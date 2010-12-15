@@ -1,0 +1,10 @@
+################################
+# Dune module information file #
+################################
+
+#Name of the module
+Module: dune-fem-functionals
+Version: 0.1
+Maintainer: felix.albrecht@uni-muenster.de
+#depending on 
+Depends: dune-common dune-grid dune-fem dune-istl
