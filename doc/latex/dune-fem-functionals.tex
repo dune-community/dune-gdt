@@ -385,24 +385,80 @@
         \end{itemize}
       \end{remark}
 
-      \begin{class}[\CodeT{Functional< FunctionSpace >}]\theoremNewline
+      \begin{class}[\CodeT{Functional}]\theoremNewline
         This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}). It
-        provides the basis for linear and nonlinear functionals. Its single method is \CodeT{operator()} which
-        represents ${F[v]}$.\\\\
-        \CodeT{RangeFieldType ret = operator( FunctionType function )}
-        \hrule
-        \hrule
-        \vspace{2mm}
-        \begin{tabular}{ll|l}
-          \textnormal{in:}
-            &\CodeT{FunctionType function}
-            & $v$\\
+        provides the base class for linear and nonlinear functionals.\\\\
+        \begin{tabular}{l}
+          \textbf{Class definition:}\\
           \hline
-          \textnormal{out:}
-            & \CodeT{RangeFieldType ret}
-            & ${F[v]}$
+          \hline
+          \codeT{class Functional< FunctionSpaceType >}
+        \end{tabular}\\\\\\
+        \noindent
+        \begin{tabular}{l}
+          \textbf{Methods:}\\
+          \hline
+          \hline
+          \codeT{RangeFieldType ret = operator( FunctionType function )}\\
+          \begin{tabular}{l|l}
+            description:
+              & This method represents the functional, applied to a function.\\
+            \hline
+            in:
+              & \begin{tabular}{ll}
+                  \codeT{FunctionType function}
+                  & $v$
+                \end{tabular}\\
+            \hline
+            out:
+              & \begin{tabular}{ll}
+                  \codeT{RangeFieldType ret}
+                  & ${F[v]}$
+                \end{tabular}
+          \end{tabular}
         \end{tabular}
-      \end{class}
+      \end{class}\theoremEndLine
+
+      \begin{class}[\CodeT{CombinedFunctional}]\theoremNewline
+        Given two functionals ${F \komma G \in V'}$, this class represents the functional
+        \begin{align}
+          F+G: V &\rightarrow  \R
+            \notag\\
+          v &\mapsto F[v] + G[v]\punkt
+            \notag
+        \end{align}
+        This class is derived from \codeT{Functional}.\\\\
+        \begin{tabular}{l}
+          \textbf{Class definition:}\\
+          \hline
+          \hline
+          \codeT{class CombinedFunctional< FirstFunctionalType, SecondFunctionalType >}\\
+          \codeT{: Functional}
+        \end{tabular}\\\\\\
+        \noindent
+        \begin{tabular}{l}
+          \textbf{Methods:}\\
+          \hline
+          \hline
+          \codeT{RangeFieldType ret = operator( FunctionType function )}\\
+          \begin{tabular}{l|l}
+            description:
+              & This method redefines \codeT{Functional::operator()}.\\
+            \hline
+            in:
+              & \begin{tabular}{ll}
+                  \codeT{FunctionType function}
+                  & $v$
+                \end{tabular}\\
+            \hline
+            out:
+              & \begin{tabular}{ll}
+                  \codeT{RangeFieldType ret}
+                  & ${F[v] + G[v]}$
+                \end{tabular}
+          \end{tabular}
+        \end{tabular}
+      \end{class}\theoremEndLine
 
 
 \subsection{Required classes}
