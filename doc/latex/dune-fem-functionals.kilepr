@@ -36,14 +36,14 @@ order=-1
 
 [item:dune-fem-functionals.tex]
 archive=true
-column=36
+column=58
 encoding=UTF-8
 highlight=LaTeX
-line=589
+line=191
 mode=LaTeX
 open=true
 order=0
 
 [view-settings,view=0,item:dune-fem-functionals.tex]
-CursorColumn=36
-CursorLine=589
+CursorColumn=58
+CursorLine=191

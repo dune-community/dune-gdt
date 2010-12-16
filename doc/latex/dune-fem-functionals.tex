@@ -1,45 +1,59 @@
+% ==================================================================================================================== %
+% dune-fem-functionals.tex
+% by: Felix Albrecht (felix.albrecht@uni-muenster.de)
+%     Patrick Henning (patrick.henning@uni-muenster.de)
+% ==================================================================================================================== %
 \documentclass[a4paper,11pt]{article}
 
+% required packages and definitions
+\usepackage[utf8]{inputenc}
+% \usepackage[body={148mm,240mm,nohead}]{geometry}
 
 \usepackage{multicol}
+\usepackage{xspace}
+\usepackage{relsize}
+
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amsthm}
-\usepackage{xspace}
-\usepackage[body={148mm,240mm,nohead}]{geometry}
-\usepackage[utf8]{inputenc}
-\usepackage{listings}
-\usepackage{relsize}
-\usepackage{tikz}
+\numberwithin{equation}{section}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{class}[definition]{Class}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{example}[definition]{Example}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{problem}[definition]{Problem}
+\newcommand{\theoremNewline}{\hspace{1mm}\\}
+\newcommand{\theoremEndLine}{\hspace{1mm}}
+\newcommand{\theoremItemizeNewline}{\hspace{1mm}\vspace{-3mm}}
+
 \usepackage{hyperref}
 \usepackage{url}
 
-
-\usepgflibrary{arrows}
-
-
-% spaces after macros but not when . or , or something is following
-\usepackage{xspace}
 \usepackage{listings}
 \lstset{language=C++,basicstyle=\ttfamily}
+\newcommand{\Code}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\lstinline!#1!}
+\newcommand{\CodeT}[1]{\textnormal{\texttt{#1}}}
+\newcommand{\codeT}[1]{\textnormal{\lstinline!#1!}}
 
-% dune core modules
+\usepackage{tikz}
+\usepgflibrary{arrows}
+
 \newcommand{\dune}{\textsc{Dune}\xspace}
 \newcommand{\dunecommon}{\textsc{Dune-Common}\xspace}
 \newcommand{\dunegrid}{\textsc{Dune-Grid}\xspace}
 \newcommand{\duneistl}{\textsc{Dune-Istl}\xspace}
 \newcommand{\dunelocalfunctions}{\textsc{Dune-Localfunctions}\xspace}
 
-% external modules
 \newcommand{\dunefem}{\textsc{Dune-Fem}\xspace}
+\newcommand{\dunefemfunctionals}{\textsc{Dune-Fem-Functionals}\xspace}
 \newcommand{\dunepdelab}{\textsc{Dune-PDELab}\xspace}
 \newcommand{\dumux}{\textsc{DuMu}$^\textrm{x}$\xspace}
 
-% external packages
 \newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
 \newcommand{\alberta}{\textsc{ALBERTA}\xspace}
 
-% grid names
 \newcommand{\albertagrid}{{\tt AlbertaGrid}\xspace}
 \newcommand{\alusimplexgrid}{{\tt ALUSimplexGrid}\xspace}
 \newcommand{\alucubegrid}{{\tt ALUCubeGrid}\xspace}
@@ -49,29 +63,21 @@
 \newcommand{\sgrid}{{\tt SGrid}\xspace}
 \newcommand{\yaspgrid}{{\tt YaspGrid}\xspace}
 
-
-\numberwithin{equation}{section}
-
-
-\newtheorem{definition}{Definition}[section]
-\newtheorem{class}[definition]{Class}
-\newtheorem{lemma}[definition]{Lemma}
-\newtheorem{problem}[definition]{Problem}
-
-\newcommand{\theoremNewline}{\hspace{1mm}\\}
-\newcommand{\theoremEndLine}{\hspace{1mm}}
-\newcommand{\theoremItemizeNewline}{\hspace{1mm}\vspace{-3mm}}
-\newcommand{\Code}[1]{\texttt{#1}}
-\newcommand{\code}[1]{\lstinline!#1!}
-\newcommand{\CodeT}[1]{\textnormal{\texttt{#1}}}
-\newcommand{\codeT}[1]{\textnormal{\lstinline!#1!}}
+\newcommand{\hnS}{\hspace{-1.25pt}}
+\newcommand{\divergence}{\nabla\hnS\hnS\hnS\cdot}
+\newcommand{\gradient}{\nabla\hnS\hnS}
+\newcommand{\boundary}{\partial \hnS}
+\newcommand{\dx}{\;d\hnS x}
 \newcommand{\komma}{\text{,}}
 \newcommand{\punkt}{\text{.}}
 \newcommand{\K}{\mathbb{K}}
+\newcommand{\N}{\mathbb{N}}
 \newcommand{\R}{\mathbb{R}}
 
-\title{Draft on the 'functionals-concept' in \dunefem}
-\author{Felix Albrecht (\url{felix.albrecht@uni-muenster.de}) and \\Patrick Henning (\url{patrick.henning@uni-muenster.de})}
+\title{Draft on \dunefemfunctionals}
+\author{Felix Albrecht (\url{felix.albrecht@uni-muenster.de}) and\\
+  Patrick Henning (\url{patrick.henning@uni-muenster.de})
+}
 \date{\today}
 
 \begin{document}
@@ -79,8 +85,9 @@
   \maketitle
 
   \begin{abstract}
-    This document is a draft about a new concept of \dunefem basing on 'functionals'. \dunefem is part of the Distributed and
-    Unified Numerics Environment (\dune) and is available from the site \url{http://dune.mathematik.uni-freiburg.de/}.
+    This document is a draft about a new concept of \dunefem based on functionals. \dunefem is part of the
+    Distributed and Unified Numerics Environment (\dune) and is available from
+    \url{http://dune.mathematik.uni-freiburg.de/}.
   \end{abstract}
 
   \hrule
@@ -90,27 +97,140 @@
   \end{multicols}
 
   \hrule
+
+  \section{Introduction}
+
+    The overall goal of \dunefem and \dunefemfunctionals is the efficient numerical solution of PDE's. Assuming standard
+    notation, the following elliptic PDE may serve as a sample problem.
+
+    \begin{example}[Elliptic PDE in one dimension]\theoremNewline
+      \label{example::introduction::elliptic_pde}
+      Let ${\Omega \subset \R}$ be a domain and ${a\komma f : \Omega \rightarrow \R}$ and
+      ${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
+      \begin{align}
+        \label{equation::introduction::elliptic_pde}
+        - \divergence
+          \big(
+            a \gradient u
+          \big)
+          &= f &&\text{in } \Omega \komma
+        \\
+        u &= g &&\text{on } \boundary\Omega \punkt
+        \notag
+      \end{align}
+    \end{example}\theoremEndLine
+
+    \begin{definition}{Weak formulation}\theoremNewline
+      \label{definition::introduction::weak_formulation}
+      Let $H^1$ and $H^1_0$ be given as usual and let $H^1_g$ for ${g\in H^1}$ be defined as
+      \begin{align}
+        H^1_g :=
+          \big\{
+            v \in H^1
+          \big|
+            v = w + g \text{ for a } w \in H^1_0
+          \big\}\punkt
+        \notag
+      \end{align}
+      The weak formulation of problem \eqref{equation::introduction::elliptic_pde} then reads as follows. Find
+      ${u \in H^1_g}$, such that
+      \begin{align}
+        \label{equation::introduction::weak_formulation}
+        \int\limits_{\Omega}
+          a \gradient u \gradient v
+        \dx
+        =
+        \int\limits_{\Omega}
+          f v
+        \dx
+        &&\text{for all } v \in H^1_0 \punkt
+      \end{align}
+    \end{definition}\theoremEndLine
+
+    The weak formulation \eqref{equation::introduction::weak_formulation} gives rise to the introduction of
+    functionals and operators. A rigorous mathematical definition of these can be found in the next section.
+    The following is only intended to give the basic idea.
+
+    \begin{definition}[Operators and functionals]\theoremNewline
+      \label{definition::introduction::operators_functionals}
+      The function $f$ from he original problem \ref{equation::introduction::elliptic_pde} induces a functional
+      \begin{align}
+        F: H^1_0 &\rightarrow \R
+          \notag\\
+        v &\mapsto F[v] :=
+          \int\limits_{\Omega}
+            f v
+          \dx\punkt
+          \notag
+        \intertext{Accordingly the function $a$ from the original problem \ref{equation::introduction::elliptic_pde}
+          induces an operator}
+        A: H^1_g &\rightarrow H^{-1}
+          \notag\\
+        u &\mapsto A(u) \komma
+          \notag
+        \intertext{where $A(u)$ itself is a functional, defined by}
+        A(u): H^1_0 &\rightarrow \R
+          \notag\\
+        v &\mapsto A(u)[v] :=
+          \int\limits_{\Omega}
+            a \gradient u \gradient v
+          \dx\punkt
+          \notag
+      \end{align}
+    \end{definition}\theoremEndLine
+
+    With these definitions at hand the weak formulation \eqref{equation::introduction::weak_formulation} can be
+    rewritten in the following way.
+
+    \begin{remark}[Variational formulation using functionals and operator]\theoremNewline
+      \label{remakr::introduction::variational_formulation_functionals_operators}
+      Let $A$ and $F$ be as in definition \ref{definition::introduction::operators_functionals}. The weak formulation
+      \eqref{equation::introduction::weak_formulation} can be rewritten as follos.
+      Find ${u \in H^1_g}$, such that
+      \begin{align}
+        \label{equation::introduction::variational_formulation_functionals_operators}
+        A(u)[v] = F[v] &&\text{for all } v\in H^1_0 \punkt
+      \end{align}
+    \end{remark}
+
+    Our postulate is, that a wide range of interesting problems can be written in this form. For detailed examples of
+    linear and nonlinear problems see section ?.
+
   \section{Analytical concept}
 
-  \subsection{Overview}
-We start with an overview on the mathematical concept which is carried over to a corresponding programming concept. The following notations and definitions are required for the subsequent sections.
+    \subsection{Overview}
 
-    \begin{definition}[Function and Functionspace]\theoremNewline
-    If $\Omega$ denotes a subset of $\mathbb{R}^n$, a mapping $v : \Omega \rightarrow \mathbb{R}^d $ is called a \textnormal{function}. Any vector space $V$ which only consits functions is called a \textnormal{functionspace}. If additionally
-    \begin{align*}
-    (\alpha v_1 + \beta v_2) \in V \enspace \forall v_1,v_2 \in V, \forall \alpha,\beta \in \R
-    \end{align*}
-    the space is called a \textnormal{linear functionspace}.
-    \end{definition}\theoremEndLine
+      We start with an overview on the mathematical concept which is carried over to a corresponding programming
+      concept. The following notations and definitions are required for the subsequent sections.
+
+      \begin{definition}[Function and Functionspace]\theoremNewline
+        Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
+        ${v : \Omega \rightarrow \mathbb{R}^d}$ is called a \textnormal{function}. A vector space $V$ consiting only of
+        functions is called a \textnormal{functionspace}.
+%         does this make sense? is this not the definition of a vector space?
+%         If additionally
+%         \begin{align*}
+%           (\alpha v_1 + \beta v_2) \in V \qquad \text{for all }v_1,v_2 \in V \text{ and for all } \alpha,\beta \in \R
+%         \end{align*}
+%         holds, the space is called a \textnormal{linear functionspace}.
+      \end{definition}\theoremEndLine
 
     \begin{definition}[Functional]\theoremNewline
       Let $V$ be a function space. A map
       \begin{align}
-        F: V &\rightarrow \R \enspace \mbox{with} \enspace v \mapsto F[v]
+        F: V &\rightarrow \K\komma
+          \notag\\
+        v &\mapsto F[v]
       \end{align}
-      is called a \textnormal{Functional}. If $F(\alpha v_1 + \beta v_2) = \alpha F(v_1) + \beta F(v_2)$ for all $\alpha,\beta \in \R$ and $v_1,v_2\in V$, $F$ is a \textnormal{Linear Functional}. The space
+      is called a \textnormal{Functional}. If
       \begin{align}
-        V^{\prime} := \{ F : V \rightarrow \R | \hspace{2pt} \mbox{is linear functional} \}
+        F[\alpha v_1 + \beta v_2] = \alpha F[v_1] + \beta F[v_2]
+          \notag
+      \end{align}
+      holds for all ${\alpha,\beta \in \R}$ and all ${v_1,v_2\in V}$, $F$ is called a \textnormal{Linear Functional}.
+      The vector space
+      \begin{align}
+        V' := \big\{ F : V \rightarrow \R \big| F \text{ is a linear functional } \big\}
       \end{align}
       is called the dual space of $V$.
     \end{definition}\theoremEndLine
