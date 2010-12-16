@@ -18,7 +18,36 @@
 \usepgflibrary{arrows}
 
 
-\input{dunemacros}
+% spaces after macros but not when . or , or something is following
+\usepackage{xspace}
+\usepackage{listings}
+\lstset{language=C++,basicstyle=\ttfamily}
+
+% dune core modules
+\newcommand{\dune}{\textsc{Dune}\xspace}
+\newcommand{\dunecommon}{\textsc{Dune-Common}\xspace}
+\newcommand{\dunegrid}{\textsc{Dune-Grid}\xspace}
+\newcommand{\duneistl}{\textsc{Dune-Istl}\xspace}
+\newcommand{\dunelocalfunctions}{\textsc{Dune-Localfunctions}\xspace}
+
+% external modules
+\newcommand{\dunefem}{\textsc{Dune-Fem}\xspace}
+\newcommand{\dunepdelab}{\textsc{Dune-PDELab}\xspace}
+\newcommand{\dumux}{\textsc{DuMu}$^\textrm{x}$\xspace}
+
+% external packages
+\newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
+\newcommand{\alberta}{\textsc{ALBERTA}\xspace}
+
+% grid names
+\newcommand{\albertagrid}{{\tt AlbertaGrid}\xspace}
+\newcommand{\alusimplexgrid}{{\tt ALUSimplexGrid}\xspace}
+\newcommand{\alucubegrid}{{\tt ALUCubeGrid}\xspace}
+\newcommand{\aluconformgrid}{{\tt ALUConformGrid}\xspace}
+\newcommand{\uggrid}{{\tt UGGrid}\xspace}
+\newcommand{\onedgrid}{{\tt OneDGrid}\xspace}
+\newcommand{\sgrid}{{\tt SGrid}\xspace}
+\newcommand{\yaspgrid}{{\tt YaspGrid}\xspace}
 
 
 \numberwithin{equation}{section}
@@ -67,9 +96,9 @@
 We start with an overview on the mathematical concept which is carried over to a corresponding programming concept. The following notations and definitions are required for the subsequent sections.
 
     \begin{definition}[Function and Functionspace]\theoremNewline
-    If $\Omega$ denotes a subset of $\mathbb{R}^n$, a mapping $v : \Omega \rightarrow \mathbb{R}^d $ is called a \textnormal{function}. Any vector space $V$ which only consits functions is called a \textnormal{functionspace}. If additionally 
+    If $\Omega$ denotes a subset of $\mathbb{R}^n$, a mapping $v : \Omega \rightarrow \mathbb{R}^d $ is called a \textnormal{function}. Any vector space $V$ which only consits functions is called a \textnormal{functionspace}. If additionally
     \begin{align*}
-    (\alpha v_1 + \beta v_2) \in V \enspace \forall v_1,v_2 \in V, \forall \alpha,\beta \in \R 
+    (\alpha v_1 + \beta v_2) \in V \enspace \forall v_1,v_2 \in V, \forall \alpha,\beta \in \R
     \end{align*}
     the space is called a \textnormal{linear functionspace}.
     \end{definition}\theoremEndLine
@@ -125,7 +154,7 @@ We start with an overview on the mathematical concept which is carried over to a
       an \textnormal{operator} on $V_g$.
     \end{definition}\theoremEndLine
 
-  In the subsequent sections, we are dealing with the following problem: 
+  In the subsequent sections, we are dealing with the following problem:
 
   \begin{problem}
   For a linear space $V$, a linear (constraint) subspace $V_C$, a functional $F$ and an affine subspace $V_g$ of $V$, find $u \in V_g$ with
@@ -185,7 +214,7 @@ First of all we give an overview on the various classes that are required in our
 \item[$\circ$] at first, we restrict ourselves to linear functionals
 \item[$\circ$] we might distinguish the types of functionals according to the codim: CodimFunctionals, for example {\tt FunctionalType::CodimFunctional<codim>}; combinations of functionals for different codims must be possible (for instance $F(\Phi) = \int_{\Omega} f \Phi + \int_{\partial \Omega} g \Phi$)
 \item[$\circ$] required methods:
-\item[$\cdot$] method: {\tt apply( function )} $\leftrightarrow$ $F[ v ]$, $v$ analytical function 
+\item[$\cdot$] method: {\tt apply( function )} $\leftrightarrow$ $F[ v ]$, $v$ analytical function
 \item[$\cdot$] method: {\tt apply( discreteFunction )} $\leftrightarrow$ $F[v_H]$, $v_H$ discrete function
 \item[$\cdot$] method: {\tt applyLocal( localBasefunctionSet )} $\rightarrow$ an abstract method depending on the specific realisation of a functional; we can say it returns a vector of local contributions for a specific grid element; it is required for assembling the right hand side in our system of equations; details are given later
 \end{itemize}
@@ -201,7 +230,7 @@ First of all we give an overview on the various classes that are required in our
 \item[$\circ$] other methods depending on the specific type of a constraint (e.g. DirichletConstraint)?
 \item[$\circ$] constraints are used to construct a 'constraint subspace' - for the user, nothing else has to be done with the constraints
 \end{itemize}
-{\tt typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > 
+{\tt typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType >
 
 \hspace{1pt}LinearSubspaceType;}
 \begin{itemize}
@@ -558,7 +587,7 @@ Example: {\tt ConstraintType::DirichletConstraint dirConstraint( function );}
 
 
   \bibliographystyle{plain}
-  \bibliography{bibliography}
+  \bibliography{dune-fem-functionals}
 
 
 \end{document}
