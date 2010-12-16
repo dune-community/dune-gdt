@@ -75,8 +75,8 @@
 \newcommand{\R}{\mathbb{R}}
 
 \title{Draft on \dunefemfunctionals}
-\author{Felix Albrecht (\url{felix.albrecht@uni-muenster.de}) and\\
-  Patrick Henning (\url{patrick.henning@uni-muenster.de})
+\author{Felix Albrecht (\Code{felix.albrecht@uni-muenster.de}) and\\
+  Patrick Henning (\Code{patrick.henning@uni-muenster.de})
 }
 \date{\today}
 
@@ -145,7 +145,7 @@
         \dx
         &&\text{for all } v \in H^1_0 \punkt
       \end{align}
-    \end{definition}\theoremEndLine
+    \end{definition}
 
     The weak formulation \eqref{equation::introduction::weak_formulation} gives rise to the introduction of
     functionals and operators. A rigorous mathematical definition of these can be found in the next section.
@@ -177,7 +177,7 @@
           \dx\punkt
           \notag
       \end{align}
-    \end{definition}\theoremEndLine
+    \end{definition}
 
     With these definitions at hand the weak formulation \eqref{equation::introduction::weak_formulation} can be
     rewritten in the following way.
@@ -198,27 +198,28 @@
 
   \section{Analytical concept}
 
-    \subsection{Overview}
+    We start with an overview on the mathematical concept which is carried over to a corresponding programming
+    concept. The following notations and definitions are required for the subsequent sections.
 
-      We start with an overview on the mathematical concept which is carried over to a corresponding programming
-      concept. The following notations and definitions are required for the subsequent sections.
-
-      \begin{definition}[Function and Functionspace]\theoremNewline
-        Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
-        ${v : \Omega \rightarrow \mathbb{R}^d}$ is called a \textnormal{function}. A vector space $V$ consiting only of
-        functions is called a \textnormal{functionspace}.
-%         does this make sense? is this not the definition of a vector space?
-%         If additionally
-%         \begin{align*}
-%           (\alpha v_1 + \beta v_2) \in V \qquad \text{for all }v_1,v_2 \in V \text{ and for all } \alpha,\beta \in \R
-%         \end{align*}
-%         holds, the space is called a \textnormal{linear functionspace}.
-      \end{definition}\theoremEndLine
+    \begin{definition}[Function and Functionspace]\theoremNewline
+      \label{definition::analytical_concept::function_functionspace}
+      Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
+      ${v : \Omega \rightarrow \R^d}$ is called a \textnormal{function}, the set
+      \begin{align}
+        V :=
+          \big\{
+            v : \Omega \rightarrow \R^d
+          \big\}
+          \notag
+      \end{align}
+      is called a \textnormal{functionspace}. If $V$ is an $\R$--vector space, $V$ is called a \textnormal{linear functionspace}.
+    \end{definition}\theoremEndLine
 
     \begin{definition}[Functional]\theoremNewline
+      \label{definition::analytical_concept::functional}
       Let $V$ be a function space. A map
       \begin{align}
-        F: V &\rightarrow \K\komma
+        F: V &\rightarrow \R\komma
           \notag\\
         v &\mapsto F[v]
       \end{align}
@@ -236,108 +237,178 @@
     \end{definition}\theoremEndLine
 
     \begin{definition}[Constraint]\theoremNewline
-      Let $V$ be a linear function space, $M \in \mathbb{N}_{>0}$ and $\{ F_1, ..., F_M \}$ a set of linear functionals on $V$. We define the corresponding vector of functionals $C$ by
+      \label{definition::analytical_concept::constraint}
+      Let $V$ be a linear function space, $M \in \mathbb{N}_{>0}$ and $\{ F_1, ..., F_M \}$ a set of linear
+      functionals on $V$. We define the corresponding vector of linear functionals $C$ by
       \begin{align}
         C: \{1,...,M\} \times V &\rightarrow \R \enspace \mbox{with} \enspace (i,v) \mapsto C[i][v] := F_i[v].
       \end{align}
-     The condition:
-      \begin{align}
-       C[i][v] = 0 \enspace \forall 1 \le i \le M
-      \end{align}
-     is called a \textnormal{Constraint} for $v$.
-    \end{definition}\theoremEndLine
-    In particular every single linear functional implies a constraint.
+      The condition:
+        \begin{align}
+        C[i][v] = 0 \enspace \forall 1 \le i \le M
+        \end{align}
+      is called a \textnormal{Constraint} for $v$.
+    \end{definition}
+
+    In particular each linear functional implies a constraint.
 
     \begin{definition}[Linear Subspace]\theoremNewline
-      Let $V$ be a linear function space and $C[i][\cdot]=0$ a constraint on $V$. Then we call
+      \label{definition::analytical_concept::linear_subspace}
+      Let $V$ be a linear function space and $C[\cdot][\cdot]=0$ a constraint on $V$. Then we call
       \begin{align}
         V_C := \{ v \in V| \hspace{4pt} C[i][v] = 0 \hspace{4pt}\forall i\in\{1,...,M\}\}
       \end{align}
       a \textnormal{linear subspace} of $V$ with respect to $C$.
-    \end{definition}\theoremEndLine
-    $V_C$ is a linear vector space, since the constraint functionals $C[i]$ are linear. Typically, $V_C$ becomes the space of test functions in our later problem.
+    \end{definition}
 
-    \begin{definition}[Affine Subspace]\theoremNewline
-      Let $V$ be a linear function space, $V_C$ a linear subspace and $g \in V$. Then we call
+    $V_C$ is a vector space itself, since the constraint functionals $C[i]$ are linear. Typically, $V_C$ becomes the
+    space of test functions in our later problem.
+
+    \begin{definition}[Affine space]\theoremNewline
+      \label{definition::analytical_concept::affine_space}
+      Let $V$ be a function space, $V_C$ a linear subspace and $g \in V$. Then we call
       \begin{align}
         V_{g} := \{ v+g| \hspace{4pt} v \in V_C \} \subset V
       \end{align}
-      an \textnormal{affine subspace} of $V$ with respect to $g$ and $V_C$.
+      an \textnormal{affine space} with respect to $g$ and $V_C$.
     \end{definition}\theoremEndLine
-    In general, $V_g$ is a nonlinear function space. It becomes the space of solution in our later problem.
+
+    In general, $V_g$ is only a subset of $V$ and not a subspace. It will be the space of solutions in our later
+    problem.
 
     \begin{definition}[Operator]\theoremNewline
-    Let $V_C$ be a linear (constraint) function space with dual space $V^{\prime}_C$ and $V_g$ a constraint subspace. Then we call
+      \label{definition::analytical_concept::operator}
+      Let $V$ be a linear function space, ${V_C \subset V}$ a linear subspace, $V_C'$ its dual and ${V_g \subset V}$
+      an affine space. Then we call
       \begin{align}
         G : V_g \rightarrow V^{\prime}_C
       \end{align}
-      an \textnormal{operator} on $V_g$.
-    \end{definition}\theoremEndLine
+      an \textnormal{operator} on $V_g$. If
+      \begin{align}
+        G(\alpha v + \beta w) = \alpha G(v) + \beta G(w)
+          \notag
+      \end{align}
+      holds for all ${\alpha\komma \beta \in \R}$ and for all ${v\komma w \in V_g}$ the operator $G$ is called
+      \textnormal{linear}.
+    \end{definition}
 
-  In the subsequent sections, we are dealing with the following problem:
+    In the subsequent sections, we are dealing with the following problem.
 
-  \begin{problem}
-  For a linear space $V$, a linear (constraint) subspace $V_C$, a functional $F$ and an affine subspace $V_g$ of $V$, find $u \in V_g$ with
-  \begin{align*}
-  G(u)[v] = F[v] \enspace \forall v \in V_C.
-  \end{align*}
-  \end{problem}
-  In general, the functional $F$ on the right hand side of our problem is linear. The (differential) operator $G$ can be either linear or nonlinear.
+    \begin{problem}{Sample problem}\theoremNewline
+      \label{problem::analytical_concept::sample_problem}
+      Let $V$ be a linear space, ${V_C \subset V}$ a linear subspace, ${F \in V_C'}$ a functional and
+      ${V_g \subset V}$ an affine space. Find ${u \in V_g}$, such that
+      \begin{align*}
+        G(u)[v] = F[v] &&\text{for all } v \in V_C.
+      \end{align*}
+    \end{problem}
 
-  \subsection{Example}
+    In general, the functional $F$ on the right hand side of our problem is linear. The (differential) operator $G$
+    can be either linear or nonlinear.
 
-  Let $\Omega \subset \mathbb{R}^d$ denote a polygonal bounded domain, $\mathcal{T}_H = \{ T_1, ..., T_N \}$ a corresponding regular triangulation, $\mathcal{N}_H = \{ x_1, ...., x_{\tilde{N}}\}$ the set of nodes and $\{ \Phi_1, ...., \Phi_{\tilde{N}}\}$ the associated Lagrange basis of order $1$. The (discrete) linear space of solutions is given by
-  \begin{align*}
-  V := \{ v_H \in C^0(\Omega)| \enspace (v_H)_{|T}\in \mathbb{P}^1(T) \forall T \in \mathcal{T}_H \}
-  \end{align*}
-  and the linear subspace by $\mathring{V} := V \cap \mathring{H}^1(\Omega)$. Now, let us consider the following discrete problem:
-  \begin{problem}
-  For $g \in V \subset C^0(\Omega)$ find $u \in V$ with $u=g$ on $\partial \Omega$ and
-  \begin{align*}
-  \int_{\Omega} \nabla u \cdot \nabla v = \int_{\Omega} f v \quad \forall v \in \mathring{V}.
-  \end{align*}
-  (Note: $\mathring{V}$ can not be replaced by $V$).
-  \end{problem}
+  \section{Examples}
 
-  Putting this into the general framework above, we idenitfy the (linear) functional $F:\mathring{V}\rightarrow \mathbb{R}$ by
-  \begin{align*}
-  F[v] := \int_{\Omega} f v \enspace \mbox{for} \enspace v \in \mathring{V}.
-  \end{align*}
-  $\mathring{V}$ is a constraint subspace with the constraint $C[i][v] := v(x_i^b) = 0$ for any boundary node $x_i^b$ (i.e. $\mathcal{N}_H \cap \partial \Omega = \{ x_1^b, ...., x_{\bar{N}}^b\}$). We can therefore identify
-  \begin{align*}
-  \mathring{V} = \{ v \in V| \hspace{3pt} C[i][v] = 0 \enspace \forall 1\le i\le \bar{N} \} =: V_C.
-  \end{align*}
-  The affine space is given by:
-  \begin{align*}
-  V_{g_H} := \{ v + g_H | \hspace{3pt} v \in V \enspace \mbox{and} \enspace g_H := \sum_{i=1}^{\tilde{N}} g(x_i) \Phi_i \}.
-  \end{align*}
-  and the (differential) operator $G : V_{g_H} \rightarrow V_C^{\prime}$ by:
-  \begin{align*}
-  G(u)[v] := \int_{\Omega} \nabla u \cdot \nabla v.
-  \end{align*}
-  With these notations the problem reads:
-  \begin{align*}
-  \mbox{Find} \enspace u \in V_{g_H} \enspace \mbox{with} \enspace G(u) = F \enspace \mbox{on} \enspace V_C.
-  \end{align*}
+    \subsection{Elliptic PDE}
 
-\section{Programming concept}
+      Let $\Omega \subset \mathbb{R}^d$ denote a polygonal bounded domain, $\mathcal{T}_H = \{ T_1, ..., T_N \}$ a
+      corresponding regular triangulation, $\mathcal{N}_H = \{ x_1, ...., x_{\tilde{N}}\}$ the set of nodes and
+      $\{ \Phi_1, ...., \Phi_{\tilde{N}}\}$ the associated Lagrange basis of order $1$. The (discrete) linear space of
+      solutions is given by
+      \begin{align*}
+        V :=
+          \Big\{
+            v_H \in C^0(\Omega)
+          \Big|
+            (v_H)_{|T}\in \mathbb{P}^1(T) \quad\forall T \in \mathcal{T}_H
+          \Big\}
+      \end{align*}
+      and the linear subspace of testfunctions by $V_0 := V \cap H^1_0(\Omega)$. Now, let us consider the
+      following discrete problem.
 
-In this section we describe the general programming concept. Details on the implementation of the various classes are given later. We assume that we use a {\tt namespace Functionals} in order to avoid conflicts with other existing \dunefem-classes.
+      \begin{problem}\theoremNewline
+      For $g \in V$ find $u \in V$ with $u=g$ on $\partial \Omega$ and
+      \begin{align*}
+      \int\limits_{\Omega} \nabla u \cdot \nabla v \dx = \int\limits_{\Omega} f v \dx &&\text{for all }v \in V_0.
+      \end{align*}
+      (Note: $V_0$ can not be replaced by $V$).
+      \end{problem}
+
+      Putting this into the general framework above, we define the (linear) functional
+      ${F: V_0 \rightarrow \R}$ by
+      \begin{align*}
+        F[v] := \int\limits_{\Omega} f v &&\text{for } v \in \mathring{V}.
+      \end{align*}
+      $V_0$ is a constraint subspace with the constraint $C[i][v] := v(x_i^b) = 0$ for any boundary node
+      $x_i^b$ (i.e. $\mathcal{N}_H \cap \partial \Omega = \{ x_1^b, ...., x_{\bar{N}}^b\}$). We can therefore identify
+      \begin{align*}
+        V_0 = \{ v \in V| \hspace{3pt} C[i][v] = 0 \enspace \forall 1\le i\le \bar{N} \} =: V_C.
+      \end{align*}
+      The affine space $V_{g_H}$is given by
+      \begin{align*}
+        V_{g_H} :=
+          \Big\{
+            v + g_H
+          \Big|
+            v \in V \enspace \mbox{and} \enspace g_H := \sum_{i=1}^{\tilde{N}} g(x_i) \Phi_i
+          \Big\}
+      \end{align*}
+      and the (differential) operator $G : V_{g_H} \rightarrow V_C^{\prime}$ by
+      \begin{align*}
+      G(u)[v] := \int_{\Omega} \nabla u \cdot \nabla v \dx.
+      \end{align*}
+      With these notations the original problem reads:
+      \begin{align*}
+      \text{Find} \enspace u \in V_{g_H} \enspace \mbox{with} \enspace G(u) = F \enspace \mbox{on} \enspace V_C.
+      \end{align*}
+
+  \section{Programming concept}
+
+    In this section we describe the general programming concept. For a detailed description of these classes, see
+    section ? and the doxygen documentation. These classes are realized in a namespace \Code{Functionals} in order to
+    avoid conflicts with other existing \dunefem-classes. We do not distinguish between interfaces and realizations
+    here, this is only intended as a conceptual overview.
+
+    \subsection{Functionals}
+
+      \begin{remark}[Class tree]\theoremItemizeNewline
+        \begin{itemize}
+          \item[] \CodeT{Functional}
+          \item[] \begin{itemize}
+                    \item[$\rightarrow$] \CodeT{CombinedFunctional}
+                    \item[$\rightarrow$] \CodeT{LinearFunctional}
+                    \item[] \begin{itemize}
+                            \item[$\rightarrow$] \CodeT{CombinedLinearFunctional}
+                            \item[$\rightarrow$] \CodeT{CodimCFunctional}
+                            \item[$\rightarrow$] \CodeT{IntegralFunctional}
+                          \end{itemize}
+                  \end{itemize}
+        \end{itemize}
+      \end{remark}
+
+      \begin{class}[\CodeT{Functional< FunctionSpace >}]\theoremNewline
+        This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}). It
+        provides the basis for linear and nonlinear functionals. Its single method is \CodeT{operator()} which
+        represents ${F[v]}$.\\\\
+        \CodeT{RangeFieldType ret = operator( FunctionType function )}
+        \hrule
+        \hrule
+        \vspace{2mm}
+        \begin{tabular}{ll|l}
+          \textnormal{in:}
+            &\CodeT{FunctionType function}
+            & $v$\\
+          \hline
+          \textnormal{out:}
+            & \CodeT{RangeFieldType ret}
+            & ${F[v]}$
+        \end{tabular}
+      \end{class}
+
 
 \subsection{Required classes}
 
 First of all we give an overview on the various classes that are required in our concept. In particuler we comment on the functionality of each class.\\
 \\
-{\tt typedef Functional < DiscreteFunctionSpace > FunctionalType;}
-\begin{itemize}
-\item[$\circ$] from the the general type {\tt Functional} we can derive various realizations of functionals
-\item[$\circ$] at first, we restrict ourselves to linear functionals
-\item[$\circ$] we might distinguish the types of functionals according to the codim: CodimFunctionals, for example {\tt FunctionalType::CodimFunctional<codim>}; combinations of functionals for different codims must be possible (for instance $F(\Phi) = \int_{\Omega} f \Phi + \int_{\partial \Omega} g \Phi$)
-\item[$\circ$] required methods:
-\item[$\cdot$] method: {\tt apply( function )} $\leftrightarrow$ $F[ v ]$, $v$ analytical function
-\item[$\cdot$] method: {\tt apply( discreteFunction )} $\leftrightarrow$ $F[v_H]$, $v_H$ discrete function
-\item[$\cdot$] method: {\tt applyLocal( localBasefunctionSet )} $\rightarrow$ an abstract method depending on the specific realisation of a functional; we can say it returns a vector of local contributions for a specific grid element; it is required for assembling the right hand side in our system of equations; details are given later
-\end{itemize}
 {\tt typedef Constraint < FunctionalType > ConstraintType;}
 \begin{itemize}
 \item[$\circ$] various realizations of constraints $C$ are possible (boundary conditions, periodicity, zero-average, ...); they are derived from the general {\tt Constraint} class
