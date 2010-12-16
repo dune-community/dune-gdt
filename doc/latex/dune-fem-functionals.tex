@@ -1,0 +1,568 @@
+\documentclass[a4paper,11pt]{article}
+
+
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{xspace}
+\usepackage[body={148mm,240mm,nohead}]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{relsize}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{url}
+
+
+\usepgflibrary{arrows}
+
+
+\input{dunemacros}
+
+
+\numberwithin{equation}{section}
+
+
+\newtheorem{definition}{Definition}[section]
+\newtheorem{class}[definition]{Class}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{problem}[definition]{Problem}
+
+\newcommand{\theoremNewline}{\hspace{1mm}\\}
+\newcommand{\theoremEndLine}{\hspace{1mm}}
+\newcommand{\theoremItemizeNewline}{\hspace{1mm}\vspace{-3mm}}
+\newcommand{\Code}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\lstinline!#1!}
+\newcommand{\CodeT}[1]{\textnormal{\texttt{#1}}}
+\newcommand{\codeT}[1]{\textnormal{\lstinline!#1!}}
+\newcommand{\komma}{\text{,}}
+\newcommand{\punkt}{\text{.}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\R}{\mathbb{R}}
+
+\title{Draft on the 'functionals-concept' in \dunefem}
+\author{Felix Albrecht (\url{felix.albrecht@uni-muenster.de}) and \\Patrick Henning (\url{patrick.henning@uni-muenster.de})}
+\date{\today}
+
+\begin{document}
+
+  \maketitle
+
+  \begin{abstract}
+    This document is a draft about a new concept of \dunefem basing on 'functionals'. \dunefem is part of the Distributed and
+    Unified Numerics Environment (\dune) and is available from the site \url{http://dune.mathematik.uni-freiburg.de/}.
+  \end{abstract}
+
+  \hrule
+
+  \begin{multicols}{2}
+    \small\tableofcontents
+  \end{multicols}
+
+  \hrule
+  \section{Analytical concept}
+
+  \subsection{Overview}
+We start with an overview on the mathematical concept which is carried over to a corresponding programming concept. The following notations and definitions are required for the subsequent sections.
+
+    \begin{definition}[Function and Functionspace]\theoremNewline
+    If $\Omega$ denotes a subset of $\mathbb{R}^n$, a mapping $v : \Omega \rightarrow \mathbb{R}^d $ is called a \textnormal{function}. Any vector space $V$ which only consits functions is called a \textnormal{functionspace}. If additionally 
+    \begin{align*}
+    (\alpha v_1 + \beta v_2) \in V \enspace \forall v_1,v_2 \in V, \forall \alpha,\beta \in \R 
+    \end{align*}
+    the space is called a \textnormal{linear functionspace}.
+    \end{definition}\theoremEndLine
+
+    \begin{definition}[Functional]\theoremNewline
+      Let $V$ be a function space. A map
+      \begin{align}
+        F: V &\rightarrow \R \enspace \mbox{with} \enspace v \mapsto F[v]
+      \end{align}
+      is called a \textnormal{Functional}. If $F(\alpha v_1 + \beta v_2) = \alpha F(v_1) + \beta F(v_2)$ for all $\alpha,\beta \in \R$ and $v_1,v_2\in V$, $F$ is a \textnormal{Linear Functional}. The space
+      \begin{align}
+        V^{\prime} := \{ F : V \rightarrow \R | \hspace{2pt} \mbox{is linear functional} \}
+      \end{align}
+      is called the dual space of $V$.
+    \end{definition}\theoremEndLine
+
+    \begin{definition}[Constraint]\theoremNewline
+      Let $V$ be a linear function space, $M \in \mathbb{N}_{>0}$ and $\{ F_1, ..., F_M \}$ a set of linear functionals on $V$. We define the corresponding vector of functionals $C$ by
+      \begin{align}
+        C: \{1,...,M\} \times V &\rightarrow \R \enspace \mbox{with} \enspace (i,v) \mapsto C[i][v] := F_i[v].
+      \end{align}
+     The condition:
+      \begin{align}
+       C[i][v] = 0 \enspace \forall 1 \le i \le M
+      \end{align}
+     is called a \textnormal{Constraint} for $v$.
+    \end{definition}\theoremEndLine
+    In particular every single linear functional implies a constraint.
+
+    \begin{definition}[Linear Subspace]\theoremNewline
+      Let $V$ be a linear function space and $C[i][\cdot]=0$ a constraint on $V$. Then we call
+      \begin{align}
+        V_C := \{ v \in V| \hspace{4pt} C[i][v] = 0 \hspace{4pt}\forall i\in\{1,...,M\}\}
+      \end{align}
+      a \textnormal{linear subspace} of $V$ with respect to $C$.
+    \end{definition}\theoremEndLine
+    $V_C$ is a linear vector space, since the constraint functionals $C[i]$ are linear. Typically, $V_C$ becomes the space of test functions in our later problem.
+
+    \begin{definition}[Affine Subspace]\theoremNewline
+      Let $V$ be a linear function space, $V_C$ a linear subspace and $g \in V$. Then we call
+      \begin{align}
+        V_{g} := \{ v+g| \hspace{4pt} v \in V_C \} \subset V
+      \end{align}
+      an \textnormal{affine subspace} of $V$ with respect to $g$ and $V_C$.
+    \end{definition}\theoremEndLine
+    In general, $V_g$ is a nonlinear function space. It becomes the space of solution in our later problem.
+
+    \begin{definition}[Operator]\theoremNewline
+    Let $V_C$ be a linear (constraint) function space with dual space $V^{\prime}_C$ and $V_g$ a constraint subspace. Then we call
+      \begin{align}
+        G : V_g \rightarrow V^{\prime}_C
+      \end{align}
+      an \textnormal{operator} on $V_g$.
+    \end{definition}\theoremEndLine
+
+  In the subsequent sections, we are dealing with the following problem: 
+
+  \begin{problem}
+  For a linear space $V$, a linear (constraint) subspace $V_C$, a functional $F$ and an affine subspace $V_g$ of $V$, find $u \in V_g$ with
+  \begin{align*}
+  G(u)[v] = F[v] \enspace \forall v \in V_C.
+  \end{align*}
+  \end{problem}
+  In general, the functional $F$ on the right hand side of our problem is linear. The (differential) operator $G$ can be either linear or nonlinear.
+
+  \subsection{Example}
+
+  Let $\Omega \subset \mathbb{R}^d$ denote a polygonal bounded domain, $\mathcal{T}_H = \{ T_1, ..., T_N \}$ a corresponding regular triangulation, $\mathcal{N}_H = \{ x_1, ...., x_{\tilde{N}}\}$ the set of nodes and $\{ \Phi_1, ...., \Phi_{\tilde{N}}\}$ the associated Lagrange basis of order $1$. The (discrete) linear space of solutions is given by
+  \begin{align*}
+  V := \{ v_H \in C^0(\Omega)| \enspace (v_H)_{|T}\in \mathbb{P}^1(T) \forall T \in \mathcal{T}_H \}
+  \end{align*}
+  and the linear subspace by $\mathring{V} := V \cap \mathring{H}^1(\Omega)$. Now, let us consider the following discrete problem:
+  \begin{problem}
+  For $g \in V \subset C^0(\Omega)$ find $u \in V$ with $u=g$ on $\partial \Omega$ and
+  \begin{align*}
+  \int_{\Omega} \nabla u \cdot \nabla v = \int_{\Omega} f v \quad \forall v \in \mathring{V}.
+  \end{align*}
+  (Note: $\mathring{V}$ can not be replaced by $V$).
+  \end{problem}
+
+  Putting this into the general framework above, we idenitfy the (linear) functional $F:\mathring{V}\rightarrow \mathbb{R}$ by
+  \begin{align*}
+  F[v] := \int_{\Omega} f v \enspace \mbox{for} \enspace v \in \mathring{V}.
+  \end{align*}
+  $\mathring{V}$ is a constraint subspace with the constraint $C[i][v] := v(x_i^b) = 0$ for any boundary node $x_i^b$ (i.e. $\mathcal{N}_H \cap \partial \Omega = \{ x_1^b, ...., x_{\bar{N}}^b\}$). We can therefore identify
+  \begin{align*}
+  \mathring{V} = \{ v \in V| \hspace{3pt} C[i][v] = 0 \enspace \forall 1\le i\le \bar{N} \} =: V_C.
+  \end{align*}
+  The affine space is given by:
+  \begin{align*}
+  V_{g_H} := \{ v + g_H | \hspace{3pt} v \in V \enspace \mbox{and} \enspace g_H := \sum_{i=1}^{\tilde{N}} g(x_i) \Phi_i \}.
+  \end{align*}
+  and the (differential) operator $G : V_{g_H} \rightarrow V_C^{\prime}$ by:
+  \begin{align*}
+  G(u)[v] := \int_{\Omega} \nabla u \cdot \nabla v.
+  \end{align*}
+  With these notations the problem reads:
+  \begin{align*}
+  \mbox{Find} \enspace u \in V_{g_H} \enspace \mbox{with} \enspace G(u) = F \enspace \mbox{on} \enspace V_C.
+  \end{align*}
+
+\section{Programming concept}
+
+In this section we describe the general programming concept. Details on the implementation of the various classes are given later. We assume that we use a {\tt namespace Functionals} in order to avoid conflicts with other existing \dunefem-classes.
+
+\subsection{Required classes}
+
+First of all we give an overview on the various classes that are required in our concept. In particuler we comment on the functionality of each class.\\
+\\
+{\tt typedef Functional < DiscreteFunctionSpace > FunctionalType;}
+\begin{itemize}
+\item[$\circ$] from the the general type {\tt Functional} we can derive various realizations of functionals
+\item[$\circ$] at first, we restrict ourselves to linear functionals
+\item[$\circ$] we might distinguish the types of functionals according to the codim: CodimFunctionals, for example {\tt FunctionalType::CodimFunctional<codim>}; combinations of functionals for different codims must be possible (for instance $F(\Phi) = \int_{\Omega} f \Phi + \int_{\partial \Omega} g \Phi$)
+\item[$\circ$] required methods:
+\item[$\cdot$] method: {\tt apply( function )} $\leftrightarrow$ $F[ v ]$, $v$ analytical function 
+\item[$\cdot$] method: {\tt apply( discreteFunction )} $\leftrightarrow$ $F[v_H]$, $v_H$ discrete function
+\item[$\cdot$] method: {\tt applyLocal( localBasefunctionSet )} $\rightarrow$ an abstract method depending on the specific realisation of a functional; we can say it returns a vector of local contributions for a specific grid element; it is required for assembling the right hand side in our system of equations; details are given later
+\end{itemize}
+{\tt typedef Constraint < FunctionalType > ConstraintType;}
+\begin{itemize}
+\item[$\circ$] various realizations of constraints $C$ are possible (boundary conditions, periodicity, zero-average, ...); they are derived from the general {\tt Constraint} class
+\item[$\circ$] mapping an element $v\in V$ on an element $v_C \in V_C$ is not unique, therefore 'applying a constraint' to a general function $v$ means that we project $v$ on $V_C$ with respect to certain scalar product; in the discrete setting these projections are typically straight forward
+\item[$\circ$] required methods:
+\item[$\cdot$] method: {\tt apply( numberOfConstraint, function )} $\leftrightarrow$ find $v_C \in V_C$ which is 'close' to $v$ and which fulfills $C[i][v_C]=0$, $i$ is the index of the functional (in our functional vector), $v$ is an analytical function
+\item[$\cdot$] method: {\tt apply( numberOfConstraint, discreteFunction )} $\leftrightarrow$ find $v_C \in V_C$ which is 'close' to $v_H$ and which fulfills $C[i][v_C]=0$, $i$ is the index of the functional (in our functional vector), $v_H$ is a discrete function; typically we simply change the value of $v_H$ in a certain number of nodes
+\item[$\cdot$] method: {\tt applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} $\rightarrow$ again, an abstract method depending on the specific type of the constraint; it returns local contributions for a specific grid element; it is required for assembling the system matrix in our system of equations; details are given later
+\item[$\cdot$] method: {\tt applyLocal( localBasefunctionSet, localBasefunctionSet )} $\rightarrow$ use {\tt applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} for all {\tt numberOfConstraint}
+\item[$\circ$] other methods depending on the specific type of a constraint (e.g. DirichletConstraint)?
+\item[$\circ$] constraints are used to construct a 'constraint subspace' - for the user, nothing else has to be done with the constraints
+\end{itemize}
+{\tt typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > 
+
+\hspace{1pt}LinearSubspaceType;}
+\begin{itemize}
+\item[$\circ$] derived from {\tt DiscreteFunctionSpace}
+\item[$\circ$] all the information about the constraint is in our subspace
+\item[$\circ$] we can extract the constraint that it was constructed from
+\item[$\circ$] formally the subspace is of the same size as {\tt DiscreteFunctionSpace}
+\item[$\circ$] in particular an object of {\tt LinearSubspace} becomes the space of test functions in our later problem
+\end{itemize}
+{\tt typedef AffineSubspace < LinearSubspace > AffineSubspaceType;}
+\begin{itemize}
+\item[$\circ$] the space of the solution
+\item[$\circ$] initialized with a fixed discrete function $v_H$: 'AffineSubspace = $v_H$ + LinearSubspace'
+\item[$\circ$] {\tt AffineSubspace}-class derived from {\tt DiscreteFunctionSpace}
+\end{itemize}
+{\tt typedef Operator< LinearSubspaceType, AffineSubspaceType,
+
+\hspace{1pt}MatrixObjectTraits > DifferentialOperatorType;}
+\begin{itemize}
+\item[$\circ$] can be derived from the dune-fem Operator-class, later it should be implemented independently
+\item[$\circ$] Operator : AffineSubspace $\rightarrow$ (LinearSubspace$)^{\prime}$
+\item[$\circ$] if required: automatically assembles the correct system matrix (which is a quadratic sparse row matrix) with respect to the subspaces (i.e. with respect to the constraints)
+\item[$\circ$] simplified we can say: the {\it linear subspace} tells us which lines we must substitute in our later system of equations and the {\it affine subspace} tells us by what we must substitute these lines.
+\item[$\circ$] usage of a {\tt DifferentialOperatorType}-object identical to the old usage of an {\tt Operator}-object
+\item[$\circ$] get system matrix with {\tt operator.systemMatrix();}
+\end{itemize}
+
+Algebraic classes (assembling of system matrix and right hand side):\\
+\\
+To assemble the right hand side in our system of equations:\\
+{\tt typedef FunctionalAssembler < FunctionalType, AffineSubspace >
+
+FunctionalAssemblerType;}\\
+\\
+To assemble the correct system matrix (with respect to the subspaces):\\
+{\tt typedef OperatorAssembler < OperatorType > OperatorAssemblerType;}
+\begin{itemize}
+\item incorporates something like:\\
+{\tt assembleSystemMatrix(); constraints.apply( systemMatrix() );}\\
+\end{itemize}
+Both classes might be incorporated in a general {\tt FunctionalSolverInterface}, so that the user does not need to care about the system assemblers.
+
+
+\subsection{Draft}
+
+
+Essential classes: \\
+\\
+{\footnotesize\tt
+using namespace Functionals;\\
+\\
+typedef Functional< DiscreteFunctionSpace > FunctionalType; \\
+typedef Constraint < FunctionalType > ConstraintType; \\
+typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > LinearSubspaceType; \\
+typedef AffineSubspace < LinearSubspace > AffineSubspaceType; \\
+\\
+{\sl// sparse row matrix of size $N \times N$}\\
+typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace >  MatrixObjectTraits; \\
+typedef Operator< LinearSubspaceType, AffineSubspaceType,
+
+MatrixObjectTraits > DiffOperatorType; \\
+\\
+{\sl// algebraic system assemblers:}\\
+typedef OperatorAssembler < OperatorType > OperatorAssemblerType; \\
+typedef FunctionalAssembler < FunctionalType, AffineSubspace > FunctionalAssemblerType; \\
+\\
+{\sl// CG scheme}\\
+typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler > InverseOperatorType; \\
+}
+\\
+Main code: \\
+\\
+{\tt\footnotesize
+DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace ); \\
+\\
+{\sl// use a right hand side assembler class to apply 'functional+constraints' to right hand side vector}\\
+FunctionalAssemblerType rhsAssembler ( functional, affineSubspace ); \\
+rhsAssembler.assemble( rhs ); \\
+\\
+{\sl// behaves like the old Operator-class of \dunefem:}\\
+OperatorAssemblerType systemMatrixAssembler ( differentialOperator );
+\\
+{\sl// 'differentialOperator' contains correct 'systemMatrix()':}\\
+InverseOperatorType cg( systemMatrixAssembler, 1e-6, 1e-8 );\\
+cg( rhs, solution );\\}
+\\
+We might think about hiding this main code behind a 'FunctionalSolverInterface', so that the user can simply call:
+
+{\tt\footnotesize cg( differentialOperator, functional, affineSubspace, solution );}\\
+(i.e. {\tt FunctionalSolverInterface< Operator, Functional, AffineSubspace>} )
+
+$\\$
+Comparison with 'old' main code (for laplace operator and zero boundary condition):\\
+\\
+{\tt\footnotesize DiscreteFunctionType rhs( "rhs", discreteFunctionSpace );\\
+AssembledFunctional< FunctionalType > rhsFunctional ( disceretFunctionSpace, functional );\\
+rhsFunctional.assemble( rhs );\\
+\\
+typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits > LaplaceOperatorType;\\
+{\sl// apply constraints}\\
+bool hasDirBoundary = constraints.apply( laplaceOperator.systemMatrix(), rhs, solution );\\
+\\
+InverseOperatorType cg( laplaceOperator, 1e-6, 1e-8 );\\
+cg( rhs, solution );\\}
+\\
+The essential difference is that the (differential)operator already knows the correct system matrix (due to the subspaces, that know the constraints). Therefore the user does not need some kind of 'constraints.apply' method (this happens internally in the two system assemblers).
+
+\section{Realization of Functionals}
+
+    \begin{class}[\Code{Functional< Space >}]\theoremNewline
+      Represents a functional $f$. This class comes without any functionality at the moment, until someone comes
+      up with a reasonable example of nonlinear functionals.\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number = operator( function )}
+          & Given $u$, returns $f[u]$.\\
+        \hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+  \subsection{Linear Functionals}
+
+    \begin{definition}[Linear functional]\theoremNewline
+      Let $V$ be a vector space, $\K$ its underlying scalar field and $f$ a functional. If, for all
+      ${u \komma v \in V}$ and for all ${\lambda \komma \mu \in \K}$,
+      \begin{align}
+        f[ \lambda u ] + f[ \mu v ] = \lambda f[u] + \mu f[v]
+      \end{align}
+      holds, $f$ is called a \textnormal{linear functional}.
+    \end{definition}\theoremEndLine
+
+    \begin{definition}[Dual Space]\theoremNewline
+      Let $V$ be a vector space and $\K$ its underlying scalar field. The space
+      \begin{align}
+        V^{*} :=
+            \big\{
+              f: V \rightarrow \K
+            \big|
+              f \text{ linear functional}
+            \big\}
+          \notag
+      \end{align}
+      is called the \textnormal{dual space} of $V$ and is a vector space itself.
+    \end{definition}\theoremEndLine
+
+    \begin{lemma}[Localization property of linear functionals]\theoremNewline
+      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${f \in V_G^*}$ a linear functional. Let
+      further be
+      \begin{align}
+        u = \sum\limits_{E \in G}
+            {
+              \sum\limits_{i \in I_E}
+              {
+                u_i^E \varphi_i^E
+              }
+            }
+      \end{align}
+      the representation for a ${u \in V_G}$ in terms of its local DoFs $u_i^E$ and the local
+      base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Then it holds that
+      \begin{align}
+        f[u] &= \sum\limits_{E \in G}
+            {
+              \sum\limits_{i \in I_E}
+              {
+                u_i^E f \Big[ \varphi_i^E \Big]
+              }
+            }\komma
+        \intertext{which can also be written as}
+        f[u] &= \sum\limits_{E \in G}
+            {
+              u^E \cdot f[B_E]^E
+            }\komma
+      \end{align}
+      where $u^E := ( u_i^E )_{i \in I_E}$ is the local DoF vector of $u$ on $E$ and ${f[B_E]^E}$ is defined as the vector
+      \begin{align}
+        f[B_E]^E := \Bigg( f \Big[ \varphi_i^E \Big] \Bigg)_{i \in I_E}
+      \end{align}
+      for a local basfunction set $B_E$.
+    \end{lemma}\theoremEndLine
+
+    \begin{class}[\Code{LinearFunctional< Space, DiscreteFunctionSpace >:Functional}]\theoremNewline
+      Represents a linear functional $f$.\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number}
+          & Redefines \CodeT{Functional::operator()}.\\
+        \CodeT{ = operator( function )}
+          & Given $u$, computes ${\sum\limits_{E \in G} u^E \cdot f[B_E]^E}$\\
+          & by doing a gridwalk and calling\\
+          & \CodeT{applyLocal()} on each entity.\\
+        \hline
+        \CodeT{vector}
+          & Implements $f[B_E]^E$.\\
+        \CodeT{ = applyLocal( localBasefunctionSet )}
+          & Given $B_E$, computes ${( f [ \varphi_i^E ] )_{i \in I_E}}$\\
+        \hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+  \subsection{Integral Functionals}
+
+    \begin{definition}[Integral functional]\theoremNewline
+      Let $V$ be a vector space, ${u \in V}$ and ${f \in V^*}$. If $f[u]$ can
+      be decomposed as
+      \begin{align}
+        f[u] = \sum\limits_{c = 0}^{dim}
+            {
+              f^c [u]
+            }\komma
+      \end{align}
+      where ${f^c \in V^*}$ are \textnormal{codim c integral functionals}, which can be written as
+      \begin{align}
+        f^c [u] = \int\limits_{\omega^c} \tilde{f}^c[u]
+      \end{align}
+      for a set $\omega^c$ of codimension $c$ and a functional ${\tilde{f}^c \in V^*}$, then $f$ is called an
+      \textnormal{integral functional}.
+    \end{definition}\theoremEndLine
+
+    \begin{lemma}[Localization property of integral functionals]\theoremNewline
+      Let $V_G$ be a discrete function space and ${f \in V_G^*}$ an integral functional. Then it holds that
+      \begin{align}
+        f[u] &= \sum\limits_{E \in G^0}
+            {
+              \sum\limits_{i \in I_E}
+                {
+                  u_i^E \sum\limits_{c=0}^{dim}
+                    {
+                      f^c[ \varphi_i^E ]
+                    }
+                }
+            }
+          \notag\\
+        &= \sum\limits_{E \in G^0}
+            {
+              u^E \cdot
+                \Bigg(
+                  \sum\limits_{c=0}^{dim}
+                    {
+                      \int\limits_{G_E^0}
+                        {
+                          \tilde{f}^c[B_E]^E
+                        }
+                    }
+                \Bigg)
+            }\komma
+        \intertext{where $(\dots)$ is to be understood as the vector}
+        \Bigg(
+            \sum\limits_{c=0}^{dim}
+              {
+                \int\limits_{G_E^0}
+                  {
+                    \tilde{f}^c[B_E]^E
+                  }
+              }
+          \Bigg) &:=
+            \Bigg(
+              \sum\limits_{c=0}^{dim}
+                {
+                  \int\limits_{G_E^c}
+                    {
+                      \tilde{f}^c[\varphi_i^E]
+                    }
+                }
+            \Bigg)_{i \in I_E}
+          \komma
+      \end{align}
+      where $G_E^c$ is ``the set of all codim $c$ entities, that lie inside E''.
+    \end{lemma}\theoremEndLine
+
+    \begin{class}[\Code{LocalOperationProvider}]\theoremNewline
+      Represents the operation ${\tilde{f}^c[\varphi_i^E]}$, e.g. ${\tilde{f}^c[\varphi_i^E] = f(x)\varphi_i^E(x)}$.
+      This class has to be provided by the user in order to define a
+      \CodeT{CodimIntegralFunctional} (see below).\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number}
+          & Given a point $x$ in local coordinates, returns $\tilde{f}^c[\varphi_i^E](x)$,\\
+        \CodeT{ = apply( function,}
+          & where $\varphi_i^E$ is given as \CodeT{function} and some function\\
+        \CodeT{ localPoint,}
+          & associated with the functional can be given as\\
+        \CodeT{ functionalFunction = 1 )}
+          & \CodeT{functionalFunction}\\
+        \hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+    \begin{class}[\Code{CodimIntegralFunctional< LocalOperationProvider >:LinearFunctional}]
+      Represents a codim c functional ${f^c[u]}$. A \CodeT{CodimIntegralFunctional} provides an additional method
+      \CodeT{prepareLocalIntegration()} to facilitate the integration in\\
+      \CodeT{IntegralFunctional::applyLocal()} (see below). There should be derived classes for each codimension, which,
+      together with a suitable \CodeT{LocalOperationProvider}, can be given to an \CodeT{IntegralFunctional} to provide
+      something like an \CodeT{L2Functional} for the user.\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number}
+          & Inherited from \CodeT{LinearFunctional}.\\
+        \CodeT{ = operator( function )}
+          & \\
+        \hline
+        \CodeT{vector}
+          & Redefines \CodeT{LinearFunctional::applyLocal()}.\\
+        \CodeT{ = applyLocal( localBasefunctionSet )}
+          & Given ${B_E}$, computes ${(f^c[\varphi_i^E])_{i\in I_E}}$ by\\
+          & doing a codim c integration by quadrature\\
+          & and calling \CodeT{prepareLocalIntegration()}\\
+          & for each quadrature point.\\
+        \hline
+        \CodeT{vector}
+          & Given ${B_E}$ and a point $x$ in local\\
+        \CodeT{ = prepareLocalIntegration(}
+          & coordiantes, returns ${\tilde{f}^c[\varphi_i^E]}(x)$ by calling\\
+        \CodeT{ localBasefunctionSet}
+          & the underlying \CodeT{LocalOperationProvider}.\\
+        \CodeT{ localPoint )}
+          &\\
+        \hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+    \begin{class}[\CodeT{IntegralFunctional< CodimIntegralFunctionals >:LinearFunctional}]
+    Represents an integral functional. This is like a \CodeT{CombinedLinearFunctional} (see somewhere), but the
+    integration in \CodeT{applyLocal()} is only done once, calling\\
+    \CodeT{prepareLocalIntegration()} on each \CodeT{CodimIntegralFunctional}.\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number}
+          & Inherited from \CodeT{LinearFunctional}.\\
+        \CodeT{ = operator( function )}
+          & \\
+        \hline
+        \CodeT{vector}
+          & Redefinition of\\
+        \CodeT{ = applyLocal( localBasefunctionSet )}
+          & \CodeT{LinearFunctional::applyLocal()}.\\
+          & Given ${B_E}$, computes ${(f^c[\varphi_i^E])_{i\in I_E}}$ by\\
+          & doing a codim c integration for each given\\
+          & codim by quadrature and calling\\
+          & \CodeT{prepareLocalIntegration()} of each\\
+          & \CodeT{CodimIntegralFunctional} for each\\
+          & quadrature point.\\
+        \hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+
+\section{Realization of Constraints}
+
+Maybe, we should discuss the general concept first.\\
+\\
+Example: {\tt ConstraintType::DirichletConstraint dirConstraint( function );}
+
+%(Operator ( Subspace, ProblemInfo ))(u) = Functional
+
+
+  \bibliographystyle{plain}
+  \bibliography{bibliography}
+
+
+\end{document}
+
+
+
+
