@@ -228,7 +228,7 @@
         F[\alpha v_1 + \beta v_2] = \alpha F[v_1] + \beta F[v_2]
           \notag
       \end{align}
-      holds for all ${\alpha,\beta \in \R}$ and all ${v_1,v_2\in V}$, $F$ is called a \textnormal{Linear Functional}.
+      holds for all ${\alpha,\beta \in \R}$ and all ${v_1,v_2\in V}$, $F$ is called a \textnormal{linear Functional}.
       The vector space
       \begin{align}
         V' := \big\{ F : V \rightarrow \R \big| F \text{ is a linear functional } \big\}
@@ -252,7 +252,7 @@
 
     In particular each linear functional implies a constraint.
 
-    \begin{definition}[Linear Subspace]\theoremNewline
+    \begin{definition}[Linear subspace]\theoremNewline
       \label{definition::analytical_concept::linear_subspace}
       Let $V$ be a linear function space and $C[\cdot][\cdot]=0$ a constraint on $V$. Then we call
       \begin{align}
@@ -264,22 +264,22 @@
     $V_C$ is a vector space itself, since the constraint functionals $C[i]$ are linear. Typically, $V_C$ becomes the
     space of test functions in our later problem.
 
-    \begin{definition}[Affine space]\theoremNewline
+    \begin{definition}[Affine subspace]\theoremNewline
       \label{definition::analytical_concept::affine_space}
       Let $V$ be a function space, $V_C$ a linear subspace and $g \in V$. Then we call
       \begin{align}
         V_{g} := \{ v+g| \hspace{4pt} v \in V_C \} \subset V
       \end{align}
-      an \textnormal{affine space} with respect to $g$ and $V_C$.
+      an \textnormal{affine subspace} with respect to $g$ and $V_C$.
     \end{definition}\theoremEndLine
 
-    In general, $V_g$ is only a subset of $V$ and not a subspace. It will be the space of solutions in our later
-    problem.
+    In general, $V_g$ is only a subspace of $V$ and not a linear subspace (in the sense, that $V_G$ is not a vector
+    space itself in general ). It will be the space of solutions in our later problem.
 
     \begin{definition}[Operator]\theoremNewline
       \label{definition::analytical_concept::operator}
       Let $V$ be a linear function space, ${V_C \subset V}$ a linear subspace, $V_C'$ its dual and ${V_g \subset V}$
-      an affine space. Then we call
+      an affine subspace. Then we call
       \begin{align}
         G : V_g \rightarrow V^{\prime}_C
       \end{align}
@@ -297,7 +297,7 @@
     \begin{problem}{Sample problem}\theoremNewline
       \label{problem::analytical_concept::sample_problem}
       Let $V$ be a linear space, ${V_C \subset V}$ a linear subspace, ${F \in V_C'}$ a functional and
-      ${V_g \subset V}$ an affine space. Find ${u \in V_g}$, such that
+      ${V_g \subset V}$ an affine subspace. Find ${u \in V_g}$, such that
       \begin{align*}
         G(u)[v] = F[v] &&\text{for all } v \in V_C.
       \end{align*}
@@ -343,7 +343,7 @@
       \begin{align*}
         V_0 = \{ v \in V| \hspace{3pt} C[i][v] = 0 \enspace \forall 1\le i\le \bar{N} \} =: V_C.
       \end{align*}
-      The affine space $V_{g_H}$is given by
+      The affine subspace $V_{g_H}$is given by
       \begin{align*}
         V_{g_H} :=
           \Big\{
@@ -371,18 +371,15 @@
     \subsection{Functionals}
 
       \begin{remark}[Class tree]\theoremItemizeNewline
-        \begin{itemize}
-          \item[] \CodeT{Functional}
-          \item[] \begin{itemize}
-                    \item[$\rightarrow$] \CodeT{CombinedFunctional}
-                    \item[$\rightarrow$] \CodeT{LinearFunctional}
-                    \item[] \begin{itemize}
-                            \item[$\rightarrow$] \CodeT{CombinedLinearFunctional}
-                            \item[$\rightarrow$] \CodeT{CodimCFunctional}
-                            \item[$\rightarrow$] \CodeT{IntegralFunctional}
-                          \end{itemize}
-                  \end{itemize}
-        \end{itemize}
+        \begin{tikzpicture}[>=latex']
+          \tikzstyle{boxs} = [draw, %text width=4em,
+            fill=blue!5, minimum height=2em, rounded corners]
+          \tikzstyle{boxsG} = [draw,  %text width=4em,
+            fill=green!5, minimum height=2em, rounded corners ]
+          \tikzstyle{line} = [draw,->,thick]
+          \tikzstyle{lineR} = [draw,<-,thick]
+          \tikzset{node distance = 3cm}
+        \end{tikzpicture}
       \end{remark}
 
       \begin{class}[\CodeT{Functional}]\theoremNewline
