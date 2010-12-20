@@ -409,9 +409,14 @@
         \end{tikzpicture}
       \end{remark}\theoremEndLine
 
+      The class \Code{Functional} will not really be used. It is only there to provide us with the possibility to have
+      all the following classes in a non--discrete way in the future. The only thing this class does is to enforce the
+      \Code{operator()} for all functionals. The only method, the function $v$ has to privide, is a method
+      \Code{evaluate( xGlobal )}.
+
       \begin{class}[\CodeT{Functional}]\theoremNewline
         This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}). It
-        provides the base class for linear and nonlinear functionals.\\\\
+        provides the base class for discrete and what--ever--else--there--will--be functionals.\\\\
         \begin{tabular}{l}
           \textbf{Class definition:}\\
           \hline
@@ -443,7 +448,46 @@
         \end{tabular}
       \end{class}\theoremEndLine
 
-      \begin{class}[\CodeT{CombinedFunctional}]\theoremNewline
+      The class \Code{DiscreteFunctional} is the actual base class for all functionals we use at the time being.
+
+      \begin{class}[\CodeT{DiscreteFunctional}]\theoremNewline
+        This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}),
+        which can be applied to a discrete function.\\\\
+        \begin{tabular}{l}
+          \textbf{Class definition:}\\
+          \hline
+          \hline
+          \codeT{class DiscreteFunctional< DiscreteFunctionSpaceType >}
+        \end{tabular}\\\\\\
+        \noindent
+        \begin{tabular}{l}
+          \textbf{Methods:}\\
+          \hline
+          \hline
+          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
+          \begin{tabular}{l|l}
+            description:
+              & This method represents the functional, applied to a function.\\
+            \hline
+            in:
+              & \begin{tabular}{ll}
+                  \codeT{FunctionType function}
+                  & $v$
+                \end{tabular}\\
+            \hline
+            out:
+              & \begin{tabular}{ll}
+                  \codeT{RangeFieldType ret}
+                  & ${F[v]}$
+                \end{tabular}
+          \end{tabular}
+        \end{tabular}
+      \end{class}\theoremEndLine
+
+      The \Code{DiscreteCombinedFunctional} is more or less a pair of two \Code{DiscreteFunctional}s. When its
+      \Code{operator()} is called, it just calles each \Code{operator()} and adds the results.
+
+      \begin{class}[\CodeT{DiscreteCombinedFunctional}]\theoremNewline
         Given two functionals ${F \komma G \in V'}$, this class represents the functional
         \begin{align}
           F+G: V &\rightarrow  \R
@@ -451,12 +495,12 @@
           v &\mapsto F[v] + G[v]\punkt
             \notag
         \end{align}
-        This class is derived from \codeT{Functional}.\\\\
+        This class is derived from \codeT{DiscreteFunctional}.\\\\
         \begin{tabular}{l}
           \textbf{Class definition:}\\
           \hline
           \hline
-          \codeT{class CombinedFunctional< FirstFunctionalType, SecondFunctionalType >}\\
+          \codeT{class DiscreteCombinedFunctional< FirstFunctionalType, SecondFunctionalType >}\\
           \codeT{: Functional}
         \end{tabular}\\\\\\
         \noindent
@@ -464,14 +508,14 @@
           \textbf{Methods:}\\
           \hline
           \hline
-          \codeT{RangeFieldType ret = operator( FunctionType function )}\\
+          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
           \begin{tabular}{l|l}
             description:
-              & This method redefines \codeT{Functional::operator()}.\\
+              & This method redefines \codeT{DiscreteFunctional::operator()}.\\
             \hline
             in:
               & \begin{tabular}{ll}
-                  \codeT{FunctionType function}
+                  \codeT{DiscreteFunctionType discreteFunction}
                   & $v$
                 \end{tabular}\\
             \hline
