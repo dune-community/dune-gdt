@@ -92,13 +92,15 @@
 
   \hrule
 
-  \begin{multicols}{2}
-    \small\tableofcontents
-  \end{multicols}
+  \begin{small}
+    \tableofcontents
+  \end{small}
 
+  \vspace{5mm}
   \hrule
 
   \section{Introduction}
+    \label{section::introduction}
 
     The overall goal of \dunefem and \dunefemfunctionals is the efficient numerical solution of PDE's. Assuming standard
     notation, the following elliptic PDE may serve as a sample problem.
@@ -196,7 +198,8 @@
     Our postulate is, that a wide range of interesting problems can be written in this form. For detailed examples of
     linear and nonlinear problems see section ?.
 
-  \section{Analytical concept}
+  \section{Abstract concept}
+    \label{section::abstract_concept}
 
     We start with an overview on the mathematical concept which is carried over to a corresponding programming
     concept. The following notations and definitions are required for the subsequent sections.
@@ -307,6 +310,7 @@
     can be either linear or nonlinear.
 
   \section{Examples}
+    \label{section::examples}
 
     \subsection{Elliptic PDE}
 
@@ -361,7 +365,8 @@
       \text{Find} \enspace u \in V_{g_H} \enspace \mbox{with} \enspace G(u) = F \enspace \mbox{on} \enspace V_C.
       \end{align*}
 
-  \section{Programming concept}
+  \section{Realization in \dunefemfunctionals}
+    \label{realization_in_dune_fem_dunctionals}
 
     In this section we describe the general programming concept. For a detailed description of these classes, see
     section ? and the doxygen documentation. These classes are realized in a namespace \Code{Functionals} in order to
@@ -370,17 +375,39 @@
 
     \subsection{Functionals}
 
-      \begin{remark}[Class tree]\theoremItemizeNewline
-        \begin{tikzpicture}[>=latex']
+      The following diagram is intended to be a conceptual overview only. It is not intended to display a class
+      hirarchy.
+
+      \begin{remark}[Conceptual class tree]\theoremNewline
+        \begin{tikzpicture}
           \tikzstyle{boxs} = [draw, %text width=4em,
             fill=blue!5, minimum height=2em, rounded corners]
           \tikzstyle{boxsG} = [draw,  %text width=4em,
             fill=green!5, minimum height=2em, rounded corners ]
           \tikzstyle{line} = [draw,->,thick]
           \tikzstyle{lineR} = [draw,<-,thick]
-          \tikzset{node distance = 3cm}
+
+          \tikzset{node distance = 40mm}
+          \node(Functional)[boxs]{\CodeT{Functional}};
+
+          \node(DiscreteFunctional)[boxs,left of = Functional]{\CodeT{DiscreteFunctional}} edge[line] (Functional.west);
+
+          \tikzset{node distance = 15mm}
+          \node(dummy1)[below of = DiscreteFunctional]{};
+          \tikzset{node distance = 30mm}
+          \node(DiscreteCombinedFunctional)[boxs,left of = dummy1]{\CodeT{DiscreteCombinedFunctional}} edge[line] (DiscreteFunctional.south);
+          \node(DiscreteLinearFunctional)[boxs,right of = dummy1]{\CodeT{DiscreteLinearFunctional}} edge[line] (DiscreteFunctional.south);
+
+          \tikzset{node distance = 15mm}
+          \node(DiscreteCombinedLinearFunctional)[boxs,below of = DiscreteCombinedFunctional]{\CodeT{DiscreteCombinedLinearFunctional}} edge[line] (DiscreteCombinedFunctional.south) edge[line] (DiscreteLinearFunctional.south);
+
+          \node(DiscreteCodimCFunctional)[boxs,below of = DiscreteLinearFunctional]{\CodeT{DiscreteCodimCFunctional}} edge[line] (DiscreteLinearFunctional.south);
+
+          \node(DiscreteCodim0Functional)[boxs,below of = DiscreteCodimCFunctional]{\CodeT{DiscreteCodim0Functional}} edge[line] (DiscreteCodimCFunctional.south);
+
+          \node(DiscreteIntegralFunctional)[boxs,below of = DiscreteCombinedLinearFunctional]{\CodeT{DiscreteIntegralFunctional}} edge[line] (DiscreteCombinedLinearFunctional.south);
         \end{tikzpicture}
-      \end{remark}
+      \end{remark}\theoremEndLine
 
       \begin{class}[\CodeT{Functional}]\theoremNewline
         This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}). It
