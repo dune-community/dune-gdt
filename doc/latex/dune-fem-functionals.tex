@@ -239,6 +239,55 @@
       is called the dual space of $V$.
     \end{definition}\theoremEndLine
 
+    \begin{lemma}[Localization property of discrete linear functionals]\theoremNewline
+      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${f \in V_G^*}$ a discrete linear functional.
+      Let further be
+      \begin{align}
+        u &= \sum\limits_{E \in G}
+            {
+              u_E
+            }
+        \intertext{the representation for a ${u \in V_G}$ in terms of its local functions ${u_E := u_{|E}}$ and}
+        u_E &= \sum\limits_{i \in I_E}
+            {
+              u_i^E \varphi_i^E
+            }
+      \end{align}
+      the representation for a local function in terms of its local DoFs $u_i^E$ and the local
+      base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Thus, $u_E$ can be written as
+      \begin{align}
+        u &= \sum\limits_{E \in G}
+            {
+              \sum\limits_{i \in I_E}
+              {
+                u_{\mu_G(i)}^E \varphi_{\mu_G(i)}^E
+              }
+            }\komma
+          \notag
+      \end{align}
+      where ${\mu_G}$ is local--to--global DoF mapping. Since $f$ if a discrete linear functional, it holds that
+      \begin{align}
+        f[u] &= \sum\limits_{E \in G}
+            {
+              \sum\limits_{i \in I_E}
+              {
+                u_{\mu_G(i)}^E f \Big[ \varphi_{\mu_G(i)}^E \Big]
+              }
+            }\komma
+        \intertext{which can also be written as}
+        f[u] &= \sum\limits_{E \in G}
+            {
+              u^E \cdot f[B_E]^E
+            }\komma
+      \end{align}
+      where $u^E := ( u_{\mu_G(i)}^E )_{i \in I_E}$ is the local DoF vector of $u$ on $E$ (mapped to global) and
+      ${f[B_E]^E}$ is defined as the vector
+      \begin{align}
+        f[B_E]^E := \Bigg( f \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
+      \end{align}
+      for a local basfunction set $B_E$.
+    \end{lemma}\theoremEndLine
+
     \begin{definition}[Constraint]\theoremNewline
       \label{definition::analytical_concept::constraint}
       Let $V$ be a linear function space, $M \in \mathbb{N}_{>0}$ and $\{ F_1, ..., F_M \}$ a set of linear
@@ -655,76 +704,8 @@ The essential difference is that the (differential)operator already knows the co
 
 \section{Realization of Functionals}
 
-    \begin{class}[\Code{Functional< Space >}]\theoremNewline
-      Represents a functional $f$. This class comes without any functionality at the moment, until someone comes
-      up with a reasonable example of nonlinear functionals.\\\\
-      \begin{tabular}{|l|l|}
-        \hline
-        \CodeT{number = operator( function )}
-          & Given $u$, returns $f[u]$.\\
-        \hline
-      \end{tabular}
-    \end{class}\theoremEndLine
-
   \subsection{Linear Functionals}
 
-    \begin{definition}[Linear functional]\theoremNewline
-      Let $V$ be a vector space, $\K$ its underlying scalar field and $f$ a functional. If, for all
-      ${u \komma v \in V}$ and for all ${\lambda \komma \mu \in \K}$,
-      \begin{align}
-        f[ \lambda u ] + f[ \mu v ] = \lambda f[u] + \mu f[v]
-      \end{align}
-      holds, $f$ is called a \textnormal{linear functional}.
-    \end{definition}\theoremEndLine
-
-    \begin{definition}[Dual Space]\theoremNewline
-      Let $V$ be a vector space and $\K$ its underlying scalar field. The space
-      \begin{align}
-        V^{*} :=
-            \big\{
-              f: V \rightarrow \K
-            \big|
-              f \text{ linear functional}
-            \big\}
-          \notag
-      \end{align}
-      is called the \textnormal{dual space} of $V$ and is a vector space itself.
-    \end{definition}\theoremEndLine
-
-    \begin{lemma}[Localization property of linear functionals]\theoremNewline
-      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${f \in V_G^*}$ a linear functional. Let
-      further be
-      \begin{align}
-        u = \sum\limits_{E \in G}
-            {
-              \sum\limits_{i \in I_E}
-              {
-                u_i^E \varphi_i^E
-              }
-            }
-      \end{align}
-      the representation for a ${u \in V_G}$ in terms of its local DoFs $u_i^E$ and the local
-      base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Then it holds that
-      \begin{align}
-        f[u] &= \sum\limits_{E \in G}
-            {
-              \sum\limits_{i \in I_E}
-              {
-                u_i^E f \Big[ \varphi_i^E \Big]
-              }
-            }\komma
-        \intertext{which can also be written as}
-        f[u] &= \sum\limits_{E \in G}
-            {
-              u^E \cdot f[B_E]^E
-            }\komma
-      \end{align}
-      where $u^E := ( u_i^E )_{i \in I_E}$ is the local DoF vector of $u$ on $E$ and ${f[B_E]^E}$ is defined as the vector
-      \begin{align}
-        f[B_E]^E := \Bigg( f \Big[ \varphi_i^E \Big] \Bigg)_{i \in I_E}
-      \end{align}
-      for a local basfunction set $B_E$.
-    \end{lemma}\theoremEndLine
 
     \begin{class}[\Code{LinearFunctional< Space, DiscreteFunctionSpace >:Functional}]\theoremNewline
       Represents a linear functional $f$.\\\\
