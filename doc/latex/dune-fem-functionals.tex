@@ -205,7 +205,7 @@
     concept. The following notations and definitions are required for the subsequent sections.
 
     \begin{definition}[Function and Functionspace]\theoremNewline
-      \label{definition::analytical_concept::function_functionspace}
+      \label{definition::abstract_concept::function_functionspace}
       Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
       ${v : \Omega \rightarrow \R^d}$ is called a \textnormal{function}, the set
       \begin{align}
@@ -219,7 +219,7 @@
     \end{definition}\theoremEndLine
 
     \begin{definition}[Functional]\theoremNewline
-      \label{definition::analytical_concept::functional}
+      \label{definition::abstract_concept::functional}
       Let $V$ be a function space. A map
       \begin{align}
         F: V &\rightarrow \R\komma
@@ -240,7 +240,8 @@
     \end{definition}\theoremEndLine
 
     \begin{lemma}[Localization property of discrete linear functionals]\theoremNewline
-      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${f \in V_G^*}$ a discrete linear functional.
+      \label{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}
+      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${F \in V_G^*}$ a discrete linear functional.
       Let further be
       \begin{align}
         u &= \sum\limits_{E \in G}
@@ -253,7 +254,7 @@
               u_i^E \varphi_i^E
             }
       \end{align}
-      the representation for a local function in terms of its local DoFs $u_i^E$ and the local
+      the representation of a local function in terms of its local DoFs $u_i^E$ and the local
       base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Thus, $u_E$ can be written as
       \begin{align}
         u &= \sum\limits_{E \in G}
@@ -265,31 +266,31 @@
             }\komma
           \notag
       \end{align}
-      where ${\mu_G}$ is local--to--global DoF mapping. Since $f$ if a discrete linear functional, it holds that
+      where ${\mu_G}$ is local--to--global DoF mapping (\cite[Def. 18]{DKNO10}). Since $F$ if a discrete linear functional, it holds that
       \begin{align}
-        f[u] &= \sum\limits_{E \in G}
+        F[u] &= \sum\limits_{E \in G}
             {
               \sum\limits_{i \in I_E}
               {
-                u_{\mu_G(i)}^E f \Big[ \varphi_{\mu_G(i)}^E \Big]
+                u_{\mu_G(i)}^E F \Big[ \varphi_{\mu_G(i)}^E \Big]
               }
             }\komma
         \intertext{which can also be written as}
-        f[u] &= \sum\limits_{E \in G}
+        F[u] &= \sum\limits_{E \in G}
             {
-              u^E \cdot f[B_E]^E
+              u^E \cdot F[B_E]^E
             }\komma
       \end{align}
-      where $u^E := ( u_{\mu_G(i)}^E )_{i \in I_E}$ is the local DoF vector of $u$ on $E$ (mapped to global) and
-      ${f[B_E]^E}$ is defined as the vector
+      where $u^E := ( u_{\mu_G(i)}^E )_{i \in I_E}$ is the local DoF vector of $u_E$ (mapped to global) and
+      ${F[B_E]^E}$ is defined as the vector
       \begin{align}
-        f[B_E]^E := \Bigg( f \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
+        F[B_E]^E := \Bigg( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
       \end{align}
       for a local basfunction set $B_E$.
     \end{lemma}\theoremEndLine
 
     \begin{definition}[Constraint]\theoremNewline
-      \label{definition::analytical_concept::constraint}
+      \label{definition::abstract_concept::constraint}
       Let $V$ be a linear function space, $M \in \mathbb{N}_{>0}$ and $\{ F_1, ..., F_M \}$ a set of linear
       functionals on $V$. We define the corresponding vector of linear functionals $C$ by
       \begin{align}
@@ -305,7 +306,7 @@
     In particular each linear functional implies a constraint.
 
     \begin{definition}[Linear subspace]\theoremNewline
-      \label{definition::analytical_concept::linear_subspace}
+      \label{definition::abstract_concept::linear_subspace}
       Let $V$ be a linear function space and $C[\cdot][\cdot]=0$ a constraint on $V$. Then we call
       \begin{align}
         V_C := \{ v \in V| \hspace{4pt} C[i][v] = 0 \hspace{4pt}\forall i\in\{1,...,M\}\}
@@ -317,7 +318,7 @@
     space of test functions in our later problem.
 
     \begin{definition}[Affine subspace]\theoremNewline
-      \label{definition::analytical_concept::affine_space}
+      \label{definition::abstract_concept::affine_space}
       Let $V$ be a function space, $V_C$ a linear subspace and $g \in V$. Then we call
       \begin{align}
         V_{g} := \{ v+g| \hspace{4pt} v \in V_C \} \subset V
@@ -329,7 +330,7 @@
     space itself in general ). It will be the space of solutions in our later problem.
 
     \begin{definition}[Operator]\theoremNewline
-      \label{definition::analytical_concept::operator}
+      \label{definition::abstract_concept::operator}
       Let $V$ be a linear function space, ${V_C \subset V}$ a linear subspace, $V_C'$ its dual and ${V_g \subset V}$
       an affine subspace. Then we call
       \begin{align}
@@ -346,8 +347,8 @@
 
     In the subsequent sections, we are dealing with the following problem.
 
-    \begin{problem}{Sample problem}\theoremNewline
-      \label{problem::analytical_concept::sample_problem}
+    \begin{problem}[Sample problem]\theoremNewline
+      \label{problem::abstract_concept::sample_problem}
       Let $V$ be a linear space, ${V_C \subset V}$ a linear subspace, ${F \in V_C'}$ a functional and
       ${V_g \subset V}$ an affine subspace. Find ${u \in V_g}$, such that
       \begin{align*}
@@ -464,7 +465,7 @@
       \Code{evaluate( xGlobal )}.
 
       \begin{class}[\CodeT{Functional}]\theoremNewline
-        This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}). It
+        This class represents a functional $F$ (see definition \ref{definition::abstract_concept::functional}). It
         provides the base class for discrete and what--ever--else--there--will--be functionals.\\\\
         \begin{tabular}{l}
           \textbf{Class definition:}\\
@@ -500,7 +501,7 @@
       The class \Code{DiscreteFunctional} is the actual base class for all functionals we use at the time being.
 
       \begin{class}[\CodeT{DiscreteFunctional}]\theoremNewline
-        This class represents a functional $F$ (see definition \ref{definition::analytical_concept::functional}),
+        This class represents a functional $F$ (see definition \ref{definition::abstract_concept::functional}),
         which can be applied to a discrete function.\\\\
         \begin{tabular}{l}
           \textbf{Class definition:}\\
@@ -572,6 +573,77 @@
               & \begin{tabular}{ll}
                   \codeT{RangeFieldType ret}
                   & ${F[v] + G[v]}$
+                \end{tabular}
+          \end{tabular}
+        \end{tabular}
+      \end{class}\theoremEndLine
+
+      The \Code{DiscreteLinearFunctional} is the base class for a wide range of interesting functionals -- linear
+      functionals. As stated in lemma
+      \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals},
+      the most important property of linear functionals is, that its application to a discrete function can be split up
+      and carried out by some kind of local application of the functionals to a local function.
+
+      \begin{class}[\CodeT{DiscreteLinearFunctional}]\theoremNewline
+        This class represents a linear functional $F$ (see definition \ref{definition::abstract_concept::functional}).
+        All linear functionals have to provide the method \CodeT{applyLocal()} in addition to the method
+        \CodeT{operator()}. This class is derived from \codeT{DiscreteFunctional}.\\\\
+        \begin{tabular}{l}
+          \textbf{Class definition:}\\
+          \hline
+          \hline
+          \codeT{class DiscreteLinearFunctional< DiscreteFunctionSpaceType >}\\
+          \codeT{: DiscreteFunctional}
+        \end{tabular}\\\\\\
+        \noindent
+        \begin{tabular}{l}
+          \textbf{Methods:}\\
+          \hline
+          \hline
+          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
+          \begin{tabular}{l|l}
+            description:
+              & This method redefines \codeT{DiscreteFunctional::operator()}.\\
+              & It makes use of the localization property of linear\\
+              & functionals (see lemma
+                \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}). It is implemented
+                as a grid\\
+              & walk over all codim 0 entities which calls the method\\
+              & \CodeT{applyLocal()} on each entity. Thus each linear functional\\
+              & only has to implement the method \CodeT{applyLocal()}.\\
+            \hline
+            in:
+              & \begin{tabular}{ll}
+                  \codeT{DiscreteFunctionType discreteFunction}
+                  & $v$
+                \end{tabular}\\
+            \hline
+            out:
+              & \begin{tabular}{ll}
+                  \codeT{RangeFieldType ret}
+                  & ${F[v]}$
+                \end{tabular}
+          \end{tabular}\\
+          \hline
+          \hline
+          \codeT{void applyLocal( LocalBasefunctionSetType localBasefunctionSet,}\\
+          \CodeT{ LocalDoFVectorType returnVector )}\\
+          \begin{tabular}{l|l}
+            description:
+              & Given the localization property of a linear functional (see\\
+              & lemma \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}), this method
+                implements the vector ${F[B_E]^E}$\\
+            \hline
+            in:
+              & \begin{tabular}{ll}
+                  \codeT{LocalBasefunctionSetType localBasefunctionSet}
+                  & $B_E$
+                \end{tabular}\\
+            \hline
+            out:
+              & \begin{tabular}{ll}
+                  \codeT{LocalDoFVectorType returnVector}\\
+                  ${F[B_E]^E := \Big( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Big)_{i \in I_E}}$
                 \end{tabular}
           \end{tabular}
         \end{tabular}
@@ -703,28 +775,6 @@ cg( rhs, solution );\\}
 The essential difference is that the (differential)operator already knows the correct system matrix (due to the subspaces, that know the constraints). Therefore the user does not need some kind of 'constraints.apply' method (this happens internally in the two system assemblers).
 
 \section{Realization of Functionals}
-
-  \subsection{Linear Functionals}
-
-
-    \begin{class}[\Code{LinearFunctional< Space, DiscreteFunctionSpace >:Functional}]\theoremNewline
-      Represents a linear functional $f$.\\\\
-      \begin{tabular}{|l|l|}
-        \hline
-        \CodeT{number}
-          & Redefines \CodeT{Functional::operator()}.\\
-        \CodeT{ = operator( function )}
-          & Given $u$, computes ${\sum\limits_{E \in G} u^E \cdot f[B_E]^E}$\\
-          & by doing a gridwalk and calling\\
-          & \CodeT{applyLocal()} on each entity.\\
-        \hline
-        \CodeT{vector}
-          & Implements $f[B_E]^E$.\\
-        \CodeT{ = applyLocal( localBasefunctionSet )}
-          & Given $B_E$, computes ${( f [ \varphi_i^E ] )_{i \in I_E}}$\\
-        \hline
-      \end{tabular}
-    \end{class}\theoremEndLine
 
   \subsection{Integral Functionals}
 
