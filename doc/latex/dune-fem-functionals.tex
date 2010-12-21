@@ -30,6 +30,7 @@
 \usepackage{hyperref}
 \usepackage{url}
 
+\usepackage{longtable}
 \usepackage{listings}
 \lstset{language=C++,basicstyle=\ttfamily}
 \newcommand{\Code}[1]{\texttt{#1}}
@@ -201,93 +202,146 @@
   \section{Abstract concept}
     \label{section::abstract_concept}
 
-    We start with an overview on the mathematical concept which is carried over to a corresponding programming
-    concept. The following notations and definitions are required for the subsequent sections.
+    \subsection{Functionals}
 
-    \begin{definition}[Function and Functionspace]\theoremNewline
-      \label{definition::abstract_concept::function_functionspace}
-      Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
-      ${v : \Omega \rightarrow \R^d}$ is called a \textnormal{function}, the set
-      \begin{align}
-        V :=
-          \big\{
-            v : \Omega \rightarrow \R^d
-          \big\}
-          \notag
-      \end{align}
-      is called a \textnormal{functionspace}. If $V$ is an $\R$--vector space, $V$ is called a \textnormal{linear functionspace}.
-    \end{definition}\theoremEndLine
+      We start with an overview on the mathematical concept which is carried over to a corresponding programming
+      concept. The following notations and definitions are required for the subsequent sections.
 
-    \begin{definition}[Functional]\theoremNewline
-      \label{definition::abstract_concept::functional}
-      Let $V$ be a function space. A map
-      \begin{align}
-        F: V &\rightarrow \R\komma
-          \notag\\
-        v &\mapsto F[v]
-      \end{align}
-      is called a \textnormal{Functional}. If
-      \begin{align}
-        F[\alpha v_1 + \beta v_2] = \alpha F[v_1] + \beta F[v_2]
-          \notag
-      \end{align}
-      holds for all ${\alpha,\beta \in \R}$ and all ${v_1,v_2\in V}$, $F$ is called a \textnormal{linear Functional}.
-      The vector space
-      \begin{align}
-        V' := \big\{ F : V \rightarrow \R \big| F \text{ is a linear functional } \big\}
-      \end{align}
-      is called the dual space of $V$.
-    \end{definition}\theoremEndLine
+      \begin{definition}[Function and Functionspace]\theoremNewline
+        \label{definition::abstract_concept::function_functionspace}
+        Let ${n,d \in \N^{\geq 1}}$ be integers and ${\Omega \subseteq \mathbb{R}^n}$ a subset. A mapping
+        ${v : \Omega \rightarrow \R^d}$ is called a \textnormal{function}, the set
+        \begin{align}
+          V :=
+            \big\{
+              v : \Omega \rightarrow \R^d
+            \big\}
+            \notag
+        \end{align}
+        is called a \textnormal{functionspace}. If $V$ is an $\R$--vector space, $V$ is called a \textnormal{linear functionspace}.
+      \end{definition}\theoremEndLine
 
-    \begin{lemma}[Localization property of discrete linear functionals]\theoremNewline
-      \label{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}
-      Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${F \in V_G^*}$ a discrete linear functional.
-      Let further be
-      \begin{align}
-        u &= \sum\limits_{E \in G}
-            {
-              u_E
-            }
-        \intertext{the representation for a ${u \in V_G}$ in terms of its local functions ${u_E := u_{|E}}$ and}
-        u_E &= \sum\limits_{i \in I_E}
-            {
-              u_i^E \varphi_i^E
-            }
-      \end{align}
-      the representation of a local function in terms of its local DoFs $u_i^E$ and the local
-      base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Thus, $u_E$ can be written as
-      \begin{align}
-        u &= \sum\limits_{E \in G}
-            {
-              \sum\limits_{i \in I_E}
+      \begin{definition}[Functional]\theoremNewline
+        \label{definition::abstract_concept::functional}
+        Let $V$ be a function space. A map
+        \begin{align}
+          F: V &\rightarrow \R\komma
+            \notag\\
+          v &\mapsto F[v]
+        \end{align}
+        is called a \textnormal{Functional}. If
+        \begin{align}
+          F[\alpha v_1 + \beta v_2] = \alpha F[v_1] + \beta F[v_2]
+            \notag
+        \end{align}
+        holds for all ${\alpha,\beta \in \R}$ and all ${v_1,v_2\in V}$, $F$ is called a \textnormal{linear Functional}.
+        The vector space
+        \begin{align}
+          V' := \big\{ F : V \rightarrow \R \big| F \text{ is a linear functional } \big\}
+        \end{align}
+        is called the dual space of $V$.
+      \end{definition}\theoremEndLine
+
+      \begin{lemma}[Localization property of discrete linear functionals]\theoremNewline
+        \label{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}
+        Let $V_G$ be a discrete function space (\cite[Def. 18]{DKNO10}) and ${F \in V_G'}$ a discrete linear functional.
+        Let further be
+        \begin{align}
+          u &= \sum\limits_{E \in G}
               {
-                u_{\mu_G(i)}^E \varphi_{\mu_G(i)}^E
+                u_E
               }
-            }\komma
-          \notag
-      \end{align}
-      where ${\mu_G}$ is local--to--global DoF mapping (\cite[Def. 18]{DKNO10}). Since $F$ if a discrete linear functional, it holds that
-      \begin{align}
-        F[u] &= \sum\limits_{E \in G}
-            {
-              \sum\limits_{i \in I_E}
+          \intertext{the representation for a ${u \in V_G}$ in terms of its local functions ${u_E := u_{|E}}$ and}
+          u_E &= \sum\limits_{i \in I_E}
               {
-                u_{\mu_G(i)}^E F \Big[ \varphi_{\mu_G(i)}^E \Big]
+                u_i^E \varphi_i^E
               }
-            }\komma
-        \intertext{which can also be written as}
-        F[u] &= \sum\limits_{E \in G}
-            {
-              u^E \cdot F[B_E]^E
-            }\komma
-      \end{align}
-      where $u^E := ( u_{\mu_G(i)}^E )_{i \in I_E}$ is the local DoF vector of $u_E$ (mapped to global) and
-      ${F[B_E]^E}$ is defined as the vector
-      \begin{align}
-        F[B_E]^E := \Bigg( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
-      \end{align}
-      for a local basfunction set $B_E$.
-    \end{lemma}\theoremEndLine
+        \end{align}
+        the representation of a local function in terms of its local DoFs $u_i^E$ and the local
+        base functions $\varphi_i^E$ (\cite[Def. 20]{DKNO10}). Thus, $u_E$ can be written as
+        \begin{align}
+          u &= \sum\limits_{E \in G}
+              {
+                \sum\limits_{i \in I_E}
+                {
+                  u_{\mu_G(i)}^E \varphi_{\mu_G(i)}^E
+                }
+              }\komma
+            \notag
+        \end{align}
+        where ${\mu_G}$ is local--to--global DoF mapping (\cite[Def. 18]{DKNO10}). Since $F$ if a discrete linear functional, it holds that
+        \begin{align}
+          F[u] &= \sum\limits_{E \in G}
+              {
+                \sum\limits_{i \in I_E}
+                {
+                  u_{\mu_G(i)}^E F \Big[ \varphi_{\mu_G(i)}^E \Big]
+                }
+              }\komma
+          \intertext{which can also be written as}
+          F[u] &= \sum\limits_{E \in G}
+              {
+                u^E \cdot F[B_E]^E
+              }\komma
+        \end{align}
+        where $u^E := ( u_{\mu_G(i)}^E )_{i \in I_E}$ is the local DoF vector of $u_E$ (mapped to global) and
+        ${F[B_E]^E}$ is defined as the vector
+        \begin{align}
+          F[B_E]^E := \Bigg( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
+        \end{align}
+        for a local basfunction set $B_E$.
+      \end{lemma}\theoremEndLine
+
+      An important set of linear functionals is the set of those functionals that are associated with integration, e.g
+      the functional $F$, induced by the function $f$, which arises as a right hand side in the introductory example
+      (see definition \ref{definition::introduction::operators_functionals}). To formulate the abstract idea of an
+      ``integral functional'', we first have to introduce a ``codim $c$ functional', which is associated with integration
+      over a set of codimension $c$.
+
+      \begin{definition}[Codim $c$ fucntional]\theoremNewline
+        Let $V_G$ be a discrete function space and ${F \in V_G'}$ a discrete linear functional. If ${F[v]}$ ca be
+        written as
+        \begin{align}
+          F[v] &= \int\limits_{\omega^c}
+              {
+                \tilde{f}[v](x) \dx
+              }
+            \notag
+        \intertext{for a function ${v \in V_G}$, a subset ${\omega^c \subset \Omega}$ of codimension $c$ and a map}
+          \tilde{f} :& V_G \rightarrow V_G \komma
+            \notag
+        \end{align}
+        $F$ is called a \textnormal{codim $c$ functional}. The map $\tilde{f}$ is called a
+        \textnormal{local operation provider}.
+      \end{definition}\theoremEndLine
+
+      Given suitable codim $c$ functionals for all codimensions of interest we can now define an integral fucntional
+      as a combination of those codim $c$ fucntionals.
+
+      \begin{definition}[Integral functional]\theoremNewline
+        Let $V_G$ be a discrete function space, ${F^{c_1}\komma \dots \komma F^{c_C} \in V_G'}$ codim functionals for
+        the codimensions ${c_1 \komma \dots \komma c_C \in \N^{\geq 0}}$ and ${F \in V_G'}$ a discrete linear
+        functional. If $F[v]$ can be written as
+        \begin{align}
+          F[v] = \sum\limits_{c=c_1}^{c_C}
+              {
+                F^{c}[v]
+              }
+            \notag
+        \end{align}
+        for a function ${v \in V_G}$, $F$ is called an \textnormal{integral functional}.
+      \end{definition}\theoremEndLine
+
+      \begin{remark}[Localization property of integral and codim $c$ fucntionals]
+        Since integral functionals and codim $c$ fucntionals are themselves discrete linear fucntionals we can localize
+        the evaluation of these functionals as in lemma
+        \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}.
+      \end{remark}
+
+
+
+
+    \subsection{Constraints and subspaces}
 
     \begin{definition}[Constraint]\theoremNewline
       \label{definition::abstract_concept::constraint}
@@ -328,6 +382,8 @@
 
     In general, $V_g$ is only a subspace of $V$ and not a linear subspace (in the sense, that $V_G$ is not a vector
     space itself in general ). It will be the space of solutions in our later problem.
+
+    \subsection{Operators}
 
     \begin{definition}[Operator]\theoremNewline
       \label{definition::abstract_concept::operator}
@@ -474,11 +530,12 @@
           \codeT{class Functional< FunctionSpaceType >}
         \end{tabular}\\\\\\
         \noindent
-        \begin{tabular}{l}
+        \begin{longtable}{l}
           \textbf{Methods:}\\
           \hline
           \hline
-          \codeT{RangeFieldType ret = operator( FunctionType function )}\\
+          \CodeT{RangeFieldType ret = operator(}\\
+          \CodeT{ FunctionType function )}\\
           \begin{tabular}{l|l}
             description:
               & This method represents the functional, applied to a function.\\
@@ -495,7 +552,7 @@
                   & ${F[v]}$
                 \end{tabular}
           \end{tabular}
-        \end{tabular}
+        \end{longtable}
       \end{class}\theoremEndLine
 
       The class \Code{DiscreteFunctional} is the actual base class for all functionals we use at the time being.
@@ -510,11 +567,12 @@
           \codeT{class DiscreteFunctional< DiscreteFunctionSpaceType >}
         \end{tabular}\\\\\\
         \noindent
-        \begin{tabular}{l}
+        \begin{longtable}{l}
           \textbf{Methods:}\\
           \hline
           \hline
-          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
+          \CodeT{RangeFieldType ret = operator(}\\
+          \CodeT{ DiscreteFunctionType discreteFunction )}\\
           \begin{tabular}{l|l}
             description:
               & This method represents the functional, applied to a function.\\
@@ -531,10 +589,10 @@
                   & ${F[v]}$
                 \end{tabular}
           \end{tabular}
-        \end{tabular}
+        \end{longtable}
       \end{class}\theoremEndLine
 
-      The \Code{DiscreteCombinedFunctional} is more or less a pair of two \Code{DiscreteFunctional}s. When its
+      The \Code{DiscreteCombinedFunctional} is more or less a pair of two \code{DiscreteFunctional}s. When its
       \Code{operator()} is called, it just calles each \Code{operator()} and adds the results.
 
       \begin{class}[\CodeT{DiscreteCombinedFunctional}]\theoremNewline
@@ -550,15 +608,18 @@
           \textbf{Class definition:}\\
           \hline
           \hline
-          \codeT{class DiscreteCombinedFunctional< FirstFunctionalType, SecondFunctionalType >}\\
-          \codeT{: Functional}
+          \CodeT{class DiscreteCombinedFunctional< }\\
+          \CodeT{ FirstFunctionalType,}\\
+          \CodeT{ SecondFunctionalType >}\\
+          \CodeT{ : Functional}
         \end{tabular}\\\\\\
         \noindent
-        \begin{tabular}{l}
+        \begin{longtable}{l}
           \textbf{Methods:}\\
           \hline
           \hline
-          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
+          \CodeT{RangeFieldType ret = operator(}\\
+          \CodeT{ DiscreteFunctionType discreteFunction )}\\
           \begin{tabular}{l|l}
             description:
               & This method redefines \codeT{DiscreteFunctional::operator()}.\\
@@ -575,7 +636,7 @@
                   & ${F[v] + G[v]}$
                 \end{tabular}
           \end{tabular}
-        \end{tabular}
+        \end{longtable}
       \end{class}\theoremEndLine
 
       The \Code{DiscreteLinearFunctional} is the base class for a wide range of interesting functionals -- linear
@@ -596,11 +657,12 @@
           \codeT{: DiscreteFunctional}
         \end{tabular}\\\\\\
         \noindent
-        \begin{tabular}{l}
+        \begin{longtable}{l}
           \textbf{Methods:}\\
           \hline
           \hline
-          \codeT{RangeFieldType ret = operator( DiscreteFunctionType discreteFunction )}\\
+          \CodeT{RangeFieldType ret = operator(}\\
+          \CodeT{ DiscreteFunctionType discreteFunction )}\\
           \begin{tabular}{l|l}
             description:
               & This method redefines \codeT{DiscreteFunctional::operator()}.\\
@@ -626,18 +688,23 @@
           \end{tabular}\\
           \hline
           \hline
-          \codeT{void applyLocal( LocalBasefunctionSetType localBasefunctionSet,}\\
+          \CodeT{void applyLocal(}\\
+          \CodeT{ LocalBasefunctionSetType localBasefunctionSet,}\\
           \CodeT{ LocalDoFVectorType returnVector )}\\
           \begin{tabular}{l|l}
             description:
               & Given the localization property of a linear functional (see\\
               & lemma \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}), this method
-                implements the vector ${F[B_E]^E}$\\
+                implements the vector ${F[B_E]^E}$.\\
+              & This is still only a rough idea of this methods signature.\\
+              & It is highly possible that we will need to extend this method\\
+              & to take additional arguments, such as the neighbors local\\
+              & basefunction set etc...\\
             \hline
             in:
               & \begin{tabular}{ll}
-                  \codeT{LocalBasefunctionSetType localBasefunctionSet}
-                  & $B_E$
+                  \codeT{LocalBasefunctionSetType localBasefunctionSet}\\
+                  $B_E$
                 \end{tabular}\\
             \hline
             out:
@@ -646,7 +713,7 @@
                   ${F[B_E]^E := \Big( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Big)_{i \in I_E}}$
                 \end{tabular}
           \end{tabular}
-        \end{tabular}
+        \end{longtable}
       \end{class}\theoremEndLine
 
 
