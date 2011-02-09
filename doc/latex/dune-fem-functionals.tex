@@ -2,6 +2,7 @@
 % dune-fem-functionals.tex
 % by: Felix Albrecht (felix.albrecht@uni-muenster.de)
 %     Patrick Henning (patrick.henning@uni-muenster.de)
+%     Stefan Girke (s_girk01@uni-muenster.de)
 % ==================================================================================================================== %
 \documentclass[a4paper,11pt]{article}
 
@@ -32,7 +33,14 @@
 
 \usepackage{longtable}
 \usepackage{listings}
-\lstset{language=C++,basicstyle=\ttfamily}
+\lstset{language=C++,
+basicstyle=\ttfamily\color{black}\footnotesize,
+keywordstyle=\underbar,
+identifierstyle=,
+commentstyle=\color{blue},
+stringstyle=\itshape\color{green},
+numbers=left,
+numberstyle=\tiny}
 \newcommand{\Code}[1]{\texttt{#1}}
 \newcommand{\code}[1]{\lstinline!#1!}
 \newcommand{\CodeT}[1]{\textnormal{\texttt{#1}}}
@@ -76,8 +84,9 @@
 \newcommand{\R}{\mathbb{R}}
 
 \title{Draft on \dunefemfunctionals}
-\author{Felix Albrecht (\Code{felix.albrecht@uni-muenster.de}) and\\
-  Patrick Henning (\Code{patrick.henning@uni-muenster.de})
+\author{Felix Albrecht (\Code{felix.albrecht@uni-muenster.de}),\\
+  Patrick Henning (\Code{patrick.henning@uni-muenster.de}) and\\
+	Stefan Girke (\Code{s\_girk01@uni-muenster.de}).
 }
 \date{\today}
 
@@ -188,7 +197,7 @@
     \begin{remark}[Variational formulation using functionals and operator]\theoremNewline
       \label{remakr::introduction::variational_formulation_functionals_operators}
       Let $A$ and $F$ be as in definition \ref{definition::introduction::operators_functionals}. The weak formulation
-      \eqref{equation::introduction::weak_formulation} can be rewritten as follos.
+      \eqref{equation::introduction::weak_formulation} can be rewritten as follows.
       Find ${u \in H^1_g}$, such that
       \begin{align}
         \label{equation::introduction::variational_formulation_functionals_operators}
@@ -269,7 +278,7 @@
               }\komma
             \notag
         \end{align}
-        where ${\mu_G}$ is local--to--global DoF mapping (\cite[Def. 18]{DKNO10}). Since $F$ if a discrete linear functional, it holds that
+        where ${\mu_G}$ is local--to--global DoF mapping (\cite[Def. 18]{DKNO10}). Since $F$ is a discrete linear functional, it holds that
         \begin{align}
           F[u] &= \sum\limits_{E \in G}
               {
@@ -289,17 +298,17 @@
         \begin{align}
           F[B_E]^E := \Bigg( F \Big[ \varphi_{\mu_G(i)}^E \Big] \Bigg)_{i \in I_E}
         \end{align}
-        for a local basfunction set $B_E$.
+        for a local basefunction set $B_E$.
       \end{lemma}\theoremEndLine
 
       An important set of linear functionals is the set of those functionals that are associated with integration, e.g
       the functional $F$, induced by the function $f$, which arises as a right hand side in the introductory example
       (see definition \ref{definition::introduction::operators_functionals}). To formulate the abstract idea of an
-      ``integral functional'', we first have to introduce a ``codim $c$ functional', which is associated with integration
+      ``integral functional'', we first have to introduce a ``codim $c$ functional``, which is associated with integration
       over a set of codimension $c$.
 
-      \begin{definition}[Codim $c$ fucntional]\theoremNewline
-        Let $V_G$ be a discrete function space and ${F \in V_G'}$ a discrete linear functional. If ${F[v]}$ ca be
+      \begin{definition}[Codim $c$ functional]\theoremNewline
+        Let $V_G$ be a discrete function space and ${F \in V_G'}$ a discrete linear functional. If ${F[v]}$ can be
         written as
         \begin{align}
           F[v] &= \int\limits_{\omega^c}
@@ -315,8 +324,8 @@
         \textnormal{local operation provider}.
       \end{definition}\theoremEndLine
 
-      Given suitable codim $c$ functionals for all codimensions of interest we can now define an integral fucntional
-      as a combination of those codim $c$ fucntionals.
+      Given suitable codim $c$ functionals for all codimensions of interest we can now define an integral functional
+      as a combination of those codim $c$ functionals.
 
       \begin{definition}[Integral functional]\theoremNewline
         Let $V_G$ be a discrete function space, ${F^{c_1}\komma \dots \komma F^{c_C} \in V_G'}$ codim functionals for
@@ -332,8 +341,8 @@
         for a function ${v \in V_G}$, $F$ is called an \textnormal{integral functional}.
       \end{definition}\theoremEndLine
 
-      \begin{remark}[Localization property of integral and codim $c$ fucntionals]
-        Since integral functionals and codim $c$ fucntionals are themselves discrete linear fucntionals we can localize
+      \begin{remark}[Localization property of integral and codim $c$ functionals]
+        Since integral functionals and codim $c$ functionals are themselves discrete linear functionals we can localize
         the evaluation of these functionals as in lemma
         \ref{lemma::abstract_concept::localization_property_of_discrete_linear_functionals}.
       \end{remark}
@@ -446,7 +455,7 @@
       Putting this into the general framework above, we define the (linear) functional
       ${F: V_0 \rightarrow \R}$ by
       \begin{align*}
-        F[v] := \int\limits_{\Omega} f v &&\text{for } v \in \mathring{V}.
+        F[v] := \int\limits_{\Omega} f v &&\text{for } v \in V_0.
       \end{align*}
       $V_0$ is a constraint subspace with the constraint $C[i][v] := v(x_i^b) = 0$ for any boundary node
       $x_i^b$ (i.e. $\mathcal{N}_H \cap \partial \Omega = \{ x_1^b, ...., x_{\bar{N}}^b\}$). We can therefore identify
@@ -482,7 +491,7 @@
     \subsection{Functionals}
 
       The following diagram is intended to be a conceptual overview only. It is not intended to display a class
-      hirarchy.
+      hierarchy.
 
       \begin{remark}[Conceptual class tree]\theoremNewline
         \begin{tikzpicture}
@@ -517,7 +526,7 @@
 
       The class \Code{Functional} will not really be used. It is only there to provide us with the possibility to have
       all the following classes in a non--discrete way in the future. The only thing this class does is to enforce the
-      \Code{operator()} for all functionals. The only method, the function $v$ has to privide, is a method
+      \Code{operator()} for all functionals. The only method, the function $v$ has to provide, is a method
       \Code{evaluate( xGlobal )}.
 
       \begin{class}[\CodeT{Functional}]\theoremNewline
@@ -593,7 +602,7 @@
       \end{class}\theoremEndLine
 
       The \Code{DiscreteCombinedFunctional} is more or less a pair of two \code{DiscreteFunctional}s. When its
-      \Code{operator()} is called, it just calles each \Code{operator()} and adds the results.
+      \Code{operator()} is called, it just calls each \Code{operator()} and adds the results.
 
       \begin{class}[\CodeT{DiscreteCombinedFunctional}]\theoremNewline
         Given two functionals ${F \komma G \in V'}$, this class represents the functional
@@ -719,126 +728,149 @@
 
 \subsection{Required classes}
 
-First of all we give an overview on the various classes that are required in our concept. In particuler we comment on the functionality of each class.\\
+First of all we give an overview on the various classes that are required in our concept. In particular we comment on the functionality of each class.\\
 \\
-{\tt typedef Constraint < FunctionalType > ConstraintType;}
+\noindent\CodeT{typedef Constraint < FunctionalType > ConstraintType;}
 \begin{itemize}
-\item[$\circ$] various realizations of constraints $C$ are possible (boundary conditions, periodicity, zero-average, ...); they are derived from the general {\tt Constraint} class
-\item[$\circ$] mapping an element $v\in V$ on an element $v_C \in V_C$ is not unique, therefore 'applying a constraint' to a general function $v$ means that we project $v$ on $V_C$ with respect to certain scalar product; in the discrete setting these projections are typically straight forward
-\item[$\circ$] required methods:
-\item[$\cdot$] method: {\tt apply( numberOfConstraint, function )} $\leftrightarrow$ find $v_C \in V_C$ which is 'close' to $v$ and which fulfills $C[i][v_C]=0$, $i$ is the index of the functional (in our functional vector), $v$ is an analytical function
-\item[$\cdot$] method: {\tt apply( numberOfConstraint, discreteFunction )} $\leftrightarrow$ find $v_C \in V_C$ which is 'close' to $v_H$ and which fulfills $C[i][v_C]=0$, $i$ is the index of the functional (in our functional vector), $v_H$ is a discrete function; typically we simply change the value of $v_H$ in a certain number of nodes
-\item[$\cdot$] method: {\tt applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} $\rightarrow$ again, an abstract method depending on the specific type of the constraint; it returns local contributions for a specific grid element; it is required for assembling the system matrix in our system of equations; details are given later
-\item[$\cdot$] method: {\tt applyLocal( localBasefunctionSet, localBasefunctionSet )} $\rightarrow$ use {\tt applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} for all {\tt numberOfConstraint}
-\item[$\circ$] other methods depending on the specific type of a constraint (e.g. DirichletConstraint)?
-\item[$\circ$] constraints are used to construct a 'constraint subspace' - for the user, nothing else has to be done with the constraints
+	\item[$\circ$] various realizations of constraints $C$ are possible (boundary conditions, periodicity, zero-average, ...); they are derived from the general \CodeT{Constraint} class
+	\item[$\circ$] mapping an element $v\in V$ on an element $v_C \in V_C$ is not unique, therefore 'applying a constraint' to a general function $v$ means that we project $v$ on $V_C$ with respect to certain scalar product; in the discrete setting these projections are typically straight forward
+	\item[$\circ$] required methods:
+	\item[$\cdot$] method: \CodeT{apply( numberOfConstraint, discreteFunction )} $\leftrightarrow$ find $v_C \in V_C$ which is 'close' to $v_H$ and which fulfills $C[i][v_C]=0$, $i$ is the index of the functional (in our functional vector), $v_H$ is a discrete function; typically we simply change the value of $v_H$ in a certain number of nodes
+	\item[$\cdot$] method: \CodeT{applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} $\rightarrow$ again, an abstract method depending on the specific type of the constraint; it returns local contributions for a specific grid element; it is required for assembling the system matrix in our system of equations; details are given later
+	\item[$\cdot$] method: \CodeT{applyLocal( localBasefunctionSet, localBasefunctionSet )} $\rightarrow$ use \CodeT{applyLocal( numberOfConstraint, localBasefunctionSet, \\ localBasefunctionSet )} for all \CodeT{numberOfConstraint}
+	\item[$\circ$] other methods depending on the specific type of a constraint (e.g. DirichletConstraint)?
+	\item[$\circ$] constraints are used to construct a 'constraint subspace' - for the user, nothing else has to be done with the constraints
 \end{itemize}
-{\tt typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType >
+\noindent\CodeT{typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType >}
+\CodeT{LinearSubspaceType;}
+\begin{itemize}
+	\item[$\circ$] derived from \CodeT{DiscreteFunctionSpace}
+	\item[$\circ$] all the information about the constraint is in our subspace
+	\item[$\circ$] we can extract the constraint that it was constructed from
+	\item[$\circ$] formally the subspace is of the same size as \CodeT{DiscreteFunctionSpace}
+	\item[$\circ$] in particular an object of \CodeT{LinearSubspace} becomes the space of test functions in our later problem
+\end{itemize}
+\noindent\CodeT{typedef AffineSubspace < LinearSubspace, DiscreteFunctionType >} \CodeT{AffineSubspaceType;}
+\begin{itemize}
+	\item[$\circ$] the space of the solution
+	\item[$\circ$] initialized with a fixed discrete function $v_H$: 'AffineSubspace = $v_H$ + LinearSubspace'
+	\item[$\circ$] \CodeT{AffineSubspace}-class derived from \CodeT{DiscreteFunctionSpace}
+\end{itemize}
+\noindent\CodeT{typedef Operator< LinearSubspaceType, AffineSubspaceType,}
+\CodeT{MatrixObjectTraits > DifferentialOperatorType;}
+\begin{itemize}
+	\item[$\circ$] can be derived from the dune-fem Operator-class, later it should be implemented independently
+	\item[$\circ$] Operator : AffineSubspace $\rightarrow$ (LinearSubspace$)^{\prime}$
+	\item[$\circ$] if required: automatically assembles the correct system matrix (which is a quadratic sparse row matrix) with respect to the subspaces (i.e. with respect to the constraints)
+	\item[$\circ$] simplified we can say: the {\it linear subspace} tells us which lines we must substitute in our later system of equations and the {\it affine subspace} tells us by what we must substitute these lines.
+	\item[$\circ$] usage of a \CodeT{DifferentialOperatorType}-object identical to the old usage of an \CodeT{Operator}-object
+	\item[$\circ$] {\it Algebraic representation:} get system matrix with \CodeT{operator.systemMatrix();} or \CodeT{operator.algebraic();}
+%----------------------
+%added by Stefan
+%----------------------
+	\item[$\circ$] incorporates something like:\\
+	\CodeT{assembleSystemMatrix(); constraints.apply( systemMatrix() );}
+\end{itemize}
 
-\hspace{1pt}LinearSubspaceType;}
+%-------------------------
+%new version (Stefan)
+%-------------------------
+\noindent\CodeT{typedef FunctionalAssembler< FunctionalType, AffineSubspace >}\\
+\CodeT{FunctionalAssemblerType;}
 \begin{itemize}
-\item[$\circ$] derived from {\tt DiscreteFunctionSpace}
-\item[$\circ$] all the information about the constraint is in our subspace
-\item[$\circ$] we can extract the constraint that it was constructed from
-\item[$\circ$] formally the subspace is of the same size as {\tt DiscreteFunctionSpace}
-\item[$\circ$] in particular an object of {\tt LinearSubspace} becomes the space of test functions in our later problem
-\end{itemize}
-{\tt typedef AffineSubspace < LinearSubspace > AffineSubspaceType;}
-\begin{itemize}
-\item[$\circ$] the space of the solution
-\item[$\circ$] initialized with a fixed discrete function $v_H$: 'AffineSubspace = $v_H$ + LinearSubspace'
-\item[$\circ$] {\tt AffineSubspace}-class derived from {\tt DiscreteFunctionSpace}
-\end{itemize}
-{\tt typedef Operator< LinearSubspaceType, AffineSubspaceType,
-
-\hspace{1pt}MatrixObjectTraits > DifferentialOperatorType;}
-\begin{itemize}
-\item[$\circ$] can be derived from the dune-fem Operator-class, later it should be implemented independently
-\item[$\circ$] Operator : AffineSubspace $\rightarrow$ (LinearSubspace$)^{\prime}$
-\item[$\circ$] if required: automatically assembles the correct system matrix (which is a quadratic sparse row matrix) with respect to the subspaces (i.e. with respect to the constraints)
-\item[$\circ$] simplified we can say: the {\it linear subspace} tells us which lines we must substitute in our later system of equations and the {\it affine subspace} tells us by what we must substitute these lines.
-\item[$\circ$] usage of a {\tt DifferentialOperatorType}-object identical to the old usage of an {\tt Operator}-object
-\item[$\circ$] get system matrix with {\tt operator.systemMatrix();}
+	\item[$\circ$] assembles the right hand side in our system of equations 
+  \item[$\circ$] {\it Algebraic representation:} get assembled functional with \CodeT{functional.algebraic()}
+  \item[$\circ$] incorporates something like:\\
+\CodeT{assembleFunctional(); constraints.apply( functional );} 
 \end{itemize}
 
-Algebraic classes (assembling of system matrix and right hand side):\\
-\\
-To assemble the right hand side in our system of equations:\\
-{\tt typedef FunctionalAssembler < FunctionalType, AffineSubspace >
+Both classes (\CodeT{DifferentialOperator} and \CodeT{FunctionalAssembler}) might be incorporated in a general \CodeT{FunctionalSolverInterface}, so that the user does not need to care about the system assemblers.
 
-FunctionalAssemblerType;}\\
-\\
-To assemble the correct system matrix (with respect to the subspaces):\\
-{\tt typedef OperatorAssembler < OperatorType > OperatorAssemblerType;}
-\begin{itemize}
-\item incorporates something like:\\
-{\tt assembleSystemMatrix(); constraints.apply( systemMatrix() );}\\
-\end{itemize}
-Both classes might be incorporated in a general {\tt FunctionalSolverInterface}, so that the user does not need to care about the system assemblers.
+%--------------
+%old version
+%--------------
+%Algebraic classes (assembling of system matrix and right hand side):\\
+%\\
+%To assemble the right hand side in our system of equations:\\
+%\CodeT{typedef FunctionalAssembler < FunctionalType, AffineSubspace >
+
+%FunctionalAssemblerType;}\\
+%\\
+%To assemble the correct system matrix (with respect to the subspaces):\\
+%\CodeT{typedef OperatorAssembler < DiffOperatorType > OperatorAssemblerType;}
+%\begin{itemize}
+%\item incorporates something like:\\
+%\CodeT{assembleSystemMatrix(); constraints.apply( systemMatrix() );}\\
+%\end{itemize}
+%Both classes might be incorporated in a general \CodeT{FunctionalSolverInterface}, so that the user does not need to care about the system assemblers.
+
 
 
 \subsection{Draft}
 
+\begin{lstlisting}
+using namespace Functionals;
 
-Essential classes: \\
-\\
-{\footnotesize\tt
-using namespace Functionals;\\
-\\
-typedef Functional< DiscreteFunctionSpace > FunctionalType; \\
-typedef Constraint < FunctionalType > ConstraintType; \\
-typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > LinearSubspaceType; \\
-typedef AffineSubspace < LinearSubspace > AffineSubspaceType; \\
-\\
-{\sl// sparse row matrix of size $N \times N$}\\
-typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace >  MatrixObjectTraits; \\
-typedef Operator< LinearSubspaceType, AffineSubspaceType,
+typedef Functional < DiscreteFunctionSpace > FunctionalType; 
+typedef Constraint < FunctionalType > ConstraintType; 
+typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > 
+  LinearSubspaceType; 
+typedef AffineSubspace < LinearSubspace > AffineSubspaceType; 
 
-MatrixObjectTraits > DiffOperatorType; \\
-\\
-{\sl// algebraic system assemblers:}\\
-typedef OperatorAssembler < OperatorType > OperatorAssemblerType; \\
-typedef FunctionalAssembler < FunctionalType, AffineSubspace > FunctionalAssemblerType; \\
-\\
-{\sl// CG scheme}\\
-typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler > InverseOperatorType; \\
-}
-\\
-Main code: \\
-\\
-{\tt\footnotesize
-DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace ); \\
-\\
-{\sl// use a right hand side assembler class to apply 'functional+constraints' to right hand side vector}\\
-FunctionalAssemblerType rhsAssembler ( functional, affineSubspace ); \\
-rhsAssembler.assemble( rhs ); \\
-\\
-{\sl// behaves like the old Operator-class of \dunefem:}\\
+// sparse row matrix of size $N \times N$
+typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace > 
+  MatrixObjectTraits; 
+typedef Operator< LinearSubspaceType, AffineSubspaceType, MatrixObjectTraits >   
+  DiffOperatorType;
+
+// algebraic system assembler:
+typedef FunctionalAssembler < FunctionalType, AffineSubspace > 
+  FunctionalAssemblerType;
+
+MatrixObjectTraits > DiffOperatorType; 
+// CG scheme
+typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler > 
+  InverseOperatorType;
+\end{lstlisting}
+Main Code:
+\begin{lstlisting}
+DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace ); 
+
+// use a right hand side assembler class to apply 'functional+constraints' 
+// to right hand side vector
+FunctionalAssemblerType rhsAssembler ( functional, affineSubspace );
+rhsAssembler.algebraic( rhs );
+
+// behaves like the old Operator-class of dunefem:
 OperatorAssemblerType systemMatrixAssembler ( differentialOperator );
-\\
-{\sl// 'differentialOperator' contains correct 'systemMatrix()':}\\
-InverseOperatorType cg( systemMatrixAssembler, 1e-6, 1e-8 );\\
-cg( rhs, solution );\\}
-\\
+
+// 'differentialOperator' contains correct 'systemMatrix()':}
+InverseOperatorType cg( systemMatrixAssembler, 1e-6, 1e-8 );
+cg( rhs, solution );
+\end{lstlisting}
+
 We might think about hiding this main code behind a 'FunctionalSolverInterface', so that the user can simply call:
 
-{\tt\footnotesize cg( differentialOperator, functional, affineSubspace, solution );}\\
-(i.e. {\tt FunctionalSolverInterface< Operator, Functional, AffineSubspace>} )
+\CodeT{\footnotesize cg( differentialOperator, functional, affineSubspace, solution );}\\
+(i.e. \CodeT{FunctionalSolverInterface< Operator, Functional, AffineSubspace>} )
 
-$\\$
-Comparison with 'old' main code (for laplace operator and zero boundary condition):\\
-\\
-{\tt\footnotesize DiscreteFunctionType rhs( "rhs", discreteFunctionSpace );\\
-AssembledFunctional< FunctionalType > rhsFunctional ( disceretFunctionSpace, functional );\\
-rhsFunctional.assemble( rhs );\\
-\\
-typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits > LaplaceOperatorType;\\
-{\sl// apply constraints}\\
-bool hasDirBoundary = constraints.apply( laplaceOperator.systemMatrix(), rhs, solution );\\
-\\
-InverseOperatorType cg( laplaceOperator, 1e-6, 1e-8 );\\
-cg( rhs, solution );\\}
-\\
+Comparison to the old main code (for laplace operator and zero boundary condition):
+\begin{lstlisting}
+DiscreteFunctionType rhs( "rhs", discreteFunctionSpace );
+typedef AssembledFunctional< FunctionalType > AssembledFunctionalType; 
+AssembledFunctionalType rhsFunctional ( disceretFunctionSpace, functional );
+rhsFunctional.assemble( rhs );
+
+typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits > 
+  LaplaceOperatorType;
+// apply constraints
+bool hasDirBoundary = 
+  constraints.apply( laplaceOperator.systemMatrix(), rhs, solution );
+
+InverseOperatorType cg( laplaceOperator, 1e-6, 1e-8 );
+cg( rhs, solution );
+\end{lstlisting}
+
 The essential difference is that the (differential)operator already knows the correct system matrix (due to the subspaces, that know the constraints). Therefore the user does not need some kind of 'constraints.apply' method (this happens internally in the two system assemblers).
 
 \section{Realization of Functionals}
@@ -893,7 +925,7 @@ The essential difference is that the (differential)operator already knows the co
         \Bigg(
             \sum\limits_{c=0}^{dim}
               {
-                \int\limits_{G_E^0}
+                \int\limits_{G_E^c}
                   {
                     \tilde{f}^c[B_E]^E
                   }
@@ -992,9 +1024,125 @@ The essential difference is that the (differential)operator already knows the co
 
 \section{Realization of Constraints}
 
-Maybe, we should discuss the general concept first.\\
-\\
-Example: {\tt ConstraintType::DirichletConstraint dirConstraint( function );}
+	We should discuss about the general concept, especially about the methods \CodeT{operator()}, \CodeT{apply()} and \CodeT{applyLocal()}.\\
+
+	\begin{remark}[Conceptual class tree]\theoremNewline
+		\begin{tikzpicture}
+			\tikzstyle{boxs} = [draw, %text width=4em,
+				fill=blue!5, minimum height=2em, rounded corners]
+			\tikzstyle{boxsG} = [draw,  %text width=4em,
+				fill=green!5, minimum height=2em, rounded corners ]
+			\tikzstyle{line} = [draw,->,thick]
+			\tikzstyle{lineR} = [draw,<-,thick]
+
+			\tikzset{node distance = 50mm}
+			\node(Functional)[boxs]{\CodeT{SingleConstraint}};
+
+			\node(ConstraintsInterface)[boxs,left of = Functional]{\CodeT{ConstraintsInterface}} edge[line] (Functional.west);
+			\tikzset{node distance = 15mm}
+			\node(ConstraintsDefault)[boxs,below of = ConstraintsInterface]{\CodeT{ConstraintsDefault}} edge[line] (ConstraintsInterface.south);
+			\tikzset{node distance = 30mm}
+			\node(dummy1)[below of = ConstraintsInterface]{};
+			\tikzset{node distance = 25mm}
+			\node(DirichletConstraints)[boxs,left of = dummy1]{\CodeT{DirichletConstraints}} edge[line] (ConstraintsDefault.south);
+			\node(NeumannConstraints)[boxs,below of = ConstraintsDefault]{\CodeT{NeumannConstraints}} edge[line] (ConstraintsDefault.south);
+			\node(VectorConstraints)[boxs,right of = dummy1]{\CodeT{VectorConstraints}} edge[line] (ConstraintsDefault.south);
+
+			\tikzset{node distance = 15mm}
+			
+		\end{tikzpicture}
+	\end{remark}\theoremEndLine
+
+	\begin{class}[\CodeT{SingleConstraint< FunctionalImp >}]
+		Represents a single constraint. Mainly, this class is the formal implementation of \ref{definition::abstract_concept::constraint}. This class is the basic class for all other classes dealing with constraints. Normally this class is not used directly because an efficient implementation is not possible.\\
+		Shortly said, a single constraint presents a pair of a \emph{functional} (defining the constraint) and \emph{row number} determing the row which has to be deleted in the system matrix.\\
+		This means, that a class (for example representing the dirichlet constraints) can be (formally) seen as a vector of \CodeT{SingleConstraints}.
+		\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number} & Computes $F[v]$, where $F$ is the functional and $v$\\
+        \CodeT{ = operator( discretefunction )} & the discrete function.\\
+        \hline
+				\CodeT{vector} & just calls \CodeT{applyLocal()} for each entity.\\
+				\CodeT{ = apply( discreteFunction) } & \\
+				\hline
+        \CodeT{localVector} & \\
+        \CodeT{ = applyLocal( entity,} & \\
+        \CodeT{ localBasefunctionSet )}  & \\         
+        \hline
+				\CodeT{int} & returns the row number which has to be deleted \\
+				\CodeT{ = getRow()} & in the system matrix.\\
+        \hline
+				\CodeT{functional} & returns the functional representing the constraint,\\
+				\CodeT{ = getFunctional()} & i.e. $F[v]\stackrel{!}{=}0$ for the functional $F$\\
+				  & returned by this function.\\
+				\hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+	\begin{class}[\CodeT{ConstraintsInterface< FunctionalImp >}]
+		This class represents an interface for all classes. Mention that it is possible to write something like this: \CodeT{ConstraintsInterfaceImp C; C[i].apply();}.
+		\\\\
+      \begin{tabular}{|l|l|}
+        \hline
+        \CodeT{number} & Computes $F[v]$, where $F$ is the functional and $v$\\
+        \CodeT{ = operator( discretefunction )} & the discrete function.\\
+        \hline
+				\CodeT{vector} & just calls \CodeT{applyLocal()} for each entity.\\
+				\CodeT{ = apply( discreteFunction) } & \\
+				\hline
+        \CodeT{localVector} & \\
+        \CodeT{ = applyLocal( entity,} & \\
+        \CodeT{ localBasefunctionSet )}  & \\         
+        \hline
+				\CodeT{int} & Returns number of constraints. \\
+				\CodeT{ = size()} & \\  
+				\hline
+				\CodeT{singleconstraint} & Returns a single constraint represented\\
+				\CodeT{ = operator[i]} & by the class \CodeT{SingleConstraint}. This \\
+					& method will not be used in general.\\
+				\hline
+      \end{tabular}
+    \end{class}\theoremEndLine
+
+	\begin{class}[\CodeT{ConstraintsDefault< FunctionalImp >}]
+		Default implementation of \CodeT{ConstraintsInterface}.		
+  \end{class}\theoremEndLine
+
+	\begin{class}[\CodeT{DirichletConstraints< FunctionalImp >}]
+		An example for constraints: Implementation of Dirichlet constraints.\\
+		Derived from \CodeT{ConstraintsDefault}. Here we will \emph{overwrite} the methods \CodeT{operator()}, \CodeT{apply()} and \CodeT{applyLocal()} without using the single constraints from \CodeT{SingleConstraint}.\\\\
+		\begin{tabular}{|l|l|}
+			\hline
+			\CodeT{number} & Computes $F[v]$, where $F$ is the functional and $v$\\
+			\CodeT{ = operator( discretefunction )} & the discrete function.\\
+			\hline
+			\CodeT{vector} & just calls \CodeT{applyLocal()} for each entity.\\
+			\CodeT{ = apply( discreteFunction) } & \\
+			\hline
+			\CodeT{localVector} & \\
+			\CodeT{ = applyLocal( entity,} & \\
+			\CodeT{ localBasefunctionSet )}  & \\         
+			\hline
+			\CodeT{int} & Returns number of constraints. \\
+			\CodeT{ = size()} & \\  
+			\hline
+			\CodeT{singleconstraint} & Returns a single constraint represented\\
+			\CodeT{ = operator[i]} & by the class \CodeT{SingleConstraint}. This \\
+				& method will not be used in general.\\
+			\hline
+		\end{tabular}
+  \end{class}\theoremEndLine
+
+	\begin{class}[\CodeT{NeumannConstraints< FunctionalImp >}]
+		An example for constraints: Implementation of Neumann constraints.\\
+		Derived from \CodeT{ConstraintsDefault}. See above.
+  \end{class}\theoremEndLine
+
+	\begin{class}[\CodeT{VectorConstraints< FunctionalImp >}]
+		An example for constraints: Here the constraints are stored explicitly in a vector of elements from the class \CodeT{SingleConstraint}. Derived from \CodeT{ConstraintsDefault}. \emph{In general we do not want to have such a class}.
+  \end{class}\theoremEndLine
+
 
 %(Operator ( Subspace, ProblemInfo ))(u) = Functional
 

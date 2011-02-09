@@ -1,0 +1,9 @@
+\begin{thebibliography}{1}
+
+\bibitem{DKNO10}
+A.~Dedner, R.~Kl\"ofkorn, M.~Nolte, and M.~Ohlberger.
+\newblock A generic interface for parallel and adaptive discretization schemes:
+  abstraction principles and the dune-fem module.
+\newblock {\em Computing}, 90(3-4):165--196, 2010.
+
+\end{thebibliography}
