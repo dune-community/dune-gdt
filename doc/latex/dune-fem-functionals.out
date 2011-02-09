@@ -1,0 +1,14 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}
+\BOOKMARK [1][-]{section.2}{Abstract concept}{}
+\BOOKMARK [2][-]{subsection.2.1}{Functionals}{section.2}
+\BOOKMARK [2][-]{subsection.2.2}{Constraints and subspaces}{section.2}
+\BOOKMARK [2][-]{subsection.2.3}{Operators}{section.2}
+\BOOKMARK [1][-]{section.3}{Examples}{}
+\BOOKMARK [2][-]{subsection.3.1}{Elliptic PDE}{section.3}
+\BOOKMARK [1][-]{section.4}{Realization in Dune-Fem-Functionals}{}
+\BOOKMARK [2][-]{subsection.4.1}{Functionals}{section.4}
+\BOOKMARK [2][-]{subsection.4.2}{Required classes}{section.4}
+\BOOKMARK [2][-]{subsection.4.3}{Draft}{section.4}
+\BOOKMARK [1][-]{section.5}{Realization of Functionals}{}
+\BOOKMARK [2][-]{subsection.5.1}{Integral Functionals}{section.5}
+\BOOKMARK [1][-]{section.6}{Realization of Constraints}{}
