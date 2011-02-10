@@ -3,7 +3,7 @@
 # we need the module file to be able to build via dunecontrol
 EXTRA_DIST=dune.module
 
-SUBDIRS = src m4 dune doc
+SUBDIRS = src m4 dune doc poisson_new
 
 if BUILD_DOCS
 # TODO: set up documentation tree automatically
