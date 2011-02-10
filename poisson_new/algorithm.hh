@@ -232,7 +232,8 @@ private:
   //TODO: Beim Anlegen einer "AffineSubspaceDiscreteFunction" soll automatisch die 
 	//folgende Methode ausgefuehrt werden, so dass die richtigen Randwerte angenommen werden.
 
-	void trivialProjectionOnAffineSpace(DiscreteFunctionType& discreteFunction)
+	template<class ProblemType>
+	void trivialProjectionOnAffineSpace(DiscreteFunctionType& discreteFunction, const ProblemType& problem)
 	{
 		//TODO Implementation vervollstaendigen.
 		ConstraintsType constraints = space_.getConstraints();
@@ -294,7 +295,7 @@ private:
 
                   // check whether Dirichlet boundary or not 
 									// (remark: all boundary nodes are supposed to be Dirichlet boundary faces at the moment)
-                  //if( ! constraints.problem_.dirichletBoundary(intersection.boundaryId(), global ) )
+                  //if( ! constraints.problem.dirichletBoundary(intersection.boundaryId(), global ) )
                   // {
                   //   continue;
                   // }
@@ -303,7 +304,7 @@ private:
 
                   // evaluate boundary data
                   RangeType phi;
-                  constraints.problem_.g( global, phi );
+                  problem.g( global, phi );
 
                   //!const RangeFieldType xsqr = global*global;
                   //!phi = exp( -10.0 * xsqr );
@@ -325,9 +326,10 @@ private:
 	
 public:
 
-	void modifyRHS(DiscreteFunctionType& rhs)
+	template<class ProblemType>
+	void modifyRHS(DiscreteFunctionType& rhs, const ProblemType& problem)
 	{
-      trivialProjectionOnAffineSpace( rhs );
+      trivialProjectionOnAffineSpace( rhs, problem );
 	}
 
 	DiscreteFunctionType& getAffinePart() const
@@ -391,8 +393,7 @@ public:                                                               /*@LST0E@*
 	//----- Constraints ----------------------------------------------------------
 	//! define the Constraints you want to use, i.e. Dirichlet constraints
 	//typedef VectorConstraints<LinearFunctionalType>               ConstraintsType;
-	typedef Dune::DirichletConstraints<DiscreteSpaceType, ProblemType>  
-		                                                            DirichletConstraintsType;
+	typedef Dune::DirichletConstraints<DiscreteSpaceType>         DirichletConstraintsType;
 	
 
   //---- DiscreteFunction ----------------------------------------------------
@@ -446,7 +447,7 @@ public:
     gridPart_( grid_ ),
     space_( gridPart_ ),
     problem_( problem ),
-		constraints_(space_, problem_),
+		constraints_(space_),
 		linSubspace_(space_, constraints_),
 		affSubspace_(linSubspace_)
   {
@@ -536,10 +537,10 @@ private:                                                            /*@LST0S@*/
 		rhs.clear();
     // assemble right hand side functional vector 
 		functional.algebraic( rhs );
-	  affSubspace_.modifyRHS( rhs );	
+	  affSubspace_.modifyRHS( rhs, problem_ );	
 	  
 	  //TODO das hier muss geändert werden (solution aus AffineDiscreteSubspace hat damit automatisch die richtigen Randwerte)
-	  affSubspace_.modifyRHS( solution );	
+	  affSubspace_.modifyRHS( solution, problem_ );	
 
     // create timer (also stops time) 
     Dune::Timer timer;

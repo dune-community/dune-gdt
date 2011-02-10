@@ -6,7 +6,7 @@
 namespace Dune { 
 
 //TODO template parameters should be replaced by FunctionalType
-template < class DiscreteFunctionSpace, class ProblemType >  
+template < class DiscreteFunctionSpace >  
 class DirichletConstraints 
 {
 
@@ -26,10 +26,8 @@ public:
 	typedef SingletonList< SlaveDofsKeyType, SlaveDofsType >	    SlaveDofsProviderType;
 
 	//TODO change constructor, remove problem 
-  DirichletConstraints( const DiscreteFunctionSpaceType& space,
-                        const ProblemType& problem ) 
+  DirichletConstraints( const DiscreteFunctionSpaceType& space) 
     : space_( space ),
-      problem_( problem ),
       slaveDofs_( getSlaveDofs( space_ ) )
   {}
 
@@ -222,9 +220,6 @@ public:
 
 #endif
 
-public:
-
-  const ProblemType& problem_;
 
 protected:
   //! pointer to slave dofs 
