@@ -808,6 +808,9 @@ Both classes (\CodeT{DifferentialOperator} and \CodeT{FunctionalAssembler}) migh
 
 \subsection{Draft}
 
+%-------------------------
+%new version (Stefan)
+%-------------------------
 \begin{lstlisting}
 using namespace Functionals;
 
@@ -817,7 +820,7 @@ typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType >
   LinearSubspaceType; 
 typedef AffineSubspace < LinearSubspace > AffineSubspaceType; 
 
-// sparse row matrix of size $N \times N$
+// sparse row matrix of size N x N
 typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace > 
   MatrixObjectTraits; 
 typedef Operator< LinearSubspaceType, AffineSubspaceType, MatrixObjectTraits >   
@@ -834,6 +837,16 @@ typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler >
 \end{lstlisting}
 Main Code:
 \begin{lstlisting}
+//constraints, for example dirichlet constraints
+ConstraintsType constraints( gridPart );
+
+//subspaces
+LinearSubspaceType linearSubspace( constraints );
+AffineSubspaceType affineSubspace( linearSubspace, discretefunction );
+
+// operator (behaves like the old Operator-class of dunefem)
+DiffOperatorType differentialOperator ( linearSubspace, affineSubspace );
+
 DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace ); 
 
 // use a right hand side assembler class to apply 'functional+constraints' 
@@ -841,11 +854,8 @@ DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace );
 FunctionalAssemblerType rhsAssembler ( functional, affineSubspace );
 rhsAssembler.algebraic( rhs );
 
-// behaves like the old Operator-class of dunefem:
-OperatorAssemblerType systemMatrixAssembler ( differentialOperator );
-
 // 'differentialOperator' contains correct 'systemMatrix()':}
-InverseOperatorType cg( systemMatrixAssembler, 1e-6, 1e-8 );
+InverseOperatorType cg( differentialOperator, 1e-6, 1e-8 );
 cg( rhs, solution );
 \end{lstlisting}
 
@@ -858,11 +868,12 @@ Comparison to the old main code (for laplace operator and zero boundary conditio
 \begin{lstlisting}
 DiscreteFunctionType rhs( "rhs", discreteFunctionSpace );
 typedef AssembledFunctional< FunctionalType > AssembledFunctionalType; 
-AssembledFunctionalType rhsFunctional ( disceretFunctionSpace, functional );
+AssembledFunctionalType rhsFunctional ( discretFunctionSpace, functional );
 rhsFunctional.assemble( rhs );
 
 typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits > 
   LaplaceOperatorType;
+
 // apply constraints
 bool hasDirBoundary = 
   constraints.apply( laplaceOperator.systemMatrix(), rhs, solution );
