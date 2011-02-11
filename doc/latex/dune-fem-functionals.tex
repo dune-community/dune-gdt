@@ -868,9 +868,9 @@ Note: We can also define \CodeT{typedef Operator< AssemblerType > DifferentialOp
 	\item[$\circ$] Define a private method \CodeT{void applyConstraints(algebraicRepresentation)} where the constraints are extracted and applied to the algebraic representation. Now we can implement a general assemble method just by writing \CodeT{applyConstraints(operator.algebraic())}.
 \end{itemize}
 
-\noindent\CodeT{typedef FunctionalAssembler< FunctionalType, AffineSubspace, AssemblerType >}\\
-\CodeT{FunctionalAssemblerType;}\\
-Note: We can also define \CodeT{typedef FunctionalAssembler< AssemblerType > FunctionalAssemblerType} by extracting the space types from the assembler.
+\noindent\CodeT{typedef RHSFunctional< FunctionalType, AffineSubspace, AssemblerType >}\\
+\CodeT{RHSFunctionalType;}\\
+Note: We can also define \CodeT{typedef RHSAssembler< AssemblerType > RHSAssemblerType} by extracting the space types from the assembler.
 \begin{itemize}
 	\item[$\circ$] Same properties as above\ldots
 	\item[$\circ$] Define a private method \CodeT{applyConstraints(algebraicRepresentation)} where the constraints are extracted and applied to the algebraic representation. Now we can implement a general assemble method just by writing \CodeT{applyConstraints(functional.algebraic())}.	
