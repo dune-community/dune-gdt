@@ -25,7 +25,11 @@ AC_CONFIG_FILES([
   doc/doxygen/Doxyfile
   dune/Makefile
   dune/fem/Makefile
-  poisson_new/Makefile
+  dune/fem/functional/Makefile
+  examples/Makefile
+  examples/poisson_new/Makefile
+  tests/Makefile
+  tests/l2functional/Makefile
   m4/Makefile
   dune-fem-functionals.pc
 ])
