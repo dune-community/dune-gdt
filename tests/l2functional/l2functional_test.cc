@@ -5,6 +5,8 @@
 #include <iostream>
 #include <dune/fem/misc/mpimanager.hh>
 
+#include <dune/fem/functional/l2functional.hh>
+
 int main(int argc, char** argv)
 {
   try {
