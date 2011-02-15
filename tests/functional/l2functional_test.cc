@@ -51,7 +51,7 @@ public:
 
   inline void evaluate(const DomainType& arg, RangeType& ret) const
   {
-    ret = 1.0;
+    ret = 0.5;
   }
 };
 
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     typedef Dune::AdaptiveDiscreteFunction<DiscreteFunctionSpaceType> DiscreteFunctionType;
 
     DiscreteFunctionType discreteFunction("discrete_function", discreteFunctionSpace);
-    Dune::FemTools::setDiscreteFunctionToScalarValue(discreteFunction, 1.0);
+    Dune::FemTools::setDiscreteFunctionToScalarValue(discreteFunction, 2.0);
 
     // test functional
     typedef Dune::Functionals::L2Functional<AnalyticalFunctionType> L2FunctionalType;
