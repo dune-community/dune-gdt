@@ -2,12 +2,9 @@
 #ifndef DUNE_FEM_FUNCTIONALS_L2FUNCTIONAL_HH
 #define DUNE_FEM_FUNCTIONALS_L2FUNCTIONAL_HH
 
-////- Dune includes
 //#include <dune/common/fmatrix.hh>
 //#include <dune/common/timer.hh>
-
 //#include <dune/fem/storage/array.hh>
-//#include <dune/fem/quadrature/quadrature.hh>
 //#include <dune/fem/function/common/scalarproducts.hh>
 //#include <dune/fem/operator/common/operator.hh>
 //#include <dune/fem/operator/2order/lagrangematrixsetup.hh>
@@ -15,52 +12,104 @@
 
 //#include <dune/fem-howto/probleminterfaces.hh>
 
+// dune fem includes
+#include <dune/fem/quadrature/cachingquadrature.hh>
+
+// dune fem-tools includes
+#include "../../../tools/function/functiontools.hh" // should be removed in the end!
+
 namespace Dune {
 
 namespace Functionals {
 
 /**
-  * \brief
+  * \brief      This class represents an L2 functional.
   *
-  * \todo doc me please
+  * \attention  This class is under construction!
+  *
+  * \todo       Doc me, please!
   **/
-//  template< class FunctionImp, class DiscreteFunctionImp >
+template <class InducingFunctionImp>
 class L2Functional
 {
 public:
-  //    typedef FunctionImp
-  //      FunctionType;
-  //    typedef DiscreteFunctionImp
-  //      DiscreteFunctionType;
+  typedef InducingFunctionImp InducingFunctionType;
 
-  //    typedef typename FunctionType::RangeType
-  //      RangeType;
-  //    typedef typename FunctionType::RangeFieldType
-  //      RangeFieldType;
+  typedef typename InducingFunctionType::RangeFieldType RangeFieldType;
 
-
-  //		typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType         DiscreteFunctionSpaceType;
-
-  L2Functional(/*const FunctionType& function*/)
-  //      : function_( function )
+  L2Functional(const InducingFunctionType& inducingFunction)
+    : inducingFunction_(inducingFunction)
   {
   }
 
-  //    RangeFieldType operator()( const DiscreteFunctionType &discreteFunction ) const
-  //    {
-  //      RangeFieldType ret( 0.0 );
+  template <class DiscreteFunctionType>
+  RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
+  {
+    RangeFieldType ret = 0.0;
 
-  //      return ret;
-  //    }
+    // some types we will need
+    typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+    //      typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
+    //        BaseFunctionSetType;
+    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
+    typedef typename EntityIteratorType::Entity EntityType;
+    typedef typename EntityType::Geometry EntityGeometryType;
+    typedef typename DiscreteFunctionType::RangeType RangeType;
+    typedef typename DiscreteFunctionType::LocalFunctionType LocalFunctionType;
 
-  //    template < class LocalFunctionType >
-  //    void applyLocal( const LocalFunctionType &localFunction ) const
-  //    {
-  //    }
+    // some things we will need
+    const DiscreteFunctionSpaceType& discreteFunctionSpace = discreteFunction.space();
 
-  //  private:
-  //    const FunctionType &function_;
-};
+    // do gridwalk
+    const EntityIteratorType BehindLastEntityIterator = discreteFunctionSpace.end();
+    for (EntityIteratorType entityIterator = discreteFunctionSpace.begin(); entityIterator != BehindLastEntityIterator;
+         ++entityIterator) {
+      // entity and geometry
+      const EntityType& entity                 = *entityIterator;
+      const EntityGeometryType& entityGeometry = entity.geometry();
+
+      // quadrature
+      typedef CachingQuadrature<GridPartType, 0> EntityQuadratureType;
+      typedef typename EntityQuadratureType::CoordinateType EntityCoordinateType;
+      const int quadratureOrder = (2 * discreteFunctionSpace.order() + 1);
+      const EntityQuadratureType entityQuadrature(entity, quadratureOrder);
+      const unsigned int numberOfQuadraturePoints = entityQuadrature.nop();
+
+      // local function
+      const LocalFunctionType& localFunction = discreteFunction.localFunction(entity);
+
+      // do walk over quadrature points
+      for (unsigned int quadraturePoint = 0; quadraturePoint < numberOfQuadraturePoints; ++quadraturePoint) {
+        // coordinates
+        const EntityCoordinateType xReferenceElement = entityQuadrature.point(quadraturePoint);
+        const EntityCoordinateType xWorld            = entityGeometry.global(xReferenceElement);
+
+        // integration factors
+        const double integrationFactor = entityGeometry.integrationElement(xReferenceElement);
+        const double quadratureWeight  = entityQuadrature.weight(quadraturePoint);
+
+        // evaluate functions
+        RangeType functionValue = 0.0;
+        inducingFunction_.evaluate(xWorld, functionValue);
+        RangeType discreteFunctionValue = 0.0;
+        localFunction.evaluate(xReferenceElement, discreteFunctionValue);
+
+        // compute integral
+        ret += integrationFactor * quadratureWeight * functionValue * discreteFunctionValue;
+
+      } // done walk over quadrature points
+
+
+    } // done gridwalk
+
+    return ret;
+  }
+
+private:
+  const InducingFunctionType& inducingFunction_;
+
+}; // end class L2Functional
 
 //  // L2 functional
 //  template< class Function, class DiscreteFunction >
