@@ -47,3 +47,8 @@ tests/l2functional/.deps
 tests/l2functional/Makefile
 tests/l2functional/Makefile.in
 examples/poisson_new/.deps
+src/dune_fem_functionals
+src/dune_fem_functionals-dune_fem_functionals.o
+tests/functional/.deps
+tests/functional/l2functional_test
+tests/functional/l2functional_test-l2functional_test.o
