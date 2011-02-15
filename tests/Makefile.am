@@ -1,9 +1,6 @@
 # $Id$
 
-# we need the module file to be able to build via dunecontrol
-EXTRA_DIST=dune.module
-
-SUBDIRS = l2functional
+SUBDIRS = functional
 
 if BUILD_DOCS
 # TODO: set up documentation tree automatically

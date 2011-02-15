@@ -1,8 +1,5 @@
 # $Id$
 
-# we need the module file to be able to build via dunecontrol
-EXTRA_DIST=dune.module
-
 SUBDIRS = poisson_new
 
 if BUILD_DOCS
