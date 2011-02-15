@@ -29,7 +29,7 @@ AC_CONFIG_FILES([
   examples/Makefile
   examples/poisson_new/Makefile
   tests/Makefile
-  tests/l2functional/Makefile
+  tests/functional/Makefile
   m4/Makefile
   dune-fem-functionals.pc
 ])
