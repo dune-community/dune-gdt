@@ -1,0 +1,11 @@
+DGF
+Interval
+0 0
+1 1
+1 1
+#
+GridParameter
+overlap 0
+#
+BOUNDARYDOMAIN
+default 1
