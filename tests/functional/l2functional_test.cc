@@ -34,22 +34,23 @@ template < class FunctionSpaceImp >
 class AnalyticalFunction : public Dune::Function < FunctionSpaceImp , AnalyticalFunction < FunctionSpaceImp > >
 {
   public:
-    typedef AnalyticalFunction< FunctionSpaceImp >
+    typedef FunctionSpaceImp
+      FunctionSpaceType;
+    typedef AnalyticalFunction< FunctionSpaceType >
       ThisType;
-    typedef Dune::Function< FunctionSpaceImp, ThisType >
+    typedef Dune::Function< FunctionSpaceType, ThisType >
       BaseType;
-//    typedef typename BaseType::DomainType
-//      DomainType;
-//    typedef typename BaseType::RangeType
-//      RangeType;
-    typedef typename FunctionSpaceImp::RangeFieldType
+    typedef typename FunctionSpaceType::DomainType
+      DomainType;
+    typedef typename FunctionSpaceType::RangeType
+      RangeType;
+    typedef typename FunctionSpaceType::RangeFieldType
       RangeFieldType;
 
     AnalyticalFunction(){}
 
     ~AnalyticalFunction(){}
 
-    template< class DomainType, class RangeType >
     inline void evaluate( const DomainType& arg, RangeType& ret ) const
     {
       ret = 1.0;
