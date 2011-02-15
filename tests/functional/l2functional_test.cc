@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   try {
 
     // print welcome
-    std::cout << "This is l2functional_test." << std::endl;
+    std::cout << "L2 functional test ";
 
     // mpi
     Dune::MPIManager::initialize(argc, argv);
@@ -100,17 +100,15 @@ int main(int argc, char** argv)
     Dune::FemTools::setDiscreteFunctionToScalarValue(discreteFunction, 1.0);
 
     // test functional
-    std::cout << "Testing L2 functional: ";
-
     typedef Dune::Functionals::L2Functional<AnalyticalFunctionType> L2FunctionalType;
     const L2FunctionalType l2Functional(analyticalFunction);
 
     const double volume = l2Functional(discreteFunction);
 
     if (volume == 1.0)
-      std::cout << " test passed!" << std::endl;
+      std::cout << "passed!" << std::endl;
     else
-      std::cout << " test failed (result should equal 1, is " << volume << ")!" << std::endl;
+      std::cout << "failed (result should equal 1, is " << volume << ")!" << std::endl;
 
     // we don't make no errors^^
     return 0;
