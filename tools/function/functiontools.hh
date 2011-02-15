@@ -39,8 +39,11 @@ void writeDiscreteFunctionToVTK(const DiscreteFunctionType& discreteFunction,
   typedef Dune::VTKIO<GridPartType> VTKWriterType;
   VTKWriterType vtkWriter(gridPart);
 
-  //    vtkWriter.addVectorVertexData( computedSolutions.discreteVelocity() );
-  vtkWriter.addVertexData(discreteFunction);
+  if (DiscreteFunctionType::FunctionSpaceType::dimRange == 1)
+    vtkWriter.addVertexData(discreteFunction);
+  else
+    vtkWriter.addVectorVertexData(discreteFunction);
+
   vtkWriter.write(filename);
   vtkWriter.clear();
 }
