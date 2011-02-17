@@ -109,21 +109,21 @@ ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
 #----------------------------------------------------------------------------------------------------
 # Source listing
 #----------------------------------------------------------------------------------------------------
-FILE( GLOB_RECURSE header "tools/*.hh" )
 FILE( GLOB_RECURSE common "../dune-common/dune/common/*.hh" )
 FILE( GLOB_RECURSE grid "../dune-grid/dune/grid/*.hh" )
 FILE( GLOB_RECURSE istl "../dune-istl/dune/istl/*.hh" )
-FILE( GLOB_RECURSE fem-howto "../dune-fem-howto/dune/fem-howto/*.hh" )
+FILE( GLOB_RECURSE femhowto "../dune-fem-howto/dune/fem-howto/*.hh" )
 FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
-FILE( GLOB_RECURSE fem-functionals "../dune-fem-functionals/dune/fem/*.hh" )
+FILE( GLOB_RECURSE femtools "../dune-fem-tools/dune/fem-tools/*.hh" )
+FILE( GLOB_RECURSE femfunctionals "../dune-fem-functionals/dune/fem/*.hh" )
 
-set_source_files_properties( ${header} ${common} ${grid} ${istl} ${fem} ${fem-howto} ${fem-functionals} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
-ADD_EXECUTABLE( l2functional_test "tests/functional/l2functional_test.cc" ${header} ${common} ${grid} ${istl} ${fem} ${femhowto} ${fem-functionals} )
+ADD_EXECUTABLE( l2functional_test "tests/functional/l2functional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( l2functional_test ${COMMON_LIBS}  )
 
-ADD_EXECUTABLE( discretelinearfunctional_test "tests/functional/discretelinearfunctional_test.cc" ${header} ${common} ${grid} ${istl} ${fem} ${femhowto} ${fem-functionals} )
+ADD_EXECUTABLE( discretelinearfunctional_test "tests/functional/discretelinearfunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( discretelinearfunctional_test ${COMMON_LIBS}  )
 
 #HEADERCHECK( ${header} )

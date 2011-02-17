@@ -25,7 +25,7 @@
 #include <dune/fem/functional/discretelinearfunctional.hh>
 
 // dune fem-tools includes
-#include "../../tools/function/functiontools.hh"
+#include "../../../dune-fem-tools/dune/fem-tools/function/functiontools.hh"
 
 /**
   * \brief Analytical function which induces the functional.

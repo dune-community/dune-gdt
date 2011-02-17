@@ -12,9 +12,6 @@
 #include <dune/fem/functional/discretelinearfunctional.hh>
 #include <dune/fem/dofvector/dofvector.hh>
 
-// dune fem-tools includes
-#include "../../../tools/function/functiontools.hh" // should be removed in the end!
-
 namespace Dune {
 
 namespace Functionals {
