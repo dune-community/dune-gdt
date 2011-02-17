@@ -109,17 +109,18 @@ ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
 #----------------------------------------------------------------------------------------------------
 # Source listing
 #----------------------------------------------------------------------------------------------------
-FILE( GLOB_RECURSE header "dune/fem/*.hh" )
+FILE( GLOB_RECURSE header "tools/*.hh" )
 FILE( GLOB_RECURSE common "../dune-common/dune/common/*.hh" )
 FILE( GLOB_RECURSE grid "../dune-grid/dune/grid/*.hh" )
 FILE( GLOB_RECURSE istl "../dune-istl/dune/istl/*.hh" )
-FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
 FILE( GLOB_RECURSE fem-howto "../dune-fem-howto/dune/fem-howto/*.hh" )
+FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
+FILE( GLOB_RECURSE fem-functionals "../dune-fem-functionals/dune/fem/*.hh" )
 
-set_source_files_properties( ${header} ${common} ${grid} ${istl} ${fem} ${fem-howto} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${header} ${common} ${grid} ${istl} ${fem} ${fem-howto} ${fem-functionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
-ADD_EXECUTABLE( l2functional_test "tests/functional/l2functional_test.cc" ${header} ${common} ${grid} ${istl} ${fem} ${femhowto} )
+ADD_EXECUTABLE( l2functional_test "tests/functional/l2functional_test.cc" ${header} ${common} ${grid} ${istl} ${fem} ${femhowto} ${fem-functionals} )
 TARGET_LINK_LIBRARIES( l2functional_test ${COMMON_LIBS}  )
 
 #HEADERCHECK( ${header} )
