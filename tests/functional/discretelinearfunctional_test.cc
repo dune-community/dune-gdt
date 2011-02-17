@@ -105,17 +105,22 @@ int main(int argc, char** argv)
     Dune::FemTools::setDiscreteFunctionToScalarValue( discreteFunction, 2.0 );
 
     // test functional
-    typedef Dune::Functionals::DiscreteLinearFunctionalDefaultTraits< AnalyticalFunctionType >
-      DiscreteLinearFunctionalDefaultTraitsType;
-    typedef Dune::Functionals::DiscreteLinearFunctionalDefault< DiscreteLinearFunctionalDefaultTraitsType >
-      DiscreteLinearFunctionalDefaultType;
-    typedef Dune::Functionals::DiscreteLinearFunctionalInterface< DiscreteLinearFunctionalDefaultTraitsType >
-      DiscreteLinearFunctionalInterfaceType;
+//    typedef Dune::Functionals::DiscreteLinearFunctionalDefaultTraits< AnalyticalFunctionType >
+//      DiscreteLinearFunctionalDefaultTraitsType;
+//    typedef Dune::Functionals::DiscreteLinearFunctionalDefault< DiscreteLinearFunctionalDefaultTraitsType >
+//      DiscreteLinearFunctionalDefaultType;
+    typedef Dune::Functionals::TestLinearFunctionalTraits< AnalyticalFunctionType >
+      TestLinearFunctionalTraitsType;
+    typedef Dune::Functionals::TestLinearFunctional< TestLinearFunctionalTraitsType >
+      TestLinearFunctionalType;
 
-    DiscreteLinearFunctionalDefaultType discreteLinearFunctionalDefault;
+//    DiscreteLinearFunctionalDefaultType discreteLinearFunctionalDefault;
 
-//    DiscreteLinearFunctionalInterfaceType discreteLinearFunctionalInterface;
-    discreteLinearFunctionalDefault( discreteFunction );
+//    discreteLinearFunctionalDefault( discreteFunction );
+
+    TestLinearFunctionalType testLinearFunctional( analyticalFunction );
+
+    testLinearFunctional( discreteFunction );
 
 //    if ( volume == 1.0 )
 //      std::cout << "passed!" << std::endl;
