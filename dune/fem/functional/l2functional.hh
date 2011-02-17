@@ -9,6 +9,7 @@
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
 // dune fem-functionals includes
+#include <dune/fem/functional/discretelinearfunctional.hh>
 #include <dune/fem/dofvector/dofvector.hh>
 
 // dune fem-tools includes
@@ -41,8 +42,7 @@ public:
   }
 
   /**
-    * \brief      This function represents the application of the functional to a
-    *             discrete function.
+    * \brief      This operator represents the application of the functional to a discrete function.
     *
     * \todo       Doc me, please!
     **/

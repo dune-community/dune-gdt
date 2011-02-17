@@ -22,7 +22,7 @@
 #include <dune/fem/function/adaptivefunction.hh>
 
 // dune fem-functionals includes
-#include <dune/fem/functional/l2functional.hh>
+#include <dune/fem/functional/discretelinearfunctional.hh>
 
 // dune fem-tools includes
 #include "../../tools/function/functiontools.hh"
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   try {
 
     // print welcome
-    std::cout << "L2 functional test ";
+    std::cout << "Discrete linear functional test:" << std::endl;
 
     // mpi
     Dune::MPIManager::initialize(argc, argv);
@@ -97,17 +97,22 @@ int main(int argc, char** argv)
     Dune::FemTools::setDiscreteFunctionToScalarValue(discreteFunction, 2.0);
 
     // test functional
-    typedef Dune::Functionals::L2Functional<AnalyticalFunctionType> L2FunctionalType;
-    const L2FunctionalType l2Functional(analyticalFunction);
+    typedef Dune::Functionals::DiscreteLinearFunctionalDefaultTraits<AnalyticalFunctionType>
+        DiscreteLinearFunctionalDefaultTraitsType;
+    typedef Dune::Functionals::DiscreteLinearFunctionalDefault<DiscreteLinearFunctionalDefaultTraitsType>
+        DiscreteLinearFunctionalDefaultType;
+    typedef Dune::Functionals::DiscreteLinearFunctionalInterface<DiscreteLinearFunctionalDefaultTraitsType>
+        DiscreteLinearFunctionalInterfaceType;
 
-    // functions are chosen to equal 1 when multiplied, thus the application of the functional should yield the volume
-    // of the area, which in turn should be 1 in case of the two-dimensional unitcube
-    const double volume = l2Functional(discreteFunction);
+    DiscreteLinearFunctionalDefaultType discreteLinearFunctionalDefault;
 
-    if (volume == 1.0)
-      std::cout << "passed!" << std::endl;
-    else
-      std::cout << "failed (result should equal 1, is " << volume << ")!" << std::endl;
+    //    DiscreteLinearFunctionalInterfaceType discreteLinearFunctionalInterface;
+    discreteLinearFunctionalDefault(discreteFunction);
+
+    //    if ( volume == 1.0 )
+    //      std::cout << "passed!" << std::endl;
+    //    else
+    //      std::cout << "failed (result should equal 1, is " << volume << ")!" << std::endl;
 
     // we don't make no errors^^
     return 0;
