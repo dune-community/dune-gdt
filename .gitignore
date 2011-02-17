@@ -52,3 +52,5 @@ src/dune_fem_functionals-dune_fem_functionals.o
 tests/functional/.deps
 tests/functional/l2functional_test
 tests/functional/l2functional_test-l2functional_test.o
+tests/functional/discretelinearfunctional_test
+tests/functional/discretelinearfunctional_test-discretelinearfunctional_test.o
