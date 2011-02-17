@@ -25,7 +25,10 @@
 #include <dune/fem/functional/l2functional.hh>
 
 // dune fem-tools includes
-#include "../../tools/function/functiontools.hh"
+// Make sure to have the module dune-fem-tools, available from
+// https://dune.mathematik.uni-freiburg.de/svn/dune-fem-tools
+// (I did not manage to configure that module correctly)
+#include "../../../dune-fem-tools/dune/fem-tools/function/functiontools.hh"
 
 /**
   * \brief Analytical function which induces the functional.
