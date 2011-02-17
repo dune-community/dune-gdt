@@ -8,6 +8,9 @@
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
+// dune fem-functionals includes
+#include <dune/fem/dofvector/dofvector.hh>
+
 // dune fem-tools includes
 #include "../../../tools/function/functiontools.hh" // should be removed in the end!
 
@@ -16,95 +19,6 @@ namespace Dune
 
 namespace Functionals
 {
-
-  /**
-    * \brief      This class represents a local DoF vector.
-    *
-    *             It is based upon std::vector and should be replaced by something clever in the future!
-    *
-    * \todo       Doc me, please!
-    **/
-  template< class ElementType >
-  class LocalDoFVector
-  {
-  public:
-    /**
-      * \brief    Initializes an empty vector, according to the given size.
-      **/
-    LocalDoFVector( const unsigned size )
-      :size_( size )
-    {
-      // resize
-      storage_.resize( size );
-    }
-
-    /**
-      * \brief    Initializes a DoF vector and sets its entries to the
-      *           corresponding entries of the given localFunction.
-      **/
-    template< class LocalFunctionType >
-    LocalDoFVector( const LocalFunctionType& localFunction )
-      :size_( localFunction.numDofs() )
-    {
-      // resize
-      storage_.resize( localFunction.numDofs() );
-
-      // copy entries
-      for(  unsigned ii = 0;
-            ii < localFunction.numDofs();
-            ++ii )
-      {
-        storage_[ii] = localFunction[ii];
-      }
-    }
-
-    /**
-      * \brief    Returns the size.
-      */
-    unsigned size() const
-    {
-      return size_;
-    }
-
-    /**
-      * \brief    Random read and write access.
-      **/
-    ElementType& operator[]( const unsigned ii )
-    {
-      return storage_[ii];
-    }
-
-    /**
-      * \brief    Random read access.
-      **/
-    const ElementType operator[]( const unsigned ii ) const
-    {
-      return storage_[ii];
-    }
-
-    /**
-      * \brief    Scalar product of two local DoF vectors of same type.
-      **/
-    ElementType operator*( const LocalDoFVector< ElementType >& other ) const
-    {
-      assert( size_ == other.size() );
-      ElementType result = 0.0;
-
-      for(  unsigned ii = 0;
-            ii < size_;
-            ++ii )
-      {
-        result += storage_[ii] * other[ii];
-      }
-
-      return result;
-    }
-
-  private:
-    std::vector< ElementType > storage_;
-    const unsigned size_;
-
-  };
 
   /**
     * \brief      This class represents an L2 functional.
@@ -124,7 +38,7 @@ namespace Functionals
     typedef typename InducingFunctionType::RangeFieldType
       RangeFieldType;
 
-    typedef LocalDoFVector< RangeFieldType >
+    typedef Dune::Functionals::LocalDoFVector< RangeFieldType >
       LocalDoFVectorType;
 
     L2Functional( const InducingFunctionType& inducingFunction )
@@ -232,6 +146,7 @@ namespace Functionals
       {
         // value of the L2 functional, applied to the local basefunction, associated with the local DoF
         RangeFieldType localFunctionalValue = 0.0;
+
         // do walk over quadrature points
         for(  unsigned int quadraturePoint = 0;
               quadraturePoint < numberOfQuadraturePoints;
