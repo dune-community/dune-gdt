@@ -61,7 +61,7 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionType>
-  RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
+  const RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
   {
     std::cout << "DiscreteLinearFunctionalInterface::operator()" << std::endl;
     CHECK_INTERFACE_IMPLEMENTATION(asImp().operator()(discreteFunction));
@@ -76,8 +76,8 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType>
-  LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
-                                const BaseFunctionSetType& baseFunctionSet) const
+  const LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
+                                      const BaseFunctionSetType& baseFunctionSet) const
   {
     std::cout << "DiscreteLinearFunctionalInterface::applyLocal()" << std::endl;
     CHECK_INTERFACE_IMPLEMENTATION(asImp().applyLocal(discreteFunctionSpace, entity, baseFunctionSet));
@@ -182,7 +182,7 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionType>
-  RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
+  const RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
   {
     std::cout << "DiscreteLinearFunctionalDefault::operator()" << std::endl;
 
@@ -248,8 +248,8 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType>
-  LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
-                                const BaseFunctionSetType& baseFunctionSet) const
+  const LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
+                                      const BaseFunctionSetType& baseFunctionSet) const
   {
     std::cout << "DiscreteLinearFunctionalDefault::applyLocal()" << std::endl;
     CHECK_INTERFACE_IMPLEMENTATION(asImp().applyLocal(discreteFunctionSpace, entity, baseFunctionSet));
@@ -331,8 +331,8 @@ public:
 
   //! Function, that actually does something
   template <class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType>
-  LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
-                                const BaseFunctionSetType& baseFunctionSet) const
+  const LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
+                                      const BaseFunctionSetType& baseFunctionSet) const
   {
     std::cout << "TestLinearFunctional::applyLocal()" << std::endl;
 

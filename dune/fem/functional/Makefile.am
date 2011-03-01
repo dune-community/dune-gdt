@@ -1,4 +1,4 @@
-l2functionalincludedir = $(includedir)/dune/fem/functional
-l2functionalinclude_HEADERS = l2functional.hh
+ltwofunctionalincludedir = $(includedir)/dune/fem/functional
+ltwofunctionalinclude_HEADERS = ltwofunctional.hh
 
 include $(top_srcdir)/am/global-rules

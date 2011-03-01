@@ -3,11 +3,11 @@ GRIDDIM=2
 GRIDTYPE=YASPGRID
 POLORDER=1
 
-noinst_PROGRAMS = l2functional_test discretelinearfunctional_test
+noinst_PROGRAMS = ltwofunctional_test discretelinearfunctional_test
 
-l2functional_test_SOURCES = l2functional_test.cc
+ltwofunctional_test_SOURCES = ltwofunctional_test.cc
 
-l2functional_test_CPPFLAGS = $(AM_CPPFLAGS) \
+ltwofunctional_test_CPPFLAGS = $(AM_CPPFLAGS) \
 	$(DUNEMPICPPFLAGS) \
 	$(UG_CPPFLAGS) \
 	$(AMIRAMESH_CPPFLAGS) \
@@ -17,7 +17,7 @@ l2functional_test_CPPFLAGS = $(AM_CPPFLAGS) \
 # last).  Also, due to some misunderstanding, a lot of libraries include the
 # -L option in LDFLAGS instead of LIBS -- so we have to include the LDFLAGS
 # here as well.
-l2functional_test_LDADD = \
+ltwofunctional_test_LDADD = \
 	$(DUNE_LDFLAGS) $(DUNE_LIBS) \
 	$(ALUGRID_LDFLAGS) $(ALUGRID_LIBS) \
 	$(ALBERTA_LDFLAGS) $(ALBERTA_LIBS) \
@@ -25,7 +25,7 @@ l2functional_test_LDADD = \
 	$(UG_LDFLAGS) $(UG_LIBS) \
 	$(DUNEMPILIBS)	\
 	$(LDADD)
-l2functional_test_LDFLAGS = $(AM_LDFLAGS) \
+ltwofunctional_test_LDFLAGS = $(AM_LDFLAGS) \
 	$(DUNEMPILDFLAGS) \
 	$(UG_LDFLAGS) \
 	$(AMIRAMESH_LDFLAGS) \
