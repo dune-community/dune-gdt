@@ -21,8 +21,8 @@ public:
   /**
     * \brief    Initializes an empty vector, according to the given size.
     **/
-  LocalDoFVector( const unsigned size )
-    :size_( size )
+  LocalDoFVector( const unsigned int size )
+    : size_( size )
   {
     // resize
     storage_.resize( size, 0.0 );
@@ -34,13 +34,13 @@ public:
     **/
   template< class LocalFunctionType >
   LocalDoFVector( const LocalFunctionType& localFunction )
-    :size_( localFunction.numDofs() )
+    : size_( localFunction.numDofs() )
   {
     // resize
     storage_.resize( localFunction.numDofs() );
 
     // copy entries
-    for(  unsigned ii = 0;
+    for(  int ii = 0;
           ii < localFunction.numDofs();
           ++ii )
     {
@@ -51,7 +51,7 @@ public:
   /**
     * \brief    Returns the size.
     */
-  unsigned size() const
+  const unsigned int size() const
   {
     return size_;
   }
@@ -59,7 +59,7 @@ public:
   /**
     * \brief    Random read and write access.
     **/
-  ElementType& operator[]( const unsigned ii )
+  ElementType& operator[]( const unsigned int ii )
   {
     return storage_[ii];
   }
@@ -67,7 +67,7 @@ public:
   /**
     * \brief    Random read access.
     **/
-  const ElementType operator[]( const unsigned ii ) const
+  const ElementType operator[]( const unsigned int ii ) const
   {
     return storage_[ii];
   }
@@ -92,7 +92,7 @@ public:
 
 private:
   std::vector< ElementType > storage_;
-  const unsigned size_;
+  const unsigned int size_;
 
 }; // end class LocalDoFVector
 

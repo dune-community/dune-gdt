@@ -64,7 +64,7 @@ SET( ALUGRID_BASE_PATH
 #   "CXX_FLAGS")
 
 SET( CUSTOM_FLAGS
-	"-Wall -O0 -DDEBUG -funroll-loops -g -ggdb -fno-strict-aliasing -std=c++0x " CACHE LIST
+	"-Wall -O0 -DDEBUG -funroll-loops -g -ggdb -fno-strict-aliasing -std=c++0x -fdiagnostics-show-option " CACHE LIST
 	"CUSTOM FLAGS" )
 
 # SET( ENABLE_PARALELL
@@ -120,8 +120,8 @@ FILE( GLOB_RECURSE femfunctionals "../dune-fem-functionals/dune/fem/*.hh" )
 set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
-ADD_EXECUTABLE( l2functional_test "tests/functional/l2functional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
-TARGET_LINK_LIBRARIES( l2functional_test ${COMMON_LIBS}  )
+ADD_EXECUTABLE( ltwofunctional_test "tests/functional/ltwofunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
+TARGET_LINK_LIBRARIES( ltwofunctional_test ${COMMON_LIBS}  )
 
 ADD_EXECUTABLE( discretelinearfunctional_test "tests/functional/discretelinearfunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( discretelinearfunctional_test ${COMMON_LIBS}  )

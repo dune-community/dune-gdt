@@ -5,6 +5,9 @@
 // system includes
 #include <iostream>
 
+// disable warnings about problems in dune headers
+#include "../../../dune-fem-tools/dune/fem-tools/header/disablewarnings.hh"
+
 // dune common includes
 #include <dune/common/exceptions.hh>
 
@@ -20,6 +23,9 @@
 #include <dune/fem/function/common/function.hh>
 #include <dune/fem/space/lagrangespace.hh>
 #include <dune/fem/function/adaptivefunction.hh>
+
+// reenable warnings about problems in dune headers
+#include "../../../dune-fem-tools/dune/fem-tools/header/enablewarnings.hh"
 
 // dune fem-functionals includes
 #include <dune/fem/functional/discretelinearfunctional.hh>
@@ -57,6 +63,9 @@ class AnalyticalFunction : public Dune::Function < FunctionSpaceImp , Analytical
     }
 
 };
+
+// disable warnings about problems in dune headers (sourced by dgfparser)
+#include "../../../dune-fem-tools/dune/fem-tools/header/disablewarnings.hh"
 
 // main
 int main(int argc, char** argv)

@@ -54,3 +54,5 @@ tests/functional/l2functional_test
 tests/functional/l2functional_test-l2functional_test.o
 tests/functional/discretelinearfunctional_test
 tests/functional/discretelinearfunctional_test-discretelinearfunctional_test.o
+tests/functional/ltwofunctional_test
+tests/functional/ltwofunctional_test-ltwofunctional_test.o
