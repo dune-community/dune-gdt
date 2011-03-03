@@ -16,7 +16,7 @@ namespace Functionals
 /**
   * \brief      This class is the interface for discrete linear functionals.
   *
-  *             This class is mainly here for documentational purpose.
+  *             This class exists mainly for documentational purpose.
   *
   * \attention  This class is under construction!
   *
@@ -86,7 +86,9 @@ public:
     * \todo       Doc me, please!
     **/
   template< class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType >
-  const LocalDoFVectorType applyLocal( const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity, const BaseFunctionSetType& baseFunctionSet ) const
+  const LocalDoFVectorType applyLocal(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                                        const EntityType& entity,
+                                        const BaseFunctionSetType& baseFunctionSet ) const
   {
     std::cout << "DiscreteLinearFunctionalInterface::applyLocal()" << std::endl;
     CHECK_INTERFACE_IMPLEMENTATION( asImp().applyLocal( discreteFunctionSpace, entity, baseFunctionSet ) );
@@ -277,7 +279,9 @@ public:
     * \todo       Doc me, please!
     **/
   template< class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType >
-  const LocalDoFVectorType applyLocal( const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity, const BaseFunctionSetType& baseFunctionSet ) const
+  const LocalDoFVectorType applyLocal(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                                        const EntityType& entity,
+                                        const BaseFunctionSetType& baseFunctionSet ) const
   {
     std::cout << "DiscreteLinearFunctionalDefault::applyLocal()" << std::endl;
     CHECK_INTERFACE_IMPLEMENTATION( asImp().applyLocal( discreteFunctionSpace, entity, baseFunctionSet ) );
@@ -365,7 +369,7 @@ public:
     std::cout << "TestLinearFunctional::TestLinearFunctional()" << std::endl;
   }
 
-  //! Denstructor
+  //! Destructor
   ~TestLinearFunctional()
   {
     std::cout << "TestLinearFunctional::~TestLinearFunctional()" << std::endl;
@@ -373,11 +377,13 @@ public:
 
   //! Function, that actually does something
   template< class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType >
-  const LocalDoFVectorType applyLocal( const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity, const BaseFunctionSetType& baseFunctionSet ) const
+  const LocalDoFVectorType applyLocal(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                                        const EntityType& entity,
+                                        const BaseFunctionSetType& baseFunctionSet ) const
   {
     std::cout << "TestLinearFunctional::applyLocal()" << std::endl;
 
-    const unsigned size = baseFunctionSet.numBaseFunctions();
+    const unsigned int size = baseFunctionSet.numBaseFunctions();
 
     LocalDoFVectorType ret( size );
 
