@@ -14,7 +14,7 @@ namespace Functionals {
 /**
   * \brief      This class is the interface for discrete linear functionals.
   *
-  *             This class is mainly here for documentational purpose.
+  *             This class exists mainly for documentational purpose.
   *
   * \attention  This class is under construction!
   *
@@ -323,7 +323,7 @@ public:
     std::cout << "TestLinearFunctional::TestLinearFunctional()" << std::endl;
   }
 
-  //! Denstructor
+  //! Destructor
   ~TestLinearFunctional()
   {
     std::cout << "TestLinearFunctional::~TestLinearFunctional()" << std::endl;
@@ -336,7 +336,7 @@ public:
   {
     std::cout << "TestLinearFunctional::applyLocal()" << std::endl;
 
-    const unsigned size = baseFunctionSet.numBaseFunctions();
+    const unsigned int size = baseFunctionSet.numBaseFunctions();
 
     LocalDoFVectorType ret(size);
 

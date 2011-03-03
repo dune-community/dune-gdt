@@ -44,7 +44,7 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionType>
-  RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
+  const RangeFieldType operator()(const DiscreteFunctionType& discreteFunction) const
   {
     RangeFieldType ret = 0.0;
 
@@ -91,8 +91,8 @@ public:
     * \todo       Doc me, please!
     **/
   template <class DiscreteFunctionSpaceType, class EntityType, class BaseFunctionSetType>
-  LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
-                                const BaseFunctionSetType& baseFunctionSet) const
+  const LocalDoFVectorType applyLocal(const DiscreteFunctionSpaceType& discreteFunctionSpace, const EntityType& entity,
+                                      const BaseFunctionSetType& baseFunctionSet) const
   {
     // some types we will need
     typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
