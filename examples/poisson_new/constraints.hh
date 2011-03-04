@@ -216,47 +216,6 @@ private:
 template <class FunctionalType>
 class DirichletBoundaryConstraints : public ConstraintsDefault<FunctionalType>
 {
-public:
-  std::size_t size()
-  {
-    // do a grid walk and count boundary faces
-    return 1;
-  }
-
-  // In general we are not really keen on using this method here:
-  // TODO Do your own implementation here without using the [] operator
-  void apply(DiscreteFunctionType& u_h)
-  {
-    // TODO remove it
-    for (int i = 0; i < size(); i++)
-      (*this)[i].getFunctional().apply(u_h);
-  }
-
-
-  // In general we are not really keen on using this method here:
-  // TODO Do your own implementation here without using the [] operator
-  void applyLocal(EntityType& en, BaseFunctionSetType& bf)
-  {
-    // TODO remove it
-    for (int i = 0; i < size(); i++)
-      (*this)[i].getFunctional().applyLocal(bf);
-  }
-
-
-  // In general we are not really keen on using this method here
-  SingleConstraintType operator[](unsigned int i)
-  {
-    // Do a grid walk here and take the i-th boundary faces
-    // return a single constraint
-
-    // create the right Functional deleting the correct dof
-    FunctionalType functional;
-    int dummyline = 1;
-    SingleConstraint constraint(functional, dummyline);
-    return constraint;
-  }
-
-private:
 };
 
 
@@ -332,7 +291,7 @@ public:
   void apply(DiscreteFunctionType& u_h)
   {
     for (int i = 0; i < size(); i++)
-      constraints_[i].getFunctional().apply(u_h);
+      constraints_[i].apply(u_h);
   }
 
   /*
@@ -354,7 +313,7 @@ public:
   void applyLocal(EntityType& en, BaseFunctionSetType& bf)
   {
     for (int i = 0; i < size(); i++)
-      constraints_[i].getFunctional().applyLocal(bf);
+      constraints_[i].applyLocal(bf);
   }
 
 
@@ -396,7 +355,7 @@ public:
    */
   SingleConstraintType operator[](unsigned int i)
   {
-    return constraints_[i];
+    return constraints_[i].getFunctional();
   }
 
 private:

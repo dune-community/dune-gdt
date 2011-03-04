@@ -89,8 +89,6 @@
 
 #include <dune/fem/misc/femeoc.hh>
 
-#include <dune/grid/common/gridenums.hh>
-
 // Local Includes
 // --------------
 
@@ -100,227 +98,9 @@
 #include "dirichletconstraints.hh"
 #include "neumannconstraints.hh"
 
-// new constraints implementation
-//#include "constraints.hh"
-
 
 // Algorithm
 // ---------
-template <class DiscreteFunctionSpaceImp, class ConstraintsImp>
-class LinearSubspace : public DiscreteFunctionSpaceImp
-{
-public:
-  typedef ConstraintsImp ConstraintsType;
-  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
-
-private:
-  typedef DiscreteFunctionSpaceType BaseType;
-
-public:
-  typedef typename DiscreteFunctionSpaceType::Traits Traits;
-  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-  typedef typename DiscreteFunctionSpaceType::GridType GridType;
-  typedef typename DiscreteFunctionSpaceType::IndexSetType IndexSetType;
-  typedef typename DiscreteFunctionSpaceType::IteratorType IteratorType;
-  typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
-  typedef typename DiscreteFunctionSpaceType::DofManagerType DofManagerType;
-  typedef typename DiscreteFunctionSpaceType::CommunicationManagerType CommunicationManagerType;
-  typedef typename DiscreteFunctionSpaceType::MapperType MapperType;
-  typedef typename DiscreteFunctionSpaceType::BlockMapperType BlockMapperType;
-  enum
-  {
-    localBlockSize = DiscreteFunctionSpaceType::localBlockSize
-  };
-  // enum {polynomialOrder = DiscreteFunctionType::polynomialOrder};
-
-  //! constructor
-  LinearSubspace(DiscreteFunctionSpaceType& space, const ConstraintsType& constraints,
-                 const Dune::InterfaceType commInterface          = Dune::InteriorBorder_All_Interface,
-                 const Dune::CommunicationDirection commDirection = Dune::ForwardCommunication)
-    : BaseType(space.gridPart(), commInterface, commDirection)
-    , constraints_(constraints)
-  {
-  }
-
-  //! get constraints
-  const ConstraintsType getConstraints() const
-  {
-    return constraints_;
-  }
-
-private:
-  const ConstraintsType& constraints_;
-};
-
-template <class LinearSubspaceImp, class DiscreteFunctionImp>
-class AffineSubspace : public DiscreteFunctionImp::DiscreteFunctionSpaceType
-{
-public:
-  typedef DiscreteFunctionImp DiscreteFunctionType;
-  typedef typename DiscreteFunctionType::LocalFunctionType LocalFunctionType;
-  typedef LinearSubspaceImp LinearSubspaceType;
-  typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
-  typedef typename LinearSubspaceType::ConstraintsType ConstraintsType;
-
-private:
-  typedef typename DiscreteFunctionImp::DiscreteFunctionSpaceType BaseType;
-
-public:
-  typedef typename DiscreteFunctionSpaceType::Traits Traits;
-  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-  typedef typename DiscreteFunctionSpaceType::GridType GridType;
-  typedef typename DiscreteFunctionSpaceType::IndexSetType IndexSetType;
-  typedef typename DiscreteFunctionSpaceType::IteratorType IteratorType;
-  typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
-  typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
-  typedef typename DiscreteFunctionSpaceType::DofManagerType DofManagerType;
-  typedef typename DiscreteFunctionSpaceType::CommunicationManagerType CommunicationManagerType;
-  typedef typename DiscreteFunctionSpaceType::MapperType MapperType;
-  typedef typename DiscreteFunctionSpaceType::BlockMapperType BlockMapperType;
-
-private:
-  typedef typename DiscreteFunctionSpaceType::DomainType DomainType;
-  typedef typename DiscreteFunctionSpaceType::RangeType RangeType;
-  typedef typename DiscreteFunctionSpaceType::DomainFieldType DomainFieldType;
-  typedef typename DiscreteFunctionSpaceType::RangeFieldType RangeFieldType;
-
-public:
-  enum
-  {
-    localBlockSize = DiscreteFunctionSpaceType::localBlockSize
-  };
-
-
-  //! constructor
-  AffineSubspace(GridPartType& gridPart, const DiscreteFunctionType df,
-                 const Dune::InterfaceType commInterface          = Dune::InteriorBorder_All_Interface,
-                 const Dune::CommunicationDirection commDirection = Dune::ForwardCommunication)
-    : BaseType(gridPart, commInterface, commDirection)
-    , df_(&df)
-  {
-  }
-
-  //! constructor
-  AffineSubspace(LinearSubspaceType& space, const DiscreteFunctionType df,
-                 const Dune::InterfaceType commInterface          = Dune::InteriorBorder_All_Interface,
-                 const Dune::CommunicationDirection commDirection = Dune::ForwardCommunication)
-    : BaseType(space.gridPart(), commInterface, commDirection)
-    , space_(space)
-    , df_(&df)
-  {
-  }
-
-  //! constructor
-  AffineSubspace(LinearSubspaceType& space,
-                 const Dune::InterfaceType commInterface          = Dune::InteriorBorder_All_Interface,
-                 const Dune::CommunicationDirection commDirection = Dune::ForwardCommunication)
-    : BaseType(space.gridPart(), commInterface, commDirection)
-    , space_(space)
-    , df_(NULL)
-  {
-  }
-
-private:
-  // TODO: Beim Anlegen einer "AffineSubspaceDiscreteFunction" soll automatisch die
-  // folgende Methode ausgefuehrt werden, so dass die richtigen Randwerte angenommen werden.
-
-  template <class ProblemType>
-  void trivialProjectionOnAffineSpace(DiscreteFunctionType& discreteFunction, const ProblemType& problem)
-  {
-    // TODO Implementation vervollstaendigen.
-    ConstraintsType constraints = space_.getConstraints();
-
-    const DiscreteFunctionSpaceType& dfSpace = discreteFunction.space();
-    const GridPartType& gridPart             = dfSpace.gridPart();
-
-    // TODO Lagrange-Spezialisierung ändern:
-    typedef typename DiscreteFunctionSpaceType::LagrangePointSetType LagrangePointSetType;
-    const int faceCodim = 1;
-    typedef typename LagrangePointSetType::template Codim<faceCodim>::SubEntityIteratorType FaceDofIteratorType;
-    typedef typename EntityType::Geometry Geometry;
-    typedef typename IntersectionIteratorType::Intersection IntersectionType;
-
-
-    bool hasDirichletBoundary = false;
-    const IteratorType end = space_.end();
-    for (IteratorType it = space_.begin(); it != end; ++it) {
-      const EntityType& entity = *it;
-      // if entity has boundary intersections
-      if (entity.hasBoundaryIntersections()) {
-
-        // get local functions of data
-        LocalFunctionType discreteFunctionLocal = discreteFunction.localFunction(entity);
-
-        const Geometry& geo = entity.geometry();
-
-        const LagrangePointSetType& lagrangePointSet = dfSpace.lagrangePointSet(entity);
-
-        IntersectionIteratorType it          = gridPart.ibegin(entity);
-        const IntersectionIteratorType endit = gridPart.iend(entity);
-        for (; it != endit; ++it) {
-          const IntersectionType& intersection = *it;
-
-          // if intersection is with boundary, adjust data
-          if (intersection.boundary()) {
-            hasDirichletBoundary = true;
-
-            // get face number of boundary intersection
-            const int face = intersection.indexInInside();
-            // get dof iterators
-            FaceDofIteratorType faceIt          = lagrangePointSet.template beginSubEntity<faceCodim>(face);
-            const FaceDofIteratorType faceEndIt = lagrangePointSet.template endSubEntity<faceCodim>(face);
-            for (; faceIt != faceEndIt; ++faceIt) {
-              // get local dof number
-              const int localDof = *faceIt;
-
-              // get global coordinate of point on boundary
-              const DomainType global = geo.global(lagrangePointSet.point(localDof));
-
-              // check whether Dirichlet boundary or not
-              // (remark: all boundary nodes are supposed to be Dirichlet boundary faces at the moment)
-              // if( ! constraints.problem.dirichletBoundary(intersection.boundaryId(), global ) )
-              // {
-              //   continue;
-              // }
-
-              //! TODO: phi ersetzen durch df_ und problem entfernen
-
-              // evaluate boundary data
-              RangeType phi;
-              problem.g(global, phi);
-
-              //! const RangeFieldType xsqr = global*global;
-              //! phi = exp( -10.0 * xsqr );
-
-              // adjust right hand side and solution data
-              discreteFunctionLocal[localDof] = phi[0];
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-public:
-  template <class ProblemType>
-  void modifyRHS(DiscreteFunctionType& rhs, const ProblemType& problem)
-  {
-    trivialProjectionOnAffineSpace(rhs, problem);
-  }
-
-  DiscreteFunctionType& getAffinePart() const
-  {
-    return *df_;
-  }
-
-private:
-  LinearSubspaceType& space_;
-  DiscreteFunctionType* df_;
-};
-
 
 template <class GridImp, int polynomialOrder,
           class GridPartImp = Dune::AdaptiveLeafGridPart<GridImp, Dune::InteriorBorder_Partition>>
@@ -359,18 +139,6 @@ public: /*@LST0E@*/
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polynomialOrder, Dune::CachingStorage>
       DiscreteSpaceType;
 
-  //---- Functional ---------------------------------------------------
-  //! define the functionals you want to use
-  // typedef Dune::LinearCodimZeroFunctional<FunctionSpaceType, DiscreteSpaceType>
-  //                                                              LinearFunctionalType;
-
-
-  //----- Constraints ----------------------------------------------------------
-  //! define the Constraints you want to use, i.e. Dirichlet constraints
-  // typedef VectorConstraints<LinearFunctionalType>               ConstraintsType;
-  typedef Dune::DirichletConstraints<DiscreteSpaceType> DirichletConstraintsType;
-
-
   //---- DiscreteFunction ----------------------------------------------------
   //---- good choice for adaptive simulations using OEM solver ---------------
   //! define the type of discrete function we are using
@@ -379,12 +147,6 @@ public: /*@LST0E@*/
   // typedef Dune::BlockVectorDiscreteFunction< DiscreteSpaceType > DiscreteFunctionType;
   // typedef Dune::ManagedDiscreteFunction< VectorDiscreteFunction< DiscreteSpaceType, DynamicVector< double > > >
   // DiscreteFunctionType;
-
-
-  //----- Subspaces -------------------------------------------------------------------
-  typedef LinearSubspace<DiscreteSpaceType, DirichletConstraintsType> LinearSubspaceType;
-  typedef AffineSubspace<LinearSubspaceType, DiscreteFunctionType> AffineSubspaceType;
-
 
   //---- MatrixObjects -------------------------------------------------------
   //---- good choice for build in solvers ------------------------------------
@@ -396,21 +158,19 @@ public: /*@LST0E@*/
   // typedef Dune::OnTheFlyMatrixTraits < DiscreteSpaceType, DiscreteSpaceType > MatrixObjectTraits;
 
   //! define the discrete laplace operator, see ./laplaceoperator.hh
-  typedef Dune::DifferentialOperator<LinearSubspaceType, AffineSubspaceType, MatrixObjectTraits>
-      DifferentialOperatorType;
-
+  typedef Dune::LaplaceOperator<DiscreteFunctionType, MatrixObjectTraits> LaplaceOperatorType;
 
   //---- InverseOperator ----------------------------------------------------
   //---- good choice for build in CG solver ---------------------------------
   //! define the inverse operator we are using to solve the system
-  typedef Dune::CGInverseOp<DiscreteFunctionType, DifferentialOperatorType> InverseOperatorType;
+  typedef Dune::CGInverseOp<DiscreteFunctionType, LaplaceOperatorType> InverseOperatorType;
   //---- other choices ------------------------------------------------------
-  // typedef Dune::ISTLBICGSTABOp< DiscreteFunctionType, DifferentialOperatorType >
-  // typedef Dune::ISTLCGOp< DiscreteFunctionType, DifferentialOperatorType >
-  // typedef Dune::OEMCGOp<DiscreteFunctionType,DifferentialOperatorType>
-  // typedef Dune::OEMBICGSTABOp<DiscreteFunctionType,DifferentialOperatorType>
-  // typedef Dune::OEMBICGSQOp<DiscreteFunctionType,DifferentialOperatorType>
-  // typedef Dune::OEMGMRESOp<DiscreteFunctionType,DifferentialOperatorType>
+  // typedef Dune::ISTLBICGSTABOp< DiscreteFunctionType, LaplaceOperatorType >
+  // typedef Dune::ISTLCGOp< DiscreteFunctionType, LaplaceOperatorType >
+  // typedef Dune::OEMCGOp<DiscreteFunctionType,LaplaceOperatorType>
+  // typedef Dune::OEMBICGSTABOp<DiscreteFunctionType,LaplaceOperatorType>
+  // typedef Dune::OEMBICGSQOp<DiscreteFunctionType,LaplaceOperatorType>
+  // typedef Dune::OEMGMRESOp<DiscreteFunctionType,LaplaceOperatorType>
   //    InverseOperatorType;
 
 public:
@@ -420,9 +180,6 @@ public:
     , gridPart_(grid_)
     , space_(gridPart_)
     , problem_(problem)
-    , constraints_(space_)
-    , linSubspace_(space_, constraints_)
-    , affSubspace_(linSubspace_)
   {
     // add entries to eoc calculation
     std::vector<std::string> femEocHeaders;
@@ -435,7 +192,7 @@ public:
 
     // distribute grid (only for parallel runs, in serial runs nothing is done here)
     grid.loadBalance();
-  }
+  } /*@LST0S@*/
 
   //! setup and solve the linear system
   void operator()(DiscreteFunctionType& solution)
@@ -450,18 +207,20 @@ public:
 
     // initialize solution with zero                                 /*@LST0S@*/
     solution.clear();
-    /*@\label{poi:rhsInit1}@*/
 
     // create laplace assembler (is assembled on call of systemMatrix by solver)
-    DifferentialOperatorType laplace(linSubspace_, affSubspace_, problem_); /*@\label{poi:laplaceDef}@*/
+    LaplaceOperatorType laplace(space_, problem_); /*@\label{poi:laplaceDef}@*/
 
     // functional describing the right hand side
     typedef Dune::IntegralFunctional<ProblemType, DiscreteFunctionType> FunctionalType;
-    FunctionalType rhsFunctional(problem_, space_);
+    FunctionalType rhsFunctional(problem_);
 
+    Dune::DirichletConstraints<DiscreteSpaceType, ProblemType> constraints(space_, problem_); /*@\label{poi:rhsInit1}@*/
+
+    Dune::NeumannConstraints<DiscreteSpaceType, ProblemType> neumann(space_, problem_);
 
     // solve the linear system  @\ref{
-    solve(laplace, rhsFunctional, solution); /*@\label{poi:solve}@*/
+    solve(laplace, rhsFunctional, solution, constraints, neumann); /*@\label{poi:solve}@*/
   }
 
   //! finalize computation by calculating errors and EOCs
@@ -500,19 +259,22 @@ public:
 
 private: /*@LST0S@*/
   //! solve the resulting linear system
-  template <class FunctionalType>
-  void solve(DifferentialOperatorType& laplace, const FunctionalType& functional, DiscreteFunctionType& solution)
+  template <class FunctionalType, class Constraints, class Neumann>
+  void solve(LaplaceOperatorType& laplace, const FunctionalType& functional, DiscreteFunctionType& solution,
+             const Constraints& constraints, const Neumann& neumann)
   { /*@LST0E@*/
     // create storage for rhs (this could be any vector type)
     DiscreteFunctionType rhs("rhs", space_);
-    rhs.clear();
-    // assemble right hand side functional vector
-    functional.algebraic(rhs);
-    affSubspace_.modifyRHS(rhs, problem_);
 
-    // TODO das hier muss geändert werden (solution aus AffineDiscreteSubspace hat damit automatisch die richtigen
-    // Randwerte)
-    affSubspace_.modifyRHS(solution, problem_);
+    // assemble right hand side functional into vector
+    Dune::AssembledFunctional<FunctionalType> rhsFunctional(space_, functional);
+    rhsFunctional.assemble(rhs);
+
+    // apply constraints (here Dirichlet boundary)
+    bool hasDirichletBoundary = constraints.apply(laplace.systemMatrix(), rhs, solution);
+
+    if (!hasDirichletBoundary)
+      neumann.apply(laplace.systemMatrix(), rhs, solution);
 
     // create timer (also stops time)
     Dune::Timer timer;
@@ -544,9 +306,6 @@ protected:
   GridPartType gridPart_; // reference to grid part, i.e. the leaf grid
   DiscreteSpaceType space_; // the discrete function space
   const ProblemType& problem_; // the problem data
-  const DirichletConstraintsType constraints_;
-  LinearSubspaceType linSubspace_;
-  AffineSubspaceType affSubspace_;
   int eocId_; // id for FemEOC
 }; /*@LST0E@*/
 

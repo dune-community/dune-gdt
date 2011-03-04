@@ -5,8 +5,8 @@
 
 namespace Dune {
 
-// TODO template parameters should be replaced by FunctionalType
-template <class DiscreteFunctionSpace>
+
+template <class DiscreteFunctionSpace, class ProblemType>
 class DirichletConstraints
 {
 
@@ -25,29 +25,31 @@ public:
   typedef typename SlaveDofsType::SingletonKey SlaveDofsKeyType; /*@\label{poi:singleton}@*/
   typedef SingletonList<SlaveDofsKeyType, SlaveDofsType> SlaveDofsProviderType;
 
-  // TODO change constructor, remove problem
-  DirichletConstraints(const DiscreteFunctionSpaceType& space)
+  DirichletConstraints(const DiscreteFunctionSpaceType& space, const ProblemType& problem)
     : space_(space)
+    , problem_(problem)
     , slaveDofs_(getSlaveDofs(space_))
   {
   }
 
-  template <class LinearOperator>
-  void applyToOperator(LinearOperator& linearOperator) const
+  template <class LinearOperator, class DiscreteFunctionType>
+  bool apply(LinearOperator& linearOperator, DiscreteFunctionType& rhs, DiscreteFunctionType& solution) const
   {
     typedef typename DiscreteFunctionSpaceType::IteratorType IteratorType;
     typedef typename IteratorType::Entity EntityType;
 
+    bool hasDirichletBoundary = false;
     const IteratorType end = space_.end();
     for (IteratorType it = space_.begin(); it != end; ++it) {
       const EntityType& entity = *it;
       // if entity has boundary intersections
       if (entity.hasBoundaryIntersections()) {
-        applyToOperatorLocal(linearOperator, entity);
+        boundaryCorrectOnEntity(linearOperator, entity);
+        hasDirichletBoundary |= boundaryTreatment(entity, problem_, rhs, solution);
       }
     }
+    return hasDirichletBoundary;
   }
-
 
   /*! treatment of Dirichlet-DoFs for one entity
    *
@@ -58,7 +60,7 @@ public:
    *   \param[in]  entity  entity to perform Dirichlet treatment on
    */
   template <class LinearOperator, class EntityType> /*@LST0S@*/
-  void applyToOperatorLocal(LinearOperator& linearOperator, const EntityType& entity) const
+  void boundaryCorrectOnEntity(LinearOperator& linearOperator, const EntityType& entity) const
   { /*@LST0E@*/
     typedef typename DiscreteFunctionSpaceType::LagrangePointSetType LagrangePointSetType;
 
@@ -123,99 +125,82 @@ public:
 
 
 public:
-#if 0
   //! set the dirichlet points to exact values
-  template< class EntityType, class DiscreteFunctionType >
-  bool boundaryTreatment( const EntityType &entity,
-                          const ProblemType& problem,  
-                          DiscreteFunctionType &rhs,
-                          DiscreteFunctionType &solution ) const 
-  {                                                                 /*@LST0E@*/
-    typedef typename DiscreteFunctionType :: DiscreteFunctionSpaceType
-      DiscreteSpaceType;
-    typedef typename DiscreteFunctionType :: LocalFunctionType LocalFunctionType;
+  template <class EntityType, class DiscreteFunctionType>
+  bool boundaryTreatment(const EntityType& entity, const ProblemType& problem, DiscreteFunctionType& rhs,
+                         DiscreteFunctionType& solution) const
+  { /*@LST0E@*/
+    typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteSpaceType;
+    typedef typename DiscreteFunctionType::LocalFunctionType LocalFunctionType;
 
-    typedef typename DiscreteSpaceType :: LagrangePointSetType
-      LagrangePointSetType;
-    typedef typename DiscreteSpaceType :: GridPartType GridPartType;
+    typedef typename DiscreteSpaceType::LagrangePointSetType LagrangePointSetType;
+    typedef typename DiscreteSpaceType::GridPartType GridPartType;
 
     const int faceCodim = 1;
-    typedef typename GridPartType :: IntersectionIteratorType
-      IntersectionIteratorType;
-    typedef typename LagrangePointSetType
-      :: template Codim< faceCodim > :: SubEntityIteratorType
-      FaceDofIteratorType;
+    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
+    typedef typename LagrangePointSetType::template Codim<faceCodim>::SubEntityIteratorType FaceDofIteratorType;
 
-    const DiscreteSpaceType &dfSpace = rhs.space();
-    const GridPartType &gridPart = dfSpace.gridPart();
+    const DiscreteSpaceType& dfSpace = rhs.space();
+    const GridPartType& gridPart     = dfSpace.gridPart();
 
-    // get local functions of data 
-    LocalFunctionType rhsLocal = rhs.localFunction( entity );
-    LocalFunctionType solutionLocal = solution.localFunction( entity );
+    // get local functions of data
+    LocalFunctionType rhsLocal      = rhs.localFunction(entity);
+    LocalFunctionType solutionLocal = solution.localFunction(entity);
 
     bool hasDirichletBoundary = false;
 
-    typedef typename EntityType :: Geometry Geometry; 
+    typedef typename EntityType::Geometry Geometry;
     const Geometry& geo = entity.geometry();
 
-    const LagrangePointSetType &lagrangePointSet = dfSpace.lagrangePointSet( entity );
+    const LagrangePointSetType& lagrangePointSet = dfSpace.lagrangePointSet(entity);
 
-    IntersectionIteratorType it = gridPart.ibegin( entity );
-    const IntersectionIteratorType endit = gridPart.iend( entity );
-    for( ; it != endit; ++it )
-    {
-      typedef typename IntersectionIteratorType :: Intersection IntersectionType;
+    IntersectionIteratorType it          = gridPart.ibegin(entity);
+    const IntersectionIteratorType endit = gridPart.iend(entity);
+    for (; it != endit; ++it) {
+      typedef typename IntersectionIteratorType::Intersection IntersectionType;
       const IntersectionType& intersection = *it;
 
-      // if intersection is with boundary, adjust data  
-      if( intersection.boundary() )
-      {
+      // if intersection is with boundary, adjust data
+      if (intersection.boundary()) {
         hasDirichletBoundary = true;
 
-        // get face number of boundary intersection 
+        // get face number of boundary intersection
         const int face = intersection.indexInInside();
-        // get dof iterators 
-        FaceDofIteratorType faceIt
-          = lagrangePointSet.template beginSubEntity< faceCodim >( face );
-        const FaceDofIteratorType faceEndIt
-          = lagrangePointSet.template endSubEntity< faceCodim >( face );
-        for( ; faceIt != faceEndIt; ++faceIt )
-        {
-          // get local dof number 
+        // get dof iterators
+        FaceDofIteratorType faceIt          = lagrangePointSet.template beginSubEntity<faceCodim>(face);
+        const FaceDofIteratorType faceEndIt = lagrangePointSet.template endSubEntity<faceCodim>(face);
+        for (; faceIt != faceEndIt; ++faceIt) {
+          // get local dof number
           const int localDof = *faceIt;
 
-          typedef typename DiscreteFunctionSpaceType :: DomainType DomainType;
-          // get global coordinate of point on boundary 
-          const DomainType global = geo.global( lagrangePointSet.point( localDof ) );
+          typedef typename DiscreteFunctionSpaceType::DomainType DomainType;
+          // get global coordinate of point on boundary
+          const DomainType global = geo.global(lagrangePointSet.point(localDof));
 
-          // check whether Dirichlet boundary or not 
-          if( ! problem.dirichletBoundary(intersection.boundaryId(), global ) )
-          {
+          // check whether Dirichlet boundary or not
+          if (!problem.dirichletBoundary(intersection.boundaryId(), global)) {
             continue;
           }
 
           // evaluate boundary data
-          typedef typename DiscreteFunctionSpaceType :: RangeType RangeType;
+          typedef typename DiscreteFunctionSpaceType::RangeType RangeType;
           RangeType phi;
-          problem.g( global, phi );
+          problem.g(global, phi);
 
-          // adjust right hand side and solution data 
-          rhsLocal[ localDof ] = phi[ 0 ];
-          solutionLocal[ localDof ] = phi[ 0 ];
+          // adjust right hand side and solution data
+          rhsLocal[localDof]      = phi[0];
+          solutionLocal[localDof] = phi[0];
         }
       }
     }
 
     return hasDirichletBoundary;
-  }                                                                 /*@LST0S@*/
-
-#endif
-
+  } /*@LST0S@*/
 
 protected:
   //! pointer to slave dofs
   const DiscreteFunctionSpaceType& space_;
-
+  const ProblemType& problem_;
   SlaveDofsType* const slaveDofs_;
 
   // return slave dofs                          /*@\label{poi:slavedof0}@*/
