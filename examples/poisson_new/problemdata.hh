@@ -100,7 +100,8 @@ struct CosProduct
   //! the gradient of the exact solution
   void jacobian(const DomainType& x, JacobianRangeType& grad) const
   {
-    array<RangeFieldType, dimDomain> costbl, sintbl;
+    array<RangeFieldType, dimDomain> costbl;
+    array<RangeFieldType, dimDomain> sintbl;
     for (int i = 0; i < dimDomain; ++i) {
       costbl[i] = cos(2. * M_PI * x[i]);
       sintbl[i] = sin(2. * M_PI * x[i]);
@@ -115,7 +116,8 @@ struct CosProduct
 
   void hessian(const DomainType& x, HessianRangeType& hessian) const
   {
-    array<RangeFieldType, dimDomain> costbl, sintbl;
+    array<RangeFieldType, dimDomain> costbl;
+    array<RangeFieldType, dimDomain> sintbl;
     for (int i = 0; i < dimDomain; ++i) {
       costbl[i] = cos(2. * M_PI * x[i]);
       sintbl[i] = sin(2. * M_PI * x[i]);
@@ -247,13 +249,13 @@ struct CornerSolution
     const double fac = 2.0 / 3.0;
 
     const double phi
-      = (x[ 1 ] >= 0 ? acos( x[ 0 ] / r ) : acos( -x[ 0 ] / r ) + M_PI);
+      = (x[1] >= 0 ? acos( x[0] / r ) : acos( -x[0] / r ) + M_PI);
 
     array< RangeFieldType, dimDomain > costbl, sintbl;
     for( int i = 0; i < dimDomain; ++i )
     {
-      costbl[ i ] = cos( 2.0 * M_PI * x[ i ] );
-      sintbl[ i ] = sin( 2.0 * M_PI * x[ i ] );
+      costbl[i] = cos( 2.0 * M_PI * x[i] );
+      sintbl[i] = sin( 2.0 * M_PI * x[i] );
     }
     */
 
