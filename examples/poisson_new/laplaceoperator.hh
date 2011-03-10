@@ -12,125 +12,154 @@
 #include <dune/fem/operator/2order/lagrangematrixsetup.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
+
 #include <dune/fem-howto/probleminterfaces.hh>
 
 namespace Dune
 {
 
-  //! \brief The Laplace operator
-  template< class DiscreteFunction, class MatrixTraits >             /*@LST0S@*/
-  class LaplaceOperator
-  : public Operator< typename DiscreteFunction::RangeFieldType,
-                     typename DiscreteFunction::RangeFieldType,
-                     DiscreteFunction,
-                     DiscreteFunction >,
+  //! \brief The operator
+  template< class LinearSubspaceImp, class AffineSubspaceImp, class MatrixTraits >             /*@LST0S@*/
+  class DifferentialOperator
+    : public Operator< typename AffineSubspaceImp::DiscreteFunctionAffinePartType::RangeFieldType,
+                       typename AffineSubspaceImp::DiscreteFunctionAffinePartType::RangeFieldType,
+                       typename AffineSubspaceImp::DiscreteFunctionAffinePartType,
+                       typename AffineSubspaceImp::DiscreteFunctionAffinePartType >,
     public OEMSolver::PreconditionInterface                         /*@\label{poi:precif}@*/
   {                                                                 /*@LST0E@*/
-    typedef LaplaceOperator< DiscreteFunction, MatrixTraits > ThisType;
-    typedef Operator< typename DiscreteFunction::RangeFieldType, typename DiscreteFunction::RangeFieldType,
-                      DiscreteFunction, DiscreteFunction > BaseType;
 
-    // needs to be friend for conversion check 
-    friend class Conversion<ThisType,OEMSolver::PreconditionInterface>;
-    
+    typedef LinearSubspaceImp
+      LinearSubspaceType;
+    typedef AffineSubspaceImp
+      AffineSubspaceType;
+
+    typedef DifferentialOperator< LinearSubspaceType, AffineSubspaceType, MatrixTraits >
+      ThisType;
+
+    typedef typename AffineSubspaceType::DiscreteFunctionAffinePartType
+      DiscreteFunctionType;
+
+    typedef Operator< typename DiscreteFunctionType::RangeFieldType, 
+                      typename DiscreteFunctionType::RangeFieldType,
+                      DiscreteFunctionType, 
+                      DiscreteFunctionType >
+      BaseType;
+
+    // needs to be friend for conversion check
+    friend class Conversion< ThisType,OEMSolver::PreconditionInterface >;
+
   public:
-    //! type of discrete functions
-    typedef DiscreteFunction DiscreteFunctionType;
 
     //! type of discrete function space
-    typedef typename DiscreteFunctionType :: DiscreteFunctionSpaceType
+    typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType
       DiscreteFunctionSpaceType;
 
-    //! type of problem 
-    typedef ProblemInterface< typename DiscreteFunctionSpaceType :: FunctionSpaceType > 
-        ProblemType; 
+    //! type of problem
+    typedef ProblemInterface< typename DiscreteFunctionSpaceType::FunctionSpaceType >
+      ProblemType;
 
     //! field type of range
-    typedef typename DiscreteFunctionSpaceType :: RangeFieldType
+    typedef typename DiscreteFunctionSpaceType::RangeFieldType
       RangeFieldType;
-       
+
   protected:
     //! type of jacobian
-    typedef typename DiscreteFunctionSpaceType :: JacobianRangeType
+    typedef typename DiscreteFunctionSpaceType::JacobianRangeType
       JacobianRangeType;
     //! type of the base function set
-    typedef typename DiscreteFunctionSpaceType :: BaseFunctionSetType
+    typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
       BaseFunctionSetType;
 
   public:
     //! type of grid partition
-    typedef typename DiscreteFunctionSpaceType :: GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::GridPartType
+      GridPartType;
     //! type of grid
-    typedef typename DiscreteFunctionSpaceType :: GridType GridType;
+    typedef typename DiscreteFunctionSpaceType::GridType
+      GridType;
 
     //! polynomial order of base functions
-    enum { polynomialOrder = DiscreteFunctionSpaceType :: polynomialOrder };
+    enum { polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder };
 
     //! The grid's dimension
-    enum { dimension = GridType :: dimension };
-        
-    //! type of quadrature to be used
-    typedef CachingQuadrature< GridPartType, 0 > QuadratureType;
+    enum { dimension = GridType::dimension };
 
-    typedef typename MatrixTraits
-      :: template  MatrixObject< LagrangeMatrixTraits< MatrixTraits > >
-      :: MatrixObjectType LinearOperatorType;
+    //! type of quadrature to be used
+    typedef CachingQuadrature< GridPartType, 0 >
+      QuadratureType;
+
+    typedef typename MatrixTraits::template MatrixObject< LagrangeMatrixTraits< MatrixTraits> >::MatrixObjectType
+      LinearOperatorType;
 
     //! get important types from the MatrixObject 
-    typedef typename LinearOperatorType :: LocalMatrixType LocalMatrixType;
-    typedef typename LinearOperatorType :: PreconditionMatrixType PreconditionMatrixType;
-    typedef typename LinearOperatorType :: MatrixType MatrixType;
+    typedef typename LinearOperatorType::LocalMatrixType
+      LocalMatrixType;
+    typedef typename LinearOperatorType::PreconditionMatrixType
+      PreconditionMatrixType;
+    typedef typename LinearOperatorType::MatrixType
+      MatrixType;
 
   protected:
     // type of DofManager
-    typedef DofManager< GridType > DofManagerType;
-   
+    typedef DofManager< GridType >
+      DofManagerType;
+
   public:
-    //! constructor 
-    LaplaceOperator ( const DiscreteFunctionSpaceType &dfSpace, const ProblemType &problem )
-    : discreteFunctionSpace_( dfSpace ),
-      dofManager_( DofManagerType::instance( dfSpace.grid() ) ),
-      linearOperator_( discreteFunctionSpace_, discreteFunctionSpace_ ),
-      sequence_( -1 ),
-      problem_( problem ),
-      gradCache_( discreteFunctionSpace_.mapper().maxNumDofs() ),
-      gradDiffusion_( discreteFunctionSpace_.mapper().maxNumDofs() )
+
+    DifferentialOperator ( const LinearSubspaceType& linSpace, 
+                           AffineSubspaceType& affSpace, 
+                           const ProblemType& problem )
+      : linearFunctionSubspace_( linSpace ),
+        affineFunctionSubspace_( affSpace ),
+        dofManager_( DofManagerType::instance( linSpace.grid() ) ),
+        linearOperator_( linearFunctionSubspace_, linearFunctionSubspace_ ),
+        sequence_( -1 ),
+        problem_( problem ),
+        gradCache_( linearFunctionSubspace_.mapper().maxNumDofs() ),
+        gradDiffusion_( linearFunctionSubspace_.mapper().maxNumDofs() )
     {}
-        
+
   private:
     // prohibit copying
-    LaplaceOperator ( const ThisType & );
+    DifferentialOperator( const ThisType& );
 
   public:                                                           /*@LST0S@*/
     //! apply the operator
-    virtual void operator() ( const DiscreteFunctionType &u, 
-                              DiscreteFunctionType &w ) const 
+    //TODO evt. DiscreteFunctionType in AffinedSubspaceType umbennen, siehe draft
+    virtual void operator()( const DiscreteFunctionType& u, 
+                             DiscreteFunctionType& image_u ) const 
     {
-      systemMatrix().apply( u, w );                                 /*@\label{poi:matrixEval}@*/
+      systemMatrix().apply( u, image_u );                           /*@\label{poi:matrixEval}@*/
     }                                                               /*@LST0E@*/
-  
+
     //! return reference to preconditioning matrix, used by OEM-Solver
-    const PreconditionMatrixType &preconditionMatrix () const
+    const PreconditionMatrixType& preconditionMatrix () const
     {
       return systemMatrix().preconditionMatrix();
     }
 
     //! return true if preconditioning is enabled
-    bool hasPreconditionMatrix () const
+    bool hasPreconditionMatrix() const
     {
       return linearOperator_.hasPreconditionMatrix();
     }
 
     //! print the system matrix into a stream
-    void print ( std :: ostream & out = std :: cout ) const 
+    void print( std::ostream& out = std::cout ) const 
     {
       systemMatrix().matrix().print( out );
     }
 
     //! return reference to discreteFunctionSpace
-    const DiscreteFunctionSpaceType &discreteFunctionSpace () const
+    const LinearSubspaceType& linearSubspace() const
     {
-      return discreteFunctionSpace_;
+      return linearFunctionSubspace_;
+    }
+
+    //! return reference to discreteFunctionSpace
+    AffineSubspaceType& affineSubspace() const
+    {
+      return affineFunctionSubspace_;
     }
 
     //! return reference to problem
@@ -146,7 +175,7 @@ namespace Dune
      *
      *  \returns a reference to the system matrix
      */
-    LinearOperatorType &systemMatrix () const                        /*@LST0S@*/
+    LinearOperatorType& systemMatrix() const                        /*@LST0S@*/
     {
       // if stored sequence number it not equal to the one of the
       // dofManager (or space) then the grid has been changed
@@ -157,10 +186,19 @@ namespace Dune
       return linearOperator_;
     }
 
-    /** \brief perform a grid walkthrough and assemble the global matrix */
-    void assemble () const 
+    LinearOperatorType& algebraic() const
     {
-      const DiscreteFunctionSpaceType &space = discreteFunctionSpace();
+      return systemMatrix();
+    }
+
+
+    /** \brief perform a grid walkthrough and assemble the global matrix */
+    void assemble() const 
+    {
+      typedef typename DiscreteFunctionSpaceType::IteratorType
+        IteratorType;
+
+      const DiscreteFunctionSpaceType& space = linearSubspace();
 
       // reserve memory for matrix 
       linearOperator_.reserve();                                   /*@LST0E@*/
@@ -172,18 +210,19 @@ namespace Dune
       linearOperator_.clear();
 
       // apply local matrix assembler on each element
-      typedef typename DiscreteFunctionSpaceType :: IteratorType IteratorType;
       IteratorType end = space.end();
       for(IteratorType it = space.begin(); it != end; ++it)
       {
         assembleLocal( *it );                                       /*@\label{poi:applAss}@*/
       }
 
+      linearFunctionSubspace_.getConstraints().applyToOperator(linearOperator_ );
+
       // get elapsed time 
       const double assemblyTime = timer.elapsed();
       // in verbose mode print times 
-      if ( Parameter :: verbose () )
-        std :: cout << "Time to assemble matrix: " << assemblyTime << "s" << std :: endl;
+      if ( Parameter::verbose () )
+        std::cout << "Time to assemble matrix: " << assemblyTime << "s" << std::endl;
 
       // get grid sequence number from space (for adaptive runs)    /*@LST0S@*/
       sequence_ = dofManager_.sequence();
@@ -192,28 +231,29 @@ namespace Dune
   protected:
     //! assemble local matrix for given entity
     template< class EntityType >
-    void assembleLocal( const EntityType &entity ) const
+    void assembleLocal( const EntityType& entity ) const
     {
       // extract type of geometry from entity 
-      typedef typename EntityType :: Geometry Geometry;
+      typedef typename EntityType::Geometry                     Geometry;
+      typedef typename ProblemType::DiffusionMatrixType         DiffusionMatrixType;
 
       // assert that matrix is not build on ghost elements 
       assert( entity.partitionType() != GhostEntity );
 
       // cache geometry of entity 
-      const Geometry &geometry = entity.geometry();
+      const Geometry& geometry = entity.geometry();
 
       // get local matrix from matrix object
       LocalMatrixType localMatrix                                   /*@\label{poi:localMInit}@*/
         = linearOperator_.localMatrix( entity, entity );
-      
-      // get base function set 
-      const BaseFunctionSetType &baseSet = localMatrix.domainBaseFunctionSet();/*@\label{poi:baseSetInit}@*/
 
-      // get number of local base functions 
+      // get base function set 
+      const BaseFunctionSetType& baseSet = localMatrix.domainBaseFunctionSet();/*@\label{poi:baseSetInit}@*/
+
+      // get number of local base functions
       const size_t numBaseFunctions = baseSet.numBaseFunctions();
-            
-      // create quadrature of appropriate order 
+
+      // create quadrature of appropriate order
       QuadratureType quadrature( entity, 2 * (polynomialOrder - 1) );/*@\label{poi:quadraInit}@*/
 
       // loop over all quadrature points
@@ -221,15 +261,12 @@ namespace Dune
       for( size_t pt = 0; pt < numQuadraturePoints; ++pt )
       {
         // get local coordinate of quadrature point 
-        const typename QuadratureType :: CoordinateType &x
-          = quadrature.point( pt );
+        const typename QuadratureType::CoordinateType& x = quadrature.point( pt );
 
         // get jacobian inverse transposed 
-        const typename Geometry :: Jacobian& inv
-          = geometry.jacobianInverseTransposed( x );
+        const typename Geometry::Jacobian& inv = geometry.jacobianInverseTransposed( x );
 
         // extract type of diffusion coefficient from problem
-        typedef typename ProblemType :: DiffusionMatrixType DiffusionMatrixType;
         DiffusionMatrixType K;
 
         // evaluate diffusion matrix 
@@ -239,22 +276,22 @@ namespace Dune
         // on quadrature point pt and apply jacobian inverse 
         baseSet.jacobianAll( quadrature[ pt ], inv, gradCache_ );
 
-        // apply diffusion tensor  
+        // apply diffusion tensor
         for( size_t i = 0; i < numBaseFunctions; ++i )
           K.mv( gradCache_[ i ][ 0 ], gradDiffusion_[ i ][ 0 ] );
-        
+
         // evaluate integration weight 
         weight_ = quadrature.weight( pt ) * geometry.integrationElement( x );
-        
+
         // add scalar product of gradients to local matrix 
         updateLocalMatrix( localMatrix );
       }
     }
-  
+
     //! add scalar product of cached gradients to local matrix
-    void updateLocalMatrix ( LocalMatrixType &localMatrix ) const
+    void updateLocalMatrix ( LocalMatrixType& localMatrix ) const
     {
-      const size_t rows    = localMatrix.rows();
+      const size_t rows = localMatrix.rows();
       const size_t columns = localMatrix.columns();
       for( size_t i = 0; i < rows; ++i )
       {
@@ -266,23 +303,24 @@ namespace Dune
         }
       }
     }                                                            /*@LST0E@*/
-  
+
   protected:
-    const DiscreteFunctionSpaceType &discreteFunctionSpace_;
-    const DofManagerType &dofManager_;
+    const LinearSubspaceType& linearFunctionSubspace_;
+    const AffineSubspaceType& affineFunctionSubspace_;
+    const DofManagerType& dofManager_;
 
     //! pointer to the system matrix
     mutable LinearOperatorType linearOperator_;
  
     //! flag indicating whether the system matrix has been assembled
     mutable int sequence_;
-      
+
     //! the diffusion tensor 
     const ProblemType& problem_;
 
     mutable DynamicArray< JacobianRangeType > gradCache_;
     mutable DynamicArray< JacobianRangeType > gradDiffusion_;
-    mutable RangeFieldType weight_;    
+    mutable RangeFieldType weight_;
   };                                                                  /*@LST0S@*//*@LST0E@*/
 
 } // end namespace 
