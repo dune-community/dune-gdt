@@ -6,7 +6,7 @@
 #include <iostream>
 
 // disable warnings about problems in dune headers
-#include "../../../dune-fem-tools/dune/fem-tools/header/disablewarnings.hh"
+#include <dune/fem-tools/header/disablewarnings.hh>
 
 // dune common includes
 #include <dune/common/exceptions.hh>
@@ -25,16 +25,13 @@
 #include <dune/fem/function/adaptivefunction.hh>
 
 // reenable warnings about problems in dune headers
-#include "../../../dune-fem-tools/dune/fem-tools/header/enablewarnings.hh"
+#include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune fem-functionals includes
 #include <dune/fem/functional/ltwofunctional.hh>
 
 // dune fem-tools includes
-// Make sure to have the module dune-fem-tools, available from
-// https://dune.mathematik.uni-freiburg.de/svn/dune-fem-tools
-// (I did not manage to configure that module correctly)
-#include "../../../dune-fem-tools/dune/fem-tools/function/functiontools.hh"
+#include <dune/fem-tools/function/functiontools.hh>
 
 /**
   * \brief Analytical function which induces the functional.
