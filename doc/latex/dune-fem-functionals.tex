@@ -179,7 +179,7 @@ numberstyle=\tiny}
       \label{definition::introduction::operators_functionals}
       The function $f$ from he original problem \ref{equation::introduction::elliptic_pde} induces a functional
       \begin{align}
-        F: H^1_0 &\rightarrow \R
+        F: H^1 &\rightarrow \R
           \notag\\
         v &\mapsto F[v] :=
           \int\limits_{\Omega}
@@ -188,12 +188,12 @@ numberstyle=\tiny}
           \notag
         \intertext{Accordingly the function $a$ from the original problem \ref{equation::introduction::elliptic_pde}
           induces an operator}
-        A: H^1 &\rightarrow H^{-1}_{0}
+        A: H^1 &\rightarrow H^{-1}
           \notag\\
         u &\mapsto A(u) \komma
           \notag
         \intertext{where $A(u)$ itself is a functional, defined by}
-        A(u): H^1_0 &\rightarrow \R
+        A(u): H^1 &\rightarrow \R
           \notag\\
         v &\mapsto A(u)[v] :=
           \int\limits_{\Omega}
@@ -233,7 +233,7 @@ numberstyle=\tiny}
       is then given as
       \begin{align}
         \label{equation::introduction::solution}
-        u := u_{0} + g\punkt
+        u := u_{0} + \hat{g}\punkt
       \end{align}
     \end{remark}\theoremEndLine
 
@@ -289,22 +289,37 @@ numberstyle=\tiny}
       This algorithm computes the finite element solution of problem
       \eqref{equation::introduction::elliptic_pde}.
       \begin{itemize}
-        \item[$(i)$] define the space $S_{h}^{1}$
-        \item[$(ii)$] define the linear subspace ${S_{h}^{1}}_{0}$
-        \item[$(iii)$] define the affine subspace ${S_{h}^{1}}_{g}$
-        \item[$(iv)$] define the operator ${A: {S_{h}^{1}} \rightarrow {S_{h}^{1}}_{0}^{-1}}$
-        \item[$(v)$] define the functional ${F \in {S_{h}^{1}}_{0}^{-1}}$
+        \item[$(i)$] define the finite element space $S_{h}^{1}$
+        \item[$(ii)$] define the test space ${S_{h}^{1}}_{0} \subset S_{h}^{1}$ as a linear subspace
+        \item[$(iii)$] define the ansatz space ${S_{h}^{1}}_{g} \subset S_{h}^{1}$ as an affine subspace
+        \item[$(iv)$] define the operator ${A: {S_{h}^{1}} \rightarrow {S_{h}^{1}}^{-1}}$
+        \item[$(v)$] define the functional ${F \in {S_{h}^{1}}^{-1}}$
         \item[$(vi)$] assemble a matrix with entries
           \begin{align}
             \label{equation::introduction::matrix_entries}
-            A( \varphi_{i} )[ \psi_j ]
+            (A)_{i,j} := A( \varphi_{i} )[ \psi_j ]
           \end{align}
-          for all basefunctions of the ansatz-space ${\varphi_i \in S_h^1}$ and all basefunctions of the test-space
+          for all basefunctions of the ansatz-space ${\varphi_i \in S_{hg}^1}$ and all basefunctions of the test-space
           ${\psi_j \in {S_h^1}_0}$
-
+        \item[$(vii))$] assemble a vector with entries
+          \begin{align}
+            \label{equation::introduction::vector_entries}
+            (F)_{j} := F[ \psi_j ]
+          \end{align}
+          for all basefunctions of the test-space ${\psi_j \in {S_h^1}_0}$
+        \item[$(viii)$] solve the algebraic system
+          \begin{align}
+            \label{equation::introduction::algebraic_system}
+            A x = F
+          \end{align}
+          for $x$
+        \item[$(ix)$] compute the solution ${u \in S_{hg}^{1}}$ as
+          \begin{align}
+            \label{equation::introduction::algebraic_solution}
+            u_h := u_{h0} + \hat{g}\komma
+          \end{align}
+          where ${u_{h0} \in S_{h0}^{1}}$ is the discrete function belonging to the dof vector $x$.
       \end{itemize}
-
-
     \end{definition}
 
 
