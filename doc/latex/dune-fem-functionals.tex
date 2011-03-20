@@ -782,10 +782,10 @@ First of all we give an overview on the various classes that are required in our
 \noindent\CodeT{typedef FunctionalAssembler< FunctionalType, AffineSubspace >}\\
 \CodeT{FunctionalAssemblerType;}
 \begin{itemize}
-	\item[$\circ$] assembles the right hand side in our system of equations 
+	\item[$\circ$] assembles the right hand side in our system of equations
   \item[$\circ$] {\it Algebraic representation:} get assembled functional with \CodeT{functional.algebraic()}
   \item[$\circ$] incorporates something like:\\
-\CodeT{algebraicl(); constraints.apply( functional );} 
+\CodeT{algebraicl(); constraints.apply( functional );}
 \end{itemize}
 
 Both classes (\CodeT{DifferentialOperator} and \CodeT{FunctionalAssembler}) might be incorporated in a general \CodeT{FunctionalSolverInterface}, so that the user does not need to care about the system assemblers.
@@ -831,7 +831,7 @@ Maybe we should think about the operator and ''assembled functional'' design aga
 			\node(OperatorAssembler)[boxs,left of = dummy1]{\CodeT{OperatorAssembler}} edge[line] (Assembler.south);
 			\node(FunctionalAssembler)[boxs,right of = dummy1]{\CodeT{FunctionalAssembler}} edge[line] (Assembler.south);
 			\tikzset{node distance = 15mm}
-			
+
 		\end{tikzpicture}
 	\end{remark}\theoremEndLine
 
@@ -873,7 +873,7 @@ Note: We can also define \CodeT{typedef Operator< AssemblerType > DifferentialOp
 Note: We can also define \CodeT{typedef RHSAssembler< AssemblerType > RHSAssemblerType} by extracting the space types from the assembler.
 \begin{itemize}
 	\item[$\circ$] Same properties as above\ldots
-	\item[$\circ$] Define a private method \CodeT{applyConstraints(algebraicRepresentation)} where the constraints are extracted and applied to the algebraic representation. Now we can implement a general assemble method just by writing \CodeT{applyConstraints(functional.algebraic())}.	
+	\item[$\circ$] Define a private method \CodeT{applyConstraints(algebraicRepresentation)} where the constraints are extracted and applied to the algebraic representation. Now we can implement a general assemble method just by writing \CodeT{applyConstraints(functional.algebraic())}.
 \end{itemize}
 
 \subsection{Draft}
@@ -884,25 +884,25 @@ Note: We can also define \CodeT{typedef RHSAssembler< AssemblerType > RHSAssembl
 \begin{lstlisting}
 using namespace Functionals;
 
-typedef Functional < DiscreteFunctionSpace > FunctionalType; 
-typedef Constraint < FunctionalType > ConstraintType; 
-typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType > 
-  LinearSubspaceType; 
-typedef AffineSubspace < LinearSubspace > AffineSubspaceType; 
+typedef Functional < DiscreteFunctionSpace > FunctionalType;
+typedef Constraint < FunctionalType > ConstraintType;
+typedef LinearSubspace < DiscreteFunctionSpace, ConstraintType >
+  LinearSubspaceType;
+typedef AffineSubspace < LinearSubspace > AffineSubspaceType;
 
 // sparse row matrix of size N x N
-typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace > 
-  MatrixObjectTraits; 
-typedef Operator< LinearSubspaceType, AffineSubspaceType, MatrixObjectTraits >   
+typedef Dune::SparseRowMatrixTraits < DiscreteFunctionSpace, DiscreteFunctionSpace >
+  MatrixObjectTraits;
+typedef Operator< LinearSubspaceType, AffineSubspaceType, MatrixObjectTraits >
   DiffOperatorType;
 
 // algebraic system assembler:
-typedef FunctionalAssembler < FunctionalType, AffineSubspace > 
+typedef FunctionalAssembler < FunctionalType, AffineSubspace >
   FunctionalAssemblerType;
 
-MatrixObjectTraits > DiffOperatorType; 
+MatrixObjectTraits > DiffOperatorType;
 // CG scheme
-typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler > 
+typedef CGInverseOp< DiscreteFunctionType, OperatorAssembler >
   InverseOperatorType;
 \end{lstlisting}
 Main Code:
@@ -917,9 +917,9 @@ AffineSubspaceType affineSubspace( linearSubspace, discretefunction );
 // operator (behaves like the old Operator-class of dunefem)
 DiffOperatorType differentialOperator ( linearSubspace, affineSubspace );
 
-DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace ); 
+DiscreteFunctionType rhs( "right hand side", discreteFunctionSpace );
 
-// use a right hand side assembler class to apply 'functional+constraints' 
+// use a right hand side assembler class to apply 'functional+constraints'
 // to right hand side vector
 FunctionalAssemblerType rhsAssembler ( functional, affineSubspace );
 rhsAssembler.algebraic( rhs );
@@ -937,15 +937,15 @@ We might think about hiding this main code behind a 'FunctionalSolverInterface',
 Comparison to the old main code (for laplace operator and zero boundary condition):
 \begin{lstlisting}
 DiscreteFunctionType rhs( "rhs", discreteFunctionSpace );
-typedef AssembledFunctional< FunctionalType > AssembledFunctionalType; 
+typedef AssembledFunctional< FunctionalType > AssembledFunctionalType;
 AssembledFunctionalType rhsFunctional ( discretFunctionSpace, functional );
 rhsFunctional.assemble( rhs );
 
-typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits > 
+typedef LaplaceOperator< DiscreteFunctionType, MatrixObjectTraits >
   LaplaceOperatorType;
 
 // apply constraints
-bool hasDirBoundary = 
+bool hasDirBoundary =
   constraints.apply( laplaceOperator.systemMatrix(), rhs, solution );
 
 InverseOperatorType cg( laplaceOperator, 1e-6, 1e-8 );
@@ -1130,444 +1130,444 @@ The essential difference is that the (differential)operator already knows the co
 			\node(VectorConstraints)[boxs,right of = dummy1]{\CodeT{VectorConstraints}} edge[line] (ConstraintsDefault.south);
 
 			\tikzset{node distance = 15mm}
-			
+
 		\end{tikzpicture}
 	\end{remark}\theoremEndLine
 
 	\begin{remark}[SingleConstraint vs. ConstraintsInterface]\theoremNewline
 		The next figure shows the class concept again - concentrating on the difference between a single constraint and classes derived from the class \CodeT{ConstraintsInterface}. Here we should discuss about some implementation details, especially about the Interface class. (Is it convient to implement a method like \CodeT{applyLocal(en)}?)
-		\begin{flushleft}
-			\scalebox{0.6} % Change this value to rescale the drawing.
-			{
-			\begin{pspicture}(0,-10.9775)(23.0,10.550938)
-			\rput{-90.0}(1.6625,15.4375){\psarc[linewidth=0.04](8.55,6.8875){3.85}{61.699245}{119.0546}}
-			\rput{-270.0}(17.3375,-3.5625){\psarc[linewidth=0.04](10.45,6.8875){3.85}{61.699245}{119.0546}}
-			\psframe[linewidth=0.04,dimen=outer](8.2,7.1375)(7.2,6.7375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.4,7.1375)(8.4,6.7375)
-			\psframe[linewidth=0.04,dimen=outer](10.6,7.1375)(9.6,6.7375)
-			\psframe[linewidth=0.04,dimen=outer](11.8,7.1375)(10.8,6.7375)
-			\psdots[dotsize=0.12](7.3,6.3375)
-			\psdots[dotsize=0.12](7.7,6.3375)
-			\psdots[dotsize=0.12](8.1,6.3375)
-			\psdots[dotsize=0.12](8.5,6.3375)
-			\psdots[dotsize=0.12](8.9,6.3375)
-			\psdots[dotsize=0.12](9.3,6.3375)
-			\psdots[dotsize=0.12](9.7,6.3375)
-			\psdots[dotsize=0.12](10.1,6.3375)
-			\psdots[dotsize=0.12](10.5,6.3375)
-			\psdots[dotsize=0.12](11.0,6.3375)
-			\psdots[dotsize=0.12](11.4,6.3375)
-			\psdots[dotsize=0.12](11.8,6.3375)
-			\psdots[dotsize=0.12](7.3,7.8375)
-			\psdots[dotsize=0.12](7.7,7.8375)
-			\psdots[dotsize=0.12](8.1,7.8375)
-			\psdots[dotsize=0.12](8.5,7.8375)
-			\psdots[dotsize=0.12](8.9,7.8375)
-			\psdots[dotsize=0.12](9.3,7.8375)
-			\psdots[dotsize=0.12](9.7,7.8375)
-			\psdots[dotsize=0.12](10.1,7.8375)
-			\psdots[dotsize=0.12](10.5,7.8375)
-			\psdots[dotsize=0.12](11.0,7.8375)
-			\psdots[dotsize=0.12](11.4,7.8375)
-			\psdots[dotsize=0.12](11.8,7.8375)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(7.992031,9.3475){\CodeT{SingleConstraint}}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(8.932032,4.7475){\CodeT{applyLocal(en)}}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(14.172031,6.9475){\CodeT{getRow()}}
-			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(13.2,7.0375)(12.5,7.0375)
-			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(15.3,7.0375)(16.3,7.0375)
-			\psframe[linewidth=0.04,dimen=outer](8.0,0.5375)(7.0,0.1375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,0.5375)(8.2,0.1375)
-			\psframe[linewidth=0.04,dimen=outer](10.4,0.5375)(9.4,0.1375)
-			\psframe[linewidth=0.04,dimen=outer](11.6,0.5375)(10.6,0.1375)
-			\psframe[linewidth=0.04,dimen=outer](8.0,1.9375)(7.0,1.5375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,1.9375)(8.2,1.5375)
-			\psframe[linewidth=0.04,dimen=outer](10.4,1.9375)(9.4,1.5375)
-			\psframe[linewidth=0.04,dimen=outer](11.6,1.9375)(10.6,1.5375)
-			\psframe[linewidth=0.04,dimen=outer](8.0,-0.8625)(7.0,-1.2625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,-0.8625)(8.2,-1.2625)
-			\psframe[linewidth=0.04,dimen=outer](10.4,-0.8625)(9.4,-1.2625)
-			\psframe[linewidth=0.04,dimen=outer](11.6,-0.8625)(10.6,-1.2625)
-			\psdots[dotsize=0.12](7.1,-0.2625)
-			\psdots[dotsize=0.12](7.5,-0.2625)
-			\psdots[dotsize=0.12](7.9,-0.2625)
-			\psdots[dotsize=0.12](8.3,-0.2625)
-			\psdots[dotsize=0.12](8.7,-0.2625)
-			\psdots[dotsize=0.12](9.1,-0.2625)
-			\psdots[dotsize=0.12](9.5,-0.2625)
-			\psdots[dotsize=0.12](9.9,-0.2625)
-			\psdots[dotsize=0.12](10.3,-0.2625)
-			\psdots[dotsize=0.12](10.8,-0.2625)
-			\psdots[dotsize=0.12](11.2,-0.2625)
-			\psdots[dotsize=0.12](11.6,-0.2625)
-			\psdots[dotsize=0.12](7.1,0.9375)
-			\psdots[dotsize=0.12](7.5,0.9375)
-			\psdots[dotsize=0.12](7.9,0.9375)
-			\psdots[dotsize=0.12](8.3,0.9375)
-			\psdots[dotsize=0.12](8.7,0.9375)
-			\psdots[dotsize=0.12](9.1,0.9375)
-			\psdots[dotsize=0.12](9.5,0.9375)
-			\psdots[dotsize=0.12](9.9,0.9375)
-			\psdots[dotsize=0.12](10.3,0.9375)
-			\psdots[dotsize=0.12](10.8,0.9375)
-			\psdots[dotsize=0.12](11.2,0.9375)
-			\psdots[dotsize=0.12](11.6,0.9375)
-			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(9.0,5.2375)(9.0,6.6375)
-			\psdots[dotsize=0.12](7.3,8.1375)
-			\psdots[dotsize=0.12](7.7,8.1375)
-			\psdots[dotsize=0.12](8.1,8.1375)
-			\psdots[dotsize=0.12](8.5,8.1375)
-			\psdots[dotsize=0.12](8.9,8.1375)
-			\psdots[dotsize=0.12](9.3,8.1375)
-			\psdots[dotsize=0.12](9.7,8.1375)
-			\psdots[dotsize=0.12](10.1,8.1375)
-			\psdots[dotsize=0.12](10.5,8.1375)
-			\psdots[dotsize=0.12](11.0,8.1375)
-			\psdots[dotsize=0.12](11.4,8.1375)
-			\psdots[dotsize=0.12](11.8,8.1375)
-			\psdots[dotsize=0.12](7.3,8.4375)
-			\psdots[dotsize=0.12](7.7,8.4375)
-			\psdots[dotsize=0.12](8.1,8.4375)
-			\psdots[dotsize=0.12](8.5,8.4375)
-			\psdots[dotsize=0.12](8.9,8.4375)
-			\psdots[dotsize=0.12](9.3,8.4375)
-			\psdots[dotsize=0.12](9.7,8.4375)
-			\psdots[dotsize=0.12](10.1,8.4375)
-			\psdots[dotsize=0.12](10.5,8.4375)
-			\psdots[dotsize=0.12](11.0,8.4375)
-			\psdots[dotsize=0.12](11.4,8.4375)
-			\psdots[dotsize=0.12](11.8,8.4375)
-			\psdots[dotsize=0.12](7.3,6.0375)
-			\psdots[dotsize=0.12](7.7,6.0375)
-			\psdots[dotsize=0.12](8.1,6.0375)
-			\psdots[dotsize=0.12](8.5,6.0375)
-			\psdots[dotsize=0.12](8.9,6.0375)
-			\psdots[dotsize=0.12](9.3,6.0375)
-			\psdots[dotsize=0.12](9.7,6.0375)
-			\psdots[dotsize=0.12](10.1,6.0375)
-			\psdots[dotsize=0.12](10.5,6.0375)
-			\psdots[dotsize=0.12](11.0,6.0375)
-			\psdots[dotsize=0.12](11.4,6.0375)
-			\psdots[dotsize=0.12](11.8,6.0375)
-			\psdots[dotsize=0.12](7.3,5.7375)
-			\psdots[dotsize=0.12](7.7,5.7375)
-			\psdots[dotsize=0.12](8.1,5.7375)
-			\psdots[dotsize=0.12](8.5,5.7375)
-			\psdots[dotsize=0.12](8.9,5.7375)
-			\psdots[dotsize=0.12](9.3,5.7375)
-			\psdots[dotsize=0.12](9.7,5.7375)
-			\psdots[dotsize=0.12](10.1,5.7375)
-			\psdots[dotsize=0.12](10.5,5.7375)
-			\psdots[dotsize=0.12](11.0,5.7375)
-			\psdots[dotsize=0.12](11.4,5.7375)
-			\psdots[dotsize=0.12](11.8,5.7375)
-			\psdots[dotsize=0.12](7.3,5.4375)
-			\psdots[dotsize=0.12](7.7,5.4375)
-			\psdots[dotsize=0.12](8.1,5.4375)
-			\psdots[dotsize=0.12](8.5,5.4375)
-			\psdots[dotsize=0.12](8.9,5.4375)
-			\psdots[dotsize=0.12](9.3,5.4375)
-			\psdots[dotsize=0.12](9.7,5.4375)
-			\psdots[dotsize=0.12](10.1,5.4375)
-			\psdots[dotsize=0.12](10.5,5.4375)
-			\psdots[dotsize=0.12](11.0,5.4375)
-			\psdots[dotsize=0.12](11.4,5.4375)
-			\psdots[dotsize=0.12](11.8,5.4375)
-			\psdots[dotsize=0.12](7.3,7.5375)
-			\psdots[dotsize=0.12](7.7,7.5375)
-			\psdots[dotsize=0.12](8.1,7.5375)
-			\psdots[dotsize=0.12](8.5,7.5375)
-			\psdots[dotsize=0.12](8.9,7.5375)
-			\psdots[dotsize=0.12](9.3,7.5375)
-			\psdots[dotsize=0.12](9.7,7.5375)
-			\psdots[dotsize=0.12](10.1,7.5375)
-			\psdots[dotsize=0.12](10.5,7.5375)
-			\psdots[dotsize=0.12](11.0,7.5375)
-			\psdots[dotsize=0.12](11.4,7.5375)
-			\psdots[dotsize=0.12](11.8,7.5375)
-			\psdots[dotsize=0.12](7.1,1.2375)
-			\psdots[dotsize=0.12](7.5,1.2375)
-			\psdots[dotsize=0.12](7.9,1.2375)
-			\psdots[dotsize=0.12](8.3,1.2375)
-			\psdots[dotsize=0.12](8.7,1.2375)
-			\psdots[dotsize=0.12](9.1,1.2375)
-			\psdots[dotsize=0.12](9.5,1.2375)
-			\psdots[dotsize=0.12](9.9,1.2375)
-			\psdots[dotsize=0.12](10.3,1.2375)
-			\psdots[dotsize=0.12](10.8,1.2375)
-			\psdots[dotsize=0.12](11.2,1.2375)
-			\psdots[dotsize=0.12](11.6,1.2375)
-			\psdots[dotsize=0.12](7.1,-0.5625)
-			\psdots[dotsize=0.12](7.5,-0.5625)
-			\psdots[dotsize=0.12](7.9,-0.5625)
-			\psdots[dotsize=0.12](8.3,-0.5625)
-			\psdots[dotsize=0.12](8.7,-0.5625)
-			\psdots[dotsize=0.12](9.1,-0.5625)
-			\psdots[dotsize=0.12](9.5,-0.5625)
-			\psdots[dotsize=0.12](9.9,-0.5625)
-			\psdots[dotsize=0.12](10.3,-0.5625)
-			\psdots[dotsize=0.12](10.8,-0.5625)
-			\psdots[dotsize=0.12](11.2,-0.5625)
-			\psdots[dotsize=0.12](11.6,-0.5625)
-			\rput{-270.0}(10.3375,-9.9625){\psarc[linewidth=0.04](10.15,0.1875){3.85}{61.699245}{119.0546}}
-			\rput{-90.0}(8.2625,8.6375){\psarc[linewidth=0.04](8.45,0.1875){3.85}{61.699245}{119.0546}}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(9.032031,-1.9525){\CodeT{applyLocal(en)}}
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.4,-1.5625)(8.4,-1.2625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.6,-1.5625)(8.6,0.0375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.9,-1.5625)(8.9,1.4375)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(8.282031,2.6475){\CodeT{DirichletConstraints}}
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,0.7375)(17.3,0.3375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,0.7375)(18.5,0.3375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,0.7375)(19.7,0.3375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,0.7375)(20.9,0.3375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,2.1375)(17.3,1.7375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,2.1375)(18.5,1.7375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,2.1375)(19.7,1.7375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,2.1375)(20.9,1.7375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,-0.6625)(17.3,-1.0625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,-0.6625)(18.5,-1.0625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,-0.6625)(19.7,-1.0625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,-0.6625)(20.9,-1.0625)
-			\psdots[dotsize=0.12](17.4,-0.0625)
-			\psdots[dotsize=0.12](17.8,-0.0625)
-			\psdots[dotsize=0.12](18.2,-0.0625)
-			\psdots[dotsize=0.12](18.6,-0.0625)
-			\psdots[dotsize=0.12](19.0,-0.0625)
-			\psdots[dotsize=0.12](19.4,-0.0625)
-			\psdots[dotsize=0.12](19.8,-0.0625)
-			\psdots[dotsize=0.12](20.2,-0.0625)
-			\psdots[dotsize=0.12](20.6,-0.0625)
-			\psdots[dotsize=0.12](21.1,-0.0625)
-			\psdots[dotsize=0.12](21.5,-0.0625)
-			\psdots[dotsize=0.12](21.9,-0.0625)
-			\psdots[dotsize=0.12](17.4,1.1375)
-			\psdots[dotsize=0.12](17.8,1.1375)
-			\psdots[dotsize=0.12](18.2,1.1375)
-			\psdots[dotsize=0.12](18.6,1.1375)
-			\psdots[dotsize=0.12](19.0,1.1375)
-			\psdots[dotsize=0.12](19.4,1.1375)
-			\psdots[dotsize=0.12](19.8,1.1375)
-			\psdots[dotsize=0.12](20.2,1.1375)
-			\psdots[dotsize=0.12](20.6,1.1375)
-			\psdots[dotsize=0.12](21.1,1.1375)
-			\psdots[dotsize=0.12](21.5,1.1375)
-			\psdots[dotsize=0.12](21.9,1.1375)
-			\psdots[dotsize=0.12](17.4,1.4375)
-			\psdots[dotsize=0.12](17.8,1.4375)
-			\psdots[dotsize=0.12](18.2,1.4375)
-			\psdots[dotsize=0.12](18.6,1.4375)
-			\psdots[dotsize=0.12](19.0,1.4375)
-			\psdots[dotsize=0.12](19.4,1.4375)
-			\psdots[dotsize=0.12](19.8,1.4375)
-			\psdots[dotsize=0.12](20.2,1.4375)
-			\psdots[dotsize=0.12](20.6,1.4375)
-			\psdots[dotsize=0.12](21.1,1.4375)
-			\psdots[dotsize=0.12](21.5,1.4375)
-			\psdots[dotsize=0.12](21.9,1.4375)
-			\psdots[dotsize=0.12](17.4,-0.3625)
-			\psdots[dotsize=0.12](17.8,-0.3625)
-			\psdots[dotsize=0.12](18.2,-0.3625)
-			\psdots[dotsize=0.12](18.6,-0.3625)
-			\psdots[dotsize=0.12](19.0,-0.3625)
-			\psdots[dotsize=0.12](19.4,-0.3625)
-			\psdots[dotsize=0.12](19.8,-0.3625)
-			\psdots[dotsize=0.12](20.2,-0.3625)
-			\psdots[dotsize=0.12](20.6,-0.3625)
-			\psdots[dotsize=0.12](21.1,-0.3625)
-			\psdots[dotsize=0.12](21.5,-0.3625)
-			\psdots[dotsize=0.12](21.9,-0.3625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(18.96203,-1.7525){\CodeT{apply()}}
-			\rput{-270.0}(20.8375,-20.0625){\psarc[linewidth=0.04](20.45,0.3875){3.85}{61.699245}{119.0546}}
-			\rput{-90.0}(18.3625,19.1375){\psarc[linewidth=0.04](18.75,0.3875){3.85}{61.699245}{119.0546}}
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.0,7.2375)(17.0,6.8375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.2,7.2375)(18.2,6.8375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.4,7.2375)(19.4,6.8375)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.6,7.2375)(20.6,6.8375)
-			\psdots[dotsize=0.12](17.1,6.4375)
-			\psdots[dotsize=0.12](17.5,6.4375)
-			\psdots[dotsize=0.12](17.9,6.4375)
-			\psdots[dotsize=0.12](18.3,6.4375)
-			\psdots[dotsize=0.12](18.7,6.4375)
-			\psdots[dotsize=0.12](19.1,6.4375)
-			\psdots[dotsize=0.12](19.5,6.4375)
-			\psdots[dotsize=0.12](19.9,6.4375)
-			\psdots[dotsize=0.12](20.3,6.4375)
-			\psdots[dotsize=0.12](20.8,6.4375)
-			\psdots[dotsize=0.12](21.2,6.4375)
-			\psdots[dotsize=0.12](21.6,6.4375)
-			\psdots[dotsize=0.12](17.1,7.9375)
-			\psdots[dotsize=0.12](17.5,7.9375)
-			\psdots[dotsize=0.12](17.9,7.9375)
-			\psdots[dotsize=0.12](18.3,7.9375)
-			\psdots[dotsize=0.12](18.7,7.9375)
-			\psdots[dotsize=0.12](19.1,7.9375)
-			\psdots[dotsize=0.12](19.5,7.9375)
-			\psdots[dotsize=0.12](19.9,7.9375)
-			\psdots[dotsize=0.12](20.3,7.9375)
-			\psdots[dotsize=0.12](20.8,7.9375)
-			\psdots[dotsize=0.12](21.2,7.9375)
-			\psdots[dotsize=0.12](21.6,7.9375)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(19.162031,4.8475){\CodeT{apply()}}
-			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.8,5.3375)(18.8,6.7375)
-			\psdots[dotsize=0.12](17.1,8.2375)
-			\psdots[dotsize=0.12](17.5,8.2375)
-			\psdots[dotsize=0.12](17.9,8.2375)
-			\psdots[dotsize=0.12](18.3,8.2375)
-			\psdots[dotsize=0.12](18.7,8.2375)
-			\psdots[dotsize=0.12](19.1,8.2375)
-			\psdots[dotsize=0.12](19.5,8.2375)
-			\psdots[dotsize=0.12](19.9,8.2375)
-			\psdots[dotsize=0.12](20.3,8.2375)
-			\psdots[dotsize=0.12](20.8,8.2375)
-			\psdots[dotsize=0.12](21.2,8.2375)
-			\psdots[dotsize=0.12](21.6,8.2375)
-			\psdots[dotsize=0.12](17.1,8.5375)
-			\psdots[dotsize=0.12](17.5,8.5375)
-			\psdots[dotsize=0.12](17.9,8.5375)
-			\psdots[dotsize=0.12](18.3,8.5375)
-			\psdots[dotsize=0.12](18.7,8.5375)
-			\psdots[dotsize=0.12](19.1,8.5375)
-			\psdots[dotsize=0.12](19.5,8.5375)
-			\psdots[dotsize=0.12](19.9,8.5375)
-			\psdots[dotsize=0.12](20.3,8.5375)
-			\psdots[dotsize=0.12](20.8,8.5375)
-			\psdots[dotsize=0.12](21.2,8.5375)
-			\psdots[dotsize=0.12](21.6,8.5375)
-			\psdots[dotsize=0.12](17.1,6.1375)
-			\psdots[dotsize=0.12](17.5,6.1375)
-			\psdots[dotsize=0.12](17.9,6.1375)
-			\psdots[dotsize=0.12](18.3,6.1375)
-			\psdots[dotsize=0.12](18.7,6.1375)
-			\psdots[dotsize=0.12](19.1,6.1375)
-			\psdots[dotsize=0.12](19.5,6.1375)
-			\psdots[dotsize=0.12](19.9,6.1375)
-			\psdots[dotsize=0.12](20.3,6.1375)
-			\psdots[dotsize=0.12](20.8,6.1375)
-			\psdots[dotsize=0.12](21.2,6.1375)
-			\psdots[dotsize=0.12](21.6,6.1375)
-			\psdots[dotsize=0.12](17.1,5.8375)
-			\psdots[dotsize=0.12](17.5,5.8375)
-			\psdots[dotsize=0.12](17.9,5.8375)
-			\psdots[dotsize=0.12](18.3,5.8375)
-			\psdots[dotsize=0.12](18.7,5.8375)
-			\psdots[dotsize=0.12](19.1,5.8375)
-			\psdots[dotsize=0.12](19.5,5.8375)
-			\psdots[dotsize=0.12](19.9,5.8375)
-			\psdots[dotsize=0.12](20.3,5.8375)
-			\psdots[dotsize=0.12](20.8,5.8375)
-			\psdots[dotsize=0.12](21.2,5.8375)
-			\psdots[dotsize=0.12](21.6,5.8375)
-			\psdots[dotsize=0.12](17.1,5.5375)
-			\psdots[dotsize=0.12](17.5,5.5375)
-			\psdots[dotsize=0.12](17.9,5.5375)
-			\psdots[dotsize=0.12](18.3,5.5375)
-			\psdots[dotsize=0.12](18.7,5.5375)
-			\psdots[dotsize=0.12](19.1,5.5375)
-			\psdots[dotsize=0.12](19.5,5.5375)
-			\psdots[dotsize=0.12](19.9,5.5375)
-			\psdots[dotsize=0.12](20.3,5.5375)
-			\psdots[dotsize=0.12](20.8,5.5375)
-			\psdots[dotsize=0.12](21.2,5.5375)
-			\psdots[dotsize=0.12](21.6,5.5375)
-			\psdots[dotsize=0.12](17.1,7.6375)
-			\psdots[dotsize=0.12](17.5,7.6375)
-			\psdots[dotsize=0.12](17.9,7.6375)
-			\psdots[dotsize=0.12](18.3,7.6375)
-			\psdots[dotsize=0.12](18.7,7.6375)
-			\psdots[dotsize=0.12](19.1,7.6375)
-			\psdots[dotsize=0.12](19.5,7.6375)
-			\psdots[dotsize=0.12](19.9,7.6375)
-			\psdots[dotsize=0.12](20.3,7.6375)
-			\psdots[dotsize=0.12](20.8,7.6375)
-			\psdots[dotsize=0.12](21.2,7.6375)
-			\psdots[dotsize=0.12](21.6,7.6375)
-			\rput{-270.0}(27.3375,-13.1625){\psarc[linewidth=0.04](20.25,7.0875){3.85}{61.699245}{119.0546}}
-			\rput{-90.0}(11.2625,25.4375){\psarc[linewidth=0.04](18.35,7.0875){3.85}{61.699245}{119.0546}}
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.4,5.3375)(17.6,6.7375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.3,5.3375)(19.8,6.7375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.5,5.3375)(20.9,6.7375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.0,-1.3625)(17.7,-1.1625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.1,-1.3625)(17.7,0.2375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.3,-1.3625)(17.9,1.6375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.6,-1.3625)(18.6,-1.1625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.8,-1.3625)(18.8,0.2375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.0,-1.3625)(19.0,1.6375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.2,-1.3625)(19.8,1.5375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.4,-1.3625)(20.1,0.2375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.6,-1.3625)(19.9,-1.1625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.9,-1.3625)(21.1,1.6375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(20.0,-1.3625)(21.1,0.2375)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(20.1,-1.3625)(21.0,-1.1625)
-			\psframe[linewidth=0.04,dimen=outer](23.0,10.0375)(5.5,-2.5625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(14.20875,10.3475){Systemmatrix}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(14.156563,-3.5525){RHS}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(8.292031,-4.5525){\CodeT{SingleConstraint}}
-			\rput{-270.0}(2.8375,-16.2625){\psarc[linewidth=0.04](9.55,-6.7125){3.85}{61.699245}{119.0546}}
-			\rput{-90.0}(10.5625,-2.8625){\psarc[linewidth=0.04](3.85,-6.7125){3.85}{61.699245}{119.0546}}
-			\psframe[linewidth=0.04,dimen=outer](7.2,-5.0625)(6.2,-5.4625)
-			\psframe[linewidth=0.04,dimen=outer](7.2,-8.0625)(6.2,-8.4625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](7.2,-6.4625)(6.2,-6.8625)
-			\psdots[dotsize=0.12](6.3,-5.7625)
-			\psdots[dotsize=0.12](6.7,-5.7625)
-			\psdots[dotsize=0.12](7.1,-5.7625)
-			\psdots[dotsize=0.12](6.3,-6.0625)
-			\psdots[dotsize=0.12](6.7,-6.0625)
-			\psdots[dotsize=0.12](7.1,-6.0625)
-			\psdots[dotsize=0.12](6.3,-7.1625)
-			\psdots[dotsize=0.12](6.7,-7.1625)
-			\psdots[dotsize=0.12](7.1,-7.1625)
-			\psdots[dotsize=0.12](6.3,-7.6625)
-			\psdots[dotsize=0.12](6.7,-7.6625)
-			\psdots[dotsize=0.12](7.1,-7.6625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(9.472032,-6.6525){\CodeT{getRow()}}
-			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.5,-6.5625)(7.8,-6.5625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-4.9625)(16.0,-5.3625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-7.9625)(16.0,-8.3625)
-			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-6.3625)(16.0,-6.7625)
-			\psdots[dotsize=0.12](16.1,-5.6625)
-			\psdots[dotsize=0.12](16.5,-5.6625)
-			\psdots[dotsize=0.12](16.9,-5.6625)
-			\psdots[dotsize=0.12](16.1,-5.9625)
-			\psdots[dotsize=0.12](16.5,-5.9625)
-			\psdots[dotsize=0.12](16.9,-5.9625)
-			\psdots[dotsize=0.12](16.1,-7.0625)
-			\psdots[dotsize=0.12](16.5,-7.0625)
-			\psdots[dotsize=0.12](16.9,-7.0625)
-			\psdots[dotsize=0.12](16.1,-7.5625)
-			\psdots[dotsize=0.12](16.5,-7.5625)
-			\psdots[dotsize=0.12](16.9,-7.5625)
-			\rput{-90.0}(20.2625,7.0375){\psarc[linewidth=0.04](13.65,-6.6125){3.85}{61.699245}{119.0546}}
-			\rput{-270.0}(12.7375,-25.9625){\psarc[linewidth=0.04](19.35,-6.6125){3.85}{61.699245}{119.0546}}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(16.582031,-4.4525){\CodeT{DirichletConstraints}}
-			\psframe[linewidth=0.04,dimen=outer](23.0,-3.9625)(5.5,-9.4625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(6.8620315,-8.8525){\CodeT{apply()}}
-			\usefont{T1}{ptm}{m}{n}
-			\rput(16.46203,-8.8525){\CodeT{apply()}}
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(6.5,-8.6625)(6.5,-6.9625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.1,-8.5625)(16.1,-8.3625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.3,-8.5625)(16.3,-6.8625)
-			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.6,-8.5625)(16.6,-5.4625)
-			\psframe[linewidth=0.04,dimen=outer](9.3,-9.8625)(8.3,-10.2625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(12.065937,-10.0525){= entity with boundary faces}
-			\psdots[dotsize=0.12](8.8,-10.7625)
-			\usefont{T1}{ptm}{m}{n}
-			\rput(12.355938,-10.7525){= entity without boundary faces}
-			\end{pspicture} 
-			}
-		\end{flushleft}
+% 		\begin{flushleft}
+% 			\scalebox{0.6} % Change this value to rescale the drawing.
+% 			{
+% 			\begin{pspicture}(0,-10.9775)(23.0,10.550938)
+% 			\rput{-90.0}(1.6625,15.4375){\psarc[linewidth=0.04](8.55,6.8875){3.85}{61.699245}{119.0546}}
+% 			\rput{-270.0}(17.3375,-3.5625){\psarc[linewidth=0.04](10.45,6.8875){3.85}{61.699245}{119.0546}}
+% 			\psframe[linewidth=0.04,dimen=outer](8.2,7.1375)(7.2,6.7375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.4,7.1375)(8.4,6.7375)
+% 			\psframe[linewidth=0.04,dimen=outer](10.6,7.1375)(9.6,6.7375)
+% 			\psframe[linewidth=0.04,dimen=outer](11.8,7.1375)(10.8,6.7375)
+% 			\psdots[dotsize=0.12](7.3,6.3375)
+% 			\psdots[dotsize=0.12](7.7,6.3375)
+% 			\psdots[dotsize=0.12](8.1,6.3375)
+% 			\psdots[dotsize=0.12](8.5,6.3375)
+% 			\psdots[dotsize=0.12](8.9,6.3375)
+% 			\psdots[dotsize=0.12](9.3,6.3375)
+% 			\psdots[dotsize=0.12](9.7,6.3375)
+% 			\psdots[dotsize=0.12](10.1,6.3375)
+% 			\psdots[dotsize=0.12](10.5,6.3375)
+% 			\psdots[dotsize=0.12](11.0,6.3375)
+% 			\psdots[dotsize=0.12](11.4,6.3375)
+% 			\psdots[dotsize=0.12](11.8,6.3375)
+% 			\psdots[dotsize=0.12](7.3,7.8375)
+% 			\psdots[dotsize=0.12](7.7,7.8375)
+% 			\psdots[dotsize=0.12](8.1,7.8375)
+% 			\psdots[dotsize=0.12](8.5,7.8375)
+% 			\psdots[dotsize=0.12](8.9,7.8375)
+% 			\psdots[dotsize=0.12](9.3,7.8375)
+% 			\psdots[dotsize=0.12](9.7,7.8375)
+% 			\psdots[dotsize=0.12](10.1,7.8375)
+% 			\psdots[dotsize=0.12](10.5,7.8375)
+% 			\psdots[dotsize=0.12](11.0,7.8375)
+% 			\psdots[dotsize=0.12](11.4,7.8375)
+% 			\psdots[dotsize=0.12](11.8,7.8375)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(7.992031,9.3475){\CodeT{SingleConstraint}}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(8.932032,4.7475){\CodeT{applyLocal(en)}}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(14.172031,6.9475){\CodeT{getRow()}}
+% 			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(13.2,7.0375)(12.5,7.0375)
+% 			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(15.3,7.0375)(16.3,7.0375)
+% 			\psframe[linewidth=0.04,dimen=outer](8.0,0.5375)(7.0,0.1375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,0.5375)(8.2,0.1375)
+% 			\psframe[linewidth=0.04,dimen=outer](10.4,0.5375)(9.4,0.1375)
+% 			\psframe[linewidth=0.04,dimen=outer](11.6,0.5375)(10.6,0.1375)
+% 			\psframe[linewidth=0.04,dimen=outer](8.0,1.9375)(7.0,1.5375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,1.9375)(8.2,1.5375)
+% 			\psframe[linewidth=0.04,dimen=outer](10.4,1.9375)(9.4,1.5375)
+% 			\psframe[linewidth=0.04,dimen=outer](11.6,1.9375)(10.6,1.5375)
+% 			\psframe[linewidth=0.04,dimen=outer](8.0,-0.8625)(7.0,-1.2625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](9.2,-0.8625)(8.2,-1.2625)
+% 			\psframe[linewidth=0.04,dimen=outer](10.4,-0.8625)(9.4,-1.2625)
+% 			\psframe[linewidth=0.04,dimen=outer](11.6,-0.8625)(10.6,-1.2625)
+% 			\psdots[dotsize=0.12](7.1,-0.2625)
+% 			\psdots[dotsize=0.12](7.5,-0.2625)
+% 			\psdots[dotsize=0.12](7.9,-0.2625)
+% 			\psdots[dotsize=0.12](8.3,-0.2625)
+% 			\psdots[dotsize=0.12](8.7,-0.2625)
+% 			\psdots[dotsize=0.12](9.1,-0.2625)
+% 			\psdots[dotsize=0.12](9.5,-0.2625)
+% 			\psdots[dotsize=0.12](9.9,-0.2625)
+% 			\psdots[dotsize=0.12](10.3,-0.2625)
+% 			\psdots[dotsize=0.12](10.8,-0.2625)
+% 			\psdots[dotsize=0.12](11.2,-0.2625)
+% 			\psdots[dotsize=0.12](11.6,-0.2625)
+% 			\psdots[dotsize=0.12](7.1,0.9375)
+% 			\psdots[dotsize=0.12](7.5,0.9375)
+% 			\psdots[dotsize=0.12](7.9,0.9375)
+% 			\psdots[dotsize=0.12](8.3,0.9375)
+% 			\psdots[dotsize=0.12](8.7,0.9375)
+% 			\psdots[dotsize=0.12](9.1,0.9375)
+% 			\psdots[dotsize=0.12](9.5,0.9375)
+% 			\psdots[dotsize=0.12](9.9,0.9375)
+% 			\psdots[dotsize=0.12](10.3,0.9375)
+% 			\psdots[dotsize=0.12](10.8,0.9375)
+% 			\psdots[dotsize=0.12](11.2,0.9375)
+% 			\psdots[dotsize=0.12](11.6,0.9375)
+% 			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(9.0,5.2375)(9.0,6.6375)
+% 			\psdots[dotsize=0.12](7.3,8.1375)
+% 			\psdots[dotsize=0.12](7.7,8.1375)
+% 			\psdots[dotsize=0.12](8.1,8.1375)
+% 			\psdots[dotsize=0.12](8.5,8.1375)
+% 			\psdots[dotsize=0.12](8.9,8.1375)
+% 			\psdots[dotsize=0.12](9.3,8.1375)
+% 			\psdots[dotsize=0.12](9.7,8.1375)
+% 			\psdots[dotsize=0.12](10.1,8.1375)
+% 			\psdots[dotsize=0.12](10.5,8.1375)
+% 			\psdots[dotsize=0.12](11.0,8.1375)
+% 			\psdots[dotsize=0.12](11.4,8.1375)
+% 			\psdots[dotsize=0.12](11.8,8.1375)
+% 			\psdots[dotsize=0.12](7.3,8.4375)
+% 			\psdots[dotsize=0.12](7.7,8.4375)
+% 			\psdots[dotsize=0.12](8.1,8.4375)
+% 			\psdots[dotsize=0.12](8.5,8.4375)
+% 			\psdots[dotsize=0.12](8.9,8.4375)
+% 			\psdots[dotsize=0.12](9.3,8.4375)
+% 			\psdots[dotsize=0.12](9.7,8.4375)
+% 			\psdots[dotsize=0.12](10.1,8.4375)
+% 			\psdots[dotsize=0.12](10.5,8.4375)
+% 			\psdots[dotsize=0.12](11.0,8.4375)
+% 			\psdots[dotsize=0.12](11.4,8.4375)
+% 			\psdots[dotsize=0.12](11.8,8.4375)
+% 			\psdots[dotsize=0.12](7.3,6.0375)
+% 			\psdots[dotsize=0.12](7.7,6.0375)
+% 			\psdots[dotsize=0.12](8.1,6.0375)
+% 			\psdots[dotsize=0.12](8.5,6.0375)
+% 			\psdots[dotsize=0.12](8.9,6.0375)
+% 			\psdots[dotsize=0.12](9.3,6.0375)
+% 			\psdots[dotsize=0.12](9.7,6.0375)
+% 			\psdots[dotsize=0.12](10.1,6.0375)
+% 			\psdots[dotsize=0.12](10.5,6.0375)
+% 			\psdots[dotsize=0.12](11.0,6.0375)
+% 			\psdots[dotsize=0.12](11.4,6.0375)
+% 			\psdots[dotsize=0.12](11.8,6.0375)
+% 			\psdots[dotsize=0.12](7.3,5.7375)
+% 			\psdots[dotsize=0.12](7.7,5.7375)
+% 			\psdots[dotsize=0.12](8.1,5.7375)
+% 			\psdots[dotsize=0.12](8.5,5.7375)
+% 			\psdots[dotsize=0.12](8.9,5.7375)
+% 			\psdots[dotsize=0.12](9.3,5.7375)
+% 			\psdots[dotsize=0.12](9.7,5.7375)
+% 			\psdots[dotsize=0.12](10.1,5.7375)
+% 			\psdots[dotsize=0.12](10.5,5.7375)
+% 			\psdots[dotsize=0.12](11.0,5.7375)
+% 			\psdots[dotsize=0.12](11.4,5.7375)
+% 			\psdots[dotsize=0.12](11.8,5.7375)
+% 			\psdots[dotsize=0.12](7.3,5.4375)
+% 			\psdots[dotsize=0.12](7.7,5.4375)
+% 			\psdots[dotsize=0.12](8.1,5.4375)
+% 			\psdots[dotsize=0.12](8.5,5.4375)
+% 			\psdots[dotsize=0.12](8.9,5.4375)
+% 			\psdots[dotsize=0.12](9.3,5.4375)
+% 			\psdots[dotsize=0.12](9.7,5.4375)
+% 			\psdots[dotsize=0.12](10.1,5.4375)
+% 			\psdots[dotsize=0.12](10.5,5.4375)
+% 			\psdots[dotsize=0.12](11.0,5.4375)
+% 			\psdots[dotsize=0.12](11.4,5.4375)
+% 			\psdots[dotsize=0.12](11.8,5.4375)
+% 			\psdots[dotsize=0.12](7.3,7.5375)
+% 			\psdots[dotsize=0.12](7.7,7.5375)
+% 			\psdots[dotsize=0.12](8.1,7.5375)
+% 			\psdots[dotsize=0.12](8.5,7.5375)
+% 			\psdots[dotsize=0.12](8.9,7.5375)
+% 			\psdots[dotsize=0.12](9.3,7.5375)
+% 			\psdots[dotsize=0.12](9.7,7.5375)
+% 			\psdots[dotsize=0.12](10.1,7.5375)
+% 			\psdots[dotsize=0.12](10.5,7.5375)
+% 			\psdots[dotsize=0.12](11.0,7.5375)
+% 			\psdots[dotsize=0.12](11.4,7.5375)
+% 			\psdots[dotsize=0.12](11.8,7.5375)
+% 			\psdots[dotsize=0.12](7.1,1.2375)
+% 			\psdots[dotsize=0.12](7.5,1.2375)
+% 			\psdots[dotsize=0.12](7.9,1.2375)
+% 			\psdots[dotsize=0.12](8.3,1.2375)
+% 			\psdots[dotsize=0.12](8.7,1.2375)
+% 			\psdots[dotsize=0.12](9.1,1.2375)
+% 			\psdots[dotsize=0.12](9.5,1.2375)
+% 			\psdots[dotsize=0.12](9.9,1.2375)
+% 			\psdots[dotsize=0.12](10.3,1.2375)
+% 			\psdots[dotsize=0.12](10.8,1.2375)
+% 			\psdots[dotsize=0.12](11.2,1.2375)
+% 			\psdots[dotsize=0.12](11.6,1.2375)
+% 			\psdots[dotsize=0.12](7.1,-0.5625)
+% 			\psdots[dotsize=0.12](7.5,-0.5625)
+% 			\psdots[dotsize=0.12](7.9,-0.5625)
+% 			\psdots[dotsize=0.12](8.3,-0.5625)
+% 			\psdots[dotsize=0.12](8.7,-0.5625)
+% 			\psdots[dotsize=0.12](9.1,-0.5625)
+% 			\psdots[dotsize=0.12](9.5,-0.5625)
+% 			\psdots[dotsize=0.12](9.9,-0.5625)
+% 			\psdots[dotsize=0.12](10.3,-0.5625)
+% 			\psdots[dotsize=0.12](10.8,-0.5625)
+% 			\psdots[dotsize=0.12](11.2,-0.5625)
+% 			\psdots[dotsize=0.12](11.6,-0.5625)
+% 			\rput{-270.0}(10.3375,-9.9625){\psarc[linewidth=0.04](10.15,0.1875){3.85}{61.699245}{119.0546}}
+% 			\rput{-90.0}(8.2625,8.6375){\psarc[linewidth=0.04](8.45,0.1875){3.85}{61.699245}{119.0546}}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(9.032031,-1.9525){\CodeT{applyLocal(en)}}
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.4,-1.5625)(8.4,-1.2625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.6,-1.5625)(8.6,0.0375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.9,-1.5625)(8.9,1.4375)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(8.282031,2.6475){\CodeT{DirichletConstraints}}
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,0.7375)(17.3,0.3375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,0.7375)(18.5,0.3375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,0.7375)(19.7,0.3375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,0.7375)(20.9,0.3375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,2.1375)(17.3,1.7375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,2.1375)(18.5,1.7375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,2.1375)(19.7,1.7375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,2.1375)(20.9,1.7375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.3,-0.6625)(17.3,-1.0625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.5,-0.6625)(18.5,-1.0625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.7,-0.6625)(19.7,-1.0625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.9,-0.6625)(20.9,-1.0625)
+% 			\psdots[dotsize=0.12](17.4,-0.0625)
+% 			\psdots[dotsize=0.12](17.8,-0.0625)
+% 			\psdots[dotsize=0.12](18.2,-0.0625)
+% 			\psdots[dotsize=0.12](18.6,-0.0625)
+% 			\psdots[dotsize=0.12](19.0,-0.0625)
+% 			\psdots[dotsize=0.12](19.4,-0.0625)
+% 			\psdots[dotsize=0.12](19.8,-0.0625)
+% 			\psdots[dotsize=0.12](20.2,-0.0625)
+% 			\psdots[dotsize=0.12](20.6,-0.0625)
+% 			\psdots[dotsize=0.12](21.1,-0.0625)
+% 			\psdots[dotsize=0.12](21.5,-0.0625)
+% 			\psdots[dotsize=0.12](21.9,-0.0625)
+% 			\psdots[dotsize=0.12](17.4,1.1375)
+% 			\psdots[dotsize=0.12](17.8,1.1375)
+% 			\psdots[dotsize=0.12](18.2,1.1375)
+% 			\psdots[dotsize=0.12](18.6,1.1375)
+% 			\psdots[dotsize=0.12](19.0,1.1375)
+% 			\psdots[dotsize=0.12](19.4,1.1375)
+% 			\psdots[dotsize=0.12](19.8,1.1375)
+% 			\psdots[dotsize=0.12](20.2,1.1375)
+% 			\psdots[dotsize=0.12](20.6,1.1375)
+% 			\psdots[dotsize=0.12](21.1,1.1375)
+% 			\psdots[dotsize=0.12](21.5,1.1375)
+% 			\psdots[dotsize=0.12](21.9,1.1375)
+% 			\psdots[dotsize=0.12](17.4,1.4375)
+% 			\psdots[dotsize=0.12](17.8,1.4375)
+% 			\psdots[dotsize=0.12](18.2,1.4375)
+% 			\psdots[dotsize=0.12](18.6,1.4375)
+% 			\psdots[dotsize=0.12](19.0,1.4375)
+% 			\psdots[dotsize=0.12](19.4,1.4375)
+% 			\psdots[dotsize=0.12](19.8,1.4375)
+% 			\psdots[dotsize=0.12](20.2,1.4375)
+% 			\psdots[dotsize=0.12](20.6,1.4375)
+% 			\psdots[dotsize=0.12](21.1,1.4375)
+% 			\psdots[dotsize=0.12](21.5,1.4375)
+% 			\psdots[dotsize=0.12](21.9,1.4375)
+% 			\psdots[dotsize=0.12](17.4,-0.3625)
+% 			\psdots[dotsize=0.12](17.8,-0.3625)
+% 			\psdots[dotsize=0.12](18.2,-0.3625)
+% 			\psdots[dotsize=0.12](18.6,-0.3625)
+% 			\psdots[dotsize=0.12](19.0,-0.3625)
+% 			\psdots[dotsize=0.12](19.4,-0.3625)
+% 			\psdots[dotsize=0.12](19.8,-0.3625)
+% 			\psdots[dotsize=0.12](20.2,-0.3625)
+% 			\psdots[dotsize=0.12](20.6,-0.3625)
+% 			\psdots[dotsize=0.12](21.1,-0.3625)
+% 			\psdots[dotsize=0.12](21.5,-0.3625)
+% 			\psdots[dotsize=0.12](21.9,-0.3625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(18.96203,-1.7525){\CodeT{apply()}}
+% 			\rput{-270.0}(20.8375,-20.0625){\psarc[linewidth=0.04](20.45,0.3875){3.85}{61.699245}{119.0546}}
+% 			\rput{-90.0}(18.3625,19.1375){\psarc[linewidth=0.04](18.75,0.3875){3.85}{61.699245}{119.0546}}
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](18.0,7.2375)(17.0,6.8375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](19.2,7.2375)(18.2,6.8375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](20.4,7.2375)(19.4,6.8375)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](21.6,7.2375)(20.6,6.8375)
+% 			\psdots[dotsize=0.12](17.1,6.4375)
+% 			\psdots[dotsize=0.12](17.5,6.4375)
+% 			\psdots[dotsize=0.12](17.9,6.4375)
+% 			\psdots[dotsize=0.12](18.3,6.4375)
+% 			\psdots[dotsize=0.12](18.7,6.4375)
+% 			\psdots[dotsize=0.12](19.1,6.4375)
+% 			\psdots[dotsize=0.12](19.5,6.4375)
+% 			\psdots[dotsize=0.12](19.9,6.4375)
+% 			\psdots[dotsize=0.12](20.3,6.4375)
+% 			\psdots[dotsize=0.12](20.8,6.4375)
+% 			\psdots[dotsize=0.12](21.2,6.4375)
+% 			\psdots[dotsize=0.12](21.6,6.4375)
+% 			\psdots[dotsize=0.12](17.1,7.9375)
+% 			\psdots[dotsize=0.12](17.5,7.9375)
+% 			\psdots[dotsize=0.12](17.9,7.9375)
+% 			\psdots[dotsize=0.12](18.3,7.9375)
+% 			\psdots[dotsize=0.12](18.7,7.9375)
+% 			\psdots[dotsize=0.12](19.1,7.9375)
+% 			\psdots[dotsize=0.12](19.5,7.9375)
+% 			\psdots[dotsize=0.12](19.9,7.9375)
+% 			\psdots[dotsize=0.12](20.3,7.9375)
+% 			\psdots[dotsize=0.12](20.8,7.9375)
+% 			\psdots[dotsize=0.12](21.2,7.9375)
+% 			\psdots[dotsize=0.12](21.6,7.9375)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(19.162031,4.8475){\CodeT{apply()}}
+% 			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.8,5.3375)(18.8,6.7375)
+% 			\psdots[dotsize=0.12](17.1,8.2375)
+% 			\psdots[dotsize=0.12](17.5,8.2375)
+% 			\psdots[dotsize=0.12](17.9,8.2375)
+% 			\psdots[dotsize=0.12](18.3,8.2375)
+% 			\psdots[dotsize=0.12](18.7,8.2375)
+% 			\psdots[dotsize=0.12](19.1,8.2375)
+% 			\psdots[dotsize=0.12](19.5,8.2375)
+% 			\psdots[dotsize=0.12](19.9,8.2375)
+% 			\psdots[dotsize=0.12](20.3,8.2375)
+% 			\psdots[dotsize=0.12](20.8,8.2375)
+% 			\psdots[dotsize=0.12](21.2,8.2375)
+% 			\psdots[dotsize=0.12](21.6,8.2375)
+% 			\psdots[dotsize=0.12](17.1,8.5375)
+% 			\psdots[dotsize=0.12](17.5,8.5375)
+% 			\psdots[dotsize=0.12](17.9,8.5375)
+% 			\psdots[dotsize=0.12](18.3,8.5375)
+% 			\psdots[dotsize=0.12](18.7,8.5375)
+% 			\psdots[dotsize=0.12](19.1,8.5375)
+% 			\psdots[dotsize=0.12](19.5,8.5375)
+% 			\psdots[dotsize=0.12](19.9,8.5375)
+% 			\psdots[dotsize=0.12](20.3,8.5375)
+% 			\psdots[dotsize=0.12](20.8,8.5375)
+% 			\psdots[dotsize=0.12](21.2,8.5375)
+% 			\psdots[dotsize=0.12](21.6,8.5375)
+% 			\psdots[dotsize=0.12](17.1,6.1375)
+% 			\psdots[dotsize=0.12](17.5,6.1375)
+% 			\psdots[dotsize=0.12](17.9,6.1375)
+% 			\psdots[dotsize=0.12](18.3,6.1375)
+% 			\psdots[dotsize=0.12](18.7,6.1375)
+% 			\psdots[dotsize=0.12](19.1,6.1375)
+% 			\psdots[dotsize=0.12](19.5,6.1375)
+% 			\psdots[dotsize=0.12](19.9,6.1375)
+% 			\psdots[dotsize=0.12](20.3,6.1375)
+% 			\psdots[dotsize=0.12](20.8,6.1375)
+% 			\psdots[dotsize=0.12](21.2,6.1375)
+% 			\psdots[dotsize=0.12](21.6,6.1375)
+% 			\psdots[dotsize=0.12](17.1,5.8375)
+% 			\psdots[dotsize=0.12](17.5,5.8375)
+% 			\psdots[dotsize=0.12](17.9,5.8375)
+% 			\psdots[dotsize=0.12](18.3,5.8375)
+% 			\psdots[dotsize=0.12](18.7,5.8375)
+% 			\psdots[dotsize=0.12](19.1,5.8375)
+% 			\psdots[dotsize=0.12](19.5,5.8375)
+% 			\psdots[dotsize=0.12](19.9,5.8375)
+% 			\psdots[dotsize=0.12](20.3,5.8375)
+% 			\psdots[dotsize=0.12](20.8,5.8375)
+% 			\psdots[dotsize=0.12](21.2,5.8375)
+% 			\psdots[dotsize=0.12](21.6,5.8375)
+% 			\psdots[dotsize=0.12](17.1,5.5375)
+% 			\psdots[dotsize=0.12](17.5,5.5375)
+% 			\psdots[dotsize=0.12](17.9,5.5375)
+% 			\psdots[dotsize=0.12](18.3,5.5375)
+% 			\psdots[dotsize=0.12](18.7,5.5375)
+% 			\psdots[dotsize=0.12](19.1,5.5375)
+% 			\psdots[dotsize=0.12](19.5,5.5375)
+% 			\psdots[dotsize=0.12](19.9,5.5375)
+% 			\psdots[dotsize=0.12](20.3,5.5375)
+% 			\psdots[dotsize=0.12](20.8,5.5375)
+% 			\psdots[dotsize=0.12](21.2,5.5375)
+% 			\psdots[dotsize=0.12](21.6,5.5375)
+% 			\psdots[dotsize=0.12](17.1,7.6375)
+% 			\psdots[dotsize=0.12](17.5,7.6375)
+% 			\psdots[dotsize=0.12](17.9,7.6375)
+% 			\psdots[dotsize=0.12](18.3,7.6375)
+% 			\psdots[dotsize=0.12](18.7,7.6375)
+% 			\psdots[dotsize=0.12](19.1,7.6375)
+% 			\psdots[dotsize=0.12](19.5,7.6375)
+% 			\psdots[dotsize=0.12](19.9,7.6375)
+% 			\psdots[dotsize=0.12](20.3,7.6375)
+% 			\psdots[dotsize=0.12](20.8,7.6375)
+% 			\psdots[dotsize=0.12](21.2,7.6375)
+% 			\psdots[dotsize=0.12](21.6,7.6375)
+% 			\rput{-270.0}(27.3375,-13.1625){\psarc[linewidth=0.04](20.25,7.0875){3.85}{61.699245}{119.0546}}
+% 			\rput{-90.0}(11.2625,25.4375){\psarc[linewidth=0.04](18.35,7.0875){3.85}{61.699245}{119.0546}}
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.4,5.3375)(17.6,6.7375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.3,5.3375)(19.8,6.7375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.5,5.3375)(20.9,6.7375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.0,-1.3625)(17.7,-1.1625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.1,-1.3625)(17.7,0.2375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.3,-1.3625)(17.9,1.6375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.6,-1.3625)(18.6,-1.1625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(18.8,-1.3625)(18.8,0.2375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.0,-1.3625)(19.0,1.6375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.2,-1.3625)(19.8,1.5375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.4,-1.3625)(20.1,0.2375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.6,-1.3625)(19.9,-1.1625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(19.9,-1.3625)(21.1,1.6375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(20.0,-1.3625)(21.1,0.2375)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(20.1,-1.3625)(21.0,-1.1625)
+% 			\psframe[linewidth=0.04,dimen=outer](23.0,10.0375)(5.5,-2.5625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(14.20875,10.3475){Systemmatrix}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(14.156563,-3.5525){RHS}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(8.292031,-4.5525){\CodeT{SingleConstraint}}
+% 			\rput{-270.0}(2.8375,-16.2625){\psarc[linewidth=0.04](9.55,-6.7125){3.85}{61.699245}{119.0546}}
+% 			\rput{-90.0}(10.5625,-2.8625){\psarc[linewidth=0.04](3.85,-6.7125){3.85}{61.699245}{119.0546}}
+% 			\psframe[linewidth=0.04,dimen=outer](7.2,-5.0625)(6.2,-5.4625)
+% 			\psframe[linewidth=0.04,dimen=outer](7.2,-8.0625)(6.2,-8.4625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](7.2,-6.4625)(6.2,-6.8625)
+% 			\psdots[dotsize=0.12](6.3,-5.7625)
+% 			\psdots[dotsize=0.12](6.7,-5.7625)
+% 			\psdots[dotsize=0.12](7.1,-5.7625)
+% 			\psdots[dotsize=0.12](6.3,-6.0625)
+% 			\psdots[dotsize=0.12](6.7,-6.0625)
+% 			\psdots[dotsize=0.12](7.1,-6.0625)
+% 			\psdots[dotsize=0.12](6.3,-7.1625)
+% 			\psdots[dotsize=0.12](6.7,-7.1625)
+% 			\psdots[dotsize=0.12](7.1,-7.1625)
+% 			\psdots[dotsize=0.12](6.3,-7.6625)
+% 			\psdots[dotsize=0.12](6.7,-7.6625)
+% 			\psdots[dotsize=0.12](7.1,-7.6625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(9.472032,-6.6525){\CodeT{getRow()}}
+% 			\psline[linewidth=0.04cm,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(8.5,-6.5625)(7.8,-6.5625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-4.9625)(16.0,-5.3625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-7.9625)(16.0,-8.3625)
+% 			\psframe[linewidth=0.04,dimen=outer,fillstyle=solid,fillcolor=red](17.0,-6.3625)(16.0,-6.7625)
+% 			\psdots[dotsize=0.12](16.1,-5.6625)
+% 			\psdots[dotsize=0.12](16.5,-5.6625)
+% 			\psdots[dotsize=0.12](16.9,-5.6625)
+% 			\psdots[dotsize=0.12](16.1,-5.9625)
+% 			\psdots[dotsize=0.12](16.5,-5.9625)
+% 			\psdots[dotsize=0.12](16.9,-5.9625)
+% 			\psdots[dotsize=0.12](16.1,-7.0625)
+% 			\psdots[dotsize=0.12](16.5,-7.0625)
+% 			\psdots[dotsize=0.12](16.9,-7.0625)
+% 			\psdots[dotsize=0.12](16.1,-7.5625)
+% 			\psdots[dotsize=0.12](16.5,-7.5625)
+% 			\psdots[dotsize=0.12](16.9,-7.5625)
+% 			\rput{-90.0}(20.2625,7.0375){\psarc[linewidth=0.04](13.65,-6.6125){3.85}{61.699245}{119.0546}}
+% 			\rput{-270.0}(12.7375,-25.9625){\psarc[linewidth=0.04](19.35,-6.6125){3.85}{61.699245}{119.0546}}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(16.582031,-4.4525){\CodeT{DirichletConstraints}}
+% 			\psframe[linewidth=0.04,dimen=outer](23.0,-3.9625)(5.5,-9.4625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(6.8620315,-8.8525){\CodeT{apply()}}
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(16.46203,-8.8525){\CodeT{apply()}}
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(6.5,-8.6625)(6.5,-6.9625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.1,-8.5625)(16.1,-8.3625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.3,-8.5625)(16.3,-6.8625)
+% 			\psline[linewidth=0.04cm,fillcolor=red,arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.4]{->}(16.6,-8.5625)(16.6,-5.4625)
+% 			\psframe[linewidth=0.04,dimen=outer](9.3,-9.8625)(8.3,-10.2625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(12.065937,-10.0525){= entity with boundary faces}
+% 			\psdots[dotsize=0.12](8.8,-10.7625)
+% 			\usefont{T1}{ptm}{m}{n}
+% 			\rput(12.355938,-10.7525){= entity without boundary faces}
+% 			\end{pspicture}
+% 			}
+% 		\end{flushleft}
 	\end{remark}\theoremEndLine
 
 
@@ -1586,7 +1586,7 @@ The essential difference is that the (differential)operator already knows the co
 				\hline
         \CodeT{localVector} & \\
         \CodeT{ = applyLocal( entity,} & \\
-        \CodeT{ localBasefunctionSet )}  & \\         
+        \CodeT{ localBasefunctionSet )}  & \\
         \hline
 				\CodeT{int} & returns the row number which has to be deleted \\
 				\CodeT{ = getRow()} & in the system matrix.\\
@@ -1611,10 +1611,10 @@ The essential difference is that the (differential)operator already knows the co
 				\hline
         \CodeT{localVector} & \\
         \CodeT{ = applyLocal( entity,} & \\
-        \CodeT{ localBasefunctionSet )}  & \\         
+        \CodeT{ localBasefunctionSet )}  & \\
         \hline
 				\CodeT{int} & Returns number of constraints. \\
-				\CodeT{ = size()} & \\  
+				\CodeT{ = size()} & \\
 				\hline
 				\CodeT{singleconstraint} & Returns a single constraint represented\\
 				\CodeT{ = operator[i]} & by the class \CodeT{SingleConstraint}. This \\
@@ -1624,7 +1624,7 @@ The essential difference is that the (differential)operator already knows the co
     \end{class}\theoremEndLine
 
 	\begin{class}[\CodeT{ConstraintsDefault< FunctionalImp >}]
-		Default implementation of \CodeT{ConstraintsInterface}.		
+		Default implementation of \CodeT{ConstraintsInterface}.
   \end{class}\theoremEndLine
 
 	\begin{class}[\CodeT{DirichletConstraints< FunctionalImp >}]
@@ -1640,10 +1640,10 @@ The essential difference is that the (differential)operator already knows the co
 			\hline
 			\CodeT{localVector} & \\
 			\CodeT{ = applyLocal( entity,} & \\
-			\CodeT{ localBasefunctionSet )}  & \\         
+			\CodeT{ localBasefunctionSet )}  & \\
 			\hline
 			\CodeT{int} & Returns number of constraints. \\
-			\CodeT{ = size()} & \\  
+			\CodeT{ = size()} & \\
 			\hline
 			\CodeT{singleconstraint} & Returns a single constraint represented\\
 			\CodeT{ = operator[i]} & by the class \CodeT{SingleConstraint}. This \\
