@@ -177,7 +177,7 @@ numberstyle=\tiny}
 
     \begin{definition}[operator and functional]\theoremNewline
       \label{definition::introduction::operators_functionals}
-      The function $f$ from he original problem \ref{equation::introduction::elliptic_pde} induces a functional
+      The function $f$ from example \ref{example::introduction::elliptic_pde} induces a functional
       \begin{align}
         F: H^1 &\rightarrow \R
           \notag\\
@@ -186,7 +186,7 @@ numberstyle=\tiny}
             f v
           \dx\punkt
           \notag
-        \intertext{Accordingly the function $a$ from the original problem \ref{equation::introduction::elliptic_pde}
+        \intertext{Accordingly the function $a$ from example \ref{example::introduction::elliptic_pde}
           induces an operator}
         A: H^1 &\rightarrow H^{-1}
           \notag\\
@@ -204,7 +204,7 @@ numberstyle=\tiny}
     \end{definition}\theoremEndLine
 
     With these definitions at hand the weak formulation \eqref{equation::introduction::weak_formulation} can be
-    rewritten in the following way.
+    written as the following variational problem.
 
     \begin{remark}[variational problem]\theoremNewline
       \label{remark::introduction::variational_formulation_functionals_operators}
@@ -217,9 +217,9 @@ numberstyle=\tiny}
       \end{align}
     \end{remark}\theoremEndLine
 
-    In order to solve the above problem, one can rewrite equation
-    \eqref{equation::introduction::variational_formulation_functionals_operators} using the definition of the affine
-    subspace.
+    In order to solve the above problem we can rewrite equation
+    \eqref{equation::introduction::variational_formulation_functionals_operators} using the fact that the desired
+    solution lies in the affine subspace ${H_{g}^{1}}$ and can thus be decomposed as ${u = u_0 + \hat{g}}$.
 
     \begin{remark}[solution of the variational problem]\theoremNewline
       \label{remark::introduction::solution_of_the_variational_problem}
@@ -230,17 +230,20 @@ numberstyle=\tiny}
         A(u_{0})[v] = F[v] - A(\hat{g})[v] &&\text{for all } v\in H^1_0 \punkt
       \end{align}
       The solution ${u \in H^{1}_{g}}$ of \eqref{equation::introduction::variational_formulation_functionals_operators}
-      is then given as
+      is then given by
       \begin{align}
         \label{equation::introduction::solution}
         u := u_{0} + \hat{g}\punkt
       \end{align}
     \end{remark}\theoremEndLine
 
+    In order to solve equation \eqref{equation::introduction::variational_formulation_functionals_operators} numerically
+    we introduce the finite element discretization.
+
     \begin{definition}[finite element discretization]\theoremNewline
       \label{definition::introduction::finite_element_discretization}
-      With the notation from above, let $\Tau_h$ be a conform admissable triangulation of the domain $\Omega$ with
-      codim 0 elements ${T \in \Tau_h}$. The usual finite element lagrange spaces are then given by
+      With the notation from example \ref{example::introduction::elliptic_pde}, let $\Tau_h$ be a conform admissable
+      triangulation of the domain $\Omega$ with codim 0 elements ${T \in \Tau_h}$. The usual finite element lagrange spaces are then given by
       \begin{align}
         \label{equation::introduction::lagrange_space}
         S_{h}^{k} &:=
@@ -266,12 +269,13 @@ numberstyle=\tiny}
       where ${g_{h} \in S_{h}^{k}}$ is the projection of $\hat{g}$ onto ${S_{h}^{k}}$.
     \end{definition}\theoremEndLine
 
-    With these discrete function spaces at hand, we can define the finite element solution to problem
+    With these discrete function spaces at hand, we can define the finite element solution of problem
     \eqref{equation::introduction::elliptic_pde}.
 
     \begin{definition}[finite element solution]\theoremNewline
       \label{definition::introduction::finite_element_solution}
-      With the notation from above, find ${{u_{h}}_{0} \in {S_{h}^{1}}_0}$, such that
+      With the notation from remark \ref{remark::introduction::variational_formulation_functionals_operators} and
+      definition \ref{definition::introduction::finite_element_discretization}, find ${{u_{h}}_{0} \in {S_{h}^{1}}_0}$, such that
       \begin{align}
         \label{equation::introduction::finite_element_solution_0}
           A({u_{h}}_{0})[v_{h}] = F[v_{h}] - A(g_{h})[v_{h}] &&\text{for all } v_{h} \in {S_{h}^{1}}_0\punkt
