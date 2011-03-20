@@ -86,6 +86,7 @@ numberstyle=\tiny}
 \newcommand{\K}{\mathbb{K}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\R}{\mathbb{R}}
+\newcommand{\Tau}{\mathcal{T}}
 
 \title{Draft on \dunefemfunctionals}
 \author{Felix Albrecht (\Code{felix.albrecht@uni-muenster.de}),\\
@@ -116,12 +117,17 @@ numberstyle=\tiny}
   \section{Introduction}
     \label{section::introduction}
 
-    The overall goal of \dunefem and \dunefemfunctionals is the efficient numerical solution of PDE's. Assuming standard
-    notation, the following elliptic PDE may serve as a sample problem.
+    The overall goal of \dunefem and \dunefemfunctionals is the efficient numerical solution of PDE's. We will present
+    some examples in this section, that may serve as a design motivation.
+
+    \subsection{Elliptic PDE, finite element discretization}
+
+    Assuming standard notation, the following elliptic PDE is one of the simplest sample problem we would like to solve
+    with \dunefemfunctionals.
 
     \begin{example}[Elliptic PDE in one dimension]\theoremNewline
       \label{example::introduction::elliptic_pde}
-      Let ${\Omega \subset \R}$ be a domain and ${a\komma f : \Omega \rightarrow \R}$ and
+      Let ${\Omega \subset \R}$ be a bounded connected lipshitz-domain and ${a\komma f : \Omega \rightarrow \R}$ and
       ${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
       \begin{align}
         \label{equation::introduction::elliptic_pde}
@@ -138,7 +144,8 @@ numberstyle=\tiny}
 
     \begin{definition}{Weak formulation}\theoremNewline
       \label{definition::introduction::weak_formulation}
-      Let $H^1$ and $H^1_0$ be given as usual and let $H^1_g$ for ${g\in H^1}$ be defined as
+      Let $H^1$ and $H^1_0$ be given as usual and let the affine subspace $H^1_g$ induced by a function ${g\in H^1}$ be
+      defined as
       \begin{align}
         H^1_g :=
           \big\{
@@ -180,7 +187,7 @@ numberstyle=\tiny}
           \notag
         \intertext{Accordingly the function $a$ from the original problem \ref{equation::introduction::elliptic_pde}
           induces an operator}
-        A: H^1_g &\rightarrow H^{-1}
+        A: H^1_g &\rightarrow H^{-1}_{0}
           \notag\\
         u &\mapsto A(u) \komma
           \notag
@@ -199,7 +206,7 @@ numberstyle=\tiny}
     rewritten in the following way.
 
     \begin{remark}[Variational formulation using functionals and operator]\theoremNewline
-      \label{remakr::introduction::variational_formulation_functionals_operators}
+      \label{remark::introduction::variational_formulation_functionals_operators}
       Let $A$ and $F$ be as in definition \ref{definition::introduction::operators_functionals}. The weak formulation
       \eqref{equation::introduction::weak_formulation} can be rewritten as follows.
       Find ${u \in H^1_g}$, such that
@@ -209,8 +216,71 @@ numberstyle=\tiny}
       \end{align}
     \end{remark}
 
-    Our postulate is, that a wide range of interesting problems can be written in this form. For detailed examples of
-    linear and nonlinear problems see section ?.
+    In order to solve the above problem, one can rewrite equation
+    \eqref{equation::introduction::variational_formulation_functionals_operators} using the definition of the affine
+    subspace.
+
+    \begin{remark}[Solution of the variational problem]\theoremNewline
+      \label{remark::introduction::solution_of_the_variational_problem}
+      Let all be as in remark \ref{remark::introduction::variational_formulation_functionals_operators}. Find
+      ${u_{0} \in H^{1}_{0}}$, such that
+      \begin{align}
+        \label{equation::introduction::variational_formulation_in_h_1_0}
+        A(u_{0})[v] = F[v] &&\text{for all } v\in H^1_0 \punkt
+      \end{align}
+      The solution ${u \in H^{1}_{g}}$ of \eqref{equation::introduction::variational_formulation_functionals_operators}
+      is then given as
+      \begin{align}
+        \label{equation::introduction::solution}
+        u := u_{0} + g\punkt
+      \end{align}
+    \end{remark}
+
+    \begin{definition}[Finite element discretization]\theoremNewline
+      \label{definition::introduction::finite_element_discretization}
+      With the notation from above, let $\Tau_h$ be a conform admissable triangulation of the domain $\Omega$ into
+      elements $T$. The usual finite element lagrange spaces are then given by
+      \begin{align}
+        \label{equation::introduction::lagrange_space}
+        S_{h}^{k} &:=
+          \big\{
+            v_{h} \in C^{0}(\Omega)
+          \big|
+            v_{h}|_{T} \in \mathbb{P}^{k}(T) \quad\forall T \in \Tau_{h}
+          \big\}\komma\\
+        {S_{h}^{k}}_{0} &:=
+          \big\{
+            v_{h} \in S_{h}^{k}
+          \big|
+            v_{h} = 0 \text{ on } \boundary \Omega
+          \big\}\punkt
+        \intertext{and}
+        {S_{h}^{k}}_{g} &:=
+          \big\{
+            v_{h} + g_{h}
+          \big|
+            v_{h}  \in {S_{h}^{k}}_g\komma
+          \big\}
+      \end{align}
+      with ${g_{h} \in S_{h}^{k}}$ being the projection of $g$ onto ${S_{h}^{k}}$.
+    \end{definition}\theoremEndLine
+
+    With these discrete function spaces at hand, we can define the finite element solution to problem
+    \eqref{equation::introduction::elliptic_pde}.
+
+    \begin{definition}[Finite element solution]\theoremNewline
+      \label{definition::introduction::finite_element_solution}
+      With the notation from above, find ${{u_{h}}_{0} \in {S_{h}^{1}}_0}$, such that
+      \begin{align}
+        \label{equation::introduction::finite_element_solution_0}
+          A({u_{h}}_{0})[v_{h}] = F[v_{h}] &&\text{for all } v_{h} \in {S_{h}^{1}}_0\punkt
+      \end{align}
+      The finite element solution of \eqref{equation::introduction::elliptic_pde} is then given as
+      \begin{align}
+        \label{equation::introduction::finite_element_solution}
+          u_{h} := {u_{h}}_{0} + g_{h}\punkt
+      \end{align}
+    \end{definition}
 
   \section{Abstract concept}
     \label{section::abstract_concept}
