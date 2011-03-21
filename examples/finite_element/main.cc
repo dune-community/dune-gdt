@@ -10,8 +10,8 @@
 
 #include <dune/fem/constraints/dirichlet.hh>
 #include <dune/fem/subspace/subspaces.hh>
-#include <dune/fem/operator/ellipticfem.hh>
-#include <dune/fem/functional/l2.hh>
+#include <dune/fem/operator/ellipticfiniteelement.hh>
+#include <dune/fem/functional/ltwo.hh>
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
 

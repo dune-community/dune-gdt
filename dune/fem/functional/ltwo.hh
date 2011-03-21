@@ -9,7 +9,6 @@
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
 // dune fem-functionals includes
-//#include <dune/fem/functional/discretelinearfunctional.hh>
 #include <dune/fem/dofvector/dofvector.hh>
 
 namespace Dune {
@@ -37,6 +36,14 @@ public:
 
   typedef Dune::Functionals::LocalDoFVector<RangeFieldType> LocalDoFVectorType;
 
+  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
+
+  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+
+  typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
+
+  typedef typename EntityIteratorType::Entity EntityType;
+
   L2(const DiscreteFunctionSpaceType& discreteFunctionSpace, const InducingFunctionType& inducingFunction)
     : discreteFunctionSpace_(discreteFunctionSpace)
     , inducingFunction_(inducingFunction)
@@ -58,10 +65,6 @@ public:
     RangeFieldType ret = 0.0;
 
     // some types we will need
-    typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-    typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
-    typedef typename EntityIteratorType::Entity EntityType;
     typedef typename DiscreteFunctionType::RangeType RangeType;
     typedef typename DiscreteFunctionType::LocalFunctionType LocalFunctionType;
 
@@ -95,13 +98,9 @@ public:
     *
     * \todo       Doc me, please!
     **/
-  template <class EntityType, class BaseFunctionSetType>
   const LocalDoFVectorType applyLocal(const EntityType& entity, const BaseFunctionSetType& baseFunctionSet) const
   {
     // some types we will need
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-    typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
-    typedef typename EntityIteratorType::Entity EntityType;
     typedef typename EntityType::Geometry EntityGeometryType;
     typedef typename BaseFunctionSetType::RangeType RangeType;
 
