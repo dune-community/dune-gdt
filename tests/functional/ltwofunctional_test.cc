@@ -106,8 +106,8 @@ int main(int argc, char** argv)
     Dune::FemTools::setDiscreteFunctionToScalarValue(discreteFunction, 2.0);
 
     // test functional
-    typedef Dune::Functionals::L2Functional<AnalyticalFunctionType> L2FunctionalType;
-    const L2FunctionalType l2Functional(analyticalFunction);
+    typedef Dune::Functionals::Functional::L2<DiscreteFunctionSpaceType, AnalyticalFunctionType> L2FunctionalType;
+    const L2FunctionalType l2Functional(discreteFunctionSpace, analyticalFunction);
 
     // functions are chosen to equal 1 when multiplied, thus the application of the functional should yield the volume
     // of the area, which in turn should be 1 in case of the two-dimensional unitcube

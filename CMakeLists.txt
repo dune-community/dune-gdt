@@ -101,7 +101,7 @@ ADD_CXX_FLAGS( -I${ALUGRID_BASE_PATH}/include
 #
 # ENDIF ( ENABLE_PARALELL )
 
-ADD_DUNE_MODULES( common istl grid fem )
+ADD_DUNE_MODULES( common istl grid fem fem-tools)
 
 LINK_DIRECTORIES( "/usr/lib" "${ALUGRID_BASE_PATH}/lib" )
 ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
