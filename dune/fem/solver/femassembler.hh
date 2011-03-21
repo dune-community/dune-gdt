@@ -15,6 +15,10 @@ public:
 
   typedef VectorImp VectorType;
 
+  typedef VectorType::FieldType FieldType;
+
+  typedef LocalMatrix<FieldType> LocalMatrixType;
+
 
 public:
   template <class Operator>
@@ -30,7 +34,12 @@ public:
     // assert()
     ItType it = space.begin();
     for (; it != space.end(); ++it) {
-      LocalMatrix localMatrix = op.applyLocal(en1)
+      Entity& en = *it;
+      BFS bfs = space.baseFunctionSet(en);
+      LocalMatrixType localMatrix(bfs.numBaseFunctions(), bfs.numBaseFunctions);
+      op.applyLocal(en, localMatrix);
+
+      addToMatrix(space, m, en, localMatrix);
     }
   }
 };
