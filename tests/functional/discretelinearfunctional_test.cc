@@ -118,18 +118,18 @@ int main(int argc, char** argv)
 //      DiscreteLinearFunctionalDefaultTraitsType;
 //    typedef Dune::Functionals::DiscreteLinearFunctionalDefault< DiscreteLinearFunctionalDefaultTraitsType >
 //      DiscreteLinearFunctionalDefaultType;
-    typedef Dune::Functionals::TestLinearFunctionalTraits< AnalyticalFunctionType >
-      TestLinearFunctionalTraitsType;
-    typedef Dune::Functionals::TestLinearFunctional< TestLinearFunctionalTraitsType >
-      TestLinearFunctionalType;
+//    typedef Dune::Functionals::TestLinearFunctionalTraits< AnalyticalFunctionType >
+//      TestLinearFunctionalTraitsType;
+//    typedef Dune::Functionals::TestLinearFunctional< TestLinearFunctionalTraitsType >
+//      TestLinearFunctionalType;
 
 //    DiscreteLinearFunctionalDefaultType discreteLinearFunctionalDefault;
 
 //    discreteLinearFunctionalDefault( discreteFunction );
 
-    TestLinearFunctionalType testLinearFunctional( analyticalFunction );
+//    TestLinearFunctionalType testLinearFunctional( analyticalFunction );
 
-    testLinearFunctional( discreteFunction );
+//    testLinearFunctional( discreteFunction );
 
 //    if ( volume == 1.0 )
 //      std::cout << "passed!" << std::endl;

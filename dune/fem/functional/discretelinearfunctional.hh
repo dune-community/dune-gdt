@@ -13,6 +13,9 @@ namespace Dune
 namespace Functionals
 {
 
+namespace Functional
+{
+
 /**
   * \brief      This class is the interface for discrete linear functionals.
   *
@@ -395,6 +398,8 @@ private:
   const InducingFunctionType& inducingFunction_;
 
 }; // end TestLinearFunctional
+
+} // end namespace Functional
 
 } // end namespace Functionals
 
