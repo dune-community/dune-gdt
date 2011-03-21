@@ -28,7 +28,7 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune fem-functionals includes
-#include <dune/fem/functional/ltwofunctional.hh>
+#include <dune/fem/functional/ltwo.hh>
 
 // dune fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
