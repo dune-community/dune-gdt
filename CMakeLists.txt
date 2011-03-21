@@ -123,7 +123,4 @@ set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 ADD_EXECUTABLE( ltwofunctional_test "tests/functional/ltwofunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( ltwofunctional_test ${COMMON_LIBS}  )
 
-ADD_EXECUTABLE( discretelinearfunctional_test "tests/functional/discretelinearfunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
-TARGET_LINK_LIBRARIES( discretelinearfunctional_test ${COMMON_LIBS}  )
-
 #HEADERCHECK( ${header} )
