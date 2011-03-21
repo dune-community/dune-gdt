@@ -120,7 +120,7 @@ numberstyle=\tiny}
     The overall goal of \dunefem and \dunefemfunctionals is the efficient numerical solution of PDE's. We will present
     some examples in this section, that may serve as a design motivation.
 
-    \subsection{finite element solution of elliptic boundary value problems}
+    \subsection{Finite element solution of elliptic boundary value problems}
 
     Assuming standard notation, the following elliptic PDE is one of the simplest sample problem we would like to solve
     with \dunefemfunctionals.
@@ -290,6 +290,7 @@ numberstyle=\tiny}
     The following algorithm gives rise to the corresponding constructs that we will nedd in \dunefemfunctionals.
 
     \begin{definition}[algorithm to solve the elliptic boundary value problem]\theoremNewline
+      \label{definition::introduction::algorithm_fem}
       This algorithm computes the finite element solution of problem
       \eqref{equation::introduction::elliptic_pde}.
       \begin{itemize}
@@ -305,7 +306,7 @@ numberstyle=\tiny}
           \end{align}
           for all basefunctions of the ansatz-space ${\varphi_i \in S_{hg}^1}$ and all basefunctions of the test-space
           ${\psi_j \in {S_h^1}_0}$
-        \item[$(vii))$] assemble a vector with entries
+        \item[$(vii)$] assemble a vector with entries
           \begin{align}
             \label{equation::introduction::vector_entries}
             (F)_{j} := F[ \psi_j ]
@@ -325,6 +326,77 @@ numberstyle=\tiny}
           where ${u_{h0} \in S_{h0}^{1}}$ is the discrete function belonging to the dof vector $x$.
       \end{itemize}
     \end{definition}
+
+    We will enlighten some of the needed engredients of the above algorithm in the following remarks.
+
+    \begin{remark}[Discrete function space]\theoremNewline
+      \label{remark::introduction::discrete_function_space}
+      The discrete function space $S_{h}^{1}$ in algorithm \ref{definition::introduction::algorithm_fem}.i will be the
+      usual discrete function spaces from \dunefem.
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Discrete linear subspace]\theoremNewline
+      \label{remark::introduction::discrete_linear_subspace}
+      The discrete linear subspace ${S_{h}^{k}}_{0}$ in algorithm \ref{definition::introduction::algorithm_fem}.ii
+      will be realized by a discrete function space from \dunefem, together with a constraints class to realize the
+      homogeneous dirichlet boundary values.\\
+      Features:
+      \begin{itemize}
+        \item This space should provide a means to apply the constraints or should provide corresponding
+        basefunctions.
+      \end{itemize}
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Discrete affine subspace]\theoremNewline
+      \label{remark::introduction::discrete_affine_subspace}
+      The discrete affine subspace ${S_{h}^{k}}_{g}$ in algorithm \ref{definition::introduction::algorithm_fem}.iii
+      will be ralized by a discrete linear subspace (see remark \ref{remark::introduction::discrete_linear_subspace}),
+      together with a function ${\hat{g} \in S_h^k}$.\\
+      Features:
+      \begin{itemize}
+        \item This space should provide a means to access the function $\hat{g}$.
+      \end{itemize}
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Discrete linear operator]\theoremNewline
+      \label{remark::introduction::discrete_linear_operator}
+      The discrete linear operator $A$ in algorithm \ref{definition::introduction::algorithm_fem}.iv will be realizead
+      by a class with the following features:\\
+      \begin{itemize}
+        \item the operator should provide a method $A(u)$ that returns a functional
+        \item the operator should provide a method $A(u,v)$ which evaluates the operator as a bilinear form
+        \item the operator should provide a method $A(\varphi_i,\psi_j)$ to evaluate the operator locally
+        \item the operator will hold no system matrix or any big storage object.
+      \end{itemize}
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Discrete linear functional]\theoremNewline
+      \label{remark::introduction::discrete_linear_functional}
+      The discrete linear functional $F$ in algorithm \ref{definition::introduction::algorithm_fem}.v will be realized
+      by a class with the following features:\\
+      \begin{itemize}
+        \item the functional should provide a method $F(u)$
+        \item the functional should provide a method $F(\psi_j)$ which evaluates the functional locally
+        \item the functional will hold no vector or any big storage object.
+      \end{itemize}
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Solver]\theoremNewline
+      \label{remark::introduction::solver}
+      The steps $(vi)$ -- $(ix)$ in algorithm \ref{definition::introduction::algorithm_fem} should be ralized by a class
+      that does several things. One possible behaviour is described by the algorithm. Another possible behaviour is
+      ``on-the-fly'' computation of the solution withous the need to assemble the systemmatrix and the right hand
+      side.\\
+      Features:
+      \begin{itemize}
+        \item the solver initializes some kind of storage objects for the system matrix and the right hand side
+        \item the solver carries out the assembling of the system matrix and the right hand side
+        \item the solver applies the constraints (if necessarry) to the system matrix and the right hand side
+        \item the solver assembles the displacement vector $A(\hat{g},\psi_j)$ and substracts it
+        \item the solver solves the system for the DoF vector
+        \item the solver computes the actual solution
+      \end{itemize}
+    \end{remark}\theoremEndLine
 
 
   \section{Abstract concept}
