@@ -8,12 +8,12 @@
 #include <dune/istl/bcrsmatrix.hh>
 #include <dune/istl/solvers.hh>
 
-#include <dune/fem/functional/constraints/dirichlet.hh>
-#include <dune/fem/functional/subspace/subspaces.hh>
-#include <dune/fem/functional/operator/ellipticfem.hh>
-#include <dune/fem/functional/functional/l2.hh>
-#include <dune/fem/functional/container/factory.hh>
-#include <dune/fem/functional/solver/femassembler.hh>
+#include <dune/fem/constraints/dirichlet.hh>
+#include <dune/fem/subspace/subspaces.hh>
+#include <dune/fem/operator/ellipticfem.hh>
+#include <dune/fem/functional/l2.hh>
+#include <dune/fem/container/factory.hh>
+#include <dune/fem/solver/femassembler.hh>
 
 using Dune::Fem::Functional::Constraints;
 using Dune::Fem::Functional::Subspace;
