@@ -11,6 +11,7 @@
 
 // dune common includes
 #include <dune/common/exceptions.hh>
+#include <dune/common/fvector.hh>
 
 // dune grid includes
 #include <dune/grid/yaspgrid.hh>
@@ -38,7 +39,7 @@
   * \brief Analytical function which induces the functional.
   **/
 template <class FunctionSpaceImp>
-class AnalyticalFunction : public Dune::Function<FunctionSpaceImp, AnalyticalFunction<FunctionSpaceImp>>
+class AnalyticalFunction : public Dune::Fem::Function<FunctionSpaceImp, AnalyticalFunction<FunctionSpaceImp>>
 {
 public:
   typedef FunctionSpaceImp FunctionSpaceType;
@@ -47,6 +48,7 @@ public:
   typedef typename FunctionSpaceType::DomainType DomainType;
   typedef typename FunctionSpaceType::RangeType RangeType;
   typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
+  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
   AnalyticalFunction()
   {
@@ -59,6 +61,11 @@ public:
   inline void evaluate(const DomainType& arg, RangeType& ret) const
   {
     ret = 1.0;
+  }
+
+  inline void jacobian(const DomainType& arg, JacobianRangeType& ret) const
+  {
+    ret = JacobianRangeType(1.0);
   }
 };
 
@@ -112,11 +119,18 @@ int main(int argc, char** argv)
 
     EllipticFiniteElementOperatorType ellipticFiniteElementOperator(discreteFunctionSpace, analyticalFunction);
 
+    // entity
+    EllipticFiniteElementOperatorType::EntityIteratorType entityIterator = discreteFunctionSpace.begin();
+    EllipticFiniteElementOperatorType::EntityType& entity                = *entityIterator;
 
-    // functions are chosen to equal 1 when multiplied, thus the application of the functional should yield the volume
-    // of the area, which in turn should be 1 in case of the two-dimensional unitcube
-    //    const double volume = l2Functional( discreteFunction );
+    // test applyLocal
+    const EllipticFiniteElementOperatorType::LocalMatrixType localMatrix =
+        ellipticFiniteElementOperator.applyLocal(entity);
 
+
+    //    // functions are chosen to equal 1 when multiplied, thus the application of the operator should yield the
+    //    volume
+    //    // of the area, which in turn should be 1 in case of the two-dimensional unitcube
     //    if ( volume == 1.0 )
     //      std::cout << "passed!" << std::endl;
     //    else

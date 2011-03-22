@@ -69,8 +69,8 @@ public:
     typedef typename DiscreteFunctionType::LocalFunctionType LocalFunctionType;
 
     // do gridwalk
-    const EntityIteratorType BehindLastEntityIterator = discreteFunctionSpace_.end();
-    for (EntityIteratorType entityIterator = discreteFunctionSpace_.begin(); entityIterator != BehindLastEntityIterator;
+    const EntityIteratorType BehindLastEntity = discreteFunctionSpace_.end();
+    for (EntityIteratorType entityIterator = discreteFunctionSpace_.begin(); entityIterator != BehindLastEntity;
          ++entityIterator) {
       // entity and geometry
       const EntityType& entity = *entityIterator;
