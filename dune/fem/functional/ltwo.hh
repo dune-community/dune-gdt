@@ -83,9 +83,9 @@ public:
       LocalFunctionType;
 
     // do gridwalk
-    const EntityIteratorType BehindLastEntityIterator = discreteFunctionSpace_.end();
+    const EntityIteratorType BehindLastEntity = discreteFunctionSpace_.end();
     for ( EntityIteratorType entityIterator = discreteFunctionSpace_.begin();
-          entityIterator != BehindLastEntityIterator;
+          entityIterator != BehindLastEntity;
           ++entityIterator )
     {
       // entity and geometry
