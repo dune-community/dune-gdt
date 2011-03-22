@@ -74,7 +74,7 @@ class AnalyticalFunction : public Dune::Fem::Function< FunctionSpaceImp , Analyt
 };
 
 // disable warnings about problems in dune headers (sourced by dgfparser)
-#include "../../../dune-fem-tools/dune/fem-tools/header/disablewarnings.hh"
+#include <dune/fem-tools/header/disablewarnings.hh>
 
 // main
 int main(int argc, char** argv)
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
   try{
 
     // print welcome
-    std::cout << "L2 functional test ";
+    std::cout << "Elliptic finite element operator test ";
 
     // mpi
     Dune::MPIManager::initialize ( argc, argv );
