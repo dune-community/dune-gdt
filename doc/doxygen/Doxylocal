@@ -28,3 +28,4 @@ INPUT                 += @top_srcdir@/dune/
 
 # IMAGE_PATH            += @top_srcdir@/dune/fem_functionals/pics
 
+EXTRA_PACKAGES          += amsmath amsfonts amssymb
