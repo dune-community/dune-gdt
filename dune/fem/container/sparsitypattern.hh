@@ -1,10 +1,11 @@
-#ifndef DUNE_FUNCTIONALS_SPARSITYPATTERN
-#define DUNE_FUNCTIONALS_SPARSITYPATTERN
+#ifndef DUNE_FUNCTIONALS_CONTAINER_SPARSITYPATTERN_HH
+#define DUNE_FUNCTIONALS_CONTAINER_SPARSITYPATTERN_HH
 
 #include <vector>
 #include <set>
 
 namespace Dune {
+
 namespace Functionals {
 
 /**
@@ -94,6 +95,7 @@ class DefaultSparsityPattern : public SparsityPattern
 }; // end of class DefaultSparsityPattern
 
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
-#endif // DUNE_FUNCTIONALS_SPARSITYPATTERN
+#endif // DUNE_FUNCTIONALS_CONTAINER_SPARSITYPATTERN_HH

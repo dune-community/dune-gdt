@@ -1,9 +1,11 @@
-#ifndef SUBSPACES_WBM7R4K5
-#define SUBSPACES_WBM7R4K5
+#ifndef DUNE_FEM_FUNCTIONALS_SUBSPACE_SUBSPACES_HH
+#define DUNE_FEM_FUNCTIONALS_SUBSPACE_SUBSPACES_HH
 
 
 namespace Dune {
+
 namespace Functionals {
+
 namespace Subspace {
 
 // \todo should prepare sparsity patterns and such things!
@@ -47,9 +49,11 @@ private:
   OffsetFunctionType& offset_;
 }; // end of class Affine
 
-} // end of namespace Constraints
+} // end of namespace Subspace
+
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
 
-#endif /* end of include guard: SUBSPACES_WBM7R4K5 */
+#endif /* end of include guard: DUNE_FEM_FUNCTIONALS_SUBSPACE_SUBSPACES_HH */

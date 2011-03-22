@@ -1,9 +1,11 @@
-#ifndef LOCALDEFAULT_E3A4A6BC
-#define LOCALDEFAULT_E3A4A6BC
+#ifndef DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH
+#define DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH
 
 
 namespace Dune {
+
 namespace Functionals {
+
 namespace Constraints {
 
 template <typename FieldType, int maxRows, int maxColumns>
@@ -88,11 +90,13 @@ private:
   MatrixType matrix_;
   unsigned int numRows_;
   unsigned int numColumns_;
+
 }; // end class Dirichlet
 
 } // end of namespace Constraints
+
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
-
-#endif /* end of include guard: LOCALDEFAULT_E3A4A6BC */
+#endif /* end of include guard: DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH */

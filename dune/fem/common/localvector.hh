@@ -1,5 +1,5 @@
-#ifndef DUNE_FEM_FUNCTIONALS_DOFVECTOR_HH
-#define DUNE_FEM_FUNCTIONALS_DOFVECTOR_HH
+#ifndef DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH
+#define DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH
 
 namespace Dune {
 
@@ -13,13 +13,13 @@ namespace Functionals {
   * \todo       Doc me, please!
   **/
 template <class ElementType>
-class LocalDoFVector
+class LocalVector
 {
 public:
   /**
     * \brief    Initializes an empty vector, according to the given size.
     **/
-  LocalDoFVector(const unsigned int size)
+  LocalVector(const unsigned int size)
     : size_(size)
   {
     // resize
@@ -31,7 +31,7 @@ public:
     *           corresponding entries of the given localFunction.
     **/
   template <class LocalFunctionType>
-  LocalDoFVector(const LocalFunctionType& localFunction)
+  LocalVector(const LocalFunctionType& localFunction)
     : size_(localFunction.numDofs())
   {
     // resize
@@ -70,7 +70,7 @@ public:
   /**
     * \brief    Scalar product of two local DoF vectors of same type.
     **/
-  ElementType operator*(const LocalDoFVector<ElementType>& other) const
+  ElementType operator*(const LocalVector<ElementType>& other) const
   {
     assert(size_ == other.size());
     ElementType result = 0.0;
@@ -92,4 +92,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_FEM_FUNCTIONALS_DOFVECTOR_HH
+#endif // end DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH

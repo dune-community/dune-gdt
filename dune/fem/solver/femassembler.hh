@@ -1,9 +1,10 @@
-#ifndef FEMASSEMBLER_AZSG0L97
-#define FEMASSEMBLER_AZSG0L97
-
+#ifndef DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
+#define DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 
 namespace Dune {
+
 namespace Functionals {
+
 namespace Solver {
 
 template <class MatrixImp, class VectorImp>
@@ -94,11 +95,14 @@ private:
       }
     }
   }
-};
 
-} // end of namespace Constraints
+}; // end of class FEMAssembler
+
+} // end of namespace Solver
+
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
 
-#endif /* end of include guard: FEMASSEMBLER_AZSG0L97 */
+#endif /* end of include guard: DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH */

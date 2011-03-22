@@ -1,5 +1,5 @@
-#ifndef FACTORY_FNGWXZ23
-#define FACTORY_FNGWXZ23
+#ifndef DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
+#define DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 
 
 namespace Dune {
@@ -130,8 +130,10 @@ public:
 }; // end of VectorFactory<BlockVector<T> >
 
 } // end of namespace Container
+
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
 
-#endif /* end of include guard: FACTORY_FNGWXZ23 */
+#endif /* end of include guard: DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH */
