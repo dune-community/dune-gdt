@@ -62,7 +62,7 @@ public:
 };
 
 // disable warnings about problems in dune headers (sourced by dgfparser)
-#include "../../../dune-fem-tools/dune/fem-tools/header/disablewarnings.hh"
+#include <dune/fem-tools/header/disablewarnings.hh>
 
 // main
 int main(int argc, char** argv)
