@@ -35,6 +35,74 @@ class GFunc
 {
 };
 
+/**
+ * @class AFunc
+ * function representing the coefficient a for the poisson problem
+ * a \laplace u = f
+ */
+template< class FunctionSpaceImp >
+class AFunc
+{
+public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  void evaluate( const DomainType& x, RangeType& y )
+  {
+    y = 1.0;
+  }
+
+  void jacobian( const DomainType& x, JacobianRangeType& y )
+  {
+    y = 0.0;
+  }
+
+};
+
+/**
+ * @class FFunc
+ * function representing f for the poisson problem
+ * a \laplace u = f
+ */
+template< class FunctionSpaceImp >
+class FFunc
+{
+public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  void evaluate( const DomainType& x, RangeType& y )
+  {
+    y = 0.0;
+  }
+
+  void jacobian( const DomainType& x, JacobianRangeType& y )
+  {
+    y = 0.0;
+  }
+
+};
+
 int main( int argc, const char *argv[] )
 {
 
@@ -69,9 +137,9 @@ int main( int argc, const char *argv[] )
   typedef Subspace::Linear< H1, DirichletConstraints >
     H10;
 
-  typedef Operator::EllipticFiniteElement< H1, GFunc/*InducingFunctionType*/ >
+  typedef Operator::EllipticFiniteElement< H1, AFunc < FunctionSpaceType >/*InducingFunctionType*/ >
     EllipticOperator;
-  typedef Functional::L2< H1, InducingFunctionType >
+  typedef Functional::L2< H1, FFunc< FunctionSpaceType > /*InducingFunctionType*/ >
     RHS;
 
   typedef Container::MatrixFactory< Dune::BCRSMatrix< double > >
@@ -88,7 +156,7 @@ int main( int argc, const char *argv[] )
   typedef VectorFactoryType::ContainerType
     VectorContainer;
 
-  typedef Solver::FEMAssembler<MatrixContainer, VectorContainer>
+  typedef Solver::FEMAssembler< MatrixContainer, VectorContainer >
     Assembler;
   typedef Dune::CGSolver< VectorContainer > 
     CG;
@@ -103,15 +171,15 @@ int main( int argc, const char *argv[] )
     H1g;
 
   //create grid
-  Dune::GridPtr< HGridType > gridPtr( "dummy.dgf" );
+  Dune::GridPtr< HGridType > gridPtr( "macrogrids/unitcube2.dgf" );
 
   //get grid part
   GridPartType gridPart( *gridPtr );
 
   //some functions
-  GFunc                gFunc;
-  GFunc                aFunc;
-  GFunc                fFunc;
+  GFunc                      gFunc;
+  AFunc< FunctionSpaceType > aFunc;
+  FFunc< FunctionSpaceType > fFunc;
 
   //create spaces
   H1                   h1( gridPart );
@@ -140,16 +208,20 @@ int main( int argc, const char *argv[] )
 
   Assembler::assembleMatrix( ellipticFEM, *A );
   Assembler::applyMatrixConstraints( h10, *A );
-  Assembler::assembleVector( rhs, *F );
-  Assembler::applyVectorConstraints( h10, *F );
-  Assembler::assembleVector( ellipticFEM(gFunc), *G );
+  // @todo methods needs to be implemented
+  // Assembler::assembleVector( rhs, *F );
+  // Assembler::applyVectorConstraints( h10, *F );
+  // Assembler::assembleVector( ellipticFEM(gFunc), *G );
 
+  double prec = 10e-8;
 
-  CG cg(A, prec, 1e-10, 1000, true);
+  CG cg( A, prec, 1e-10, 1000, true );
 
-  InverseOperatorResult res;
-  cg(u0, F-G, res);
+  Dune::InverseOperatorResult res;
+  // @todo need to implement "F-G"
+  cg( u0, F-G, res );
 
+  // @todo implement gFunc
   *u = *u0 + gFunc;
 
 /*  DiscreteFunction dfU( h1, *u );
