@@ -381,7 +381,7 @@ private:
 
 public:
   enum {localBlockSize = LinearSubspaceType::localBlockSize};
-  
+
   /**
    * @brief constructor
    *
