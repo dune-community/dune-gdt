@@ -25,7 +25,13 @@ AC_CONFIG_FILES([
   doc/doxygen/Doxyfile
   dune/Makefile
   dune/fem/Makefile
+  dune/fem/common/Makefile
+  dune/fem/constraints/Makefile
+  dune/fem/container/Makefile
   dune/fem/functional/Makefile
+  dune/fem/operator/Makefile
+  dune/fem/solver/Makefile
+  dune/fem/subspace/Makefile
   examples/Makefile
   examples/poisson_new/Makefile
   examples/finite_element/Makefile
