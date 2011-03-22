@@ -1,6 +1,6 @@
 
-#ifndef DUNE_FEM_FUNCTIONALS_L2FUNCTIONAL_HH
-#define DUNE_FEM_FUNCTIONALS_L2FUNCTIONAL_HH
+#ifndef DUNE_FEM_FUNCTIONALS_FUNCTIONAL_LTWO_HH
+#define DUNE_FEM_FUNCTIONALS_FUNCTIONAL_LTWO_HH
 
 // dune common includes
 #include <dune/common/fvector.hh>
@@ -9,7 +9,7 @@
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
 // dune fem-functionals includes
-#include <dune/fem/dofvector/dofvector.hh>
+#include <dune/fem/common/localvector.hh>
 
 namespace Dune
 {
@@ -41,7 +41,7 @@ public:
   typedef typename InducingFunctionType::RangeFieldType
     RangeFieldType;
 
-  typedef Dune::Functionals::LocalDoFVector< RangeFieldType >
+  typedef Dune::Functionals::LocalVector< RangeFieldType >
     LocalDoFVectorType;
 
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
@@ -193,4 +193,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_FEM_FUNCTIONALS_L2FUNCTIONAL_HH
+#endif // end DUNE_FEM_FUNCTIONALS_FUNCTIONAL_LTWO_HH

@@ -1,109 +1,113 @@
-#ifndef LOCALDEFAULT_E3A4A6BC
-#define LOCALDEFAULT_E3A4A6BC
+#ifndef DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH
+#define DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH
 
 
 namespace Dune
 {
+
 namespace Functionals
 {
+
 namespace Constraints
 {
 
-  template<typename FieldType, int maxRows, int maxColumns>
-  class LocalDefault
+template<typename FieldType, int maxRows, int maxColumns>
+class LocalDefault
+{
+private:
+  typedef FieldVector<unsigned int, int maxRows>
+    RowDofs;
+
+  typedef FieldVector<unsigned int, int maxColumns>
+    ColumnDofs;
+
+  typedef FieldMatrix<FieldType, int maxRow, maxColumn>
+    MatrixType;
+
+public:
+  LocalDefault( int numColumns=0 )
+    : rowDofs_(0),
+      columnDofs_(0),
+      matrix_(0),
+      numRows_(0),
+      numColumns_(numColumns)
   {
-  private:
-    typedef FieldVector<unsigned int, int maxRows>
-      RowDofs;
+  }
 
-    typedef FieldVector<unsigned int, int maxColumns>
-      ColumnDofs;
+  void setRowDofsSize( int numRows )
+  {
+    assert(numRows < maxRows);
+    numRows_ = numRows;
+  }
 
-    typedef FieldMatrix<FieldType, int maxRow, maxColumn>
-      MatrixType;
+  void setColumnDofsSize( int numColumns )
+  {
+    assert(numColumns < maxColumns);
+    numColumns_ = numColumns;
+  }
 
-  public:
-    LocalDefault( int numColumns=0 )
-      : rowDofs_(0),
-        columnDofs_(0),
-        matrix_(0),
-        numRows_(0),
-        numColumns_(numColumns)
-    {
-    }
+  unsigned int rowDofsSize()
+  {
+    return numRows_;
+  }
 
-    void setRowDofsSize( int numRows )
-    {
-      assert(numRows < maxRows);
-      numRows_ = numRows;
-    }
+  unsigned int columnDofsSize()
+  {
+    return numColumns_;
+  }
 
-    void setColumnDofsSize( int numColumns )
-    {
-      assert(numColumns < maxColumns);
-      numColumns_ = numColumns;
-    }
+  void setRowDofs( unsigned int i,
+                   unsigned int globalDof )
+  {
+    rowDofs_[i] = globalDof;
+  }
 
-    unsigned int rowDofsSize()
-    {
-      return numRows_;
-    }
+  void setRowDofs( unsigned int i,
+                   unsigned int globalDof )
+  {
+    columnDofs_[i] = globalDof;
+  }
 
-    unsigned int columnDofsSize()
-    {
-      return numColumns_;
-    }
+  unsigned int rowDofs( unsigned int i )
+  {
+    assert(i < maxRows);
+    return rowDofs_[i];
+  }
 
-    void setRowDofs( unsigned int i,
-                     unsigned int globalDof )
-    {
-      rowDofs_[i] = globalDof;
-    }
+  unsigned int columnDofs( unsigned int i )
+  {
+    assert(i < maxColumns);
+    return columnDofs_[i];
+  }
 
-    void setRowDofs( unsigned int i,
-                     unsigned int globalDof )
-    {
-      columnDofs_[i] = globalDof;
-    }
+  void setLocalMatrix( unsigned int i,
+                       unsigned int j,
+                       FieldType val )
+  {
+    matrix_[i][j] = val;
+  }
 
-    unsigned int rowDofs( unsigned int i )
-    {
-      assert(i < maxRows);
-      return rowDofs_[i];
-    }
+  FieldType localMatrix( unsigned int i,
+                         unsigned int j )
+  {
+    assert(i < maxRows);
+    assert(i < maxColumns);
+    return matrix_[i][j];
+  }
 
-    unsigned int columnDofs( unsigned int i )
-    {
-      assert(i < maxColumns);
-      return columnDofs_[i];
-    }
+private:
+  RowDofs      rowDofs_;
+  ColumnDofs   columnDofs_;
+  MatrixType   matrix_;
+  unsigned int numRows_;
+  unsigned int numColumns_;
 
-    void setLocalMatrix( unsigned int i,
-                         unsigned int j,
-                         FieldType val )
-    {
-      matrix_[i][j] = val;
-    }
-
-    FieldType localMatrix( unsigned int i,
-                           unsigned int j )
-    {
-      assert(i < maxRows);
-      assert(i < maxColumns);
-      return matrix_[i][j];
-    }
-
-  private:
-    RowDofs      rowDofs_;
-    ColumnDofs   columnDofs_;
-    MatrixType   matrix_;
-    unsigned int numRows_;
-    unsigned int numColumns_;
-  }; // end class Dirichlet
+}; // end class Dirichlet
 
 } // end of namespace Constraints
+
 } // end of namespace Functionals
+
 } // end of namespace Dune
 
-
-#endif /* end of include guard: LOCALDEFAULT_E3A4A6BC */
+#endif /* end of include guard: DUNE_FEM_FUNCTIONALS_CONSTRAINTS_LOCALDEFAULT_HH */
