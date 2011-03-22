@@ -12,18 +12,18 @@ clean: clean-recursive
 PRECIOUS: dune-fem-functionals.aux
 
 %.aux: %.tex $(TEXFILES) $(PDFFILES) Makefile
-	@echo "Running latex..."
-	@pdflatex --interaction=nonstopmode $< &> /dev/null
+	@echo "Running latex...";
+	@pdflatex --interaction=nonstopmode $< > /dev/null
 
 %.bbl: %.aux %.bib Makefile
-	@echo "Running bibtex..."
-	@bibtex $< &> /dev/null
+	@echo "Running bibtex...";
+	@bibtex $< > /dev/null 2>/dev/null
 
 %.pdf: %.tex %.bbl $(TEXFILES) $(PDFFILES) Makefile
-	@echo "Rerun" > $*.log
-	@while grep "Rerun" $*.log &> /dev/null ; do \
+	@echo "Rerun" > $*.log;
+	@while grep "Rerun" $*.log > /dev/null ; do \
 	  echo "Running pdflatex..." ; \
-	  pdflatex --interaction=nonstopmode $< &> /dev/null ; \
+	  pdflatex --interaction=nonstopmode $< > /dev/null 2> /dev/null; \
 	done
 
 all-recursive:
