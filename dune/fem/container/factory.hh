@@ -2,6 +2,7 @@
 #define DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 
 #include <dune/common/exceptions.hh>
+#include <dune/fem/container/sparsitypattern.hh>
 
 namespace Dune {
 namespace Functionals {
@@ -109,7 +110,7 @@ public:
     typedef typename ItType::Entity Entity;
 
     const unsigned int numDofs = dfs.size();
-    typedef std::vector<std::set<unsigned int>> PatternType;
+    typedef Dune::Functionals::Container::SparsityPattern PatternType;
     PatternType sPattern(numDofs);
 
     ContainerType* matrix = new ContainerType(numDofs, numDofs, ContainerType::random);
@@ -126,20 +127,20 @@ public:
         unsigned int ii = dfs.mapToGlobal(en, i);
         for (unsigned int j = 0; j < bfs.numBaseFunctions(); j++) {
           unsigned int jj = dfs.mapToGlobal(en, j);
-          sPattern[ii].insert(jj);
+          sPattern.insert(ii, jj);
         }
       }
     }
 
     for (unsigned int i = 0; i < sPattern.size(); i++) {
-      matrix->setRowSize(i, sPattern[i].size());
+      matrix->setRowSize(i, sPattern.size(i));
     }
     matrix->endrowsizes();
 
     for (unsigned int i = 0; i < sPattern.size(); ++i) {
-      typedef std::set<unsigned int>::const_iterator SetIterator;
-      SetIterator sit = sPattern[i].begin();
-      for (; sit != sPattern[i].end(); sit++) {
+      typedef SparsityPattern::NonZeroColIterator ColIterator;
+      ColIterator sit = sPattern.begin(i);
+      for (; sit != sPattern.end(i); sit++) {
         matrix->addindex(i, *sit);
       }
     }

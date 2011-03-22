@@ -8,6 +8,7 @@ namespace Dune {
 
 namespace Functionals {
 
+namespace Container {
 /**
  * @class SparsityPattern
  * Class for storing the sparsity pattern for a sparse matrix
@@ -15,7 +16,12 @@ namespace Functionals {
 class SparsityPattern
 {
 public:
+  //! type for saving the sparsity pattern
   typedef std::vector<std::set<unsigned int>> SparsityPatternContainerType;
+
+  //! type for iterating through a row
+  typedef std::set<unsigned int>::const_iterator NonZeroColIterator;
+
 
   /**
    * @brief constructor
@@ -49,7 +55,7 @@ public:
    */
   bool isZero(unsigned int row, unsigned int col)
   {
-    return (sparsityPattern_[row].count(col) == 0)
+    return (sparsityPattern_[row].count(col) == 0);
   }
 
   /**
@@ -63,11 +69,36 @@ public:
   /**
    * @brief number of rows (counted in blocks)
    */
+  unsigned int size()
+  {
+    return sizeN_;
+  }
+
+  /**
+   * @brief number of rows (counted in blocks)
+   */
   unsigned int N()
   {
     return sizeN_;
   }
 
+  /**
+   *  @brief get pointer to the first nonzero entry
+   *  in row "row"
+   */
+  NonZeroColIterator begin(unsigned int row)
+  {
+    sparsityPattern_[row].begin();
+  }
+
+  /**
+   *  @brief get pointer pointing behind the last nonzero entry
+   *  in row "row"
+   */
+  NonZeroColIterator end(unsigned int row)
+  {
+    sparsityPattern_[row].end();
+  }
 
 private:
   SparsityPatternContainerType sparsityPattern_;
@@ -93,6 +124,8 @@ class DefaultSparsityPattern : public SparsityPattern
   }
 
 }; // end of class DefaultSparsityPattern
+
+} // end of namespace Container
 
 } // end of namespace Functionals
 
