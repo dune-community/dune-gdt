@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = poisson_new
+SUBDIRS = poisson_new finite_element
 
 if BUILD_DOCS
 # TODO: set up documentation tree automatically
