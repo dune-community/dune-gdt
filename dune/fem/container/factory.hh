@@ -3,8 +3,7 @@
 
 
 namespace Dune {
-namespace Fem {
-namespace Functional {
+namespace Functionals {
 namespace Container {
 
 template <class ContainerImp>
@@ -117,7 +116,7 @@ public:
 
 public:
   template <class DFSType>
-  static ContainterType* createPtr(DFSType& dfs)
+  static ContainerType* createPtr(DFSType& dfs)
   {
     const unsigned int numDofs = dfs.size();
     ContainerType* bv          = new ContainerType(numDofs);
@@ -131,8 +130,7 @@ public:
 }; // end of VectorFactory<BlockVector<T> >
 
 } // end of namespace Container
-} // end of namespace Functional
-} // end of namespace Fem
+} // end of namespace Functionals
 } // end of namespace Dune
 
 
