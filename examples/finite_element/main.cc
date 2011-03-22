@@ -15,7 +15,7 @@
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
 
-using namespace Dune::Fem::Functional;
+using namespace Dune::Functionals;
 
 class gFunc
 {

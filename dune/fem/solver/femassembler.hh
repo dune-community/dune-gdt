@@ -4,9 +4,7 @@
 
 namespace Dune
 {
-namespace Fem
-{
-namespace Functional
+namespace Functionals
 {
 namespace Solver
 {
@@ -132,8 +130,7 @@ namespace Solver
   };
 
 } // end of namespace Constraints
-} // end of namespace Functional
-} // end of namespace Fem
+} // end of namespace Functionals
 } // end of namespace Dune
 
 

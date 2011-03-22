@@ -4,9 +4,7 @@
 
 namespace Dune
 {
-namespace Fem
-{
-namespace Functional
+namespace Functionals
 {
 namespace Subspace
 {
@@ -55,8 +53,7 @@ namespace Subspace
   }; // end of class Affine
 
 } // end of namespace Constraints
-} // end of namespace Functional
-} // end of namespace Fem
+} // end of namespace Functionals
 } // end of namespace Dune
 
 
