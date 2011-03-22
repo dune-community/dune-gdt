@@ -28,6 +28,7 @@ AC_CONFIG_FILES([
   dune/fem/functional/Makefile
   examples/Makefile
   examples/poisson_new/Makefile
+  examples/finite_element/Makefile
   tests/Makefile
   tests/functional/Makefile
   m4/Makefile
