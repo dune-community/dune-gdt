@@ -75,80 +75,80 @@ public:
   {
   }
 
-//  template< class DiscreteFucntionImp1, class DiscreteFunctionImp2 >
-//  const RangeFieldType operator()(  const DiscreteFucntionImp1& function1,
-//                                    const DiscreteFunctionImp2& function2 ) const
-//  {
-//    RangeFieldType ret = 0.0;
+  template< class DiscreteFucntionImp1, class DiscreteFunctionImp2 >
+  const RangeFieldType operator()(  const DiscreteFucntionImp1& function1,
+                                    const DiscreteFunctionImp2& function2 ) const
+  {
+    RangeFieldType ret = 0.0;
 
-//    // some types we will nedd
-//    typedef DiscreteFunctionImp1
-//      DiscreteFunctionType1;
-//    typedef DiscreteFunctionImp2
-//      DiscreteFunctionType2;
+    // some types we will nedd
+    typedef DiscreteFunctionImp1
+      DiscreteFunctionType1;
+    typedef DiscreteFunctionImp2
+      DiscreteFunctionType2;
 
-//    typedef typename FunctionSpaceType::JacobianRangeType
-//      JacobianRangeType;
+    typedef typename FunctionSpaceType::JacobianRangeType
+      JacobianRangeType;
 
-//    // do gridwalk
-//    const EntityIteratorType BehindLastEntity = discreteFunctionSpace_.end();
-//    for ( EntityIteratorType entityIterator = discreteFunctionSpace_.begin();
-//          entityIterator != BehindLastEntity;
-//          ++entityIterator )
-//    {
-//      // some types we will need
-//      typedef typename EntityType::Geometry
-//        EntityGeometryType;
-//      typedef typename BaseFunctionSetType::RangeType
-//        RangeType;
+    // do gridwalk
+    const EntityIteratorType BehindLastEntity = discreteFunctionSpace_.end();
+    for ( EntityIteratorType entityIterator = discreteFunctionSpace_.begin();
+          entityIterator != BehindLastEntity;
+          ++entityIterator )
+    {
+      // some types we will need
+      typedef typename EntityType::Geometry
+        EntityGeometryType;
+      typedef typename BaseFunctionSetType::RangeType
+        RangeType;
 
-//      // entity and geometry
-//      const EntityType& entity = *entityIterator;
-//      const EntityGeometryType& entityGeometry = entity.geometry();
+      // entity and geometry
+      const EntityType& entity = *entityIterator;
+      const EntityGeometryType& entityGeometry = entity.geometry();
 
-//      // quadrature
-//      typedef CachingQuadrature< GridPartType, 0 >
-//        EntityQuadratureType;
-//      typedef typename EntityQuadratureType::CoordinateType
-//        EntityCoordinateType;
-//      const unsigned quadratureOrder = (2 * discreteFunctionSpace_.order() + 1);
-//      const EntityQuadratureType entityQuadrature( entity, quadratureOrder );
-//      const unsigned numberOfQuadraturePoints = entityQuadrature.nop();
+      // quadrature
+      typedef CachingQuadrature< GridPartType, 0 >
+        EntityQuadratureType;
+      typedef typename EntityQuadratureType::CoordinateType
+        EntityCoordinateType;
+      const unsigned quadratureOrder = (2 * discreteFunctionSpace_.order() + 1);
+      const EntityQuadratureType entityQuadrature( entity, quadratureOrder );
+      const unsigned numberOfQuadraturePoints = entityQuadrature.nop();
 
-//      // do walk over quadrature points
-//      for(  unsigned int quadraturePoint = 0;
-//            quadraturePoint < numberOfQuadraturePoints;
-//            ++quadraturePoint )
-//      {
-//        // coordinates
-//        const EntityCoordinateType xReferenceElement = entityQuadrature.point( quadraturePoint );
-////        const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
-//        const typename FunctionImp::DomainType xWorld = entityGeometry.global( xReferenceElement );
+      // do walk over quadrature points
+      for(  unsigned int quadraturePoint = 0;
+            quadraturePoint < numberOfQuadraturePoints;
+            ++quadraturePoint )
+      {
+        // coordinates
+        const EntityCoordinateType xReferenceElement = entityQuadrature.point( quadraturePoint );
+//        const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
+        const typename FunctionImp::DomainType xWorld = entityGeometry.global( xReferenceElement );
 
-//        // integration factors
-//        const double integrationFactor = entityGeometry.integrationElement( xReferenceElement );
-//        const double quadratureWeight = entityQuadrature.weight( quadraturePoint );
+        // integration factors
+        const double integrationFactor = entityGeometry.integrationElement( xReferenceElement );
+        const double quadratureWeight = entityQuadrature.weight( quadraturePoint );
 
-//        // evaluate gradients of the analytical functions
-//        typename FunctionSpaceType::RangeType gradient1( 0.0 );
-//        JacobianRangeType gradient2( 0.0 );
-//        function1.evaluate( xWorld, gradient1 );
-////        function2.jacobian( xWorld, gradient2 );
+        // evaluate gradients of the analytical functions
+        typename FunctionSpaceType::RangeType gradient1( 0.0 );
+        JacobianRangeType gradient2( 0.0 );
+        function1.evaluate( xWorld, gradient1 );
+//        function2.jacobian( xWorld, gradient2 );
 
-//        // evaluate the inducing function
-//        RangeType functionValue = 0.0;
-//        inducingFunction_.evaluate( xWorld, functionValue );
+        // evaluate the inducing function
+        RangeType functionValue = 0.0;
+        inducingFunction_.evaluate( xWorld, functionValue );
 
-//        // compute integral
-////        ret += integrationFactor * quadratureWeight * functionValue * gradient1 * gradient1;
+        // compute integral
+//        ret += integrationFactor * quadratureWeight * functionValue * gradient1 * gradient1;
 
-//      } // done walk over quadrature points
+      } // done walk over quadrature points
 
 
-//    } // done gridwalk
+    } // done gridwalk
 
-//    return ret;
-//  }
+    return ret;
+  }
 
   LocalMatrixType applyLocal( const EntityType& entity )
   {
