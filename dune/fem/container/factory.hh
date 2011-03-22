@@ -1,6 +1,7 @@
 #ifndef DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 #define DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 
+#include <dune/common/exceptions.hh>
 
 namespace Dune
 {
@@ -11,7 +12,7 @@ namespace Container
 
 /** @brief interface of static factory class for matrix and vector classes
  */
-template<class ContainerImp>
+template< class ContainerImp >
 class Factory
 {
 public:
@@ -23,9 +24,9 @@ public:
     ContainerType;
 
 private:
-  class NotImplemented
-  {
-  };
+  //class NotImplemented
+  //{
+  //};
 
 public:
   /** @brief creates a new matrix/vector object and returns an auto_ptr
@@ -42,7 +43,7 @@ public:
   template< class DiscFuncSpace >
   static AutoPtrType create( DiscFuncSpace& dfs )
   {
-    dune_static_assert("Not Implemented: Factory!");
+    dune_static_assert( false, "Not Implemented: Factory!" );
   }
 
   /** @brief creates a new matrix/vector object and returns a pointer to the
@@ -59,21 +60,21 @@ public:
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
-    dune_static_assert("Not Implemented: Factory!");
+    dune_static_assert( false, "Not Implemented: Factory!" );
   }
 }; // end of class Factory
 
 /** @brief interface of static factory class for matrix classes
  */
-template<class ContainerImp>
+template< class ContainerImp >
 class MatrixFactory
-  : public Factory<ContainerImp>
+  : public Factory< ContainerImp >
 {
 };
 
 // specialization for BCRSMatrix
-template<class T>
-class MatrixFactory<Dune::BCRSMatrix<T> >
+template< class T >
+class MatrixFactory< Dune::BCRSMatrix< T > >
 {
 public:
   typedef Dune::BCRSMatrix<T>
@@ -113,11 +114,11 @@ public:
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
-    typedef DiscFuncSpace::BaseFunctionSet
+    typedef typename DiscFuncSpace::BaseFunctionSet
       BFS;
-    typedef DiscFuncSpace::IteratorType
+    typedef typename DiscFuncSpace::IteratorType
       ItType;
-    typedef ItType::Entity
+    typedef typename ItType::Entity
       Entity;
 
     const unsigned int numDofs = dfs.size();
@@ -140,10 +141,10 @@ public:
 
       for (unsigned int i = 0; i < bfs.numBaseFunctions(); i++)
       {
-        ii = dfs.mapToGlobal( en, i );
+        unsigned int ii = dfs.mapToGlobal( en, i );
         for (unsigned int j = 0; j < bfs.numBaseFunctions(); j++)
         {
-          jj = dfs.mapToGlobal( en, j );
+          unsigned int jj = dfs.mapToGlobal( en, j );
           sPattern[ii].insert(jj);
         }
       }
@@ -182,15 +183,15 @@ class VectorFactory
 
 /** @brief static factory class for vector classes of type Dune::BlockVector
  */
-template<class T>
-class VectorFactory<Dune::BlockVector<T> >
+template< class T >
+class VectorFactory< Dune::BlockVector< T > >
 {
 public:
   //! \copydoc Factory::ContainerType
-  typedef Dune::BlockVector<T>
+  typedef Dune::BlockVector< T >
     ContainerType;
   //! \copydoc Factory::AutoPtrType;
-  typedef std::auto_ptr<ContainerType>
+  typedef std::auto_ptr< ContainerType >
     AutoPtrType;
 
 public:
@@ -210,6 +211,7 @@ public:
     return bv;
   }
 
+  template< class DFSType >
   static AutoPtrType create( DFSType & dfs)
   {
     return AutoPtrType( createPtr( dfs ) );

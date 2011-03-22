@@ -1,6 +1,8 @@
 #ifndef DIRICHLET_SHETXCOC
 #define DIRICHLET_SHETXCOC
 
+#include "localdefault.hh"
+
 namespace Dune
 {
 namespace Functionals
@@ -79,7 +81,7 @@ public:
     const int numCols = bfs.numBaseFunctions();
     LocalConstraintsType lc(numCols);
 
-    typedef typename DFS::Iterator
+    typedef typename DiscFuncSpace::Iterator
       ItType;
     typedef typename Entity::LeafIntersectionIterator
       IntersectionIterator;

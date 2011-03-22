@@ -1,6 +1,8 @@
 #ifndef DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 #define DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 
+#include <dune/fem/common/localmatrix.hh>
+
 namespace Dune
 {
 
@@ -10,7 +12,7 @@ namespace Functionals
 namespace Solver
 {
 
-template<class MatrixImp, class VectorImp>
+template< class MatrixImp, class VectorImp >
 class FEMAssembler
 {
 public:
@@ -20,16 +22,16 @@ public:
   typedef VectorImp
     VectorType;
 
-  typedef VectorType::FieldType
+  typedef typename VectorType::FieldType
     FieldType;
 
-  typedef LocalMatrix<FieldType>
+  typedef Dune::Functionals::Common::LocalMatrix< FieldType >
     LocalMatrixType;
 
 
 public:
-  template<class Operator>
-  static void assembleMatrix(const Operator & op, MatrixType & m)
+  template< class Operator >
+  static void assembleMatrix( const Operator & op, MatrixType & m )
   {
     typedef typename Operator::DiscreteFunctionSpaceType
       DFS;
@@ -58,7 +60,7 @@ public:
   /// \todo merge later with assembleMatrix
   /// \todo implement a PrecompiledConstraints class which wraps an existing
   ///       Constraints class for efficiency at the cost of one grid walk
-  template<class ConstrainedDFS>
+  template< class ConstrainedDFS >
   static void applyMatrixConstraints( const ConstrainedDFS& cSpace,
                                       MatrixType & m )
   {
@@ -68,7 +70,7 @@ public:
       LocalConstraints;
     typedef typename ConstrainedDFS::BaseFunctionSet
       BFS;
-    typedef typename DFS::Iterator
+    typedef typename ConstrainedDFS::Iterator
       ItType;
     typedef typename ItType::Entity
       Entity;
@@ -79,21 +81,22 @@ public:
     // assert()
 
     ItType it = cSpace.begin();
-    for(; it!=cSpace.end(); ++it)
+    for( ; it != cSpace.end(); ++it )
     {
+      Entity en = *it;
       const LocalConstraints localConstraints = constraints.local( en );
 
-      setLocalConstraintsInMatrix( space, localConstraints, en, m );
+      setLocalConstraintsInMatrix( cSpace, localConstraints, en, m );
     }
 
   }
 
 private:
   /// \todo move to matrixContainer factory
-  template<class DFSType,
-           class Entity>
+  template< class DFSType,
+            class Entity >
   static void addToMatrix( const DFSType& space,
-                           const LocalMatrix& localMatrix,
+                           const LocalMatrixType& localMatrix,
                            const Entity& en,
                            MatrixType &m )
   {
@@ -110,10 +113,10 @@ private:
   }
 
   /// \todo move to Constraints class
-  template<class ConstrainedDFS,
-           class Entity>
+  template< class ConstrainedDFS,
+            class Entity >
   static void setLocalConstraintsInMatrix( const ConstrainedDFS& cSpace,
-                                           const LocalConstraints& localConstraints,
+                                           const typename ConstrainedDFS::LocalConstraints& localConstraints,
                                            const Entity& en,
                                            MatrixType &m )
   {

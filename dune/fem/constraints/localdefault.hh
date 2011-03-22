@@ -15,13 +15,13 @@ template<typename FieldType, int maxRows, int maxColumns>
 class LocalDefault
 {
 private:
-  typedef FieldVector<unsigned int, int maxRows>
+  typedef FieldVector<unsigned int, maxRows>
     RowDofs;
 
-  typedef FieldVector<unsigned int, int maxColumns>
+  typedef FieldVector<unsigned int, maxColumns>
     ColumnDofs;
 
-  typedef FieldMatrix<FieldType, int maxRow, maxColumn>
+  typedef FieldMatrix<FieldType, maxRows, maxColumns>
     MatrixType;
 
 public:
@@ -62,7 +62,7 @@ public:
     rowDofs_[i] = globalDof;
   }
 
-  void setRowDofs( unsigned int i,
+  void setColumnDofs( unsigned int i,
                    unsigned int globalDof )
   {
     columnDofs_[i] = globalDof;
