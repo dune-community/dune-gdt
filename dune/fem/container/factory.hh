@@ -1,6 +1,7 @@
 #ifndef DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 #define DUNE_FEM_FUNCTIONALS_CONTAINER_FACTORY_HH
 
+#include <dune/common/exceptions.hh>
 
 namespace Dune {
 namespace Functionals {
@@ -18,9 +19,9 @@ public:
   typedef NotImplemented ContainerType;
 
 private:
-  class NotImplemented
-  {
-  };
+  // class NotImplemented
+  //{
+  //};
 
 public:
   /** @brief creates a new matrix/vector object and returns an auto_ptr
@@ -37,7 +38,7 @@ public:
   template <class DiscFuncSpace>
   static AutoPtrType create(DiscFuncSpace& dfs)
   {
-    dune_static_assert("Not Implemented: Factory!");
+    dune_static_assert(false, "Not Implemented: Factory!");
   }
 
   /** @brief creates a new matrix/vector object and returns a pointer to the
@@ -54,7 +55,7 @@ public:
   template <class DiscFuncSpace>
   static ContainerType* createPtr(DiscFuncSpace& dfs)
   {
-    dune_static_assert("Not Implemented: Factory!");
+    dune_static_assert(false, "Not Implemented: Factory!");
   }
 }; // end of class Factory
 
@@ -103,9 +104,9 @@ public:
   template <class DiscFuncSpace>
   static ContainerType* createPtr(DiscFuncSpace& dfs)
   {
-    typedef DiscFuncSpace::BaseFunctionSet BFS;
-    typedef DiscFuncSpace::IteratorType ItType;
-    typedef ItType::Entity Entity;
+    typedef typename DiscFuncSpace::BaseFunctionSet BFS;
+    typedef typename DiscFuncSpace::IteratorType ItType;
+    typedef typename ItType::Entity Entity;
 
     const unsigned int numDofs = dfs.size();
     typedef std::vector<std::set<unsigned int>> PatternType;
@@ -122,9 +123,9 @@ public:
       const BFS& bfs   = dfs.baseFunctionSet(en);
 
       for (unsigned int i = 0; i < bfs.numBaseFunctions(); i++) {
-        ii = dfs.mapToGlobal(en, i);
+        unsigned int ii = dfs.mapToGlobal(en, i);
         for (unsigned int j = 0; j < bfs.numBaseFunctions(); j++) {
-          jj = dfs.mapToGlobal(en, j);
+          unsigned int jj = dfs.mapToGlobal(en, j);
           sPattern[ii].insert(jj);
         }
       }
@@ -185,6 +186,7 @@ public:
     return bv;
   }
 
+  template <class DFSType>
   static AutoPtrType create(DFSType& dfs)
   {
     return AutoPtrType(createPtr(dfs));

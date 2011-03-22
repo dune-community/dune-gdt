@@ -1,6 +1,8 @@
 #ifndef DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 #define DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 
+#include <dune/fem/common/localmatrix.hh>
+
 namespace Dune {
 
 namespace Functionals {
@@ -15,9 +17,9 @@ public:
 
   typedef VectorImp VectorType;
 
-  typedef VectorType::FieldType FieldType;
+  typedef typename VectorType::FieldType FieldType;
 
-  typedef LocalMatrix<FieldType> LocalMatrixType;
+  typedef Dune::Functionals::Common::LocalMatrix<FieldType> LocalMatrixType;
 
 
 public:
@@ -52,7 +54,7 @@ public:
     typedef typename ConstrainedDFS::Constraints Constraints;
     typedef typename Constraints::LocalConstraints LocalConstraints;
     typedef typename ConstrainedDFS::BaseFunctionSet BFS;
-    typedef typename DFS::Iterator ItType;
+    typedef typename ConstrainedDFS::Iterator ItType;
     typedef typename ItType::Entity Entity;
 
     const Constraints& constraints = cSpace.constraints();
@@ -62,16 +64,17 @@ public:
 
     ItType it = cSpace.begin();
     for (; it != cSpace.end(); ++it) {
+      Entity en                               = *it;
       const LocalConstraints localConstraints = constraints.local(en);
 
-      setLocalConstraintsInMatrix(space, localConstraints, en, m);
+      setLocalConstraintsInMatrix(cSpace, localConstraints, en, m);
     }
   }
 
 private:
   /// \todo move to matrixContainer factory
   template <class DFSType, class Entity>
-  static void addToMatrix(const DFSType& space, const LocalMatrix& localMatrix, const Entity& en, MatrixType& m)
+  static void addToMatrix(const DFSType& space, const LocalMatrixType& localMatrix, const Entity& en, MatrixType& m)
   {
     for (unsigned int i = 0; i < localMatrix.getN(); i++) {
       for (unsigned int j = 0; j < localMatrix.getM(); j++) {
@@ -85,7 +88,8 @@ private:
 
   /// \todo move to Constraints class
   template <class ConstrainedDFS, class Entity>
-  static void setLocalConstraintsInMatrix(const ConstrainedDFS& cSpace, const LocalConstraints& localConstraints,
+  static void setLocalConstraintsInMatrix(const ConstrainedDFS& cSpace,
+                                          const typename ConstrainedDFS::LocalConstraints& localConstraints,
                                           const Entity& en, MatrixType& m)
   {
 
