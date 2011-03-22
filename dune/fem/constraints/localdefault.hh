@@ -1,0 +1,112 @@
+#ifndef LOCALDEFAULT_E3A4A6BC
+#define LOCALDEFAULT_E3A4A6BC
+
+
+namespace Dune
+{
+namespace Fem
+{
+namespace Functional
+{
+namespace Constraints
+{
+
+  template<typename FieldType, int maxRows, int maxColumns>
+  class LocalDefault
+  {
+  private:
+    typedef FieldVector<unsigned int, int maxRows>
+      RowDofs;
+
+    typedef FieldVector<unsigned int, int maxColumns>
+      ColumnDofs;
+
+    typedef FieldMatrix<FieldType, int maxRow, maxColumn>
+      MatrixType;
+
+  public:
+    LocalDefault( int numColumns=0 )
+      : rowDofs_(0),
+        columnDofs_(0),
+        matrix_(0),
+        numRows_(0),
+        numColumns_(numColumns)
+    {
+    }
+
+    void setRowDofsSize( int numRows )
+    {
+      assert(numRows < maxRows);
+      numRows_ = numRows;
+    }
+
+    void setColumnDofsSize( int numColumns )
+    {
+      assert(numColumns < maxColumns);
+      numColumns_ = numColumns;
+    }
+
+    unsigned int rowDofsSize()
+    {
+      return numRows_;
+    }
+
+    unsigned int columnDofsSize()
+    {
+      return numColumns_;
+    }
+
+    void setRowDofs( unsigned int i,
+                     unsigned int globalDof )
+    {
+      rowDofs_[i] = globalDof;
+    }
+
+    void setRowDofs( unsigned int i,
+                     unsigned int globalDof )
+    {
+      columnDofs_[i] = globalDof;
+    }
+
+    unsigned int rowDofs( unsigned int i )
+    {
+      assert(i < maxRows);
+      return rowDofs_[i];
+    }
+
+    unsigned int columnDofs( unsigned int i )
+    {
+      assert(i < maxColumns);
+      return columnDofs_[i];
+    }
+
+    void setLocalMatrix( unsigned int i,
+                         unsigned int j,
+                         FieldType val )
+    {
+      matrix_[i][j] = val;
+    }
+
+    FieldType localMatrix( unsigned int i,
+                           unsigned int j )
+    {
+      assert(i < maxRows);
+      assert(i < maxColumns);
+      return matrix_[i][j];
+    }
+
+  private:
+    RowDofs      rowDofs_;
+    ColumnDofs   columnDofs_;
+    MatrixType   matrix_;
+    unsigned int numRows_;
+    unsigned int numColumns_;
+  }; // end class Dirichlet
+
+} // end of namespace Constraints
+} // end of namespace Functional
+} // end of namespace Fem
+} // end of namespace Dune
+
+
+#endif /* end of include guard: LOCALDEFAULT_E3A4A6BC */

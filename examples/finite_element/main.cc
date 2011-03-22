@@ -15,12 +15,7 @@
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
 
-using Dune::Fem::Functional::Constraints;
-using Dune::Fem::Functional::Subspace;
-using Dune::Fem::Functional::Operator;
-using Dune::Fem::Functional::Functional;
-using Dune::Fem::Functional::Container;
-using Dune::Fem::Functional::Solver;
+using namespace Dune::Fem::Functional;
 
 class gFunc
 {
@@ -65,26 +60,30 @@ int main(int argc, const char *argv[])
 
   //SparsityPattern & pattern = h1.fullSparsityPattern();
 
-  typedef typename Container::MatrixFactory<Dune::BCRSMatrix<double> >::AutoPtr
+  typedef Container::MatrixFactory<Dune::BCRSMatrix<double> >
+    MatrixFactoryType;
+  typedef typename MatrixFactoryType::AutoPtrType
     MatrixContainerPtr;
-  typedef typename MatrixContainerPtr::Container
+  typedef typename MatrixFactoryType::ContainerType
     MatrixContainer;
 
-  typedef typename Container::VectorFactory<Dune::BCRSVector<double> >::AutoPtr
+  typedef Container::VectorFactory<Dune::BCRSVector<double> >
+    VectorFactoryType;
+  typedef typename VectorFactoryType::AutoPtrType
     VectorContainerPtr;
-  typedef typename VectorContainerPtr::Container
+  typedef typename VectorFactoryType::ContainerType
     VectorContainer;
 
-  MatrixContainerPtr A  = Container::MatrixFactory<MatrixContainer>::create( h1 );
-  VectorContainerPtr F  = Container::VectorFactory<VectorContainer>::create( h1 );
-  VectorContainerPtr G  = Container::VectorFactory<VectorContainer>::create( h1 );
+  MatrixContainerPtr A  = MatrixFactoryType::create( h10 );
+  VectorContainerPtr F  = VectorFactoryType::create( h10 );
+  VectorContainerPtr G  = VectorFactoryType::create( h10 );
 
 /*  MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
  *  VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
  *  VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );*/
 
-  VectorContainerPtr u0 = Container::VectorFactory<VectorContainer>::create( h1 );
-  VectorContainerPtr u  = Container::VectorFactory<VectorContainer>::create( h1 );
+  VectorContainerPtr u0 = VectorFactoryType::create( h10 );
+  VectorContainerPtr u  = VectorFactoryType::create( h10 );
 
   typedef Solver::FEMAssembler<MatrixContainer, VectorContainer>
     Assembler;
@@ -106,10 +105,10 @@ int main(int argc, const char *argv[])
 
   *u = *u0 + gFunc;
 
-  DiscreteFunction dfU( h1, *u );
+/*  DiscreteFunction dfU( h1, *u );
 
-  dfU.evaluate( globalX );
-  plot( dfU );
+ *  dfU.evaluate( globalX );
+ *  plot( dfU );*/
 
   return 0;
 }

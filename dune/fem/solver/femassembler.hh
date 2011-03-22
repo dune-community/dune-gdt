@@ -30,7 +30,7 @@ namespace Solver
 
   public:
     template<class Operator>
-    static void assembleMatrix(Operator & op, MatrixType & m)
+    static void assembleMatrix(const Operator & op, MatrixType & m)
     {
       typedef typename Operator::DiscreteFunctionSpaceType
         DFS;
@@ -41,18 +41,91 @@ namespace Solver
       typedef typename ItType::Entity
         Entity;
 
-      DFS & space = op.space();
+      const DFS & space = op.space();
       // check that number of dofs in space is equal to matrix size
       // assert()
-      ItType it = space.begin();
+      const ItType it = space.begin();
       for(; it!=space.end(); ++it)
       {
-        Entity &en = *it;
-        BFS bfs = space.baseFunctionSet(en);
-        LocalMatrixType localMatrix(bfs.numBaseFunctions(), bfs.numBaseFunctions);
-        op.applyLocal( en, localMatrix );
+        const Entity &en = *it;
+        const BFS & bfs = space.baseFunctionSet( en );
+        LocalMatrixType localMatrix( bfs.numBaseFunctions(), bfs.numBaseFunctions );
+        localMatrix = op.applyLocal( en );
 
-        addToMatrix(space, m, en, localMatrix);
+        addToMatrix(space, localMatrix, en, m);
+      }
+    }
+
+    /// \todo merge later with assembleMatrix
+    /// \todo implement a PrecompiledConstraints class which wraps an existing
+    ///       Constraints class for efficiency at the cost of one grid walk
+    template<class ConstrainedDFS>
+    static void applyMatrixConstraints( const ConstrainedDFS& cSpace,
+                                        MatrixType & m )
+    {
+      typedef typename ConstrainedDFS::Constraints
+        Constraints;
+      typedef typename Constraints::LocalConstraints
+        LocalConstraints;
+      typedef typename ConstrainedDFS::BaseFunctionSet
+        BFS;
+      typedef typename DFS::Iterator
+        ItType;
+      typedef typename ItType::Entity
+        Entity;
+
+      const Constraints& constraints = cSpace.constraints();
+
+      // check that number of dofs in space is equal to matrix size
+      // assert()
+
+      ItType it = cSpace.begin();
+      for(; it!=cSpace.end(); ++it)
+      {
+        const LocalConstraints localConstraints = constraints.local( en );
+
+        setLocalConstraintsInMatrix( space, localConstraints, en, m );
+      }
+
+    }
+
+  private:
+    /// \todo move to matrixContainer factory
+    template<class DFSType,
+             class Entity>
+    static void addToMatrix( const DFSType& space,
+                             const LocalMatrix& localMatrix,
+                             const Entity& en,
+                             MatrixType &m )
+    {
+      for (unsigned int i = 0; i < localMatrix.getN(); i++)
+      {
+        for (unsigned int j = 0; j < localMatrix.getM(); j++)
+        {
+          const int globalI = space.mapToGlobal( en, i );
+          const int globalJ = space.mapToGlobal( en, j );
+
+          m[globalI][globalJ] = localMatrix[i][j];
+        }
+      }
+    }
+
+    /// \todo move to Constraints class
+    template<class ConstrainedDFS,
+             class Entity>
+    static void setLocalConstraintsInMatrix( const ConstrainedDFS& cSpace,
+                                             const LocalConstraints& localConstraints,
+                                             const Entity& en,
+                                             MatrixType &m )
+    {
+
+      for (unsigned int i = 0; i < localConstraints.rowDofsSize(); i++)
+      {
+        for (unsigned int j = 0; j < localConstraints.columnDofsSize(); j++)
+        {
+          m[localConstraints.rowDofs(i)][localConstraints.columnDofs(j)]
+            = localConstraints.localMatrix(i,j);
+        }
       }
     }
 
