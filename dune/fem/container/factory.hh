@@ -9,26 +9,53 @@ namespace Functionals
 namespace Container
 {
 
+/** @brief interface of static factory class for matrix and vector classes
+ */
 template<class ContainerImp>
 class Factory
 {
 public:
+  //! return type for create() method
   typedef NotImplemented
     AutoPtrType;
+  //! wrapped container type
   typedef NotImplemented
     ContainerType;
 
+private:
   class NotImplemented
   {
   };
 
 public:
+  /** @brief creates a new matrix/vector object and returns an auto_ptr
+   * pointing to the allocated object
+   *
+   * - Matrices have size @f$ H \times H @f$ where @f$H@f$ is the number
+   * of degrees of freedom in the discrete function space @f$ { \cal X }_H @f$.
+   * The matrices' sparsity pattern is determined by the discrete function
+   * space's basefunction overlap.
+   * - Vectors have @f$ H @f$ components
+   *
+   * @param dfs the discrete function space @f$ { \cal X }_H @f$.
+   */
   template< class DiscFuncSpace >
   static AutoPtrType create( DiscFuncSpace& dfs )
   {
     dune_static_assert("Not Implemented: Factory!");
   }
 
+  /** @brief creates a new matrix/vector object and returns a pointer to the
+   * allocated object
+   *
+   * - Matrices have size @f$ H \times H @f$ where @f$H@f$ is the number
+   * of degrees of freedom in the discrete function space @f$ { \cal X }_H @f$.
+   * The matrices' sparsity pattern is determined by the discrete function
+   * space's basefunction overlap.
+   * - Vectors have @f$ H @f$ components
+   *
+   * @param dfs the discrete function space @f$ { \cal X }_H @f$.
+   */
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
@@ -36,6 +63,8 @@ public:
   }
 }; // end of class Factory
 
+/** @brief interface of static factory class for matrix classes
+ */
 template<class ContainerImp>
 class MatrixFactory
   : public Factory<ContainerImp>
@@ -55,12 +84,32 @@ public:
 public:
 
 
+  /** @brief creates a new BCRSMatrix object and returns an auto_ptr pointing
+   * to the allocated object
+   *
+   * Matrices have size @f$ H \times H @f$ where @f$H@f$ is the number
+   * of degrees of freedom in the discrete function space @f$ { \cal X }_H @f$.
+   * The matrices' sparsity pattern is determined by the discrete function
+   * space's basefunction overlap.
+   *
+   * @param dfs the discrete function space @f$ { \cal X }_H @f$.
+   */
   template< class DiscFuncSpace >
   static AutoPtrType create( DiscFuncSpace& dfs )
   {
     return AutoPtrType( createPtr( dfs ) );
   }
 
+  /** @brief creates a new BCRSMatrix object and returns a pointer to the
+   * allocated object
+   *
+   * Matrices have size @f$ H \times H @f$ where @f$H@f$ is the number
+   * of degrees of freedom in the discrete function space @f$ { \cal X }_H @f$.
+   * The matrices' sparsity pattern is determined by the discrete function
+   * space's basefunction overlap.
+   *
+   * @param dfs the discrete function space @f$ { \cal X }_H @f$.
+   */
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
@@ -123,23 +172,36 @@ public:
 }; // end of MatrixFactory<BCRSMatrix<T> >
 
 
+/** @brief interface of static factory class for vector classes
+ */
 template<class ContainerImp>
 class VectorFactory
   : public Factory<ContainerImp>
 {
 };
 
-// specialization for BlockVector<T>
+/** @brief static factory class for vector classes of type Dune::BlockVector
+ */
 template<class T>
 class VectorFactory<Dune::BlockVector<T> >
 {
 public:
+  //! \copydoc Factory::ContainerType
   typedef Dune::BlockVector<T>
     ContainerType;
+  //! \copydoc Factory::AutoPtrType;
   typedef std::auto_ptr<ContainerType>
     AutoPtrType;
 
 public:
+  /** @brief creates a new vector object and returns an auto_ptr pointing to
+   * the allocated object
+   *
+   * The vector has @f$ H @f$ components which is the number of degrees of
+   * freedom of the given discrete function space @f$ {\cal X}_H @f$.
+   *
+   * @param dfs the discrete function space @f$ { \cal X }_H @f$.
+   */
   template< class DFSType >
   static ContainerType* createPtr( DFSType& dfs )
   {
