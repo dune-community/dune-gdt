@@ -8,6 +8,13 @@ namespace Functionals
 namespace Constraints
 {
 
+  /** @brief Constraints for Dirichlet values on the entire boundary domain
+   *
+   * This class implements constraints on the degrees of freedom on a @ref
+   * Subspace::Linear "linear subspace" @endref.
+   *
+   * @tparam DiscFuncSpace 
+   */
   template<class DiscFuncSpace>
   class Dirichlet
   {
