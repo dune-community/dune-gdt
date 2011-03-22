@@ -43,8 +43,10 @@ int main(int argc, const char* argv[])
   H10 h10(h1, dirichletConstraints);
   H1g h1g(h10, gFunc);
 
+  typedef Operator::EllipticOperator<H1::FunctionSpace, InducingFunction> EllipticOperator;
 
-  typedef Operator::EllipticFiniteElement<H1, InducingFunction> EllipticFEM;
+
+  typedef Operator::FiniteElement<H1, EllipticOperator> EllipticFEM;
 
   typedef Functional::L2<H1, InducingFunction> RHS;
 
@@ -79,7 +81,6 @@ int main(int argc, const char* argv[])
   Assembler::assembleVector(rhs, *F);
   Assembler::applyVectorConstraints(h10, *F);
   Assembler::assembleVector(ellipticFEM(gFunc), *G);
-  Assembler::applyVectorConstraints(h10, *G);
 
   typedef Dune::CGSolver<VectorContainer> CG;
   typedef Dune::SeqILU0<MatrixContainer, VectorContainer, VectorContainer, int>
