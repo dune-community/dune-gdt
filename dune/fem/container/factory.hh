@@ -13,16 +13,16 @@ namespace Container {
 template <class ContainerImp>
 class Factory
 {
+private:
+  class NonImplemented
+  {
+  };
+
 public:
   //! return type for create() method
-  typedef NotImplemented AutoPtrType;
+  typedef NonImplemented AutoPtrType;
   //! wrapped container type
-  typedef NotImplemented ContainerType;
-
-private:
-  // class NotImplemented
-  //{
-  //};
+  typedef NonImplemented ContainerType;
 
 public:
   /** @brief creates a new matrix/vector object and returns an auto_ptr
@@ -133,7 +133,7 @@ public:
     }
 
     for (unsigned int i = 0; i < sPattern.size(); i++) {
-      matrix->setRowSize(i, sPattern.size(i));
+      matrix->setRowSize(i, sPattern.countNonZeros(i));
     }
     matrix->endrowsizes();
 
