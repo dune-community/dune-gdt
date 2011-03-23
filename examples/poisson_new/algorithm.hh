@@ -127,6 +127,7 @@ class LinearSubspace : public DiscreteFunctionSpaceImp
 public:
   typedef ConstraintsImp ConstraintsType;
   typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
+
   typedef typename DiscreteFunctionSpaceType::Traits Traits;
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
   typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
