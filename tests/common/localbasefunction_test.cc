@@ -73,8 +73,8 @@ int main(int argc, char** argv)
     LocalBaseFunctionProviderType localBaseFunctionProvider(discreteFunctionSpace);
 
     // entity
-    LocalBaseFunctionProviderType::EntityIteratorType entityIterator = discreteFunctionSpace.begin();
-    LocalBaseFunctionProviderType::EntityType& entity                = *entityIterator;
+    DiscreteFunctionSpaceType::IteratorType entityIterator = discreteFunctionSpace.begin();
+    DiscreteFunctionSpaceType::EntityType& entity          = *entityIterator;
 
     // local basefunction
     typedef LocalBaseFunctionProviderType::LocalBaseFunctionType LocalBaseFunctionType;
@@ -82,7 +82,6 @@ int main(int argc, char** argv)
     LocalBaseFunctionType localBaseFunction = localBaseFunctionProvider.provide(entity, 0);
 
     // test some functionality
-
 
     // if we get here, the test passed
     std::cout << "passed!" << std::endl;

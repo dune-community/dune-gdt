@@ -32,13 +32,13 @@ public:
     storage_.resize(rows_ * cols_, 0.0);
   }
 
-  /**
-   * @brief     Resizes the storage size (rows*cols).
-   */
-  void resize(const unsigned int rows, const unsigned int cols)
-  {
-    storage_.resize(rows * cols, 0.0);
-  }
+  //  /**
+  //   * @brief     Resizes the storage size (rows*cols).
+  //   */
+  //  void resize( const unsigned int rows, const unsigned int cols )
+  //  {
+  //    storage_.resize( rows * cols, 0.0 );
+  //  }
 
   /**
     * \brief    Returns the storage size (n*m).

@@ -36,7 +36,8 @@ public:
     : size_(localFunction.numDofs())
   {
     // resize
-    storage_.resize(localFunction.numDofs(), 0.0);
+    storage_.resize(size_, 0.0);
+    //    resize( localFunction.numDofss() );
 
     // copy entries
     for (int ii = 0; ii < localFunction.numDofs(); ++ii) {
@@ -44,14 +45,14 @@ public:
     }
   }
 
-  /**
-   * @brief     Resizes the storage size
-   */
-  void resize(const unsigned int rows)
-  {
-    size_ = rows;
-    storage_.resize(size_, 0.0);
-  }
+  //  /**
+  //   * @brief     Resizes the storage size
+  //   */
+  //  void resize( const unsigned int rows )
+  //  {
+  //    size_ = rows;
+  //    storage_.resize( size_, 0.0 );
+  //  }
 
   /**
     * \brief    Returns the size.

@@ -14,27 +14,13 @@ namespace Common {
 template <class DiscreteFunctionSpaceImp>
 class LocalBaseFunctionProvider
 {
-
 public:
   typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
-
-  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-
-  typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
-
-  typedef typename EntityIteratorType::Entity EntityType;
-
-  typedef typename EntityType::Geometry EntityGeometryType;
-
-private:
   class LocalBaseFunction
   {
 
   public:
-    typedef LocalBaseFunction LocalBaseFunctionType;
-
     typedef typename DiscreteFunctionSpaceType::DomainFieldType DomainFieldType;
 
     typedef typename DiscreteFunctionSpaceType::RangeFieldType RangeFieldType;
@@ -47,9 +33,15 @@ private:
 
     typedef typename DiscreteFunctionSpaceType::HessianRangeType HessianRangeType;
 
-    typedef typename EntityGeometryType::LocalCoordinate LocalCoordinateType;
-
     typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
+
+    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+
+    typedef typename DiscreteFunctionSpaceType::IteratorType EntityIteratorType;
+
+    typedef typename EntityIteratorType::Entity EntityType;
+
+    typedef typename EntityType::Geometry EntityGeometryType;
 
     static const int dimDomain = DiscreteFunctionSpaceType::dimDomain;
 
@@ -75,24 +67,45 @@ private:
     template <class PointType>
     void jacobian(const PointType& x, JacobianRangeType& ret) const
     {
-      baseFunctionSet_.jacobian(localDoFNumber_, x, ret);
+      // some types we will need
+      typedef typename EntityGeometryType::Jacobian JacobianInverseTransposedType;
+
+      typedef typename JacobianRangeType::row_type JacobianRowType;
+
+      // geometry and jacobian inverse transposed
+      const EntityGeometryType& entityGeometry                       = entity_.geometry();
+      const JacobianInverseTransposedType& jacobianInverseTransposed = entityGeometry.jacobianInverseTransposed(x);
+
+      // get untransposed jacobian
+      JacobianRangeType jacobianUntransposed(0.0);
+      baseFunctionSet_.jacobian(localDoFNumber_, x, jacobianUntransposed);
+
+      // do for each dim of Range
+      for (unsigned int row = 0; row < ret.N(); ++row) {
+        // transpose
+        JacobianRowType jacobian(0.0);
+        jacobianInverseTransposed.mv(jacobianUntransposed[0], jacobian);
+
+        // return
+        ret[row] = jacobian;
+      }
     }
 
-    template <int diffOrder, class PointType>
-    void evaluate(const FieldVector<int, diffOrder>& diffVariable, const PointType& x, RangeType& ret) const
+    const EntityType& entity() const
     {
-      baseFunctionSet_.evaluate(localDoFNumber_, diffVariable, x, ret);
+      return entity_;
     }
 
   private:
     const EntityType& entity_;
-    const BaseFunctionSetType& baseFunctionSet_;
+    const BaseFunctionSetType baseFunctionSet_;
     const int localDoFNumber_;
 
   }; // end class LocalBaseFunction
 
-public:
   typedef LocalBaseFunction LocalBaseFunctionType;
+
+  typedef typename LocalBaseFunctionType::EntityType EntityType;
 
   LocalBaseFunctionProvider(const DiscreteFunctionSpaceType& discreteFunctionSpace)
     : discreteFunctionSpace_(discreteFunctionSpace)
@@ -105,8 +118,7 @@ public:
 
   const LocalBaseFunctionType provide(const EntityType& entity, const int localDoFNumber) const
   {
-
-    return LocalBaseFunction(entity, discreteFunctionSpace_.baseFunctionSet(entity), localDoFNumber);
+    return LocalBaseFunctionType(entity, discreteFunctionSpace_.baseFunctionSet(entity), localDoFNumber);
   }
 
 private:
