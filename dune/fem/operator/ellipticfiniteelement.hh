@@ -8,6 +8,7 @@
 // dune-fem-functionals includes
 #include <dune/fem/common/localmatrix.hh>
 #include <dune/fem/common/localvector.hh>
+#include <dune/fem/common/localbasefunction.hh>
 #include <dune/fem/functional/ltwo.hh>
 
 namespace Dune
@@ -19,16 +20,16 @@ namespace Functionals
 namespace Operator
 {
 
-template< class DiscreteFunctionSpaceImp, class InducingFunctionImp >
-class EllipticFiniteElement
+template< class DiscreteFunctionSpaceImp, class LocalOperationImp >
+class FiniteElement
 {
 public:
 
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
-  typedef InducingFunctionImp
-    InducingFunctionType;
+  typedef LocalOperationImp
+    LocalOperationType;
 
   typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
     FunctionSpaceType;
@@ -51,8 +52,8 @@ public:
   typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
     LocalVectorType;
 
-  typedef Dune::Functionals::Functional::L2< DiscreteFunctionSpaceImp, InducingFunctionImp >
-    FunctionalType;
+//  typedef Dune::Functionals::Functional::L2< DiscreteFunctionSpaceImp, InducingFunctionImp >
+//    FunctionalType;
 
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
     BaseFunctionSetType;
@@ -72,113 +73,25 @@ public:
   typedef CachingQuadrature< GridPartType, 0 >
     EntityQuadratureType;
 
-  EllipticFiniteElement( DiscreteFunctionSpaceType& discreteFunctionSpace,
-                         InducingFunctionType& inducingFunction )
+  typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteFunctionSpaceType >
+    LocalBaseFunctionProviderType;
+
+  typedef typename LocalBaseFunctionProviderType::LocalBaseFunctionType
+    LocalBaseFunctionType;
+
+  FiniteElement(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                  const LocalOperationType& localOperation )
     : discreteFunctionSpace_( discreteFunctionSpace ),
-      inducingFunction_( inducingFunction )
+      localOperation_( localOperation ),
+      localBaseFunctionProvider_( discreteFunctionSpace )
   {
   }
 
-  ~EllipticFiniteElement()
+  ~FiniteElement()
   {
-  }
-
-  DiscreteFunctionSpaceType& space() const
-  {
-    return discreteFunctionSpace_;
   }
   
-  template< class DiscreteFunctionImp1 >
-  const FunctionalType operator()( const DiscreteFunctionImp1& function1 ) const
-  {
-    FunctionalType func;
-    return func;
-  }
-
-  template< class DiscreteFunctionImp1, class DiscreteFunctionImp2 >
-  const RangeFieldType operator()( const DiscreteFunctionImp1& function1,
-                                   const DiscreteFunctionImp2& function2 ) const
-  {
-    return 0.0;
-  }
-
-//  template< class DiscreteFucntionImp1, class DiscreteFunctionImp2 >
-//  const RangeFieldType operator()(  const DiscreteFucntionImp1& function1,
-//                                    const DiscreteFunctionImp2& function2 ) const
-//  {
-//    RangeFieldType ret = 0.0;
-
-//    // some types we will need
-//    typedef DiscreteFunctionImp1
-//      DiscreteFunctionType1;
-//    typedef DiscreteFunctionImp2
-//      DiscreteFunctionType2;
-
-//    typedef typename FunctionSpaceType::JacobianRangeType
-//      JacobianRangeType;
-
-//    // do gridwalk
-//    const EntityIteratorType BehindLastEntity = discreteFunctionSpace_.end();
-//    for ( EntityIteratorType entityIterator = discreteFunctionSpace_.begin();
-//          entityIterator != BehindLastEntity;
-//          ++entityIterator )
-//    {
-//      // some types we will need
-//      typedef typename EntityType::Geometry
-//        EntityGeometryType;
-//      typedef typename BaseFunctionSetType::RangeType
-//        RangeType;
-
-//      // entity and geometry
-//      const EntityType& entity = *entityIterator;
-//      const EntityGeometryType& entityGeometry = entity.geometry();
-
-//      // quadrature
-//      typedef CachingQuadrature< GridPartType, 0 >
-//        EntityQuadratureType;
-//      typedef typename EntityQuadratureType::CoordinateType
-//        EntityCoordinateType;
-//      const unsigned quadratureOrder = (2 * discreteFunctionSpace_.order() + 1);
-//      const EntityQuadratureType entityQuadrature( entity, quadratureOrder );
-//      const unsigned numberOfQuadraturePoints = entityQuadrature.nop();
-
-//      // do walk over quadrature points
-//      for(  unsigned int quadraturePoint = 0;
-//            quadraturePoint < numberOfQuadraturePoints;
-//            ++quadraturePoint )
-//      {
-//        // coordinates
-//        const EntityCoordinateType xReferenceElement = entityQuadrature.point( quadraturePoint );
-////        const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
-//        const typename FunctionImp::DomainType xWorld = entityGeometry.global( xReferenceElement );
-
-//        // integration factors
-//        const double integrationFactor = entityGeometry.integrationElement( xReferenceElement );
-//        const double quadratureWeight = entityQuadrature.weight( quadraturePoint );
-
-//        // evaluate gradients of the analytical functions
-//        typename FunctionSpaceType::RangeType gradient1( 0.0 );
-//        JacobianRangeType gradient2( 0.0 );
-//        function1.evaluate( xWorld, gradient1 );
-////        function2.jacobian( xWorld, gradient2 );
-
-//        // evaluate the inducing function
-//        RangeType functionValue = 0.0;
-//        inducingFunction_.evaluate( xWorld, functionValue );
-
-//        // compute integral
-////        ret += integrationFactor * quadratureWeight * functionValue * gradient1 * gradient1;
-
-//      } // done walk over quadrature points
-
-
-//    } // done gridwalk
-
-//    return ret;
-//  }
-
-
-  LocalMatrixType applyLocal( const EntityType& entity) const
+  LocalMatrixType applyLocal( const EntityType& entity )
   {
 
     // basefunctionset
@@ -192,8 +105,6 @@ public:
     const EntityGeometryType& entityGeometry = entity.geometry();
 
     // quadrature
-    typedef typename EntityQuadratureType::CoordinateType
-      EntityCoordinateType;
     const unsigned quadratureOrder = discreteFunctionSpace_.order();
     const EntityQuadratureType entityQuadrature( entity, quadratureOrder );
     const unsigned numberOfQuadraturePoints = entityQuadrature.nop();
@@ -219,34 +130,40 @@ public:
               ++quadraturePoint )
         {
           // coordinates
-          const EntityCoordinateType xReferenceElement = entityQuadrature.point( quadraturePoint );
-          const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
+          const DomainType x = entityQuadrature.point( quadraturePoint );
+//          const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
 
           // integration factors
-          const double integrationFactor = entityGeometry.integrationElement( xReferenceElement );
+          const double integrationFactor = entityGeometry.integrationElement( x );
           const double quadratureWeight = entityQuadrature.weight( quadraturePoint );
 
-          // jacobian inverse transposed
-          const typename EntityGeometryType::Jacobian& jacobianInverseTransposed = entityGeometry.jacobianInverseTransposed( xReferenceElement );
+          // get local basefucntions
+          const LocalBaseFunctionType phi_i = localBaseFunctionProvider_.provide( entity, i );
+          const LocalBaseFunctionType phi_j = localBaseFunctionProvider_.provide( entity, j );
 
-          // evaluate function and basefunction
-          RangeType functionValue = 0.0;
-          inducingFunction_.evaluate( xWorld, functionValue );
+//          // jacobian inverse transposed
+//          const typename EntityGeometryType::Jacobian& jacobianInverseTransposed = entityGeometry.jacobianInverseTransposed( xReferenceElement );
 
-          JacobianRangeType gradientBaseFunction_i_untransposed( 0.0 );
-          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_i_untransposed );
-          JacobianRangeType gradientBaseFunction_i( 0.0 );
-          jacobianInverseTransposed.mv( gradientBaseFunction_i_untransposed[0], gradientBaseFunction_i[0] );
+//          // evaluate function and basefunction
+//          RangeType functionValue = 0.0;
+//          inducingFunction_.evaluate( xWorld, functionValue );
 
-          JacobianRangeType gradientBaseFunction_j_untransposed( 0.0 );
-          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_j_untransposed );
-          JacobianRangeType gradientBaseFunction_j( 0.0 );
-          jacobianInverseTransposed.mv( gradientBaseFunction_j_untransposed[0], gradientBaseFunction_j[0] );
+//          JacobianRangeType gradientBaseFunction_i_untransposed( 0.0 );
+//          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_i_untransposed );
+//          JacobianRangeType gradientBaseFunction_i( 0.0 );
+//          jacobianInverseTransposed.mv( gradientBaseFunction_i_untransposed[0], gradientBaseFunction_i[0] );
 
-          const double product = gradientBaseFunction_j[0] * gradientBaseFunction_j[0];
+//          JacobianRangeType gradientBaseFunction_j_untransposed( 0.0 );
+//          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_j_untransposed );
+//          JacobianRangeType gradientBaseFunction_j( 0.0 );
+//          jacobianInverseTransposed.mv( gradientBaseFunction_j_untransposed[0], gradientBaseFunction_j[0] );
+
+//          const double product = gradientBaseFunction_j[0] * gradientBaseFunction_j[0];
+
+          const double localOperationEvaluated = localOperation_.operate( phi_i, phi_j, x );
 
           // compute integral
-          operator_i_j += integrationFactor * quadratureWeight * functionValue * product;
+          operator_i_j += integrationFactor * quadratureWeight * localOperationEvaluated;
 
         } // done walk over quadrature points
 
@@ -257,14 +174,17 @@ public:
 
     } // done loop over all local DoFs (i)
 
+    return ret;
+
   }
 
 private:
 
-  DiscreteFunctionSpaceType& discreteFunctionSpace_;
-  InducingFunctionType& inducingFunction_;
+  const DiscreteFunctionSpaceType& discreteFunctionSpace_;
+  const LocalOperationType& localOperation_;
+  const LocalBaseFunctionProviderType localBaseFunctionProvider_;
 
-};
+}; // end class FiniteElement
 
 } // end of namespace Operator
 

@@ -34,6 +34,7 @@
 
 // dune fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
+#include <dune/fem-tools/common/printing.hh>
 
 /**
   * \brief Analytical function which induces the functional.
@@ -73,16 +74,76 @@ class AnalyticalFunction : public Dune::Fem::Function< FunctionSpaceImp , Analyt
 
 };
 
-// disable warnings about problems in dune headers (sourced by dgfparser)
+class EllipticOperation
+{
+public:
+
+  EllipticOperation()
+  {
+  }
+
+  ~EllipticOperation()
+  {
+  }
+
+  template< class FirstLocalFunctionType, class SecondLocalFunctionType, class LocalPointType >
+  double operate( const FirstLocalFunctionType& firstLocalFunction,
+                  const SecondLocalFunctionType& secondLocalFunction,
+                  const LocalPointType& localPoint ) const
+  {
+    // init return value
+    double ret = 0.0;
+
+    // some types we will need
+    typedef typename SecondLocalFunctionType::EntityType
+      EntityType;
+
+    typedef typename EntityType::Geometry
+      EntityGeometryType;
+
+    typedef typename EntityGeometryType::Jacobian
+      JacobianInverseTransposedType;
+
+    typedef typename FirstLocalFunctionType::RangeType
+      RangeType;
+
+    typedef typename FirstLocalFunctionType::JacobianRangeType
+      JacobianRangeType;
+
+    // entity and geometry
+    const EntityType& entity = secondLocalFunction.entity();
+    const EntityGeometryType& entityGeometry = entity.geometry();
+    const LocalPointType globalPoint = entityGeometry.global( localPoint );
+
+    // first gradient
+    JacobianRangeType firstGradient( 0.0 );
+    firstLocalFunction.jacobian( localPoint, firstGradient );
+
+    // second gradient
+    JacobianRangeType secondGradient( 0.0 );
+    secondLocalFunction.jacobian( localPoint, secondGradient );
+
+    const double product = firstGradient[0] * secondGradient[0];
+
+    // 1.0 * \gradient u(x) \gradient v(x)
+    ret = 1.0 * product;
+
+    // return
+    return ret;
+  }
+
+}; // end class EllipticOperation
+
+// disable warnings about problems, sourced by dgfparser
 #include <dune/fem-tools/header/disablewarnings.hh>
 
 // main
-int main(int argc, char** argv)
+int main( int argc, char** argv )
 {
   try{
 
     // print welcome
-    std::cout << "Elliptic finite element operator test ";
+    std::cout << "Elliptic finite element operator test " << std::endl;
 
     // mpi
     Dune::MPIManager::initialize ( argc, argv );
@@ -122,11 +183,14 @@ int main(int argc, char** argv)
     DiscreteFunctionType discreteFunction( "discrete_function" , discreteFunctionSpace );
     Dune::FemTools::setDiscreteFunctionToScalarValue( discreteFunction, 1.0 );
 
+    // local operation
+    EllipticOperation ellipticOperation;
+
     // operator
-    typedef Dune::Functionals::Operator::EllipticFiniteElement< DiscreteFunctionSpaceType, AnalyticalFunctionType >
+    typedef Dune::Functionals::Operator::FiniteElement< DiscreteFunctionSpaceType, EllipticOperation >
       EllipticFiniteElementOperatorType;
 
-    EllipticFiniteElementOperatorType ellipticFiniteElementOperator( discreteFunctionSpace, analyticalFunction);
+    EllipticFiniteElementOperatorType ellipticFiniteElementOperator( discreteFunctionSpace, ellipticOperation );
 
     // entity
     EllipticFiniteElementOperatorType::EntityIteratorType entityIterator = discreteFunctionSpace.begin();
