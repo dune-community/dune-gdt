@@ -44,7 +44,7 @@ public:
   template< class DiscFuncSpace >
   static AutoPtrType create( DiscFuncSpace& dfs )
   {
-    dune_static_assert( false, "Not Implemented: Factory!" );
+    DUNE_THROW( InvalidStateException, "Factory not implemented for ContainerType!" );
   }
 
   /** @brief creates a new matrix/vector object and returns a pointer to the
@@ -61,7 +61,7 @@ public:
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
-    dune_static_assert( false, "Not Implemented: Factory!" );
+    DUNE_THROW( InvalidStateException, "Factory not implemented for ContainerType!" );
   }
 }; // end of class Factory
 
@@ -74,10 +74,11 @@ class MatrixFactory
 };
 
 // specialization for BCRSMatrix
-template< class T >
-class MatrixFactory< Dune::BCRSMatrix< T > >
+template<class T>
+class MatrixFactory< Dune::BCRSMatrix< T > >//Dune::FieldMatrix<double, 1,1> > >
 {
 public:
+//  typedef Dune::FieldMatrix<double, 1,1> T;
   typedef Dune::BCRSMatrix<T>
     ContainerType;
   typedef std::auto_ptr<ContainerType>
@@ -115,7 +116,7 @@ public:
   template< class DiscFuncSpace >
   static ContainerType* createPtr( DiscFuncSpace& dfs )
   {
-    typedef typename DiscFuncSpace::BaseFunctionSet
+    typedef typename DiscFuncSpace::BaseFunctionSetType
       BFS;
     typedef typename DiscFuncSpace::IteratorType
       ItType;
@@ -135,15 +136,15 @@ public:
     // \todo precompile this in linear subspace
     // \todo use constraints for sparsity pattern
     ItType it = dfs.begin();
-    for ( ; it != dfs.end(); it++ )
+    for ( ; it != dfs.end(); ++it )
     {
       const Entity& en = *it;
       const BFS& bfs = dfs.baseFunctionSet( en );
 
-      for (unsigned int i = 0; i < bfs.numBaseFunctions(); i++)
+      for (unsigned int i = 0; i < bfs.numBaseFunctions(); ++i)
       {
         unsigned int ii = dfs.mapToGlobal( en, i );
-        for (unsigned int j = 0; j < bfs.numBaseFunctions(); j++)
+        for (unsigned int j = 0; j < bfs.numBaseFunctions(); ++j)
         {
           unsigned int jj = dfs.mapToGlobal( en, j );
           sPattern.insert( ii, jj );
@@ -151,8 +152,8 @@ public:
       }
     }
 
-    for (unsigned int i = 0; i < sPattern.size(); i++) {
-      matrix->setRowSize( i, sPattern.countNonZeros( i ) );
+    for (unsigned int i = 0; i < sPattern.size(); ++i) {
+      matrix->setrowsize( i, sPattern.countNonZeros( i ) );
     }
     matrix->endrowsizes();
 

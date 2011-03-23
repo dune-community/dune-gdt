@@ -51,7 +51,7 @@ public:
     return rows_*cols_;
   }
 
-  ElementType& get( const unsigned int i, const unsigned int j )
+  ElementType get( const unsigned int i, const unsigned int j ) const
   {
     return storage_[i*cols_+j];
   }
@@ -85,10 +85,26 @@ public:
     return result;
   }
 
+  /**
+   * @brief Return number of rows.
+   */
+  unsigned int N() const
+  {
+    return rows_;
+  }
+
+  /**
+   * @brief Return number of cols.
+   */
+  unsigned int M() const
+  {
+    return cols_;
+  }
+
 private:
   std::vector< ElementType > storage_;
-  const unsigned int rows_;
-  const unsigned int cols_;
+  unsigned int rows_;
+  unsigned int cols_;
 
 }; // end class LocalDoFVector
 

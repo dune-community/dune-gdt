@@ -39,7 +39,7 @@ public:
     : size_( localFunction.numDofs() )
   {
     // resize
-    resize( localFunction.numDofs() );
+    storage_.resize( localFunction.numDofs(), 0.0 );
 
     // copy entries
     for(  int ii = 0;

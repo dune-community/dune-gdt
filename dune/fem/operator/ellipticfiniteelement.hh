@@ -72,8 +72,8 @@ public:
   typedef CachingQuadrature< GridPartType, 0 >
     EntityQuadratureType;
 
-  EllipticFiniteElement(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
-                          const InducingFunctionType& inducingFunction )
+  EllipticFiniteElement( DiscreteFunctionSpaceType& discreteFunctionSpace,
+                         InducingFunctionType& inducingFunction )
     : discreteFunctionSpace_( discreteFunctionSpace ),
       inducingFunction_( inducingFunction )
   {
@@ -82,11 +82,16 @@ public:
   ~EllipticFiniteElement()
   {
   }
+
+  DiscreteFunctionSpaceType& space() const
+  {
+    return discreteFunctionSpace_;
+  }
   
   template< class DiscreteFunctionImp1 >
   const FunctionalType operator()( const DiscreteFunctionImp1& function1 ) const
   {
-    FunctionalType func();
+    FunctionalType func;
     return func;
   }
 
@@ -172,15 +177,8 @@ public:
 //    return ret;
 //  }
 
-  /**
-   * @brief apply operator locally on entity
-   */
-  void applyLocal( const EntityType& entity, LocalVectorType& vec )
-  {
 
-  }
-
-  void applyLocal( const EntityType& entity, LocalMatrixType& ret )
+  LocalMatrixType applyLocal( const EntityType& entity) const
   {
 
     // basefunctionset
@@ -188,7 +186,7 @@ public:
     const unsigned numberOfLocalDoFs = baseFunctionSet.numBaseFunctions();
 
     // init return matrix
-    ret.resize( numberOfLocalDoFs, numberOfLocalDoFs );
+    LocalMatrixType ret( numberOfLocalDoFs, numberOfLocalDoFs );
 
     // geometry
     const EntityGeometryType& entityGeometry = entity.geometry();
@@ -263,8 +261,8 @@ public:
 
 private:
 
-  const DiscreteFunctionSpaceType& discreteFunctionSpace_;
-  const InducingFunctionType& inducingFunction_;
+  DiscreteFunctionSpaceType& discreteFunctionSpace_;
+  InducingFunctionType& inducingFunction_;
 
 };
 

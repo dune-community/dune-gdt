@@ -131,6 +131,7 @@ public:
     ConstraintsType;
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
+  
   typedef typename DiscreteFunctionSpaceType::Traits
     Traits;
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType

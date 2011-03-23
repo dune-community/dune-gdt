@@ -57,8 +57,8 @@ public:
    *                  constraints are applied
    */
   Dirichlet( DiscFuncSpace& space )
-    : space_(space),
-      gridPart_(space.gridPart())
+    : space_( space ),
+      gridPart_( space.gridPart() )
   {
   }
 
@@ -74,39 +74,39 @@ public:
   template< class Entity >
   const LocalConstraintsType local( const Entity& en )
   {
-    typedef typename DiscFuncSpace::BaseFunctionSet
+    typedef typename DiscFuncSpace::BaseFunctionSetType
       BFS;
 
     const BFS& bfs = space_.baseFunctionSet( en );
     const int numCols = bfs.numBaseFunctions();
     LocalConstraintsType lc(numCols);
 
-    typedef typename DiscFuncSpace::Iterator
+    typedef typename DiscFuncSpace::IteratorType
       ItType;
     typedef typename Entity::LeafIntersectionIterator
       IntersectionIterator;
     typedef typename IntersectionIterator::Intersection
       Intersection;
 
-    int numRows = 0;
+    unsigned int numRows = 0;
     ItType it = space_.begin();
-    for (; it != space_.end(); it++)
+    for (; it != space_.end(); ++it)
     {
       const Entity& en = *it;
 
       IntersectionIterator iit = en.ileafbegin();
-      for (; iit != en.ileafend(); iit++)
+      for (; iit != en.ileafend(); ++iit)
       {
         const Intersection& ii = *iit;
         if( ii.boundary() )
         {
           lc.setRowDofs( numRows, space_.mapToGlobal( en, numRows ) );
-          for (unsigned int i = 0; i < numCols; i++)
+          for (unsigned int i = 0; i < numCols; ++i)
           {
             lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
-            lc.setLocalMatrix( numRows, i ) = 0;
+            lc.setLocalMatrix( numRows, i, 0.0 );
           }
-          lc.setLocalMatrix(numRows, numRows) = 1;
+          lc.setLocalMatrix(numRows, numRows, 1.0 );
           ++numRows;
         }
       }

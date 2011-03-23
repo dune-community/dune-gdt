@@ -9,6 +9,7 @@
 #include <dune/fem/space/lagrangespace.hh>
 #include <dune/fem/storage/vector.hh>
 #include <dune/istl/bvector.hh>
+#include <dune/common/fmatrix.hh>
 
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 
@@ -60,12 +61,12 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  void evaluate( const DomainType& x, RangeType& y )
+  void evaluate( const DomainType& x, RangeType& y ) const
   {
     y = 1.0;
   }
 
-  void jacobian( const DomainType& x, JacobianRangeType& y )
+  void jacobian( const DomainType& x, JacobianRangeType& y ) const
   {
     y = 0.0;
   }
@@ -100,23 +101,58 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  void evaluate( const DomainType& x, RangeType& y )
+  void evaluate( const DomainType& x, RangeType& y ) const
   {
     y = 0.0;
   }
 
-  void jacobian( const DomainType& x, JacobianRangeType& y )
+  void jacobian( const DomainType& x, JacobianRangeType& y ) const
   {
     y = 0.0;
   }
 
 };
 
-
-
+/**
+ * @class GFunc
+ * function representing the dirichlet data g for the poisson problem
+ * a \laplace u = f
+ */
+template< class FunctionSpaceImp >
 class GFunc
 {
+public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+  
+  typedef typename FunctionSpaceType::DomainFieldType
+    DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  void evaluate( const DomainType& x, RangeType& y ) const
+  {
+    y = 0.0;
+  }
+
+  void jacobian( const DomainType& x, JacobianRangeType& y ) const
+  {
+    y = 0.0;
+  }
+
 };
+
 
 int main( int argc, const char *argv[] )
 {
@@ -158,7 +194,10 @@ int main( int argc, const char *argv[] )
   typedef Functional::L2< H1, FFunc< FunctionSpaceType > /*InducingFunctionType*/ >
     RHS;
 
-  typedef Container::MatrixFactory< Dune::BCRSMatrix< double > >
+  typedef Dune::FieldMatrix< double, dimRange, dimRange >
+    FieldMatrixType;
+
+  typedef Container::MatrixFactory< Dune::BCRSMatrix< FieldMatrixType > >
     MatrixFactoryType;
   typedef MatrixFactoryType::AutoPtrType
     MatrixContainerPtr;
@@ -174,16 +213,18 @@ int main( int argc, const char *argv[] )
 
   typedef Solver::FEMAssembler< MatrixContainer, VectorContainer >
     Assembler;
-  typedef Dune::CGSolver< VectorContainer > 
+  typedef Dune::CGSolver< VectorContainer >
     CG;
   typedef Dune::SeqILU0< MatrixContainer, VectorContainer, VectorContainer, 1 >
     SeqILU0Type;
+  typedef Dune::MatrixAdapter< MatrixContainer, VectorContainer, VectorContainer >
+    MatrixAdapterType;
 
 
   // FunctionType should be obsolete
   // It should be either a DoF-Container or an analytical function, and for
   // transition phase a discrete function.
-  typedef Subspace::Affine< H10, GFunc >
+  typedef Subspace::Affine< H10, GFunc< FunctionSpaceType > >
     H1g;
 
   //create grid
@@ -193,7 +234,7 @@ int main( int argc, const char *argv[] )
   GridPartType gridPart( *gridPtr );
 
   //some functions
-  GFunc                      gFunc;
+  GFunc< FunctionSpaceType > gFunc;
   AFunc< FunctionSpaceType > aFunc;
   FFunc< FunctionSpaceType > fFunc;
 
@@ -228,16 +269,17 @@ int main( int argc, const char *argv[] )
   Assembler::applyVectorConstraints( h10, *F );
   Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
-  double prec = 10e-8;
+  MatrixAdapterType op(*A);
+  SeqILU0Type prec( *A, 1.0 );
 
-  CG cg( A, prec, 1e-10, 1000, true );
+  CG cg( op, prec, 1e-10, 1000, 1 );
 
   Dune::InverseOperatorResult res;
-  F -= G;
-  cg( u0, F, res );
+  *F -= *G;
+  cg.apply( *u0, *F, res );
 
   // @todo implement gFunc
-  *u = *u0 + gFunc;
+  //*u = *u0 + gFunc;
 
 /*  DiscreteFunction dfU( h1, *u );
 
