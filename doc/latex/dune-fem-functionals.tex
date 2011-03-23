@@ -125,7 +125,7 @@ numberstyle=\tiny}
     Assuming standard notation, the following elliptic PDE is one of the simplest sample problem we would like to solve
     with \dunefemfunctionals.
 
-    \begin{example}[elliptic boundary value problem]\theoremNewline
+    \begin{example}[Elliptic boundary value problem]\theoremNewline
       \label{example::introduction::elliptic_pde}
       Let ${\Omega \subset \R}$ be a bounded connected lipshitz-domain and let ${a\komma f : \Omega \rightarrow \R}$ and
       ${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
@@ -142,7 +142,9 @@ numberstyle=\tiny}
       \end{align}
     \end{example}\theoremEndLine
 
-    \begin{definition}[weak formulation]\theoremNewline
+    As usual, we will consider the weak formulation of equation \ref{equation::introduction::elliptic_pde}.
+
+    \begin{definition}[Weak formulation]\theoremNewline
       \label{definition::introduction::weak_formulation}
       Let $H^1$ and $H^1_0$ be given as usual and let the affine subspace $H^1_g$ be
       defined as
@@ -171,78 +173,41 @@ numberstyle=\tiny}
       \end{align}
     \end{definition}\theoremEndLine
 
-    The weak formulation \eqref{equation::introduction::weak_formulation} gives rise to the introduction of
-    functionals and operators. A rigorous mathematical definition of these can be found in the next section.
-    The following is only intended to give the basic idea.
+    Using the fact, that the solution lies in ${H_g^1}$, we can decomposed the solution as ${u = u_0 + \hat{g}}$, where
+    ${u_0 \in H_0^1}$ is the solution to problem \eqref{equation::introduction::elliptic_pde} with homogeneous boundary
+    conditions and a modified right hand side. We can thus rewrite \eqref{equation::introduction::weak_formulation} as follows.
 
-    \begin{definition}[operator and functional]\theoremNewline
-      \label{definition::introduction::operators_functionals}
-      The function $f$ from example \ref{example::introduction::elliptic_pde} induces a functional
+    \begin{remark}[Weak formulation]\theoremNewline
+      \label{remark::introduction::weak_formulation}
+      With the notation from definition \ref{definition::introduction::weak_formulation}, find ${u_0 \in H_0^1}$, such
+      that
       \begin{align}
-        F: H^1 &\rightarrow \R
-          \notag\\
-        v &\mapsto F[v] :=
-          \int\limits_{\Omega}
-            f v
-          \dx\punkt
-          \notag
-        \intertext{Accordingly the function $a$ from example \ref{example::introduction::elliptic_pde}
-          induces an operator}
-        A: H^1 &\rightarrow H^{-1}
-          \notag\\
-        u &\mapsto A(u) \komma
-          \notag
-        \intertext{where $A(u)$ itself is a functional, defined by}
-        A(u): H^1 &\rightarrow \R
-          \notag\\
-        v &\mapsto A(u)[v] :=
-          \int\limits_{\Omega}
-            a \gradient u \gradient v
-          \dx\punkt
-          \notag
+        \label{equation::introduction::weak_formulation_homogeneous_boundary_values}
+        \int\limits_{\Omega}
+          a \gradient u_0 \gradient v
+        \dx
+        =
+        \int\limits_{\Omega}
+          f v
+        \dx -
+        \int\limits_{\Omega}
+          a \gradient \hat{g} \gradient v
+        \dx
+        &&\text{for all } v \in H^1_0 \punkt
       \end{align}
-    \end{definition}\theoremEndLine
-
-    With these definitions at hand the weak formulation \eqref{equation::introduction::weak_formulation} can be
-    written as the following variational problem.
-
-    \begin{remark}[variational problem]\theoremNewline
-      \label{remark::introduction::variational_formulation_functionals_operators}
-      Let $A$ and $F$ be as in definition \ref{definition::introduction::operators_functionals}. The weak formulation
-      \eqref{equation::introduction::weak_formulation} can be rewritten as follows.
-      Find ${u \in H^1_g}$, such that
+      The weak solution from definition \ref{definition::introduction::weak_formulation} can then be obtained by
       \begin{align}
-        \label{equation::introduction::variational_formulation_functionals_operators}
-        A(u)[v] = F[v] &&\text{for all } v\in H^1_0 \punkt
+        \label{equation::introduction::weak_formulation_decomposition_solution}
+        u = u_0 + \hat{g} \punkt
       \end{align}
     \end{remark}\theoremEndLine
 
-    In order to solve the above problem we can rewrite equation
-    \eqref{equation::introduction::variational_formulation_functionals_operators} using the fact that the desired
-    solution lies in the affine subspace ${H_{g}^{1}}$ and can thus be decomposed as ${u = u_0 + \hat{g}}$.
-
-    \begin{remark}[solution of the variational problem]\theoremNewline
-      \label{remark::introduction::solution_of_the_variational_problem}
-      With the notation from remark \ref{remark::introduction::variational_formulation_functionals_operators}, find
-      ${u_{0} \in H^{1}_{0}}$, such that
-      \begin{align}
-        \label{equation::introduction::variational_formulation_in_h_1_0}
-        A(u_{0})[v] = F[v] - A(\hat{g})[v] &&\text{for all } v\in H^1_0 \punkt
-      \end{align}
-      The solution ${u \in H^{1}_{g}}$ of \eqref{equation::introduction::variational_formulation_functionals_operators}
-      is then given by
-      \begin{align}
-        \label{equation::introduction::solution}
-        u := u_{0} + \hat{g}\punkt
-      \end{align}
-    \end{remark}\theoremEndLine
-
-    In order to solve equation \eqref{equation::introduction::variational_formulation_functionals_operators} numerically
+    In order to solve equation \eqref{equation::introduction::weak_formulation_homogeneous_boundary_values} numerically
     we introduce the finite element discretization.
 
     \begin{definition}[finite element discretization]\theoremNewline
       \label{definition::introduction::finite_element_discretization}
-      With the notation from example \ref{example::introduction::elliptic_pde}, let $\Tau_h$ be a conform admissable
+      With the notation from definition \ref{definition::introduction::weak_formulation}, let $\Tau_h$ be a conform admissable
       triangulation of the domain $\Omega$ with codim 0 elements ${T \in \Tau_h}$. The usual finite element lagrange spaces are then given by
       \begin{align}
         \label{equation::introduction::lagrange_space}
@@ -274,22 +239,102 @@ numberstyle=\tiny}
 
     \begin{definition}[finite element solution]\theoremNewline
       \label{definition::introduction::finite_element_solution}
-      With the notation from remark \ref{remark::introduction::variational_formulation_functionals_operators} and
+      With the notation from remark \ref{remark::introduction::weak_formulation} and
       definition \ref{definition::introduction::finite_element_discretization}, find ${{u_{h}}_{0} \in {S_{h}^{1}}_0}$, such that
       \begin{align}
         \label{equation::introduction::finite_element_solution_0}
-          A({u_{h}}_{0})[v_{h}] = F[v_{h}] - A(g_{h})[v_{h}] &&\text{for all } v_{h} \in {S_{h}^{1}}_0\punkt
+        \int\limits_{\Omega}
+          a \gradient {u_{h}}_{0} \gradient v_h
+        \dx
+        =
+        \int\limits_{\Omega}
+          f v_h
+        \dx -
+        \int\limits_{\Omega}
+          a \gradient g_h \gradient v_h
+        \dx
+        &&\text{for all } v_{h} \in {S_{h}^{1}}_0\punkt
       \end{align}
-      The finite element solution ${u_h \in {S_h^1}_h}$ of \eqref{equation::introduction::elliptic_pde} is then given as
+      The finite element solution ${u_h \in {S_h^1}}$ of \eqref{equation::introduction::elliptic_pde} is then given by
       \begin{align}
         \label{equation::introduction::finite_element_solution}
           u_{h} := {u_{h}}_{0} + g_{h}\punkt
       \end{align}
     \end{definition}\theoremEndLine
 
+    The weak formulations \eqref{equation::introduction::weak_formulation} and
+    \eqref{equation::introduction::finite_element_solution_0} gives rise to the introduction of
+    functionals and operators. A rigorous mathematical definition of these can be found in the next section.
+    The following is only intended to give the basic idea.
+
+    \begin{definition}[operator and functional]\theoremNewline
+      \label{definition::introduction::operators_functionals}
+      The function $f$ from example \ref{example::introduction::elliptic_pde} induces a functional
+      \begin{align}
+        F: S_h^k &\rightarrow \R
+          \notag\\
+        v &\mapsto F[v] :=
+          \int\limits_{\Omega}
+            f v
+          \dx\punkt
+          \notag
+        \intertext{Accordingly the function $a$ from example \ref{example::introduction::elliptic_pde}
+          induces an operator}
+        A: S_h^k &\rightarrow {S_h^k}^{-1}
+          \notag\\
+        u &\mapsto A(u) \komma
+          \notag
+        \intertext{where $A(u)$ itself is a functional, defined by}
+        A(u): S_h^k &\rightarrow \R
+          \notag\\
+        v &\mapsto A(u)[v] :=
+          \int\limits_{\Omega}
+            a \gradient u \gradient v
+          \dx\punkt
+          \notag
+      \end{align}
+    \end{definition}\theoremEndLine
+
+    The above operator and functional are characterized by two things in general. The first is the discretization type,
+    in this case a finite element discretization. The second is the mathematical operation, which induces the operator or
+    the functional, respectively.
+
+    \begin{remark}[Local operations]\theoremNewline
+      \label{remark::introduction::local_operation}
+      The operator $A$ and the functional $F$ are characterized by simple mathematical operations. These are, for given
+      $a$ and $f$ the ``elliptic operation''
+      \begin{align}
+        H^1 \times H^1 &\rightarrow \R
+          \notag\\
+        ( u, v ) &\mapsto a \gradient u \gradient v
+          \label{equation::introduction::elliptic_operations}
+        \intertext{and the ``product operation''}
+        H^1 &\rightarrow \R
+          \notag\\
+        v &\mapsto f v \punkt
+          \label{equation::introduction::product_operation}
+      \end{align}
+    \end{remark}\theoremEndLine
+
+    With these definitions at hand the finite element formulation from definition
+    \ref{definition::introduction::finite_element_solution} can be written as follows.
+
+    \begin{remark}[Finite element solution, using operators and functionals]\theoremNewline
+      \label{remark::introduction::variational_formulation_functionals_operators}
+      With the notation from definition \ref{definition::introduction::finite_element_solution} let $A$ and $F$ be as in
+      definition \ref{definition::introduction::operators_functionals}. The finite element formulation
+      \eqref{equation::introduction::weak_formulation} can be rewritten as follows.
+      Find ${{u_h}_0 \in {S^1_h}_0}$, such that
+      \begin{align}
+        \label{equation::introduction::finite_element_formulation_functionals_operators}
+        A({u_h}_0)[v_h] = F[v_h] - A(g_h)[v_h] &&\text{for all } v_h \in {S^1_h}_0 \punkt
+      \end{align}
+      The finite element solution is then given as in definition \ref{definition::introduction::weak_formulation}.
+    \end{remark}\theoremEndLine
+
     The following algorithm gives rise to the corresponding constructs that we will nedd in \dunefemfunctionals.
 
-    \begin{definition}[algorithm to solve the elliptic boundary value problem]\theoremNewline
+    \begin{definition}[Algorithm to solve the elliptic boundary value problem]\theoremNewline
       \label{definition::introduction::algorithm_fem}
       This algorithm computes the finite element solution of problem
       \eqref{equation::introduction::elliptic_pde}.
@@ -297,33 +342,24 @@ numberstyle=\tiny}
         \item[$(i)$] define the finite element space $S_{h}^{1}$
         \item[$(ii)$] define the test space ${S_{h}^{1}}_{0} \subset S_{h}^{1}$ as a linear subspace
         \item[$(iii)$] define the ansatz space ${S_{h}^{1}}_{g} \subset S_{h}^{1}$ as an affine subspace
-        \item[$(iv)$] define the operator ${A: {S_{h}^{1}} \rightarrow {S_{h}^{1}}^{-1}}$
-        \item[$(v)$] define the functional ${F \in {S_{h}^{1}}^{-1}}$
+        \item[$(iv)$] define the elliptic operation and the finite element operator ${A: {S_{h}^{1}} \rightarrow {S_{h}^{1}}^{-1}}$
+        \item[$(v)$] define the product operation and the finite element functional ${F \in {S_{h}^{1}}^{-1}}$
         \item[$(vi)$] assemble a matrix with entries
           \begin{align}
             \label{equation::introduction::matrix_entries}
             (A)_{i,j} := A( \varphi_{i} )[ \psi_j ]
           \end{align}
-          for all basefunctions of the ansatz-space ${\varphi_i \in S_{hg}^1}$ and all basefunctions of the test-space
-          ${\psi_j \in {S_h^1}_0}$
+          for all basefunctions of the ansatz-space ${\varphi_i \in S_{h}^1}$ and all basefunctions of the test-space
+          ${\psi_j \in S_h^1}$
         \item[$(vii)$] assemble a vector with entries
           \begin{align}
             \label{equation::introduction::vector_entries}
             (F)_{j} := F[ \psi_j ]
           \end{align}
-          for all basefunctions of the test-space ${\psi_j \in {S_h^1}_0}$
-        \item[$(viii)$] solve the algebraic system
-          \begin{align}
-            \label{equation::introduction::algebraic_system}
-            A x = F
-          \end{align}
-          for $x$
-        \item[$(ix)$] compute the solution ${u \in S_{hg}^{1}}$ as
-          \begin{align}
-            \label{equation::introduction::algebraic_solution}
-            u_h := u_{h0} + \hat{g}\komma
-          \end{align}
-          where ${u_{h0} \in S_{h0}^{1}}$ is the discrete function belonging to the dof vector $x$.
+          for all basefunctions of the test-space ${\psi_j \in S_h^1}$
+        \item[$(viii)$] constrain the algebraic system according to ${S_h^1}_0$
+        \item[$(ix)$] solve the algebraic system
+        \item[$(x)$] compute the solution ${u \in S_{hg}^{1}}$ as $u_h := u_{h0} + \hat{g}$
       \end{itemize}
     \end{definition}
 
@@ -343,7 +379,8 @@ numberstyle=\tiny}
       Features:
       \begin{itemize}
         \item This space should provide a means to apply the constraints or should provide corresponding
-        basefunctions.
+          basefunctions.
+        \item This space should provide the sparsity pattern for the system matrix.
       \end{itemize}
     \end{remark}\theoremEndLine
 
@@ -355,6 +392,15 @@ numberstyle=\tiny}
       Features:
       \begin{itemize}
         \item This space should provide a means to access the function $\hat{g}$.
+      \end{itemize}
+    \end{remark}\theoremEndLine
+
+    \begin{remark}[Local operation]\theoremNewline
+      \label{remark::introduction::local_operation_in_summary}
+      The local operations in algorithm \ref{definition::introduction::algorithm_fem}.iv and
+      \ref{definition::introduction::algorithm_fem}.v will be realized by a class with the following features:
+      \begin{itemize}
+        \item For given local functions, compute the mathematical operation.
       \end{itemize}
     \end{remark}\theoremEndLine
 
@@ -381,7 +427,7 @@ numberstyle=\tiny}
       \end{itemize}
     \end{remark}\theoremEndLine
 
-    \begin{remark}[Solver]\theoremNewline
+    \begin{remark}[``Solver'']\theoremNewline
       \label{remark::introduction::solver}
       The steps $(vi)$ -- $(ix)$ in algorithm \ref{definition::introduction::algorithm_fem} should be ralized by a class
       that does several things. One possible behaviour is described by the algorithm. Another possible behaviour is
@@ -392,7 +438,7 @@ numberstyle=\tiny}
         \item the solver initializes some kind of storage objects for the system matrix and the right hand side
         \item the solver carries out the assembling of the system matrix and the right hand side
         \item the solver applies the constraints (if necessarry) to the system matrix and the right hand side
-        \item the solver assembles the displacement vector $A(\hat{g},\psi_j)$ and substracts it
+        \item the solver assembles the displacement vector $A(g_h,\psi_j)$ if needed and substracts it
         \item the solver solves the system for the DoF vector
         \item the solver computes the actual solution
       \end{itemize}
