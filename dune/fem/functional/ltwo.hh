@@ -34,7 +34,7 @@ public:
 
   typedef typename InducingFunctionType::RangeFieldType RangeFieldType;
 
-  typedef Dune::Functionals::LocalVector<RangeFieldType> LocalDoFVectorType;
+  typedef Dune::Functionals::Common::LocalVector<RangeFieldType> LocalDoFVectorType;
 
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
 

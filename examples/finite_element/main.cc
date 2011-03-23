@@ -47,6 +47,10 @@ public:
 
   typedef typename FunctionSpaceType::RangeType RangeType;
 
+  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
+
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
   void evaluate(const DomainType& x, RangeType& y)
@@ -74,6 +78,10 @@ public:
   typedef typename FunctionSpaceType::DomainType DomainType;
 
   typedef typename FunctionSpaceType::RangeType RangeType;
+
+  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
