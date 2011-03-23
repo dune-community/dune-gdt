@@ -7,6 +7,8 @@
 
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/space/lagrangespace.hh>
+#include <dune/fem/storage/vector.hh>
+#include <dune/istl/bvector.hh>
 
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 
@@ -30,6 +32,75 @@ const int polOrder = 1;
 const int polOrder = POLORDER;
 #endif
 
+/**
+ * @class AFunc
+ * function representing the coefficient a for the poisson problem
+ * a \laplace u = f
+ */
+template< class FunctionSpaceImp >
+class AFunc
+{
+public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  void evaluate( const DomainType& x, RangeType& y )
+  {
+    y = 1.0;
+  }
+
+  void jacobian( const DomainType& x, JacobianRangeType& y )
+  {
+    y = 0.0;
+  }
+
+};
+
+/**
+ * @class FFunc
+ * function representing f for the poisson problem
+ * a \laplace u = f
+ */
+template< class FunctionSpaceImp >
+class FFunc
+{
+public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  void evaluate( const DomainType& x, RangeType& y )
+  {
+    y = 0.0;
+  }
+
+  void jacobian( const DomainType& x, JacobianRangeType& y )
+  {
+    y = 0.0;
+  }
+
+};
+
+
 
 class GFunc
 {
@@ -37,6 +108,7 @@ class GFunc
 
 int main( int argc, const char *argv[] )
 {
+  static const unsigned int dimRange = 1;
 
   typedef Dune::GridSelector::GridType
     HGridType;
@@ -44,7 +116,7 @@ int main( int argc, const char *argv[] )
   typedef Dune::AdaptiveLeafGridPart< HGridType >
     GridPartType;
 
-  typedef Dune::FunctionSpace< double, double, HGridType::dimension, 1 >
+  typedef Dune::FunctionSpace< double, double, HGridType::dimension, dimRange >
     FunctionSpaceType;
 
   typedef Dune::Function< double, double >
@@ -69,9 +141,9 @@ int main( int argc, const char *argv[] )
   typedef Subspace::Linear< H1, DirichletConstraints >
     H10;
 
-  typedef Operator::EllipticFiniteElement< H1, GFunc/*InducingFunctionType*/ >
+  typedef Operator::EllipticFiniteElement< H1, AFunc< FunctionSpaceType >/*InducingFunctionType*/ >
     EllipticOperator;
-  typedef Functional::L2< H1, InducingFunctionType >
+  typedef Functional::L2< H1, FFunc< FunctionSpaceType > /*InducingFunctionType*/ >
     RHS;
 
   typedef Container::MatrixFactory< Dune::BCRSMatrix< double > >
@@ -81,7 +153,7 @@ int main( int argc, const char *argv[] )
   typedef MatrixFactoryType::ContainerType
     MatrixContainer;
 
-  typedef Container::VectorFactory< std::vector< double > >
+  typedef Container::VectorFactory< Dune::BlockVector< Dune::FieldVector< double, 1 > > >
     VectorFactoryType;
   typedef VectorFactoryType::AutoPtrType
     VectorContainerPtr;
@@ -103,15 +175,15 @@ int main( int argc, const char *argv[] )
     H1g;
 
   //create grid
-  Dune::GridPtr< HGridType > gridPtr( "macrogrids/unitcube2.dummy.dgf" );
+  Dune::GridPtr< HGridType > gridPtr( "macrogrids/unitcube2.dgf" );
 
   //get grid part
   GridPartType gridPart( *gridPtr );
 
   //some functions
-  GFunc                gFunc;
-  GFunc                aFunc;
-  GFunc                fFunc;
+  GFunc                      gFunc;
+  AFunc< FunctionSpaceType > aFunc;
+  FFunc< FunctionSpaceType > fFunc;
 
   //create spaces
   H1                   h1( gridPart );
@@ -149,8 +221,8 @@ int main( int argc, const char *argv[] )
   CG cg( A, prec, 1e-10, 1000, true );
 
   Dune::InverseOperatorResult res;
-  // @todo need to implement "F-G"
-  cg( u0, F-G, res );
+  F -= G;
+  cg( u0, F, res );
 
   // @todo implement gFunc
   *u = *u0 + gFunc;
