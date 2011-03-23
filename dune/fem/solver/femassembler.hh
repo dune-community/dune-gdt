@@ -45,6 +45,13 @@ public:
     }
   }
 
+  // @todo implementation
+  template <class Operator>
+  static void assembleVector(const Operator& op, VectorType& vec)
+  {
+  }
+
+
   /// \todo merge later with assembleMatrix
   /// \todo implement a PrecompiledConstraints class which wraps an existing
   ///       Constraints class for efficiency at the cost of one grid walk
@@ -69,6 +76,12 @@ public:
 
       setLocalConstraintsInMatrix(cSpace, localConstraints, en, m);
     }
+  }
+
+  // @todo implementation
+  template <class ConstrainedDFS>
+  static void applyVectorConstraints(const ConstrainedDFS& cSpace, VectorType& vec)
+  {
   }
 
 private:
@@ -99,6 +112,7 @@ private:
       }
     }
   }
+
 
 }; // end of class FEMAssembler
 

@@ -35,62 +35,6 @@ class GFunc
 {
 };
 
-/**
- * @class AFunc
- * function representing the coefficient a for the poisson problem
- * a \laplace u = f
- */
-template <class FunctionSpaceImp>
-class AFunc
-{
-public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
-
-  typedef typename FunctionSpaceType::RangeType RangeType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-  void evaluate(const DomainType& x, RangeType& y)
-  {
-    y = 1.0;
-  }
-
-  void jacobian(const DomainType& x, JacobianRangeType& y)
-  {
-    y = 0.0;
-  }
-};
-
-/**
- * @class FFunc
- * function representing f for the poisson problem
- * a \laplace u = f
- */
-template <class FunctionSpaceImp>
-class FFunc
-{
-public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
-
-  typedef typename FunctionSpaceType::RangeType RangeType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-  void evaluate(const DomainType& x, RangeType& y)
-  {
-    y = 0.0;
-  }
-
-  void jacobian(const DomainType& x, JacobianRangeType& y)
-  {
-    y = 0.0;
-  }
-};
-
 int main(int argc, const char* argv[])
 {
 
@@ -116,8 +60,8 @@ int main(int argc, const char* argv[])
 
   typedef Subspace::Linear<H1, DirichletConstraints> H10;
 
-  typedef Operator::EllipticFiniteElement<H1, AFunc<FunctionSpaceType> /*InducingFunctionType*/> EllipticOperator;
-  typedef Functional::L2<H1, FFunc<FunctionSpaceType> /*InducingFunctionType*/> RHS;
+  typedef Operator::EllipticFiniteElement<H1, GFunc /*InducingFunctionType*/> EllipticOperator;
+  typedef Functional::L2<H1, InducingFunctionType> RHS;
 
   typedef Container::MatrixFactory<Dune::BCRSMatrix<double>> MatrixFactoryType;
   typedef MatrixFactoryType::AutoPtrType MatrixContainerPtr;
@@ -138,15 +82,15 @@ int main(int argc, const char* argv[])
   typedef Subspace::Affine<H10, GFunc> H1g;
 
   // create grid
-  Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dgf");
+  Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dummy.dgf");
 
   // get grid part
   GridPartType gridPart(*gridPtr);
 
   // some functions
   GFunc gFunc;
-  AFunc<FunctionSpaceType> aFunc;
-  FFunc<FunctionSpaceType> fFunc;
+  GFunc aFunc;
+  GFunc fFunc;
 
   // create spaces
   H1 h1(gridPart);
@@ -175,10 +119,9 @@ int main(int argc, const char* argv[])
 
   Assembler::assembleMatrix(ellipticFEM, *A);
   Assembler::applyMatrixConstraints(h10, *A);
-  // @todo methods needs to be implemented
-  // Assembler::assembleVector( rhs, *F );
-  // Assembler::applyVectorConstraints( h10, *F );
-  // Assembler::assembleVector( ellipticFEM(gFunc), *G );
+  Assembler::assembleVector(rhs, *F);
+  Assembler::applyVectorConstraints(h10, *F);
+  Assembler::assembleVector(ellipticFEM(gFunc), *G);
 
   double prec = 10e-8;
 
