@@ -30,57 +30,19 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune fem-functionals includes
-#include <dune/fem/operator/ellipticfiniteelement.hh>
+#include <dune/fem/operator/finiteelement.hh>
 
 // dune fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
 #include <dune/fem-tools/common/printing.hh>
 
 /**
-  * \brief Analytical function which induces the functional.
+  * \brief  Represents the elliptic operation a(x) \gradient u(x) \gradient v(x) for given u, v, x.
+  *         In this case, a = 1.
   **/
-template <class FunctionSpaceImp>
-class AnalyticalFunction : public Dune::Fem::Function<FunctionSpaceImp, AnalyticalFunction<FunctionSpaceImp>>
-{
-public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-  typedef AnalyticalFunction<FunctionSpaceType> ThisType;
-  typedef Dune::Function<FunctionSpaceType, ThisType> BaseType;
-  typedef typename FunctionSpaceType::DomainType DomainType;
-  typedef typename FunctionSpaceType::RangeType RangeType;
-  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-  AnalyticalFunction()
-  {
-  }
-
-  ~AnalyticalFunction()
-  {
-  }
-
-  inline void evaluate(const DomainType& arg, RangeType& ret) const
-  {
-    ret = 1.0;
-  }
-
-  inline void jacobian(const DomainType& arg, JacobianRangeType& ret) const
-  {
-    ret = JacobianRangeType(1.0);
-  }
-};
-
 class EllipticOperation
 {
 public:
-  EllipticOperation()
-  {
-  }
-
-  ~EllipticOperation()
-  {
-  }
-
   template <class FirstLocalFunctionType, class SecondLocalFunctionType, class LocalPointType>
   double operate(const FirstLocalFunctionType& firstLocalFunction, const SecondLocalFunctionType& secondLocalFunction,
                  const LocalPointType& localPoint) const
@@ -123,8 +85,10 @@ public:
 
 }; // end class EllipticOperation
 
+
 // disable warnings about problems, sourced by dgfparser
 #include <dune/fem-tools/header/disablewarnings.hh>
+
 
 // main
 int main(int argc, char** argv)
@@ -132,7 +96,7 @@ int main(int argc, char** argv)
   try {
 
     // print welcome
-    std::cout << "Elliptic finite element operator test " << std::endl;
+    std::cout << "Elliptic finite element operator test ";
 
     // mpi
     Dune::MPIManager::initialize(argc, argv);
@@ -150,9 +114,6 @@ int main(int argc, char** argv)
 
     // analytical function space and function
     typedef Dune::FunctionSpace<double, double, dim, 1> AnalyticalFunctionSpaceType;
-    typedef AnalyticalFunction<AnalyticalFunctionSpaceType> AnalyticalFunctionType;
-
-    const AnalyticalFunctionType analyticalFunction;
 
     // discrete function space and function
     const int polOrder = 1;
@@ -183,16 +144,8 @@ int main(int argc, char** argv)
     // test applyLocal
     ellipticFiniteElementOperator.applyLocal(entity);
 
-    //    // test as scalar product
-    //    const double volume = ellipticFiniteElementOperator( discreteFunction, discreteFunction );
-
-    //    // functions are chosen to equal 1 when multiplied, thus the application of the operator should yield the
-    //    volume
-    //    // of the area, which in turn should be 1 in case of the two-dimensional unitcube
-    //    if ( volume == 1.0 )
-    //      std::cout << "passed!" << std::endl;
-    //    else
-    //      std::cout << "failed (result should equal 1, is " << volume << ")!" << std::endl;
+    // if we get this far without segfault, the test is passed for now
+    std::cout << "passed!" << std::endl;
 
     // we don't make no errors^^
     return 0;

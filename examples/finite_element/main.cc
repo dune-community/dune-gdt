@@ -17,9 +17,10 @@
 #include <dune/istl/bcrsmatrix.hh>
 #include <dune/istl/solvers.hh>
 
+// dune-fem-functionals includes
 #include <dune/fem/constraints/dirichlet.hh>
 #include <dune/fem/subspace/subspaces.hh>
-#include <dune/fem/operator/ellipticfiniteelement.hh>
+#include <dune/fem/operator/finiteelement.hh>
 #include <dune/fem/functional/ltwo.hh>
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
@@ -34,36 +35,54 @@ const int polOrder = POLORDER;
 #endif
 
 /**
- * @class AFunc
- * function representing the coefficient a for the poisson problem
- * a \laplace u = f
- */
-template <class FunctionSpaceImp>
-class AFunc
+  * \brief  Represents the elliptic operation a(x) \gradient u(x) \gradient v(x) for given u, v, x.
+  *         In this case, a = 1.
+  **/
+class EllipticOperation
 {
 public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
-
-  typedef typename FunctionSpaceType::RangeType RangeType;
-
-  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
-
-  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-  void evaluate(const DomainType& x, RangeType& y) const
+  template <class FirstLocalFunctionType, class SecondLocalFunctionType, class LocalPointType>
+  double operate(const FirstLocalFunctionType& firstLocalFunction, const SecondLocalFunctionType& secondLocalFunction,
+                 const LocalPointType& localPoint) const
   {
-    y = 1.0;
+    // init return value
+    double ret = 0.0;
+
+    // some types we will need
+    typedef typename SecondLocalFunctionType::EntityType EntityType;
+
+    typedef typename EntityType::Geometry EntityGeometryType;
+
+    typedef typename EntityGeometryType::Jacobian JacobianInverseTransposedType;
+
+    typedef typename FirstLocalFunctionType::RangeType RangeType;
+
+    typedef typename FirstLocalFunctionType::JacobianRangeType JacobianRangeType;
+
+    // entity and geometry
+    const EntityType& entity                 = secondLocalFunction.entity();
+    const EntityGeometryType& entityGeometry = entity.geometry();
+    const LocalPointType globalPoint         = entityGeometry.global(localPoint);
+
+    // first gradient
+    JacobianRangeType firstGradient(0.0);
+    firstLocalFunction.jacobian(localPoint, firstGradient);
+
+    // second gradient
+    JacobianRangeType secondGradient(0.0);
+    secondLocalFunction.jacobian(localPoint, secondGradient);
+
+    const double product = firstGradient[0] * secondGradient[0];
+
+    // 1.0 * \gradient u(x) \gradient v(x)
+    ret = 1.0 * product;
+
+    // return
+    return ret;
   }
 
-  void jacobian(const DomainType& x, JacobianRangeType& y) const
-  {
-    y = 0.0;
-  }
-};
+}; // end class EllipticOperation
+
 
 /**
  * @class FFunc
@@ -140,10 +159,7 @@ int main(int argc, const char* argv[])
 
   typedef Dune::FunctionSpace<double, double, HGridType::dimension, dimRange> FunctionSpaceType;
 
-  typedef Dune::Function<double, double> FunctionType;
-
-  // typedef FunctionType
-  ////InducingFunctionType;
+  typedef Dune::Function<double, doubEllipticOperationle> FunctionType;
 
   // function spaces
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> H1;
@@ -156,7 +172,8 @@ int main(int argc, const char* argv[])
 
   typedef Subspace::Linear<H1, DirichletConstraints> H10;
 
-  typedef Operator::EllipticFiniteElement<H1, AFunc<FunctionSpaceType> /*InducingFunctionType*/> EllipticOperator;
+  typedef Operator::FiniteElement<H1, EllipticOperation> EllipticOperator;
+
   typedef Functional::L2<H1, FFunc<FunctionSpaceType> /*InducingFunctionType*/> RHS;
 
   typedef Dune::FieldMatrix<double, dimRange, dimRange> FieldMatrixType;
@@ -206,7 +223,7 @@ int main(int argc, const char* argv[])
 
   MatrixContainerPtr A = MatrixFactoryType::create(h10);
   VectorContainerPtr F = VectorFactoryType::create(h10);
-  VectorContainerPtr G = VectorFactoryType::create(h10);
+  //  VectorContainerPtr G  = VectorFactoryType::create( h10 );
 
   /*  MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
    *  VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
@@ -220,7 +237,7 @@ int main(int argc, const char* argv[])
   Assembler::applyMatrixConstraints(h10, *A);
   Assembler::assembleVector(rhs, *F);
   Assembler::applyVectorConstraints(h10, *F);
-  Assembler::assembleVector(ellipticFEM(gFunc), *G);
+  //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
   MatrixAdapterType op(*A);
   SeqILU0Type prec(*A, 1.0);

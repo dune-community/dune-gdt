@@ -39,9 +39,6 @@ public:
 
   typedef Dune::Functionals::Common::LocalVector<RangeFieldType> LocalVectorType;
 
-  //  typedef Dune::Functionals::Functional::L2< DiscreteFunctionSpaceImp, InducingFunctionImp >
-  //    FunctionalType;
-
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType BaseFunctionSetType;
 
   typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
@@ -100,7 +97,6 @@ public:
         for (unsigned int quadraturePoint = 0; quadraturePoint < numberOfQuadraturePoints; ++quadraturePoint) {
           // coordinates
           const DomainType x = entityQuadrature.point(quadraturePoint);
-          //          const EntityCoordinateType xWorld = entityGeometry.global( xReferenceElement );
 
           // integration factors
           const double integrationFactor = entityGeometry.integrationElement(x);
@@ -110,26 +106,7 @@ public:
           const LocalBaseFunctionType phi_i = localBaseFunctionProvider_.provide(entity, i);
           const LocalBaseFunctionType phi_j = localBaseFunctionProvider_.provide(entity, j);
 
-          //          // jacobian inverse transposed
-          //          const typename EntityGeometryType::Jacobian& jacobianInverseTransposed =
-          //          entityGeometry.jacobianInverseTransposed( xReferenceElement );
-
-          //          // evaluate function and basefunction
-          //          RangeType functionValue = 0.0;
-          //          inducingFunction_.evaluate( xWorld, functionValue );
-
-          //          JacobianRangeType gradientBaseFunction_i_untransposed( 0.0 );
-          //          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_i_untransposed );
-          //          JacobianRangeType gradientBaseFunction_i( 0.0 );
-          //          jacobianInverseTransposed.mv( gradientBaseFunction_i_untransposed[0], gradientBaseFunction_i[0] );
-
-          //          JacobianRangeType gradientBaseFunction_j_untransposed( 0.0 );
-          //          baseFunctionSet.jacobian( i, xReferenceElement, gradientBaseFunction_j_untransposed );
-          //          JacobianRangeType gradientBaseFunction_j( 0.0 );
-          //          jacobianInverseTransposed.mv( gradientBaseFunction_j_untransposed[0], gradientBaseFunction_j[0] );
-
-          //          const double product = gradientBaseFunction_j[0] * gradientBaseFunction_j[0];
-
+          // apply local operation
           const double localOperationEvaluated = localOperation_.operate(phi_i, phi_j, x);
 
           // compute integral
