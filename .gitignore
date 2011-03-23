@@ -56,3 +56,4 @@ tests/functional/discretelinearfunctional_test
 tests/functional/discretelinearfunctional_test-discretelinearfunctional_test.o
 tests/functional/ltwofunctional_test
 tests/functional/ltwofunctional_test-ltwofunctional_test.o
+doc/latex/dune-fem-functionals.pdf
