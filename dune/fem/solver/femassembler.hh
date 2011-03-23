@@ -22,7 +22,7 @@ public:
   typedef VectorImp
     VectorType;
 
-  typedef typename VectorType::FieldType
+  typedef typename VectorType::field_type
     FieldType;
 
   typedef Dune::Functionals::Common::LocalMatrix< FieldType >

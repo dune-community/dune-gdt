@@ -7,6 +7,8 @@
 
 // dune-fem-functionals includes
 #include <dune/fem/common/localmatrix.hh>
+#include <dune/fem/common/localvector.hh>
+#include <dune/fem/functional/ltwo.hh>
 
 namespace Dune
 {
@@ -46,6 +48,12 @@ public:
   typedef Dune::Functionals::Common::LocalMatrix< RangeFieldType >
     LocalMatrixType;
 
+  typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
+    LocalVectorType;
+
+  typedef Dune::Functionals::Functional::L2< DiscreteFunctionSpaceImp, InducingFunctionImp >
+    FunctionalType;
+
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
     BaseFunctionSetType;
 
@@ -74,6 +82,20 @@ public:
   ~EllipticFiniteElement()
   {
   }
+  
+  template< class DiscreteFunctionImp1 >
+  const FunctionalType operator()( const DiscreteFunctionImp1& function1 ) const
+  {
+    FunctionalType func();
+    return func;
+  }
+
+  template< class DiscreteFunctionImp1, class DiscreteFunctionImp2 >
+  const RangeFieldType operator()( const DiscreteFunctionImp1& function1,
+                                   const DiscreteFunctionImp2& function2 ) const
+  {
+    return 0.0;
+  }
 
 //  template< class DiscreteFucntionImp1, class DiscreteFunctionImp2 >
 //  const RangeFieldType operator()(  const DiscreteFucntionImp1& function1,
@@ -81,7 +103,7 @@ public:
 //  {
 //    RangeFieldType ret = 0.0;
 
-//    // some types we will nedd
+//    // some types we will need
 //    typedef DiscreteFunctionImp1
 //      DiscreteFunctionType1;
 //    typedef DiscreteFunctionImp2
@@ -150,7 +172,15 @@ public:
 //    return ret;
 //  }
 
-  LocalMatrixType applyLocal( const EntityType& entity )
+  /**
+   * @brief apply operator locally on entity
+   */
+  void applyLocal( const EntityType& entity, LocalVectorType& vec )
+  {
+
+  }
+
+  void applyLocal( const EntityType& entity, LocalMatrixType& ret )
   {
 
     // basefunctionset
@@ -158,7 +188,7 @@ public:
     const unsigned numberOfLocalDoFs = baseFunctionSet.numBaseFunctions();
 
     // init return matrix
-    LocalMatrixType ret( numberOfLocalDoFs, numberOfLocalDoFs );
+    ret.resize( numberOfLocalDoFs, numberOfLocalDoFs );
 
     // geometry
     const EntityGeometryType& entityGeometry = entity.geometry();
@@ -228,8 +258,6 @@ public:
       } // done loop over all local DoFs (i)
 
     } // done loop over all local DoFs (i)
-
-    return ret;
 
   }
 

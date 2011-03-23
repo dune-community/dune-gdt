@@ -36,6 +36,14 @@ public:
   }
 
   /**
+   * @brief     Resizes the storage size (rows*cols).
+   */
+  void resize( const unsigned int rows, const unsigned int cols )
+  {
+    storage_.resize( rows * cols, 0.0 );
+  }
+
+  /**
     * \brief    Returns the storage size (n*m).
     */
   const unsigned int size() const

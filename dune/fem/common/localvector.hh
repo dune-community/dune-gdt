@@ -7,6 +7,8 @@ namespace Dune
 namespace Functionals
 {
 
+namespace Common
+{
 /**
   * \brief      This class represents a local DoF vector.
   *
@@ -37,7 +39,7 @@ public:
     : size_( localFunction.numDofs() )
   {
     // resize
-    storage_.resize( localFunction.numDofs() );
+    resize( localFunction.numDofs() );
 
     // copy entries
     for(  int ii = 0;
@@ -46,6 +48,15 @@ public:
     {
       storage_[ii] = localFunction[ii];
     }
+  }
+
+  /**
+   * @brief     Resizes the storage size
+   */
+  void resize( const unsigned int rows )
+  {
+    size_ = rows;
+    storage_.resize( size_, 0.0 );
   }
 
   /**
@@ -94,10 +105,12 @@ private:
   std::vector< ElementType > storage_;
   const unsigned int size_;
 
-}; // end class LocalDoFVector
+}; // end of class LocalDoFVector
 
-} // end namespace Functionals
+} // end of namespace Common
 
-} // end namespace Dune
+} // end of namespace Functionals
+
+} // end of namespace Dune
 
 #endif // end DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH

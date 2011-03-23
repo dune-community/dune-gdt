@@ -51,6 +51,12 @@ public:
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
+  typedef typename FunctionSpaceType::DomainFieldType
+    DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
@@ -84,6 +90,12 @@ public:
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
+  
+  typedef typename FunctionSpaceType::DomainFieldType
+    DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
 
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
@@ -214,7 +226,7 @@ int main( int argc, const char *argv[] )
   Assembler::applyMatrixConstraints( h10, *A );
   Assembler::assembleVector( rhs, *F );
   Assembler::applyVectorConstraints( h10, *F );
-  Assembler::assembleVector( ellipticFEM(gFunc), *G );
+  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
   double prec = 10e-8;
 
