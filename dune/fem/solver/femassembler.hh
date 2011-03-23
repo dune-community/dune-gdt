@@ -31,7 +31,7 @@ public:
 
 public:
   template< class Operator >
-  static void assembleMatrix( const Operator & op, MatrixType & m )
+  static void assembleMatrix( const Operator& op, MatrixType& m )
   {
     typedef typename Operator::DiscreteFunctionSpaceType
       DFS;
@@ -46,23 +46,31 @@ public:
     // check that number of dofs in space is equal to matrix size
     // assert()
     const ItType it = space.begin();
-    for(; it!=space.end(); ++it)
+    for( ; it!=space.end(); ++it )
     {
       const Entity &en = *it;
       const BFS & bfs = space.baseFunctionSet( en );
       LocalMatrixType localMatrix( bfs.numBaseFunctions(), bfs.numBaseFunctions );
       localMatrix = op.applyLocal( en );
 
-      addToMatrix(space, localMatrix, en, m);
+      addToMatrix( space, localMatrix, en, m );
     }
   }
+
+  // @todo implementation 
+  template< class Operator >
+  static void assembleVector( const Operator& op, VectorType& vec )
+  {
+
+  }
+
 
   /// \todo merge later with assembleMatrix
   /// \todo implement a PrecompiledConstraints class which wraps an existing
   ///       Constraints class for efficiency at the cost of one grid walk
   template< class ConstrainedDFS >
   static void applyMatrixConstraints( const ConstrainedDFS& cSpace,
-                                      MatrixType & m )
+                                      MatrixType& m )
   {
     typedef typename ConstrainedDFS::Constraints
       Constraints;
@@ -88,6 +96,14 @@ public:
 
       setLocalConstraintsInMatrix( cSpace, localConstraints, en, m );
     }
+
+  }
+ 
+  // @todo implementation 
+  template< class ConstrainedDFS >
+  static void applyVectorConstraints( const ConstrainedDFS& cSpace,
+                                      VectorType& vec )
+  {
 
   }
 
@@ -130,6 +146,7 @@ private:
       }
     }
   }
+
 
 }; // end of class FEMAssembler
 
