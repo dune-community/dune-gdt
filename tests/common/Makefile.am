@@ -4,7 +4,7 @@ POLORDER=1
 
 noinst_PROGRAMS = localbasefunction_test
 
-localbasefunction_testltwofunctional_test_SOURCES = localbasefunction_test.cc
+localbasefunction_test_SOURCES = localbasefunction_test.cc
 
 localbasefunction_test_CPPFLAGS = $(AM_CPPFLAGS) \
 	$(DUNEMPICPPFLAGS) \
