@@ -87,8 +87,13 @@ public:
   ~FiniteElement()
   {
   }
-  
-  LocalMatrixType applyLocal( const EntityType& entity )
+ 
+  const DiscreteFunctionSpaceType& space() const
+  {
+    return discreteFunctionSpace_;
+  }
+
+  LocalMatrixType applyLocal( const EntityType& entity ) const
   {
 
     // basefunctionset

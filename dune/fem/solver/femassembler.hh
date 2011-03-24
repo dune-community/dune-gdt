@@ -34,22 +34,22 @@ public:
   static void assembleMatrix( const Operator& op, MatrixType& m )
   {
     typedef typename Operator::DiscreteFunctionSpaceType
-      DFS;
-    typedef typename DFS::BaseFunctionSetType
-      BFS;
-    typedef typename DFS::IteratorType
+      DFSType;
+    typedef typename DFSType::BaseFunctionSetType
+      BFSType;
+    typedef typename DFSType::IteratorType
       ItType;
     typedef typename ItType::Entity
-      Entity;
+      EntityType;
 
-    const DFS & space = op.space();
+    const DFSType& space = op.space();
     // check that number of dofs in space is equal to matrix size
     // assert()
     ItType it = space.begin();
     for( ; it != space.end(); ++it )
     {
-      const Entity &en = *it;
-      const BFS & bfs = space.baseFunctionSet( en );
+      const EntityType &en = *it;
+      const BFSType& bfs = space.baseFunctionSet( en );
       LocalMatrixType localMatrix( bfs.numBaseFunctions(), bfs.numBaseFunctions() );
       localMatrix = op.applyLocal( en );
 
@@ -73,19 +73,19 @@ public:
                                       MatrixType& m )
   {
     typedef typename ConstrainedDFS::ConstraintsType
-      Constraints;
+      ConstraintsType;
     typedef typename ConstrainedDFS::DiscreteFunctionSpaceType
-      DFS;
-    typedef typename Constraints::LocalConstraintsType
-      LocalConstraints;
-    typedef typename DFS::BaseFunctionSetType
-      BFS;
-    typedef typename DFS::IteratorType
+      DFSType;
+    typedef typename ConstraintsType::LocalConstraintsType
+      LocalConstraintsType;
+    typedef typename DFSType::BaseFunctionSetType
+      BFSType;
+    typedef typename DFSType::IteratorType
       ItType;
     typedef typename ItType::Entity
-      Entity;
+      EntityType;
 
-    const Constraints& constraints = cSpace.constraints();
+    const ConstraintsType& constraints = cSpace.constraints();
 
     // check that number of dofs in space is equal to matrix size
     // assert()
@@ -94,16 +94,16 @@ public:
     ItType end = cSpace.space().end();
     for( ; it != end; ++it )
     {
-      const Entity& en = *it;
+      const EntityType& en = *it;
 
-      const LocalConstraints localConstraints = constraints.local( en );
+      const LocalConstraintsType localConstraints = constraints.local( en );
 
       setLocalConstraintsInMatrix( cSpace, localConstraints, en, m );
     }
 
   }
- 
-  // @todo implementation 
+
+  // @todo implementation
   template< class ConstrainedDFS >
   static void applyVectorConstraints( const ConstrainedDFS& cSpace,
                                       VectorType& vec )
@@ -120,9 +120,9 @@ private:
                            const Entity& en,
                            MatrixType &m )
   {
-    for (unsigned int i = 0; i < localMatrix.N(); i++)
+    for( unsigned int i = 0; i < localMatrix.N(); i++ )
     {
-      for (unsigned int j = 0; j < localMatrix.M(); j++)
+      for( unsigned int j = 0; j < localMatrix.M(); j++ )
       {
         const int globalI = space.mapToGlobal( en, i );
         const int globalJ = space.mapToGlobal( en, j );
@@ -136,14 +136,14 @@ private:
   template< class ConstrainedDFS,
             class Entity >
   static void setLocalConstraintsInMatrix( const ConstrainedDFS& cSpace,
-                                           const typename ConstrainedDFS::LocalConstraints& localConstraints,
+                                           const typename ConstrainedDFS::ConstraintsType::LocalConstraintsType& localConstraints,
                                            const Entity& en,
                                            MatrixType &m )
   {
 
-    for (unsigned int i = 0; i < localConstraints.rowDofsSize(); i++)
+    for( unsigned int i = 0; i < localConstraints.rowDofsSize(); i++ )
     {
-      for (unsigned int j = 0; j < localConstraints.columnDofsSize(); j++)
+      for( unsigned int j = 0; j < localConstraints.columnDofsSize(); j++ )
       {
         m[localConstraints.rowDofs(i)][localConstraints.columnDofs(j)]
           = localConstraints.localMatrix(i,j);

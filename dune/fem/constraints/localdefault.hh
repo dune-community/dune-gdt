@@ -46,12 +46,12 @@ public:
     numColumns_ = numColumns;
   }
 
-  unsigned int rowDofsSize()
+  unsigned int rowDofsSize() const
   {
     return numRows_;
   }
 
-  unsigned int columnDofsSize()
+  unsigned int columnDofsSize() const
   {
     return numColumns_;
   }
@@ -68,13 +68,13 @@ public:
     columnDofs_[i] = globalDof;
   }
 
-  unsigned int rowDofs( unsigned int i )
+  unsigned int rowDofs( unsigned int i ) const
   {
     assert(i < maxRows);
     return rowDofs_[i];
   }
 
-  unsigned int columnDofs( unsigned int i )
+  unsigned int columnDofs( unsigned int i ) const
   {
     assert(i < maxColumns);
     return columnDofs_[i];
@@ -88,7 +88,7 @@ public:
   }
 
   FieldType localMatrix( unsigned int i,
-                         unsigned int j )
+                         unsigned int j ) const
   {
     assert(i < maxRows);
     assert(i < maxColumns);
