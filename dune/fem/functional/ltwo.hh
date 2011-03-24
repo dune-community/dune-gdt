@@ -153,6 +153,11 @@ public:
 
   } // end applyLocal()
 
+  const DiscreteFunctionSpaceType& space() const
+  {
+    return discreteFunctionSpace_;
+  }
+
 private:
   const DiscreteFunctionSpaceType& discreteFunctionSpace_;
   const InducingFunctionType& inducingFunction_;

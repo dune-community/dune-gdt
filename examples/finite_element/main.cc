@@ -42,6 +42,7 @@
 
 // dune-fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
+#include <dune/fem-tools/common/printing.hh>
 
 using namespace Dune::Functionals;
 
@@ -124,7 +125,7 @@ public:
 
   void evaluate(const DomainType& x, RangeType& y) const
   {
-    y = 0.0;
+    y = 1.0;
   }
 
   void jacobian(const DomainType& x, JacobianRangeType& y) const
@@ -164,6 +165,10 @@ public:
     y = 0.0;
   }
 };
+
+
+// disable warnings about problems in dune headers
+#include <dune/fem-tools/header/disablewarnings.hh>
 
 
 int main(int argc, char** argv)
@@ -258,6 +263,7 @@ int main(int argc, char** argv)
     Assembler::assembleMatrix(ellipticFEM, *A);
     Assembler::applyMatrixConstraints(h10, *A);
     Assembler::assembleVector(rhs, *F);
+    Dune::FemTools::Printing::printBlockVector(*F, "Fbefore", std::cout);
     Assembler::applyVectorConstraints(h10, *F);
     //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
@@ -279,7 +285,9 @@ int main(int argc, char** argv)
      *  plot( dfU );*/
 
     DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(h1, *u0);
-    Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution.vtk");
+    Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution");
+    Dune::FemTools::Printing::printBCRSMatrix(*A, "A", std::cout);
+    Dune::FemTools::Printing::printBlockVector(*F, "F", std::cout);
 
     return 0;
   } catch (Dune::Exception& e) {
