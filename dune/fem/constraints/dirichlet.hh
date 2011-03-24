@@ -76,37 +76,95 @@ public:
   {
     typedef typename DiscFuncSpace::BaseFunctionSetType
       BFS;
-
-    const BFS& bfs    = space_.baseFunctionSet( en );
-    const int numCols = bfs.numBaseFunctions();
-    LocalConstraintsType lc(numCols);
-
-    typedef typename DiscFuncSpace::IteratorType
-      ItType;
-    typedef typename Entity::LeafIntersectionIterator
+    typedef typename DiscFuncSpace::LagrangePointSetType
+      LPSType;
+    typedef typename GridPartType::IntersectionIteratorType
       IntersectionIterator;
     typedef typename IntersectionIterator::Intersection
       Intersection;
 
-    unsigned int numRows = 0;
-    IntersectionIterator iit = en.ileafbegin();
-    for (; iit != en.ileafend(); ++iit)
+    const int faceCodim = 1;
+    typedef typename LPSType :: template Codim< faceCodim >
+              :: SubEntityIteratorType
+       FaceDofIteratorType;
+
+    const BFS& bfs    = space_.baseFunctionSet( en );
+    const unsigned int numCols = bfs.numBaseFunctions();
+    LocalConstraintsType lc(numCols);
+
+    const LPSType & lps = space_.lagrangePointSet( en );
+
+/*    // get slave dof structure (for parallel runs)
+ *    SlaveDofsType &slaveDofs = this->slaveDofs();
+ *    const int numSlaveDofs = slaveDofs.size();*/
+
+    // set of local boundary dofs
+    std::set<unsigned int> localBoundaryDofs;
+
+    // loop over all intersections and find dirichlet
+    // boundaries
+    const IntersectionIterator endit = gridPart_.iend( en );
+    for( IntersectionIterator it = gridPart_.ibegin( en ); it != endit ; ++it )
     {
-      const Intersection& ii = *iit;
-      if( ii.boundary() )
+      // get intersection
+      const Intersection& ii = *it;
+
+      // skip non-boundary elements
+      if( ! ii.boundary() )
+        continue;
+
+      // get local face number of boundary intersection
+      const int face = ii.indexInInside();
+
+      // get iterator over all local dofs on this face
+      FaceDofIteratorType faceIt
+        = lps.template beginSubEntity< faceCodim >( face );
+      const FaceDofIteratorType faceEndIt
+        = lps.template endSubEntity< faceCodim >( face );
+
+      // iterate over face dofs and set unit row
+      for( ; faceIt != faceEndIt; ++faceIt )
       {
-        lc.setRowDofs( numRows, space_.mapToGlobal( en, numRows ) );
-        for( int i = 0; i < numCols; ++i)
-        {
-          lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
-          lc.setLocalMatrix( numRows, i, 0.0 );
-        }
-        lc.setLocalMatrix(numRows, numRows, 1.0 );
-        ++numRows;
-        std::cout << numRows << std::endl;
+        const int localDof = *faceIt;
+
+        localBoundaryDofs.insert( localDof );
+
+/*        // clear all other columns
+ *        const int globalDof = dfSpace.mapToGlobal( entity, localDof );
+
+ *        // cancel all slave dofs (for parallel runs)
+ *        for( int i = 0; i < numSlaveDofs; ++i )
+ *        {
+ *          // slave dofs are canceled
+ *          if( globalDof == slaveDofs[ i ] )
+ *            localMatrix.set( localDof, localDof, 0 );
+ *        }*/
       }
     }
+
+
+    /************************************************************************
+     * iterate over local boundary dof set and fill local constraint matrix *
+     ************************************************************************/
+    typedef std::set<unsigned int>::const_iterator
+      LBIterator;
+
+    LBIterator lbend = localBoundaryDofs.end();
+    unsigned int numRows = 0;
+    for (LBIterator lbit = localBoundaryDofs.begin(); lbit != lbend; lbit++, numRows++)
+    {
+      const unsigned int localDof = *lbit;
+      for (unsigned int i = 0; i < numCols; ++i)
+      {
+        if(numRows == 0)
+          lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
+        lc.setLocalMatrix( numRows, i, 0.0 );
+      }
+      lc.setLocalMatrix( numRows, localDof, 1.0 );
+      lc.setRowDofs( numRows, space_.mapToGlobal( en, localDof ) );
+    }
     lc.setRowDofsSize( numRows );
+
     return lc;
   }
 
