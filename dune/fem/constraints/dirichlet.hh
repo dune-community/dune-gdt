@@ -96,7 +96,7 @@ public:
       if( ii.boundary() )
       {
         lc.setRowDofs( numRows, space_.mapToGlobal( en, numRows ) );
-        for (unsigned int i = 0; i < numCols; ++i)
+        for( int i = 0; i < numCols; ++i)
         {
           lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
           lc.setLocalMatrix( numRows, i, 0.0 );

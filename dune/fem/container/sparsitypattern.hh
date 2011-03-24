@@ -93,7 +93,7 @@ public:
    */
   NonZeroColIterator begin( unsigned int row )
   {
-    sparsityPattern_[row].begin();
+    return sparsityPattern_[row].begin();
   }
 
   /**
@@ -102,7 +102,7 @@ public:
    */
   NonZeroColIterator end( unsigned int row )
   {
-    sparsityPattern_[row].end();
+    return sparsityPattern_[row].end();
   }
 
 private:
@@ -125,7 +125,7 @@ class DefaultSparsityPattern
   DefaultSparsityPattern( unsigned int rowSize )
     : SparsityPattern( rowSize )
   {
-    for( int i = 0; i < rowSize; ++i )
+    for( unsigned int i = 0; i < rowSize; ++i )
       insert( i, i );
   }
 
