@@ -40,6 +40,9 @@
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
 
+// dune-fem-tools includes
+#include <dune/fem-tools/function/functiontools.hh>
+
 using namespace Dune::Functionals;
 
 #ifndef POLORDER
@@ -274,6 +277,9 @@ int main(int argc, char** argv)
 
      *  dfU.evaluate( globalX );
      *  plot( dfU );*/
+
+    DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(h1, *u0);
+    Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution.vtk");
 
     return 0;
   } catch (Dune::Exception& e) {
