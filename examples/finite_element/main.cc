@@ -1,21 +1,36 @@
-#include <config.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <iostream>
 #include <vector>
 
+// disable warnings about problems in dune headers
+#include <dune/fem-tools/header/disablewarnings.hh>
+
+// dune-common includes
+#include <dune/common/exceptions.hh>
+#include <dune/common/fmatrix.hh>
+
+// dune-grid includes
 #include <dune/grid/utility/gridtype.hh>
 
+// dune-istl includes
+#include <dune/istl/bcrsmatrix.hh>
+#include <dune/istl/solvers.hh>
+#include <dune/istl/bvector.hh>
+
+// dune-fem includes
+#include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/space/lagrangespace.hh>
 #include <dune/fem/storage/vector.hh>
-#include <dune/istl/bvector.hh>
-#include <dune/common/fmatrix.hh>
-
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
+#include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
-
-#include <dune/istl/bcrsmatrix.hh>
-#include <dune/istl/solvers.hh>
+// reenable warnings about problems in dune headers
+#include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-fem-functionals includes
 #include <dune/fem/constraints/dirichlet.hh>
@@ -24,7 +39,6 @@
 #include <dune/fem/functional/ltwo.hh>
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
-#include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
 using namespace Dune::Functionals;
 
@@ -149,114 +163,122 @@ public:
 };
 
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
-  Dune::MPIManager::initialize(argc, argv);
+  try {
 
-  static const unsigned int dimRange = 1;
+    // mpi
+    Dune::MPIManager::initialize(argc, argv);
 
-  typedef Dune::GridSelector::GridType HGridType;
+    static const unsigned int dimRange = 1;
 
-  typedef Dune::AdaptiveLeafGridPart<HGridType> GridPartType;
+    typedef Dune::GridSelector::GridType HGridType;
 
-  typedef Dune::FunctionSpace<double, double, HGridType::dimension, dimRange> FunctionSpaceType;
+    typedef Dune::AdaptiveLeafGridPart<HGridType> GridPartType;
 
-  typedef Dune::Function<double, double> FunctionType;
+    typedef Dune::FunctionSpace<double, double, HGridType::dimension, dimRange> FunctionSpaceType;
 
-  // function spaces
-  typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> H1;
+    typedef Dune::Function<double, double> FunctionType;
 
-  typedef Dune::AdaptiveDiscreteFunction<H1> DiscreteFunctionType;
+    // function spaces
+    typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> H1;
 
-  typedef DiscreteFunctionType InducingFunctionType;
+    typedef Dune::AdaptiveDiscreteFunction<H1> DiscreteFunctionType;
 
-  typedef Constraints::Dirichlet<H1> DirichletConstraints;
+    typedef DiscreteFunctionType InducingFunctionType;
 
-  typedef Subspace::Linear<H1, DirichletConstraints> H10;
+    typedef Constraints::Dirichlet<H1> DirichletConstraints;
 
-  typedef Operator::FiniteElement<H1, EllipticOperation> EllipticOperator;
+    typedef Subspace::Linear<H1, DirichletConstraints> H10;
 
-  typedef Functional::L2<H1, FFunc<FunctionSpaceType> /*InducingFunctionType*/> RHS;
+    typedef Operator::FiniteElement<H1, EllipticOperation> EllipticOperator;
 
-  typedef Dune::FieldMatrix<double, dimRange, dimRange> FieldMatrixType;
+    typedef Functional::L2<H1, FFunc<FunctionSpaceType> /*InducingFunctionType*/> RHS;
 
-  typedef Container::MatrixFactory<Dune::BCRSMatrix<FieldMatrixType>> MatrixFactoryType;
-  typedef MatrixFactoryType::AutoPtrType MatrixContainerPtr;
-  typedef MatrixFactoryType::ContainerType MatrixContainer;
+    typedef Dune::FieldMatrix<double, dimRange, dimRange> FieldMatrixType;
 
-  typedef Container::VectorFactory<Dune::BlockVector<Dune::FieldVector<double, 1>>> VectorFactoryType;
-  typedef VectorFactoryType::AutoPtrType VectorContainerPtr;
-  typedef VectorFactoryType::ContainerType VectorContainer;
+    typedef Container::MatrixFactory<Dune::BCRSMatrix<FieldMatrixType>> MatrixFactoryType;
+    typedef MatrixFactoryType::AutoPtrType MatrixContainerPtr;
+    typedef MatrixFactoryType::ContainerType MatrixContainer;
 
-  typedef Solver::FEMAssembler<MatrixContainer, VectorContainer> Assembler;
-  typedef Dune::CGSolver<VectorContainer> CG;
-  typedef Dune::SeqILU0<MatrixContainer, VectorContainer, VectorContainer, 1> SeqILU0Type;
-  typedef Dune::MatrixAdapter<MatrixContainer, VectorContainer, VectorContainer> MatrixAdapterType;
+    typedef Container::VectorFactory<Dune::BlockVector<Dune::FieldVector<double, 1>>> VectorFactoryType;
+    typedef VectorFactoryType::AutoPtrType VectorContainerPtr;
+    typedef VectorFactoryType::ContainerType VectorContainer;
 
-
-  // FunctionType should be obsolete
-  // It should be either a DoF-Container or an analytical function, and for
-  // transition phase a discrete function.
-  typedef Subspace::Affine<H10, GFunc<FunctionSpaceType>> H1g;
-
-  // create grid
-  Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dgf");
-
-  // get grid part
-  GridPartType gridPart(*gridPtr);
-
-  // some functions
-  GFunc<FunctionSpaceType> gFunc;
-  EllipticOperation aFunc;
-  FFunc<FunctionSpaceType> fFunc;
-
-  // create spaces
-  H1 h1(gridPart);
-  DirichletConstraints dirichletConstraints(h1);
-  H10 h10(h1, dirichletConstraints);
-  H1g h1g(h10, gFunc);
+    typedef Solver::FEMAssembler<MatrixContainer, VectorContainer> Assembler;
+    typedef Dune::CGSolver<VectorContainer> CG;
+    typedef Dune::SeqILU0<MatrixContainer, VectorContainer, VectorContainer, 1> SeqILU0Type;
+    typedef Dune::MatrixAdapter<MatrixContainer, VectorContainer, VectorContainer> MatrixAdapterType;
 
 
-  EllipticOperator ellipticFEM(h1, aFunc);
-  RHS rhs(h1, fFunc);
+    // FunctionType should be obsolete
+    // It should be either a DoF-Container or an analytical function, and for
+    // transition phase a discrete function.
+    typedef Subspace::Affine<H10, GFunc<FunctionSpaceType>> H1g;
 
-  // SparsityPattern & pattern = h1.fullSparsityPattern();
+    // create grid
+    Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dgf");
+
+    // get grid part
+    GridPartType gridPart(*gridPtr);
+
+    // some functions
+    GFunc<FunctionSpaceType> gFunc;
+    EllipticOperation aFunc;
+    FFunc<FunctionSpaceType> fFunc;
+
+    // create spaces
+    H1 h1(gridPart);
+    DirichletConstraints dirichletConstraints(h1);
+    H10 h10(h1, dirichletConstraints);
+    H1g h1g(h10, gFunc);
 
 
-  MatrixContainerPtr A = MatrixFactoryType::create(h10);
-  VectorContainerPtr F = VectorFactoryType::create(h10);
-  //  VectorContainerPtr G  = VectorFactoryType::create( h10 );
+    EllipticOperator ellipticFEM(h1, aFunc);
+    RHS rhs(h1, fFunc);
 
-  /*  MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
-   *  VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
-   *  VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );*/
-
-  VectorContainerPtr u0 = VectorFactoryType::create(h10);
-  VectorContainerPtr u  = VectorFactoryType::create(h10);
+    // SparsityPattern & pattern = h1.fullSparsityPattern();
 
 
-  Assembler::assembleMatrix(ellipticFEM, *A);
-  Assembler::applyMatrixConstraints(h10, *A);
-  Assembler::assembleVector(rhs, *F);
-  Assembler::applyVectorConstraints(h10, *F);
-  //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
+    MatrixContainerPtr A = MatrixFactoryType::create(h10);
+    VectorContainerPtr F = VectorFactoryType::create(h10);
+    //  VectorContainerPtr G  = VectorFactoryType::create( h10 );
 
-  MatrixAdapterType op(*A);
-  SeqILU0Type prec(*A, 1.0);
+    /*  MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
+     *  VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
+     *  VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );*/
 
-  CG cg(op, prec, 1e-10, 1000, 1);
+    VectorContainerPtr u0 = VectorFactoryType::create(h10);
+    VectorContainerPtr u  = VectorFactoryType::create(h10);
 
-  Dune::InverseOperatorResult res;
-  //*F -= *G;
-  cg.apply(*u0, *F, res);
 
-  // @todo implement gFunc
-  //*u = *u0 + gFunc;
+    Assembler::assembleMatrix(ellipticFEM, *A);
+    Assembler::applyMatrixConstraints(h10, *A);
+    Assembler::assembleVector(rhs, *F);
+    Assembler::applyVectorConstraints(h10, *F);
+    //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
-  /*  DiscreteFunction dfU( h1, *u );
+    MatrixAdapterType op(*A);
+    SeqILU0Type prec(*A, 1.0);
 
-   *  dfU.evaluate( globalX );
-   *  plot( dfU );*/
+    CG cg(op, prec, 1e-10, 1000, 1);
 
-  return 0;
+    Dune::InverseOperatorResult res;
+    //*F -= *G;
+    cg.apply(*u0, *F, res);
+
+    // @todo implement gFunc
+    //*u = *u0 + gFunc;
+
+    /*  DiscreteFunction dfU( h1, *u );
+
+     *  dfU.evaluate( globalX );
+     *  plot( dfU );*/
+
+    return 0;
+  } catch (Dune::Exception& e) {
+    std::cerr << "Dune reported error: " << e << std::endl;
+  } catch (...) {
+    std::cerr << "Unknown exception thrown!" << std::endl;
+  }
 }
