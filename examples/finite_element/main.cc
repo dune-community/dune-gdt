@@ -309,7 +309,6 @@ int main( int argc, char** argv )
     Assembler::assembleMatrix( ellipticFEM, *A );
     Assembler::applyMatrixConstraints( h10, *A );
     Assembler::assembleVector( rhs, *F );
-    Dune::FemTools::Printing::printBlockVector( *F, "Fbefore", std::cout );
     Assembler::applyVectorConstraints( h10, *F );
   //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
