@@ -41,7 +41,7 @@ public:
 
   //! @brief Return type of local() method, implementing the LocalConstraints
   //! interface
-  typedef Constraints::LocalDefault<double, griddim, griddim> LocalConstraintsType;
+  typedef Constraints::LocalDefault<double, 2 * griddim, 6 * griddim> LocalConstraintsType;
 
 public:
   /** @brief Constructor for the Dirichlet constraints
@@ -77,23 +77,19 @@ public:
     typedef typename Entity::LeafIntersectionIterator IntersectionIterator;
     typedef typename IntersectionIterator::Intersection Intersection;
 
-    unsigned int numRows = 0;
-    ItType it = space_.begin();
-    for (; it != space_.end(); ++it) {
-      const Entity& en = *it;
-
-      IntersectionIterator iit = en.ileafbegin();
-      for (; iit != en.ileafend(); ++iit) {
-        const Intersection& ii = *iit;
-        if (ii.boundary()) {
-          lc.setRowDofs(numRows, space_.mapToGlobal(en, numRows));
-          for (unsigned int i = 0; i < numCols; ++i) {
-            lc.setColumnDofs(i, space_.mapToGlobal(en, i));
-            lc.setLocalMatrix(numRows, i, 0.0);
-          }
-          lc.setLocalMatrix(numRows, numRows, 1.0);
-          ++numRows;
+    unsigned int numRows     = 0;
+    IntersectionIterator iit = en.ileafbegin();
+    for (; iit != en.ileafend(); ++iit) {
+      const Intersection& ii = *iit;
+      if (ii.boundary()) {
+        lc.setRowDofs(numRows, space_.mapToGlobal(en, numRows));
+        for (unsigned int i = 0; i < numCols; ++i) {
+          lc.setColumnDofs(i, space_.mapToGlobal(en, i));
+          lc.setLocalMatrix(numRows, i, 0.0);
         }
+        lc.setLocalMatrix(numRows, numRows, 1.0);
+        ++numRows;
+        std::cout << numRows << std::endl;
       }
     }
     lc.setRowDofsSize(numRows);

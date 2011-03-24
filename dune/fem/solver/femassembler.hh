@@ -87,7 +87,7 @@ public:
   {
   }
 
-private:
+public:
   /// \todo move to matrixContainer factory
   template <class DFSType, class Entity>
   static void addToMatrix(const DFSType& space, const LocalMatrixType& localMatrix, const Entity& en, MatrixType& m)
