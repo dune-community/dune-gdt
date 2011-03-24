@@ -78,8 +78,6 @@ public:
       DFSType;
     typedef typename ConstraintsType::LocalConstraintsType
       LocalConstraintsType;
-    typedef typename DFSType::BaseFunctionSetType
-      BFSType;
     typedef typename DFSType::IteratorType
       ItType;
     typedef typename ItType::Entity
@@ -90,8 +88,9 @@ public:
     // check that number of dofs in space is equal to matrix size
     // assert()
 
-    ItType it = cSpace.space().begin();
+    ItType it  = cSpace.space().begin();
     ItType end = cSpace.space().end();
+
     for( ; it != end; ++it )
     {
       const EntityType& en = *it;
@@ -108,7 +107,32 @@ public:
   static void applyVectorConstraints( const ConstrainedDFS& cSpace,
                                       VectorType& vec )
   {
+    typedef typename ConstrainedDFS::ConstraintsType
+      ConstraintsType;
+    typedef typename ConstrainedDFS::DiscreteFunctionSpaceType
+      DFSType;
+    typedef typename ConstraintsType::LocalConstraintsType
+      LocalConstraintsType;
+    typedef typename DFSType::IteratorType
+      ItType;
+    typedef typename ItType::Entity
+      EntityType;
 
+    const ConstraintsType & constraints = cSpace.constraints();
+
+    ItType it  = cSpace.space().begin();
+    ItType end = cSpace.space().end();
+
+    for( ; it != end; ++it )
+    {
+      const EntityType& en = *it;
+
+      const LocalConstraintsType localConstraints = constraints.local( en );
+
+      for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
+        vec[localConstraints.rowDofs(i)] = 0;
+      }
+    }
   }
 
 public:
