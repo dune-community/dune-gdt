@@ -176,7 +176,7 @@ public:
         const int globalI = space.mapToGlobal( en, i );
         const int globalJ = space.mapToGlobal( en, j );
 
-        m[globalI][globalJ] = localMatrix.get( i, j );
+        m[globalI][globalJ] += localMatrix.get( i, j );
       }
     }
   }
@@ -192,7 +192,7 @@ public:
     {
       const int globalI = space.mapToGlobal( entity, ii );
 
-      vector[globalI] = localVector[ii];
+      vector[globalI] += localVector[ii];
     }
   }
 
