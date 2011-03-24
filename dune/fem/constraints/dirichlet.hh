@@ -65,7 +65,7 @@ public:
    * implementation.
    */
   template <class Entity>
-  const LocalConstraintsType local(const Entity& en)
+  const LocalConstraintsType local(const Entity& en) const
   {
     typedef typename DiscFuncSpace::BaseFunctionSetType BFS;
 

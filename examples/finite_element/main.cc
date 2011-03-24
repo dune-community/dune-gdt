@@ -159,7 +159,7 @@ int main(int argc, const char* argv[])
 
   typedef Dune::FunctionSpace<double, double, HGridType::dimension, dimRange> FunctionSpaceType;
 
-  typedef Dune::Function<double, doubEllipticOperationle> FunctionType;
+  typedef Dune::Function<double, double> FunctionType;
 
   // function spaces
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> H1;
@@ -205,7 +205,7 @@ int main(int argc, const char* argv[])
 
   // some functions
   GFunc<FunctionSpaceType> gFunc;
-  AFunc<FunctionSpaceType> aFunc;
+  EllipticOperation aFunc;
   FFunc<FunctionSpaceType> fFunc;
 
   // create spaces
@@ -245,7 +245,7 @@ int main(int argc, const char* argv[])
   CG cg(op, prec, 1e-10, 1000, 1);
 
   Dune::InverseOperatorResult res;
-  *F -= *G;
+  //*F -= *G;
   cg.apply(*u0, *F, res);
 
   // @todo implement gFunc

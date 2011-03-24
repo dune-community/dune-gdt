@@ -51,8 +51,9 @@ public:
   }
 
   Linear(const Linear& lin)
-    : space_(lin.space())
-    , constraints_(lin.space())
+    : DiscreteFunctionSpaceType(lin.space().gridPart())
+    , space_(lin.space())
+    , constraints_(lin.constraints())
   {
   }
 
