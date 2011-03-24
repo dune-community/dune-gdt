@@ -124,9 +124,9 @@ public:
       const Entity& en = *it;
       const BFS& bfs   = dfs.baseFunctionSet(en);
 
-      for (unsigned int i = 0; i < bfs.numBaseFunctions(); ++i) {
+      for (int i = 0; i < bfs.numBaseFunctions(); ++i) {
         unsigned int ii = dfs.mapToGlobal(en, i);
-        for (unsigned int j = 0; j < bfs.numBaseFunctions(); ++j) {
+        for (int j = 0; j < bfs.numBaseFunctions(); ++j) {
           unsigned int jj = dfs.mapToGlobal(en, j);
           sPattern.insert(ii, jj);
         }
