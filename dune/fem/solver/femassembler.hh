@@ -2,6 +2,7 @@
 #define DUNE_FEM_FUNCTIONALS_SOLVER_FEMASSEMBLER_HH
 
 #include <dune/fem/common/localmatrix.hh>
+#include <dune/fem/common/localvector.hh>
 
 namespace Dune
 {
@@ -27,6 +28,9 @@ public:
 
   typedef Dune::Functionals::Common::LocalMatrix< FieldType >
     LocalMatrixType;
+
+  typedef Dune::Functionals::Common::LocalVector< FieldType >
+    LocalVectorType;
 
 
 public:
@@ -57,11 +61,32 @@ public:
     }
   }
 
-  // @todo implementation 
-  template< class Operator >
-  static void assembleVector( const Operator& op, VectorType& vec )
+  template< class Functional >
+  static void assembleVector( const Functional& functional, VectorType& vec )
   {
+    typedef typename Functional::DiscreteFunctionSpaceType
+      DFSType;
+    typedef typename DFSType::BaseFunctionSetType
+      BFSType;
+    typedef typename DFSType::IteratorType
+      ItType;
+    typedef typename ItType::Entity
+      EntityType;
 
+    const DFSType& space = functional.space();
+
+    // check that number of dofs in space is equal to vector size
+    assert( space.size() == vec.size() );
+    ItType it = space.begin();
+    for( ; it != space.end(); ++it )
+    {
+      const EntityType &en = *it;
+      const BFSType& bfs = space.baseFunctionSet( en );
+
+      LocalVectorType localVector = functional.applyLocal( en, bfs );
+
+      addToVector( space, localVector, en, vec );
+    }
   }
 
 
@@ -153,6 +178,21 @@ public:
 
         m[globalI][globalJ] = localMatrix.get( i, j );
       }
+    }
+  }
+
+  template< class DFSType,
+            class Entity >
+  static void addToVector( const DFSType& space,
+                           const LocalVectorType& localVector,
+                           const Entity& entity,
+                           VectorType& vector )
+  {
+    for( unsigned int ii = 0; ii < localVector.size(); ++ii )
+    {
+      const int globalI = space.mapToGlobal( entity, ii );
+
+      vector[globalI] = localVector[ii];
     }
   }
 
