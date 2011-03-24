@@ -11,18 +11,26 @@ namespace Functionals {
 namespace Common {
 
 /**
-  * \brief      This class represents a local DoF Matrix.
+  * \brief  This class represents a local DoF Matrix.
+  *         It is based upon std::vector and should be replaced by something clever in the future!
   *
-  *             It is based upon std::vector and should be replaced by something clever in the future!
+  * \tparam ElementType
+  *         Type of one element, usually double or RangeFieldType.
   *
-  * \todo       Doc me, please!
+  * \todo   Doc me, please!
   **/
 template <class ElementType>
 class LocalMatrix
 {
 public:
   /**
-    * \brief    Initializes an empty matrix, according to the given size.
+    * \brief      Initializes an empty matrix, according to the given size.
+    *
+    * \param[in]  rows
+    *             Number of rows, the matrix will have.
+    *
+    * \param[in]  cols
+    *             Number of collumns, the matrix will have.
     **/
   LocalMatrix(const unsigned int rows, const unsigned int cols)
     : rows_(rows)
@@ -31,14 +39,6 @@ public:
     // resize
     storage_.resize(rows_ * cols_, 0.0);
   }
-
-  //  /**
-  //   * @brief     Resizes the storage size (rows*cols).
-  //   */
-  //  void resize( const unsigned int rows, const unsigned int cols )
-  //  {
-  //    storage_.resize( rows * cols, 0.0 );
-  //  }
 
   /**
     * \brief    Returns the storage size (n*m).
