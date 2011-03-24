@@ -18,7 +18,6 @@
 #include <dune/grid/io/file/dgfparser/dgfparser.hh>
 
 // dune fem includes
-//#include <dune/fem/io/parameter.hh>
 #include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 #include <dune/fem/space/common/functionspace.hh>
