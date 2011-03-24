@@ -262,6 +262,7 @@ int main(int argc, char** argv)
 
     Assembler::assembleMatrix(ellipticFEM, *A);
     Assembler::applyMatrixConstraints(h10, *A);
+
     Assembler::assembleVector(rhs, *F);
     Assembler::applyVectorConstraints(h10, *F);
     //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
@@ -269,7 +270,12 @@ int main(int argc, char** argv)
     MatrixAdapterType op(*A);
     SeqILU0Type prec(*A, 1.0);
 
-    CG cg(op, prec, 1e-10, 1000, 1);
+    *u0 = 0.1;
+
+    /*    printmatrix(std::cout, *A,"a fixed size block matrix","row",9,1);
+     *    printvector(std::cout, *u0, "u0 test","entry", 11, 9, 1);*/
+
+    CG cg(op, prec, 1e-4, 100, 2);
 
     Dune::InverseOperatorResult res;
     //*F -= *G;
@@ -285,8 +291,6 @@ int main(int argc, char** argv)
 
     DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(h1, *u0);
     Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution");
-    Dune::FemTools::Printing::printBCRSMatrix(*A, "A", std::cout);
-    Dune::FemTools::Printing::printBlockVector(*F, "F", std::cout);
 
     return 0;
   } catch (Dune::Exception& e) {
