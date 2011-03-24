@@ -57,3 +57,8 @@ tests/functional/discretelinearfunctional_test-discretelinearfunctional_test.o
 tests/functional/ltwofunctional_test
 tests/functional/ltwofunctional_test-ltwofunctional_test.o
 doc/latex/dune-fem-functionals.pdf
+examples/finite_element/.deps/
+examples/finite_element/test
+examples/finite_element/test-main.o
+tests/common/.deps/
+tests/operator/.deps/
