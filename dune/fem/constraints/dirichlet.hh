@@ -46,7 +46,7 @@ public:
 
   //! @brief Return type of local() method, implementing the LocalConstraints
   //! interface
-  typedef Constraints::LocalDefault< double, griddim, griddim >
+  typedef Constraints::LocalDefault< double, 2*griddim, 6*griddim >
     LocalConstraintsType;
 
 public:
@@ -77,7 +77,7 @@ public:
     typedef typename DiscFuncSpace::BaseFunctionSetType
       BFS;
 
-    const BFS& bfs = space_.baseFunctionSet( en );
+    const BFS& bfs    = space_.baseFunctionSet( en );
     const int numCols = bfs.numBaseFunctions();
     LocalConstraintsType lc(numCols);
 
@@ -89,26 +89,21 @@ public:
       Intersection;
 
     unsigned int numRows = 0;
-    ItType it = space_.begin();
-    for (; it != space_.end(); ++it)
+    IntersectionIterator iit = en.ileafbegin();
+    for (; iit != en.ileafend(); ++iit)
     {
-      const Entity& en = *it;
-
-      IntersectionIterator iit = en.ileafbegin();
-      for (; iit != en.ileafend(); ++iit)
+      const Intersection& ii = *iit;
+      if( ii.boundary() )
       {
-        const Intersection& ii = *iit;
-        if( ii.boundary() )
+        lc.setRowDofs( numRows, space_.mapToGlobal( en, numRows ) );
+        for (unsigned int i = 0; i < numCols; ++i)
         {
-          lc.setRowDofs( numRows, space_.mapToGlobal( en, numRows ) );
-          for (unsigned int i = 0; i < numCols; ++i)
-          {
-            lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
-            lc.setLocalMatrix( numRows, i, 0.0 );
-          }
-          lc.setLocalMatrix(numRows, numRows, 1.0 );
-          ++numRows;
+          lc.setColumnDofs( i, space_.mapToGlobal( en, i ) );
+          lc.setLocalMatrix( numRows, i, 0.0 );
         }
+        lc.setLocalMatrix(numRows, numRows, 1.0 );
+        ++numRows;
+        std::cout << numRows << std::endl;
       }
     }
     lc.setRowDofsSize( numRows );

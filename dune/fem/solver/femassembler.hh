@@ -111,7 +111,7 @@ public:
 
   }
 
-private:
+public:
   /// \todo move to matrixContainer factory
   template< class DFSType,
             class Entity >

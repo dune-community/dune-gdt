@@ -109,7 +109,7 @@ public:
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
-  
+
   typedef typename FunctionSpaceType::DomainFieldType
     DomainFieldType;
 
@@ -172,8 +172,10 @@ public:
 };
 
 
-int main( int argc, const char *argv[] )
+int main( int argc, char *argv[] )
 {
+  Dune::MPIManager::initialize ( argc, argv );
+
   static const unsigned int dimRange = 1;
 
   typedef Dune::GridSelector::GridType
