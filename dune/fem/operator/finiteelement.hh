@@ -9,7 +9,6 @@
 #include <dune/fem/common/localmatrix.hh>
 #include <dune/fem/common/localvector.hh>
 #include <dune/fem/common/localbasefunction.hh>
-#include <dune/fem/functional/ltwo.hh>
 
 namespace Dune {
 
@@ -107,7 +106,7 @@ public:
           const double integrationFactor = entityGeometry.integrationElement(x);
           const double quadratureWeight  = entityQuadrature.weight(quadraturePoint);
 
-          // get local basefucntions
+          // get local basefunctions
           const LocalBaseFunctionType phi_i = localBaseFunctionProvider_.provide(entity, i);
           const LocalBaseFunctionType phi_j = localBaseFunctionProvider_.provide(entity, j);
 
