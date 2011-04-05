@@ -76,7 +76,7 @@ public:
     const DFSType& space = functional.space();
 
     // check that number of dofs in space is equal to vector size
-    assert( space.size() == vec.size() );
+    assert( space.size() == (int)vec.size() );
     ItType it = space.begin();
     for( ; it != space.end(); ++it )
     {
