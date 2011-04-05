@@ -66,8 +66,8 @@ public:
   {
     typedef typename Functional::DiscreteFunctionSpaceType
       DFSType;
-    typedef typename DFSType::BaseFunctionSetType
-      BFSType;
+//    typedef typename DFSType::BaseFunctionSetType
+//      BFSType;
     typedef typename DFSType::IteratorType
       ItType;
     typedef typename ItType::Entity
@@ -81,9 +81,10 @@ public:
     for( ; it != space.end(); ++it )
     {
       const EntityType &en = *it;
-      const BFSType& bfs = space.baseFunctionSet( en );
+//      const BFSType& bfs = space.baseFunctionSet( en );
 
-      LocalVectorType localVector = functional.applyLocal( en, bfs );
+//      LocalVectorType localVector = functional.applyLocal( en, bfs );
+      LocalVectorType localVector = functional.applyLocal( en );
 
       addToVector( space, localVector, en, vec );
     }

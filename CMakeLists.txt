@@ -120,9 +120,6 @@ FILE( GLOB_RECURSE femfunctionals "../dune-fem-functionals/dune/fem/*.hh" )
 set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
-ADD_EXECUTABLE( ltwofunctional_test "tests/functional/ltwofunctional_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
-TARGET_LINK_LIBRARIES( ltwofunctional_test ${COMMON_LIBS}  )
-
 ADD_EXECUTABLE( ellipticfiniteelementoperator_test "tests/operator/ellipticfiniteelementoperator_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( ellipticfiniteelementoperator_test ${COMMON_LIBS}  )
 

@@ -36,7 +36,7 @@
 #include <dune/fem/constraints/dirichlet.hh>
 #include <dune/fem/subspace/subspaces.hh>
 #include <dune/fem/operator/finiteelement.hh>
-#include <dune/fem/functional/ltwo.hh>
+#include <dune/fem/functional/finiteelement.hh>
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
 
@@ -108,46 +108,37 @@ public:
 
 }; // end class EllipticOperation
 
-
 /**
- * @class FFunc
- * function representing f for the poisson problem
- * a \laplace u = f
- */
-template< class FunctionSpaceImp >
-class FFunc
+  * \brief  Represents the product operation f(x) v(x) for given v, x.
+  *         In this case, f = 1.
+  **/
+class ProductOperation
 {
 public:
 
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
-
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
-
-  typedef typename FunctionSpaceType::DomainFieldType
-    DomainFieldType;
-
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
-
-  void evaluate( const DomainType& x, RangeType& y ) const
+  template< class LocalFunctionType, class LocalPointType >
+  double operate( const LocalFunctionType& localFunction,
+                  const LocalPointType& localPoint ) const
   {
-    y = 1.0;
+    // init return value
+    double ret = 0.0;
+
+    // some types we will need
+    typedef typename LocalFunctionType::RangeType
+      RangeType;
+
+    // evaluate local function
+    RangeType localFunctionEvaluated( 0.0 );
+    localFunction.evaluate( localPoint, localFunctionEvaluated );
+
+    // 1.0 * v(x)
+    ret = 1.0 * localFunctionEvaluated;
+
+    // return
+    return ret;
   }
 
-  void jacobian( const DomainType& x, JacobianRangeType& y ) const
-  {
-    y = 0.0;
-  }
-
-};
+}; // end class ProductOperation
 
 /**
  * @class GFunc
@@ -167,7 +158,7 @@ public:
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
-  
+
   typedef typename FunctionSpaceType::DomainFieldType
     DomainFieldType;
 
@@ -232,10 +223,10 @@ int main( int argc, char** argv )
       H10;
 
     typedef Operator::FiniteElement< H1, EllipticOperation >
-      EllipticOperator;
+      FEMellipticOperator;
 
-    typedef Functional::L2< H1, FFunc< FunctionSpaceType > /*InducingFunctionType*/ >
-      RHS;
+    typedef Functional::FiniteElement< H1, ProductOperation >
+      FEMrhsFunctional;
 
     typedef Dune::FieldMatrix< double, dimRange, dimRange >
       FieldMatrixType;
@@ -277,19 +268,19 @@ int main( int argc, char** argv )
     GridPartType gridPart( *gridPtr );
 
     //some functions
-    GFunc< FunctionSpaceType > gFunc;
-    EllipticOperation aFunc;
-    FFunc< FunctionSpaceType > fFunc;
+    GFunc< FunctionSpaceType > boundaryValues;
+    EllipticOperation ellipticOperation;
+    ProductOperation productOperation;
 
     //create spaces
     H1                   h1( gridPart );
     DirichletConstraints dirichletConstraints( h1 );
     H10                  h10( h1, dirichletConstraints );
-    H1g                  h1g( h10, gFunc );
+    H1g                  h1g( h10, boundaryValues );
 
 
-    EllipticOperator     ellipticFEM( h1, aFunc );
-    RHS                  rhs( h1, fFunc );
+    FEMellipticOperator femEllipticOperator( h1, ellipticOperation );
+    FEMrhsFunctional    femRhsFunctional( h1, productOperation );
 
     //SparsityPattern & pattern = h1.fullSparsityPattern();
 
@@ -306,17 +297,17 @@ int main( int argc, char** argv )
     VectorContainerPtr u  = VectorFactoryType::create( h10 );
 
 
-    Assembler::assembleMatrix( ellipticFEM, *A );
+    Assembler::assembleMatrix( femEllipticOperator, *A );
     Assembler::applyMatrixConstraints( h10, *A );
 
-    Assembler::assembleVector( rhs, *F );
+    Assembler::assembleVector( femRhsFunctional, *F );
     Assembler::applyVectorConstraints( h10, *F );
   //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
     MatrixAdapterType op( *A );
     SeqILU0Type prec( *A, 1.0 );
 
-    *u0 = 0.1;
+//    *u0 = 0.1;
 
 /*    printmatrix(std::cout, *A,"a fixed size block matrix","row",9,1);
  *    printvector(std::cout, *u0, "u0 test","entry", 11, 9, 1);*/
