@@ -33,7 +33,7 @@ SET( CMAKE_COLOR_MAKEFILE ON)
 #----------------------------------------------------------------------------------------------------
 SET( BLAS_LIB
   "blas" CACHE STRING
-  "" )
+  "BLAS_LIB" )
 
 SET( GRIDTYPE
   "YASPGRID" CACHE STRING
