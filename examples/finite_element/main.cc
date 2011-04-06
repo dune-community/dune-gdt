@@ -42,7 +42,6 @@
 
 // dune-fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
-#include <dune/fem-tools/common/printing.hh>
 
 using namespace Dune::Functionals;
 
@@ -171,121 +170,126 @@ int main(int argc, char** argv)
 {
   try {
 
-    // mpi
+    // MPI manager
     Dune::MPIManager::initialize(argc, argv);
 
+
+    // grid
     static const unsigned int dimRange = 1;
 
     typedef Dune::GridSelector::GridType HGridType;
 
     typedef Dune::AdaptiveLeafGridPart<HGridType> GridPartType;
 
+    Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dgf");
+
+    GridPartType gridPart(*gridPtr);
+
+
+    // function spaces and functions
     typedef Dune::FunctionSpace<double, double, HGridType::dimension, dimRange> FunctionSpaceType;
 
     typedef Dune::Function<double, double> FunctionType;
 
-    // function spaces
-    typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> H1;
+    typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> DiscreteH1Type;
 
-    typedef Dune::AdaptiveDiscreteFunction<H1> DiscreteFunctionType;
+    DiscreteH1Type discreteH1(gridPart);
 
-    typedef DiscreteFunctionType InducingFunctionType;
+    typedef Dune::AdaptiveDiscreteFunction<DiscreteH1Type> DiscreteFunctionType;
 
-    typedef Constraints::Dirichlet<H1> DirichletConstraints;
+    typedef Constraints::Dirichlet<DiscreteH1Type> DirichletConstraints;
 
-    typedef Subspace::Linear<H1, DirichletConstraints> H10;
+    DirichletConstraints dirichletConstraints(discreteH1);
 
-    typedef Operator::FiniteElement<H1, EllipticOperation> FEMellipticOperator;
+    typedef Subspace::Linear<DiscreteH1Type, DirichletConstraints> DiscreteH10Type;
 
-    typedef Functional::FiniteElement<H1, ProductOperation> FEMrhsFunctional;
+    DiscreteH10Type discreteH10(discreteH1, dirichletConstraints);
 
-    typedef Dune::FieldMatrix<double, dimRange, dimRange> FieldMatrixType;
-
-    typedef Container::MatrixFactory<Dune::BCRSMatrix<FieldMatrixType>> MatrixFactoryType;
-    typedef MatrixFactoryType::AutoPtrType MatrixContainerPtr;
-    typedef MatrixFactoryType::ContainerType MatrixContainer;
-
-    typedef Container::VectorFactory<Dune::BlockVector<Dune::FieldVector<double, 1>>> VectorFactoryType;
-    typedef VectorFactoryType::AutoPtrType VectorContainerPtr;
-    typedef VectorFactoryType::ContainerType VectorContainer;
-
-    typedef Solver::FEMAssembler<MatrixContainer, VectorContainer> Assembler;
-    typedef Dune::CGSolver<VectorContainer> CG;
-    typedef Dune::SeqILU0<MatrixContainer, VectorContainer, VectorContainer, 1> SeqILU0Type;
-    typedef Dune::MatrixAdapter<MatrixContainer, VectorContainer, VectorContainer> MatrixAdapterType;
-
+    GFunc<FunctionSpaceType> boundaryValues;
 
     // FunctionType should be obsolete
     // It should be either a DoF-Container or an analytical function, and for
     // transition phase a discrete function.
-    typedef Subspace::Affine<H10, GFunc<FunctionSpaceType>> H1g;
+    typedef Subspace::Affine<DiscreteH10Type, GFunc<FunctionSpaceType>> DiscreteH1gType;
 
-    // create grid
-    Dune::GridPtr<HGridType> gridPtr("macrogrids/unitcube2.dgf");
+    DiscreteH1gType discreteH1g(discreteH10, boundaryValues);
 
-    // get grid part
-    GridPartType gridPart(*gridPtr);
 
-    // some functions
-    GFunc<FunctionSpaceType> boundaryValues;
+    // operator and functional
+    typedef Operator::FiniteElement<DiscreteH1Type, EllipticOperation> FEMellipticOperator;
+
     EllipticOperation ellipticOperation;
+
+    FEMellipticOperator femEllipticOperator(discreteH1, ellipticOperation);
+
+    typedef Functional::FiniteElement<DiscreteH1Type, ProductOperation> FEMrhsFunctional;
+
     ProductOperation productOperation;
 
-    // create spaces
-    H1 h1(gridPart);
-    DirichletConstraints dirichletConstraints(h1);
-    H10 h10(h1, dirichletConstraints);
-    H1g h1g(h10, boundaryValues);
+    FEMrhsFunctional femRhsFunctional(discreteH1, productOperation);
 
 
-    FEMellipticOperator femEllipticOperator(h1, ellipticOperation);
-    FEMrhsFunctional femRhsFunctional(h1, productOperation);
+    // matrix, rhs and solution storage
+    typedef Dune::FieldMatrix<double, dimRange, dimRange> FieldMatrixType;
 
-    // SparsityPattern & pattern = h1.fullSparsityPattern();
+    typedef Container::MatrixFactory<Dune::BCRSMatrix<FieldMatrixType>> MatrixFactoryType;
+
+    typedef MatrixFactoryType::AutoPtrType MatrixContainerPtr;
+
+    typedef MatrixFactoryType::ContainerType MatrixContainer;
+
+    typedef Container::VectorFactory<Dune::BlockVector<Dune::FieldVector<double, 1>>> VectorFactoryType;
+
+    typedef VectorFactoryType::AutoPtrType VectorContainerPtr;
+
+    typedef VectorFactoryType::ContainerType VectorContainer;
+
+    //    SparsityPattern & pattern = h1.fullSparsityPattern();
+
+    MatrixContainerPtr A = MatrixFactoryType::create(discreteH10);
+    VectorContainerPtr F = VectorFactoryType::create(discreteH10);
+    //    VectorContainerPtr G  = VectorFactoryType::create( h10 );
+
+    //    MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
+    //    VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
+    //    VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );
+
+    VectorContainerPtr u0 = VectorFactoryType::create(discreteH10);
+    VectorContainerPtr u  = VectorFactoryType::create(discreteH10);
 
 
-    MatrixContainerPtr A = MatrixFactoryType::create(h10);
-    VectorContainerPtr F = VectorFactoryType::create(h10);
-    //  VectorContainerPtr G  = VectorFactoryType::create( h10 );
-
-    /*  MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
-     *  VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
-     *  VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );*/
-
-    VectorContainerPtr u0 = VectorFactoryType::create(h10);
-    VectorContainerPtr u  = VectorFactoryType::create(h10);
-
+    // assembler
+    typedef Solver::FEMAssembler<MatrixContainer, VectorContainer> Assembler;
 
     Assembler::assembleMatrix(femEllipticOperator, *A);
-    Assembler::applyMatrixConstraints(h10, *A);
-
+    Assembler::applyMatrixConstraints(discreteH10, *A);
     Assembler::assembleVector(femRhsFunctional, *F);
-    Assembler::applyVectorConstraints(h10, *F);
+    Assembler::applyVectorConstraints(discreteH10, *F);
     //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
 
+
+    // preconditioner and solver
+    typedef Dune::MatrixAdapter<MatrixContainer, VectorContainer, VectorContainer> MatrixAdapterType;
+
     MatrixAdapterType op(*A);
+
+    typedef Dune::SeqILU0<MatrixContainer, VectorContainer, VectorContainer, 1> SeqILU0Type;
+
     SeqILU0Type prec(*A, 1.0);
 
-    //    *u0 = 0.1;
-
-    /*    printmatrix(std::cout, *A,"a fixed size block matrix","row",9,1);
-     *    printvector(std::cout, *u0, "u0 test","entry", 11, 9, 1);*/
+    typedef Dune::CGSolver<VectorContainer> CG;
 
     CG cg(op, prec, 1e-4, 100, 2);
 
     Dune::InverseOperatorResult res;
-    //*F -= *G;
+
     cg.apply(*u0, *F, res);
 
     // @todo implement gFunc
     //*u = *u0 + gFunc;
 
-    /*  DiscreteFunction dfU( h1, *u );
-
-     *  dfU.evaluate( globalX );
-     *  plot( dfU );*/
-
-    DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(h1, *u0);
+    // postprocessing
+    DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(discreteH1, *u0);
     Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution");
 
     return 0;
