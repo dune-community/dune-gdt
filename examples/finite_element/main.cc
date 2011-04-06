@@ -42,6 +42,7 @@
 
 // dune-fem-tools includes
 #include <dune/fem-tools/function/functiontools.hh>
+#include <dune/fem-tools/space/projection.hh>
 
 using namespace Dune::Functionals;
 
@@ -68,18 +69,7 @@ public:
     // some types we will need
     typedef typename SecondLocalFunctionType::EntityType EntityType;
 
-    typedef typename EntityType::Geometry EntityGeometryType;
-
-    typedef typename EntityGeometryType::Jacobian JacobianInverseTransposedType;
-
-    typedef typename FirstLocalFunctionType::RangeType RangeType;
-
     typedef typename FirstLocalFunctionType::JacobianRangeType JacobianRangeType;
-
-    // entity and geometry
-    const EntityType& entity                 = secondLocalFunction.entity();
-    const EntityGeometryType& entityGeometry = entity.geometry();
-    const LocalPointType globalPoint         = entityGeometry.global(localPoint);
 
     // first gradient
     JacobianRangeType firstGradient(0.0);
@@ -130,12 +120,12 @@ public:
 }; // end class ProductOperation
 
 /**
- * @class GFunc
+ * @class AnalyticalDirichletValues
  * function representing the dirichlet data g for the poisson problem
  * a \laplace u = f
  */
 template <class FunctionSpaceImp>
-class GFunc
+class AnalyticalDirichletValues
 {
 public:
   typedef FunctionSpaceImp FunctionSpaceType;
@@ -150,14 +140,35 @@ public:
 
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  void evaluate(const DomainType& x, RangeType& y) const
+  void evaluate(const DomainType& arg, RangeType& ret) const
   {
-    y = 0.0;
+    ret = 1.0;
+
+    std::cout << "evaluate at ";
+
+    if (!(arg[0] > 0.0)) {
+      // bottom
+      std::cout << "bottom" << std::endl;
+      ret = 1.0;
+    } else if (!(arg[0] < 1.0)) {
+      // top
+      std::cout << "top" << std::endl;
+      ret = 1.0;
+    }
+    if (!(arg[1] > 0.0)) {
+      // left
+      std::cout << "left" << std::endl;
+      ret = 1.0;
+    } else if (!(arg[1] < 1.0)) {
+      // right
+      std::cout << "right" << std::endl;
+      ret = 1.0;
+    }
   }
 
-  void jacobian(const DomainType& x, JacobianRangeType& y) const
+  void jacobian(const DomainType& arg, JacobianRangeType& ret) const
   {
-    y = 0.0;
+    ret = 0.0;
   }
 };
 
@@ -205,14 +216,20 @@ int main(int argc, char** argv)
 
     DiscreteH10Type discreteH10(discreteH1, dirichletConstraints);
 
-    GFunc<FunctionSpaceType> boundaryValues;
+    typedef AnalyticalDirichletValues<FunctionSpaceType> AnalyticalDirichletValuesType;
+
+    AnalyticalDirichletValuesType analyticalDirichletValues;
+
+    DiscreteFunctionType discreteDirichletValues("dirichlet_values", discreteH1);
+
+    Dune::FemTools::BetterL2Projection::project(analyticalDirichletValues, discreteDirichletValues);
 
     // FunctionType should be obsolete
     // It should be either a DoF-Container or an analytical function, and for
     // transition phase a discrete function.
-    typedef Subspace::Affine<DiscreteH10Type, GFunc<FunctionSpaceType>> DiscreteH1gType;
+    typedef Subspace::Affine<DiscreteH10Type, DiscreteFunctionType> DiscreteH1gType;
 
-    DiscreteH1gType discreteH1g(discreteH10, boundaryValues);
+    DiscreteH1gType discreteH1g(discreteH10, discreteDirichletValues);
 
 
     // operator and functional
@@ -248,14 +265,13 @@ int main(int argc, char** argv)
 
     MatrixContainerPtr A = MatrixFactoryType::create(discreteH10);
     VectorContainerPtr F = VectorFactoryType::create(discreteH10);
-    //    VectorContainerPtr G  = VectorFactoryType::create( h10 );
+    VectorContainerPtr G = VectorFactoryType::create(discreteH1);
 
-    //    MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( h1 );
-    //    VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( h1 );
-    //    VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( h1 );
+    //    MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( discreteH10 );
+    //    VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( discreteH10 );
+    //    VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( discreteH1 );
 
     VectorContainerPtr u0 = VectorFactoryType::create(discreteH10);
-    VectorContainerPtr u  = VectorFactoryType::create(discreteH10);
 
 
     // assembler
@@ -263,9 +279,11 @@ int main(int argc, char** argv)
 
     Assembler::assembleMatrix(femEllipticOperator, *A);
     Assembler::applyMatrixConstraints(discreteH10, *A);
+
     Assembler::assembleVector(femRhsFunctional, *F);
     Assembler::applyVectorConstraints(discreteH10, *F);
-    //  Assembler::assembleVector( ellipticFEM( gFunc ), *G );
+
+    //    Assembler::assembleVector( femEllipticOperator( discreteDirichletValues ), *G );
 
 
     // preconditioner and solver
@@ -283,13 +301,15 @@ int main(int argc, char** argv)
 
     Dune::InverseOperatorResult res;
 
+    // u_0 = A^(-1) ( F - G )
+    //    *G = G->operator*=( -1.0 );
+    //    *F = F->operator+=( *G );
     cg.apply(*u0, *F, res);
 
-    // @todo implement gFunc
-    //*u = *u0 + gFunc;
 
     // postprocessing
     DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory<DiscreteFunctionType>(discreteH1, *u0);
+    //    solution += discreteDirichletValues;
     Dune::FemTools::writeDiscreteFunctionToVTK(solution, "solution");
 
     return 0;

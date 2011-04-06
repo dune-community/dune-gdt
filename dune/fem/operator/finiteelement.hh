@@ -9,12 +9,58 @@
 #include <dune/fem/common/localmatrix.hh>
 #include <dune/fem/common/localvector.hh>
 #include <dune/fem/common/localbasefunction.hh>
+#include <dune/fem/functional/finiteelement.hh>
 
 namespace Dune {
 
 namespace Functionals {
 
 namespace Operator {
+
+template <class OperatorLocalOperationImp, class InducingFunctionImp>
+class FunctionalLocalOperation
+{
+public:
+  typedef OperatorLocalOperationImp OperatorLocalOperationType;
+
+  typedef InducingFunctionImp InducingFunctionType;
+
+  FunctionalLocalOperation(const OperatorLocalOperationType& operatorLocalOperation,
+                           const InducingFunctionType& inducingFunction)
+    : operatorLocalOperation_(operatorLocalOperation)
+    , inducingFunction_(inducingFunction)
+  {
+  }
+
+  template <class LocalFunctionType, class LocalPointType>
+  double operate(const LocalFunctionType& localFunction, const LocalPointType& localPoint) const
+  {
+
+    // some types we will need
+    typedef typename LocalFunctionType::EntityType EntityType;
+
+    typedef typename InducingFunctionType::LocalFunctionType InducingLocalFunctionType;
+
+    // entity
+    const EntityType& entity = localFunction.entity();
+
+    // local function of the inducing function
+    const InducingLocalFunctionType inducingLocalFunction = inducingFunction_.localFunction(entity);
+
+    // evaluate the original operation
+    const double ret = operatorLocalOperation_.operate(inducingLocalFunction, localFunction, localPoint);
+
+    // return
+    return ret;
+  }
+
+private:
+  const OperatorLocalOperationType operatorLocalOperation_;
+  const InducingFunctionType& inducingFunction_;
+
+
+}; // end of class FunctionalLocalOperation
+
 
 template <class DiscreteFunctionSpaceImp, class LocalOperationImp>
 class FiniteElement
@@ -128,9 +174,30 @@ public:
     return ret;
   }
 
+  template <class InducingFunctionType>
+  Dune::Functionals::Functional::FiniteElement<DiscreteFunctionSpaceType,
+                                               FunctionalLocalOperation<LocalOperationType, InducingFunctionType>>
+  operator()(const InducingFunctionType& inducingFunction)
+  {
+
+    typedef Dune::Functionals::Functional::FiniteElement<DiscreteFunctionSpaceType,
+                                                         FunctionalLocalOperation<LocalOperationType,
+                                                                                  InducingFunctionType>> FunctionalType;
+
+    typedef FunctionalLocalOperation<LocalOperationType, InducingFunctionType> FunctionalLocalOperationType;
+
+    FunctionalLocalOperationType functionalLocalOperation(localOperation_, inducingFunction);
+
+    // init return functional
+    FunctionalType ret(discreteFunctionSpace_, functionalLocalOperation);
+
+    // return
+    return ret;
+  }
+
 private:
   const DiscreteFunctionSpaceType& discreteFunctionSpace_;
-  const LocalOperationType& localOperation_;
+  const LocalOperationType localOperation_;
   const LocalBaseFunctionProviderType localBaseFunctionProvider_;
 
 }; // end class FiniteElement
