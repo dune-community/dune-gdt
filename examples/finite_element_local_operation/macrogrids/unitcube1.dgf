@@ -1,0 +1,18 @@
+DGF
+
+Interval
+0     % first corner
+1     % second corner
+4     % 4 cells only
+# 
+
+BoundaryDomain
+default 1    % all boundaries have id 1
+#
+
+GridParameter
+name 1d_Unit_Cube
+overlap 1
+#
+
+# unitcube1.dgf 

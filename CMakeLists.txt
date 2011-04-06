@@ -129,4 +129,8 @@ TARGET_LINK_LIBRARIES( localbasefunction_test ${COMMON_LIBS}  )
 ADD_EXECUTABLE( ellipticfiniteelement_example "examples/finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
 TARGET_LINK_LIBRARIES( ellipticfiniteelement_example ${COMMON_LIBS}  )
 
+ADD_EXECUTABLE( ellipticfiniteelement_local_operation_example "examples/finite_element_local_operation/finite_element_local_operation.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
+TARGET_LINK_LIBRARIES( ellipticfiniteelement_local_operation_example ${COMMON_LIBS}  )
+
+
 #HEADERCHECK( ${header} )
