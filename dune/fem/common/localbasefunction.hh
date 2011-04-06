@@ -15,12 +15,12 @@ template <class DiscreteFunctionSpaceImp>
 class LocalBaseFunctionProvider
 {
 public:
-  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
-
   class LocalBaseFunction
   {
 
   public:
+    typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
+
     typedef typename DiscreteFunctionSpaceType::DomainFieldType DomainFieldType;
 
     typedef typename DiscreteFunctionSpaceType::RangeFieldType RangeFieldType;
@@ -56,6 +56,11 @@ public:
 
     ~LocalBaseFunction()
     {
+    }
+
+    int order() const
+    {
+      return DiscreteFunctionSpaceType::polynomialOrder;
     }
 
     template <class PointType>
@@ -104,6 +109,8 @@ public:
   }; // end class LocalBaseFunction
 
   typedef LocalBaseFunction LocalBaseFunctionType;
+
+  typedef typename LocalBaseFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
   typedef typename LocalBaseFunctionType::EntityType EntityType;
 
