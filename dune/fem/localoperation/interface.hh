@@ -84,6 +84,60 @@ private:
 
 }; // end class Interface
 
+
+template< class Implementation >
+class TypeSelector
+{
+public:
+
+  typedef Interface< typename Implementation::FunctionSpaceType, Implementation >
+    Select;
+
+}; // end class InterfaceSelector
+
+
+template< class Implementation >
+class Wrapper
+  : public Interface< typename Implementation::FunctionSpaceType, Wrapper< Implementation > >
+{
+public:
+
+  typedef Interface< typename Implementation::FunctionSpaceType, Wrapper< Implementation > >
+    InterfaceType;
+
+  typedef Implementation
+    ImplementationType;
+
+  typedef typename ImplementationType::FunctionSpaceType
+    FunctionSpaceType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
+  Wrapper( const ImplementationType& implementation )
+    : InterfaceType(),
+      implementation_( implementation )
+  {
+  }
+
+  template< class LocalFunctionType >
+  RangeFieldType operateLocal( const LocalFunctionType& localFunction ) const
+  {
+    return implementation_.operateLocal( localFunction );
+  }
+
+  template< class LocalFunctionType, class LocalPointType >
+  RangeFieldType evaluateLocal( const LocalFunctionType& localFunction,
+                                const LocalPointType& localPoint ) const
+  {
+    return implementation_.evaluateLocal( localFunction, localPoint );
+  }
+
+private:
+
+  const ImplementationType implementation_;
+}; // end class
+
 } // end namespace LocalOperation
 
 } // end namespace Functionals

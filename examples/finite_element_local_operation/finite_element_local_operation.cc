@@ -57,24 +57,19 @@ const int polOrder = POLORDER;
 
 template< class FunctionSpaceImp >
 class ProductOperation
-  : public LocalOperation::Interface< FunctionSpaceImp, ProductOperation< FunctionSpaceImp > >
 {
 public:
-
-  typedef LocalOperation::Interface< FunctionSpaceImp, ProductOperation< FunctionSpaceImp > >
-    InterfaceType;
 
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef typename InterfaceType::RangeFieldType
+  typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
 
-  typedef typename InterfaceType::RangeType
+  typedef typename FunctionSpaceType::RangeType
     RangeType;
 
   ProductOperation()
-    : InterfaceType()
   {
     std::cout << "ProductOperation::ProductOperation()" << std::endl;
   }
@@ -88,7 +83,6 @@ public:
   RangeFieldType evaluateLocal( const LocalFunctionType& localFunction,
                                 const LocalPointType& localPoint ) const
   {
-    std::cout << "ProductOperation::evaluateLocal()" << std::endl;
     // init return value
     RangeFieldType ret = 0.0;
 
@@ -185,15 +179,20 @@ int main( int argc, char** argv )
 
     // local operation
     typedef ProductOperation< FunctionSpaceType >
-      ProductOperation;
+      ProductOperationType;
 
-    ProductOperation productOperation;
+    ProductOperationType productOperation;
+
+    typedef LocalOperation::Wrapper< ProductOperationType >
+      ProductLocalOperationWrapperType;
+
+    ProductLocalOperationWrapperType productLocalOperationWrapper( productOperation );
 
     // integration
-    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductOperation >
+    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductLocalOperationWrapperType >
       VolumeIntegratorType;
 
-    VolumeIntegratorType volumeIntegrator( productOperation );
+    VolumeIntegratorType volumeIntegrator( productLocalOperationWrapper );
 
 
     // discrete function space
