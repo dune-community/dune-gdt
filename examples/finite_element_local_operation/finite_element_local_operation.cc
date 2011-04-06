@@ -29,10 +29,12 @@
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
-// reenable warnings about problems in dune headers
+// reenable warnings
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-fem-functionals includes
+#include <dune/fem/localoperation/interface.hh>
+#include <dune/fem/localoperation/integrator.hh>
 #include <dune/fem/constraints/dirichlet.hh>
 #include <dune/fem/subspace/subspaces.hh>
 #include <dune/fem/operator/finiteelement.hh>
@@ -51,6 +53,59 @@ const int polOrder = 1;
 #else
 const int polOrder = POLORDER;
 #endif
+
+
+template< class FunctionSpaceImp >
+class ProductOperation
+  : public LocalOperation::Interface< FunctionSpaceImp, ProductOperation< FunctionSpaceImp > >
+{
+public:
+
+  typedef LocalOperation::Interface< FunctionSpaceImp, ProductOperation< FunctionSpaceImp > >
+    InterfaceType;
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef typename InterfaceType::RangeFieldType
+    RangeFieldType;
+
+  typedef typename InterfaceType::RangeType
+    RangeType;
+
+  ProductOperation()
+    : InterfaceType()
+  {
+    std::cout << "ProductOperation::ProductOperation()" << std::endl;
+  }
+
+  ~ProductOperation()
+  {
+    std::cout << "ProductOperation::~ProductOperation()" << std::endl;
+  }
+
+  template< class LocalFunctionType, class LocalPointType >
+  RangeFieldType evaluateLocal( const LocalFunctionType& localFunction,
+                                const LocalPointType& localPoint ) const
+  {
+    std::cout << "ProductOperation::evaluateLocal()" << std::endl;
+    // init return value
+    RangeFieldType ret = 0.0;
+
+    // evaluate local function
+    RangeType localFunctionEvaluated( 0.0 );
+    localFunction.evaluate( localPoint, localFunctionEvaluated );
+
+    // 1.0 * v(x)
+    ret = 1.0 * localFunctionEvaluated;
+
+    // return
+    return ret;
+  }
+
+
+}; // end class ProductOperation
+
 
 /**
   * \brief  Represents the elliptic operation a(x) \gradient u(x) \gradient v(x) for given u, v, x.
@@ -94,101 +149,8 @@ public:
 
 }; // end class EllipticOperation
 
-/**
-  * \brief  Represents the product operation f(x) v(x) for given v, x.
-  *         In this case, f = 1.
-  **/
-class ProductOperation
-{
-public:
 
-  template< class LocalFunctionType, class LocalPointType >
-  double operate( const LocalFunctionType& localFunction,
-                  const LocalPointType& localPoint ) const
-  {
-    // init return value
-    double ret = 0.0;
-
-    // some types we will need
-    typedef typename LocalFunctionType::RangeType
-      RangeType;
-
-    // evaluate local function
-    RangeType localFunctionEvaluated( 0.0 );
-    localFunction.evaluate( localPoint, localFunctionEvaluated );
-
-    // 1.0 * v(x)
-    ret = 1.0 * localFunctionEvaluated;
-
-    // return
-    return ret;
-  }
-
-}; // end class ProductOperation
-
-/**
- * @class AnalyticalDirichletValues
- * function representing the dirichlet data g for the poisson problem
- * a \laplace u = f
- */
-template< class FunctionSpaceImp >
-class AnalyticalDirichletValues
-{
-public:
-
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
-
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
-
-  typedef typename FunctionSpaceType::DomainFieldType
-    DomainFieldType;
-
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
-
-  void evaluate( const DomainType& arg, RangeType& ret ) const
-  {
-    ret = 1.0;
-
-    if( !(arg[0] > 0.0) )
-    {
-      // bottom
-      ret = 1.0;
-    }
-    else if( !(arg[0] < 1.0) )
-    {
-      // top
-      ret = 1.0;
-    }
-    if( !(arg[1] > 0.0) )
-    {
-      // left
-      ret = 1.0;
-    }
-    else if( !(arg[1] < 1.0) )
-    {
-      // right
-      ret = 1.0;
-    }
-  }
-
-  void jacobian( const DomainType& arg, JacobianRangeType& ret ) const
-  {
-    ret = 0.0;
-  }
-
-};
-
-
-// disable warnings about problems in dune headers
+// disable warnings about the dgf parser
 #include <dune/fem-tools/header/disablewarnings.hh>
 
 
@@ -221,6 +183,20 @@ int main( int argc, char** argv )
     typedef Dune::Function< double, double >
       FunctionType;
 
+    // local operation
+    typedef ProductOperation< FunctionSpaceType >
+      ProductOperation;
+
+    ProductOperation productOperation;
+
+    // integration
+    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductOperation >
+      VolumeIntegratorType;
+
+    VolumeIntegratorType volumeIntegrator( productOperation );
+
+
+    // discrete function space
     typedef Dune::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder >
       DiscreteH1Type;
 
@@ -239,38 +215,19 @@ int main( int argc, char** argv )
 
     DiscreteH10Type discreteH10( discreteH1, dirichletConstraints );
 
-    typedef AnalyticalDirichletValues< FunctionSpaceType >
-      AnalyticalDirichletValuesType;
-
-    AnalyticalDirichletValuesType analyticalDirichletValues;
-
-    DiscreteFunctionType discreteDirichletValues( "dirichlet_values", discreteH1 );
-
-    Dune::FemTools::BetterL2Projection::project( analyticalDirichletValues, discreteDirichletValues );
-
-    // FunctionType should be obsolete
-    // It should be either a DoF-Container or an analytical function, and for
-    // transition phase a discrete function.
-    typedef Subspace::Affine< DiscreteH10Type, DiscreteFunctionType >
-      DiscreteH1gType;
-
-    DiscreteH1gType discreteH1g( discreteH10, discreteDirichletValues );
-
 
     // operator and functional
     typedef Operator::FiniteElement< DiscreteH1Type, EllipticOperation >
-      FEMellipticOperator;
+      FEMellipticOperatorType;
 
     EllipticOperation ellipticOperation;
 
-    FEMellipticOperator femEllipticOperator( discreteH1, ellipticOperation );
+    FEMellipticOperatorType femEllipticOperator( discreteH1, ellipticOperation );
 
-    typedef Functional::FiniteElement< DiscreteH1Type, ProductOperation >
-      FEMrhsFunctional;
+    typedef Functional::FiniteElementLOP< DiscreteH1Type, VolumeIntegratorType >
+      FEMrhsFunctionalType;
 
-    ProductOperation productOperation;
-
-    FEMrhsFunctional femRhsFunctional( discreteH1, productOperation );
+    FEMrhsFunctionalType femRhsFunctional( discreteH1, volumeIntegrator );
 
 
     // matrix, rhs and solution storage
@@ -280,31 +237,23 @@ int main( int argc, char** argv )
     typedef Container::MatrixFactory< Dune::BCRSMatrix< FieldMatrixType > >
       MatrixFactoryType;
 
-    typedef MatrixFactoryType::AutoPtrType
-      MatrixContainerPtr;
-
     typedef MatrixFactoryType::ContainerType
       MatrixContainer;
+
+    typedef MatrixFactoryType::AutoPtrType
+      MatrixContainerPtr;
 
     typedef Container::VectorFactory< Dune::BlockVector< Dune::FieldVector< double, 1 > > >
       VectorFactoryType;
 
-    typedef VectorFactoryType::AutoPtrType
-      VectorContainerPtr;
-
     typedef VectorFactoryType::ContainerType
       VectorContainer;
 
-//    SparsityPattern & pattern = h1.fullSparsityPattern();
+    typedef VectorFactoryType::AutoPtrType
+      VectorContainerPtr;
 
     MatrixContainerPtr A  = MatrixFactoryType::create( discreteH10 );
     VectorContainerPtr F  = VectorFactoryType::create( discreteH10 );
-    VectorContainerPtr G  = VectorFactoryType::create( discreteH1 );
-
-//    MatrixContainer& A  = Container::MatrixFactory<MatrixContainer>::createRef( discreteH10 );
-//    VectorContainer& F  = Container::VectorFactory<VectorContainer>::createRef( discreteH10 );
-//    VectorContainer& G  = Container::VectorFactory<VectorContainer>::createRef( discreteH1 );
-
     VectorContainerPtr u0 = VectorFactoryType::create( discreteH10 );
 
 
@@ -317,8 +266,6 @@ int main( int argc, char** argv )
 
     Assembler::assembleVector( femRhsFunctional, *F );
     Assembler::applyVectorConstraints( discreteH10, *F );
-
-//    Assembler::assembleVector( femEllipticOperator( discreteDirichletValues ), *G );
 
 
     // preconditioner and solver
@@ -340,14 +287,11 @@ int main( int argc, char** argv )
     Dune::InverseOperatorResult res;
 
     // u_0 = A^(-1) ( F - G )
-//    *G = G->operator*=( -1.0 );
-//    *F = F->operator+=( *G );
     cg.apply( *u0, *F, res );
 
 
     // postprocessing
     DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory< DiscreteFunctionType >( discreteH1, *u0 );
-//    solution += discreteDirichletValues;
     Dune::FemTools::writeDiscreteFunctionToVTK( solution, "solution" );
 
     return 0;
