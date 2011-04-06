@@ -71,3 +71,4 @@ tests/common/localbasefunction_test
 tests/common/localbasefunction_test-localbasefunction_test.o
 tests/operator/ellipticfiniteelementoperator_test
 tests/operator/ellipticfiniteelementoperator_test-ellipticfiniteelementoperator_test.o
+examples/finite_element/solution.vtu

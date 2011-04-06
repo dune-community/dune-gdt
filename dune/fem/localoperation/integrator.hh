@@ -19,11 +19,10 @@ class VolumeIntegrator
                                                           VolumeIntegrator<FunctionSpaceImp, LocalOperationImp>>
 {
 public:
-  typedef Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp,
-                                                       VolumeIntegrator<FunctionSpaceImp, LocalOperationImp>>
-      InterfaceType;
+  typedef typename Dune::Functionals::LocalOperation::
+      TypeSelector<VolumeIntegrator<FunctionSpaceImp, LocalOperationImp>>::Select InterfaceType;
 
-  typedef Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp, LocalOperationImp> LocalOperationType;
+  typedef typename Dune::Functionals::LocalOperation::TypeSelector<LocalOperationImp>::Select LocalOperationType;
 
   typedef FunctionSpaceImp FunctionSpaceType;
 
@@ -33,9 +32,9 @@ public:
 
   typedef typename InterfaceType::DomainType DomainType;
 
-  VolumeIntegrator(const LocalOperationType& other)
+  VolumeIntegrator(const LocalOperationType& localOperation)
     : InterfaceType()
-    , localOperation_(other)
+    , localOperation_(localOperation)
   {
     std::cout << "VolumeIntegrator::VolumeIntegrator()" << std::endl;
   }

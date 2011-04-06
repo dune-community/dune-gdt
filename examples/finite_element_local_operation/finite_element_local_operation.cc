@@ -56,19 +56,16 @@ const int polOrder = POLORDER;
 
 
 template <class FunctionSpaceImp>
-class ProductOperation : public LocalOperation::Interface<FunctionSpaceImp, ProductOperation<FunctionSpaceImp>>
+class ProductOperation
 {
 public:
-  typedef LocalOperation::Interface<FunctionSpaceImp, ProductOperation<FunctionSpaceImp>> InterfaceType;
-
   typedef FunctionSpaceImp FunctionSpaceType;
 
-  typedef typename InterfaceType::RangeFieldType RangeFieldType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename InterfaceType::RangeType RangeType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
 
   ProductOperation()
-    : InterfaceType()
   {
     std::cout << "ProductOperation::ProductOperation()" << std::endl;
   }
@@ -81,7 +78,6 @@ public:
   template <class LocalFunctionType, class LocalPointType>
   RangeFieldType evaluateLocal(const LocalFunctionType& localFunction, const LocalPointType& localPoint) const
   {
-    std::cout << "ProductOperation::evaluateLocal()" << std::endl;
     // init return value
     RangeFieldType ret = 0.0;
 
@@ -169,14 +165,18 @@ int main(int argc, char** argv)
     typedef Dune::Function<double, double> FunctionType;
 
     // local operation
-    typedef ProductOperation<FunctionSpaceType> ProductOperation;
+    typedef ProductOperation<FunctionSpaceType> ProductOperationType;
 
-    ProductOperation productOperation;
+    ProductOperationType productOperation;
+
+    typedef LocalOperation::Wrapper<ProductOperationType> ProductLocalOperationWrapperType;
+
+    ProductLocalOperationWrapperType productLocalOperationWrapper(productOperation);
 
     // integration
-    typedef LocalOperation::VolumeIntegrator<FunctionSpaceType, ProductOperation> VolumeIntegratorType;
+    typedef LocalOperation::VolumeIntegrator<FunctionSpaceType, ProductLocalOperationWrapperType> VolumeIntegratorType;
 
-    VolumeIntegratorType volumeIntegrator(productOperation);
+    VolumeIntegratorType volumeIntegrator(productLocalOperationWrapper);
 
 
     // discrete function space
