@@ -35,6 +35,7 @@ AC_CONFIG_FILES([
   examples/Makefile
   examples/poisson_new/Makefile
   examples/finite_element/Makefile
+  examples/finite_element_local_operation/Makefile
   tests/Makefile
   tests/common/Makefile
   tests/operator/Makefile

@@ -62,3 +62,12 @@ examples/finite_element/test
 examples/finite_element/test-main.o
 tests/common/.deps/
 tests/operator/.deps/
+CMakeLists.txt.user.2.1pre1
+CMakeLists.txt.user.2.3pre1
+examples/finite_element_local_operation/.deps
+examples/finite_element_local_operation/finite_element_local_operation
+examples/finite_element_local_operation/finite_element_local_operation-finite_element_local_operation.o
+tests/common/localbasefunction_test
+tests/common/localbasefunction_test-localbasefunction_test.o
+tests/operator/ellipticfiniteelementoperator_test
+tests/operator/ellipticfiniteelementoperator_test-ellipticfiniteelementoperator_test.o
