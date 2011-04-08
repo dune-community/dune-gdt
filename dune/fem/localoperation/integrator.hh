@@ -14,32 +14,29 @@ namespace Functionals {
 namespace LocalOperation {
 
 template <class FunctionSpaceImp, class LocalOperationImp>
-class VolumeIntegrator
-    : public Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp,
-                                                          VolumeIntegrator<FunctionSpaceImp, LocalOperationImp>>
+class VolumeIntegrator : public Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp>
 {
 public:
-  typedef typename Dune::Functionals::LocalOperation::
-      TypeSelector<VolumeIntegrator<FunctionSpaceImp, LocalOperationImp>>::Select InterfaceType;
+  typedef typename Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp> BaseType;
 
-  typedef typename Dune::Functionals::LocalOperation::TypeSelector<LocalOperationImp>::Select LocalOperationType;
+  typedef LocalOperationImp LocalOperationType;
 
   typedef FunctionSpaceImp FunctionSpaceType;
 
-  typedef typename InterfaceType::RangeFieldType RangeFieldType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename InterfaceType::RangeType RangeType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
 
-  typedef typename InterfaceType::DomainType DomainType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
   VolumeIntegrator(const LocalOperationType& localOperation)
-    : InterfaceType()
+    : BaseType()
     , localOperation_(localOperation)
   {
     std::cout << "VolumeIntegrator::VolumeIntegrator()" << std::endl;
   }
 
-  InterfaceType localOperation() const
+  LocalOperationType localOperation() const
   {
     return localOperation_;
   }
@@ -49,7 +46,7 @@ public:
     *         Should comply to the Dune::LocalFunction interface.
     **/
   template <class LocalFunctionType>
-  RangeFieldType operateLocal(const LocalFunctionType& localFunction) const
+  RangeFieldType operate(const LocalFunctionType& localFunction) const
   {
     // init return value
     RangeFieldType ret = 0.0;
@@ -83,7 +80,7 @@ public:
       const double quadratureWeight  = volumeQuadrature.weight(q);
 
       // evaluate the local operation
-      const RangeFieldType localOperationEvalauted = localOperation_.evaluateLocal(localFunction, x);
+      const RangeFieldType localOperationEvalauted = localOperation_.evaluate(localFunction, x);
 
       // compute integral
       ret += integrationFactor * quadratureWeight * localOperationEvalauted;

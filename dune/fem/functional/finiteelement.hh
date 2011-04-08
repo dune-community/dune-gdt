@@ -161,7 +161,7 @@ public:
 
   typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
 
-  typedef Dune::Functionals::LocalOperation::Interface<FunctionSpaceType, LocalOperationImp> LocalOperationType;
+  typedef LocalOperationImp LocalOperationType;
 
   typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
 
@@ -215,7 +215,7 @@ public:
       const LocalBaseFunctionType localBaseFunction_i = localBaseFunctionProvider_.provide(entity, i);
 
       // set local vector
-      ret[i] = localOperation_.operateLocal(localBaseFunction_i);
+      ret[i] = localOperation_.operate(localBaseFunction_i);
 
     } // done loop over all local DoFs
 
