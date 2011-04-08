@@ -57,11 +57,15 @@ const int polOrder = POLORDER;
 
 template< class FunctionSpaceImp >
 class ProductOperation
+  : public Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
 {
 public:
 
   typedef FunctionSpaceImp
     FunctionSpaceType;
+
+  typedef Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
+    BaseType;
 
   typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
@@ -80,8 +84,8 @@ public:
   }
 
   template< class LocalFunctionType, class LocalPointType >
-  RangeFieldType evaluateLocal( const LocalFunctionType& localFunction,
-                                const LocalPointType& localPoint ) const
+  RangeFieldType evaluate(  const LocalFunctionType& localFunction,
+                            const LocalPointType& localPoint ) const
   {
     // init return value
     RangeFieldType ret = 0.0;
@@ -183,16 +187,11 @@ int main( int argc, char** argv )
 
     ProductOperationType productOperation;
 
-    typedef LocalOperation::Wrapper< ProductOperationType >
-      ProductLocalOperationWrapperType;
-
-    ProductLocalOperationWrapperType productLocalOperationWrapper( productOperation );
-
     // integration
-    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductLocalOperationWrapperType >
+    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductOperationType >
       VolumeIntegratorType;
 
-    VolumeIntegratorType volumeIntegrator( productLocalOperationWrapper );
+    VolumeIntegratorType volumeIntegrator( productOperation );
 
 
     // discrete function space
