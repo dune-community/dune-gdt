@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     typedef Dune::YaspGrid< dim >
       GridType;
 
-    Dune::GridPtr< GridType > gridPtr( "unitcube_2d.dgf" );
+    Dune::GridPtr< GridType > gridPtr( "macrogrids/unitcube2.dgf" );
 
     typedef Dune::AdaptiveLeafGridPart< GridType >
       GridPartType;

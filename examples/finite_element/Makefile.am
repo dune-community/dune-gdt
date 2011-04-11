@@ -1,29 +1,35 @@
-# DO NOT CHANGE THESE DEFAULT VALUES
-#
-# use, for example, the following statement instead:
-# make GRIDTYPE=ALUGRID_SIMPLEX GRIDDIM=3 POLORDER=2
-
-GRIDTYPE = YASPGRID
-GRIDDIM = 2
+GRIDDIM=2
+GRIDTYPE=YASPGRID
 POLORDER=1
 
-# programs to build 
-check_PROGRAMS = test 
+noinst_PROGRAMS = fem
 
-# compilation and linking flags
-POISSON_CPPFLAGS = -DPOLORDER=$(POLORDER) -DFEMTIMER
+fem_SOURCES = main.cc
 
-
-# settings for 'poisson'
-test_SOURCES = main.cc
-test_CPPFLAGS = $(ALL_PKG_CPPFLAGS) $(POISSON_CPPFLAGS) $(DUNEMPICPPFLAGS)
-test_LDADD = $(ALL_PKG_LDFLAGS) $(ALL_PKG_LIBS) $(LOCAL_LIBS) $(DUNEMPILIBS)
-
-
-# clean also temporary files 
-CLEANFILES = manager.*.log *.dgf.* dgfparser.log
-
-# files included extra in dist 
-EXTRA_DIST=*.dgf parameter 
+fem_CPPFLAGS = $(AM_CPPFLAGS) \
+	$(DUNEMPICPPFLAGS) \
+	$(UG_CPPFLAGS) \
+	$(AMIRAMESH_CPPFLAGS) \
+	$(ALBERTA_CPPFLAGS) \
+	$(ALUGRID_CPPFLAGS) -DGRIDDIM=$(GRIDDIM) -D$(GRIDTYPE) -DPOLORDER=$(POLORDER) -Wall -O0 -DDEBUG -funroll-loops -g -ggdb -fno-strict-aliasing -std=c++0x
+# The libraries have to be given in reverse order (most basic libraries
+# last).  Also, due to some misunderstanding, a lot of libraries include the
+# -L option in LDFLAGS instead of LIBS -- so we have to include the LDFLAGS
+# here as well.
+fem_LDADD = \
+	$(DUNE_LDFLAGS) $(DUNE_LIBS) \
+	$(ALUGRID_LDFLAGS) $(ALUGRID_LIBS) \
+	$(ALBERTA_LDFLAGS) $(ALBERTA_LIBS) \
+	$(AMIRAMESH_LDFLAGS) $(AMIRAMESH_LIBS) \
+	$(UG_LDFLAGS) $(UG_LIBS) \
+	$(DUNEMPILIBS)	\
+	$(LDADD)
+fem_LDFLAGS = $(AM_LDFLAGS) \
+	$(DUNEMPILDFLAGS) \
+	$(UG_LDFLAGS) \
+	$(AMIRAMESH_LDFLAGS) \
+	$(ALBERTA_LDFLAGS) \
+	$(ALUGRID_LDFLAGS) \
+	$(DUNE_LDFLAGS)
 
 include $(top_srcdir)/am/global-rules
