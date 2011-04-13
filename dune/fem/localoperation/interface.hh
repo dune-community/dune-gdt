@@ -29,27 +29,32 @@ public:
 
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  Interface()
+  template <class LocalTestFunctionType>
+  RangeFieldType operate(const LocalTestFunctionType& localTestFunction) const
   {
-    std::cout << "Interface::Interface()" << std::endl;
+    std::cout << "LocalOperation::Interface::operate()" << std::endl;
   }
 
-  ~Interface()
+  template <class LocalTestFunctionType, class LocalPointType>
+  RangeFieldType evaluate(const LocalTestFunctionType& localTestFunction, const LocalPointType& localPoint) const
   {
-    std::cout << "Interface::~Interface()" << std::endl;
+    std::cout << "LocalOperation::Interface::evaluate()" << std::endl;
   }
 
-  template <class LocalFunctionType>
-  RangeFieldType operate(const LocalFunctionType& localFunction) const
+  template <class LocalAnsatzFunctionType, class LocalTestFunctionType>
+  RangeFieldType operate(const LocalAnsatzFunctionType& localAnsatzFunction,
+                         const LocalTestFunctionType& localTestFunction) const
   {
-    std::cout << "Interface::operateLocal()" << std::endl;
+    std::cout << "LocalOperation::Interface::operate()" << std::endl;
   }
 
-  template <class LocalFunctionType, class LocalPointType>
-  RangeFieldType evaluate(const LocalFunctionType& localFunction, const LocalPointType& localPoint) const
+  template <class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType>
+  RangeFieldType evaluate(const LocalAnsatzFunctionType& localAnsatzFunction,
+                          const LocalTestFunctionType& localTestFunction, const LocalPointType& localPoint) const
   {
-    std::cout << "Interface::evaluateLocal()" << std::endl;
+    std::cout << "LocalOperation::Interface::evaluate()" << std::endl;
   }
+
 }; // end class Interface
 
 
