@@ -1,3 +1,3 @@
-SUBDIRS = common operator
+SUBDIRS = common 
 
 include $(top_srcdir)/am/global-rules
