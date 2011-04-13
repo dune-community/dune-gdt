@@ -309,7 +309,7 @@ public:
         const int globalI = ansatzSpace.mapToGlobal(en, i);
         const int globalJ = testSpace.mapToGlobal(en, j);
 
-        matrix[globalI][globalJ] += localMatrix.get(i, j);
+        matrix[globalI][globalJ] += localMatrix[i][j];
       }
     }
   }

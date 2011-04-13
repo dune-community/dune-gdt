@@ -23,6 +23,8 @@ template <class ElementType>
 class LocalMatrix
 {
 public:
+  typedef LocalVector<ElementType> RowType;
+
   /**
     * \brief      Initializes an empty matrix, according to the given size.
     *
@@ -33,11 +35,9 @@ public:
     *             Number of collumns, the matrix will have.
     **/
   LocalMatrix(const unsigned int rows, const unsigned int cols)
-    : rows_(rows)
-    , cols_(cols)
   {
     // resize
-    storage_.resize(rows_ * cols_, 0.0);
+    storage_.resize(rows, RowType(cols));
   }
 
   /**
@@ -45,17 +45,17 @@ public:
     */
   const unsigned int size() const
   {
-    return rows_ * cols_;
+    return storage_.size() * storage_[0].size();
   }
 
-  ElementType get(const unsigned int i, const unsigned int j) const
+  RowType& operator[](const unsigned int i)
   {
-    return storage_[i * cols_ + j];
+    return storage_[i];
   }
 
-  void set(const unsigned int i, const unsigned int j, ElementType val)
+  const RowType& operator[](const unsigned int i) const
   {
-    storage_[i * cols_ + j] = val;
+    return storage_[i];
   }
 
   /**
@@ -63,15 +63,13 @@ public:
     **/
   LocalVector<ElementType> operator*(const LocalVector<ElementType>& other) const
   {
-    assert(cols_ == other.size());
+    assert(cols() == other.size());
 
-    LocalVector<ElementType> result(rows_);
+    LocalVector<ElementType> result(rows());
 
-    for (unsigned ii = 0; ii < rows_; ++ii) {
-
-      for (unsigned jj = 0; jj < cols_; ++jj) {
-
-        result[ii] += get(ii, jj) * other[jj];
+    for (unsigned int i = 0; i < rows(); ++i) {
+      for (unsigned int j = 0; j < cols(); ++j) {
+        result[i] += storage_[i][j] * other[j];
       }
     }
 
@@ -83,7 +81,15 @@ public:
    */
   unsigned int N() const
   {
-    return rows_;
+    return storage_.size();
+  }
+
+  /**
+   * @brief Return number of rows.
+   */
+  unsigned int rows() const
+  {
+    return storage_.size();
   }
 
   /**
@@ -91,13 +97,19 @@ public:
    */
   unsigned int M() const
   {
-    return cols_;
+    return storage_[0].size();
+  }
+
+  /**
+   * @brief Return number of cols.
+   */
+  unsigned int cols() const
+  {
+    return storage_[0].size();
   }
 
 private:
-  std::vector<ElementType> storage_;
-  unsigned int rows_;
-  unsigned int cols_;
+  std::vector<RowType> storage_;
 
 }; // end class LocalDoFVector
 
