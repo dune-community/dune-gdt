@@ -1,3 +1,8 @@
+/**
+  \file   linear.hh
+  \brief  Contains linear operator related classes.
+  **/
+
 #ifndef DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
 #define DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
 
@@ -100,7 +105,7 @@ namespace Operator
           local basefunctions of the ansatz space \f$V_{h}\f$ and \f$\psi_j\f$ are the local basefunctions of the
           test space \f$W_h\f$. A linear operator thus only hast to provide this local application
           \f$A( \varphi_i )[\psi_j]\f$. This local application (and thus the linear operator) is induced by a local
-          operation \f$a(\varphi,\varpsi)\f$ which operates on local functions. In the finite element case for example,
+          operation \f$a(\varphi,\psi)\f$ which operates on local functions. In the finite element case for example,
           where the operator is given by
           \f[
             A(u)[v] = \int_{\Omega} a \nabla \varphi \nabla \psi \text{dx} \text{,}

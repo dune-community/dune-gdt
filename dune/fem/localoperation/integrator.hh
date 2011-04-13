@@ -1,6 +1,6 @@
 /**
-  * \file   integrator.hh
-  * \brief  Contains various integrator classes.
+  \file   integrator.hh
+  \brief  Contains various integrator classes.
   **/
 
 #ifndef DUNE_FEM_FUNCTIONALS_LOCALOPERATION_INTEGRATOR_HH
@@ -28,18 +28,16 @@ namespace Integrator
 {
 
 /**
-  * \brief  This class carries out a codim 0 integration.
-  *
-  *         Given a local operation \f$F\f$, which operates on one local function \f$u\f$ or on two local functions
-  *         \f$u\f$, \f$v\f$, this class computes the integral
-  *         \f$\int_{E} F(u) \text{dx}\f$ or \f$\int_{E} F(u,v) \text{dx}\f$ by a quadrature rule, where \f$E\f$ is the
-  *         codim 0 entity, on which the local functions are defined.
-  *
-  * \tparam FunctionSpaceImp
-  *         Type of the function space, the local functions live in, i.e. Dune::FunctionSpaceInterface.
-  *
-  * \tparam LocalOperationImp
-  *         Type of the underlying local operation, i.e. Dune::Functionals::LocalOperation::Interface.
+  \brief  This class carries out a codim 0 integration.
+
+          Given a local operation \f$F\f$, which operates on one local function \f$u\f$ or on two local functions
+          \f$u\f$, \f$v\f$, this class computes the integral
+          \f$\int_{E} F(u) \text{dx}\f$ or \f$\int_{E} F(u,v) \text{dx}\f$ by a quadrature rule, where \f$E\f$ is the
+          codim 0 entity, on which the local functions are defined.
+  \tparam FunctionSpaceImp
+          Type of the function space, the local functions live in, i.e. Dune::FunctionSpaceInterface.
+  \tparam LocalOperationImp
+          Type of the underlying local operation, i.e. Dune::Functionals::LocalOperation::Interface.
   **/
 template< class FunctionSpaceImp, class LocalOperationImp >
 class Codim0
@@ -162,20 +160,19 @@ private:
 public:
 
   /**
-    * \brief      Constructor storing the local operation.
-    * \param[in]  localOperation
-    *             The local Operation \f$F\f$.
+    \brief      Constructor storing the local operation.
+    \param[in]  localOperation
+                The local Operation \f$F\f$.
     **/
   Codim0( const LocalOperationType& localOperation )
     : BaseType(),
       localOperation_( localOperation )
   {
-    std::cout << "VolumeIntegrator::VolumeIntegrator()" << std::endl;
   }
 
   /**
-    * \brief  Returns the local operation.
-    * \return \f$F\f$
+    \brief  Returns the local operation.
+    \return \f$F\f$
     **/
   LocalOperationType localOperation() const
   {
@@ -183,12 +180,12 @@ public:
   }
 
   /**
-    * \brief      Computes the integral \f$\int_{E} F(u) \text{dx}\f$.
-    * \tparam     LocalFunctionType
-    *             Type of the local function \f$u\f$, i.e. Dune::LocalFunction.
-    * \param[in]  localTestFunction
-    *             The local function \f$u\f$.
-    * \return     The integral \f$\int_{E} F(u) \text{dx}\f$.
+    \brief      Computes the integral \f$\int_{E} F(u) \text{dx}\f$.
+    \tparam     LocalFunctionType
+                Type of the local function \f$u\f$, i.e. Dune::LocalFunction.
+    \param[in]  localTestFunction
+                The local function \f$u\f$.
+    \return     The integral \f$\int_{E} F(u) \text{dx}\f$.
     **/
   template< class LocalTestFunctionType >
   RangeFieldType operate( const LocalTestFunctionType& localTestFunction ) const
@@ -200,16 +197,16 @@ public:
   }
 
   /**
-    * \brief      Computes the integral \f$\int_{E} F(u,v) \text{dx}\f$.
-    * \tparam     LocalAnsatzFunctionType
-    *             Type of the local function \f$u\f$, i.e. Dune::LocalFunction.
-    * \tparam     LocalTestFunctionType
-    *             Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
-    * \param[in]  localAnsatzFunction
-    *             The local function \f$u\f$.
-    * \param[in]  localTestFunction
-    *             The local function \f$v\f$.
-    * \return     The integral \f$\int_{E} F(u,v) \text{dx}\f$.
+    \brief      Computes the integral \f$\int_{E} F(u,v) \text{dx}\f$.
+    \tparam     LocalAnsatzFunctionType
+                Type of the local function \f$u\f$, i.e. Dune::LocalFunction.
+    \tparam     LocalTestFunctionType
+                Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
+    \param[in]  localAnsatzFunction
+                The local function \f$u\f$.
+    \param[in]  localTestFunction
+                The local function \f$v\f$.
+    \return     The integral \f$\int_{E} F(u,v) \text{dx}\f$.
     **/
   template< class LocalAnsatzFunctionType, class LocalTestFunctionType >
   RangeFieldType operate( const LocalAnsatzFunctionType& localAnsatzFunction,
