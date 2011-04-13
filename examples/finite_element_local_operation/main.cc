@@ -1,4 +1,7 @@
-
+/**
+  \file   main.cc
+  \brief  Main file fir the finite element example.
+  **/
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -55,13 +58,12 @@ const int polOrder = POLORDER;
 #endif
 
 /**
-  * \brief  This represents the operation \f$fv\f$.
-  *
-  *         \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
-  *         testfunction.
-  *
-  * \tparam FunctionSpaceImp
-  *         Type of the function space, where \f$f\f$ and \f$v\f$ live in.
+  \brief  This represents the operation \f$fv\f$.
+
+          \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
+          testfunction.
+  \tparam FunctionSpaceImp
+          Type of the function space, where \f$f\f$ and \f$v\f$ live in.
   **/
 template <class FunctionSpaceImp>
 class ProductOperation : public Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp>
@@ -74,18 +76,18 @@ public:
   typedef typename FunctionSpaceType::RangeType RangeType;
 
   /**
-    * \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
-    *
-    * \tparam     LocalTestFunctionType
-    *             Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
-    * \tparam     LocalPointType
-    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
-    * \param[in]  localTestFunction
-    *             The local function \f$v\f$.
-    * \param[in]  localPoint
-    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
-    *             element.
-    * \return     \f$f(x)v(x)\f$
+    \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
+
+    \tparam     LocalTestFunctionType
+                Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
+    \tparam     LocalPointType
+                Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    \param[in]  localTestFunction
+                The local function \f$v\f$.
+    \param[in]  localPoint
+                The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+                element.
+    \return     \f$f(x)v(x)\f$
     **/
   template <class LocalTestFunctionType, class LocalPointType>
   RangeFieldType evaluate(const LocalTestFunctionType& localTestFunction, const LocalPointType& localPoint) const
@@ -108,13 +110,12 @@ public:
 
 
 /**
-  * \brief  This represents the operation \f$a\nabla u \nabla v\f$.
-  *
-  *         \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
-  *         ansatz- and testfunctions.
-  *
-  * \tparam FunctionSpaceImp
-  *         Type of the function space, where \f$f\f$ \f$u\f$ and \f$v\f$ live in.
+  \brief  This represents the operation \f$a\nabla u \nabla v\f$.
+
+          \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
+          ansatz- and testfunctions.
+  \tparam FunctionSpaceImp
+          Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
   **/
 template <class FunctionSpaceImp>
 class EllipticOperation : public Dune::Functionals::LocalOperation::Interface<FunctionSpaceImp>
