@@ -70,19 +70,19 @@ public:
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
-  template< class LocalFunctionType, class LocalPointType >
-  RangeFieldType evaluate(  const LocalFunctionType& localFunction,
+  template< class LocalTestFunctionType, class LocalPointType >
+  RangeFieldType evaluate(  const LocalTestFunctionType& localTestFunction,
                             const LocalPointType& localPoint ) const
   {
     // init return value
     RangeFieldType ret = 0.0;
 
     // evaluate local function
-    RangeType localFunctionEvaluated( 0.0 );
-    localFunction.evaluate( localPoint, localFunctionEvaluated );
+    RangeType localTestFunctionValue( 0.0 );
+    localTestFunction.evaluate( localPoint, localTestFunctionValue );
 
     // 1.0 * v(x)
-    ret = 1.0 * localFunctionEvaluated;
+    ret = 1.0 * localTestFunctionValue;
 
     // return
     return ret;
@@ -116,23 +116,23 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  template< class AnsatzLocalFunctionType, class TestLocalFunctionType, class LocalPointType >
-  RangeFieldType evaluate(  const AnsatzLocalFunctionType& ansatzLocalFunction,
-                            const TestLocalFunctionType& testLocalFunction,
+  template< class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType >
+  RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
+                            const LocalTestFunctionType& localTestFunction,
                             const LocalPointType& localPoint ) const
   {
     // init return value
     RangeFieldType ret = 0.0;
 
     // evaluate first gradient
-    JacobianRangeType gradientAnsatzLocalFunction( 0.0 );
-    ansatzLocalFunction.jacobian( localPoint, gradientAnsatzLocalFunction );
+    JacobianRangeType gradientLocalAnsatzFunction( 0.0 );
+    localAnsatzFunction.jacobian( localPoint, gradientLocalAnsatzFunction );
 
     // evaluate second gradient
-    JacobianRangeType gradientTestLocalFunction( 0.0 );
-    testLocalFunction.jacobian( localPoint, gradientTestLocalFunction );
+    JacobianRangeType gradientLocalTestFunction( 0.0 );
+    localTestFunction.jacobian( localPoint, gradientLocalTestFunction );
 
-    const RangeFieldType product = gradientAnsatzLocalFunction[0] * gradientTestLocalFunction[0];
+    const RangeFieldType product = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
 
     // 1.0 * \gradient u(x) \gradient v(x)
     ret = 1.0 * product;
@@ -189,12 +189,12 @@ int main( int argc, char** argv )
     EllipticOperationType ellipticOperation;
 
     // integration
-    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductOperationType >
+    typedef LocalOperation::Integrator::Codim0< FunctionSpaceType, ProductOperationType >
       ProductIntegratorType;
 
     ProductIntegratorType productIntegrator( productOperation );
 
-    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, EllipticOperationType >
+    typedef LocalOperation::Integrator::Codim0< FunctionSpaceType, EllipticOperationType >
       EllipticIntegratorType;
 
     EllipticIntegratorType ellipticIntegrator( ellipticOperation );
