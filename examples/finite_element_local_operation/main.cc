@@ -37,7 +37,7 @@
 #include <dune/fem/localoperation/integrator.hh>
 #include <dune/fem/constraints/dirichlet.hh>
 #include <dune/fem/subspace/subspaces.hh>
-#include <dune/fem/operator/finiteelement.hh>
+#include <dune/fem/operator/linear.hh>
 #include <dune/fem/functional/finiteelement.hh>
 #include <dune/fem/container/factory.hh>
 #include <dune/fem/solver/femassembler.hh>
@@ -242,9 +242,9 @@ int main(int argc, char** argv)
 
 
     // operator and functional
-    typedef Operator::FiniteElement<DiscreteH1Type, DiscreteH1Type, EllipticIntegratorType> FEMellipticOperatorType;
+    typedef Operator::Linear<EllipticIntegratorType, DiscreteH1Type> FEMellipticOperatorType;
 
-    FEMellipticOperatorType femEllipticOperator(discreteH1, discreteH1, ellipticIntegrator);
+    FEMellipticOperatorType femEllipticOperator(ellipticIntegrator, discreteH1);
 
     typedef Functional::FiniteElementLOP<DiscreteH1Type, ProductIntegratorType> FEMrhsFunctionalType;
 
