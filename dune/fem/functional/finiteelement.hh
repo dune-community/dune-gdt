@@ -203,9 +203,6 @@ public:
   typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
     LocalVectorType;
 
-  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
-    BaseFunctionSetType;
-
   typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteFunctionSpaceType >
     LocalBaseFunctionProviderType;
 
@@ -233,29 +230,22 @@ public:
     return discreteFunctionSpace_;
   }
 
-  const LocalOperationType localOperation() const
+  LocalOperationType localOperation() const
   {
     return localOperation_;
   }
 
-  const LocalVectorType applyLocal( const EntityType& entity ) const
+  LocalVectorType applyLocal( const EntityType& entity ) const
   {
-    // basefunctionset
-    const BaseFunctionSetType baseFunctionSet = discreteFunctionSpace_.baseFunctionSet( entity );
-    const unsigned numberOfLocalDoFs = baseFunctionSet.numBaseFunctions();
+    const unsigned int numberOfLocalDoFs = discreteFunctionSpace_.baseFunctionSet( entity ).numBaseFunctions();
 
-    // init return vector
     LocalVectorType ret( numberOfLocalDoFs );
 
     // do loop over all local DoFs
-    for(  unsigned int i = 0;
-          i < numberOfLocalDoFs;
-          ++i )
+    for( unsigned int i = 0; i < numberOfLocalDoFs; ++i )
     {
-      // get local basefunctions
       const LocalBaseFunctionType localBaseFunction_i = localBaseFunctionProvider_.provide( entity, i );
 
-      // set local vector
       ret[i] = localOperation_.operate( localBaseFunction_i );
 
     } // done loop over all local DoFs

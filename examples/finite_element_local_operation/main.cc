@@ -64,24 +64,11 @@ public:
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
-    BaseType;
-
   typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
-
-  ProductOperation()
-  {
-    std::cout << "ProductOperation::ProductOperation()" << std::endl;
-  }
-
-  ~ProductOperation()
-  {
-    std::cout << "ProductOperation::~ProductOperation()" << std::endl;
-  }
 
   template< class LocalFunctionType, class LocalPointType >
   RangeFieldType evaluate(  const LocalFunctionType& localFunction,
@@ -101,7 +88,6 @@ public:
     return ret;
   }
 
-
 }; // end class ProductOperation
 
 
@@ -109,34 +95,44 @@ public:
   * \brief  Represents the elliptic operation a(x) \gradient u(x) \gradient v(x) for given u, v, x.
   *         In this case, a = 1.
   **/
+template< class FunctionSpaceImp >
 class EllipticOperation
+  : public Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
 {
 public:
 
-  template< class FirstLocalFunctionType, class SecondLocalFunctionType, class LocalPointType >
-  double operate( const FirstLocalFunctionType& firstLocalFunction,
-                  const SecondLocalFunctionType& secondLocalFunction,
-                  const LocalPointType& localPoint ) const
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
+
+  typedef Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
+    BaseType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  template< class AnsatzLocalFunctionType, class TestLocalFunctionType, class LocalPointType >
+  RangeFieldType evaluate(  const AnsatzLocalFunctionType& ansatzLocalFunction,
+                            const TestLocalFunctionType& testLocalFunction,
+                            const LocalPointType& localPoint ) const
   {
     // init return value
-    double ret = 0.0;
+    RangeFieldType ret = 0.0;
 
-    // some types we will need
-    typedef typename SecondLocalFunctionType::EntityType
-      EntityType;
+    // evaluate first gradient
+    JacobianRangeType gradientAnsatzLocalFunction( 0.0 );
+    ansatzLocalFunction.jacobian( localPoint, gradientAnsatzLocalFunction );
 
-    typedef typename FirstLocalFunctionType::JacobianRangeType
-      JacobianRangeType;
+    // evaluate second gradient
+    JacobianRangeType gradientTestLocalFunction( 0.0 );
+    testLocalFunction.jacobian( localPoint, gradientTestLocalFunction );
 
-    // first gradient
-    JacobianRangeType firstGradient( 0.0 );
-    firstLocalFunction.jacobian( localPoint, firstGradient );
-
-    // second gradient
-    JacobianRangeType secondGradient( 0.0 );
-    secondLocalFunction.jacobian( localPoint, secondGradient );
-
-    const double product = firstGradient[0] * secondGradient[0];
+    const RangeFieldType product = gradientAnsatzLocalFunction[0] * gradientTestLocalFunction[0];
 
     // 1.0 * \gradient u(x) \gradient v(x)
     ret = 1.0 * product;
@@ -181,17 +177,27 @@ int main( int argc, char** argv )
     typedef Dune::Function< double, double >
       FunctionType;
 
-    // local operation
+    // local operations
     typedef ProductOperation< FunctionSpaceType >
       ProductOperationType;
 
     ProductOperationType productOperation;
 
+    typedef EllipticOperation< FunctionSpaceType >
+      EllipticOperationType;
+
+    EllipticOperationType ellipticOperation;
+
     // integration
     typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, ProductOperationType >
-      VolumeIntegratorType;
+      ProductIntegratorType;
 
-    VolumeIntegratorType volumeIntegrator( productOperation );
+    ProductIntegratorType productIntegrator( productOperation );
+
+    typedef LocalOperation::VolumeIntegrator< FunctionSpaceType, EllipticOperationType >
+      EllipticIntegratorType;
+
+    EllipticIntegratorType ellipticIntegrator( ellipticOperation );
 
 
     // discrete function space
@@ -215,17 +221,15 @@ int main( int argc, char** argv )
 
 
     // operator and functional
-    typedef Operator::FiniteElement< DiscreteH1Type, EllipticOperation >
+    typedef Operator::FiniteElementLOP< DiscreteH1Type, DiscreteH1Type, EllipticIntegratorType >
       FEMellipticOperatorType;
 
-    EllipticOperation ellipticOperation;
+    FEMellipticOperatorType femEllipticOperator( discreteH1, discreteH1, ellipticIntegrator );
 
-    FEMellipticOperatorType femEllipticOperator( discreteH1, ellipticOperation );
-
-    typedef Functional::FiniteElementLOP< DiscreteH1Type, VolumeIntegratorType >
+    typedef Functional::FiniteElementLOP< DiscreteH1Type, ProductIntegratorType >
       FEMrhsFunctionalType;
 
-    FEMrhsFunctionalType femRhsFunctional( discreteH1, volumeIntegrator );
+    FEMrhsFunctionalType femRhsFunctional( discreteH1, productIntegrator );
 
 
     // matrix, rhs and solution storage
@@ -256,7 +260,7 @@ int main( int argc, char** argv )
 
 
     // assembler
-    typedef Solver::FEMAssembler< MatrixContainer, VectorContainer >
+    typedef Assembler::FiniteElement< MatrixContainer, VectorContainer >
       Assembler;
 
     Assembler::assembleMatrix( femEllipticOperator, *A );

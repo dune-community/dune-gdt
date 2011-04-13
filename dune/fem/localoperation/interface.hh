@@ -56,8 +56,8 @@ public:
   }
 
   template< class LocalFunctionType, class LocalPointType >
-  RangeFieldType evaluate( const LocalFunctionType& localFunction,
-                                const LocalPointType& localPoint ) const
+  RangeFieldType evaluate(  const LocalFunctionType& localFunction,
+                            const LocalPointType& localPoint ) const
   {
     std::cout << "Interface::evaluateLocal()" << std::endl;
   }

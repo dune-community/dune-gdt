@@ -107,6 +107,62 @@ public:
     return ret;
   }
 
+  /**
+    * \tparam LocalFunctionType
+    *         Should comply to the Dune::LocalFunction interface.
+    **/
+  template< class FirstLocalFunctionType, class SecondLocalFunctionType >
+  RangeFieldType operate( const FirstLocalFunctionType& firstLocalFunction,
+                          const SecondLocalFunctionType& secondLocalFunction ) const
+  {
+    // init return value
+    RangeFieldType ret = 0.0;
+
+    // some types we will need
+    typedef typename FirstLocalFunctionType::DiscreteFunctionSpaceType
+      DiscreteFunctionSpaceType;
+
+    typedef typename DiscreteFunctionSpaceType::GridPartType
+      GridPartType;
+
+    typedef typename FirstLocalFunctionType::EntityType
+      EntityType;
+
+    typedef typename EntityType::Geometry
+      EntityGeometryType;
+
+    typedef CachingQuadrature< GridPartType, 0 >
+      VolumeQuadratureType;
+
+    // entity and geometry
+    const EntityType& entity = firstLocalFunction.entity();
+    const EntityGeometryType& entityGeometry = entity.geometry();
+
+    // quadrature
+    const unsigned int quadratureOrder = firstLocalFunction.order();
+    const VolumeQuadratureType volumeQuadrature( entity, quadratureOrder );
+    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
+
+    for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
+    {
+      // local coordinate
+      const DomainType x = volumeQuadrature.point( q );
+
+      // integration factors
+      const double integrationFactor = entityGeometry.integrationElement( x );
+      const double quadratureWeight = volumeQuadrature.weight( q );
+
+      // evaluate the local operation
+      const RangeFieldType localOperationEvalauted = localOperation_.evaluate( firstLocalFunction, secondLocalFunction, x );
+
+      // compute integral
+      ret += integrationFactor * quadratureWeight * localOperationEvalauted;
+    }
+
+    // return
+    return ret;
+  }
+
 private:
 
   const LocalOperationType localOperation_;
