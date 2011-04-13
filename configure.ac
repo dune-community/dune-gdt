@@ -37,7 +37,6 @@ AC_CONFIG_FILES([
   examples/finite_element_local_operation/Makefile
   tests/Makefile
   tests/common/Makefile
-  tests/operator/Makefile
   m4/Makefile
   dune-fem-functionals.pc
 ])

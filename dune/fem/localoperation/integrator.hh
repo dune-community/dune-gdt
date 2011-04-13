@@ -15,21 +15,15 @@
 namespace Dune
 {
 
-/**
-  * \brief  dune-fem-functionals
-  **/
+//! dune-fem-functionals
 namespace Functionals
 {
 
-/**
-  * \brief  Contains various local operations.
-  **/
+//! Contains various local operations.
 namespace LocalOperation
 {
 
-/**
-  * \brief  Contains various integrators.
-  **/
+//! Contains various integrators.
 namespace Integrator
 {
 

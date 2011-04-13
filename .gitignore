@@ -76,3 +76,7 @@ examples/finite_element/fem-main.o
 examples/finite_element/solution.vtu
 examples/finite_element_local_operation/fem_lop
 examples/finite_element_local_operation/fem_lop-main.o
+doc/doxygen/doxyerr.log
+doc/doxygen/doxygen-tag
+doc/doxygen/doxygen.log
+doc/doxygen/html

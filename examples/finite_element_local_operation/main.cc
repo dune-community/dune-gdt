@@ -54,7 +54,15 @@ const int polOrder = 1;
 const int polOrder = POLORDER;
 #endif
 
-
+/**
+  * \brief  This represents the operation \f$fv\f$.
+  *
+  *         \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
+  *         testfunction.
+  *
+  * \tparam FunctionSpaceImp
+  *         Type of the function space, where \f$f\f$ and \f$v\f$ live in.
+  **/
 template< class FunctionSpaceImp >
 class ProductOperation
   : public Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
@@ -70,6 +78,20 @@ public:
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
+  /**
+    * \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
+    *
+    * \tparam     LocalTestFunctionType
+    *             Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalPointType
+    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    * \param[in]  localTestFunction
+    *             The local function \f$v\f$.
+    * \param[in]  localPoint
+    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+    *             element.
+    * \return     \f$f(x)v(x)\f$
+    **/
   template< class LocalTestFunctionType, class LocalPointType >
   RangeFieldType evaluate(  const LocalTestFunctionType& localTestFunction,
                             const LocalPointType& localPoint ) const
@@ -92,8 +114,13 @@ public:
 
 
 /**
-  * \brief  Represents the elliptic operation a(x) \gradient u(x) \gradient v(x) for given u, v, x.
-  *         In this case, a = 1.
+  * \brief  This represents the operation \f$a\nabla u \nabla v\f$.
+  *
+  *         \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
+  *         ansatz- and testfunctions.
+  *
+  * \tparam FunctionSpaceImp
+  *         Type of the function space, where \f$f\f$ \f$u\f$ and \f$v\f$ live in.
   **/
 template< class FunctionSpaceImp >
 class EllipticOperation
@@ -116,6 +143,24 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
+  /**
+    * \brief      Evaluates \f$a(x)\nabla u(x) \nabla v(x)\f$ for a given local point \f$x\f$.
+    *
+    * \tparam     LocalAnsatzFunctionType
+    *             Type of the local ansatz function \f$u\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalTestFunctionType
+    *             Type of the local test function \f$v\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalPointType
+    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    * \param[in]  localAnsatzFunction
+    *             The local function \f$u\f$.
+    * \param[in]  localTestFunction
+    *             The local function \f$v\f$.
+    * \param[in]  localPoint
+    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+    *             element.
+    * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
+    **/
   template< class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType >
   RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
                             const LocalTestFunctionType& localTestFunction,
@@ -177,6 +222,7 @@ int main( int argc, char** argv )
     typedef Dune::Function< double, double >
       FunctionType;
 
+
     // local operations
     typedef ProductOperation< FunctionSpaceType >
       ProductOperationType;
@@ -187,6 +233,7 @@ int main( int argc, char** argv )
       EllipticOperationType;
 
     EllipticOperationType ellipticOperation;
+
 
     // integration
     typedef LocalOperation::Integrator::Codim0< FunctionSpaceType, ProductOperationType >
@@ -221,7 +268,7 @@ int main( int argc, char** argv )
 
 
     // operator and functional
-    typedef Operator::FiniteElementLOP< DiscreteH1Type, DiscreteH1Type, EllipticIntegratorType >
+    typedef Operator::FiniteElement< DiscreteH1Type, DiscreteH1Type, EllipticIntegratorType >
       FEMellipticOperatorType;
 
     FEMellipticOperatorType femEllipticOperator( discreteH1, discreteH1, ellipticIntegrator );

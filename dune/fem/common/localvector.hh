@@ -29,7 +29,6 @@ public:
     *             Size, the vector should have, usually the number of local DoFs.
     **/
   LocalVector( const unsigned int size )
-    : size_( size )
   {
     // resize
     storage_.resize( size, 0.0 );
@@ -48,17 +47,14 @@ public:
     **/
   template< class LocalFunctionType >
   LocalVector( const LocalFunctionType& localFunction )
-    : size_( localFunction.numDofs() )
   {
     // resize
-    storage_.resize( size_, 0.0 );
+    storage_.resize( localFunction.numDofs(), 0.0 );
 
     // copy entries
-    for(  int ii = 0;
-          ii < localFunction.numDofs();
-          ++ii )
+    for( int i = 0; i < localFunction.numDofs(); ++i )
     {
-      storage_[ii] = localFunction[ii];
+      storage_[i] = localFunction[i];
     }
   }
 
@@ -70,34 +66,34 @@ public:
     */
   const unsigned int size() const
   {
-    return size_;
+    return storage_.size();
   }
 
   /**
     * \brief      Random read and write access.
     *
-    * \param[in]  ii
+    * \param[in]  i
     *             Number of the element.
     *
     * \param[out] ElementType&
-    *             Reference to the element at position ii, writable.
+    *             Reference to the element at position i, writable.
     **/
-  ElementType& operator[]( const unsigned int ii )
+  ElementType& operator[]( const unsigned int i )
   {
-    return storage_[ii];
+    return storage_[i];
   }
 
   /**
     * \brief      Random read access.
-    * \param[in]  ii
+    * \param[in]  i
     *             Number of the element.
     *
     * \param[out] const ElementType&
-    *             Reference to the element at position ii, readable only.
+    *             Reference to the element at position i, readable only.
     **/
-  const ElementType operator[]( const unsigned int ii ) const
+  const ElementType operator[]( const unsigned int i ) const
   {
-    return storage_[ii];
+    return storage_[i];
   }
 
   /**
@@ -111,11 +107,11 @@ public:
     **/
   ElementType operator*( const LocalVector< ElementType >& other ) const
   {
-    assert( size_ == other.size() );
+    assert( storage_.size() == other.size() );
     ElementType result = 0.0;
 
     for(  unsigned ii = 0;
-          ii < size_;
+          ii < storage_.size();
           ++ii )
     {
       result += storage_[ii] * other[ii];
@@ -127,7 +123,6 @@ public:
 private:
 
   std::vector< ElementType > storage_;
-  const unsigned int size_;
 
 }; // end of class LocalDoFVector
 
