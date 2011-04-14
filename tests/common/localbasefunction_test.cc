@@ -1,13 +1,13 @@
 
+// disable warnings about problems in dune headers
+#include <dune/fem-tools/header/disablewarnings.hh>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 // system includes
 #include <iostream>
-
-// disable warnings about problems in dune headers
-#include <dune/fem-tools/header/disablewarnings.hh>
 
 // dune common includes
 #include <dune/common/exceptions.hh>
@@ -29,9 +29,6 @@
 
 // dune fem-functionals includes
 #include <dune/fem/common/localbasefunction.hh>
-
-// disable warnings about problems in dune headers (sourced by dgfparser)
-#include <dune/fem-tools/header/disablewarnings.hh>
 
 // main
 int main(int argc, char** argv)
