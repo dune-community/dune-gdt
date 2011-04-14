@@ -2,15 +2,15 @@
   \file   main.cc
   \brief  Main file fir the finite element example.
   **/
+// disable warnings about problems in dune headers
+#include <dune/fem-tools/header/disablewarnings.hh>
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
 #include <iostream>
 #include <vector>
-
-// disable warnings about problems in dune headers
-#include <dune/fem-tools/header/disablewarnings.hh>
 
 // dune-common includes
 #include <dune/common/exceptions.hh>
@@ -188,10 +188,6 @@ public:
   }
 
 }; // end class EllipticOperation
-
-
-// disable warnings about the dgf parser
-#include <dune/fem-tools/header/disablewarnings.hh>
 
 
 int main( int argc, char** argv )
