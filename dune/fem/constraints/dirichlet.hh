@@ -23,6 +23,8 @@ namespace Constraints {
  * @note The Dirichlet constraints only make sense on a finite element space,
  * not on a discontinuous discrete function space.
  *
+ * @ingroup Constraints
+ *
  * @tparam DiscFuncSpace discrete function space on which constraints shall
  * be applied.
  */
