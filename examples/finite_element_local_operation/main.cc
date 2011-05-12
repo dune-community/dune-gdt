@@ -189,7 +189,6 @@ public:
 
 }; // end class EllipticOperation
 
-
 int main( int argc, char** argv )
 {
   try{

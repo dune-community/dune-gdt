@@ -88,7 +88,7 @@ public:
     * \param[in]  i
     *             Number of the element.
     *
-    * \param[out] const ElementType&
+    * \param[out] const ElementType
     *             Reference to the element at position i, readable only.
     **/
   const ElementType operator[]( const unsigned int i ) const

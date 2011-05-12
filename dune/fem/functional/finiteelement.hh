@@ -19,6 +19,7 @@ namespace Dune
 namespace Functionals
 {
 
+
 namespace Functional
 {
 
@@ -34,51 +35,76 @@ class FiniteElement
 {
 public:
 
+  //! Type of the discrete function space.
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
+  //! Type of the local operation type.
   typedef LocalOperationImp
     LocalOperationType;
 
+  //! Type of the analytical function space Type.
   typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
+  //! Type of domain vector (using type of domain field) has a Dune::FieldVector type interface. 
   typedef typename FunctionSpaceType::DomainType
     DomainType;
+  
+  //! Intrinsic type used for values in the domain field (usually a double). 
+  typedef typename FunctionSpaceType::RangeFieldType
+    DomainFieldType;
 
+  //! Type of range vector (using type of range field) has a Dune::FieldVector type interface. 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
+  //! Intrinsic type used for values in the range field (usually a double). 
   typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
 
+  //! Type of the local vector.
   typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
     LocalVectorType;
 
+  //! Type of the basis function set.
   typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
     BaseFunctionSetType;
 
+  //! Type of the grid part.
   typedef typename DiscreteFunctionSpaceType::GridPartType
     GridPartType;
 
+  //! Type of the iterator iterating over entities.
   typedef typename DiscreteFunctionSpaceType::IteratorType
     EntityIteratorType;
 
+  //! Type of entities.
   typedef typename EntityIteratorType::Entity
     EntityType;
 
+  //! Type of geometry of entities.
   typedef typename EntityType::Geometry
     EntityGeometryType;
 
+  //! Type of quadrature on the grid part.
   typedef CachingQuadrature< GridPartType, 0 >
     EntityQuadratureType;
 
+  //! Type of the local basis function provider.
   typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteFunctionSpaceType >
     LocalBaseFunctionProviderType;
 
+  //! Type of local basis functions.
   typedef typename LocalBaseFunctionProviderType::LocalBaseFunctionType
     LocalBaseFunctionType;
 
+  /**
+   * @brief Constructor.
+   *
+   * @param discreteFunctionSpace The discrete function space.
+   * @param localOperation The local operation.
+   */
   FiniteElement(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
                   const LocalOperationType& localOperation )
     : discreteFunctionSpace_( discreteFunctionSpace ),
@@ -89,6 +115,8 @@ public:
 
   /**
     * \brief  Copy constructor
+    *
+    * @param other Another finite element.
     **/
   FiniteElement( const FiniteElement& other )
     : discreteFunctionSpace_( other.space() ),
@@ -105,16 +133,29 @@ public:
   {
   }
 
+  /**
+   * @brief Returns a reference to the discrete function space.
+   *
+   * @return A Reference to the discrete function space.
+   */
   const DiscreteFunctionSpaceType& space() const
   {
     return discreteFunctionSpace_;
   }
 
+  /**
+   * @brief Returns a local operation.
+   *
+   * @return A local operation.
+   */
   const LocalOperationType localOperation() const
   {
     return localOperation_;
   }
 
+  /**
+   *  @todo Doc me, please!
+   */
   const LocalVectorType applyLocal( const EntityType& entity ) const
   {
     // basefunctionset
@@ -133,9 +174,7 @@ public:
     const unsigned numberOfQuadraturePoints = entityQuadrature.nop();
 
     // do loop over all local DoFs
-    for(  unsigned int i = 0;
-          i < numberOfLocalDoFs;
-          ++i )
+    for( unsigned int i = 0; i < numberOfLocalDoFs; ++i )
     {
       // value of the functional, applied to the local basefunction
       RangeFieldType localFunctionalValue = 0.0;
@@ -180,35 +219,57 @@ private:
 
 }; // end class FiniteElement
 
+/**
+ * @brief This class represents ???
+ *
+ * @todo Doc me, please!
+ *
+ * @tparam DiscreteFunctionSpaceImp
+ * @tparam LocalOperationImp
+ */
 template< class DiscreteFunctionSpaceImp, class LocalOperationImp >
 class FiniteElementLOP
 {
 public:
 
+  //! Type of the discrete function space.
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
+  //! Type of the analytical function space.
   typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
+  //! Type of the local operation.
   typedef LocalOperationImp
     LocalOperationType;
 
+  //! Type ot the entity.
   typedef typename DiscreteFunctionSpaceType::EntityType
     EntityType;
 
+  //! Intrinsic type used for values in the range field (usually a double).
   typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
-
+  
+  //! Type of the local dof vector.
   typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
     LocalVectorType;
 
+  //! Type of the local basis function provider.
   typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteFunctionSpaceType >
     LocalBaseFunctionProviderType;
 
+  //! Type of the local basis functions.
   typedef typename LocalBaseFunctionProviderType::LocalBaseFunctionType
     LocalBaseFunctionType;
 
+  /**
+   * @brief Constructor.
+   *
+   * @param discreteFunctionSpace The discrete function space.
+   * @param localOperation The local operation.
+   */
   FiniteElementLOP( const DiscreteFunctionSpaceType& discreteFunctionSpace,
                     const LocalOperationType& localOperation )
     : discreteFunctionSpace_( discreteFunctionSpace ),
@@ -225,16 +286,29 @@ public:
   {
   }
 
+  /**
+   * @brief Returns a reference to the discrete function space.
+   *
+   * @return A Reference to the discrete function space.
+   */
   const DiscreteFunctionSpaceType& space() const
   {
     return discreteFunctionSpace_;
   }
 
+  /**
+   * @brief Returns a local operation.
+   *
+   * @return A local operation.
+   */
   LocalOperationType localOperation() const
   {
     return localOperation_;
   }
 
+  /**
+   * @todo Doc me, please!
+   */
   LocalVectorType applyLocal( const EntityType& entity ) const
   {
     const unsigned int numberOfLocalDoFs = discreteFunctionSpace_.baseFunctionSet( entity ).numBaseFunctions();
