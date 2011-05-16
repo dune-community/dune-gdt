@@ -28,6 +28,7 @@ AC_CONFIG_FILES([
   dune/fem/common/Makefile
   dune/fem/constraints/Makefile
   dune/fem/container/Makefile
+  dune/fem/functional/common/Makefile
   dune/fem/functional/Makefile
   dune/fem/operator/Makefile
   dune/fem/solver/Makefile
