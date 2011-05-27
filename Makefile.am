@@ -3,11 +3,11 @@
 # we need the module file to be able to build via dunecontrol
 EXTRA_DIST=dune.module
 
-SUBDIRS = src m4 dune doc examples tests
+SUBDIRS = m4 dune examples tests
 
 if BUILD_DOCS
 # TODO: set up documentation tree automatically
-#SUBDIRS += doc
+SUBDIRS += doc
 endif
 
 # don't follow the full GNU-standard
