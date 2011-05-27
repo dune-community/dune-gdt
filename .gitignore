@@ -80,3 +80,6 @@ doc/doxygen/doxyerr.log
 doc/doxygen/doxygen-tag
 doc/doxygen/doxygen.log
 doc/doxygen/html
+examples/elliptic_finite_element/.deps
+examples/elliptic_finite_element/elliptic_finite_element
+examples/elliptic_finite_element/elliptic_finite_element-main.o

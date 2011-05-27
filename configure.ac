@@ -19,23 +19,16 @@ LIBS="$DUNE_LIBS"
 
 AC_CONFIG_FILES([
   Makefile
-  src/Makefile
   doc/Makefile
   doc/doxygen/Makefile
   doc/doxygen/Doxyfile
   dune/Makefile
   dune/fem/Makefile
-  dune/fem/common/Makefile
-  dune/fem/constraints/Makefile
-  dune/fem/container/Makefile
-  dune/fem/functional/common/Makefile
   dune/fem/functional/Makefile
-  dune/fem/operator/Makefile
-  dune/fem/solver/Makefile
-  dune/fem/subspace/Makefile
+  dune/fem/functional/common/Makefile
   examples/Makefile
   examples/poisson_new/Makefile
-  examples/finite_element_local_operation/Makefile
+  examples/elliptic_finite_element/Makefile
   tests/Makefile
   tests/common/Makefile
   m4/Makefile

@@ -48,7 +48,7 @@ SET( POLORDER
   "POLORDER" )
 
 SET( ALUGRID_BASE_PATH
-  "/opt/dune/modules/alugrid/alugrid-1.22/" CACHE STRING
+  "/opt/dune/modules/alugrid/alugrid-1.23/" CACHE STRING
   "ALUGRID_BASE_PATH" )
 #
 # SET( UGGRID_BASE_PATH
@@ -120,11 +120,15 @@ FILE( GLOB_RECURSE femfunctionals "../dune-fem-functionals/dune/fem/*.hh" )
 set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
-ADD_EXECUTABLE( localbasefunction_test "tests/common/localbasefunction_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
-TARGET_LINK_LIBRARIES( localbasefunction_test ${COMMON_LIBS}  )
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory tests)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory examples)
+execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/examples/macrogrids .)
 
-ADD_EXECUTABLE( ellipticfiniteelement_local_operation_example "examples/finite_element_local_operation/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
-TARGET_LINK_LIBRARIES( ellipticfiniteelement_local_operation_example ${COMMON_LIBS}  )
+ADD_EXECUTABLE( tests/localbasefunction_test "tests/common/localbasefunction_test.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
+TARGET_LINK_LIBRARIES( tests/localbasefunction_test ${COMMON_LIBS}  )
+
+ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${femfunctionals} )
+TARGET_LINK_LIBRARIES( examples/elliptic_finite_element_example ${COMMON_LIBS}  )
 
 
 #HEADERCHECK( ${header} )

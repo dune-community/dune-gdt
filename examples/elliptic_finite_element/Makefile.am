@@ -2,11 +2,11 @@ GRIDDIM=2
 GRIDTYPE=YASPGRID
 POLORDER=1
 
-noinst_PROGRAMS = fem_lop
+noinst_PROGRAMS = elliptic_finite_element 
 
-fem_lop_SOURCES = main.cc
+elliptic_finite_element_SOURCES = main.cc
 
-fem_lop_CPPFLAGS = $(AM_CPPFLAGS) \
+elliptic_finite_element_CPPFLAGS = $(AM_CPPFLAGS) \
 	$(DUNEMPICPPFLAGS) \
 	$(UG_CPPFLAGS) \
 	$(AMIRAMESH_CPPFLAGS) \
@@ -16,7 +16,7 @@ fem_lop_CPPFLAGS = $(AM_CPPFLAGS) \
 # last).  Also, due to some misunderstanding, a lot of libraries include the
 # -L option in LDFLAGS instead of LIBS -- so we have to include the LDFLAGS
 # here as well.
-fem_lop_LDADD = \
+elliptic_finite_element_LDADD = \
 	$(DUNE_LDFLAGS) $(DUNE_LIBS) \
 	$(ALUGRID_LDFLAGS) $(ALUGRID_LIBS) \
 	$(ALBERTA_LDFLAGS) $(ALBERTA_LIBS) \
@@ -24,7 +24,7 @@ fem_lop_LDADD = \
 	$(UG_LDFLAGS) $(UG_LIBS) \
 	$(DUNEMPILIBS)	\
 	$(LDADD)
-fem_lop_LDFLAGS = $(AM_LDFLAGS) \
+elliptic_finite_element_LDFLAGS = $(AM_LDFLAGS) \
 	$(DUNEMPILDFLAGS) \
 	$(UG_LDFLAGS) \
 	$(AMIRAMESH_LDFLAGS) \
