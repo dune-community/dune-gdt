@@ -246,33 +246,17 @@ int main( int argc, char** argv )
     typedef DiscreteFunctionSpace::ContinuousFiniteElement< FunctionSpaceType, GridPartType, polOrder >
       DiscreteH1Type;
 
-    DiscreteH1Type discreteH1( gridPart );
+    const DiscreteH1Type discreteH1( gridPart );
 
     typedef DiscreteFunctionSpace::Subspace::Linear::DirichletZero< DiscreteH1Type >
       DiscreteH10Type;
 
-    DiscreteH10Type discreteH10( discreteH1 );
+    const DiscreteH10Type discreteH10( discreteH1 );
 
     typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
       DiscreteH1GType;
 
-    DiscreteH1GType discreteH1G( discreteH10 );
-
-
-
-
-//    typedef Dune::AdaptiveDiscreteFunction< DiscreteH1Type >
-//      DiscreteFunctionType;
-
-//    typedef Constraints::Dirichlet< DiscreteH1Type >
-//      DirichletConstraints;
-
-//    DirichletConstraints dirichletConstraints( discreteH1 );
-
-//    typedef Subspace::Linear< DiscreteH1Type, DirichletConstraints >
-//      DiscreteH10Type;
-
-//    DiscreteH10Type discreteH10( discreteH1, dirichletConstraints );
+    const DiscreteH1GType discreteH1G( discreteH10, "1.0", "1.0", "1.0" );
 
 
 //    // operator and functional

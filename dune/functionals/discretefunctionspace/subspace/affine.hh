@@ -1,8 +1,12 @@
 #ifndef DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 #define DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 
-//dune-fem includes
+// dune-fem includes
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
+
+// dune-fem-tools includes
+#include <dune/fem-tools/function/runtimefunction.hh>
+#include <dune/fem-tools/space/projection.hh>
 
 namespace Dune
 {
@@ -27,22 +31,44 @@ public:
   typedef DirichletZeroSpaceImp
     DirichletZeroSpaceType;
 
-  typedef Dune::AdaptiveDiscreteFunction< typename DirichletZeroSpaceType::SuperSpaceType >
+  typedef typename DirichletZeroSpaceType::SuperSpaceType
+    SuperSpaceType;
+
+  typedef typename DirichletZeroSpaceType::FunctionSpaceType
+    FunctionSpaceType;
+
+  typedef Dune::FemTools::RuntimeFunction< FunctionSpaceType >
+    RuntimeFunctionType;
+
+  typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
     AffineShiftType;
 
-  Dirichlet(  const DirichletZeroSpaceType& dirichletZeroSpace/*,
-              const std::string xExpression,
-              const std::string yExpression = "",
-              const std::string zExpression = ""*/)
-    : dirichletZeroSpace_( dirichletZeroSpace )/*,
-      affineShift_( xExpression, yExpression, zExpression )*/
+  Dirichlet(  const DirichletZeroSpaceType& dirichletZeroSpace,
+              const std::string xExpression = "0.0",
+              const std::string yExpression = "0.0",
+              const std::string zExpression = "0.0")
+    : dirichletZeroSpace_( dirichletZeroSpace ),
+      runtimeFunction_( xExpression, yExpression, zExpression ),
+      affineShift_( "affineShift", dirichletZeroSpace_.superSpace().hostSpace() )
   {
+    Dune::FemTools::BetterL2Projection::project( runtimeFunction_, affineShift_ );
+  }
+
+  const DirichletZeroSpaceType& baseSpace() const
+  {
+    return dirichletZeroSpace_;
+  }
+
+  const SuperSpaceType& superSpace() const
+  {
+    return dirichletZeroSpace_.superSpace();
   }
 
 private:
 
   const DirichletZeroSpaceType& dirichletZeroSpace_;
-//  const AffineShiftType affineShift_;
+  const RuntimeFunctionType runtimeFunction_;
+  AffineShiftType affineShift_;
 }; // end class Dirichlet
 
 } // end of namespace Affine
