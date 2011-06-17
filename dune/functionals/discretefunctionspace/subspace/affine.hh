@@ -48,7 +48,7 @@ public:
       runtimeFunction_( expression ),
       affineShift_( "affineShift", dirichletZeroSpace_.superSpace().hostSpace() )
   {
-    Dune::FemTools::Space::BetterL2Projection::project( runtimeFunction_, affineShift_ );
+    Dune::FemTools::Projection::Dirichlet::project( runtimeFunction_, affineShift_ );
   }
 
   const DirichletZeroSpaceType& baseSpace() const
