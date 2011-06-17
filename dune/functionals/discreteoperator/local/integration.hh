@@ -13,8 +13,6 @@
 // dune-fem-functionals includes
 #include <dune/fem/common/localmatrix.hh>
 #include <dune/fem/common/localvector.hh>
-#include <dune/fem/common/localbasefunction.hh>
-#include <dune/fem/functional/finiteelement.hh>
 
 namespace Dune
 {
@@ -24,61 +22,11 @@ namespace Functionals
 {
 
 //! Contains several operators.
-namespace Operator
+namespace DiscreteOperator
 {
 
-//template< class OperatorLocalOperationImp, class InducingFunctionImp >
-//class FunctionalLocalOperation
-//{
-//public:
-
-//  typedef OperatorLocalOperationImp
-//    OperatorLocalOperationType;
-
-//  typedef InducingFunctionImp
-//    InducingFunctionType;
-
-//  FunctionalLocalOperation( const OperatorLocalOperationType& operatorLocalOperation,
-//                            const InducingFunctionType& inducingFunction )
-//    : operatorLocalOperation_( operatorLocalOperation ),
-//      inducingFunction_( inducingFunction )
-//  {
-//  }
-
-//  template< class LocalFunctionType, class LocalPointType >
-//  double operate( const LocalFunctionType& localFunction,
-//                  const LocalPointType& localPoint ) const
-//  {
-
-//    // some types we will need
-//    typedef typename LocalFunctionType::EntityType
-//      EntityType;
-
-//    typedef typename InducingFunctionType::LocalFunctionType
-//      InducingLocalFunctionType;
-
-//    // entity
-//    const EntityType& entity = localFunction.entity();
-
-//    // local function of the inducing function
-//    const InducingLocalFunctionType inducingLocalFunction = inducingFunction_.localFunction( entity );
-
-//    // evaluate the original operation
-//   const double ret =  operatorLocalOperation_.operate( inducingLocalFunction, localFunction, localPoint );
-
-//    // return
-//    return ret;
-
-//  }
-
-//private:
-
-//  const OperatorLocalOperationType operatorLocalOperation_;
-//  const InducingFunctionType& inducingFunction_;
-
-
-
-//}; // end of class FunctionalLocalOperation
+namespace Local
+{
 
 /**
   \brief  Linear operator.
@@ -125,8 +73,8 @@ namespace Operator
           Dune::DiscreteFunctionSpaceInterface. If the test and the ansatz space are identicall, this template
           argument may be omitted.
   **/
-template< class LocalOperationImp, class DiscreteAnsatzFunctionSpaceImp, class DiscreteTestFunctionSpaceImp = DiscreteAnsatzFunctionSpaceImp >
-class Linear
+template< class LocalEvaluationType, class DiscreteAnsatzFunctionSpaceImp, class DiscreteTestFunctionSpaceImp = DiscreteAnsatzFunctionSpaceImp >
+class Codim0Integration
 {
 public:
 
@@ -135,9 +83,6 @@ public:
 
   typedef DiscreteTestFunctionSpaceImp
     DiscreteTestFunctionSpaceType;
-
-  typedef LocalOperationImp
-    LocalOperationType;
 
   typedef typename DiscreteAnsatzFunctionSpaceType::RangeFieldType
     RangeFieldType;
@@ -148,10 +93,10 @@ public:
   typedef typename DiscreteAnsatzFunctionSpaceType::EntityType
     EntityType;
 
-  typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteAnsatzFunctionSpaceType >
+  typedef typename DiscreteAnsatzFunctionSpaceType::LocalBaseFunctionProviderType
     LocalAnsatzBaseFunctionProviderType;
 
-  typedef Dune::Functionals::Common::LocalBaseFunctionProvider< DiscreteTestFunctionSpaceType >
+  typedef typename DiscreteAnsatzFunctionSpaceType::LocalBaseFunctionProviderType
     LocalTestBaseFunctionProviderType;
 
   typedef typename LocalAnsatzBaseFunctionProviderType::LocalBaseFunctionType
@@ -171,14 +116,14 @@ public:
     \param[in]  testSpace
                 The space of test functions \f$W_h\f$.
     **/
-  Linear(  const LocalOperationType& localOperation,
-                  const DiscreteAnsatzFunctionSpaceType& ansatzSpace,
-                  const DiscreteTestFunctionSpaceType& testSpace )
-    : localOperation_( localOperation ),
+  Codim0Integration(  const LocalEvaluationType& localEvaluation,
+                      const DiscreteAnsatzFunctionSpaceType& ansatzSpace,
+                      const DiscreteTestFunctionSpaceType& testSpace )
+    : localEvaluation_( localEvaluation ),
       ansatzSpace_( ansatzSpace ),
       testSpace_( testSpace ),
-      localAnsatzBaseFunctionProvider_( ansatzSpace ),
-      localTestBaseFunctionProvider_( testSpace )
+      localAnsatzBaseFunctionProvider_( ansatzSpace.localBaseFunctionProvider() ),
+      localTestBaseFunctionProvider_( testSpace.localBaseFunctionProvider() )
   {
   }
 
@@ -191,13 +136,13 @@ public:
     \param[in]  space
                 The space of ansatz and test functions \f$V_h = W_h\f$.
     **/
-  Linear(  const LocalOperationType& localOperation,
-                  const DiscreteAnsatzFunctionSpaceType& space )
-    : localOperation_( localOperation ),
+  Codim0Integration(  const LocalEvaluationType& localEvaluation,
+                      const DiscreteAnsatzFunctionSpaceType& space )
+    : localEvaluation_( localEvaluation ),
       ansatzSpace_( space ),
       testSpace_( space ),
-      localAnsatzBaseFunctionProvider_( space ),
-      localTestBaseFunctionProvider_( space )
+      localAnsatzBaseFunctionProvider_( space.localBaseFunctionProvider() ),
+      localTestBaseFunctionProvider_( space.localBaseFunctionProvider() )
   {
   }
 
@@ -224,9 +169,9 @@ public:
     \brief  Returns the local operation \f$a\f$.
     \return \f$a\f$.
     **/
-  LocalOperationType localOperation() const
+  const LocalEvaluationType& localEvaluation() const
   {
-    return localOperation_;
+    return localEvaluation_;
   }
 
   /**
@@ -241,50 +186,52 @@ public:
                 The entity, on wich the operator is being applied on.
     \return     The matrix \f$\{A( \varphi_i )[\psi_j]\}_{i \in I_E, j \in J_E}\f$.
     **/
-  LocalMatrixType applyLocal( const EntityType& entity ) const
-  {
-    const unsigned numberOfLocalAnsatzDoFs = ansatzSpace_.baseFunctionSet( entity ).numBaseFunctions();
-    const unsigned numberOfLocalTestDoFs = testSpace_.baseFunctionSet( entity ).numBaseFunctions();
+//  LocalMatrixType applyLocal( const EntityType& entity ) const
+//  {
+//    const unsigned numberOfLocalAnsatzDoFs = ansatzSpace_.baseFunctionSet( entity ).numBaseFunctions();
+//    const unsigned numberOfLocalTestDoFs = testSpace_.baseFunctionSet( entity ).numBaseFunctions();
 
-    // init return matrix
-    LocalMatrixType ret( numberOfLocalAnsatzDoFs, numberOfLocalTestDoFs );
+//    // init return matrix
+//    LocalMatrixType ret( numberOfLocalAnsatzDoFs, numberOfLocalTestDoFs );
 
-    // do loop over all local ansatz DoFs
-    for( unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i )
-    {
-      // do loop over all local test DoFs
-      for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
-      {
-        const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionProvider_.provide( entity, i);
-        const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionProvider_.provide( entity, j);
+//    // do loop over all local ansatz DoFs
+//    for( unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i )
+//    {
+//      // do loop over all local test DoFs
+//      for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
+//      {
+//        const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionProvider_.provide( entity, i);
+//        const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionProvider_.provide( entity, j);
 
-        const RangeFieldType operator_i_j = localOperation_.operate( localAnsatzBaseFunction_i, localTestBaseFunction_j );
+//        const RangeFieldType operator_i_j = localOperation_.operate( localAnsatzBaseFunction_i, localTestBaseFunction_j );
 
-        // set local matrix
-        ret[i][j] =  operator_i_j;
+//        // set local matrix
+//        ret[i][j] =  operator_i_j;
 
-      } // done loop over all local test DoFs
+//      } // done loop over all local test DoFs
 
-    } // done loop over all local ansatz DoFs
+//    } // done loop over all local ansatz DoFs
 
-    return ret;
+//    return ret;
 
-  }
+//  }
 
 private:
 
-  const LocalOperationType localOperation_;
+  const LocalEvaluationType& localEvaluation_;
   const DiscreteAnsatzFunctionSpaceType& ansatzSpace_;
   const DiscreteTestFunctionSpaceType& testSpace_;
-  const LocalAnsatzBaseFunctionProviderType localAnsatzBaseFunctionProvider_;
-  const LocalTestBaseFunctionProviderType localTestBaseFunctionProvider_;
+  const LocalAnsatzBaseFunctionProviderType& localAnsatzBaseFunctionProvider_;
+  const LocalTestBaseFunctionProviderType& localTestBaseFunctionProvider_;
 
 }; // end class Linear
 
-} // end of namespace Operator
+} // end namespace Local
 
-} // end of namespace Functionals
+} // end namespace DiscreteOperator
 
-} // end of namespace Dune
+} // end namespace Functionals
+
+} // end namespace Dune
 
 #endif // end DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH

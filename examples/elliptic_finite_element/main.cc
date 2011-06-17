@@ -38,6 +38,7 @@
 #include <dune/functionals/discretefunctionspace/finiteelement.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
+#include <dune/functionals/discreteoperator/local/integration.hh>
 //#include <dune/fem/localoperation/interface.hh>
 //#include <dune/fem/localoperation/integrator.hh>
 //#include <dune/fem/subspace/subspaces.hh>
@@ -117,79 +118,80 @@ const int polOrder = POLORDER;
 //}; // end class ProductOperation
 
 
-///**
-//  \brief  This represents the operation \f$a\nabla u \nabla v\f$.
+/**
+  \brief  This represents the operation \f$a\nabla u \nabla v\f$.
 
-//          \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
-//          ansatz- and testfunctions.
-//  \tparam FunctionSpaceImp
-//          Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
-//  **/
-//template< class FunctionSpaceImp >
-//class EllipticOperation
-//  : public Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
-//{
-//public:
+          \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
+          ansatz- and testfunctions.
+  \tparam FunctionSpaceImp
+          Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
+  **/
+template< class FunctionSpaceType >
+class EllipticEvaluation
+{
+public:
 
-//  typedef FunctionSpaceImp
-//    FunctionSpaceType;
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
 
-//  typedef Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
-//    BaseType;
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
 
-//  typedef typename FunctionSpaceType::RangeFieldType
-//    RangeFieldType;
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
 
-//  typedef typename FunctionSpaceType::RangeType
-//    RangeType;
+  EllipticEvaluation()
+  {
+  }
 
-//  typedef typename FunctionSpaceType::JacobianRangeType
-//    JacobianRangeType;
+  ~EllipticEvaluation()
+  {
+  }
 
-//  /**
-//    * \brief      Evaluates \f$a(x)\nabla u(x) \nabla v(x)\f$ for a given local point \f$x\f$.
-//    *
-//    * \tparam     LocalAnsatzFunctionType
-//    *             Type of the local ansatz function \f$u\f$, i.e. Dune::LocalFunction.
-//    * \tparam     LocalTestFunctionType
-//    *             Type of the local test function \f$v\f$, i.e. Dune::LocalFunction.
-//    * \tparam     LocalPointType
-//    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
-//    * \param[in]  localAnsatzFunction
-//    *             The local function \f$u\f$.
-//    * \param[in]  localTestFunction
-//    *             The local function \f$v\f$.
-//    * \param[in]  localPoint
-//    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
-//    *             element.
-//    * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
-//    **/
-//  template< class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType >
-//  RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
-//                            const LocalTestFunctionType& localTestFunction,
-//                            const LocalPointType& localPoint ) const
-//  {
-//    // init return value
-//    RangeFieldType ret = 0.0;
+  /**
+    * \brief      Evaluates \f$a(x)\nabla u(x) \nabla v(x)\f$ for a given local point \f$x\f$.
+    *
+    * \tparam     LocalAnsatzFunctionType
+    *             Type of the local ansatz function \f$u\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalTestFunctionType
+    *             Type of the local test function \f$v\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalPointType
+    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    * \param[in]  localAnsatzFunction
+    *             The local function \f$u\f$.
+    * \param[in]  localTestFunction
+    *             The local function \f$v\f$.
+    * \param[in]  localPoint
+    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+    *             element.
+    * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
+    **/
+  template< class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType >
+  RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
+                            const LocalTestFunctionType& localTestFunction,
+                            const LocalPointType& localPoint ) const
+  {
+    // init return value
+    RangeFieldType ret = 0.0;
 
-//    // evaluate first gradient
-//    JacobianRangeType gradientLocalAnsatzFunction( 0.0 );
-//    localAnsatzFunction.jacobian( localPoint, gradientLocalAnsatzFunction );
+    // evaluate first gradient
+    JacobianRangeType gradientLocalAnsatzFunction( 0.0 );
+    localAnsatzFunction.jacobian( localPoint, gradientLocalAnsatzFunction );
 
-//    // evaluate second gradient
-//    JacobianRangeType gradientLocalTestFunction( 0.0 );
-//    localTestFunction.jacobian( localPoint, gradientLocalTestFunction );
+    // evaluate second gradient
+    JacobianRangeType gradientLocalTestFunction( 0.0 );
+    localTestFunction.jacobian( localPoint, gradientLocalTestFunction );
 
-//    const RangeFieldType product = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
+    const RangeFieldType product = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
 
-//    // 1.0 * \gradient u(x) \gradient v(x)
-//    ret = 1.0 * product;
+    // 1.0 * \gradient u(x) \gradient v(x)
+    ret = 1.0 * product;
 
-//    // return
-//    return ret;
-//  }
+    // return
+    return ret;
+  }
 
-//}; // end class EllipticOperation
+}; // end class EllipticEvaluation
 
 int main( int argc, char** argv )
 {
@@ -221,16 +223,16 @@ int main( int argc, char** argv )
 //      FunctionType;
 
 
-//    // local operations
+    // local evaluations
 //    typedef ProductOperation< FunctionSpaceType >
 //      ProductOperationType;
 
 //    ProductOperationType productOperation;
 
-//    typedef EllipticOperation< FunctionSpaceType >
-//      EllipticOperationType;
+    typedef EllipticEvaluation< FunctionSpaceType >
+      EllipticEvaluationType;
 
-//    EllipticOperationType ellipticOperation;
+    const EllipticEvaluationType ellipticEvalaution;
 
 
 //    // integration
@@ -262,7 +264,13 @@ int main( int argc, char** argv )
     const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
 
 
-//    // operator and functional
+    // operator and functional
+    typedef DiscreteOperator::Local::Codim0Integration< EllipticEvaluationType, DiscreteH10Type, DiscreteH10Type >
+      LocalEllipticOperatorType;
+
+    const LocalEllipticOperatorType localEllipticOperator( ellipticEvalaution, discreteH10, discreteH10 );
+
+
 //    typedef Operator::Linear< EllipticIntegratorType, DiscreteH1Type >
 //      FEMellipticOperatorType;
 
