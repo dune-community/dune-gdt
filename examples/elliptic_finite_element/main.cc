@@ -48,7 +48,7 @@
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
-//#include <dune/fem-tools/function/functiontools.hh>
+#include <dune/fem-tools/function/functiontools.hh>
 //#include <dune/fem-tools/space/projection.hh>
 
 using namespace Dune::Functionals;
@@ -253,7 +253,7 @@ int main(int argc, char** argv)
 
     typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet<DiscreteH10Type> DiscreteH1GType;
 
-    const DiscreteH1GType discreteH1G(discreteH10, "[1.0;1.0;1.0]");
+    const DiscreteH1GType discreteH1G(discreteH10, "[x+y;y;z]");
 
 
     //    // operator and functional
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
     //    // postprocessing
     //    DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory< DiscreteFunctionType >( discreteH1,
     //    *u0 );
-    //    Dune::FemTools::writeDiscreteFunctionToVTK( solution, "solution" );
+    Dune::FemTools::Function::writeToVTK(discreteH1G.affineShift(), "boundaryData");
 
     return 0;
   } catch (Dune::Exception& e) {
