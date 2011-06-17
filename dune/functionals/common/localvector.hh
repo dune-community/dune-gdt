@@ -1,5 +1,5 @@
-#ifndef DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH
-#define DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH
+#ifndef DUNE_FUNCTIONALS_COMMON_LOCALVECTOR_HH
+#define DUNE_FUNCTIONALS_COMMON_LOCALVECTOR_HH
 
 namespace Dune
 {
@@ -124,7 +124,7 @@ private:
 
   std::vector< ElementType > storage_;
 
-}; // end of class LocalDoFVector
+}; // end of class LocalVector
 
 } // end of namespace Common
 
@@ -132,4 +132,4 @@ private:
 
 } // end of namespace Dune
 
-#endif // end DUNE_FEM_FUNCTIONALS_COMMON_DOFVECTOR_HH
+#endif // end DUNE_FUNCTIONALS_COMMON_LOCALVECTOR_HH
