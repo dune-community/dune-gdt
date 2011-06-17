@@ -330,17 +330,11 @@ int main( int argc, char** argv )
     const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
     typedef Dune::Functionals::Assembler::System< DiscreteH1GType, DiscreteH10Type >
-      AssemblerType;
+      SystemAssemblerType;
 
-    AssemblerType assembler( discreteH10, discreteH10 );
+    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
 
-    assembler.assemble( localMatrixAssembler, A );
-
-//    typedef Assembler::FiniteElement< MatrixContainer, VectorContainer >
-//      Assembler;
-
-//    Assembler::assembleMatrix( femEllipticOperator, *A );
-//    Assembler::applyMatrixConstraints( discreteH10, *A );
+    systemAssembler.assemble( localMatrixAssembler, A );
 
 //    Assembler::assembleVector( femRhsFunctional, *F );
 //    Assembler::applyVectorConstraints( discreteH10, *F );
