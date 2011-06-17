@@ -32,7 +32,11 @@ public:
 
   typedef Dune::AdaptiveDiscreteFunction<typename SuperSpaceType::HostSpaceType> AffineShiftType;
 
-  typedef typename SuperSpaceType::EntityType EntityType;
+  typedef typename DirichletZeroSpaceType::EntityType EntityType;
+
+  typedef typename DirichletZeroSpaceType::RangeFieldType RangeFieldType;
+
+  typedef typename DirichletZeroSpaceType::DomainType DomainType;
 
   /**
     \defgroup dune-fem related
@@ -66,6 +70,16 @@ public:
   const AffineShiftType& affineShift() const
   {
     return affineShift_;
+  }
+
+  const int numMaxDoFs() const
+  {
+    return dirichletZeroSpace_.numMaxDoFs();
+  }
+
+  const int order() const
+  {
+    return dirichletZeroSpace_.order();
   }
 
   /**
