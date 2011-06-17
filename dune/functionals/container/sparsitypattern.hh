@@ -9,6 +9,7 @@ namespace Dune {
 namespace Functionals {
 
 namespace Container {
+
 /**
  * @brief Class for storing the sparsity pattern of a sparse matrix.
  *
