@@ -27,12 +27,20 @@ public:
   typedef LocalFunctionalImp
     LocalFunctionalType;
 
+  typedef Vector< LocalFunctionalType >
+    ThisType;
+
   typedef typename LocalFunctionalType::RangeFieldType
     RangeFieldType;
 
   //! constructor
   Vector( const LocalFunctionalType& localFunctional )
     : localFunctional_( localFunctional )
+  {
+  }
+
+  Vector( const ThisType& other )
+    : localFunctional_( other.localFunctional() )
   {
   }
 

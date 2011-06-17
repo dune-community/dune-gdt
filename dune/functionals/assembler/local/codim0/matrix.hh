@@ -4,6 +4,9 @@
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
 
+// local includes
+#include "vector.hh"
+
 namespace Dune
 {
 
@@ -30,6 +33,18 @@ public:
   typedef typename LocalOperatorType::RangeFieldType
     RangeFieldType;
 
+  template< class InducingDiscreteFunctionType >
+  class LocalVectorAssembler
+  {
+  private:
+    typedef typename LocalOperatorType::template LocalFunctional< InducingDiscreteFunctionType >::Type
+      InducingFunctionalType;
+
+  public:
+    typedef Dune::Functionals::Assembler::Local::Codim0::Vector< InducingFunctionalType >
+      Type;
+  };
+
   //! constructor
   Matrix( const LocalOperatorType& localOperator )
     : localOperator_( localOperator )
@@ -39,6 +54,15 @@ public:
   const LocalOperatorType& localOperator() const
   {
     return localOperator_;
+  }
+
+  template< class InducingDiscreteFunctionType >
+  const typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type localVectorAssembler( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  {
+    typedef typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
+      LocalVectorAssemblerType;
+
+    return LocalVectorAssemblerType( localOperator_.localFunctional( inducingDiscreteFunction ) );
   }
 
   template< class AnsatzSpaceType,

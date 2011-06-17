@@ -23,24 +23,24 @@
 #include <dune/istl/solvers.hh>
 
 // dune-fem includes
-#include <dune/fem/misc/mpimanager.hh>
+#include <dune/fem/function/adaptivefunction.hh>
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
-#include <dune/fem/function/adaptivefunction.hh>
+#include <dune/fem/misc/mpimanager.hh>
 
 // reenable warnings
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-functionals includes
+#include <dune/functionals/container/factory.hh>
+#include <dune/functionals/assembler/local/codim0/matrix.hh>
+#include <dune/functionals/assembler/local/codim0/vector.hh>
+#include <dune/functionals/assembler/system/affine.hh>
 #include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/codim0/integral.hh>
 #include <dune/functionals/discretefunctional/local/codim0/integral.hh>
-#include <dune/functionals/container/factory.hh>
-#include <dune/functionals/assembler/local/codim0/matrix.hh>
-#include <dune/functionals/assembler/local/codim0/vector.hh>
-#include <dune/functionals/assembler/system/affine.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
@@ -315,6 +315,10 @@ int main( int argc, char** argv )
 
     const LocalL2FunctionalType localL2Functional( productEvaluation );
 
+    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
+      LocalAffineShiftFunctionalType;
+
+    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
 
     // matrix, rhs and solution storage
     //! \todo the matrix factory should get two spaces (ansatz and test)
@@ -333,6 +337,8 @@ int main( int argc, char** argv )
       VectorPtrType;
 
     VectorPtrType F = VectorFactory::create( discreteH1 );
+
+    VectorPtrType G = VectorFactory::create( discreteH1 );
 
     VectorPtrType u0 = VectorFactory::create( discreteH1 );
 
@@ -354,7 +360,8 @@ int main( int argc, char** argv )
     SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
 
     systemAssembler.assembleSystem( localMatrixAssembler, *A,
-                                    localVectorAssembler, *F );
+                                    localVectorAssembler, *F,
+                                    *G );
 
 
     // preconditioner and solver

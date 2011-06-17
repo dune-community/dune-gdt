@@ -208,6 +208,7 @@ public:
 
   const LocalBaseFunctionType baseFunction( const int i ) const
   {
+    assert( i < numBaseFunctions() );
     return LocalBaseFunctionType( *this, i );
   }
 
@@ -223,6 +224,7 @@ public:
 
   void evaluate( const int i, const DomainType& x, RangeType& ret ) const
   {
+    assert( i < numBaseFunctions() );
     hostBaseFunctionSet_.evaluate( i, x, ret );
   }
 
@@ -232,6 +234,7 @@ public:
     **/
   void jacobian( const int i, const DomainType& x, JacobianRangeType& ret ) const
   {
+    assert( i < numBaseFunctions() );
     // some types we will need
     typedef typename EntityType::Geometry
       EntityGeometryType;
@@ -269,6 +272,105 @@ private:
   const HostBaseFunctionSetType hostBaseFunctionSet_;
 
 }; // end class LocalBaseFunctionSet
+
+template< class InducingDiscreteFunctionImp >
+class LocalBaseFunctionSetWrapper
+{
+public:
+
+  typedef InducingDiscreteFunctionImp
+    InducingDiscreteFunctionType;
+
+  typedef typename InducingDiscreteFunctionType::LocalFunctionType
+    LocalBaseFunctionType;
+
+  typedef typename InducingDiscreteFunctionType::DiscreteFunctionSpaceType
+    DiscreteFunctionSpaceType;
+
+  typedef typename DiscreteFunctionSpaceType::EntityType
+    EntityType;
+
+  typedef typename DiscreteFunctionSpaceType::DomainFieldType
+    DomainFieldType;
+
+  typedef typename DiscreteFunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename DiscreteFunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
+  typedef typename DiscreteFunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename DiscreteFunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  typedef typename DiscreteFunctionSpaceType::HessianRangeType
+    HessianRangeType;
+
+private:
+
+  typedef typename DiscreteFunctionSpaceType::BaseFunctionSetType
+    HostBaseFunctionSetType;
+
+public:
+
+  LocalBaseFunctionSetWrapper( const InducingDiscreteFunctionType& inducingDiscreteFunction, const EntityType& entity )
+    : inducingDiscreteFunction_( inducingDiscreteFunction ),
+      entity_( entity )
+  {
+  }
+
+  const DiscreteFunctionSpaceType& space() const
+  {
+    return inducingDiscreteFunction_.space();
+  }
+
+  const EntityType& entity() const
+  {
+    return entity_;
+  }
+
+  const LocalBaseFunctionType baseFunction( const int i ) const
+  {
+    assert( i < numBaseFunctions() );
+    return inducingDiscreteFunction_.localFunction( entity );
+  }
+
+  const int order() const
+  {
+    return inducingDiscreteFunction_.space().order();
+  }
+
+  const int numBaseFunctions() const
+  {
+    return 1;
+  }
+
+  void evaluate( const int i, const DomainType& x, RangeType& ret ) const
+  {
+    assert( i < numBaseFunctions() );
+    const LocalBaseFunctionType localFunction = inducingDiscreteFunction_.localFunction( entity );
+    localFunction.evaluate( x, ret );
+  }
+
+  /**
+    \brief      evaluates the jacobian of the ith ocal basefunction
+    \attention  the evalaution is already multiplied by entityGeometry.jacobianInverseTransposed( x )
+    **/
+  void jacobian( const int i, const DomainType& x, JacobianRangeType& ret ) const
+  {
+    assert( i < numBaseFunctions() );
+    const LocalBaseFunctionType localFunction = inducingDiscreteFunction_.localFunction( entity );
+    localFunction.jacobian( x, ret );
+  }
+
+private:
+
+  const InducingDiscreteFunctionType& inducingDiscreteFunction_;
+  const EntityType& entity_;
+
+}; // end class LocalBaseFunctionSetWrapper
 
 } // end namespace Common
 
