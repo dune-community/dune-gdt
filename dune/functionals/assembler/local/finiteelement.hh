@@ -41,11 +41,13 @@ public:
     return localOperator_;
   }
 
-  template< class EntityType >
-  void assembleLocal( const EntityType& entity, LocalMatrixType& localMatrix ) const
+  template< class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType >
+  void assembleLocal( const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                      const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+                      LocalMatrixType& localMatrix ) const
   {
-    localOperator_.applyLocal( entity, localMatrix );
-  } // end method assembleLocal
+    localOperator_.applyLocal( localAnsatzBaseFunctionSet, localTestBaseFunctionSet, localMatrix );
+  }
 
 private:
 

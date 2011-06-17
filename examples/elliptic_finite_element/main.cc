@@ -24,9 +24,7 @@
 
 // dune-fem includes
 #include <dune/fem/misc/mpimanager.hh>
-//#include <dune/fem/gridpart/gridpart.hh>
-//#include <dune/fem/storage/vector.hh>
-//#include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
+#include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
 // reenable warnings
@@ -45,7 +43,6 @@
 #include <dune/fem-tools/common/string.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
 #include <dune/fem-tools/function/functiontools.hh>
-//#include <dune/fem-tools/space/projection.hh>
 
 using namespace Dune::Functionals;
 
@@ -144,7 +141,7 @@ public:
   typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
     InducingFunctionType;
 
-  //! constructor, takes the inducing function as a runtime parameter
+  //! constructor, takes the inducing functions expression as a runtime parameter
   EllipticEvaluation( const std::string expression = "[1.0;1.0;1.0]" )
     : inducingFunction_( expression )
   {
@@ -236,7 +233,7 @@ int main( int argc, char** argv )
 
     GridPartType gridPart( *gridPtr );
 
-    // function spaces and functions
+    // function space
     typedef Dune::FunctionSpace< double, double, GridType::dimension, dimRange >
       FunctionSpaceType;
 
@@ -273,10 +270,10 @@ int main( int argc, char** argv )
 
 
     // operator and functional
-    typedef Dune::Functionals::DiscreteOperator::Local::Codim0Integration< EllipticEvaluationType, DiscreteH1Type, DiscreteH1Type >
+    typedef Dune::Functionals::DiscreteOperator::Local::Codim0Integration< EllipticEvaluationType >
       LocalEllipticOperatorType;
 
-    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation, discreteH1, discreteH1 );
+    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
 
 
 //    FEMellipticOperatorType femEllipticOperator( ellipticIntegrator, discreteH1 );

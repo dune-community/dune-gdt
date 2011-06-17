@@ -2,6 +2,7 @@
 #define DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 
 // dune-functionals includes
+#include <dune/functionals/common/localbasefunction.hh>
 #include <dune/functionals/constraints/dirichlet.hh>
 
 namespace Dune
@@ -27,8 +28,8 @@ public:
   typedef SuperSpaceImp
     SuperSpaceType;
 
-  typedef typename SuperSpaceType::LocalBaseFunctionProviderType
-    LocalBaseFunctionProviderType;
+  typedef DirichletZero< SuperSpaceType >
+    ThisType;
 
   typedef Dune::Functionals::Constraints::DirichletZero< SuperSpaceType >
     ConstraintsType;
@@ -39,14 +40,29 @@ public:
   typedef typename SuperSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
-  typedef typename SuperSpaceType::RangeFieldType
-    RangeFieldType;
-
-  typedef typename SuperSpaceType::DomainType
-    DomainType;
-
   typedef typename SuperSpaceType::EntityType
     EntityType;
+
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
+  typedef typename FunctionSpaceType::DomainFieldType
+    DomainFieldType;
+
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
+
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
+
+  typedef typename FunctionSpaceType::JacobianRangeType
+    JacobianRangeType;
+
+  typedef typename FunctionSpaceType::HessianRangeType
+    HessianRangeType;
+
+  typedef Dune::Functionals::Common::LocalBaseFunctionSet< ThisType >
+    LocalBaseFunctionSetType;
 
   /**
     \defgroup dune-fem related
@@ -87,14 +103,19 @@ public:
     return superSpace_.size();
   }
 
-  const int numMaxDoFs() const
+  const int numMaxLocalDoFs() const
   {
-    return superSpace_.numMaxDoFs();
+    return superSpace_.numMaxLocalDoFs();
   }
 
   const int order() const
   {
     return superSpace_.order();
+  }
+
+  const LocalBaseFunctionSetType localBaseFunctionSet( const EntityType& entity ) const
+  {
+    return LocalBaseFunctionSetType( *this, entity );
   }
 
   /**
