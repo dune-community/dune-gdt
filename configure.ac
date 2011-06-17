@@ -29,6 +29,8 @@ AC_CONFIG_FILES([
   dune/functionals/Makefile
   dune/functionals/assembler/Makefile
   dune/functionals/assembler/local/Makefile
+  dune/functionals/assembler/local/codim0/Makefile
+  dune/functionals/assembler/system/Makefile
   dune/functionals/common/Makefile
   dune/functionals/constraints/Makefile
   dune/functionals/container/Makefile

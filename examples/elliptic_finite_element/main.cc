@@ -26,6 +26,7 @@
 #include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
+#include <dune/fem/function/adaptivefunction.hh>
 
 // reenable warnings
 #include <dune/fem-tools/header/enablewarnings.hh>
@@ -37,8 +38,9 @@
 #include <dune/functionals/discreteoperator/local/codim0/integral.hh>
 #include <dune/functionals/discretefunctional/local/codim0/integral.hh>
 #include <dune/functionals/container/factory.hh>
-#include <dune/functionals/assembler/local/finiteelement.hh>
-#include <dune/functionals/assembler/generic.hh>
+#include <dune/functionals/assembler/local/codim0/matrix.hh>
+#include <dune/functionals/assembler/local/codim0/vector.hh>
+#include <dune/functionals/assembler/system/affine.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
@@ -300,55 +302,57 @@ int main(int argc, char** argv)
 
     VectorPtrType F = VectorFactory::create(discreteH1);
 
-    VectorPtrType G = VectorFactory::create(discreteH1);
+    VectorPtrType u0 = VectorFactory::create(discreteH1);
 
 
     // assembler
-    //    typedef Dune::Functionals::Assembler::Local::Matrix::ContinuousFiniteElement< LocalEllipticOperatorType >
-    //      LocalMatrixAssemblerType;
+    typedef Assembler::Local::Codim0::Matrix<LocalEllipticOperatorType> LocalMatrixAssemblerType;
 
-    //    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
+    const LocalMatrixAssemblerType localMatrixAssembler(localEllipticOperator);
 
-    //    typedef Dune::Functionals::Assembler::Local::Vector::ContinuousFiniteElement< LocalL2FunctionalType >
-    //      LocalVectorAssemblerType;
+    typedef Assembler::Local::Codim0::Vector<LocalL2FunctionalType> LocalVectorAssemblerType;
 
-    //    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+    const LocalVectorAssemblerType localVectorAssembler(localL2Functional);
 
-    //    typedef Dune::Functionals::Assembler::System< DiscreteH1GType, DiscreteH10Type >
-    //      SystemAssemblerType;
+    typedef Assembler::System::Affine<DiscreteH1GType, DiscreteH10Type> SystemAssemblerType;
 
-    //    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
+    SystemAssemblerType systemAssembler(discreteH1G, discreteH10);
 
-    //    systemAssembler.assemble( localMatrixAssembler, A, localVectorAssembler, F );
+    systemAssembler.assembleSystem(localMatrixAssembler, *A, localVectorAssembler, *F);
 
 
     // preconditioner and solver
-    //    typedef Dune::MatrixAdapter< MatrixContainer, VectorContainer, VectorContainer >
-    //      MatrixAdapterType;
+    typedef typename MatrixFactory::ContainerType MatrixContainerType;
 
-    //    MatrixAdapterType op( *A );
+    typedef typename VectorFactory::ContainerType VectorContainerType;
 
-    //    typedef Dune::SeqILU0< MatrixContainer, VectorContainer, VectorContainer, 1 >
-    //      SeqILU0Type;
+    typedef Dune::MatrixAdapter<MatrixContainerType, VectorContainerType, VectorContainerType> MatrixAdapterType;
 
-    //    SeqILU0Type prec( *A, 1.0 );
+    MatrixAdapterType matrix(*A);
 
-    //    typedef Dune::CGSolver< VectorContainer >
-    //      CG;
+    typedef Dune::SeqILU0<MatrixContainerType, VectorContainerType, VectorContainerType, 1> PreconditionerType;
 
-    //    CG cg( op, prec, 1e-4, 100, 2 );
+    PreconditionerType preconditioner(*A, 1.0);
 
-    //    Dune::InverseOperatorResult res;
+    typedef Dune::CGSolver<VectorContainerType> SolverType;
 
-    //    // u_0 = A^(-1) ( F - G )
-    //    cg.apply( *u0, *F, res );
+    SolverType solver(matrix, preconditioner, 1e-4, 100, 2);
+
+    Dune::InverseOperatorResult result;
+
+    // u_0 = A^(-1) ( F - G )
+    solver.apply(*u0, *F, result);
 
 
-    //    // postprocessing
-    //    DiscreteFunctionType solution = Dune::FemTools::discreteFunctionFactory< DiscreteFunctionType >( discreteH1,
-    //    *u0 );
-    Dune::FemTools::Function::writeToVTK(discreteH1G.affineShift(), "boundaryData");
+    // postprocessing
+    typedef Dune::AdaptiveDiscreteFunction<typename DiscreteH1Type::HostSpaceType> DiscreteFunctionType;
 
+    DiscreteFunctionType solution =
+        Dune::FemTools::Function::createFromVector<DiscreteFunctionType>(discreteH1.hostSpace(), *u0);
+
+    Dune::FemTools::Function::writeToVTK(solution, "solution");
+
+    // done
     return 0;
   } catch (Dune::Exception& e) {
     std::cerr << "Dune reported error: " << e << std::endl;
