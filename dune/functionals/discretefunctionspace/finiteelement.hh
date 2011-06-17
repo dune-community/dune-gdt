@@ -5,7 +5,7 @@
 #include <dune/fem/space/lagrangespace.hh>
 
 // dune-functionals includes
-#include <dune/functionals/common/localbasefunctionprovider.hh>
+#include <dune/functionals/common/localbasefunction.hh>
 
 namespace Dune {
 
@@ -23,16 +23,13 @@ public:
 
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> HostSpaceType;
 
-  typedef typename HostSpaceType::RangeFieldType RangeFieldType;
+  typedef Dune::Functionals::Common::LocalBaseFunction<HostSpaceType> LocalBaseFunctionType;
 
   typedef typename HostSpaceType::EntityType EntityType;
-
-  typedef Dune::Functionals::Common::LocalBaseFunctionProvider<HostSpaceType> LocalBaseFunctionProviderType;
 
   ContinuousFiniteElement(GridPartType& gridPart)
     : gridPart_(gridPart)
     , hostSpace_(gridPart)
-    , localBaseFunctionProvider_(hostSpace_)
   {
   }
 
@@ -46,15 +43,14 @@ public:
     return hostSpace_;
   }
 
-  const LocalBaseFunctionProviderType& localBaseFunctionProvider() const
+  const LocalBaseFunctionType localBaseFunction(const EntityType& entity, const unsigned int localDoFNumber) const
   {
-    return localBaseFunctionProvider_;
+    return LocalBaseFunctionType(entity, hostSpace_.baseFunctionSet(entity), localDoFNumber);
   }
 
 private:
   const GridPartType& gridPart_;
   const HostSpaceType hostSpace_;
-  const LocalBaseFunctionProviderType localBaseFunctionProvider_;
 
 }; // end class ContinuousFiniteElement
 
