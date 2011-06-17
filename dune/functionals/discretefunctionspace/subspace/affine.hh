@@ -32,6 +32,19 @@ public:
 
   typedef Dune::AdaptiveDiscreteFunction<typename SuperSpaceType::HostSpaceType> AffineShiftType;
 
+  typedef typename SuperSpaceType::EntityType EntityType;
+
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  typedef typename SuperSpaceType::BaseFunctionSetType BaseFunctionSetType;
+
+  typedef typename SuperSpaceType::IteratorType IteratorType;
+  /**
+    \}
+    **/
+
   Dirichlet(const DirichletZeroSpaceType& dirichletZeroSpace, const std::string expression = "[0.0;0.0;0.0]")
     : dirichletZeroSpace_(dirichletZeroSpace)
     , runtimeFunction_(expression)
@@ -54,6 +67,33 @@ public:
   {
     return affineShift_;
   }
+
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  IteratorType begin() const
+  {
+    return dirichletZeroSpace_.begin();
+  }
+
+  const IteratorType end() const
+  {
+    return dirichletZeroSpace_.end();
+  }
+
+  const BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
+  {
+    return dirichletZeroSpace_.baseFunctionSet(entity);
+  }
+
+  const int mapToGlobal(const EntityType& entity, const int localDof) const
+  {
+    return dirichletZeroSpace_.mapToGlobal(entity, localDof);
+  }
+  /**
+    \}
+    **/
 
 private:
   const DirichletZeroSpaceType& dirichletZeroSpace_;
