@@ -293,6 +293,11 @@ int main(int argc, char** argv)
 
     MatrixPtrType A = MatrixFactory::create(discreteH10);
 
+    typedef Dune::Functionals::Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
+
+    typedef typename VectorFactory::AutoPtrType VectorPtrType;
+
+    VectorPtrType F = VectorFactory::create(discreteH10);
 
     //    typedef Dune::FieldMatrix< double, dimRange, dimRange >
     //      FieldMatrixType;
