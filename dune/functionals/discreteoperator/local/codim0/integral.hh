@@ -1,9 +1,9 @@
 /**
-  \file   integration.hh
+  \file   integral.hh
   **/
 
-#ifndef DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
-#define DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
+#ifndef DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
+#define DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
 
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
@@ -11,8 +11,8 @@
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
 #include <dune/functionals/common/localvector.hh>
-#include <dune/functionals/discretefunctional/local/integration.hh>
-#include <dune/functionals/localevaluation/wrapper.hh>
+//#include <dune/functionals/discretefunctional/local/integration.hh>
+//#include <dune/functionals/localevaluation/wrapper.hh>
 
 namespace Dune {
 
@@ -23,6 +23,8 @@ namespace Functionals {
 namespace DiscreteOperator {
 
 namespace Local {
+
+namespace Codim0 {
 
 /**
   \todo   correct doc
@@ -72,7 +74,7 @@ namespace Local {
           argument may be omitted.
   **/
 template <class LocalEvaluationImp>
-class Codim0Integration
+class Integral
 {
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
@@ -85,7 +87,7 @@ public:
 
   typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
 
-  Codim0Integration(const LocalEvaluationType& localEvaluation)
+  Integral(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
   {
   }
@@ -95,32 +97,34 @@ public:
     return localEvaluation_;
   }
 
-  template <class DiscreteFunctionType>
-  class LocalFunctional
-  {
-  private:
-    typedef Dune::Functionals::LocalEvaluation::Wrapper<LocalEvaluationType, DiscreteFunctionType>
-        WrappedLocalEvaluationType;
+  //  template< class DiscreteFunctionType >
+  //  class LocalFunctional
+  //  {
+  //  private:
+  //    typedef Dune::Functionals::LocalEvaluation::Wrapper< LocalEvaluationType, DiscreteFunctionType >
+  //      WrappedLocalEvaluationType;
 
-  public:
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration<WrappedLocalEvaluationType> Type;
-  };
+  //  public:
+  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration< WrappedLocalEvaluationType >
+  //      Type;
+  //  };
 
-  template <class DiscreteFunctionType>
-  const typename LocalFunctional<DiscreteFunctionType>::Type
-  localFunctional(const DiscreteFunctionType& discreteFunction) const
-  {
-    typedef Dune::Functionals::LocalEvaluation::Wrapper<LocalEvaluationType, DiscreteFunctionType>
-        WrappedLocalEvaluationType;
+  //  template< class DiscreteFunctionType >
+  //  const typename LocalFunctional< DiscreteFunctionType >::Type localFunctional( const DiscreteFunctionType&
+  //  discreteFunction ) const
+  //  {
+  //    typedef Dune::Functionals::LocalEvaluation::Wrapper< LocalEvaluationType, DiscreteFunctionType >
+  //      WrappedLocalEvaluationType;
 
-    typedef typename LocalFunctional<DiscreteFunctionType>::Type LocalFunctionalType;
+  //    typedef typename LocalFunctional< DiscreteFunctionType >::Type
+  //      LocalFunctionalType;
 
-    const WrappedLocalEvaluationType wrappedLocalEvaluation(localEvaluation_, discreteFunction);
+  //    const WrappedLocalEvaluationType wrappedLocalEvaluation( localEvaluation_, discreteFunction );
 
-    const LocalFunctionalType localFunctional(wrappedLocalEvaluation);
+  //    const LocalFunctionalType localFunctional( wrappedLocalEvaluation );
 
-    return localFunctional;
-  } // end method localFunctional
+  //    return localFunctional;
+  //  } // end method localFunctional
 
   /**
     \brief      Local application of the operator.
@@ -196,6 +200,8 @@ private:
 
 }; // end class Codim0Integration
 
+} // end namespace Codim0
+
 } // end namespace Local
 
 } // end namespace DiscreteOperator
@@ -204,4 +210,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
+#endif // end DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH

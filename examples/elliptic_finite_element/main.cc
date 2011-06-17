@@ -31,11 +31,11 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-functionals includes
-#include <dune/functionals/discretefunctionspace/finiteelement.hh>
+#include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
-#include <dune/functionals/discreteoperator/local/integration.hh>
-#include <dune/functionals/discretefunctional/local/integration.hh>
+#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
+#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
 #include <dune/functionals/container/factory.hh>
 #include <dune/functionals/assembler/local/finiteelement.hh>
 #include <dune/functionals/assembler/generic.hh>
@@ -231,6 +231,7 @@ int main(int argc, char** argv)
     // MPI manager
     Dune::MPIManager::initialize(argc, argv);
 
+
     // grid
     static const unsigned int dimRange = 1;
 
@@ -244,17 +245,19 @@ int main(int argc, char** argv)
 
     GridPartType gridPart(*gridPtr);
 
+
     // function space
     typedef Dune::FunctionSpace<double, double, GridType::dimension, dimRange> FunctionSpaceType;
 
     typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
+
     // discrete function space
-    typedef DiscreteFunctionSpace::ContinuousFiniteElement<FunctionSpaceType, GridPartType, polOrder> DiscreteH1Type;
+    typedef DiscreteFunctionSpace::Continuous::Lagrange<FunctionSpaceType, GridPartType, polOrder> DiscreteH1Type;
 
     const DiscreteH1Type discreteH1(gridPart);
 
-    typedef DiscreteFunctionSpace::Subspace::Linear::DirichletZero<DiscreteH1Type> DiscreteH10Type;
+    typedef DiscreteFunctionSpace::Subspace::Linear::Dirichlet<DiscreteH1Type> DiscreteH10Type;
 
     const DiscreteH10Type discreteH10(discreteH1);
 
@@ -263,7 +266,7 @@ int main(int argc, char** argv)
     const DiscreteH1GType discreteH1G(discreteH10, "[x+y;y;z]");
 
 
-    // local evaluations
+    // local evaluation
     typedef ProductEvaluation<FunctionSpaceType> ProductEvaluationType;
 
     ProductEvaluationType productEvaluation("[1.0;1.0;1.0]");
@@ -274,13 +277,12 @@ int main(int argc, char** argv)
 
 
     // operator and functional
-    typedef Dune::Functionals::DiscreteOperator::Local::Codim0Integration<EllipticEvaluationType>
+    typedef Dune::Functionals::DiscreteOperator::Local::Codim0::Integral<EllipticEvaluationType>
         LocalEllipticOperatorType;
 
     const LocalEllipticOperatorType localEllipticOperator(ellipticEvaluation);
 
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration<ProductEvaluationType>
-        LocalL2FunctionalType;
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::Integral<ProductEvaluationType> LocalL2FunctionalType;
 
     const LocalL2FunctionalType localL2Functional(productEvaluation);
 
@@ -292,31 +294,34 @@ int main(int argc, char** argv)
 
     typedef typename MatrixFactory::AutoPtrType MatrixPtrType;
 
-    MatrixPtrType A = MatrixFactory::create(discreteH10);
+    MatrixPtrType A = MatrixFactory::create(discreteH1);
 
     typedef Dune::Functionals::Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
 
     typedef typename VectorFactory::AutoPtrType VectorPtrType;
 
-    VectorPtrType F = VectorFactory::create(discreteH10);
+    VectorPtrType F = VectorFactory::create(discreteH1);
+
+    VectorPtrType G = VectorFactory::create(discreteH1);
 
 
     // assembler
-    typedef Dune::Functionals::Assembler::Local::Matrix::ContinuousFiniteElement<LocalEllipticOperatorType>
-        LocalMatrixAssemblerType;
+    //    typedef Dune::Functionals::Assembler::Local::Matrix::ContinuousFiniteElement< LocalEllipticOperatorType >
+    //      LocalMatrixAssemblerType;
 
-    const LocalMatrixAssemblerType localMatrixAssembler(localEllipticOperator);
+    //    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
-    typedef Dune::Functionals::Assembler::Local::Vector::ContinuousFiniteElement<LocalL2FunctionalType>
-        LocalVectorAssemblerType;
+    //    typedef Dune::Functionals::Assembler::Local::Vector::ContinuousFiniteElement< LocalL2FunctionalType >
+    //      LocalVectorAssemblerType;
 
-    const LocalVectorAssemblerType localVectorAssembler(localL2Functional);
+    //    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
 
-    typedef Dune::Functionals::Assembler::System<DiscreteH1GType, DiscreteH10Type> SystemAssemblerType;
+    //    typedef Dune::Functionals::Assembler::System< DiscreteH1GType, DiscreteH10Type >
+    //      SystemAssemblerType;
 
-    SystemAssemblerType systemAssembler(discreteH1G, discreteH10);
+    //    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
 
-    systemAssembler.assemble(localMatrixAssembler, A, localVectorAssembler, F);
+    //    systemAssembler.assemble( localMatrixAssembler, A, localVectorAssembler, F );
 
 
     // preconditioner and solver

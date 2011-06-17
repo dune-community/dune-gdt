@@ -1,5 +1,5 @@
-#ifndef DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_FINITEELEMENT_HH
-#define DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_FINITEELEMENT_HH
+#ifndef DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
+#define DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 
 // dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
@@ -13,15 +13,17 @@ namespace Functionals {
 
 namespace DiscreteFunctionSpace {
 
+namespace Continuous {
+
 template <class FunctionSpaceImp, class GridPartImp, int polOrder>
-class ContinuousFiniteElement
+class Lagrange
 {
 public:
   typedef FunctionSpaceImp FunctionSpaceType;
 
   typedef GridPartImp GridPartType;
 
-  typedef ContinuousFiniteElement<FunctionSpaceType, GridPartType, polOrder> ThisType;
+  typedef Lagrange<FunctionSpaceType, GridPartType, polOrder> ThisType;
 
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> HostSpaceType;
 
@@ -52,7 +54,7 @@ public:
     \}
     **/
 
-  ContinuousFiniteElement(GridPartType& gridPart)
+  Lagrange(GridPartType& gridPart)
     : gridPart_(gridPart)
     , hostSpace_(gridPart)
     , numMaxLocalDoFs_(-1)
@@ -125,7 +127,9 @@ private:
   const HostSpaceType hostSpace_;
   unsigned int numMaxLocalDoFs_;
 
-}; // end class ContinuousFiniteElement
+}; // end class Lagrange
+
+} // end namespace Continuous
 
 } // end namespace DiscreteFunctionSpace
 
@@ -133,4 +137,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_FINITEELEMENT_HH
+#endif // DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH

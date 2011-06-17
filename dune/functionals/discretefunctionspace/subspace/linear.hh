@@ -16,12 +16,12 @@ namespace Subspace {
 namespace Linear {
 
 template <class SuperSpaceImp>
-class DirichletZero
+class Dirichlet
 {
 public:
   typedef SuperSpaceImp SuperSpaceType;
 
-  typedef DirichletZero<SuperSpaceType> ThisType;
+  typedef Dirichlet<SuperSpaceType> ThisType;
 
   typedef Dune::Functionals::Constraints::DirichletZero<SuperSpaceType> ConstraintsType;
 
@@ -56,7 +56,7 @@ public:
     \}
     **/
 
-  DirichletZero(const SuperSpaceType& superSpace)
+  Dirichlet(const SuperSpaceType& superSpace)
     : superSpace_(superSpace)
     , constraints_(superSpace_)
   {

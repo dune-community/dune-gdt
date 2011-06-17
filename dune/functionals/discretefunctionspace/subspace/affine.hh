@@ -21,11 +21,11 @@ namespace Subspace {
 
 namespace Affine {
 
-template <class DirichletZeroSpaceImp>
+template <class BaseSpaceImp>
 class Dirichlet
 {
 public:
-  typedef DirichletZeroSpaceImp BaseSpaceType;
+  typedef BaseSpaceImp BaseSpaceType;
 
   typedef Dirichlet<BaseSpaceType> ThisType;
 

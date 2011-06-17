@@ -35,10 +35,10 @@ public:
     // get local inducing function
     typedef typename DiscreteFunctionType::LocalFunctionType InducingLocalFunctionType;
 
-    this does not work :
+    //    this does not work:
 
-        const InducingLocalFunctionType inducingLocalFunction =
-            discreteFunction_.localFunction(localTestFunction.entity());
+    //    const InducingLocalFunctionType inducingLocalFunction = discreteFunction_.localFunction(
+    //    localTestFunction.entity() );
 
     // evaluate base local evalaution
     return baseLocalEvaluation_.evaluate(inducingLocalFunction, localTestFunction, localPoint);
