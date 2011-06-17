@@ -26,11 +26,19 @@ AC_CONFIG_FILES([
   dune/fem/Makefile
   dune/fem/functional/Makefile
   dune/fem/functional/common/Makefile
+  dune/functionals/Makefile
+  dune/functionals/assembler/Makefile
+  dune/functionals/assembler/local/Makefile
+  dune/functionals/common/Makefile
+  dune/functionals/constraints/Makefile
+  dune/functionals/container/Makefile
+  dune/functionals/discretefunctionspace/Makefile
+  dune/functionals/discretefunctionspace/subspace/Makefile
+  dune/functionals/discreteoperator/Makefile
+  dune/functionals/discreteoperator/local/Makefile
   examples/Makefile
   examples/poisson_new/Makefile
   examples/elliptic_finite_element/Makefile
-  tests/Makefile
-  tests/common/Makefile
   m4/Makefile
   dune-fem-functionals.pc
 ])
