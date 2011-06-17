@@ -35,6 +35,7 @@
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/integration.hh>
+#include <dune/functionals/discretefunctional/local/integration.hh>
 #include <dune/functionals/container/factory.hh>
 #include <dune/functionals/assembler/local/finiteelement.hh>
 #include <dune/functionals/assembler/generic.hh>
@@ -304,13 +305,10 @@ int main( int argc, char** argv )
 
     const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
 
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration< ProductEvaluationType >
+      LocalL2FunctionalType;
 
-//    FEMellipticOperatorType femEllipticOperator( ellipticIntegrator, discreteH1 );
-
-//    typedef Functional::FiniteElementLOP< DiscreteH1Type, ProductIntegratorType >
-//      FEMrhsFunctionalType;
-
-//    FEMrhsFunctionalType femRhsFunctional( discreteH1, productIntegrator );
+    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
 
     // matrix, rhs and solution storage
