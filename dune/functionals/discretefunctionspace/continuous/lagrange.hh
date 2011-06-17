@@ -5,7 +5,7 @@
 #include <dune/fem/space/lagrangespace.hh>
 
 // dune-functionals includes
-#include <dune/functionals/common/localbasefunction.hh>
+#include <dune/functionals/common/localbasefunctionset.hh>
 
 namespace Dune {
 

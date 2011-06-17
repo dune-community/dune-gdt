@@ -31,11 +31,11 @@ public:
   {
   }
 
-  template <class LocalMatrixAssemblerType, class MatrixType, class LocalVectorAssemblerType, class VectorType /*,
-            class LocalAffineVectorAssemblerType, class AffineVectorPtrType*/>
+  template <class LocalMatrixAssemblerType, class MatrixType, class LocalVectorAssemblerType, class VectorType,
+            class AffineShiftVectorType>
   void assembleSystem(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& matrix,
-                      const LocalVectorAssemblerType& localVectorAssembler, VectorType& vector /*,
-                 const LocalAffineVectorAssemblerType& localAffineVectorAssembler, AffineVectorPtrType affineVectorPtr*/)
+                      const LocalVectorAssemblerType& localVectorAssembler, VectorType& vector,
+                      AffineShiftVectorType& affineShiftVector)
   {
     // some types
     typedef typename AnsatzFunctionSpaceType::IteratorType EntityIteratorType;
@@ -54,11 +54,11 @@ public:
 
     typedef typename AnsatzFunctionSpaceType::AffineShiftType AffineShiftType;
 
-    //    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
-    //      LocalAffineShiftVectorAssemblerType;
+    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler<AffineShiftType>::Type
+        LocalAffineShiftVectorAssemblerType;
 
-    //    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler =
-    //    localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
+    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler =
+        localMatrixAssembler.localVectorAssembler(ansatzSpace_.affineShift());
 
     // common storage for all entities
     LocalMatrixType localMatrix(ansatzSpace_.numMaxLocalDoFs(), testSpace_.numMaxLocalDoFs());
@@ -73,6 +73,8 @@ public:
       localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, matrix, localMatrix);
 
       localVectorAssembler.assembleLocal(testSpace_, entity, vector, localVector);
+
+      localAffineShiftVectorAssembler.assembleLocal(testSpace_, entity, affineShiftVector, localVector);
 
     } // done first gridwalk to assemble
 

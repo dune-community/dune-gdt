@@ -11,8 +11,7 @@
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
 #include <dune/functionals/common/localvector.hh>
-//#include <dune/functionals/discretefunctional/local/integration.hh>
-//#include <dune/functionals/localevaluation/wrapper.hh>
+#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
 
 namespace Dune {
 
@@ -79,6 +78,8 @@ class Integral
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
 
+  typedef Integral<LocalEvaluationType> ThisType;
+
   typedef typename LocalEvaluationType::FunctionSpaceType FunctionSpaceType;
 
   typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
@@ -92,39 +93,34 @@ public:
   {
   }
 
-  const LocalEvaluationType localEvaluation() const
+  Integral(const ThisType& other)
+    : localEvaluation_(other.localEvaluation())
+  {
+  }
+
+  const LocalEvaluationType& localEvaluation() const
   {
     return localEvaluation_;
   }
 
-  //  template< class DiscreteFunctionType >
-  //  class LocalFunctional
-  //  {
-  //  private:
-  //    typedef Dune::Functionals::LocalEvaluation::Wrapper< LocalEvaluationType, DiscreteFunctionType >
-  //      WrappedLocalEvaluationType;
+  template <class InducingDiscreteFunctionType>
+  class LocalFunctional
+  {
+  public:
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
+                                                                                  InducingDiscreteFunctionType> Type;
+  };
 
-  //  public:
-  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration< WrappedLocalEvaluationType >
-  //      Type;
-  //  };
+  template <class InducingDiscreteFunctionType>
+  const typename LocalFunctional<InducingDiscreteFunctionType>::Type
+  localFunctional(const InducingDiscreteFunctionType& inducingDiscreteFunction) const
+  {
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
+                                                                                  InducingDiscreteFunctionType>
+        LocalFunctionalType;
 
-  //  template< class DiscreteFunctionType >
-  //  const typename LocalFunctional< DiscreteFunctionType >::Type localFunctional( const DiscreteFunctionType&
-  //  discreteFunction ) const
-  //  {
-  //    typedef Dune::Functionals::LocalEvaluation::Wrapper< LocalEvaluationType, DiscreteFunctionType >
-  //      WrappedLocalEvaluationType;
-
-  //    typedef typename LocalFunctional< DiscreteFunctionType >::Type
-  //      LocalFunctionalType;
-
-  //    const WrappedLocalEvaluationType wrappedLocalEvaluation( localEvaluation_, discreteFunction );
-
-  //    const LocalFunctionalType localFunctional( wrappedLocalEvaluation );
-
-  //    return localFunctional;
-  //  } // end method localFunctional
+    return LocalFunctionalType(*this, inducingDiscreteFunction);
+  } // end method localFunctional
 
   /**
     \brief      Local application of the operator.
