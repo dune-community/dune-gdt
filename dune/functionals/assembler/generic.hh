@@ -3,6 +3,7 @@
 
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
+#include <dune/functionals/common/localvector.hh>
 
 namespace Dune
 {
@@ -32,8 +33,11 @@ public:
   {
   }
 
-  template< class LocalMatrixAssemblerType, class MatrixPtrType >
-  void assemble( const LocalMatrixAssemblerType localMatrixAssembler, MatrixPtrType matrixPtr )
+  template< class LocalMatrixAssemblerType, class MatrixPtrType, class LocalVectorAssemblerType, class VectorPtrType >
+  void assemble( const LocalMatrixAssemblerType& localMatrixAssembler,
+                 MatrixPtrType matrixPtr,
+                 const LocalVectorAssemblerType& localVectorAssembler,
+                 VectorPtrType vectorPtr )
   {
     // some types
     typedef typename AnsatzFunctionSpaceType::IteratorType
@@ -48,6 +52,9 @@ public:
     typedef Dune::Functionals::Common::LocalMatrix< RangeFieldType >
       LocalMatrixType;
 
+    typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
+      LocalVectorType;
+
     typedef typename AnsatzFunctionSpaceType::ConstraintsType
       ConstraintsType;
 
@@ -56,6 +63,7 @@ public:
 
     // common storage for all entities
     LocalMatrixType localMatrix( ansatzSpace_.numMaxLocalDoFs(), testSpace_.numMaxLocalDoFs() );
+    LocalVectorType localVector( testSpace_.numMaxLocalDoFs() );
 
     // do first gridwalk to assemble
     const EntityIteratorType behindLastEntity = ansatzSpace_.end();
@@ -64,8 +72,11 @@ public:
       const EntityType& entity = *entityIterator;
 
       localMatrixAssembler.assembleLocal( ansatzSpace_.localBaseFunctionSet( entity ), testSpace_.localBaseFunctionSet( entity ), localMatrix );
-
       addToMatrix( entity, localMatrix, matrixPtr );
+
+      localVectorAssembler.assembleLocal( testSpace_.localBaseFunctionSet( entity ), localVector );
+      addToVector( entity, localVector, vectorPtr );
+
 
     } // done first gridwalk to assemble
 
@@ -79,6 +90,7 @@ public:
       const LocalConstraintsType& localConstraints = constraints.local( entity );
 
       applyLocalMatrixConstraints( localConstraints, matrixPtr );
+      applyLocalVectorConstraints( localConstraints, vectorPtr );
 
     } // done second gridwalk, to apply constraints
 
@@ -103,6 +115,17 @@ private:
     }
   } // end method addToMatrix
 
+  template< class EntityType, class LocalVectorType, class VectorPtrType >
+  void addToVector( const EntityType& entity, const LocalVectorType& localVector, VectorPtrType& vectorPtr )
+  {
+    for( int j = 0; j < ansatzSpace_.baseFunctionSet( entity ).numBaseFunctions(); ++j )
+    {
+      const int globalJ = testSpace_.mapToGlobal( entity, j );
+
+      vectorPtr->operator[](globalJ) += localVector[j];
+    }
+  } // end method addToVector
+
   template< class LocalConstraintsType, class MatrixPtrType >
   void applyLocalMatrixConstraints( const LocalConstraintsType& localConstraints, MatrixPtrType& matrixPtr )
   {
@@ -115,6 +138,15 @@ private:
       }
     }
   } // end applyLocalMatrixConstraints
+
+  template< class LocalConstraintsType, class VectorPtrType >
+  void applyLocalVectorConstraints( const LocalConstraintsType& localConstraints, VectorPtrType& vectorPtr )
+  {
+    for( unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i )
+    {
+      vectorPtr->operator[](localConstraints.rowDofs(i)) = 0.0;
+    }
+  } // end applyLocalVectorConstraints
 
   const AnsatzFunctionSpaceType& ansatzSpace_;
   const TestFunctionSpaceType& testSpace_;
