@@ -277,26 +277,24 @@ int main(int argc, char** argv)
 
 
     // operator and functional
-    typedef Dune::Functionals::DiscreteOperator::Local::Codim0::Integral<EllipticEvaluationType>
-        LocalEllipticOperatorType;
+    typedef DiscreteOperator::Local::Codim0::Integral<EllipticEvaluationType> LocalEllipticOperatorType;
 
     const LocalEllipticOperatorType localEllipticOperator(ellipticEvaluation);
 
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::Integral<ProductEvaluationType> LocalL2FunctionalType;
+    typedef DiscreteFunctional::Local::Codim0::Integral<ProductEvaluationType> LocalL2FunctionalType;
 
     const LocalL2FunctionalType localL2Functional(productEvaluation);
 
 
     // matrix, rhs and solution storage
     //! \todo the matrix factory should get two spaces (ansatz and test)
-    typedef Dune::Functionals::Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix
-        MatrixFactory;
+    typedef Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix MatrixFactory;
 
     typedef typename MatrixFactory::AutoPtrType MatrixPtrType;
 
     MatrixPtrType A = MatrixFactory::create(discreteH1);
 
-    typedef Dune::Functionals::Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
+    typedef Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
 
     typedef typename VectorFactory::AutoPtrType VectorPtrType;
 
