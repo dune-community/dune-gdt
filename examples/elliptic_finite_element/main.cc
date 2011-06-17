@@ -37,6 +37,7 @@
 // dune-functionals includes
 #include <dune/functionals/discretefunctionspace/finiteelement.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
+#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 //#include <dune/fem/localoperation/interface.hh>
 //#include <dune/fem/localoperation/integrator.hh>
 //#include <dune/fem/subspace/subspaces.hh>
@@ -247,10 +248,15 @@ int main( int argc, char** argv )
 
     DiscreteH1Type discreteH1( gridPart );
 
-    typedef DiscreteFunctionSpace::Subspace::DirichletZero< DiscreteH1Type >
+    typedef DiscreteFunctionSpace::Subspace::Linear::DirichletZero< DiscreteH1Type >
       DiscreteH10Type;
 
     DiscreteH10Type discreteH10( discreteH1 );
+
+    typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
+      DiscreteH1GType;
+
+    DiscreteH1GType discreteH1G( discreteH10 );
 
 
 
