@@ -26,19 +26,19 @@
 
 // dune-fem includes
 #include <dune/fem/misc/mpimanager.hh>
-#include <dune/fem/gridpart/gridpart.hh>
-#include <dune/fem/space/lagrangespace.hh>
-#include <dune/fem/storage/vector.hh>
-#include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
+//#include <dune/fem/gridpart/gridpart.hh>
+//#include <dune/fem/storage/vector.hh>
+//#include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 
 // reenable warnings
 #include <dune/fem-tools/header/enablewarnings.hh>
 
-// dune-fem-functionals includes
+// dune-functionals includes
+#include <dune/functionals/discretefunctionspace/finiteelement.hh>
+#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 //#include <dune/fem/localoperation/interface.hh>
 //#include <dune/fem/localoperation/integrator.hh>
-//#include <dune/fem/constraints/dirichlet.hh>
 //#include <dune/fem/subspace/subspaces.hh>
 //#include <dune/fem/operator/linear.hh>
 //#include <dune/fem/functional/finiteelement.hh>
@@ -49,7 +49,7 @@
 //#include <dune/fem-tools/function/functiontools.hh>
 //#include <dune/fem-tools/space/projection.hh>
 
-// using namespace Dune::Functionals;
+using namespace Dune::Functionals;
 
 #ifndef POLORDER
 const int polOrder = 1;
@@ -196,22 +196,19 @@ int main(int argc, char** argv)
     // MPI manager
     Dune::MPIManager::initialize(argc, argv);
 
-
     // grid
     static const unsigned int dimRange = 1;
 
-    typedef Dune::GridSelector::GridType HGridType;
+    typedef Dune::GridSelector::GridType GridType;
 
-    typedef Dune::AdaptiveLeafGridPart<HGridType> GridPartType;
+    typedef Dune::AdaptiveLeafGridPart<GridType> GridPartType;
 
-    Dune::GridPtr<HGridType> gridPtr("../macrogrids/unitcube2.dgf");
+    Dune::GridPtr<GridType> gridPtr("../macrogrids/unitcube2.dgf");
 
     GridPartType gridPart(*gridPtr);
 
-
-    //    // function spaces and functions
-    //    typedef Dune::FunctionSpace< double, double, HGridType::dimension, dimRange >
-    //      FunctionSpaceType;
+    // function spaces and functions
+    typedef Dune::FunctionSpace<double, double, GridType::dimension, dimRange> FunctionSpaceType;
 
     //    typedef Dune::Function< double, double >
     //      FunctionType;
@@ -241,11 +238,15 @@ int main(int argc, char** argv)
     //    EllipticIntegratorType ellipticIntegrator( ellipticOperation );
 
 
-    //    // discrete function space
-    //    typedef Dune::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder >
-    //      DiscreteH1Type;
+    // discrete function space
+    typedef DiscreteFunctionSpace::ContinuousFiniteElement<FunctionSpaceType, GridPartType, polOrder> DiscreteH1Type;
 
-    //    DiscreteH1Type discreteH1( gridPart );
+    DiscreteH1Type discreteH1(gridPart);
+
+    typedef DiscreteFunctionSpace::Subspace::DirichletZero<DiscreteH1Type> DiscreteH10Type;
+
+    DiscreteH10Type discreteH10(discreteH1);
+
 
     //    typedef Dune::AdaptiveDiscreteFunction< DiscreteH1Type >
     //      DiscreteFunctionType;
