@@ -39,6 +39,9 @@ public:
   typedef typename HostSpaceType::RangeFieldType
     RangeFieldType;
 
+  typedef typename HostSpaceType::DomainType
+    DomainType;
+
   /**
     \defgroup dune-fem related
     \{
@@ -54,8 +57,14 @@ public:
 
   ContinuousFiniteElement( GridPartType& gridPart )
     : gridPart_( gridPart ),
-      hostSpace_( gridPart )
+      hostSpace_( gridPart ),
+      numMaxDoFs_( -1 )
   {
+    // in the simple case, there should be the same number of dofs on each entity
+    const IteratorType entityIterator = begin();
+    const EntityType& entity = *entityIterator;
+    const BaseFunctionSetType baseFunctionSet = hostSpace_.baseFunctionSet( entity );
+    numMaxDoFs_ = baseFunctionSet.numBaseFunctions();
   }
 
   const GridPartType& gridPart() const
@@ -76,6 +85,16 @@ public:
   const unsigned int size() const
   {
     return hostSpace_.size();
+  }
+
+  const int numMaxDoFs() const
+  {
+    return numMaxDoFs_;
+  }
+
+  const int order() const
+  {
+    return hostSpace_.order();
   }
 
   /**
@@ -109,6 +128,7 @@ private:
 
   const GridPartType& gridPart_;
   const HostSpaceType hostSpace_;
+  unsigned int numMaxDoFs_;
 
 }; // end class ContinuousFiniteElement
 

@@ -42,6 +42,9 @@ public:
   typedef typename SuperSpaceType::RangeFieldType
     RangeFieldType;
 
+  typedef typename SuperSpaceType::DomainType
+    DomainType;
+
   typedef typename SuperSpaceType::EntityType
     EntityType;
 
@@ -82,6 +85,16 @@ public:
   const unsigned int size() const
   {
     return superSpace_.size();
+  }
+
+  const int numMaxDoFs() const
+  {
+    return superSpace_.numMaxDoFs();
+  }
+
+  const int order() const
+  {
+    return superSpace_.order();
   }
 
   /**
