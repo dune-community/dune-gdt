@@ -20,11 +20,17 @@ class DirichletZero
 public:
   typedef SuperSpaceImp SuperSpaceType;
 
+  typedef typename SuperSpaceType::LocalBaseFunctionProviderType LocalBaseFunctionProviderType;
+
   typedef Dune::Functionals::Constraints::DirichletZero<SuperSpaceType> DirichletZeroConstraintsType;
 
   typedef typename SuperSpaceType::GridPartType GridPartType;
 
   typedef typename SuperSpaceType::FunctionSpaceType FunctionSpaceType;
+
+  typedef typename SuperSpaceType::RangeFieldType RangeFieldType;
+
+  typedef typename SuperSpaceType::EntityType EntityType;
 
   DirichletZero(const SuperSpaceType& superSpace)
     : superSpace_(superSpace)
@@ -45,6 +51,11 @@ public:
   const GridPartType& gridPart() const
   {
     return superSpace_.gridPart();
+  }
+
+  const LocalBaseFunctionProviderType& localBaseFunctionProvider() const
+  {
+    return superSpace_.localBaseFunctionProvider();
   }
 
 private:

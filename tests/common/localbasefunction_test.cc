@@ -28,7 +28,7 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune fem-functionals includes
-#include <dune/fem/common/localbasefunction.hh>
+#include <dune/functionals/common/localbasefunctionprovider.hh>
 
 // main
 int main(int argc, char** argv)
