@@ -61,6 +61,14 @@ public:
     typedef typename ConstraintsType::LocalConstraintsType
       LocalConstraintsType;
 
+    typedef typename AnsatzFunctionSpaceType::AffineShiftType
+      AffineShiftType;
+
+    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
+      LocalAffineShiftVectorAssemblerType;
+
+    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler = localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
+
     // common storage for all entities
     LocalMatrixType localMatrix( ansatzSpace_.numMaxLocalDoFs(), testSpace_.numMaxLocalDoFs() );
     LocalVectorType localVector( testSpace_.numMaxLocalDoFs() );
@@ -94,6 +102,16 @@ public:
 
     } // done second gridwalk, to apply constraints
 
+    // do third gridwalk, to subtract affine shift
+    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != behindLastEntity; ++entityIterator )
+    {
+      const EntityType& entity = *entityIterator;
+
+      localAffineShiftVectorAssembler.assembleLocal( testSpace_.localBaseFunctionSet( entity ), localVector );
+      substractFromVector( entity, localVector, vectorPtr );
+
+    } // done third gridwalk, to subtract affine shift
+
     // apply constraints
 
   } // end method assemble
@@ -125,6 +143,17 @@ private:
       vectorPtr->operator[](globalJ) += localVector[j];
     }
   } // end method addToVector
+
+  template< class EntityType, class LocalVectorType, class VectorPtrType >
+  void substractFromVector( const EntityType& entity, const LocalVectorType& localVector, VectorPtrType& vectorPtr )
+  {
+    for( int j = 0; j < ansatzSpace_.baseFunctionSet( entity ).numBaseFunctions(); ++j )
+    {
+      const int globalJ = testSpace_.mapToGlobal( entity, j );
+
+      vectorPtr->operator[](globalJ) -= localVector[j];
+    }
+  } // end method substractFromVector
 
   template< class LocalConstraintsType, class MatrixPtrType >
   void applyLocalMatrixConstraints( const LocalConstraintsType& localConstraints, MatrixPtrType& matrixPtr )

@@ -336,7 +336,7 @@ int main( int argc, char** argv )
 
     const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
-    typedef Assembler::Local::Vector::ContinuousFiniteElement< LocalL2FunctionalType >
+    typedef Dune::Functionals::Assembler::Local::Vector::ContinuousFiniteElement< LocalL2FunctionalType >
       LocalVectorAssemblerType;
 
     const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
@@ -348,11 +348,8 @@ int main( int argc, char** argv )
 
     systemAssembler.assemble( localMatrixAssembler, A, localVectorAssembler, F );
 
-//    Assembler::assembleVector( femRhsFunctional, *F );
-//    Assembler::applyVectorConstraints( discreteH10, *F );
 
-
-//    // preconditioner and solver
+    // preconditioner and solver
 //    typedef Dune::MatrixAdapter< MatrixContainer, VectorContainer, VectorContainer >
 //      MatrixAdapterType;
 
