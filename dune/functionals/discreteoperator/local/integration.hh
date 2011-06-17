@@ -7,10 +7,9 @@
 #define DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
 
 // dune fem includes
-#include <dune/fem/function/common/function.hh>
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
-// dune-fem-functionals includes
+// dune-functionals includes
 #include <dune/fem/common/localmatrix.hh>
 #include <dune/fem/common/localvector.hh>
 
@@ -29,6 +28,7 @@ namespace Local
 {
 
 /**
+  \todo   correct doc
   \brief  Linear operator.
 
           This class represents a linear operator \f$A: V_{h} \rightarrow W_{h}^{-1}\f$ which arises from a weak
@@ -73,10 +73,13 @@ namespace Local
           Dune::DiscreteFunctionSpaceInterface. If the test and the ansatz space are identicall, this template
           argument may be omitted.
   **/
-template< class LocalEvaluationType, class DiscreteAnsatzFunctionSpaceImp, class DiscreteTestFunctionSpaceImp = DiscreteAnsatzFunctionSpaceImp >
+template< class LocalEvaluationImp, class DiscreteAnsatzFunctionSpaceImp, class DiscreteTestFunctionSpaceImp = DiscreteAnsatzFunctionSpaceImp >
 class Codim0Integration
 {
 public:
+
+  typedef LocalEvaluationImp
+    LocalEvaluationType;
 
   typedef DiscreteAnsatzFunctionSpaceImp
     DiscreteAnsatzFunctionSpaceType;
@@ -92,18 +95,6 @@ public:
 
   typedef typename DiscreteAnsatzFunctionSpaceType::EntityType
     EntityType;
-
-  typedef typename DiscreteAnsatzFunctionSpaceType::LocalBaseFunctionProviderType
-    LocalAnsatzBaseFunctionProviderType;
-
-  typedef typename DiscreteAnsatzFunctionSpaceType::LocalBaseFunctionProviderType
-    LocalTestBaseFunctionProviderType;
-
-  typedef typename LocalAnsatzBaseFunctionProviderType::LocalBaseFunctionType
-    LocalAnsatzBaseFunctionType;
-
-  typedef typename LocalTestBaseFunctionProviderType::LocalBaseFunctionType
-    LocalTestBaseFunctionType;
 
   /**
     \brief      Constructor storing the local operation and the ansatz and test space.
@@ -121,9 +112,7 @@ public:
                       const DiscreteTestFunctionSpaceType& testSpace )
     : localEvaluation_( localEvaluation ),
       ansatzSpace_( ansatzSpace ),
-      testSpace_( testSpace ),
-      localAnsatzBaseFunctionProvider_( ansatzSpace.localBaseFunctionProvider() ),
-      localTestBaseFunctionProvider_( testSpace.localBaseFunctionProvider() )
+      testSpace_( testSpace )
   {
   }
 
@@ -140,12 +129,18 @@ public:
                       const DiscreteAnsatzFunctionSpaceType& space )
     : localEvaluation_( localEvaluation ),
       ansatzSpace_( space ),
-      testSpace_( space ),
-      localAnsatzBaseFunctionProvider_( space.localBaseFunctionProvider() ),
-      localTestBaseFunctionProvider_( space.localBaseFunctionProvider() )
+      testSpace_( space )
   {
   }
 
+  /**
+    \brief  Returns the local operation \f$a\f$.
+    \return \f$a\f$.
+    **/
+  const LocalEvaluationType localEvaluation() const
+  {
+    return localEvaluation_;
+  }
 
   /**
     \brief  Returns the ansatz space \f$V_h\f$.
@@ -163,15 +158,6 @@ public:
   const DiscreteTestFunctionSpaceType& testSpace() const
   {
     return testSpace_;
-  }
-
-  /**
-    \brief  Returns the local operation \f$a\f$.
-    \return \f$a\f$.
-    **/
-  const LocalEvaluationType& localEvaluation() const
-  {
-    return localEvaluation_;
   }
 
   /**
@@ -213,18 +199,15 @@ public:
 //    } // done loop over all local ansatz DoFs
 
 //    return ret;
-
 //  }
 
 private:
 
-  const LocalEvaluationType& localEvaluation_;
+  const LocalEvaluationType localEvaluation_;
   const DiscreteAnsatzFunctionSpaceType& ansatzSpace_;
   const DiscreteTestFunctionSpaceType& testSpace_;
-  const LocalAnsatzBaseFunctionProviderType& localAnsatzBaseFunctionProvider_;
-  const LocalTestBaseFunctionProviderType& localTestBaseFunctionProvider_;
 
-}; // end class Linear
+}; // end class Codim0Integration
 
 } // end namespace Local
 
