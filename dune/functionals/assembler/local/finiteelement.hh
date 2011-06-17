@@ -12,6 +12,8 @@ namespace Assembler {
 
 namespace Local {
 
+namespace Matrix {
+
 template <class LocalOperatorImp>
 class ContinuousFiniteElement
 {
@@ -44,6 +46,44 @@ private:
   const LocalOperatorType& localOperator_;
 
 }; // end class ContinuousFiniteElement
+
+} // end namespace Matrix
+
+namespace Vector {
+
+template <class LocalFunctionalImp>
+class ContinuousFiniteElement
+{
+public:
+  typedef LocalFunctionalImp LocalFunctionalType;
+
+  typedef typename LocalFunctionalType::RangeFieldType RangeFieldType;
+
+  typedef Dune::Functionals::Common::LocalVector<RangeFieldType> LocalVectorType;
+
+  //! constructor
+  ContinuousFiniteElement(const LocalFunctionalType& localFunctional)
+    : localFunctional_(localFunctional)
+  {
+  }
+
+  const LocalFunctionalType& localFunctional() const
+  {
+    return localFunctional_;
+  }
+
+  template <class LocalTestBaseFunctionSetType>
+  void assembleLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& localVector) const
+  {
+    localFunctional_.applyLocal(localTestBaseFunctionSet, localVector);
+  }
+
+private:
+  const LocalFunctionalType& localFunctional_;
+
+}; // end class ContinuousFiniteElement
+
+} // end namespace Vector
 
 } // end namespace Local
 

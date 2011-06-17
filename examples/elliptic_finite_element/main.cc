@@ -286,6 +286,7 @@ int main(int argc, char** argv)
 
 
     // matrix, rhs and solution storage
+    //! \todo the matrix factory should get two spaces (ansatz and test)
     typedef Dune::Functionals::Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix
         MatrixFactory;
 
@@ -299,43 +300,22 @@ int main(int argc, char** argv)
 
     VectorPtrType F = VectorFactory::create(discreteH10);
 
-    //    typedef Dune::FieldMatrix< double, dimRange, dimRange >
-    //      FieldMatrixType;
-
-    //    typedef Container::MatrixFactory< Dune::BCRSMatrix< FieldMatrixType > >
-    //      MatrixFactoryType;
-
-    //    typedef MatrixFactoryType::ContainerType
-    //      MatrixContainer;
-
-    //    typedef MatrixFactoryType::AutoPtrType
-    //      MatrixContainerPtr;
-
-    //    typedef Container::VectorFactory< Dune::BlockVector< Dune::FieldVector< double, 1 > > >
-    //      VectorFactoryType;
-
-    //    typedef VectorFactoryType::ContainerType
-    //      VectorContainer;
-
-    //    typedef VectorFactoryType::AutoPtrType
-    //      VectorContainerPtr;
-
-    //    MatrixContainerPtr A  = MatrixFactoryType::create( discreteH10 );
-    //    VectorContainerPtr F  = VectorFactoryType::create( discreteH10 );
-    //    VectorContainerPtr u0 = VectorFactoryType::create( discreteH10 );
-
 
     // assembler
-    typedef Dune::Functionals::Assembler::Local::ContinuousFiniteElement<LocalEllipticOperatorType>
+    typedef Dune::Functionals::Assembler::Local::Matrix::ContinuousFiniteElement<LocalEllipticOperatorType>
         LocalMatrixAssemblerType;
 
     const LocalMatrixAssemblerType localMatrixAssembler(localEllipticOperator);
+
+    typedef Assembler::Local::Vector::ContinuousFiniteElement<LocalL2FunctionalType> LocalVectorAssemblerType;
+
+    const LocalVectorAssemblerType localVectorAssembler(localL2Functional);
 
     typedef Dune::Functionals::Assembler::System<DiscreteH1GType, DiscreteH10Type> SystemAssemblerType;
 
     SystemAssemblerType systemAssembler(discreteH1G, discreteH10);
 
-    systemAssembler.assemble(localMatrixAssembler, A);
+    systemAssembler.assemble(localMatrixAssembler, A, localVectorAssembler, F);
 
     //    Assembler::assembleVector( femRhsFunctional, *F );
     //    Assembler::applyVectorConstraints( discreteH10, *F );
