@@ -250,7 +250,7 @@ int main(int argc, char** argv)
 
     typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet<DiscreteH10Type> DiscreteH1GType;
 
-    const DiscreteH1GType discreteH1G(discreteH10, "1.0", "1.0", "1.0");
+    const DiscreteH1GType discreteH1G(discreteH10, "[1.0;1.0;1.0]");
 
 
     //    // operator and functional

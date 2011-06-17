@@ -32,13 +32,12 @@ public:
 
   typedef Dune::AdaptiveDiscreteFunction<typename SuperSpaceType::HostSpaceType> AffineShiftType;
 
-  Dirichlet(const DirichletZeroSpaceType& dirichletZeroSpace, const std::string xExpression = "0.0",
-            const std::string yExpression = "0.0", const std::string zExpression = "0.0")
+  Dirichlet(const DirichletZeroSpaceType& dirichletZeroSpace, const std::string expression = "[0.0;0.0;0.0]")
     : dirichletZeroSpace_(dirichletZeroSpace)
-    , runtimeFunction_(xExpression, yExpression, zExpression)
+    , runtimeFunction_(expression)
     , affineShift_("affineShift", dirichletZeroSpace_.superSpace().hostSpace())
   {
-    Dune::FemTools::BetterL2Projection::project(runtimeFunction_, affineShift_);
+    Dune::FemTools::Space::BetterL2Projection::project(runtimeFunction_, affineShift_);
   }
 
   const DirichletZeroSpaceType& baseSpace() const
