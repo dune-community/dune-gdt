@@ -160,10 +160,11 @@ public:
     // do loop over all local ansatz DoFs
     for( unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i )
     {
+      const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionSet.baseFunction( i );
+
       // do loop over all local test DoFs
       for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
       {
-        const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionSet.baseFunction( i );
         const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionSet.baseFunction( j );
 
         // do loop over all quadrature points
