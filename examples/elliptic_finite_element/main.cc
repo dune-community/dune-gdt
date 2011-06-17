@@ -38,7 +38,6 @@
 #include <dune/functionals/discretefunctionspace/finiteelement.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
-#include <dune/functionals/discreteoperator/local/integration.hh>
 //#include <dune/fem/localoperation/interface.hh>
 //#include <dune/fem/localoperation/integrator.hh>
 //#include <dune/fem/subspace/subspaces.hh>
@@ -49,6 +48,7 @@
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
+#include <dune/fem-tools/function/runtimefunction.hh>
 #include <dune/fem-tools/function/functiontools.hh>
 //#include <dune/fem-tools/space/projection.hh>
 
@@ -126,10 +126,13 @@ const int polOrder = POLORDER;
   \tparam FunctionSpaceImp
           Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
   **/
-template< class FunctionSpaceType >
+template< class FunctionSpaceImp >
 class EllipticEvaluation
 {
 public:
+
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
 
   typedef typename FunctionSpaceType::RangeFieldType
     RangeFieldType;
@@ -137,15 +140,31 @@ public:
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
+
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  EllipticEvaluation()
+  typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
+    InducingFunctionType;
+
+  //! constructor, takes the inducing function as a runtime parameter
+  EllipticEvaluation( const std::string expression = "[1.0;1.0;1.0]" )
+    : inducingFunction_( expression )
   {
   }
 
-  ~EllipticEvaluation()
+  //! copy constructor
+  EllipticEvaluation( const EllipticEvaluation& other )
+    : inducingFunction_( other.inducingFunction() )
   {
+  }
+
+  //! returns the inducing function
+  const InducingFunctionType& inducingFunction() const
+  {
+    return inducingFunction_;
   }
 
   /**
@@ -174,6 +193,9 @@ public:
     // init return value
     RangeFieldType ret = 0.0;
 
+    // get global point
+    const DomainType globalPoint = localAnsatzFunction.entity().geometry().gobal( localPoint );
+
     // evaluate first gradient
     JacobianRangeType gradientLocalAnsatzFunction( 0.0 );
     localAnsatzFunction.jacobian( localPoint, gradientLocalAnsatzFunction );
@@ -182,16 +204,23 @@ public:
     JacobianRangeType gradientLocalTestFunction( 0.0 );
     localTestFunction.jacobian( localPoint, gradientLocalTestFunction );
 
-    const RangeFieldType product = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
+    const RangeFieldType gradientProduct = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
 
-    // 1.0 * \gradient u(x) \gradient v(x)
-    ret = 1.0 * product;
+    // evaluate inducing function
+    RangeFieldType functionValue( 0.0 );
+    inducingFunction_.evaluate( globalPoint, functionValue );
 
-    // return
+    // a(x) * \gradient u(x) * \gradient v(x)
+    ret = functionValue * gradientProduct;
+
     return ret;
   }
 
-}; // end class EllipticEvaluation
+private:
+
+  const InducingFunctionType inducingFunction_;
+}; // end class EllipticEvalaution
+
 
 int main( int argc, char** argv )
 {
@@ -219,33 +248,6 @@ int main( int argc, char** argv )
     typedef Dune::FunctionSpace< double, double, GridType::dimension, dimRange >
       FunctionSpaceType;
 
-//    typedef Dune::Function< double, double >
-//      FunctionType;
-
-
-    // local evaluations
-//    typedef ProductOperation< FunctionSpaceType >
-//      ProductOperationType;
-
-//    ProductOperationType productOperation;
-
-    typedef EllipticEvaluation< FunctionSpaceType >
-      EllipticEvaluationType;
-
-    const EllipticEvaluationType ellipticEvalaution;
-
-
-//    // integration
-//    typedef LocalOperation::Integrator::Codim0< FunctionSpaceType, ProductOperationType >
-//      ProductIntegratorType;
-
-//    ProductIntegratorType productIntegrator( productOperation );
-
-//    typedef LocalOperation::Integrator::Codim0< FunctionSpaceType, EllipticOperationType >
-//      EllipticIntegratorType;
-
-//    EllipticIntegratorType ellipticIntegrator( ellipticOperation );
-
 
     // discrete function space
     typedef DiscreteFunctionSpace::ContinuousFiniteElement< FunctionSpaceType, GridPartType, polOrder >
@@ -264,13 +266,19 @@ int main( int argc, char** argv )
     const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
 
 
-    // operator and functional
-    typedef DiscreteOperator::Local::Codim0Integration< EllipticEvaluationType, DiscreteH10Type, DiscreteH10Type >
-      LocalEllipticOperatorType;
+    // local evaluations
+//    typedef ProductOperation< FunctionSpaceType >
+//      ProductOperationType;
 
-    const LocalEllipticOperatorType localEllipticOperator( ellipticEvalaution, discreteH10, discreteH10 );
+//    ProductOperationType productOperation;
+
+    typedef EllipticEvaluation< FunctionSpaceType >
+      EllipticEvaluationType;
+
+    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
 
 
+//    // operator and functional
 //    typedef Operator::Linear< EllipticIntegratorType, DiscreteH1Type >
 //      FEMellipticOperatorType;
 
