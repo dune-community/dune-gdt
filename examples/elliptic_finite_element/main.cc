@@ -20,9 +20,7 @@
 #include <dune/grid/utility/gridtype.hh>
 
 // dune-istl includes
-#include <dune/istl/bcrsmatrix.hh>
 #include <dune/istl/solvers.hh>
-#include <dune/istl/bvector.hh>
 
 // dune-fem includes
 #include <dune/fem/misc/mpimanager.hh>
@@ -39,13 +37,7 @@
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/integration.hh>
-//#include <dune/fem/localoperation/interface.hh>
-//#include <dune/fem/localoperation/integrator.hh>
-//#include <dune/fem/subspace/subspaces.hh>
-//#include <dune/fem/operator/linear.hh>
-//#include <dune/fem/functional/finiteelement.hh>
-//#include <dune/fem/container/factory.hh>
-//#include <dune/fem/solver/femassembler.hh>
+#include <dune/functionals/container/factory.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
@@ -249,6 +241,8 @@ int main( int argc, char** argv )
     typedef Dune::FunctionSpace< double, double, GridType::dimension, dimRange >
       FunctionSpaceType;
 
+    typedef typename FunctionSpaceType::RangeFieldType
+      RangeFieldType;
 
     // discrete function space
     typedef DiscreteFunctionSpace::ContinuousFiniteElement< FunctionSpaceType, GridPartType, polOrder >
@@ -294,7 +288,16 @@ int main( int argc, char** argv )
 //    FEMrhsFunctionalType femRhsFunctional( discreteH1, productIntegrator );
 
 
-//    // matrix, rhs and solution storage
+    // matrix, rhs and solution storage
+    typedef Dune::Functionals::Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
+      MatrixFactory;
+
+    typedef typename MatrixFactory::AutoPtrType
+      MatrixPtrType;
+
+    MatrixPtrType A = MatrixFactory::create( discreteH10 );
+
+
 //    typedef Dune::FieldMatrix< double, dimRange, dimRange >
 //      FieldMatrixType;
 
