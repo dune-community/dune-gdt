@@ -31,7 +31,7 @@ public:
     LocalBaseFunctionProviderType;
 
   typedef Dune::Functionals::Constraints::DirichletZero< SuperSpaceType >
-    DirichletZeroConstraintsType;
+    ConstraintsType;
 
   typedef typename SuperSpaceType::GridPartType
     GridPartType;
@@ -72,7 +72,7 @@ public:
     return superSpace_;
   }
 
-  const DirichletZeroConstraintsType& constraints() const
+  const ConstraintsType& constraints() const
   {
     return constraints_;
   }
@@ -126,7 +126,7 @@ public:
 
 private:
   const SuperSpaceType& superSpace_;
-  const DirichletZeroConstraintsType constraints_;
+  const ConstraintsType constraints_;
 
 }; // end of class DirichletZero
 

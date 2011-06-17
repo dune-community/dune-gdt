@@ -29,12 +29,12 @@ class Dirichlet
 public:
 
   typedef DirichletZeroSpaceImp
-    DirichletZeroSpaceType;
+    BaseSpaceType;
 
-  typedef typename DirichletZeroSpaceType::SuperSpaceType
+  typedef typename BaseSpaceType::SuperSpaceType
     SuperSpaceType;
 
-  typedef typename DirichletZeroSpaceType::FunctionSpaceType
+  typedef typename BaseSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
   typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
@@ -43,13 +43,16 @@ public:
   typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
     AffineShiftType;
 
-  typedef typename DirichletZeroSpaceType::EntityType
+  typedef typename BaseSpaceType::ConstraintsType
+    ConstraintsType;
+
+  typedef typename BaseSpaceType::EntityType
     EntityType;
 
-  typedef typename DirichletZeroSpaceType::RangeFieldType
+  typedef typename BaseSpaceType::RangeFieldType
     RangeFieldType;
 
-  typedef typename DirichletZeroSpaceType::DomainType
+  typedef typename BaseSpaceType::DomainType
     DomainType;
 
   /**
@@ -65,22 +68,22 @@ public:
     \}
     **/
 
-  Dirichlet( const DirichletZeroSpaceType& dirichletZeroSpace, const std::string expression = "[0.0;0.0;0.0]" )
-    : dirichletZeroSpace_( dirichletZeroSpace ),
+  Dirichlet( const BaseSpaceType& baseSpace, const std::string expression = "[0.0;0.0;0.0]" )
+    : baseSpace_( baseSpace ),
       runtimeFunction_( expression ),
-      affineShift_( "affineShift", dirichletZeroSpace_.superSpace().hostSpace() )
+      affineShift_( "affineShift", baseSpace.superSpace().hostSpace() )
   {
     Dune::FemTools::Projection::Dirichlet::project( runtimeFunction_, affineShift_ );
   }
 
-  const DirichletZeroSpaceType& baseSpace() const
+  const BaseSpaceType& baseSpace() const
   {
-    return dirichletZeroSpace_;
+    return baseSpace_;
   }
 
   const SuperSpaceType& superSpace() const
   {
-    return dirichletZeroSpace_.superSpace();
+    return baseSpace_.superSpace();
   }
 
   const AffineShiftType& affineShift() const
@@ -90,12 +93,17 @@ public:
 
   const int numMaxDoFs() const
   {
-    return dirichletZeroSpace_.numMaxDoFs();
+    return baseSpace_.numMaxDoFs();
   }
 
   const int order() const
   {
-    return dirichletZeroSpace_.order();
+    return baseSpace_.order();
+  }
+
+  const ConstraintsType& constraints() const
+  {
+    return baseSpace_.constraints();
   }
 
   /**
@@ -104,22 +112,22 @@ public:
     **/
   IteratorType begin() const
   {
-    return dirichletZeroSpace_.begin();
+    return baseSpace_.begin();
   }
 
   const IteratorType end() const
   {
-    return dirichletZeroSpace_.end();
+    return baseSpace_.end();
   }
 
   const BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
   {
-    return dirichletZeroSpace_.baseFunctionSet( entity );
+    return baseSpace_.baseFunctionSet( entity );
   }
 
   const int mapToGlobal( const EntityType& entity, const int localDof) const
   {
-    return dirichletZeroSpace_.mapToGlobal( entity, localDof);
+    return baseSpace_.mapToGlobal( entity, localDof);
   }
   /**
     \}
@@ -127,7 +135,7 @@ public:
 
 private:
 
-  const DirichletZeroSpaceType& dirichletZeroSpace_;
+  const BaseSpaceType& baseSpace_;
   const RuntimeFunctionType runtimeFunction_;
   AffineShiftType affineShift_;
 }; // end class Dirichlet
