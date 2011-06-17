@@ -39,6 +39,19 @@ public:
   typedef typename HostSpaceType::RangeFieldType
     RangeFieldType;
 
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  typedef typename HostSpaceType::BaseFunctionSetType
+    BaseFunctionSetType;
+
+  typedef typename HostSpaceType::IteratorType
+    IteratorType;
+  /**
+    \}
+    **/
+
   ContinuousFiniteElement( GridPartType& gridPart )
     : gridPart_( gridPart ),
       hostSpace_( gridPart )
@@ -59,6 +72,38 @@ public:
   {
     return LocalBaseFunctionType( entity, hostSpace_.baseFunctionSet( entity ), localDoFNumber );
   }
+
+  const unsigned int size() const
+  {
+    return hostSpace_.size();
+  }
+
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  IteratorType begin() const
+  {
+    return hostSpace_.begin();
+  }
+
+  const IteratorType end() const
+  {
+    return hostSpace_.end();
+  }
+
+  const BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
+  {
+    return hostSpace_.baseFunctionSet( entity );
+  }
+
+  const int mapToGlobal( const EntityType& entity, const int localDof) const
+  {
+    return hostSpace_.mapToGlobal( entity, localDof);
+  }
+  /**
+    \}
+    **/
 
 private:
 

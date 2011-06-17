@@ -45,6 +45,19 @@ public:
   typedef typename SuperSpaceType::EntityType
     EntityType;
 
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  typedef typename SuperSpaceType::BaseFunctionSetType
+    BaseFunctionSetType;
+
+  typedef typename SuperSpaceType::IteratorType
+    IteratorType;
+  /**
+    \}
+    **/
+
   DirichletZero( const SuperSpaceType& superSpace )
     : superSpace_( superSpace ),
       constraints_( superSpace_ )
@@ -66,10 +79,37 @@ public:
     return superSpace_.gridPart();
   }
 
-  const LocalBaseFunctionProviderType& localBaseFunctionProvider() const
+  const unsigned int size() const
   {
-    return superSpace_.localBaseFunctionProvider();
+    return superSpace_.size();
   }
+
+  /**
+    \defgroup dune-fem related
+    \{
+    **/
+  IteratorType begin() const
+  {
+    return superSpace_.begin();
+  }
+
+  const IteratorType end() const
+  {
+    return superSpace_.end();
+  }
+
+  const BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
+  {
+    return superSpace_.baseFunctionSet( entity );
+  }
+
+  const int mapToGlobal( const EntityType& entity, const int localDof) const
+  {
+    return superSpace_.mapToGlobal( entity, localDof);
+  }
+  /**
+    \}
+    **/
 
 private:
   const SuperSpaceType& superSpace_;
