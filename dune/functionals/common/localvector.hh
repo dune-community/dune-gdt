@@ -34,6 +34,12 @@ public:
     storage_.resize( size, 0.0 );
   }
 
+  LocalVector( const int size )
+  {
+    // resize
+    storage_.resize( size, 0.0 );
+  }
+
   /**
     * \brief      Initializes a DoF vector and sets its entries to the
     *             corresponding entries of the given localFunction.
