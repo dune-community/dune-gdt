@@ -38,6 +38,8 @@
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/integration.hh>
 #include <dune/functionals/container/factory.hh>
+#include <dune/functionals/assembler/local/finiteelement.hh>
+#include <dune/functionals/assembler/generic.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
@@ -175,11 +177,8 @@ public:
   RangeFieldType evaluate(const LocalAnsatzFunctionType& localAnsatzFunction,
                           const LocalTestFunctionType& localTestFunction, const LocalPointType& localPoint) const
   {
-    // init return value
-    RangeFieldType ret = 0.0;
-
     // get global point
-    const DomainType globalPoint = localAnsatzFunction.entity().geometry().gobal(localPoint);
+    const DomainType globalPoint = localAnsatzFunction.entity().geometry().global(localPoint);
 
     // evaluate first gradient
     JacobianRangeType gradientLocalAnsatzFunction(0.0);
@@ -189,14 +188,14 @@ public:
     JacobianRangeType gradientLocalTestFunction(0.0);
     localTestFunction.jacobian(localPoint, gradientLocalTestFunction);
 
-    const RangeFieldType gradientProduct = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
+    const RangeType gradientProduct = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
 
     // evaluate inducing function
-    RangeFieldType functionValue(0.0);
+    RangeType functionValue(0.0);
     inducingFunction_.evaluate(globalPoint, functionValue);
 
     // a(x) * \gradient u(x) * \gradient v(x)
-    ret = functionValue * gradientProduct;
+    const RangeFieldType ret = functionValue * gradientProduct;
 
     return ret;
   }
@@ -307,7 +306,18 @@ int main(int argc, char** argv)
     //    VectorContainerPtr u0 = VectorFactoryType::create( discreteH10 );
 
 
-    //    // assembler
+    // assembler
+    typedef Dune::Functionals::Assembler::Local::ContinuousFiniteElement<LocalEllipticOperatorType>
+        LocalMatrixAssemblerType;
+
+    const LocalMatrixAssemblerType localMatrixAssembler(localEllipticOperator);
+
+    typedef Dune::Functionals::Assembler::System<DiscreteH1GType, DiscreteH10Type> AssemblerType;
+
+    AssemblerType assembler(discreteH10, discreteH10);
+
+    assembler.assemble(localMatrixAssembler, A);
+
     //    typedef Assembler::FiniteElement< MatrixContainer, VectorContainer >
     //      Assembler;
 
