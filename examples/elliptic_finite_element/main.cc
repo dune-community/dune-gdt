@@ -47,6 +47,7 @@
 //#include <dune/fem/solver/femassembler.hh>
 
 // dune-fem-tools includes
+#include <dune/fem-tools/common/string.hh>
 //#include <dune/fem-tools/function/functiontools.hh>
 //#include <dune/fem-tools/space/projection.hh>
 
@@ -206,7 +207,9 @@ int main( int argc, char** argv )
     typedef Dune::AdaptiveLeafGridPart< GridType >
       GridPartType;
 
-    Dune::GridPtr< GridType > gridPtr( "../macrogrids/unitcube2.dgf" );
+    const std::string dgfFilename = "../macrogrids/unitcube" + Dune::FemTools::String::toString( GRIDDIM ) + ".dgf";
+
+    Dune::GridPtr< GridType > gridPtr( dgfFilename );
 
     GridPartType gridPart( *gridPtr );
 
