@@ -12,43 +12,6 @@ namespace Assembler {
 
 namespace Local {
 
-namespace Matrix {
-
-template <class LocalOperatorImp>
-class ContinuousFiniteElement
-{
-public:
-  typedef LocalOperatorImp LocalOperatorType;
-
-  typedef typename LocalOperatorType::RangeFieldType RangeFieldType;
-
-  typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
-
-  //! constructor
-  ContinuousFiniteElement(const LocalOperatorType& localOperator)
-    : localOperator_(localOperator)
-  {
-  }
-
-  const LocalOperatorType& localOperator() const
-  {
-    return localOperator_;
-  }
-
-  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType>
-  void assembleLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                     const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
-  {
-    localOperator_.applyLocal(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, localMatrix);
-  }
-
-private:
-  const LocalOperatorType& localOperator_;
-
-}; // end class ContinuousFiniteElement
-
-} // end namespace Matrix
-
 namespace Vector {
 
 template <class LocalFunctionalImp>
@@ -84,6 +47,66 @@ private:
 }; // end class ContinuousFiniteElement
 
 } // end namespace Vector
+
+namespace Matrix {
+
+template <class LocalOperatorImp>
+class ContinuousFiniteElement
+{
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  typedef typename LocalOperatorType::RangeFieldType RangeFieldType;
+
+  typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
+
+  //! constructor
+  ContinuousFiniteElement(const LocalOperatorType& localOperator)
+    : localOperator_(localOperator)
+  {
+  }
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType>
+  void assembleLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                     const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
+  {
+    localOperator_.applyLocal(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, localMatrix);
+  }
+
+  template <class DiscreteFunctionType>
+  class LocalVectorAssembler
+  {
+  private:
+    typedef typename LocalOperatorType::template LocalFunctional<DiscreteFunctionType>::Type LocalFunctionalType;
+
+  public:
+    typedef Dune::Functionals::Assembler::Local::Vector::ContinuousFiniteElement<LocalFunctionalType> Type;
+  }; // end class LocalVectorAssembler
+
+  template <class DiscreteFunctionType>
+  const typename LocalVectorAssembler<DiscreteFunctionType>::Type
+  localVectorAssembler(const DiscreteFunctionType& discreteFunction) const
+  {
+    typedef typename LocalOperatorType::template LocalFunctional<DiscreteFunctionType>::Type LocalFunctionalType;
+
+    typedef typename LocalVectorAssembler<DiscreteFunctionType>::Type LocalVectorAssemblerType;
+
+    const LocalFunctionalType localFunctional = localOperator_.localFunctional(discreteFunction);
+
+    return LocalVectorAssemblerType(localFunctional);
+  } // end method localVectorAssembler
+
+private:
+  const LocalOperatorType& localOperator_;
+
+}; // end class ContinuousFiniteElement
+
+} // end namespace Matrix
 
 } // end namespace Local
 

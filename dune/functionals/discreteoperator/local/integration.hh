@@ -11,6 +11,8 @@
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
 #include <dune/functionals/common/localvector.hh>
+#include <dune/functionals/discretefunctional/local/integration.hh>
+#include <dune/functionals/localevaluation/wrapper.hh>
 
 namespace Dune {
 
@@ -75,7 +77,7 @@ class Codim0Integration
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
 
-  typedef LocalEvaluationType FunctionSpaceType;
+  typedef typename LocalEvaluationType::FunctionSpaceType FunctionSpaceType;
 
   typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
@@ -83,30 +85,42 @@ public:
 
   typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
 
-  /**
-    \brief      Constructor storing the local operation and the ansatz and test space.
-
-                Use this constructor, if ansatz and test space are not the same.
-    \param[in]  localOperation
-                The local operation \f$a\f$, which induces the operator.
-    \param[in]  ansatzSpace
-                The space of ansatz functions \f$V_h\f$.
-    \param[in]  testSpace
-                The space of test functions \f$W_h\f$.
-    **/
   Codim0Integration(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
   {
   }
 
-  /**
-    \brief  Returns the local operation \f$a\f$.
-    \return \f$a\f$.
-    **/
   const LocalEvaluationType localEvaluation() const
   {
     return localEvaluation_;
   }
+
+  template <class DiscreteFunctionType>
+  class LocalFunctional
+  {
+  private:
+    typedef Dune::Functionals::LocalEvaluation::Wrapper<LocalEvaluationType, DiscreteFunctionType>
+        WrappedLocalEvaluationType;
+
+  public:
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0Integration<WrappedLocalEvaluationType> Type;
+  };
+
+  template <class DiscreteFunctionType>
+  const typename LocalFunctional<DiscreteFunctionType>::Type
+  localFunctional(const DiscreteFunctionType& discreteFunction) const
+  {
+    typedef Dune::Functionals::LocalEvaluation::Wrapper<LocalEvaluationType, DiscreteFunctionType>
+        WrappedLocalEvaluationType;
+
+    typedef typename LocalFunctional<DiscreteFunctionType>::Type LocalFunctionalType;
+
+    const WrappedLocalEvaluationType wrappedLocalEvaluation(localEvaluation_, discreteFunction);
+
+    const LocalFunctionalType localFunctional(wrappedLocalEvaluation);
+
+    return localFunctional;
+  } // end method localFunctional
 
   /**
     \brief      Local application of the operator.
