@@ -1,10 +1,9 @@
 /**
-  \file   linear.hh
-  \brief  Contains linear operator related classes.
+  \file   integration.hh
   **/
 
-#ifndef DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
-#define DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
+#ifndef DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
+#define DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
 
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
@@ -208,4 +207,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_FEM_FUNCTIONALS_OPERATOR_ELLIPTICFINITEELEMENT_HH
+#endif // end DUNE_FEM_FUNCTIONALS_DISCRETEOPERATOR_LOCAL_INTEGRATION_HH
