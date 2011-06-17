@@ -1,7 +1,7 @@
-#ifndef DUNE_FEM_FUNCTIONALS_COMMON_LOCALMATRIX_HH
-#define DUNE_FEM_FUNCTIONALS_COMMON_LOCALMATRIX_HH
+#ifndef DUNE_FUNCTIONALS_COMMON_LOCALMATRIX_HH
+#define DUNE_FUNCTIONALS_COMMON_LOCALMATRIX_HH
 
-// dunefem-functionals include
+// local include
 #include "localvector.hh"
 
 namespace Dune {
@@ -119,4 +119,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end of include guard: DUNE_FEM_FUNCTIONALS_COMMON_LOCALMATRIX_HH
+#endif // end DUNE_FUNCTIONALS_COMMON_LOCALMATRIX_HH
