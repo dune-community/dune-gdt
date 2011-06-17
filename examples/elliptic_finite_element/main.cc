@@ -38,6 +38,7 @@
 #include <dune/functionals/discretefunctionspace/finiteelement.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
+#include <dune/functionals/discreteoperator/local/integration.hh>
 //#include <dune/fem/localoperation/interface.hh>
 //#include <dune/fem/localoperation/integrator.hh>
 //#include <dune/fem/subspace/subspaces.hh>
@@ -278,9 +279,12 @@ int main( int argc, char** argv )
     EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
 
 
-//    // operator and functional
-//    typedef Operator::Linear< EllipticIntegratorType, DiscreteH1Type >
-//      FEMellipticOperatorType;
+    // operator and functional
+    typedef Dune::Functionals::DiscreteOperator::Local::Codim0Integration< EllipticEvaluationType, DiscreteH1Type, DiscreteH1Type >
+      LocalEllipticOperatorType;
+
+    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation, discreteH1, discreteH1 );
+
 
 //    FEMellipticOperatorType femEllipticOperator( ellipticIntegrator, discreteH1 );
 

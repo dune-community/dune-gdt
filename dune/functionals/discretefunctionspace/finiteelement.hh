@@ -36,6 +36,9 @@ public:
   typedef typename HostSpaceType::EntityType
     EntityType;
 
+  typedef typename HostSpaceType::RangeFieldType
+    RangeFieldType;
+
   ContinuousFiniteElement( GridPartType& gridPart )
     : gridPart_( gridPart ),
       hostSpace_( gridPart )
