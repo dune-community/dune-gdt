@@ -70,24 +70,19 @@ namespace Local {
           Dune::DiscreteFunctionSpaceInterface. If the test and the ansatz space are identicall, this template
           argument may be omitted.
   **/
-template <class LocalEvaluationImp, class DiscreteAnsatzFunctionSpaceImp,
-          class DiscreteTestFunctionSpaceImp = DiscreteAnsatzFunctionSpaceImp>
+template <class LocalEvaluationImp>
 class Codim0Integration
 {
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
 
-  typedef DiscreteAnsatzFunctionSpaceImp DiscreteAnsatzFunctionSpaceType;
+  typedef LocalEvaluationType FunctionSpaceType;
 
-  typedef DiscreteTestFunctionSpaceImp DiscreteTestFunctionSpaceType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename DiscreteAnsatzFunctionSpaceType::RangeFieldType RangeFieldType;
-
-  typedef typename DiscreteAnsatzFunctionSpaceType::DomainType DomainType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
   typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
-
-  typedef typename DiscreteAnsatzFunctionSpaceType::EntityType EntityType;
 
   /**
     \brief      Constructor storing the local operation and the ansatz and test space.
@@ -100,27 +95,8 @@ public:
     \param[in]  testSpace
                 The space of test functions \f$W_h\f$.
     **/
-  Codim0Integration(const LocalEvaluationType& localEvaluation, const DiscreteAnsatzFunctionSpaceType& ansatzSpace,
-                    const DiscreteTestFunctionSpaceType& testSpace)
+  Codim0Integration(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
-    , ansatzSpace_(ansatzSpace)
-    , testSpace_(testSpace)
-  {
-  }
-
-  /**
-    \brief      Constructor storing the local operation and the ansatz and test space.
-
-                Use this constructor, if ansatz and test space are the same.
-    \param[in]  localOperation
-                The local operation \f$a\f$, which induces the operator.
-    \param[in]  space
-                The space of ansatz and test functions \f$V_h = W_h\f$.
-    **/
-  Codim0Integration(const LocalEvaluationType& localEvaluation, const DiscreteAnsatzFunctionSpaceType& space)
-    : localEvaluation_(localEvaluation)
-    , ansatzSpace_(space)
-    , testSpace_(space)
   {
   }
 
@@ -131,24 +107,6 @@ public:
   const LocalEvaluationType localEvaluation() const
   {
     return localEvaluation_;
-  }
-
-  /**
-    \brief  Returns the ansatz space \f$V_h\f$.
-    \return \f$V_h\f$.
-    **/
-  const DiscreteAnsatzFunctionSpaceType& ansatzSpace() const
-  {
-    return ansatzSpace_;
-  }
-
-  /**
-    \brief  Returns the test space \f$W_h\f$.
-    \return \f$W_h\f$.
-    **/
-  const DiscreteTestFunctionSpaceType& testSpace() const
-  {
-    return testSpace_;
   }
 
   /**
@@ -163,30 +121,34 @@ public:
                 The entity, on wich the operator is being applied on.
     \return     The matrix \f$\{A( \varphi_i )[\psi_j]\}_{i \in I_E, j \in J_E}\f$.
     **/
-  void applyLocal(const EntityType& entity, LocalMatrixType& localMatrix) const
+  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType>
+  void applyLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
   {
     // some types
-    typedef typename DiscreteAnsatzFunctionSpaceType::GridPartType GridPartType;
+    typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+
+    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
     typedef Dune::CachingQuadrature<GridPartType, 0> VolumeQuadratureType;
 
-    typedef typename DiscreteAnsatzFunctionSpaceType::LocalBaseFunctionType LocalAnsatzBaseFunctionType;
+    typedef typename LocalAnsatzBaseFunctionSetType::LocalBaseFunctionType LocalAnsatzBaseFunctionType;
 
-    typedef typename DiscreteTestFunctionSpaceType::LocalBaseFunctionType LocalTestBaseFunctionType;
+    typedef typename LocalTestBaseFunctionSetType::LocalBaseFunctionType LocalTestBaseFunctionType;
 
     // some stuff
-    const unsigned numberOfLocalAnsatzDoFs = ansatzSpace_.baseFunctionSet(entity).numBaseFunctions();
-    const unsigned numberOfLocalTestDoFs   = testSpace_.baseFunctionSet(entity).numBaseFunctions();
-    const unsigned int quadratureOrder = 1 + ansatzSpace_.order() + testSpace_.order();
-    const VolumeQuadratureType volumeQuadrature(entity, quadratureOrder);
+    const unsigned numberOfLocalAnsatzDoFs = localAnsatzBaseFunctionSet.numBaseFunctions();
+    const unsigned numberOfLocalTestDoFs   = localTestBaseFunctionSet.numBaseFunctions();
+    const unsigned int quadratureOrder = 1 + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
+    const VolumeQuadratureType volumeQuadrature(localAnsatzBaseFunctionSet.entity(), quadratureOrder);
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
     // do loop over all local ansatz DoFs
     for (unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i) {
       // do loop over all local test DoFs
       for (unsigned int j = 0; j < numberOfLocalTestDoFs; ++j) {
-        const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = ansatzSpace_.localBaseFunction(entity, i);
-        const LocalTestBaseFunctionType localTestBaseFunction_j     = testSpace_.localBaseFunction(entity, j);
+        const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionSet.baseFunction(i);
+        const LocalTestBaseFunctionType localTestBaseFunction_j     = localTestBaseFunctionSet.baseFunction(j);
 
         // do loop over all quadrature points
         RangeFieldType operator_i_j(0.0);
@@ -195,7 +157,7 @@ public:
           const DomainType x = volumeQuadrature.point(q);
 
           // integration factors
-          const double integrationFactor = entity.geometry().integrationElement(x);
+          const double integrationFactor = localAnsatzBaseFunctionSet.entity().geometry().integrationElement(x);
           const double quadratureWeight  = volumeQuadrature.weight(q);
 
           // evaluate the local operation
@@ -216,9 +178,7 @@ public:
   } // end method applyLocal
 
 private:
-  const LocalEvaluationType localEvaluation_;
-  const DiscreteAnsatzFunctionSpaceType& ansatzSpace_;
-  const DiscreteTestFunctionSpaceType& testSpace_;
+  const LocalEvaluationType& localEvaluation_;
 
 }; // end class Codim0Integration
 

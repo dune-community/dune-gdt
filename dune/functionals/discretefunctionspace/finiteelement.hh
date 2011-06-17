@@ -21,15 +21,25 @@ public:
 
   typedef GridPartImp GridPartType;
 
+  typedef ContinuousFiniteElement<FunctionSpaceType, GridPartType, polOrder> ThisType;
+
   typedef Dune::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> HostSpaceType;
 
-  typedef Dune::Functionals::Common::LocalBaseFunction<HostSpaceType> LocalBaseFunctionType;
+  typedef Dune::Functionals::Common::LocalBaseFunctionSet<ThisType> LocalBaseFunctionSetType;
 
   typedef typename HostSpaceType::EntityType EntityType;
 
+  typedef typename HostSpaceType::DomainType DomainType;
+
+  typedef typename HostSpaceType::DomainFieldType DomainFieldType;
+
   typedef typename HostSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename HostSpaceType::DomainType DomainType;
+  typedef typename HostSpaceType::RangeType RangeType;
+
+  typedef typename HostSpaceType::JacobianRangeType JacobianRangeType;
+
+  typedef typename HostSpaceType::HessianRangeType HessianRangeType;
 
   /**
     \defgroup dune-fem related
@@ -45,13 +55,12 @@ public:
   ContinuousFiniteElement(GridPartType& gridPart)
     : gridPart_(gridPart)
     , hostSpace_(gridPart)
-    , numMaxDoFs_(-1)
+    , numMaxLocalDoFs_(-1)
   {
     // in the simple case, there should be the same number of dofs on each entity
-    const IteratorType entityIterator         = begin();
-    const EntityType& entity                  = *entityIterator;
-    const BaseFunctionSetType baseFunctionSet = hostSpace_.baseFunctionSet(entity);
-    numMaxDoFs_                               = baseFunctionSet.numBaseFunctions();
+    const IteratorType entityIterator = begin();
+    const EntityType& entity          = *entityIterator;
+    numMaxLocalDoFs_                  = hostSpace_.baseFunctionSet(entity).numBaseFunctions();
   }
 
   const GridPartType& gridPart() const
@@ -64,9 +73,9 @@ public:
     return hostSpace_;
   }
 
-  const LocalBaseFunctionType localBaseFunction(const EntityType& entity, const unsigned int localDoFNumber) const
+  const LocalBaseFunctionSetType localBaseFunctionSet(const EntityType& entity) const
   {
-    return LocalBaseFunctionType(entity, hostSpace_.baseFunctionSet(entity), localDoFNumber);
+    return LocalBaseFunctionSetType(*this, entity);
   }
 
   const unsigned int size() const
@@ -74,9 +83,9 @@ public:
     return hostSpace_.size();
   }
 
-  const int numMaxDoFs() const
+  const int numMaxLocalDoFs() const
   {
-    return numMaxDoFs_;
+    return numMaxLocalDoFs_;
   }
 
   const int order() const
@@ -114,7 +123,7 @@ public:
 private:
   const GridPartType& gridPart_;
   const HostSpaceType hostSpace_;
-  unsigned int numMaxDoFs_;
+  unsigned int numMaxLocalDoFs_;
 
 }; // end class ContinuousFiniteElement
 

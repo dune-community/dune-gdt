@@ -4,6 +4,9 @@
 // dune-fem includes
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 
+// dune-fucntionals includes
+#include <dune/functionals/common/localbasefunction.hh>
+
 // dune-fem-tools includes
 #include <dune/fem-tools/function/runtimefunction.hh>
 #include <dune/fem-tools/space/projection.hh>
@@ -24,7 +27,11 @@ class Dirichlet
 public:
   typedef DirichletZeroSpaceImp BaseSpaceType;
 
+  typedef Dirichlet<BaseSpaceType> ThisType;
+
   typedef typename BaseSpaceType::SuperSpaceType SuperSpaceType;
+
+  typedef typename BaseSpaceType::GridPartType GridPartType;
 
   typedef typename BaseSpaceType::FunctionSpaceType FunctionSpaceType;
 
@@ -36,9 +43,19 @@ public:
 
   typedef typename BaseSpaceType::EntityType EntityType;
 
+  typedef typename BaseSpaceType::DomainType DomainType;
+
+  typedef typename BaseSpaceType::DomainFieldType DomainFieldType;
+
   typedef typename BaseSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename BaseSpaceType::DomainType DomainType;
+  typedef typename BaseSpaceType::RangeType RangeType;
+
+  typedef typename BaseSpaceType::JacobianRangeType JacobianRangeType;
+
+  typedef typename BaseSpaceType::HessianRangeType HessianRangeType;
+
+  typedef Dune::Functionals::Common::LocalBaseFunctionSet<ThisType> LocalBaseFunctionSetType;
 
   /**
     \defgroup dune-fem related
@@ -74,9 +91,14 @@ public:
     return affineShift_;
   }
 
-  const int numMaxDoFs() const
+  const LocalBaseFunctionSetType localBaseFunctionSet(const EntityType& entity) const
   {
-    return baseSpace_.numMaxDoFs();
+    return LocalBaseFunctionSetType(*this, entity);
+  }
+
+  const int numMaxLocalDoFs() const
+  {
+    return baseSpace_.numMaxLocalDoFs();
   }
 
   const int order() const

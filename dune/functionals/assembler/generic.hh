@@ -45,7 +45,7 @@ public:
     typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
 
     // common storage for all entities
-    LocalMatrixType localMatrix(ansatzSpace_.numMaxDoFs(), testSpace_.numMaxDoFs());
+    LocalMatrixType localMatrix(ansatzSpace_.numMaxLocalDoFs(), testSpace_.numMaxLocalDoFs());
 
     // do first gridwalk to assemble
     const EntityIteratorType behindLastEntity = ansatzSpace_.end();
@@ -53,7 +53,8 @@ public:
          ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
-      localMatrixAssembler.assembleLocal(entity, localMatrix);
+      localMatrixAssembler.assembleLocal(
+          ansatzSpace_.localBaseFunctionSet(entity), testSpace_.localBaseFunctionSet(entity), localMatrix);
 
       addToMatrix(entity, localMatrix, matrixPtr);
 
