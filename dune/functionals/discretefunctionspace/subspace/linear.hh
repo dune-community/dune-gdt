@@ -12,6 +12,8 @@ namespace DiscreteFunctionSpace {
 
 namespace Subspace {
 
+namespace Linear {
+
 template <class SuperSpaceImp>
 class DirichletZero
 {
@@ -63,6 +65,8 @@ private:
   const DirichletZeroConstraintsType constraints_;
 
 }; // end of class DirichletZero
+
+} // end namespace Linear
 
 } // end of namespace Subspace
 
