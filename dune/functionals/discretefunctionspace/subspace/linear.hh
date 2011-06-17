@@ -22,43 +22,30 @@ public:
 
   typedef Dune::Functionals::Constraints::DirichletZero<SuperSpaceType> DirichletZeroConstraintsType;
 
+  typedef typename SuperSpaceType::GridPartType GridPartType;
+
+  typedef typename SuperSpaceType::FunctionSpaceType FunctionSpaceType;
+
   DirichletZero(const SuperSpaceType& superSpace)
     : superSpace_(superSpace)
     , constraints_(superSpace_)
   {
   }
 
-  //  /**
-  //   * @brief Copy constructor.
-  //   *
-  //   * @param lin A reference to an existing linear subspace @f$V'_{h,C}@f$.
-  //   */
-  //  Linear( const Linear& lin )
-  //    : DiscreteFunctionSpaceType( lin.space().gridPart() ),
-  //      space_( lin.space() ),
-  //      constraints_( lin.constraints() )
-  //  {
-  //  }
+  const SuperSpaceType& superSpace() const
+  {
+    return superSpace_;
+  }
 
-  //  /**
-  //   * @brief Returns the constraints.
-  //   *
-  //   * @return A reference to the constraints @f$C@f$.
-  //   */
-  //  ConstraintsType& constraints() const
-  //  {
-  //    return constraints_;
-  //  }
+  const DirichletZeroConstraintsType& constraints() const
+  {
+    return constraints_;
+  }
 
-  //  /**
-  //   * @brief Returns the discrete function space.
-  //   *
-  //   * @return A reference to the discrete function space @f$V_h@f$.
-  //   */
-  //  DiscreteFunctionSpaceType& space() const
-  //  {
-  //    return space_;
-  //  }
+  const GridPartType& gridPart() const
+  {
+    return superSpace_.gridPart();
+  }
 
 private:
   const SuperSpaceType& superSpace_;

@@ -22,13 +22,8 @@ public:
 
   ContinuousFiniteElement(GridPartType& gridPart)
     : gridPart_(gridPart)
-    , hostSpace_(gridPart_)
+    , hostSpace_(gridPart)
   {
-  }
-
-  const HostSpaceType& hostSpace() const
-  {
-    return hostSpace_;
   }
 
   const GridPartType& gridPart() const
@@ -36,9 +31,13 @@ public:
     return gridPart_;
   }
 
+  const HostSpaceType& hostSpace() const
+  {
+    return hostSpace_;
+  }
 
 private:
-  GridPartType& gridPart_;
+  const GridPartType& gridPart_;
   const HostSpaceType hostSpace_;
 
 }; // end class ContinuousFiniteElement
