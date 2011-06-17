@@ -52,62 +52,91 @@ const int polOrder = 1;
 const int polOrder = POLORDER;
 #endif
 
-///**
-//  \brief  This represents the operation \f$fv\f$.
+/**
+  \brief  This represents the operation \f$fv\f$.
 
-//          \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
-//          testfunction.
-//  \tparam FunctionSpaceImp
-//          Type of the function space, where \f$f\f$ and \f$v\f$ live in.
-//  **/
-//template< class FunctionSpaceImp >
-//class ProductOperation
-//  : public Dune::Functionals::LocalOperation::Interface< FunctionSpaceImp >
-//{
-//public:
+          \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
+          testfunction.
+  \tparam FunctionSpaceImp
+          Type of the function space, where \f$f\f$ and \f$v\f$ live in.
+  **/
+template< class FunctionSpaceImp >
+class ProductEvaluation
+{
+public:
 
-//  typedef FunctionSpaceImp
-//    FunctionSpaceType;
+  typedef FunctionSpaceImp
+    FunctionSpaceType;
 
-//  typedef typename FunctionSpaceType::RangeFieldType
-//    RangeFieldType;
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
 
-//  typedef typename FunctionSpaceType::RangeType
-//    RangeType;
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
 
-//  /**
-//    \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
+  typedef typename FunctionSpaceType::RangeType
+    RangeType;
 
-//    \tparam     LocalTestFunctionType
-//                Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
-//    \tparam     LocalPointType
-//                Type of the local point \f$x\f$, i.e. Dune::FieldVector.
-//    \param[in]  localTestFunction
-//                The local function \f$v\f$.
-//    \param[in]  localPoint
-//                The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
-//                element.
-//    \return     \f$f(x)v(x)\f$
-//    **/
-//  template< class LocalTestFunctionType, class LocalPointType >
-//  RangeFieldType evaluate(  const LocalTestFunctionType& localTestFunction,
-//                            const LocalPointType& localPoint ) const
-//  {
-//    // init return value
-//    RangeFieldType ret = 0.0;
+  typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
+    InducingFunctionType;
 
-//    // evaluate local function
-//    RangeType localTestFunctionValue( 0.0 );
-//    localTestFunction.evaluate( localPoint, localTestFunctionValue );
+  //! constructor, takes the inducing functions expression as a runtime parameter
+  ProductEvaluation( const std::string expression = "[1.0;1.0;1.0]" )
+    : inducingFunction_( expression )
+  {
+  }
 
-//    // 1.0 * v(x)
-//    ret = 1.0 * localTestFunctionValue;
+  //! copy constructor
+  ProductEvaluation( const ProductEvaluation& other )
+    : inducingFunction_( other.inducingFunction() )
+  {
+  }
 
-//    // return
-//    return ret;
-//  }
+  //! returns the inducing function
+  const InducingFunctionType& inducingFunction() const
+  {
+    return inducingFunction_;
+  }
 
-//}; // end class ProductOperation
+  /**
+    \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
+
+    \tparam     LocalTestFunctionType
+                Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
+    \tparam     LocalPointType
+                Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    \param[in]  localTestFunction
+                The local function \f$v\f$.
+    \param[in]  localPoint
+                The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+                element.
+    \return     \f$f(x)v(x)\f$
+    **/
+  template< class LocalTestFunctionType >
+  const RangeFieldType evaluate(  const LocalTestFunctionType& localTestFunction,
+                                  const DomainType& localPoint ) const
+  {
+    // get global point
+    const DomainType globalPoint = localTestFunction.entity().geometry().global( localPoint );
+
+    // evaluate local function
+    RangeType localTestFunctionValue( 0.0 );
+    localTestFunction.evaluate( localPoint, localTestFunctionValue );
+
+    // evaluate inducing function
+    RangeType functionValue( 0.0 );
+    inducingFunction_.evaluate( globalPoint, functionValue );
+
+    // f(x) * v(x)
+    const RangeFieldType ret = functionValue * localTestFunctionValue;
+
+    return ret;
+  }
+
+private:
+
+  const InducingFunctionType inducingFunction_;
+}; // end class ProductEvaluation
 
 
 /**
@@ -177,10 +206,10 @@ public:
     *             element.
     * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
     **/
-  template< class LocalAnsatzFunctionType, class LocalTestFunctionType, class LocalPointType >
-  RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
+  template< class LocalAnsatzFunctionType, class LocalTestFunctionType >
+  const RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
                             const LocalTestFunctionType& localTestFunction,
-                            const LocalPointType& localPoint ) const
+                            const DomainType& localPoint ) const
   {
     // get global point
     const DomainType globalPoint = localAnsatzFunction.entity().geometry().global( localPoint );
@@ -258,10 +287,10 @@ int main( int argc, char** argv )
 
 
     // local evaluations
-//    typedef ProductOperation< FunctionSpaceType >
-//      ProductOperationType;
+    typedef ProductEvaluation< FunctionSpaceType >
+      ProductEvaluationType;
 
-//    ProductOperationType productOperation;
+    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
 
     typedef EllipticEvaluation< FunctionSpaceType >
       EllipticEvaluationType;
