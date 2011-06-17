@@ -37,7 +37,7 @@ public:
   typedef typename DirichletZeroSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
-  typedef Dune::FemTools::RuntimeFunction< FunctionSpaceType >
+  typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
     RuntimeFunctionType;
 
   typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
@@ -59,6 +59,11 @@ public:
   const SuperSpaceType& superSpace() const
   {
     return dirichletZeroSpace_.superSpace();
+  }
+
+  const AffineShiftType& affineShift() const
+  {
+    return affineShift_;
   }
 
 private:
