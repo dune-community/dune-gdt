@@ -12,13 +12,14 @@ namespace Functionals
 
 namespace Container
 {
+
 /**
  * @brief Class for storing the sparsity pattern of a sparse matrix.
  *
  * A sparsity pattern stores nonzero entries (or entries which might be nonzero)
- * in a matrix @f$A=(a_{ij})_{i,j} @f$, 
- * i.e. all entries @f$(i,j)@f$ in the matrix with 
- * @f[(a_{ij})_{i,j}\neq 0\quad\forall i\in\{1,\ldots,m\},j\in\{1,\ldots,n\}@f] 
+ * in a matrix @f$A=(a_{ij})_{i,j} @f$,
+ * i.e. all entries @f$(i,j)@f$ in the matrix with
+ * @f[(a_{ij})_{i,j}\neq 0\quad\forall i\in\{1,\ldots,m\},j\in\{1,\ldots,n\}@f]
  * where @f$m@f$ is the number of rows and  @f$n@f$ is the number of columns
  * of the matrix @f$A@f$.
  *
@@ -119,7 +120,7 @@ public:
 
   /**
    *  @brief Gets pointer pointing behind the last nonzero entry.
-   *  
+   *
    *  @param row The row number.
    */
   NonZeroColIterator end( unsigned int row )
