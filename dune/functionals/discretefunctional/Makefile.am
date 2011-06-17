@@ -1,3 +1,3 @@
-SUBDIRS = continuous subspace
+SUBDIRS = local
 
 include $(top_srcdir)/am/global-rules

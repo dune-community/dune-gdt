@@ -23,8 +23,11 @@ namespace DiscreteFunctional
 namespace Local
 {
 
+namespace Codim0
+{
+
 template< class LocalEvaluationImp >
-class Codim0Integration
+class Integral
 {
 public:
 
@@ -43,7 +46,7 @@ public:
   typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
     LocalVectorType;
 
-  Codim0Integration( const LocalEvaluationType& localEvaluation )
+  Integral( const LocalEvaluationType& localEvaluation )
     : localEvaluation_( localEvaluation )
   {
   }
@@ -110,7 +113,9 @@ private:
 
   const LocalEvaluationType& localEvaluation_;
 
-}; // end class Codim0Integration
+}; // end class Integral
+
+} // end namespace Codim0
 
 } // end namespace Local
 

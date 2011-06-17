@@ -21,14 +21,14 @@ namespace Linear
 {
 
 template< class SuperSpaceImp >
-class DirichletZero
+class Dirichlet
 {
 public:
 
   typedef SuperSpaceImp
     SuperSpaceType;
 
-  typedef DirichletZero< SuperSpaceType >
+  typedef Dirichlet< SuperSpaceType >
     ThisType;
 
   typedef Dune::Functionals::Constraints::DirichletZero< SuperSpaceType >
@@ -77,7 +77,7 @@ public:
     \}
     **/
 
-  DirichletZero( const SuperSpaceType& superSpace )
+  Dirichlet( const SuperSpaceType& superSpace )
     : superSpace_( superSpace ),
       constraints_( superSpace_ )
   {

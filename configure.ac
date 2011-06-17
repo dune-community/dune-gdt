@@ -33,9 +33,14 @@ AC_CONFIG_FILES([
   dune/functionals/constraints/Makefile
   dune/functionals/container/Makefile
   dune/functionals/discretefunctionspace/Makefile
+  dune/functionals/discretefunctionspace/continuous/Makefile
   dune/functionals/discretefunctionspace/subspace/Makefile
+  dune/functionals/discretefunctional/Makefile
+  dune/functionals/discretefunctional/local/Makefile
+  dune/functionals/discretefunctional/local/codim0/Makefile
   dune/functionals/discreteoperator/Makefile
   dune/functionals/discreteoperator/local/Makefile
+  dune/functionals/discreteoperator/local/codim0/Makefile
   examples/Makefile
   examples/poisson_new/Makefile
   examples/elliptic_finite_element/Makefile
