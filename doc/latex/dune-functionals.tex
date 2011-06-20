@@ -1,0 +1,435 @@
+% ==================================================================================================================== %
+% dune-functionals.tex
+% by: Felix Albrecht (felix.albrecht@uni-muenster.de)
+% ==================================================================================================================== %
+\documentclass[a4paper,11pt]{article}
+
+% required packages and definitions
+\usepackage[utf8]{inputenc}
+%% \usepackage[body={148mm,240mm,nohead}]{geometry}
+
+\usepackage{multicol}
+\usepackage{xspace}
+\usepackage{relsize}
+
+\usepackage[usenames,dvipsnames]{pstricks}
+\usepackage{epsfig}
+
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\numberwithin{equation}{section}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{class}[definition]{Class}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{example}[definition]{Example}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{problem}[definition]{Problem}
+\newtheorem{disclaimer}[definition]{Disclaimer}
+\newcommand{\theoremNewline}{\hspace{1mm}\\}
+\newcommand{\theoremEndLine}{\hspace{1mm}}
+\newcommand{\theoremItemizeNewline}{\hspace{1mm}\vspace{-3mm}}
+
+\usepackage{hyperref}
+\usepackage{url}
+
+\usepackage{longtable}
+\usepackage{listings}
+\lstset{language=C++,
+basicstyle=\ttfamily\color{black}\footnotesize,
+keywordstyle=\underbar,
+identifierstyle=,
+commentstyle=\color{blue},
+stringstyle=\itshape\color{green},
+numbers=left,
+numberstyle=\tiny}
+\newcommand{\Code}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\lstinline!#1!}
+\newcommand{\CodeT}[1]{\textnormal{\texttt{#1}}}
+\newcommand{\codeT}[1]{\textnormal{\lstinline!#1!}}
+
+\usepackage{tikz}
+\usepgflibrary{arrows}
+
+\newcommand{\dune}{\textsc{Dune}\xspace}
+% \newcommand{\dunecommon}{\textsc{Dune-Common}\xspace}
+% \newcommand{\dunegrid}{\textsc{Dune-Grid}\xspace}
+% \newcommand{\duneistl}{\textsc{Dune-Istl}\xspace}
+% \newcommand{\dunelocalfunctions}{\textsc{Dune-Localfunctions}\xspace}
+
+\newcommand{\dunefem}{\textsc{Dune-Fem}\xspace}
+\newcommand{\dunefunctionals}{\textsc{Dune-Functionals}\xspace}
+\newcommand{\dunepdelab}{\textsc{Dune-PDELab}\xspace}
+% \newcommand{\dumux}{\textsc{DuMu}$^\textrm{x}$\xspace}
+
+% \newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
+% \newcommand{\alberta}{\textsc{ALBERTA}\xspace}
+
+% \newcommand{\albertagrid}{{\tt AlbertaGrid}\xspace}
+% \newcommand{\alusimplexgrid}{{\tt ALUSimplexGrid}\xspace}
+% \newcommand{\alucubegrid}{{\tt ALUCubeGrid}\xspace}
+% \newcommand{\aluconformgrid}{{\tt ALUConformGrid}\xspace}
+% \newcommand{\uggrid}{{\tt UGGrid}\xspace}
+% \newcommand{\onedgrid}{{\tt OneDGrid}\xspace}
+% \newcommand{\sgrid}{{\tt SGrid}\xspace}
+% \newcommand{\yaspgrid}{{\tt YaspGrid}\xspace}
+
+\newcommand{\hnS}{\hspace{-1.25pt}}
+\newcommand{\divergence}{\nabla\hnS\hnS\hnS\cdot}
+\newcommand{\gradient}{\nabla\hnS\hnS}
+\newcommand{\boundary}{\partial \hnS}
+\newcommand{\dx}{\;d\hnS x}
+\newcommand{\komma}{\text{,}}
+\newcommand{\punkt}{\text{.}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Tau}{\mathcal{T}}
+
+\title{\dunefunctionals}
+\author{Felix Albrecht (\Code{felix.albrecht@uni-muenster.de})}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	This document is a draft about a new \dune discretization module, based on \dunefem and \dunepdelab.
+\end{abstract}
+
+\hrule
+
+\begin{small}
+	\tableofcontents
+\end{small}
+
+\vspace{5mm}
+\hrule
+
+
+\section{Introduction}
+	\label{section::introduction}
+
+
+\begin{disclaimer}\theoremNewline
+	\label{disclaimer::introduction}
+	Everything presented in this document is in a very early state of development! The presented ideas, concepts and
+	implementation details will possibly be subject to significant change in the future. In particular any implementation
+	specific details, like interfaces, method signatures, reference vs. smart pointer usage, etc is completely neglected in
+	this draft.  
+\end{disclaimer}\theoremEndLine
+
+The overall goal of \dunefunctionals is the efficient numerical solution of PDE's. To make our intentions clearer,
+here is a short introduction to our ``philosophy''.
+
+\begin{remark}[Philosophy behind \dunefunctionals]
+	We had the following in mind, when we started to design \dunefunctionals:
+  \begin{itemize}
+    \item By ``efficient'' we mainly have the efficiency of the programmer in mind, without sacrificing too much of the 
+			efficiency of the program.
+    \item Things should be simple. There should be no ``eierlegende Wollmilchsau''.
+    \item Code is usually more often read than written. Write it readable.
+    \item Everything should be highly modularized, where each piece serves a small but distinct purpose.
+  \end{itemize}
+  In the end, there should also be an additional \dune module to bundle together the above mentioned pieces with
+  suitable defaults for teaching, lazy users and quick and simple solutions.
+\end{remark}
+
+One result of these principles is the following.
+
+\begin{remark}[Branches]
+  Everything new is created in a seperate (testing-) branch or repository. Only code, that complies to the above philosophy
+  is merged into trunk/mater.
+\end{remark}
+
+In addition to this philosophy there are some other principles that are constitutive for \dunefunctionals.
+
+\begin{definition}[Design principles of \dunefunctionals]\theoremItemizeNewline
+  \begin{itemize}
+    \item There should be persistent grid views (C.E. and F.A. already did some thinking on this).
+    \item There should be discrete function spaces that do not change during runtime.
+    \item There should be discrete functions, whose size do not change during runtime.
+    \item Adaptivity is realized by creating a new space from the old one with a new grid view. Prolongation/restriction
+			is carried out by an external structure that prolongs a discrete function from one space to another discrete
+			function in another space. If the user wants to, he can keep the old space and function.
+		\item A discrete function should be some storage and a small interface, nothing more.
+		\item The magic happens in local operators and local functionals, that do integration and stuff on one entity.
+		\item These are either bundled together with a local assembler into a ``systemassembler'' to produce system matrices
+			for a linear algebra backend, or these are incorporated into an operator or functional that work on discrete
+			functions.
+  \end{itemize}
+\end{definition}\theoremEndLine
+
+Having this in mind and to elaborate our point, we present two possible discretization schemes for a simple example.
+
+
+\section{Strong and weak formulation}
+	\label{section::strong_weak_formulation}
+
+
+Assuming standard notation, the following elliptic PDE is one of the simplest sample problem we would like to being
+able to solve with \dunefunctionals.
+
+\begin{example}[Elliptic boundary value problem]\theoremNewline
+	\label{example::strong_weak_formulation::elliptic_pde}
+	Let ${\Omega \subset \R^{d=1,2,3}}$ be a bounded connected lipshitz-domain and let ${a\komma f : \Omega \rightarrow \R}$ and
+	${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
+	\begin{align}
+		\label{equation::strong_weak_formulation::elliptic_pde}
+		- \divergence
+			\big(
+				a \gradient u
+			\big)
+			&= f &&\text{in } \Omega \komma
+		\\
+		u &= g &&\text{on } \boundary\Omega \punkt
+		\notag
+	\end{align}
+\end{example}\theoremEndLine
+
+As usual, we will consider the weak formulation of equation \ref{equation::strong_weak_formulation::elliptic_pde}.
+
+\begin{definition}[Weak formulation]\theoremNewline
+	\label{definition::strong_weak_formulation::weak_formulation}
+	Let $H^1$ and $H^1_0$ be given as usual and let the affine subspace $H^1_g$ be
+	defined as
+	\begin{align}
+		H^1_g :=
+			\big\{
+				v \in H^1
+			\big|
+				v = v_0 + \hat{g} \text{ for a } v_0 \in H^1_0
+			\big\}\komma
+		\notag
+	\end{align}
+	where ${\hat{g} \in H^{1}}$ is a ${H^{1}}$--representation of $g$. Define further the bilinear form
+	$B^{\omega}$ and the linear form
+	$L^{\omega}$ for a suitable subset ${\omega \subseteq \Omega}$ by
+	\begin{align}
+		B^{\omega}: H^1(\omega) \times H^1(\omega) &\rightarrow \R \komma
+			\notag\\
+		(u,v) &\mapsto B^{\omega}(u,v) := \int\limits_{\omega} a \gradient u \gradient v \dx \komma
+			\label{equation::strong_weak_formulation::bilinear_form}\\
+		L^{\omega}: H^1(\omega) &\rightarrow \R \komma
+			\notag\\
+		v &\mapsto L^{\omega}(v) := \int\limits_{\omega} f v \dx \punkt
+			\label{equation::strong_weak_formulation::linear_form}
+	\end{align}
+	The weak formulation of problem \eqref{equation::strong_weak_formulation::elliptic_pde} then reads as follows. Find
+	${u \in H^1_g}$, such that
+	\begin{align}
+		\label{equation::strong_weak_formulation::weak_formulation}
+		B^{\Omega}(u,v) = L^{\Omega}(v)
+			&&\text{for all } v \in H^1_0 \punkt
+	\end{align}
+\end{definition}\theoremEndLine
+
+
+\section{Discretization}
+	\label{section::discretization}
+
+We will consider two discretization schemes in the following section. The first discretization (a standard Finite
+Element method) will use globally continuous spaces and is thus, in this context, a conforming discretization. The
+other discretization (a standard interior penalty Discontinuous Galerkin method) will use discontinuous spaces (thus
+being a non--conforming discretization in this context) and will show how we intend to deal with non $codim$ 0 parts
+of the discretization.
+
+Let $\Tau_h := \Tau_h(\Omega)$ be an admissible triangulation of $\Omega$ with grid width $h \in \R^{>0}$.
+
+
+\subsection{Finite Element method}
+	\label{subsection::discretization::finite_element_method}
+	
+At first, we introduce the following local operator and local functional.
+
+\begin{definition}[Local operator, local functional]\theoremNewline
+	\label{definition::discretization::local_operator_functional_fem}
+	Let ${T \in \Tau_h}$ be a $codim$ 0 entity. Define the local operator $A^T$ by
+	\begin{align}
+		A^T: H^1(T) &\rightarrow H^{-1}(T) \komma
+			\notag\\
+		u &\mapsto A^T(u) \komma
+			\notag
+	\intertext{where $A^T(u)$ itself is a local functional, defined by}
+		A^T(u): H^1(T) &\rightarrow \R \komma
+			\notag\\
+			v &\mapsto A^T(u)[v] := B^T(u,v) \komma
+			\notag
+	\intertext{and the local functional $F^T$ by}
+		F^T: H^1(T) &\rightarrow \R \komma
+			\notag\\
+			v &\mapsto F^T[v] := L^T(v) \punkt
+			\notag
+	\end{align}
+\end{definition}\theoremEndLine
+
+These are bundled together by the following operator and functional.
+
+\begin{definition}[Operator, functional]\theoremNewline
+  \label{definition::discretization::operator_fucntional_fem}
+  Let ${T \in \Tau_h}$ be a $codim$ 0 entity. Define the operator $A$ by
+	\begin{align}
+		A: H^1 &\rightarrow H^{-1} \komma
+			\notag\\
+		u &\mapsto A(u) \komma
+			\notag
+	\intertext{where $A(u)$ itself is a functional, defined by}
+		A(u): H^1 &\rightarrow \R \komma
+			\notag\\
+			v &\mapsto A(u)[v] := \sum\limits_{T \in \Tau_h} A^T(u)[v] \komma
+			\notag
+	\intertext{and the functional $F$ by}
+		F: H^1 &\rightarrow \R \komma
+			\notag\\
+			v &\mapsto F[v] := \sum\limits_{T \in \Tau_h} F^T[v] \punkt
+			\notag
+	\end{align}
+\end{definition}\theoremEndLine
+
+This operator and this functional are used to formulate the Finite Element method to obtain a finite element solution
+for problem \ref{equation::strong_weak_formulation::weak_formulation}.
+
+\begin{definition}[Finite element solution]\theoremNewline
+  \label{definition::discretization::finite_eleemnt_solution}
+  Define the usual Lagrange space of globally continuous piecewise polynomial functions by
+	\begin{align}
+		\label{equation::discretization::lagrange_space}
+		S_{h}^{k} &:=
+			\big\{
+				v_{h} \in C^{0}(\Omega)
+			\big|
+				v_{h}|_{T} \in \mathbb{P}^{k}(T) \quad\forall T \in \Tau_{h}
+			\big\} \komma
+			\notag
+		\intertext{its linear subspace by}
+		{S_{h}^{k}}_{0} &:=
+			\big\{
+				v_{h} \in S_{h}^{k}
+			\big|
+				v_{h} = 0 \text{ on } \boundary \Omega
+			\big\}
+			\notag
+		\intertext{and its affine subspace by}
+		{S_{h}^{k}}_{g} &:=
+			\big\{
+				v_{h} \in S_{h}^{k}
+			\big|
+				{v_{h}}_0 + g_{h} \text{ for a } {v_h}_0 \in {S_h^k}_0
+			\big\} \komma
+			\notag
+	\end{align}
+	where ${g_{h} \in S_{h}^{k}}$ is a projection of $\hat{g}$ onto ${S_{h}^{k}}$. Given ${g_h \in S_h^1}$, find
+	${{u_h}_0 \in {S_{h}^{1}}_{0}}$, such that
+	\begin{align}
+		A({u_h}_0)[v_h] = F[v_h] - A(g_h)[v_h] &&\text{for all } v_h \in {S_{h}^{1}}_{0} \punkt
+			\notag
+	\end{align}
+	The finite element solution for problem \ref{equation::strong_weak_formulation::weak_formulation} is then given by
+	\begin{align}
+	  u_h := {u_h}_0 + g_h && \in S_{h}^{1} \punkt
+			\notag
+	\end{align}
+\end{definition}\theoremEndLine
+
+This is the point where we usually want to assemble a matrix and a vector, to solve an algebraic system for the
+solutions DoF vector.
+
+\begin{definition}[Algebraic system]\theoremNewline
+	\label{definition::discretization::algebraic_system_fem}
+  Given sets of local basefunctions ${B^T:=\big\{ \varphi_i^T \big| i \in I^T \big\}}$ for all $codim$ 0 entity
+  ${T \in \Tau_h}$ and a suitable local--to--global mapping, compute the local matrices $A^{T,T}$ and the local
+  vectors $F^T$ and $G^T$, defined by
+  \begin{align}
+		\left( A^{T,T} \right)_{i,j} &:= A^T(\varphi_i)[\varphi_j] &&\text{for all } i,j \in I^T \komma
+			\notag\\
+		\left( F^T \right)_j &:= F^T[\varphi_j] &&\text{for all } j \in I^T
+			\notag
+	\intertext{and}
+		\left( G^T \right)_j &:= A^T(g_h)[\varphi_j] &&\text{for all } j \in I^T \punkt
+			\notag
+  \end{align}
+  for all $codim$ 0 entities ${T \in \Tau_h}$. The global matrix $A$ and the global vectors $F$ and $G$ are defined
+  by applying the above mentioned local--to--global mapping elementwise and adding up these contributions.
+\end{definition}\theoremEndLine
+
+\begin{definition}[Solver]\theoremNewline
+	\label{definition::discretization::solver_fem}
+  Given $A$, $F$ and $G$, solve
+  \begin{align}
+    A u = F - G
+			\notag
+  \end{align}
+  for $u$ to obtain ${{u_h}_0 \in {S_h^1}_0}$ and add $g_h$ to obtain ${u_h = {u_h}_0 + g_h \in S_{h}^{1}}$.
+\end{definition}
+
+Now that we have a mathematical description of the problem at hand, we would like to highlight some details on how to
+solve the problem using \dunefunctionals. Note that we use the ``assembler/global system'' approach here, another
+possibility is to define a global operator and a global functional (see \ref{}).
+
+\begin{example}[Finite element solution in \dunefunctionals]
+	\label{example::discretization::solution_dune_functionals}
+	The following steps have to be undertaken at the moment to solve the above problem using \dunefunctionals.
+	In the future, some of these steps should be bundled together to obtain some few simple classes for lazy users.
+	Note: we will only highlight the necessary steps for the (local) operator and matrix, the same has to be done for the
+	(local) functional and vector.
+	\begin{itemize}
+		\item \CodeT{DiscreteFunctionSpace::Continuous::Lagrange}: given a \CodeT{FunctionSpace},\\
+			provides methods to obtain a local basefunction set and the local--to--global mapping.
+		\item \CodeT{DiscreteFunctionSpace::Subspace::Linear::Dirichlet}: given a discrete function space,\\
+			provides constraints and all methods from the super space.
+		\item \CodeT{DiscreteFunctionSpace::Subspace::Affine::Dirichlet}: given a discrete function space and an analytical
+			expression,\\
+			carries out a dirichlet--projection,\\
+			provides methods to obtain $g_h$ and all methods from the base space.
+	  \item \CodeT{EllipticEvaluation}: given two local basefunction sets $B^T$, $B^S$,\\
+			returns a local matrix ${\big(a \gradient \varphi_i^T \gradient \varphi_j^S\big)_{i,j}}$ for all ${\varphi_i^T \in B^T}$,
+			${\varphi_i^T \in B^T}$.
+		\item \CodeT{DiscreteOperator::Local::Codim0::Integral}: given a local evaluation and two local basefunction sets,\\
+			carries out a $codim$ 0 integration by applying a quadrature rule and evaluating the local evaluation at each quadrature point,\\
+			returns a local matrix ${A^{T,T}}$.
+		\item \CodeT{Assembler::Local::Codim0::Matrix}: given a local operator, two discrete function spaces, an entity and
+			the global matrix $A$,\\
+			gets the corresponding local basefunction sets, calls the local operator and adds the resulting local matrix to
+			$A$.
+		\item \CodeT{Container::Matrix::Defaults< ... >::BCRSMatrix}: provides an auto--pointer to a suitable storage object.
+		\item \CodeT{Assembler::System::Affine}: given two discrete function spaces, two local assemblers and storage for
+			$A$, $F$ and $G$,\\
+			walks the grid and calls the local assemblers on each entity (note: the assembler automatically creates a local
+			vector assembler for the affine contribution),
+			walks the grid again to apply local constraints\\
+		\item Some solver...
+	\end{itemize}
+	At the moment the user only has to implement an \CodeT{EllipticEvaluation} and a \CodeT{ProductEvaluation}, the rest is
+	provided by \dunefunctionals.  
+\end{example}\theoremEndLine
+
+We would like to point out some final remarks for this example.
+
+\begin{remark}\theoremNewline
+  \label{remarks::discretization::final_remarks_fem}
+  \begin{itemize}
+    \item The local evaluation, the local operator and the local assembler are all instanciated without a discrete
+			function space. This objects are lightweight and can be copied without restriction.
+		\item The discrete function spaces are given only to the system assembler.
+		\item Another (not yet implemented) possibility is:
+			\begin{itemize}
+				\item Define global operator and global functionals, given their local counterparts and discrete function
+					spaces.
+				\item These can be either applied on--the--fly or assemble themselves or register themselves at a
+					``grid--walker'', which would call an \CodeT{applyLocal} method to allow them to assemble themselves.
+				\item These would more or less comply to the existing \dunefem operator and could be given to a solver,
+					ode--integrator or nonlinear solver.
+			\end{itemize}
+	\end{itemize}
+\end{remark}\theoremEndLine
+  
+%   \bibliographystyle{plain}
+%   \bibliography{dune-fem-functionals}
+
+\end{document}
+
+
+
+
