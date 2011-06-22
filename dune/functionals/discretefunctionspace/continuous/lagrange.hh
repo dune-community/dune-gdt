@@ -54,10 +54,6 @@ public:
     \}
     **/
 
-  static const unsigned int dimDomain = FunctionSpaceType::dimDomain;
-
-  static const unsigned int dimRange = FunctionSpaceType::dimRange;
-
   Lagrange(GridPartType& gridPart)
     : gridPart_(gridPart)
     , hostSpace_(gridPart)
