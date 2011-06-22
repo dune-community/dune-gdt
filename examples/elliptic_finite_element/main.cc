@@ -292,113 +292,113 @@ int main( int argc, char** argv )
     const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
 
 
-    // local evaluation
-    typedef ProductEvaluation< FunctionSpaceType >
-      ProductEvaluationType;
+//    // local evaluation
+//    typedef ProductEvaluation< FunctionSpaceType >
+//      ProductEvaluationType;
 
-    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
+//    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
 
-    typedef EllipticEvaluation< FunctionSpaceType >
-      EllipticEvaluationType;
+//    typedef EllipticEvaluation< FunctionSpaceType >
+//      EllipticEvaluationType;
 
-    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
-
-
-    // operator and functional
-    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
-      LocalEllipticOperatorType;
-
-    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
-
-    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
-      LocalL2FunctionalType;
-
-    const LocalL2FunctionalType localL2Functional( productEvaluation );
-
-    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
-      LocalAffineShiftFunctionalType;
-
-    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
-
-    // matrix, rhs and solution storage
-    //! \todo the matrix factory should get two spaces (ansatz and test)
-    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
-      MatrixFactory;
-
-    typedef typename MatrixFactory::AutoPtrType
-      MatrixPtrType;
-
-    MatrixPtrType A = MatrixFactory::create( discreteH1 );
-
-    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
-      VectorFactory;
-
-    typedef typename VectorFactory::AutoPtrType
-      VectorPtrType;
-
-    VectorPtrType F = VectorFactory::create( discreteH1 );
-
-    VectorPtrType G = VectorFactory::create( discreteH1 );
-
-    VectorPtrType u0 = VectorFactory::create( discreteH1 );
+//    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
 
 
-    // assembler
-    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
-      LocalMatrixAssemblerType;
+//    // operator and functional
+//    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
+//      LocalEllipticOperatorType;
 
-    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
+//    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
 
-    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
-      LocalVectorAssemblerType;
+//    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
+//      LocalL2FunctionalType;
 
-    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+//    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
-    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
-      SystemAssemblerType;
+//    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
+//      LocalAffineShiftFunctionalType;
 
-    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
+//    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
 
-    systemAssembler.assembleSystem( localMatrixAssembler, *A,
-                                    localVectorAssembler, *F,
-                                    *G );
+//    // matrix, rhs and solution storage
+//    //! \todo the matrix factory should get two spaces (ansatz and test)
+//    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
+//      MatrixFactory;
 
+//    typedef typename MatrixFactory::AutoPtrType
+//      MatrixPtrType;
 
-    // preconditioner and solver
-    typedef typename MatrixFactory::ContainerType
-      MatrixContainerType;
+//    MatrixPtrType A = MatrixFactory::create( discreteH1 );
 
-    typedef typename VectorFactory::ContainerType
-      VectorContainerType;
+//    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
+//      VectorFactory;
 
-    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
-      MatrixAdapterType;
+//    typedef typename VectorFactory::AutoPtrType
+//      VectorPtrType;
 
-    MatrixAdapterType matrix( *A );
+//    VectorPtrType F = VectorFactory::create( discreteH1 );
 
-    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
-      PreconditionerType;
+//    VectorPtrType G = VectorFactory::create( discreteH1 );
 
-    PreconditionerType preconditioner( *A, 1.0 );
-
-    typedef Dune::CGSolver< VectorContainerType >
-      SolverType;
-
-    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
-
-    Dune::InverseOperatorResult result;
-
-    // u_0 = A^(-1) ( F - G )
-    solver.apply( *u0, *F, result );
+//    VectorPtrType u0 = VectorFactory::create( discreteH1 );
 
 
-    // postprocessing
-    typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
-      DiscreteFunctionType;
+//    // assembler
+//    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
+//      LocalMatrixAssemblerType;
 
-    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
+//    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
-    Dune::FemTools::Function::writeToVTK( solution, "solution" );
+//    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
+//      LocalVectorAssemblerType;
+
+//    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+
+//    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
+//      SystemAssemblerType;
+
+//    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
+
+//    systemAssembler.assembleSystem( localMatrixAssembler, *A,
+//                                    localVectorAssembler, *F,
+//                                    *G );
+
+
+//    // preconditioner and solver
+//    typedef typename MatrixFactory::ContainerType
+//      MatrixContainerType;
+
+//    typedef typename VectorFactory::ContainerType
+//      VectorContainerType;
+
+//    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
+//      MatrixAdapterType;
+
+//    MatrixAdapterType matrix( *A );
+
+//    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
+//      PreconditionerType;
+
+//    PreconditionerType preconditioner( *A, 1.0 );
+
+//    typedef Dune::CGSolver< VectorContainerType >
+//      SolverType;
+
+//    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
+
+//    Dune::InverseOperatorResult result;
+
+//    // u_0 = A^(-1) ( F - G )
+//    solver.apply( *u0, *F, result );
+
+
+//    // postprocessing
+//    typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
+//      DiscreteFunctionType;
+
+//    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
+
+//    Dune::FemTools::Function::writeToVTK( solution, "solution" );
 
     // done
     return 0;

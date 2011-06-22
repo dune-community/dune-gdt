@@ -212,12 +212,12 @@ public:
     return LocalBaseFunctionType( *this, i );
   }
 
-  const int order() const
+  int order() const
   {
     return space_.order();
   }
 
-  const int numBaseFunctions() const
+  int numBaseFunctions() const
   {
     return hostBaseFunctionSet_.numBaseFunctions();
   }
@@ -226,6 +226,14 @@ public:
   {
     assert( i < numBaseFunctions() );
     hostBaseFunctionSet_.evaluate( i, x, ret );
+  }
+
+  void evaluateAll( const DomainType& x, vector< RangeType >& ret)
+  {
+    for( unsigned int i = 0; i < numBaseFunctions(); ++i )
+    {
+      evaluate( i, x, ret[i] );
+    }
   }
 
   /**
