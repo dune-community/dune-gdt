@@ -77,10 +77,6 @@ public:
     \}
     **/
 
-  static const unsigned int dimDomain = SuperSpaceType::dimDomain;
-
-  static const unsigned int dimRange = SuperSpaceType::dimRange;
-
   Dirichlet( const SuperSpaceType& superSpace )
     : superSpace_( superSpace ),
       constraints_( superSpace_ )
