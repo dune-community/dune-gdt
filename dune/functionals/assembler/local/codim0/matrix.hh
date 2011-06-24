@@ -74,7 +74,7 @@ public:
                       const TestSpaceType& testSpace,
                       const EntityType& entity,
                       MatrixType& matrix,
-                      LocalMatrixType localMatrix ) const
+                      LocalMatrixType& localMatrix ) const
   {
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal( ansatzSpace.localBaseFunctionSet( entity ), testSpace.localBaseFunctionSet( entity ), localMatrix );

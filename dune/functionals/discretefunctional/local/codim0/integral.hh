@@ -52,7 +52,7 @@ public:
   }
 
   template< class LocalTestBaseFunctionSetType >
-  void applyLocal( const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+  void applyLocal( const LocalTestBaseFunctionSetType localTestBaseFunctionSet,
                    LocalVectorType& localVector ) const
   {
     // some types
@@ -157,7 +157,7 @@ public:
   }
 
   template< class LocalTestBaseFunctionSetType >
-  void applyLocal( const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+  void applyLocal( const LocalTestBaseFunctionSetType localTestBaseFunctionSet,
                    LocalVectorType& localVector ) const
   {
     // some types

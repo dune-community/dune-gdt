@@ -133,7 +133,7 @@ public:
     return hostSpace_.baseFunctionSet( entity );
   }
 
-  const int mapToGlobal( const EntityType& entity, const int localDof) const
+  int mapToGlobal( const EntityType& entity, const int localDof) const
   {
     return hostSpace_.mapToGlobal( entity, localDof);
   }

@@ -56,7 +56,7 @@ public:
   void assembleLocal( const TestSpaceType& testSpace,
                       const EntityType& entity,
                       VectorType& vector,
-                      LocalVectorType localVector ) const
+                      LocalVectorType& localVector ) const
   {
     // write local operator application to tmpLocalMatrix
     localFunctional_.applyLocal( testSpace.localBaseFunctionSet( entity ), localVector );
