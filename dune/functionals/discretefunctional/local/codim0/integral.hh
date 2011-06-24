@@ -41,7 +41,7 @@ public:
   }
 
   template <class LocalTestBaseFunctionSetType>
-  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& localVector) const
+  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector) const
   {
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
@@ -131,7 +131,7 @@ public:
   }
 
   template <class LocalTestBaseFunctionSetType>
-  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& localVector) const
+  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector) const
   {
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;

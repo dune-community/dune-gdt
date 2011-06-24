@@ -59,7 +59,7 @@ public:
   template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class MatrixType,
             class LocalMatrixType = Dune::Functionals::Common::LocalMatrix<RangeFieldType>>
   void assembleLocal(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
-                     MatrixType& matrix, LocalMatrixType localMatrix) const
+                     MatrixType& matrix, LocalMatrixType& localMatrix) const
   {
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal(

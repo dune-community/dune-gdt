@@ -135,8 +135,8 @@ public:
     \return     The matrix \f$\{A( \varphi_i )[\psi_j]\}_{i \in I_E, j \in J_E}\f$.
     **/
   template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType>
-  void applyLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
+  void applyLocal(const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSet,
+                  const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
   {
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
