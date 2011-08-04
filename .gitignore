@@ -85,3 +85,5 @@ examples/elliptic_finite_element/elliptic_finite_element
 examples/elliptic_finite_element/elliptic_finite_element-main.o
 examples/elliptic_finite_element/boundaryData.vtp
 doc/latex/dune-functionals.pdf
+*.orig
+*.tmp
