@@ -72,6 +72,7 @@ public:
   {
   }
 
+private:
   //! copy constructor
   Lagrange(const ThisType& other)
     : gridPart_(other.gridPart())
@@ -80,6 +81,7 @@ public:
   {
   }
 
+public:
   const GridPartType& gridPart() const
   {
     return gridPart_;

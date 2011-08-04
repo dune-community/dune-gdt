@@ -27,12 +27,14 @@ public:
   {
   }
 
+private:
   //! copy constructor
   Vector(const ThisType& other)
     : localFunctional_(other.localFunctional())
   {
   }
 
+public:
   const LocalFunctionalType& localFunctional() const
   {
     return localFunctional_;

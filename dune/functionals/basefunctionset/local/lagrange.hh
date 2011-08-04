@@ -67,6 +67,7 @@ public:
     order_ = baseFunctionSet_.space().order();
   }
 
+  // private:
   //! copy constructor
   Lagrange(const ThisType& other)
     : baseFunctionSet_(other.baseFunctionSet())
@@ -74,8 +75,10 @@ public:
     , size_(other.size())
     , order_(other.order())
   {
+    std::cout << "BaseFunctionSet::Local::Lagrange::Lagrange( const ThisType& )" << std::endl;
   }
 
+  // public:
   const BaseFunctionSetType& baseFunctionSet() const
   {
     return baseFunctionSet_;

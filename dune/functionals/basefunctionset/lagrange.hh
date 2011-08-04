@@ -88,8 +88,8 @@ public:
     : space_(space)
     , hostBaseFunctionSetMap_()
   {
-    std::cout << "BaseFunctionSet::Lagrange::Lagrange(){" << std::endl;
-    mapInspector("  ");
+    //    std::cout << "BaseFunctionSet::Lagrange::Lagrange(){" << std::endl;
+    //    mapInspector( "  " );
     const IndexSetType& indexSet = space_.gridPart().indexSet();
 
     AllGeomTypes<IndexSetType, GridType> allGeometryTypes(indexSet);
@@ -106,29 +106,29 @@ public:
         hostBaseFunctionSetMap_[geometryType] = baseFunctionSet;
       }
     }
-    mapInspector("  ");
-    std::cout << "}" << std::endl;
+    //    mapInspector( "  " );
+    //    std::cout << "}" << std::endl;
   }
 
-  //  //! copy constructor
-  //  Lagrange( const ThisType& other )
-  //    : space_( other.space() ),
-  //      hostBaseFunctionSetMap_()
-  //  {
-  //    if( !other.hostBaseFunctionSetMap_.empty() )
-  //    {
-  //      for( unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i )
-  //      {
-  //        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
-  //      }
-  //    }
-  //  }
+private:
+  //! copy constructor
+  Lagrange(const ThisType& other)
+    : space_(other.space())
+    , hostBaseFunctionSetMap_()
+  {
+    if (!other.hostBaseFunctionSetMap_.empty()) {
+      for (unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i) {
+        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
+      }
+    }
+  }
 
+public:
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
-    std::cout << "BaseFunctionSet::Lagrange::~Lagrange(){" << std::endl;
-    mapInspector("  ");
+    //    std::cout << "BaseFunctionSet::Lagrange::~Lagrange(){" << std::endl;
+    //    mapInspector( "  " );
     typedef typename HostBaseFunctionMapType::iterator BFIteratorType;
     BFIteratorType bfend = hostBaseFunctionSetMap_.end();
     for (BFIteratorType it = hostBaseFunctionSetMap_.begin(); it != bfend; ++it) {
@@ -136,8 +136,8 @@ public:
       if (baseFunctionSet != NULL)
         BaseFunctionSetSingletonProviderType::removeObject(*baseFunctionSet);
     }
-    mapInspector("  ");
-    std::cout << "}" << std::endl;
+    //    mapInspector( "  " );
+    //    std::cout << "}" << std::endl;
   }
 
   const DiscreteFunctionSpaceType& space() const
@@ -152,9 +152,6 @@ public:
   }
 
 private:
-  //! copy constructor
-  Lagrange(const ThisType&);
-
   //! assignment operator
   ThisType& operator=(const ThisType&);
 
@@ -175,12 +172,12 @@ private:
   template <class EntityType>
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    std::cout << "BaseFunctionSet::Lagrange::baseFunctionSet(){" << std::endl;
-    mapInspector("  ");
+    //    std::cout << "BaseFunctionSet::Lagrange::baseFunctionSet(){" << std::endl;
+    //    mapInspector( "  " );
     // get the basefunctionset
     assert(hostBaseFunctionSetMap_.find(entity.type()) != hostBaseFunctionSetMap_.end());
     assert(hostBaseFunctionSetMap_[entity.type()] != NULL);
-    std::cout << "}" << std::endl;
+    //    std::cout << "}" << std::endl;
     return BaseFunctionSetType(hostBaseFunctionSetMap_[entity.type()]);
   }
 
