@@ -104,25 +104,24 @@ public:
     return localEvaluation_;
   }
 
-  //  template< class InducingDiscreteFunctionType >
-  //  class LocalFunctional
-  //  {
-  //  public:
-  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType,
-  //    InducingDiscreteFunctionType >
-  //      Type;
-  //  };
+  template <class InducingDiscreteFunctionType>
+  class LocalFunctional
+  {
+  public:
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
+                                                                                  InducingDiscreteFunctionType> Type;
+  };
 
-  //  template< class InducingDiscreteFunctionType >
-  //  const typename LocalFunctional< InducingDiscreteFunctionType >::Type localFunctional( const
-  //  InducingDiscreteFunctionType& inducingDiscreteFunction ) const
-  //  {
-  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType,
-  //    InducingDiscreteFunctionType >
-  //      LocalFunctionalType;
+  template <class InducingDiscreteFunctionType>
+  const typename LocalFunctional<InducingDiscreteFunctionType>::Type
+  localFunctional(const InducingDiscreteFunctionType& inducingDiscreteFunction) const
+  {
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
+                                                                                  InducingDiscreteFunctionType>
+        LocalFunctionalType;
 
-  //    return LocalFunctionalType( *this, inducingDiscreteFunction );
-  //  } // end method localFunctional
+    return LocalFunctionalType(*this, inducingDiscreteFunction);
+  } // end method localFunctional
 
   /**
     \brief      Local application of the operator.
@@ -137,8 +136,8 @@ public:
     \return     The matrix \f$\{A( \varphi_i )[\psi_j]\}_{i \in I_E, j \in J_E}\f$.
     **/
   template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType>
-  void applyLocal(const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSet,
-                  const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
+  void applyLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
   {
     // clear target matrix
     for (unsigned int i = 0; i < localMatrix.rows(); ++i) {

@@ -99,8 +99,8 @@ public:
 
   void jacobian(const DomainType& x, JacobianRangeType& ret) const
   {
-    std::cout << "DiscreteFunction::LocalConst::jacobian()" << std::endl;
-    Dune::FemTools::Grid::Entity::print(entity_, std::cout, "  ");
+    // std::cout << "DiscreteFunction::LocalConst::jacobian()" << std::endl;
+    // Dune::FemTools::Grid::Entity::print( entity_, std::cout, "  " );
     std::vector<JacobianRangeType> baseFunctionJacobianValues(size(), JacobianRangeType(0.0));
     localBaseFunctionSet_.jacobian(x, baseFunctionJacobianValues);
     ret = 0.0;

@@ -5,8 +5,14 @@
 #ifndef DUNE_FEM_FUNCTIONALS_DISCRETEFUNCTIONAL_LOCAL_INTEGRATION_HH
 #define DUNE_FEM_FUNCTIONALS_DISCRETEFUNCTIONAL_LOCAL_INTEGRATION_HH
 
+// dune-common includes
+#include <dune/common/dynmatrix.hh>
+
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
+
+// dune-functionals includes
+#include <dune/functionals/basefunctionset/local/wrapper.hh>
 
 namespace Dune {
 
@@ -51,11 +57,11 @@ public:
   }
 
   template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector) const
+  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& ret) const
   {
     // clear target
-    for (unsigned int i = 0; i < localVector.size(); ++i) {
-      localVector[i] = 0.0;
+    for (unsigned int i = 0; i < ret.size(); ++i) {
+      ret[i] = 0.0;
     }
 
     // some types
@@ -86,7 +92,7 @@ public:
 
       // compute integral
       for (unsigned int i = 0; i < size; ++i) {
-        localVector[i] += tmpVector[i] * integrationFactor * quadratureWeight;
+        ret[i] += tmpVector[i] * integrationFactor * quadratureWeight;
       }
     } // done loop over all quadrature points
   } // end method applyLocal
@@ -99,122 +105,113 @@ private:
 
 }; // end class Integral
 
-// template< class InducingOperatorImp, class InducingDiscreteFunctionImp >
-// class IntegralInduced
-//{
-// public:
+template <class InducingOperatorImp, class InducingDiscreteFunctionImp>
+class IntegralInduced
+{
+public:
+  typedef InducingOperatorImp InducingOperatorType;
 
-//  typedef InducingOperatorImp
-//    InducingOperatorType;
+  typedef InducingDiscreteFunctionImp InducingDiscreteFunctionType;
 
-//  typedef InducingDiscreteFunctionImp
-//    InducingDiscreteFunctionType;
+  typedef IntegralInduced<InducingOperatorType, InducingDiscreteFunctionType> ThisType;
 
-//  typedef IntegralInduced< InducingOperatorType, InducingDiscreteFunctionType >
-//    ThisType;
+  typedef typename InducingDiscreteFunctionType::RangeFieldType RangeFieldType;
 
-//  typedef typename InducingDiscreteFunctionType::RangeFieldType
-//    RangeFieldType;
+  typedef typename InducingDiscreteFunctionType::DomainType DomainType;
 
-//  typedef typename InducingDiscreteFunctionType::DomainType
-//    DomainType;
+  IntegralInduced(const InducingOperatorType& inducingOperator,
+                  const InducingDiscreteFunctionType& inducingDiscreteFunction)
+    : inducingOperator_(inducingOperator)
+    , inducingDiscreteFunction_(inducingDiscreteFunction)
+  {
+  }
 
-//  typedef Dune::Functionals::Common::LocalVector< RangeFieldType >
-//    LocalVectorType;
+  // private:
+  //! copy constructor
+  IntegralInduced(const ThisType& other)
+    : inducingOperator_(other.inducingOperator())
+    , inducingDiscreteFunction_(other.inducingDiscreteFunction())
+  {
+    std::cout << "DiscreteFunctional::Local::Codim0::IntegralInduced::IntegralInduced( const ThisType& )" << std::endl;
+  }
 
-//  IntegralInduced(  const InducingOperatorType& inducingOperator,
-//                    const InducingDiscreteFunctionType& inducingDiscreteFunction )
-//    : inducingOperator_( inducingOperator ),
-//      inducingDiscreteFunction_( inducingDiscreteFunction )
-//  {
-//  }
+  // public:
+  const InducingOperatorType& inducingOperator() const
+  {
+    return inducingOperator_;
+  }
 
-//  IntegralInduced( const ThisType& other )
-//    : inducingOperator_( other.inducingOperator() ),
-//      inducingDiscreteFunction_( other.inducingDiscreteFunction() )
-//  {
-//  }
+  const InducingDiscreteFunctionType& inducingDiscreteFunction() const
+  {
+    return inducingDiscreteFunction_;
+  }
 
-//  const InducingOperatorType& inducingOperator() const
-//  {
-//    return inducingOperator_;
-//  }
+  template <class LocalTestBaseFunctionSetType, class LocalVectorType>
+  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& ret) const
+  {
+    // clear target
+    for (unsigned int i = 0; i < ret.size(); ++i) {
+      ret[i] = 0.0;
+    }
 
-//  const InducingDiscreteFunctionType& inducingDiscreteFunction() const
-//  {
-//    return inducingDiscreteFunction_;
-//  }
+    // some types
+    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-//  template< class LocalTestBaseFunctionSetType >
-//  void applyLocal( const LocalTestBaseFunctionSetType localTestBaseFunctionSet,
-//                   LocalVectorType& localVector ) const
-//  {
-//    // some types
-//    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
-//      DiscreteFunctionSpaceType;
+    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
-//    typedef typename DiscreteFunctionSpaceType::GridPartType
-//      GridPartType;
+    typedef Dune::CachingQuadrature<GridPartType, 0> VolumeQuadratureType;
 
-//    typedef Dune::CachingQuadrature< GridPartType, 0 >
-//      VolumeQuadratureType;
+    typedef typename LocalTestBaseFunctionSetType::EntityType EntityType;
 
-//    typedef typename LocalTestBaseFunctionSetType::LocalBaseFunctionType
-//      LocalTestBaseFunctionType;
+    typedef typename InducingDiscreteFunctionType::ConstLocalFunctionType InducingLocalFunctionType;
 
-//    typedef typename LocalTestBaseFunctionType::EntityType
-//      EntityType;
+    typedef typename Dune::Functionals::BaseFunctionSet::Local::Wrapper<InducingLocalFunctionType>
+        InducingBaseFunctionSetType;
 
-//    typedef typename InducingDiscreteFunctionType::ConstLocalFunctionType
-//      InducingLocalFunctionType;
+    typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
 
-//    const EntityType& entity = localTestBaseFunctionSet.entity();
+    const EntityType& entity = localTestBaseFunctionSet.entity();
 
-//    const InducingLocalFunctionType inducingLocalFunction = inducingDiscreteFunction_.localFunction( entity );
+    // wrap inducing local function
+    const InducingLocalFunctionType inducingLocalFunction = inducingDiscreteFunction_.localFunction(entity);
+    const InducingBaseFunctionSetType inducingBaseFunctionSet(inducingLocalFunction);
 
-//    // some stuff
-//    const unsigned numberOfLocalTestDoFs = localTestBaseFunctionSet.numBaseFunctions();
-//    const unsigned int quadratureOrder = 1 + localTestBaseFunctionSet.order();
-//    const VolumeQuadratureType volumeQuadrature( entity, quadratureOrder );
-//    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
+    // some stuff
+    const unsigned int size = localTestBaseFunctionSet.size();
+    const unsigned int quadratureOrder =
+        inducingOperator_.localEvaluation().order() + inducingLocalFunction.order() + localTestBaseFunctionSet.order();
+    const VolumeQuadratureType volumeQuadrature(entity, quadratureOrder);
+    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
-//    // do loop over all local test DoFs
-//    for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
-//    {
-//      const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionSet.baseFunction( j );
+    // do loop over all quadrature points
+    LocalMatrixType tmpMatrix(1, size);
+    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
+      // local coordinate
+      const DomainType x = volumeQuadrature.point(q);
 
-//      // do loop over all quadrature points
-//      RangeFieldType functional_j( 0.0 );
-//      for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
-//      {
-//        // local coordinate
-//        const DomainType x = volumeQuadrature.point( q );
+      // integration factors
+      const double integrationFactor = entity.geometry().integrationElement(x);
+      const double quadratureWeight  = volumeQuadrature.weight(q);
 
-//        // integration factors
-//        const double integrationFactor = entity.geometry().integrationElement( x );
-//        const double quadratureWeight = volumeQuadrature.weight( q );
+      // evaluate the local evaluation
+      inducingOperator_.localEvaluation().evaluate(inducingBaseFunctionSet, localTestBaseFunctionSet, x, tmpMatrix);
 
-//        // evaluate the local evaluation
-//        const RangeFieldType localEvaluationEvalauted = inducingOperator_.localEvaluation().evaluate(
-//        inducingLocalFunction, localTestBaseFunction_j, x );
+      // compute integral
+      for (unsigned int i = 0; i < size; ++i) {
+        ret[i] += tmpMatrix[0][i] * integrationFactor * quadratureWeight;
+      }
+    } // done loop over all quadrature points
 
-//        // compute integral
-//        functional_j += integrationFactor * quadratureWeight * localEvaluationEvalauted;
-//      } // done loop over all quadrature points
+  } // end method applyLocal
 
-//      // set local vector (the = is important, since we dont assume a clean vector)
-//      localVector[j] = functional_j;
+private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
 
-//    } // done loop over all local test DoFs
+  const InducingOperatorType& inducingOperator_;
+  const InducingDiscreteFunctionType& inducingDiscreteFunction_;
 
-//  } // end method applyLocal
-
-// private:
-
-//  const InducingOperatorType& inducingOperator_;
-//  const InducingDiscreteFunctionType& inducingDiscreteFunction_;
-
-//}; // end class IntegralInduced
+}; // end class IntegralInduced
 
 } // end namespace Codim0
 
