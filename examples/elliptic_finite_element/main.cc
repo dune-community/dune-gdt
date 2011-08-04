@@ -315,19 +315,19 @@ int main( int argc, char** argv )
 
     const LocalL2FunctionalType localL2Functional( productEvaluation );
 
-    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
-      LocalAffineShiftFunctionalType;
+//    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
+//      LocalAffineShiftFunctionalType;
 
-    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
+//    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
 
     // matrix, rhs and solution storage
-    //! \todo the matrix factory should get two spaces (ansatz and test)
     typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
       MatrixFactory;
 
     typedef typename MatrixFactory::AutoPtrType
       MatrixPtrType;
 
+    //! \todo the matrix factory should get two spaces (ansatz and test)
     MatrixPtrType A = MatrixFactory::create( discreteH1 );
 
     typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
@@ -364,41 +364,45 @@ int main( int argc, char** argv )
                                     *G );
 
 
-    // preconditioner and solver
-    typedef typename MatrixFactory::ContainerType
-      MatrixContainerType;
+//    // preconditioner and solver
+//    typedef typename MatrixFactory::ContainerType
+//      MatrixContainerType;
 
-    typedef typename VectorFactory::ContainerType
-      VectorContainerType;
+//    typedef typename VectorFactory::ContainerType
+//      VectorContainerType;
 
-    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
-      MatrixAdapterType;
+//    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
+//      MatrixAdapterType;
 
-    MatrixAdapterType matrix( *A );
+//    MatrixAdapterType matrix( *A );
 
-    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
-      PreconditionerType;
+//    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
+//      PreconditionerType;
 
-    PreconditionerType preconditioner( *A, 1.0 );
+//    PreconditionerType preconditioner( *A, 1.0 );
 
-    typedef Dune::CGSolver< VectorContainerType >
-      SolverType;
+//    typedef Dune::CGSolver< VectorContainerType >
+//      SolverType;
 
-    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
+//    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
 
-    Dune::InverseOperatorResult result;
+//    Dune::InverseOperatorResult result;
 
-    // u_0 = A^(-1) ( F - G )
-    solver.apply( *u0, *F, result );
+//    // u_0 = A^(-1) ( F - G )
+//    solver.apply( *u0, *F, result );
 
 
     // postprocessing
     typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
       DiscreteFunctionType;
 
-    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
+    DiscreteFunctionType boundaryData = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), discreteH1G.affineShift().storage() );
 
-    Dune::FemTools::Function::writeToVTK( solution, "solution" );
+    Dune::FemTools::Function::writeToVTK( boundaryData, "boundaryData" );
+
+//    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
+
+//    Dune::FemTools::Function::writeToVTK( solution, "solution" );
 
     // done
     return 0;

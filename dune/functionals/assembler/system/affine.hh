@@ -1,5 +1,5 @@
-#ifndef DUNE_FUNCTIONALS_ASSEMBLER_GENERIC_HH
-#define DUNE_FUNCTIONALS_ASSEMBLER_GENERIC_HH
+#ifndef DUNE_FUNCTIONALS_ASSEMBLER_SYSTEM_AFFINE_HH
+#define DUNE_FUNCTIONALS_ASSEMBLER_SYSTEM_AFFINE_HH
 
 // dune-functionals includes
 #include <dune/functionals/common/localmatrix.hh>
@@ -68,6 +68,7 @@ public:
     typedef typename AnsatzFunctionSpaceType::AffineShiftType
       AffineShiftType;
 
+    // vector assembler for the affine shift
     typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
       LocalAffineShiftVectorAssemblerType;
 
@@ -78,15 +79,13 @@ public:
     LocalVectorType localVector( testSpace_.numMaxLocalDoFs() );
 
     // do first gridwalk to assemble
-    const EntityIteratorType behindLastEntity = ansatzSpace_.end();
-    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != behindLastEntity; ++entityIterator )
+    const EntityIteratorType lastEntity = ansatzSpace_.end();
+    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
     {
       const EntityType& entity = *entityIterator;
 
       localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, matrix, localMatrix );
-
       localVectorAssembler.assembleLocal( testSpace_, entity, vector, localVector );
-
       localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, localVector );
 
     } // done first gridwalk to assemble
@@ -94,7 +93,7 @@ public:
     const ConstraintsType constraints = ansatzSpace_.constraints();
 
     // do second gridwalk, to apply constraints
-    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != behindLastEntity; ++entityIterator )
+    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
     {
       const EntityType& entity = *entityIterator;
 
@@ -104,8 +103,6 @@ public:
       applyLocalVectorConstraints( localConstraints, vector );
 
     } // done second gridwalk, to apply constraints
-
-    // apply constraints
 
   } // end method assembleSystem
 
@@ -146,4 +143,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_FUNCTIONALS_ASSEMBLER_GENERIC_HH
+#endif // DUNE_FUNCTIONALS_ASSEMBLER_SYSTEM_AFFINE_HH
