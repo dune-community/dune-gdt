@@ -144,7 +144,7 @@ public:
 
     typedef typename LocalTestBaseFunctionType::EntityType EntityType;
 
-    typedef typename InducingDiscreteFunctionType::LocalFunctionType InducingLocalFunctionType;
+    typedef typename InducingDiscreteFunctionType::ConstLocalFunctionType InducingLocalFunctionType;
 
     const EntityType& entity = localTestBaseFunctionSet.entity();
 

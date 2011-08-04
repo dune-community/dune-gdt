@@ -2,10 +2,14 @@
 #define DUNE_FUNCTIONALS_DISCRETEFUNCTION_CONTINUOUS_HH
 
 // dune-common includes
+#include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
 
 // dune-istl includes
 #include <dune/istl/bvector.hh>
+
+// dune-fem-tools includes
+#include <dune/fem-tools/space/projection.hh>
 
 // local includes
 #include "local.hh"
@@ -27,6 +31,8 @@ public:
   typedef BlockVector<DiscreteFunctionSpaceType> ThisType;
 
   typedef Dune::Functionals::DiscreteFunction::Local<ThisType> LocalFunctionType;
+
+  typedef Dune::Functionals::DiscreteFunction::LocalConst<ThisType> ConstLocalFunctionType;
 
   typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
 
@@ -52,6 +58,20 @@ public:
     , storage_(discreteFunctionSpace.size())
     , name_(name)
   {
+  }
+
+  template <class FunctionType>
+  BlockVector(const DiscreteFunctionSpaceType& discreteFunctionSpace, const std::string name,
+              const FunctionType& function, const std::string projectionType)
+    : space_(discreteFunctionSpace)
+    , storage_(discreteFunctionSpace.size())
+    , name_(name)
+  {
+    if (projectionType.compare("dirichlet") == 0) {
+      Dune::FemTools::Projection::Dirichlet::project(function, *this);
+    } else {
+      throw Dune::NotImplemented();
+    }
   }
 
   const DiscreteFunctionSpaceType& space() const
@@ -99,9 +119,9 @@ public:
     return LocalFunctionType((*this), entity);
   }
 
-  const LocalFunctionType localFunction(const EntityType& entity) const
+  const ConstLocalFunctionType localFunction(const EntityType& entity) const
   {
-    return LocalFunctionType((*this), entity);
+    return ConstLocalFunctionType((*this), entity);
   }
 
 private:
