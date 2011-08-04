@@ -93,6 +93,7 @@ public:
   {
   }
 
+//private:
   //! copy constructor
   LocalDefault( const ThisType& other )
     : rowDofs_( 0.0 ),
@@ -101,6 +102,7 @@ public:
       numRows_( other.getRowDofsSize() ),
       numColumns_( other.getColumnDofsSize() )
   {
+    std::cout << "Constraints::LocalDefault::LocalDefault( const ThisType& )" << std::endl;
     for( unsigned int i = 0; i < rowDofs_.N(); ++i )
     {
       rowDofs_[i] = other.rowDofs( i );
@@ -118,6 +120,7 @@ public:
     }
   }
 
+//public:
   /**
    * @brief Sets the number of rows for the local matrix.
    *

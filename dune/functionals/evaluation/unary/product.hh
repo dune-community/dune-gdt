@@ -59,6 +59,7 @@ public:
       order_ = order;
   }
 
+private:
   //! copy constructor
   Product( const Product& other )
     : inducingFunction_( other.inducingFunction() ),
@@ -66,6 +67,7 @@ public:
   {
   }
 
+public:
   //! returns the inducing function
   const InducingFunctionType& inducingFunction() const
   {

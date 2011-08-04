@@ -51,12 +51,14 @@ public:
   {
   }
 
+private:
   //! copy constructor
   Matrix( const ThisType& other )
     : localOperator_( other.localOperator() )
   {
   }
 
+public:
   const LocalOperatorType& localOperator() const
   {
     return localOperator_;

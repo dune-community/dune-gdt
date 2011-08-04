@@ -58,6 +58,7 @@ public:
 //Dune::FemTools::Grid::Entity::print( entity_, std::cout, "  " );
   }
 
+//private:
   //! copy constructor
   LocalConst( const ThisType& other )
     : discreteFunction_( other.discreteFunction() ),
@@ -66,8 +67,10 @@ public:
       size_( localBaseFunctionSet_.size() ),
       order_( localBaseFunctionSet_.order() )
   {
+    std::cout << "DiscreteFunction::LocalConst::LocalConst( const ThisType& )" << std::endl;
   }
 
+//public:
   const DiscreteFunctionType& discreteFunction() const
   {
     return discreteFunction_;
@@ -129,7 +132,7 @@ private:
 
   const DiscreteFunctionType& discreteFunction_;
   const EntityType& entity_;
-  const LocalBaseFunctionSetType& localBaseFunctionSet_;
+  const LocalBaseFunctionSetType localBaseFunctionSet_;
   const unsigned int size_;
   const int order_;
 

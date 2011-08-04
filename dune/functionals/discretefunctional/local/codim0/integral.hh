@@ -48,11 +48,14 @@ public:
   {
   }
 
+private:
+  //! copy constructor
   Integral( const ThisType& other )
     : localEvaluation_( other.localEvaluation() )
   {
   }
 
+public:
   const LocalEvaluationType& localEvaluation()
   {
     return localEvaluation_;

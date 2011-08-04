@@ -45,6 +45,7 @@ public:
   {
   }
 
+private:
   //! copy constructor
   Affine( const ThisType& other )
     : ansatzSpace_( other.ansatzSpace() ),
@@ -52,6 +53,7 @@ public:
   {
   }
 
+public:
   const AnsatzFunctionSpaceType& ansatzSpace()
   {
     return ansatzSpace_;

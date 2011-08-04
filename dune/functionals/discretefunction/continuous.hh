@@ -112,6 +112,7 @@ public:
     }
   }
 
+private:
   //! copy constructor
   BlockVector( const ThisType& other )
     : space_( other.space() ),
@@ -140,6 +141,7 @@ public:
     return *this;
   }
 
+public:
   const DiscreteFunctionSpaceType& space() const
   {
     return space_;

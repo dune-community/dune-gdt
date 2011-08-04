@@ -29,6 +29,9 @@ namespace Container
 class SparsityPattern
 {
 public:
+  typedef SparsityPattern
+    ThisType;
+
   //! Type for saving the sparsity pattern.
   typedef std::vector< std::set< unsigned int > >
     SparsityPatternContainerType;
@@ -129,6 +132,12 @@ public:
   }
 
 private:
+  //! copy constructor
+  SparsityPattern( const ThisType& );
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
+
   SparsityPatternContainerType sparsityPattern_;
   unsigned int sizeN_;
 };

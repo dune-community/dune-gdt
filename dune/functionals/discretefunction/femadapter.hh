@@ -61,6 +61,7 @@ public:
   {
   }
 
+private:
   //! copy constructor
   FemAdapter( const ThisType& other )
     : hostDiscreteFunction_( other.hostDiscreteFunction() )
@@ -77,6 +78,7 @@ public:
     return *this;
   }
 
+public:
   HostDiscreteFunctionType& hostDiscreteFunction()
   {
     return hostDiscreteFunction();
