@@ -5,7 +5,7 @@
 #include <dune/fem/function/adaptivefunction/adaptivefunction.hh>
 
 // dune-fucntionals includes
-#include <dune/functionals/common/localbasefunctionset.hh>
+#include <dune/functionals/basefunctionset/local/lagrange.hh>
 #include <dune/functionals/discretefunction/continuous.hh>
 
 // dune-fem-tools includes

@@ -32,20 +32,20 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-functionals includes
-#include <dune/functionals/container/factory.hh>
-#include <dune/functionals/assembler/local/codim0/matrix.hh>
-#include <dune/functionals/assembler/local/codim0/vector.hh>
-#include <dune/functionals/assembler/system/affine.hh>
+//#include <dune/functionals/container/factory.hh>
+//#include <dune/functionals/assembler/local/codim0/matrix.hh>
+//#include <dune/functionals/assembler/local/codim0/vector.hh>
+//#include <dune/functionals/assembler/system/affine.hh>
 #include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
-#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
-#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
-#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
-#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
+//#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
+//#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
+//#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
+//#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
-#include <dune/fem-tools/function/functiontools.hh>
+//#include <dune/fem-tools/function/functiontools.hh>
 
 using namespace Dune::Functionals;
 
@@ -281,39 +281,39 @@ int main( int argc, char** argv )
 
     const DiscreteH1Type discreteH1( gridPart );
 
-    typedef DiscreteFunctionSpace::Subspace::Linear::Dirichlet< DiscreteH1Type >
-      DiscreteH10Type;
+//    typedef DiscreteFunctionSpace::Subspace::Linear::Dirichlet< DiscreteH1Type >
+//      DiscreteH10Type;
 
-    const DiscreteH10Type discreteH10( discreteH1 );
+//    const DiscreteH10Type discreteH10( discreteH1 );
 
-    typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
-      DiscreteH1GType;
+//    typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
+//      DiscreteH1GType;
 
-    const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
+//    const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
 
 
     // local evaluation
-    typedef ProductEvaluation< FunctionSpaceType >
-      ProductEvaluationType;
+//    typedef ProductEvaluation< FunctionSpaceType >
+//      ProductEvaluationType;
 
-    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
+//    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
 
-    typedef EllipticEvaluation< FunctionSpaceType >
-      EllipticEvaluationType;
+//    typedef EllipticEvaluation< FunctionSpaceType >
+//      EllipticEvaluationType;
 
-    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
+//    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
 
 
     // operator and functional
-    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
-      LocalEllipticOperatorType;
+//    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
+//      LocalEllipticOperatorType;
 
-    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
+//    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
 
-    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
-      LocalL2FunctionalType;
+//    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
+//      LocalL2FunctionalType;
 
-    const LocalL2FunctionalType localL2Functional( productEvaluation );
+//    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
 //    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
 //      LocalAffineShiftFunctionalType;
@@ -321,47 +321,47 @@ int main( int argc, char** argv )
 //    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
 
     // matrix, rhs and solution storage
-    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
-      MatrixFactory;
+//    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
+//      MatrixFactory;
 
-    typedef typename MatrixFactory::AutoPtrType
-      MatrixPtrType;
+//    typedef typename MatrixFactory::AutoPtrType
+//      MatrixPtrType;
 
-    //! \todo the matrix factory should get two spaces (ansatz and test)
-    MatrixPtrType A = MatrixFactory::create( discreteH1 );
+//    //! \todo the matrix factory should get two spaces (ansatz and test)
+//    MatrixPtrType A = MatrixFactory::create( discreteH1 );
 
-    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
-      VectorFactory;
+//    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
+//      VectorFactory;
 
-    typedef typename VectorFactory::AutoPtrType
-      VectorPtrType;
+//    typedef typename VectorFactory::AutoPtrType
+//      VectorPtrType;
 
-    VectorPtrType F = VectorFactory::create( discreteH1 );
+//    VectorPtrType F = VectorFactory::create( discreteH1 );
 
-    VectorPtrType G = VectorFactory::create( discreteH1 );
+//    VectorPtrType G = VectorFactory::create( discreteH1 );
 
-    VectorPtrType u0 = VectorFactory::create( discreteH1 );
+//    VectorPtrType u0 = VectorFactory::create( discreteH1 );
 
 
     // assembler
-    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
-      LocalMatrixAssemblerType;
+//    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
+//      LocalMatrixAssemblerType;
 
-    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
+//    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
-    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
-      LocalVectorAssemblerType;
+//    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
+//      LocalVectorAssemblerType;
 
-    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+//    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
 
-    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
-      SystemAssemblerType;
+//    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
+//      SystemAssemblerType;
 
-    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
+//    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
 
-    systemAssembler.assembleSystem( localMatrixAssembler, *A,
-                                    localVectorAssembler, *F,
-                                    *G );
+//    systemAssembler.assembleSystem( localMatrixAssembler, *A,
+//                                    localVectorAssembler, *F,
+//                                    *G );
 
 
 //    // preconditioner and solver
@@ -393,12 +393,12 @@ int main( int argc, char** argv )
 
 
     // postprocessing
-    typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
-      DiscreteFunctionType;
+//    typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
+//      DiscreteFunctionType;
 
-    DiscreteFunctionType boundaryData = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), discreteH1G.affineShift().storage() );
+//    DiscreteFunctionType boundaryData = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), discreteH1G.affineShift().storage() );
 
-    Dune::FemTools::Function::writeToVTK( boundaryData, "boundaryData" );
+//    Dune::FemTools::Function::writeToVTK( boundaryData, "boundaryData" );
 
 //    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
 
