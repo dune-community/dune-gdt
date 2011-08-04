@@ -23,7 +23,8 @@
 #include <dune/istl/solvers.hh>
 
 // dune-fem includes
-#include <dune/fem/function/adaptivefunction.hh>
+//#include <dune/fem/function/adaptivefunction.hh>
+#include <dune/fem/function/blockvectorfunction.hh>
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 #include <dune/fem/misc/mpimanager.hh>
@@ -32,18 +33,22 @@
 #include <dune/fem-tools/header/enablewarnings.hh>
 
 // dune-functionals includes
-//#include <dune/functionals/container/factory.hh>
-//#include <dune/functionals/assembler/local/codim0/matrix.hh>
-//#include <dune/functionals/assembler/local/codim0/vector.hh>
-//#include <dune/functionals/assembler/system/affine.hh>
+#include <dune/functionals/container/factory.hh>
+#include <dune/functionals/assembler/local/codim0/matrix.hh>
+#include <dune/functionals/assembler/local/codim0/vector.hh>
+#include <dune/functionals/assembler/system/affine.hh>
+#include <dune/functionals/discretefunction/continuous.hh>
 #include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
-//#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
-//#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
-//#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
-//#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
+#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
+#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
+#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
+#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
+
+// dune-fem-functionals includes
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
+#include <dune/fem-tools/common/printing.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
 //#include <dune/fem-tools/function/functiontools.hh>
 
@@ -73,9 +78,6 @@ public:
 
   typedef typename FunctionSpaceType::DomainType
     DomainType;
-
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
@@ -115,25 +117,27 @@ public:
                 element.
     \return     \f$f(x)v(x)\f$
     **/
-  template< class LocalTestFunctionType >
-  const RangeFieldType evaluate(  const LocalTestFunctionType& localTestFunction,
-                                  const DomainType& localPoint ) const
+  template< class LocalTestBaseFunctionSetType, class LocalVectorType >
+  void evaluate(  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+                  const DomainType& localPoint,
+                  LocalVectorType& ret ) const
   {
     // get global point
-    const DomainType globalPoint = localTestFunction.entity().geometry().global( localPoint );
-
-    // evaluate local function
-    RangeType localTestFunctionValue( 0.0 );
-    localTestFunction.evaluate( localPoint, localTestFunctionValue );
+    const DomainType globalPoint = localTestBaseFunctionSet.entity().geometry().global( localPoint );
 
     // evaluate inducing function
     RangeType functionValue( 0.0 );
     inducingFunction_.evaluate( globalPoint, functionValue );
 
-    // f(x) * v(x)
-    const RangeFieldType ret = functionValue * localTestFunctionValue;
+    // evaluate set of local functions
+    std::vector< RangeType > valuesLocalBaseFunctionSet( localTestBaseFunctionSet.size(), RangeType( 0.0 ) );
+    localTestBaseFunctionSet.evaluate( localPoint, valuesLocalBaseFunctionSet );
 
-    return ret;
+    // do loop over all basis functions
+    for( unsigned int i = 0; i < localTestBaseFunctionSet.size(); ++i )
+    {
+      ret[i] = functionValue * valuesLocalBaseFunctionSet[i];
+    }
   }
 
 private:
@@ -158,14 +162,14 @@ public:
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
+  typedef typename FunctionSpaceType::DomainType
+    DomainType;
 
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
+  typedef typename FunctionSpaceType::RangeFieldType
+    RangeFieldType;
 
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
@@ -209,32 +213,42 @@ public:
     *             element.
     * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
     **/
-  template< class LocalAnsatzFunctionType, class LocalTestFunctionType >
-  const RangeFieldType evaluate(  const LocalAnsatzFunctionType& localAnsatzFunction,
-                                  const LocalTestFunctionType& localTestFunction,
-                                  const DomainType& localPoint ) const
+  template< class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType >
+  void evaluate(  const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+                  const DomainType& localPoint,
+                  LocalMatrixType& ret ) const
   {
+//std::cout << "EllipticEvaluation::evaluate()" << std::endl;
+//Dune::FemTools::Printing::printFieldVector( localPoint, "localPoint", std::cout );
     // get global point
-    const DomainType globalPoint = localAnsatzFunction.entity().geometry().global( localPoint );
+    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global( localPoint );
+//Dune::FemTools::Printing::printFieldVector( globalPoint, "globalPoint", std::cout );
 
     // evaluate first gradient
-    JacobianRangeType gradientLocalAnsatzFunction( 0.0 );
-    localAnsatzFunction.jacobian( localPoint, gradientLocalAnsatzFunction );
+    std::vector< JacobianRangeType > gradientLocalAnsatzBaseFunctionSet( localAnsatzBaseFunctionSet.size(), JacobianRangeType( 0.0 ) );
+    localAnsatzBaseFunctionSet.jacobian( localPoint, gradientLocalAnsatzBaseFunctionSet );
 
     // evaluate second gradient
-    JacobianRangeType gradientLocalTestFunction( 0.0 );
-    localTestFunction.jacobian( localPoint, gradientLocalTestFunction );
-
-    const RangeType gradientProduct = gradientLocalAnsatzFunction[0] * gradientLocalTestFunction[0];
+    std::vector< JacobianRangeType > gradientLocalTestBaseFunctionSet( localTestBaseFunctionSet.size(), JacobianRangeType( 0.0 ) );
+    localTestBaseFunctionSet.jacobian( localPoint, gradientLocalTestBaseFunctionSet );
 
     // evaluate inducing function
     RangeType functionValue( 0.0 );
     inducingFunction_.evaluate( globalPoint, functionValue );
 
-    // a(x) * \gradient u(x) * \gradient v(x)
-    const RangeFieldType ret = functionValue * gradientProduct;
-
-    return ret;
+    for( unsigned int i = 0; i < localAnsatzBaseFunctionSet.size(); ++i )
+    {
+//std::cout << "i = " << i << " (of " << localAnsatzBaseFunctionSet.size() << ")" << std::endl;
+//Dune::FemTools::Printing::printFieldVector( gradientLocalAnsatzBaseFunctionSet[i], "gradientLocalAnsatzBaseFunctionSet[" + Dune::FemTools::String::toString( i ) + "]", std::cout, "  " );
+      for( unsigned int j = 0; j < localTestBaseFunctionSet.size(); ++j )
+      {
+//std::cout << "  j = " << j << " (of " << localTestBaseFunctionSet.size() << ")" << std::endl;
+//Dune::FemTools::Printing::printFieldVector( gradientLocalTestBaseFunctionSet[i], "gradientLocalTestBaseFunctionSet[" + Dune::FemTools::String::toString( j ) + "]", std::cout, "    " );
+        const RangeFieldType gradientProduct = gradientLocalAnsatzBaseFunctionSet[i][0] * gradientLocalTestBaseFunctionSet[j][0];
+        ret[i][j] = functionValue * gradientProduct;
+      }
+    }
   }
 
 private:
@@ -248,7 +262,7 @@ int main( int argc, char** argv )
   try{
 
     // MPI manager
-    Dune::MPIManager::initialize ( argc, argv );
+    Dune::MPIManager::initialize( argc, argv );
 
 
     // grid
@@ -281,39 +295,39 @@ int main( int argc, char** argv )
 
     const DiscreteH1Type discreteH1( gridPart );
 
-//    typedef DiscreteFunctionSpace::Subspace::Linear::Dirichlet< DiscreteH1Type >
-//      DiscreteH10Type;
+    typedef DiscreteFunctionSpace::Subspace::Linear::Dirichlet< DiscreteH1Type >
+      DiscreteH10Type;
 
-//    const DiscreteH10Type discreteH10( discreteH1 );
+    const DiscreteH10Type discreteH10( discreteH1 );
 
-//    typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
-//      DiscreteH1GType;
+    typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet< DiscreteH10Type >
+      DiscreteH1GType;
 
-//    const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
+    const DiscreteH1GType discreteH1G( discreteH10, "[x+y;y;z]" );
 
 
     // local evaluation
-//    typedef ProductEvaluation< FunctionSpaceType >
-//      ProductEvaluationType;
+    typedef ProductEvaluation< FunctionSpaceType >
+      ProductEvaluationType;
 
-//    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
+    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]" );
 
-//    typedef EllipticEvaluation< FunctionSpaceType >
-//      EllipticEvaluationType;
+    typedef EllipticEvaluation< FunctionSpaceType >
+      EllipticEvaluationType;
 
-//    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
+    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]" );
 
 
     // operator and functional
-//    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
-//      LocalEllipticOperatorType;
+    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
+      LocalEllipticOperatorType;
 
-//    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
+    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
 
-//    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
-//      LocalL2FunctionalType;
+    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
+      LocalL2FunctionalType;
 
-//    const LocalL2FunctionalType localL2Functional( productEvaluation );
+    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
 //    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
 //      LocalAffineShiftFunctionalType;
@@ -321,96 +335,108 @@ int main( int argc, char** argv )
 //    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator, discreteH1G.affineShift() );
 
     // matrix, rhs and solution storage
-//    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
-//      MatrixFactory;
+    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
+      MatrixFactory;
 
-//    typedef typename MatrixFactory::AutoPtrType
-//      MatrixPtrType;
+    typedef typename MatrixFactory::AutoPtrType
+      MatrixPtrType;
 
-//    //! \todo the matrix factory should get two spaces (ansatz and test)
-//    MatrixPtrType A = MatrixFactory::create( discreteH1 );
+    //! \todo the matrix factory should get two spaces (ansatz and test)
+    MatrixPtrType A = MatrixFactory::create( discreteH1, discreteH1 );
 
-//    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
-//      VectorFactory;
+    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
+      VectorFactory;
 
-//    typedef typename VectorFactory::AutoPtrType
-//      VectorPtrType;
+    typedef typename VectorFactory::AutoPtrType
+      VectorPtrType;
 
-//    VectorPtrType F = VectorFactory::create( discreteH1 );
+    VectorPtrType F = VectorFactory::create( discreteH1 );
 
-//    VectorPtrType G = VectorFactory::create( discreteH1 );
+    VectorPtrType G = VectorFactory::create( discreteH1 );
 
-//    VectorPtrType u0 = VectorFactory::create( discreteH1 );
+    VectorPtrType u0 = VectorFactory::create( discreteH1 );
 
 
     // assembler
-//    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
-//      LocalMatrixAssemblerType;
+    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
+      LocalMatrixAssemblerType;
 
-//    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
+    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
 
-//    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
-//      LocalVectorAssemblerType;
+    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
+      LocalVectorAssemblerType;
 
-//    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
 
-//    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
-//      SystemAssemblerType;
+    typedef Assembler::System::Affine< DiscreteH1GType, DiscreteH10Type >
+      SystemAssemblerType;
 
-//    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
+    SystemAssemblerType systemAssembler( discreteH1G, discreteH10 );
 
-//    systemAssembler.assembleSystem( localMatrixAssembler, *A,
-//                                    localVectorAssembler, *F,
-//                                    *G );
+    systemAssembler.assembleSystem( localMatrixAssembler, *A,
+                                    localVectorAssembler, *F,
+                                    *G );
 
 
-//    // preconditioner and solver
-//    typedef typename MatrixFactory::ContainerType
-//      MatrixContainerType;
+    // preconditioner and solver
+    typedef typename MatrixFactory::ContainerType
+      MatrixContainerType;
 
-//    typedef typename VectorFactory::ContainerType
-//      VectorContainerType;
+    typedef typename VectorFactory::ContainerType
+      VectorContainerType;
 
-//    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
-//      MatrixAdapterType;
+    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
+      MatrixAdapterType;
 
-//    MatrixAdapterType matrix( *A );
+    MatrixAdapterType matrix( *A );
 
-//    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
-//      PreconditionerType;
+    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
+      PreconditionerType;
 
-//    PreconditionerType preconditioner( *A, 1.0 );
+    PreconditionerType preconditioner( *A, 1.0 );
 
-//    typedef Dune::CGSolver< VectorContainerType >
-//      SolverType;
+    typedef Dune::CGSolver< VectorContainerType >
+      SolverType;
 
-//    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
+    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
 
-//    Dune::InverseOperatorResult result;
+    Dune::InverseOperatorResult result;
 
-//    // u_0 = A^(-1) ( F - G )
-//    solver.apply( *u0, *F, result );
+    // u_0 = A^(-1) ( F - G )
+    solver.apply( *u0, *F, result );
 
 
     // postprocessing
-//    typedef Dune::AdaptiveDiscreteFunction< typename DiscreteH1Type::HostSpaceType >
+    typedef typename Dune::Functionals::DiscreteFunction::Continuous::BlockVector< DiscreteH1Type >
+      DiscreteFunctionType;
+
+    const DiscreteFunctionType solution( discreteH1, *u0, "solution" );
+//    typedef Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteH1Type >
+//      LagrangeFemAdapterType;
+
+//    const LagrangeFemAdapterType lagrangeFemAdapter( discreteH1 );
+
+//    typedef Dune::BlockVectorDiscreteFunction< LagrangeFemAdapterType >
 //      DiscreteFunctionType;
 
-//    DiscreteFunctionType boundaryData = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), discreteH1G.affineShift().storage() );
+//    const DiscreteFunctionType solution( "solution", lagrangeFemAdapter );
+//    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector( lagrangeFemAdapter, *u0 );
 
-//    Dune::FemTools::Function::writeToVTK( boundaryData, "boundaryData" );
-
-//    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector< DiscreteFunctionType >( discreteH1.hostSpace(), *u0 );
-
-//    Dune::FemTools::Function::writeToVTK( solution, "solution" );
+    Dune::FemTools::Function::writeToVTK( solution, "solution" );
 
     // done
     return 0;
   }
-  catch (Dune::Exception &e){
+  catch( Dune::Exception& e )
+  {
     std::cerr << "Dune reported error: " << e << std::endl;
   }
-  catch (...){
+  catch( std::exception& e )
+  {
+    std::cerr << e.what() << std::endl;
+  }
+  catch( ... )
+  {
     std::cerr << "Unknown exception thrown!" << std::endl;
   }
 }

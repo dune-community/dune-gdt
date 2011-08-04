@@ -20,6 +20,9 @@ namespace DiscreteFunctionSpace
 namespace Continuous
 {
 
+template< class HostSpaceImp >
+class LagrangeFemAdapter;
+
 template< class FunctionSpaceImp, class GridPartImp, int polOrder >
 class Lagrange
 {
@@ -31,20 +34,16 @@ public:
   typedef GridPartImp
     GridPartType;
 
-  typedef Lagrange< FunctionSpaceType, GridPartType, polOrder >
+  enum{ polynomialOrder = polOrder };
+
+  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
     ThisType;
 
-//  typedef Dune::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder >
-//    HostSpaceType;
-
-  typedef Dune::Functionals::Mapper::Lagrange< FunctionSpaceType, GridPartType, polOrder >
+  typedef Dune::Functionals::Mapper::Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
     MapperType;
 
   typedef Dune::Functionals::BaseFunctionSet::Local::Lagrange< ThisType >
     LocalBaseFunctionSetType;
-
-//  typedef typename GridPartType::template Codim< 0 >::IteratorType::Entity
-//    EntityType;
 
   typedef typename FunctionSpaceType::DomainType
     DomainType;
@@ -64,33 +63,27 @@ public:
   typedef typename FunctionSpaceType::HessianRangeType
     HessianRangeType;
 
-//  /**
-//    \defgroup dune-fem related
-//    \{
-//    **/
-//  typedef typename HostSpaceType::BaseFunctionSetType
-//    BaseFunctionSetType;
-
-//  typedef typename HostSpaceType::IteratorType
-//    IteratorType;
-//  /**
-//    \}
-//    **/
-
   static const unsigned int dimDomain = FunctionSpaceType::dimDomain;
 
   static const unsigned int dimRange = FunctionSpaceType::dimRange;
 
-  Lagrange( GridPartType& gridPart )
-    : gridPart_( gridPart )/*,
-      hostSpace_( gridPart_ )*/,
-      mapper_( gridPart_ )/*,
-      numMaxLocalDoFs_( -1 )*/
+  /**
+      @name Convenience
+      @{
+   **/
+  typedef typename GridPartType::template Codim< 0 >::IteratorType
+    IteratorType;
+
+  typedef typename IteratorType::Entity
+    EntityType;
+  /**
+      @}
+   **/
+
+  Lagrange( const GridPartType& gridPart )
+    : gridPart_( gridPart ),
+      mapper_( gridPart_ )
   {
-//    // in the simple case, there should be the same number of dofs on each entity
-//    const IteratorType entityIterator = begin();
-//    const EntityType& entity = *entityIterator;
-//    numMaxLocalDoFs_ = hostSpace_.baseFunctionSet( entity ).numBaseFunctions();
   }
 
   const GridPartType& gridPart() const
@@ -98,14 +91,14 @@ public:
     return gridPart_;
   }
 
-//  const HostSpaceType& hostSpace() const
-//  {
-//    return hostSpace_;
-//  }
-
   const MapperType& map() const
   {
     return mapper_;
+  }
+
+  int order() const
+  {
+    return polynomialOrder;
   }
 
   template< class EntityType >
@@ -114,54 +107,18 @@ public:
     return LocalBaseFunctionSetType( *this, entity );
   }
 
-//  const unsigned int size() const
-//  {
-//    return hostSpace_.size();
-//  }
+  bool continuous() const
+  {
+    return true;
+  }
 
-//  const int numMaxLocalDoFs() const
-//  {
-//    return numMaxLocalDoFs_;
-//  }
+protected:
 
-//  const int order() const
-//  {
-//    return hostSpace_.order();
-//  }
-
-//  /**
-//    \defgroup dune-fem related
-//    \{
-//    **/
-//  IteratorType begin() const
-//  {
-//    return hostSpace_.begin();
-//  }
-
-//  const IteratorType end() const
-//  {
-//    return hostSpace_.end();
-//  }
-
-//  const BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
-//  {
-//    return hostSpace_.baseFunctionSet( entity );
-//  }
-
-//  int mapToGlobal( const EntityType& entity, const int localDof) const
-//  {
-//    return hostSpace_.mapToGlobal( entity, localDof);
-//  }
-//  /**
-//    \}
-//    **/
-
-private:
+  template< class >
+  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
 
   const GridPartType& gridPart_;
-//  const HostSpaceType hostSpace_;
   const MapperType mapper_;
-//  unsigned int numMaxLocalDoFs_;
 
 }; // end class Lagrange
 

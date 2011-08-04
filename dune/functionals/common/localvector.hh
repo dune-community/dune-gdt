@@ -29,40 +29,42 @@ public:
     *             Size, the vector should have, usually the number of local DoFs.
     **/
   LocalVector( const unsigned int size )
+    : storage_( size, ElementType( 0.0 ) )
   {
     // resize
-    storage_.resize( size, 0.0 );
+//    storage_.resize( size, 0.0 );
   }
 
   LocalVector( const int size )
+    : storage_( size, ElementType( 0.0 ) )
   {
     // resize
-    storage_.resize( size, 0.0 );
+//    storage_.resize( size, 0.0 );
   }
 
-  /**
-    * \brief      Initializes a DoF vector and sets its entries to the
-    *             corresponding entries of the given localFunction.
-    *
-    * \tparam     LocalFunctionType
-    *             Type of the given local function, usually something that fulfills the Dune::LocalFunction interface.
-    *
-    * \param[in]  localFunction
-    *             Local function, whose DoFs are going to be assigned to the vector. Has to provide the method
-    *             numDofs() and read access via an operator[].
-    **/
-  template< class LocalFunctionType >
-  LocalVector( const LocalFunctionType& localFunction )
-  {
-    // resize
-    storage_.resize( localFunction.numDofs(), 0.0 );
+//  /**
+//    * \brief      Initializes a DoF vector and sets its entries to the
+//    *             corresponding entries of the given localFunction.
+//    *
+//    * \tparam     LocalFunctionType
+//    *             Type of the given local function, usually something that fulfills the Dune::LocalFunction interface.
+//    *
+//    * \param[in]  localFunction
+//    *             Local function, whose DoFs are going to be assigned to the vector. Has to provide the method
+//    *             numDofs() and read access via an operator[].
+//    **/
+//  template< class LocalFunctionType >
+//  LocalVector( const LocalFunctionType& localFunction )
+//  {
+//    // resize
+//    storage_.resize( localFunction.numDofs(), 0.0 );
 
-    // copy entries
-    for( int i = 0; i < localFunction.numDofs(); ++i )
-    {
-      storage_[i] = localFunction[i];
-    }
-  }
+//    // copy entries
+//    for( int i = 0; i < localFunction.numDofs(); ++i )
+//    {
+//      storage_[i] = localFunction[i];
+//    }
+//  }
 
   /**
     * \brief      Returns the size.
@@ -124,6 +126,23 @@ public:
     }
 
     return result;
+  }
+
+  void operator*=( const ElementType& scalar )
+  {
+    for( unsigned int i = 0; i < size(); ++i )
+    {
+      storage_[i] *= scalar;
+    }
+  }
+
+  void operator+=( const LocalVector< ElementType >& other )
+  {
+    assert( size() == other.size() );
+    for( unsigned int i = 0; i < size(); ++i )
+    {
+      storage_[i] *= other[i];
+    }
   }
 
 private:

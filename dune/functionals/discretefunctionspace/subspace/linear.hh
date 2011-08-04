@@ -40,8 +40,10 @@ public:
   typedef typename SuperSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
-  typedef typename SuperSpaceType::EntityType
-    EntityType;
+  enum{ polynomialOrder = SuperSpaceType::polynomialOrder };
+
+  typedef typename SuperSpaceType::MapperType
+    MapperType;
 
   typedef typename FunctionSpaceType::DomainType
     DomainType;
@@ -61,21 +63,12 @@ public:
   typedef typename FunctionSpaceType::HessianRangeType
     HessianRangeType;
 
-  typedef Dune::Functionals::Common::LocalBaseFunctionSet< ThisType >
+  typedef typename SuperSpaceType::LocalBaseFunctionSetType
     LocalBaseFunctionSetType;
 
-  /**
-    \defgroup dune-fem related
-    \{
-    **/
-  typedef typename SuperSpaceType::BaseFunctionSetType
-    BaseFunctionSetType;
+  static const unsigned int dimDomain = SuperSpaceType::dimDomain;
 
-  typedef typename SuperSpaceType::IteratorType
-    IteratorType;
-  /**
-    \}
-    **/
+  static const unsigned int dimRange = SuperSpaceType::dimRange;
 
   Dirichlet( const SuperSpaceType& superSpace )
     : superSpace_( superSpace ),
@@ -98,68 +91,42 @@ public:
     return superSpace_.gridPart();
   }
 
-  const unsigned int size() const
+  const MapperType& map() const
   {
-    return superSpace_.size();
+    return superSpace_.map();
   }
 
-  const int numMaxLocalDoFs() const
-  {
-    return superSpace_.numMaxLocalDoFs();
-  }
-
-  const int order() const
+  int order() const
   {
     return superSpace_.order();
   }
 
+  template< class EntityType >
   const LocalBaseFunctionSetType localBaseFunctionSet( const EntityType& entity ) const
   {
-    return LocalBaseFunctionSetType( *this, entity );
+    return superSpace_.localBaseFunctionSet( entity );
   }
 
-  /**
-    \defgroup dune-fem related
-    \{
-    **/
-  IteratorType begin() const
+  bool continuous() const
   {
-    return superSpace_.begin();
+    return superSpace_.continuous();
   }
-
-  const IteratorType end() const
-  {
-    return superSpace_.end();
-  }
-
-  const BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
-  {
-    return superSpace_.baseFunctionSet( entity );
-  }
-
-  const int mapToGlobal( const EntityType& entity, const int localDof) const
-  {
-    return superSpace_.mapToGlobal( entity, localDof);
-  }
-  /**
-    \}
-    **/
 
 private:
   const SuperSpaceType& superSpace_;
   const ConstraintsType constraints_;
 
-}; // end of class DirichletZero
+}; // end class Dirichlet
 
 } // end namespace Linear
 
-} // end of namespace Subspace
+} // end namespace Subspace
 
 } // end namespace DiscreteFunctionSpace
 
-} // end of namespace Functionals
+} // end namespace Functionals
 
-} // end of namespace Dune
+} // end namespace Dune
 
 
 #endif /* end of include guard: DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH */

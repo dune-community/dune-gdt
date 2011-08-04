@@ -4,6 +4,8 @@
 // dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
+// dune-functionals includes
+#include <dune/functionals/discretefunctionspace/continuous/lagrangefemwrapper.hh>
 
 namespace Dune
 {
@@ -25,10 +27,13 @@ public:
   typedef GridPartImp
     GridPartType;
 
-  static const unsigned int order = polOrder;
+  enum{ polynomialOrder = polOrder };
 
-  typedef Lagrange< FunctionSpaceType, GridPartType, order >
+  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
     ThisType;
+
+  typedef LagrangePointSet< GridPartType, polynomialOrder >
+    LagrangePointSetType;
 
 private:
 
@@ -37,7 +42,7 @@ private:
 
   typedef Dune::LagrangeDiscreteFunctionSpaceTraits<  FunctionSpaceType,
                                                       GridPartType,
-                                                      order >
+                                                      polynomialOrder >
     LagrangeDiscreteFunctionSpaceTraitsType;
 
   typedef typename LagrangeDiscreteFunctionSpaceTraitsType::MapperType
@@ -46,11 +51,20 @@ private:
   typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BlockMapperType
     BlockMapperType;
 
-  typedef LagrangePointSet< GridPartType, order >
-    LagrangePointSetType;
-
   typedef std::map< const GeometryType, const LagrangePointSetType* >
     LagrangePointSetMapType;
+
+  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
+    IndexSetType;
+
+  typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetMapType >
+    MapperSingletonKeyType;
+
+  typedef LagrangeMapperSingletonFactory< MapperSingletonKeyType, BlockMapperType >
+    BlockMapperSingletonFactoryType;
+
+  typedef SingletonList< MapperSingletonKeyType, BlockMapperType, BlockMapperSingletonFactoryType >
+    BlockMapperProviderType;
 
 public:
 
@@ -61,21 +75,6 @@ public:
       mapper_( 0 ),
       blockMapper_( 0 )
   {
-    typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
-      IndexSetType;
-
-    typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetMapType >
-      MapperSingletonKeyType;
-
-    typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetMapType >
-      MapperSingletonKeyType;
-
-    typedef LagrangeMapperSingletonFactory< MapperSingletonKeyType, BlockMapperType >
-      BlockMapperSingletonFactoryType;
-
-    typedef SingletonList< MapperSingletonKeyType, BlockMapperType, BlockMapperSingletonFactoryType >
-      BlockMapperProviderType;
-
     const IndexSetType& indexSet = gridPart_.indexSet();
 
     AllGeomTypes< IndexSetType, GridType > allGeometryTypes( indexSet );
@@ -94,7 +93,7 @@ public:
       }
     }
 
-    MapperSingletonKeyType key( gridPart_, lagrangePointSet_, order );
+    MapperSingletonKeyType key( gridPart_, lagrangePointSet_, polynomialOrder );
 
     blockMapper_ = &( BlockMapperProviderType::getObject( key ) );
     assert( blockMapper_ != 0 );
@@ -106,15 +105,6 @@ public:
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
-    typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetMapType >
-      MapperSingletonKeyType;
-
-    typedef LagrangeMapperSingletonFactory< MapperSingletonKeyType, BlockMapperType >
-      BlockMapperSingletonFactoryType;
-
-    typedef SingletonList< MapperSingletonKeyType, BlockMapperType, BlockMapperSingletonFactoryType >
-      BlockMapperProviderType;
-
     delete mapper_;
 
     BlockMapperProviderType::removeObject( *blockMapper_ );
@@ -131,12 +121,33 @@ public:
   }
 
   template< class EntityType >
-  unsigned int toGlobal( const EntityType& entity, const unsigned int localDofNumber )
+  unsigned int toGlobal( const EntityType& entity, const unsigned int localDofNumber ) const
   {
     return mapper_->mapToGlobal( entity, localDofNumber );
   }
 
+  unsigned int size() const
+  {
+    return mapper_->size();
+  }
+
+  unsigned int maxLocalSize() const
+  {
+    return mapper_->maxNumDofs();
+  }
+
+  template< class EntityType >
+  const LagrangePointSetType& lagrangePointSet( const EntityType& entity ) const
+  {
+    assert( lagrangePointSet_.find( entity.type() ) != lagrangePointSet_.end() );
+    assert( lagrangePointSet_[entity.type()] != NULL );
+    return *( lagrangePointSet_[entity.type()] );
+  }
+
 private:
+
+  template< class >
+  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
 
   const GridPartType& gridPart_;
   mutable LagrangePointSetMapType lagrangePointSet_;

@@ -4,6 +4,14 @@
 // dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
+// dune-functionals includes
+#include <dune/functionals/discretefunctionspace/continuous/lagrangefemwrapper.hh>
+
+// dune-fem-tools includes
+#include <dune/fem-tools/common/printing.hh>
+#include <dune/fem-tools/common/string.hh>
+#include <dune/fem-tools/grid/entity.hh>
+
 namespace Dune
 {
 
@@ -24,13 +32,13 @@ public:
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::FucntionSpaceType
+  typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
     FunctionSpaceType;
 
   typedef typename DiscreteFunctionSpaceType::GridPartType
     GridPartType;
 
-  static const unsigned int order = DiscreteFunctionSpaceType::order;
+  enum{ polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder };
 
   typedef Lagrange< DiscreteFunctionSpaceType >
     ThisType;
@@ -53,9 +61,6 @@ public:
   typedef typename FunctionSpaceType::HessianRangeType
     HessianRangeType;
 
-  typedef typename DiscreteFunctionSpaceType::EntityType
-    EntityType;
-
 private:
 
   typedef typename GridPartType::GridType
@@ -63,7 +68,7 @@ private:
 
   typedef Dune::LagrangeDiscreteFunctionSpaceTraits<  FunctionSpaceType,
                                                       GridPartType,
-                                                      order >
+                                                      polynomialOrder >
     LagrangeDiscreteFunctionSpaceTraitsType;
 
   typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetImp
@@ -72,7 +77,33 @@ private:
   typedef std::map< const GeometryType, const BaseFunctionSetImp* >
     BaseFunctionMapType;
 
+  typedef typename GridPartType::template Codim< 0 >::IteratorType
+    EntityIteratorType;
+
+  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
+    IndexSetType;
+
+  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSpaceType
+    BaseFunctionSpaceType;
+
+  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetType
+    BaseFunctionSetType;
+
+  enum{ dimension = GridType::dimension };
+
+  typedef LagrangeBaseFunctionFactory< typename BaseFunctionSpaceType::ScalarFunctionSpaceType, dimension, polynomialOrder >
+    ScalarFactoryType;
+
+  typedef BaseFunctionSetSingletonFactory < GeometryType, BaseFunctionSetImp, ScalarFactoryType >
+    BaseFunctionSetSingletonFactoryType;
+
+  typedef SingletonList< GeometryType, BaseFunctionSetImp, BaseFunctionSetSingletonFactoryType >
+    BaseFunctionSetSingletonProviderType;
+
 public:
+
+  typedef typename EntityIteratorType::Entity
+    EntityType;
 
   //! does, whatever the constructor of the fem LagrangeDiscreteFunctionSpace does
   Lagrange( const DiscreteFunctionSpaceType& space, const EntityType& entity )
@@ -80,25 +111,6 @@ public:
       entity_( entity ),
       baseFunctionSet_()
   {
-    typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
-      IndexSetType;
-
-    typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSpaceType
-      BaseFunctionSpaceType;
-
-    enum{ dimension = GridType::dimension };
-
-    typedef LagrangeBaseFunctionFactory< typename BaseFunctionSpaceType::ScalarFunctionSpaceType, dimension, order >
-      ScalarFactoryType;
-
-    typedef BaseFunctionSetSingletonFactory < GeometryType, BaseFunctionSetImp, ScalarFactoryType >
-      BaseFunctionSetSingletonFactoryType;
-
-    typedef SingletonList< GeometryType, BaseFunctionSetImp, BaseFunctionSetSingletonFactoryType >
-      BaseFunctionSetSingletonProviderType;
-
-    typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetType
-      BaseFunctionSetType;
 
     const IndexSetType& indexSet = space_.gridPart().indexSet();
 
@@ -130,15 +142,6 @@ public:
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
-    typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSpaceType
-      BaseFunctionSpaceType;
-    enum{ dimension = GridType::dimension };
-    typedef LagrangeBaseFunctionFactory< typename BaseFunctionSpaceType::ScalarFunctionSpaceType, dimension, order >
-      ScalarFactoryType;
-    typedef BaseFunctionSetSingletonFactory < GeometryType, BaseFunctionSetImp, ScalarFactoryType >
-      BaseFunctionSetSingletonFactoryType;
-    typedef SingletonList< GeometryType, BaseFunctionSetImp, BaseFunctionSetSingletonFactoryType >
-      BaseFunctionSetSingletonProviderType;
     typedef typename BaseFunctionMapType::iterator
       BFIteratorType;
     BFIteratorType bfend = baseFunctionSet_.end();
@@ -165,7 +168,12 @@ public:
     return size_;
   }
 
-  void evaluate( const DomainType& x, std::vector< RangeType >& ret)
+  int order() const
+  {
+    return space_.order();
+  }
+
+  void evaluate( const DomainType& x, std::vector< RangeType >& ret) const
   {
     // get the basefunctionset
     typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetType
@@ -181,6 +189,10 @@ public:
 
   void jacobian( const DomainType& x, std::vector< JacobianRangeType >& ret ) const
   {
+//std::cout << "LocalBaseFunctionSet::Local::Lagrange::jacobian()" << std::endl;
+//Dune::FemTools::Grid::Entity::print( entity_, std::cout );
+//Dune::FemTools::Printing::printFieldVector( x, "x", std::cout );
+
     // some types we will need
     typedef typename EntityType::Geometry
       EntityGeometryType;
@@ -197,37 +209,46 @@ public:
     // geometry and jacobian inverse transposed
     const EntityGeometryType& entityGeometry = entity_.geometry();
     const JacobianInverseTransposedType& jacobianInverseTransposed = entityGeometry.jacobianInverseTransposed( x );
+//Dune::FemTools::Printing::printFieldMatrix( jacobianInverseTransposed, "jacobianInverseTransposed", std::cout );
 
     // some tmp storage
     JacobianRangeType jacobianUntransposed( 0.0 );
-    JacobianRowType jacobian( 0.0 );
+    JacobianRangeType jacobianTransposed( 0.0 );
 
     // evaluate
     for( unsigned int i = 0; i < size_; ++i )
     {
+//std::cout << "basefunction " << i << " of " << size_-1 << std::endl;
       // get untransposed jacobian
       baseFunctionSet.jacobian( i, x, jacobianUntransposed );
+//Dune::FemTools::Printing::printFieldMatrix( jacobianUntransposed, "jacobianUntransposed", std::cout, "  " );
 
       // transpose for each dim of range
-      for( unsigned int row = 0; row < ret.N(); ++row )
+      const unsigned int dimRange = DiscreteFunctionSpaceType::dimRange;
+      for( unsigned int row = 0; row < dimRange; ++row )
       {
+//std::cout << "  dim " << row << " of " << dimRange-1 << std::endl;
+////das tut immer noch nicht^^
         // transpose
-        jacobianInverseTransposed.mv( jacobianUntransposed[0], jacobian );
+        jacobianInverseTransposed.mv( jacobianUntransposed[row], jacobianTransposed[row] );
+//Dune::FemTools::Printing::printFieldVector( jacobianTransposed[row], "jacobianTransposed[" + Dune::FemTools::String::toString( row ) + "]", std::cout, "    " );
 
-        // return
-        ret[i][row] = jacobian;
+        ret[i][row] = jacobianTransposed[row];
       }
     }
   }
 
 private:
 
+  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteFunctionSpaceType >;
+
   const DiscreteFunctionSpaceType& space_;
   const EntityType& entity_;
   mutable BaseFunctionMapType baseFunctionSet_;
   unsigned int size_;
+  int order_;
 
-}; // end class LocalBaseFunctionSet
+}; // end class Lagrange
 
 //template< class InducingDiscreteFunctionImp >
 //class LocalBaseFunctionSetWrapper

@@ -52,17 +52,17 @@ public:
   template< class TestSpaceType,
             class EntityType,
             class VectorType,
-            class LocalVectorType = Dune::Functionals::Common::LocalVector< RangeFieldType > >
+            class LocalVectorType >
   void assembleLocal( const TestSpaceType& testSpace,
                       const EntityType& entity,
                       VectorType& vector,
-                      LocalVectorType& localVector ) const
+                      LocalVectorType& tmpLocalVector ) const
   {
     // write local operator application to tmpLocalMatrix
-    localFunctional_.applyLocal( testSpace.localBaseFunctionSet( entity ), localVector );
+    localFunctional_.applyLocal( testSpace.localBaseFunctionSet( entity ), tmpLocalVector );
 
     // write local matrix to global
-    addToVector( testSpace, entity, localVector, vector );
+    addToVector( testSpace, entity, tmpLocalVector, vector );
   }
 
 private:
@@ -76,9 +76,9 @@ private:
                     const LocalVectorType& localVector,
                     VectorType& vector ) const
   {
-    for( int j = 0; j < testSpace.baseFunctionSet( entity ).numBaseFunctions(); ++j )
+    for( unsigned int j = 0; j < testSpace.localBaseFunctionSet( entity ).size(); ++j )
     {
-      const int globalJ = testSpace.mapToGlobal( entity, j );
+      const unsigned int globalJ = testSpace.map().toGlobal( entity, j );
 
       vector[globalJ] += localVector[j];
     }

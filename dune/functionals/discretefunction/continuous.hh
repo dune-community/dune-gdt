@@ -34,6 +34,8 @@ public:
   typedef ContinuousDiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
+  enum{ polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder };
+
   typedef BlockVector< DiscreteFunctionSpaceType >
     ThisType;
 
@@ -43,8 +45,8 @@ public:
   typedef Dune::Functionals::DiscreteFunction::LocalConst< ThisType >
     ConstLocalFunctionType;
 
-  typedef typename DiscreteFunctionSpaceType::EntityType
-    EntityType;
+  typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
+    FunctionSpaceType;
 
   typedef typename DiscreteFunctionSpaceType::DomainFieldType
     DomainFieldType;
@@ -65,14 +67,29 @@ public:
 
   static const int dimRange = DiscreteFunctionSpaceType::dimRange;
 
-  typedef Dune::BlockVector< Dune::FieldVector< RangeFieldType, 1 > >
+  typedef Dune::BlockVector< Dune::FieldVector< RangeFieldType, dimRange > >
     StorageType;
 
   BlockVector( const DiscreteFunctionSpaceType& discreteFunctionSpace, const std::string name = "continuousBlockVectorFunction" )
     : space_( discreteFunctionSpace ),
-      storage_( discreteFunctionSpace.size() ),
+      storage_( discreteFunctionSpace.map().size() ),
       name_( name )
   {
+  }
+
+  BlockVector(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                const StorageType& storage,
+                const std::string name = "continuousBlockVectorFunction"
+                )
+    : space_( discreteFunctionSpace ),
+      storage_( discreteFunctionSpace.map().size() ),
+      name_( name )
+  {
+    assert( storage.size() == storage_.size() );
+    for( unsigned int i = 0; i < storage_.size(); ++i )
+    {
+      storage_[i] = storage[i];
+    }
   }
 
   template< class FunctionType >
@@ -81,7 +98,7 @@ public:
                 const FunctionType& function,
                 const std::string projectionType )
     : space_( discreteFunctionSpace ),
-      storage_( discreteFunctionSpace.size() ),
+      storage_( discreteFunctionSpace.map().size() ),
       name_( name )
   {
     if( projectionType.compare( "dirichlet" ) == 0 )
@@ -104,7 +121,7 @@ public:
     return name_;
   }
 
-  void rename( const std::string& newName = "" )
+  void name( const std::string& newName = "" )
   {
     name_ = newName;
   }
@@ -134,14 +151,26 @@ public:
     return storage_[globalDofNumber][0];
   }
 
+  template< class EntityType >
   LocalFunctionType localFunction( const EntityType& entity )
   {
     return LocalFunctionType( (*this), entity );
   }
 
+  template< class EntityType >
   const ConstLocalFunctionType localFunction( const EntityType& entity ) const
   {
     return ConstLocalFunctionType( (*this), entity );
+  }
+
+  bool continuous() const
+  {
+    return true;
+  }
+
+  int oder() const
+  {
+    return space_.order();
   }
 
 private:

@@ -120,10 +120,10 @@ public:
    *
    * @param dfs The discrete function space @f$ { \cal X }_H @f$.
    */
-  template< class DiscFuncSpace >
-  static AutoPtrType create( DiscFuncSpace& dfs )
+  template< class AnsatzSpaceType, class TestSpaceType >
+  static AutoPtrType create( AnsatzSpaceType& ansatzSpace, TestSpaceType& testSpace )
   {
-    return AutoPtrType( createPtr( dfs ) );
+    return AutoPtrType( createPtr( ansatzSpace, testSpace ) );
   }
 
   /** @brief Creates a new BCRSMatrix object and returns a pointer to the
@@ -136,50 +136,52 @@ public:
    *
    * @param dfs The discrete function space @f$ { \cal X }_H @f$.
    */
-  template< class DiscFuncSpace >
-  static ContainerType* createPtr( DiscFuncSpace& dfs )
+  template< class AnsatzSpaceType, class TestSpaceType >
+  static ContainerType* createPtr( AnsatzSpaceType& ansatzSpace, TestSpaceType& testSpace )
   {
-    typedef typename DiscFuncSpace::BaseFunctionSetType
-      BFS;
+    // some types
+    typedef typename AnsatzSpaceType::GridPartType
+      GridPartType;
 
-    typedef typename DiscFuncSpace::IteratorType
-      ItType;
+    typedef typename GridPartType::template Codim< 0 >::IteratorType
+      EntityIteratorType;
 
-    typedef typename ItType::Entity
-      Entity;
+    typedef typename EntityIteratorType::Entity
+      EntityType;
 
-    const unsigned int numDofs = dfs.size();
+    const unsigned int ansatzSize = ansatzSpace.map().size();
+    const unsigned int testSize = testSpace.map().size();
 
     typedef Dune::Functionals::Container::SparsityPattern
       PatternType;
 
-    PatternType sPattern( numDofs );
+    PatternType sPattern( ansatzSize );
 
-    ContainerType* matrix = new ContainerType( numDofs,
-                                               numDofs,
+    ContainerType* matrix = new ContainerType( ansatzSize,
+                                               testSize,
                                                ContainerType::random );
 
     // compute sparsity pattern
     // \todo precompile this in linear subspace
     // \todo use constraints for sparsity pattern
-    ItType it = dfs.begin();
-    for( ; it != dfs.end(); ++it )
+    const EntityIteratorType lastEntity = ansatzSpace.gridPart().template end< 0 >();
+    for(  EntityIteratorType entityIterator = ansatzSpace.gridPart().template begin< 0 >();
+          entityIterator != lastEntity;
+          ++entityIterator )
     {
-      const Entity& en = *it;
-      const BFS& bfs = dfs.baseFunctionSet( en );
-
-      for( int i = 0; i < bfs.numBaseFunctions(); ++i )
+      const EntityType& entity = *entityIterator;
+      for( unsigned int i = 0; i < ansatzSpace.localBaseFunctionSet( entity ).size(); ++i )
       {
-        unsigned int ii = dfs.mapToGlobal( en, i );
-        for( int j = 0; j < bfs.numBaseFunctions(); ++j )
+        unsigned int ii = ansatzSpace.map().toGlobal( entity, i );
+        for( unsigned int j = 0; j < testSpace.localBaseFunctionSet( entity ).size(); ++j )
         {
-          unsigned int jj = dfs.mapToGlobal( en, j );
+          unsigned int jj = testSpace.map().toGlobal( entity, j );
           sPattern.insert( ii, jj );
         }
       }
     }
 
-    for (unsigned int i = 0; i < sPattern.size(); ++i )
+    for( unsigned int i = 0; i < sPattern.size(); ++i )
     {
       matrix->setrowsize( i, sPattern.countNonZeros( i ) );
     }
@@ -264,7 +266,7 @@ public:
   template< class DFSType >
   static ContainerType* createPtr( DFSType& dfs )
   {
-    const unsigned int numDofs = dfs.size();
+    const unsigned int numDofs = dfs.map().size();
     ContainerType* bv = new ContainerType( numDofs );
     return bv;
   }
