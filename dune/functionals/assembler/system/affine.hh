@@ -96,14 +96,14 @@ public:
     typedef typename ConstraintsType::LocalConstraintsType
       LocalConstraintsType;
 
-//    typedef typename AnsatzFunctionSpaceType::AffineShiftType
-//      AffineShiftType;
+    typedef typename AnsatzFunctionSpaceType::AffineShiftType
+      AffineShiftType;
 
-//    // vector assembler for the affine shift
-//    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
-//      LocalAffineShiftVectorAssemblerType;
+    // vector assembler for the affine shift
+    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
+      LocalAffineShiftVectorAssemblerType;
 
-//    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler = localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
+    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler = localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
 
     // common storage for all entities
     LocalMatrixType tmpLocalMatrix( ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) );
@@ -117,7 +117,7 @@ public:
 
       localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrix );
       localVectorAssembler.assembleLocal( testSpace_, entity, systemVector, tmpLocalVector );
-//      localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, localVector );
+      localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, tmpLocalVector );
 
     } // done first gridwalk to assemble
 

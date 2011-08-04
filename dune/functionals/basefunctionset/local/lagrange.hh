@@ -116,6 +116,12 @@ public:
 
   void evaluate( const DomainType& x, std::vector< RangeType >& ret) const
   {
+    // clear target
+    for( unsigned int i = 0; i < ret.size(); ++i )
+    {
+      ret[i] = 0.0;
+    }
+
     // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType
       HostBaseFunctionSetType;
@@ -130,6 +136,12 @@ public:
 
   void jacobian( const DomainType& x, std::vector< JacobianRangeType >& ret ) const
   {
+    // clear target
+    for( unsigned int i = 0; i < ret.size(); ++i )
+    {
+      ret[i] = 0.0;
+    }
+
     // some types we will need
     typedef typename EntityType::Geometry
       EntityGeometryType;

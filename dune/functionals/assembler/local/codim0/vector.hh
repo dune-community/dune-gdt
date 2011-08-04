@@ -36,14 +36,15 @@ public:
   {
   }
 
-private:
+//private:
   //! copy constructor
   Vector( const ThisType& other )
     : localFunctional_( other.localFunctional() )
   {
+    std::cout << "Assembler::Local::Codim0::Vector::Vector( const ThisType& )" << std::endl;
   }
 
-public:
+//public:
   const LocalFunctionalType& localFunctional() const
   {
     return localFunctional_;
