@@ -6,8 +6,10 @@
 
 // dune-fucntionals includes
 #include <dune/functionals/common/localbasefunctionset.hh>
+#include <dune/functionals/discretefunction/continuous.hh>
 
 // dune-fem-tools includes
+#include <dune/fem-tools/function/functiontools.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
 #include <dune/fem-tools/space/projection.hh>
 
@@ -49,7 +51,8 @@ public:
   typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
     RuntimeFunctionType;
 
-  typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
+//  typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
+  typedef Dune::Functionals::DiscreteFunction::Continuous::BlockVector< SuperSpaceType >
     AffineShiftType;
 
   typedef typename BaseSpaceType::ConstraintsType
@@ -92,12 +95,17 @@ public:
     \}
     **/
 
+  static const unsigned int dimDomain = BaseSpaceType::dimDomain;
+
+  static const unsigned int dimRange = BaseSpaceType::dimRange;
+
   Dirichlet( const BaseSpaceType& baseSpace, const std::string expression = "[0.0;0.0;0.0]" )
     : baseSpace_( baseSpace ),
       runtimeFunction_( expression ),
-      affineShift_( "affineShift", baseSpace.superSpace().hostSpace() )
+//      affineShift_( "affineShift", baseSpace.superSpace().hostSpace() )
+      affineShift_( baseSpace.superSpace(), "affineShift", runtimeFunction_, "dirichlet" )
   {
-    Dune::FemTools::Projection::Dirichlet::project( runtimeFunction_, affineShift_ );
+//    Dune::FemTools::Projection::Dirichlet::project( runtimeFunction_, affineShift_ );
   }
 
   const BaseSpaceType& baseSpace() const
@@ -166,7 +174,7 @@ private:
 
   const BaseSpaceType& baseSpace_;
   const RuntimeFunctionType runtimeFunction_;
-  AffineShiftType affineShift_;
+  const AffineShiftType affineShift_;
 }; // end class Dirichlet
 
 } // end of namespace Affine
