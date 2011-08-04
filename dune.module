@@ -1,4 +1,4 @@
 Module: dune-fem-functionals
 Version: 0.1
 Maintainer: felix.albrecht@uni-muenster.de
-Depends: dune-common dune-grid dune-fem dune-istl dune-fem-tools dune-pdelab
+Depends: dune-common dune-grid dune-fem dune-istl dune-fem-tools
