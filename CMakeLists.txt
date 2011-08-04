@@ -101,7 +101,7 @@ ADD_CXX_FLAGS( -I${ALUGRID_BASE_PATH}/include
 #
 # ENDIF ( ENABLE_PARALELL )
 
-ADD_DUNE_MODULES( common istl grid fem fem-tools)
+ADD_DUNE_MODULES( common istl grid localfunctions pdelab fem fem-tools)
 
 LINK_DIRECTORIES( "/usr/lib" "${ALUGRID_BASE_PATH}/lib" )
 ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
@@ -112,19 +112,22 @@ ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
 FILE( GLOB_RECURSE common "../dune-common/dune/common/*.hh" )
 FILE( GLOB_RECURSE grid "../dune-grid/dune/grid/*.hh" )
 FILE( GLOB_RECURSE istl "../dune-istl/dune/istl/*.hh" )
+FILE( GLOB_RECURSE pdelab "../dune-pdelab/dune/pdelab/*.hh" )
+FILE( GLOB_RECURSE localfunctions "../dune-localfunctions/dune/localfunctions/*.hh" )
+FILE( GLOB_RECURSE pdelabhowto "../dune-pdelab-howto/src/*.hh" )
 FILE( GLOB_RECURSE femhowto "../dune-fem-howto/dune/fem-howto/*.hh" )
 FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
 FILE( GLOB_RECURSE femtools "../dune-fem-tools/dune/fem-tools/*.hh" )
 FILE( GLOB_RECURSE functionals "../dune-fem-functionals/dune/functionals/*.hh" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${localfunctions} ${pdelab} ${pdelabhowto} ${fem} ${femhowto} ${femtools} ${functionals} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory tests)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory examples)
 execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/examples/macrogrids .)
 
-ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} )
+ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${localfunctions} ${pdelab} ${pdelabhowto} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} )
 TARGET_LINK_LIBRARIES( examples/elliptic_finite_element_example ${COMMON_LIBS}  )
 
 
