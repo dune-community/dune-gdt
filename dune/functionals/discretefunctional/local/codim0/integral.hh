@@ -8,9 +8,6 @@
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
-// dune-functionals includes
-#include <dune/functionals/common/localvector.hh>
-
 namespace Dune
 {
 
@@ -52,6 +49,12 @@ public:
   void applyLocal( const LocalTestBaseFunctionSetType localTestBaseFunctionSet,
                    LocalVectorType& localVector ) const
   {
+    // clear target
+    for( unsigned int i = 0; i < localVector.size(); ++i )
+    {
+      localVector[i] = 0.0;
+    }
+
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
       DiscreteFunctionSpaceType;
@@ -62,22 +65,14 @@ public:
     typedef Dune::CachingQuadrature< GridPartType, 0 >
       VolumeQuadratureType;
 
-//    typedef typename LocalTestBaseFunctionSetType::LocalBaseFunctionType
-//      LocalTestBaseFunctionType;
-
     // some stuff
-//    const unsigned numberOfLocalTestDoFs = localTestBaseFunctionSet.numBaseFunctions();
-    const unsigned int quadratureOrder = 1 + localTestBaseFunctionSet.order();
+    const unsigned int size = localTestBaseFunctionSet.size();
+    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
     const VolumeQuadratureType volumeQuadrature( localTestBaseFunctionSet.entity(), quadratureOrder );
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
-//    // do loop over all local test DoFs
-//    for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
-//    {
-//      const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionSet.baseFunction( j );
-
     // do loop over all quadrature points
-    LocalVectorType tmpVector( localTestBaseFunctionSet.size() );
+    LocalVectorType tmpVector( size );
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
     {
       // local coordinate
@@ -91,15 +86,11 @@ public:
       localEvaluation_.evaluate( localTestBaseFunctionSet, x, tmpVector );
 
       // compute integral
-      tmpVector *= integrationFactor * quadratureWeight;
-      localVector += tmpVector;
+      for( unsigned int i = 0; i < size; ++i )
+      {
+        localVector[i] += tmpVector[i] * integrationFactor * quadratureWeight;
+      }
     } // done loop over all quadrature points
-
-//    // set local vector (the = is important, since we dont assume a clean vector)
-//    localVector[j] = functional_j;
-
-//    } // done loop over all local test DoFs
-
   } // end method applyLocal
 
 private:

@@ -1,9 +1,6 @@
 #ifndef DUNE_FUNCTIONALS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 #define DUNE_FUNCTIONALS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 
-// dune-functionals includes
-#include <dune/functionals/common/localvector.hh>
-
 namespace Dune
 {
 
@@ -59,7 +56,7 @@ public:
                       LocalVectorType& tmpLocalVector ) const
   {
     // write local operator application to tmpLocalMatrix
-    localFunctional_.applyLocal( testSpace.localBaseFunctionSet( entity ), tmpLocalVector );
+    localFunctional_.applyLocal( testSpace.baseFunctionSet().local( entity ), tmpLocalVector );
 
     // write local matrix to global
     addToVector( testSpace, entity, tmpLocalVector, vector );
@@ -76,13 +73,13 @@ private:
                     const LocalVectorType& localVector,
                     VectorType& vector ) const
   {
-    for( unsigned int j = 0; j < testSpace.localBaseFunctionSet( entity ).size(); ++j )
+    for( unsigned int j = 0; j < testSpace.baseFunctionSet().local( entity ).size(); ++j )
     {
       const unsigned int globalJ = testSpace.map().toGlobal( entity, j );
 
       vector[globalJ] += localVector[j];
     }
-  } // end method addToVector
+  } // end method addToVecto
 
   const LocalFunctionalType& localFunctional_;
 

@@ -61,13 +61,17 @@ template< typename FieldType, int maxRows, int maxColumns >
 class LocalDefault
 {
 private:
-  typedef FieldVector< unsigned int, maxRows >
+  static const unsigned int maxRows_ = maxRows;
+
+  static const unsigned int maxCols_ = maxColumns;
+
+  typedef FieldVector< unsigned int, maxRows_ >
     RowDofs;
 
-  typedef FieldVector< unsigned int, maxColumns >
+  typedef FieldVector< unsigned int, maxCols_ >
     ColumnDofs;
 
-  typedef FieldMatrix< FieldType, maxRows, maxColumns >
+  typedef FieldMatrix< FieldType, maxRows_, maxCols_ >
     MatrixType;
 
 public:
@@ -77,7 +81,7 @@ public:
    * @param numColumns The size of the columns for the degrees of
    *        freedom in the local matrix.
    */
-  LocalDefault( int numColumns=0 )
+  LocalDefault( int numColumns = 0 )
     : rowDofs_( 0 ),
       columnDofs_( 0 ),
       matrix_( 0 ),
@@ -91,9 +95,9 @@ public:
    *
    * @param numRows The number of rows.
    */
-  void setRowDofsSize( int numRows )
+  void setRowDofsSize( unsigned int numRows )
   {
-    assert(numRows < maxRows);
+    assert( numRows <= maxRows_ );
     numRows_ = numRows;
   }
 
@@ -102,9 +106,9 @@ public:
    *
    * @param numRows The number of columns.
    */
-  void setColumnDofsSize( int numColumns )
+  void setColumnDofsSize( unsigned int numColumns )
   {
-    assert(numColumns < maxColumns);
+    assert( numColumns <= maxCols_ );
     numColumns_ = numColumns;
   }
 
@@ -135,8 +139,7 @@ public:
    * @param i The row number in the local matrix.
    * @param globalDof The row number in global matrix.
    */
-  void setRowDofs( unsigned int i,
-                   unsigned int globalDof )
+  void setRowDofs( unsigned int i, unsigned int globalDof )
   {
     rowDofs_[i] = globalDof;
   }
@@ -148,8 +151,7 @@ public:
    * @param i The column number in the local matrix.
    * @param globalDof The column number in global matrix.
    */
-  void setColumnDofs( unsigned int i,
-                      unsigned int globalDof )
+  void setColumnDofs( unsigned int i, unsigned int globalDof )
   {
     columnDofs_[i] = globalDof;
   }
@@ -162,7 +164,7 @@ public:
    */
   unsigned int rowDofs( unsigned int i ) const
   {
-    assert(i < maxRows);
+    assert( i < maxRows_ );
     return rowDofs_[i];
   }
 
@@ -174,7 +176,7 @@ public:
    */
   unsigned int columnDofs( unsigned int i ) const
   {
-    assert(i < maxColumns);
+    assert( i < maxCols_ );
     return columnDofs_[i];
   }
 

@@ -121,7 +121,7 @@ public:
     return name_;
   }
 
-  void name( const std::string& newName = "" )
+  void setName( const std::string& newName = "" )
   {
     name_ = newName;
   }
@@ -163,6 +163,10 @@ public:
     return ConstLocalFunctionType( (*this), entity );
   }
 
+  /**
+    \attention  This is not correct for order 0
+    \todo       fix me
+    **/
   bool continuous() const
   {
     return true;
