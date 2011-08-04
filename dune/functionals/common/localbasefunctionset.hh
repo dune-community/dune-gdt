@@ -206,7 +206,7 @@ public:
     return entity_;
   }
 
-  const LocalBaseFunctionType baseFunction( const int i ) const
+  const LocalBaseFunctionType baseFunction( const unsigned int i ) const
   {
     assert( i < numBaseFunctions() );
     return LocalBaseFunctionType( *this, i );
@@ -222,7 +222,7 @@ public:
     return hostBaseFunctionSet_.numBaseFunctions();
   }
 
-  void evaluate( const int i, const DomainType& x, RangeType& ret ) const
+  void evaluate( const unsigned int i, const DomainType& x, RangeType& ret ) const
   {
     assert( i < numBaseFunctions() );
     hostBaseFunctionSet_.evaluate( i, x, ret );
@@ -240,7 +240,7 @@ public:
     \brief      evaluates the jacobian of the ith ocal basefunction
     \attention  the evalaution is already multiplied by entityGeometry.jacobianInverseTransposed( x )
     **/
-  void jacobian( const int i, const DomainType& x, JacobianRangeType& ret ) const
+  void jacobian( const unsigned int i, const DomainType& x, JacobianRangeType& ret ) const
   {
     assert( i < numBaseFunctions() );
     // some types we will need
