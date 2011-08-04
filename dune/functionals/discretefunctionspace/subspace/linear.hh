@@ -2,7 +2,7 @@
 #define DUNE_FUNCTIONALS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 
 // dune-functionals includes
-#include <dune/functionals/common/localbasefunctionset.hh>
+#include <dune/functionals/basefunctionset/local/lagrange.hh>
 #include <dune/functionals/constraints/dirichlet.hh>
 
 namespace Dune {
