@@ -212,12 +212,12 @@ public:
     return LocalBaseFunctionType( *this, i );
   }
 
-  const int order() const
+  unsigned int order() const
   {
     return space_.order();
   }
 
-  const int numBaseFunctions() const
+  unsigned int numBaseFunctions() const
   {
     return hostBaseFunctionSet_.numBaseFunctions();
   }
@@ -226,6 +226,14 @@ public:
   {
     assert( i < numBaseFunctions() );
     hostBaseFunctionSet_.evaluate( i, x, ret );
+  }
+
+  void evaluateAll( const DomainType& x, std::vector< RangeType >& ret)
+  {
+    for( unsigned int i = 0; i < numBaseFunctions(); ++i )
+    {
+      evaluate( i, x, ret[i] );
+    }
   }
 
   /**
@@ -262,6 +270,14 @@ public:
 
       // return
       ret[row] = jacobian;
+    }
+  }
+
+  void jacobianAll( const DomainType& x, std::vector< JacobianRangeType >& ret ) const
+  {
+    for( unsigned int i = 0; i < numBaseFunctions(); ++i )
+    {
+      jacobian( i, x, ret[i] );
     }
   }
 
