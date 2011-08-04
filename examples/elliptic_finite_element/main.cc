@@ -229,7 +229,7 @@ int main( int argc, char** argv )
 ////    const DiscreteFunctionType solution( "solution", lagrangeFemAdapter );
 ////    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector( lagrangeFemAdapter, *u0 );
 
-//    Dune::FemTools::Function::writeToVTK( solutionAdapter, "solution" );
+    Dune::FemTools::Function::writeToVTK( solutionAdapter, "solution" );
 
     // done
     return 0;

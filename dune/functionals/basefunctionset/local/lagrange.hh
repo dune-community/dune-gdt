@@ -71,12 +71,11 @@ public:
     : baseFunctionSet_( baseFunctionSet ),
       entity_( entity )
   {
-    // get the host basefunctionset
+    // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType
-      BaseFunctionSetType;
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_.find( entity.type() ) != baseFunctionSet_.hostBaseFunctionSetMap_.end() );
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_[ entity.type() ] != NULL );
-    BaseFunctionSetType tmpBaseFunctionSet( baseFunctionSet_.hostBaseFunctionSetMap_[ entity_.type() ] );
+      HostBaseFunctionSetType;
+    const HostBaseFunctionSetType tmpBaseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
+
     size_ = tmpBaseFunctionSet.numBaseFunctions();
     // this is still fishy
     order_ = baseFunctionSet_.space().order();
@@ -104,12 +103,10 @@ public:
 
   void evaluate( const DomainType& x, std::vector< RangeType >& ret) const
   {
-    // get the basefunctionset
+    // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType
-      BaseFunctionSetType;
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_.find( entity_.type() ) != baseFunctionSet_.hostBaseFunctionSetMap_.end() );
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_[ entity_.type() ] != NULL );
-    BaseFunctionSetType baseFunctionSet( baseFunctionSet_.hostBaseFunctionSetMap_[ entity_.type() ] );
+      HostBaseFunctionSetType;
+    const HostBaseFunctionSetType baseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
 
     // and evaluate
     for( unsigned int i = 0; i < size_; ++i )
@@ -128,12 +125,10 @@ public:
     typedef typename JacobianRangeType::row_type
       JacobianRowType;
 
-    // get the basefunctionset
+    // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType
-      BaseFunctionSetType;
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_.find( entity_.type() ) != baseFunctionSet_.hostBaseFunctionSetMap_.end() );
-    assert( baseFunctionSet_.hostBaseFunctionSetMap_[ entity_.type() ] != NULL );
-    BaseFunctionSetType baseFunctionSet( baseFunctionSet_.hostBaseFunctionSetMap_[ entity_.type() ] );
+      HostBaseFunctionSetType;
+    const HostBaseFunctionSetType baseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
 
     // geometry and jacobian inverse transposed
     const EntityGeometryType& entityGeometry = entity_.geometry();

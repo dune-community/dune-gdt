@@ -70,7 +70,8 @@ public:
   typedef Dune::BlockVector< Dune::FieldVector< RangeFieldType, dimRange > >
     StorageType;
 
-  BlockVector( const DiscreteFunctionSpaceType& discreteFunctionSpace, const std::string name = "continuousBlockVectorFunction" )
+  BlockVector(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
+                const std::string name = "continuousBlockVectorFunction" )
     : space_( discreteFunctionSpace ),
       storage_( discreteFunctionSpace.map().size() ),
       name_( name )

@@ -108,6 +108,8 @@ public:
     : space_( space ),
       hostBaseFunctionSetMap_()
   {
+    std::cout << "BaseFunctionSet::Lagrange::Lagrange(){" << std::endl;
+    mapInspector( "  " );
     const IndexSetType& indexSet = space_.gridPart().indexSet();
 
     AllGeomTypes< IndexSetType, GridType > allGeometryTypes( indexSet );
@@ -126,11 +128,15 @@ public:
         hostBaseFunctionSetMap_[ geometryType ] = baseFunctionSet;
       }
     }
+    mapInspector( "  " );
+    std::cout << "}" << std::endl;
   }
 
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
+    std::cout << "BaseFunctionSet::Lagrange::~Lagrange(){" << std::endl;
+    mapInspector( "  " );
     typedef typename HostBaseFunctionMapType::iterator
       BFIteratorType;
     BFIteratorType bfend = hostBaseFunctionSetMap_.end();
@@ -140,6 +146,8 @@ public:
       if( baseFunctionSet != NULL )
         BaseFunctionSetSingletonProviderType::removeObject( *baseFunctionSet );
     }
+    mapInspector( "  " );
+    std::cout << "}" << std::endl;
   }
 
   const DiscreteFunctionSpaceType& space() const
@@ -148,12 +156,39 @@ public:
   }
 
   template< class EntityType >
-  LocalBaseFunctionSetType local( EntityType& entity ) const
+  LocalBaseFunctionSetType local( const EntityType& entity ) const
   {
     return LocalBaseFunctionSetType( *this, entity );
   }
 
 private:
+
+  void mapInspector( const std::string prefix = "" ) const
+  {
+    std::cout << prefix << "BaseFunctionSet::Lagrange::mapInspector()" << std::endl;
+    if( hostBaseFunctionSetMap_.empty() )
+      std::cout << prefix << "  map is empty!" << std::endl;
+    else
+    {
+      const unsigned int size = hostBaseFunctionSetMap_.size();
+      std::cout << prefix << "  map has " << size << " element";
+      if( size > 1 )
+        std::cout << "s";
+      std::cout << "!" << std::endl;
+    }
+  }
+
+  template< class EntityType >
+  BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
+  {
+    std::cout << "BaseFunctionSet::Lagrange::baseFunctionSet(){" << std::endl;
+    mapInspector( "  " );
+    // get the basefunctionset
+    assert( hostBaseFunctionSetMap_.find( entity.type() ) != hostBaseFunctionSetMap_.end() );
+    assert( hostBaseFunctionSetMap_[ entity.type() ] != NULL );
+    std::cout << "}" << std::endl;
+    return BaseFunctionSetType( hostBaseFunctionSetMap_[ entity.type() ] );
+  }
 
 //  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteFunctionSpaceType >;
   friend class Dune::Functionals::BaseFunctionSet::Local::Lagrange< ThisType >;
