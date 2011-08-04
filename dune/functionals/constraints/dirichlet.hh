@@ -89,7 +89,7 @@ public:
     typedef typename LagrangePointSetType::template Codim<faceCodim>::SubEntityIteratorType FaceDofIteratorType;
 
     //    const LocalBaseFunctionSetType& localBaseFunctionSet = space_.localBaseFunctionSet( entity );
-    const unsigned int numCols = space_.localBaseFunctionSet(entity).size();
+    const unsigned int numCols = space_.baseFunctionSet().local(entity).size();
     LocalConstraintsType ret(numCols);
 
     const LagrangePointSetType& lagrangePointSet = space_.map().lagrangePointSet(entity);

@@ -155,9 +155,9 @@ public:
     for (EntityIteratorType entityIterator = ansatzSpace.gridPart().template begin<0>(); entityIterator != lastEntity;
          ++entityIterator) {
       const EntityType& entity = *entityIterator;
-      for (unsigned int i = 0; i < ansatzSpace.localBaseFunctionSet(entity).size(); ++i) {
+      for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
         unsigned int ii = ansatzSpace.map().toGlobal(entity, i);
-        for (unsigned int j = 0; j < testSpace.localBaseFunctionSet(entity).size(); ++j) {
+        for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
           unsigned int jj = testSpace.map().toGlobal(entity, j);
           sPattern.insert(ii, jj);
         }

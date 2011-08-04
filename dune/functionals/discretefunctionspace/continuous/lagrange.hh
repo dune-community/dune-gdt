@@ -5,7 +5,7 @@
 #include <dune/fem/space/lagrangespace.hh>
 
 // dune-functionals includes
-#include <dune/functionals/basefunctionset/local/lagrange.hh>
+#include <dune/functionals/basefunctionset/lagrange.hh>
 #include <dune/functionals/mapper/lagrange.hh>
 
 namespace Dune {
@@ -36,11 +36,11 @@ public:
 
   typedef Dune::Functionals::Mapper::Lagrange<FunctionSpaceType, GridPartType, polynomialOrder> MapperType;
 
-  typedef Dune::Functionals::BaseFunctionSet::Local::Lagrange<ThisType> LocalBaseFunctionSetType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
+  typedef Dune::Functionals::BaseFunctionSet::Lagrange<ThisType> BaseFunctionSetType;
 
   typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
   typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
@@ -55,7 +55,7 @@ public:
   static const unsigned int dimRange = FunctionSpaceType::dimRange;
 
   /**
-      @name Convenience
+      @name Convenience typedefs
       @{
    **/
   typedef typename GridPartType::template Codim<0>::IteratorType IteratorType;
@@ -68,6 +68,7 @@ public:
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
     , mapper_(gridPart_)
+    , baseFunctionSet_(*this)
   {
   }
 
@@ -81,28 +82,48 @@ public:
     return mapper_;
   }
 
+  const BaseFunctionSetType& baseFunctionSet() const
+  {
+    return baseFunctionSet_;
+  }
+
   int order() const
   {
     return polynomialOrder;
   }
 
-  template <class EntityType>
-  const LocalBaseFunctionSetType localBaseFunctionSet(const EntityType& entity) const
-  {
-    return LocalBaseFunctionSetType(*this, entity);
-  }
-
   bool continuous() const
   {
-    return true;
+    if (order() > 0)
+      return false;
+    else
+      return true;
   }
 
+  /**
+      @name Convenience methods
+      @{
+   **/
+  IteratorType begin() const
+  {
+    return gridPart_.template begin<0>();
+  }
+
+  IteratorType end() const
+  {
+    return gridPart_.template end<0>();
+  }
+  /**
+      @}
+   **/
+
 protected:
-  template <class>
-  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
+  //  template< class >
+  //  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
 
   const GridPartType& gridPart_;
   const MapperType mapper_;
+  const BaseFunctionSetType baseFunctionSet_;
 
 }; // end class Lagrange
 

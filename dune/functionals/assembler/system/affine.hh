@@ -1,9 +1,9 @@
 #ifndef DUNE_FUNCTIONALS_ASSEMBLER_SYSTEM_AFFINE_HH
 #define DUNE_FUNCTIONALS_ASSEMBLER_SYSTEM_AFFINE_HH
 
-// dune-functionals includes
-#include <dune/functionals/common/localmatrix.hh>
-#include <dune/functionals/common/localvector.hh>
+// dune-common includes
+#include <dune/common/dynmatrix.hh>
+#include <dune/common/dynvector.hh>
 
 namespace Dune {
 
@@ -33,28 +33,29 @@ public:
 
   template <class LocalMatrixAssemblerType, class MatrixType, class LocalVectorAssemblerType, class VectorType,
             class AffineShiftVectorType>
-  void assembleSystem(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& matrix,
-                      const LocalVectorAssemblerType& localVectorAssembler, VectorType& vector,
+  void assembleSystem(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& systemMatrix,
+                      const LocalVectorAssemblerType& localVectorAssembler, VectorType& systemVector,
                       AffineShiftVectorType& affineShiftVector)
   {
     // some types
     typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
 
-    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
+    typedef typename AnsatzFunctionSpaceType::IteratorType EntityIteratorType;
 
-    typedef typename EntityIteratorType::Entity EntityType;
+    typedef typename AnsatzFunctionSpaceType::EntityType EntityType;
 
     typedef typename AnsatzFunctionSpaceType::RangeFieldType RangeFieldType;
 
-    typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
+    typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
 
-    typedef Dune::Functionals::Common::LocalVector<RangeFieldType> LocalVectorType;
+    typedef Dune::DynamicVector<RangeFieldType> LocalVectorType;
 
     typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
 
     typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
 
-    typedef typename AnsatzFunctionSpaceType::AffineShiftType AffineShiftType;
+    //    typedef typename AnsatzFunctionSpaceType::AffineShiftType
+    //      AffineShiftType;
 
     //    // vector assembler for the affine shift
     //    typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
@@ -64,17 +65,17 @@ public:
     //    localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
 
     // common storage for all entities
-    LocalMatrixType tmpLocalMatrix(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize());
-    LocalVectorType tmpLocalVector(testSpace_.map().maxLocalSize());
+    LocalMatrixType tmpLocalMatrix(
+        ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0));
+    LocalVectorType tmpLocalVector(testSpace_.map().maxLocalSize(), RangeFieldType(0.0));
 
     // do first gridwalk to assemble
-    const EntityIteratorType lastEntity = ansatzSpace_.gridPart().template end<0>();
-    for (EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin<0>(); entityIterator != lastEntity;
-         ++entityIterator) {
+    const EntityIteratorType lastEntity = ansatzSpace_.end();
+    for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
-      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, matrix, tmpLocalMatrix);
-      localVectorAssembler.assembleLocal(testSpace_, entity, vector, tmpLocalVector);
+      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrix);
+      localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVector);
       //      localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, localVector );
 
     } // done first gridwalk to assemble
@@ -82,14 +83,13 @@ public:
     const ConstraintsType constraints = ansatzSpace_.constraints();
 
     // do second gridwalk, to apply constraints
-    for (EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin<0>(); entityIterator != lastEntity;
-         ++entityIterator) {
+    for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
       const LocalConstraintsType& localConstraints = constraints.local(entity);
 
-      applyLocalMatrixConstraints(localConstraints, matrix);
-      applyLocalVectorConstraints(localConstraints, vector);
+      applyLocalMatrixConstraints(localConstraints, systemMatrix);
+      applyLocalVectorConstraints(localConstraints, systemVector);
 
     } // done second gridwalk, to apply constraints
 

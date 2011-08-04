@@ -58,11 +58,15 @@ template <typename FieldType, int maxRows, int maxColumns>
 class LocalDefault
 {
 private:
-  typedef FieldVector<unsigned int, maxRows> RowDofs;
+  static const unsigned int maxRows_ = maxRows;
 
-  typedef FieldVector<unsigned int, maxColumns> ColumnDofs;
+  static const unsigned int maxCols_ = maxColumns;
 
-  typedef FieldMatrix<FieldType, maxRows, maxColumns> MatrixType;
+  typedef FieldVector<unsigned int, maxRows_> RowDofs;
+
+  typedef FieldVector<unsigned int, maxCols_> ColumnDofs;
+
+  typedef FieldMatrix<FieldType, maxRows_, maxCols_> MatrixType;
 
 public:
   /**
@@ -85,9 +89,9 @@ public:
    *
    * @param numRows The number of rows.
    */
-  void setRowDofsSize(int numRows)
+  void setRowDofsSize(unsigned int numRows)
   {
-    assert(numRows < maxRows);
+    assert(numRows <= maxRows_);
     numRows_ = numRows;
   }
 
@@ -96,9 +100,9 @@ public:
    *
    * @param numRows The number of columns.
    */
-  void setColumnDofsSize(int numColumns)
+  void setColumnDofsSize(unsigned int numColumns)
   {
-    assert(numColumns < maxColumns);
+    assert(numColumns <= maxCols_);
     numColumns_ = numColumns;
   }
 
@@ -154,7 +158,7 @@ public:
    */
   unsigned int rowDofs(unsigned int i) const
   {
-    assert(i < maxRows);
+    assert(i < maxRows_);
     return rowDofs_[i];
   }
 
@@ -166,7 +170,7 @@ public:
    */
   unsigned int columnDofs(unsigned int i) const
   {
-    assert(i < maxColumns);
+    assert(i < maxCols_);
     return columnDofs_[i];
   }
 

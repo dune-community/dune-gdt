@@ -5,7 +5,7 @@
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
 // dune-functionals includes
-#include <dune/functionals/discretefunctionspace/continuous/lagrangefemwrapper.hh>
+#include <dune/functionals/discretefunctionspace/continuous/lagrangefemadapter.hh>
 
 namespace Dune {
 

@@ -1,9 +1,6 @@
 #ifndef DUNE_FUNCTIONALS_ASSEMLBER_LOCAL_CODIM0_MATRIX_HH
 #define DUNE_FUNCTIONALS_ASSEMLBER_LOCAL_CODIM0_MATRIX_HH
 
-// dune-functionals includes
-#include <dune/functionals/common/localmatrix.hh>
-
 // local includes
 #include "vector.hh"
 
@@ -64,7 +61,7 @@ public:
   {
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal(
-        ansatzSpace.localBaseFunctionSet(entity), testSpace.localBaseFunctionSet(entity), tmpLocalMatrix);
+        ansatzSpace.baseFunctionSet().local(entity), testSpace.baseFunctionSet().local(entity), tmpLocalMatrix);
 
     // write local matrix to global
     addToMatrix(ansatzSpace, testSpace, entity, tmpLocalMatrix, matrix);
@@ -75,8 +72,8 @@ private:
   void addToMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
                    const LocalMatrixType& localMatrix, MatrixType& matrix) const
   {
-    for (unsigned int i = 0; i < ansatzSpace.localBaseFunctionSet(entity).size(); ++i) {
-      for (unsigned int j = 0; j < testSpace.localBaseFunctionSet(entity).size(); ++j) {
+    for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
+      for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
         const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
         const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
 

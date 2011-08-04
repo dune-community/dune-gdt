@@ -38,13 +38,14 @@
 #include <dune/functionals/assembler/local/codim0/vector.hh>
 #include <dune/functionals/assembler/system/affine.hh>
 #include <dune/functionals/discretefunction/continuous.hh>
+#include <dune/functionals/discretefunction/femadapter.hh>
 #include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/functionals/discretefunctionspace/subspace/linear.hh>
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/codim0/integral.hh>
 #include <dune/functionals/discretefunctional/local/codim0/integral.hh>
-
-// dune-fem-functionals includes
+#include <dune/functionals/evaluation/unary/product.hh>
+#include <dune/functionals/evaluation/binary/elliptic.hh>
 
 // dune-fem-tools includes
 #include <dune/fem-tools/common/string.hh>
@@ -60,188 +61,6 @@ const int polOrder = 1;
 const int polOrder = POLORDER;
 #endif
 
-/**
-  \brief  This represents the operation \f$fv\f$.
-
-          \f$f\f$ is a given right hand side (in this case 1) and \f$v\f$ may be a local function, i.e. a
-          testfunction.
-  \tparam FunctionSpaceImp
-          Type of the function space, where \f$f\f$ and \f$v\f$ live in.
-  **/
-template <class FunctionSpaceImp>
-class ProductEvaluation
-{
-public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
-
-  typedef typename FunctionSpaceType::RangeType RangeType;
-
-  typedef Dune::FemTools::Function::Runtime<FunctionSpaceType> InducingFunctionType;
-
-  //! constructor, takes the inducing functions expression as a runtime parameter
-  ProductEvaluation(const std::string expression = "[1.0;1.0;1.0]")
-    : inducingFunction_(expression)
-  {
-  }
-
-  //! copy constructor
-  ProductEvaluation(const ProductEvaluation& other)
-    : inducingFunction_(other.inducingFunction())
-  {
-  }
-
-  //! returns the inducing function
-  const InducingFunctionType& inducingFunction() const
-  {
-    return inducingFunction_;
-  }
-
-  /**
-    \brief      Evaluates \f$f(x)v(x)\f$ for a given local point \f$x\f$.
-
-    \tparam     LocalTestFunctionType
-                Type of the local function \f$v\f$, i.e. Dune::LocalFunction.
-    \tparam     LocalPointType
-                Type of the local point \f$x\f$, i.e. Dune::FieldVector.
-    \param[in]  localTestFunction
-                The local function \f$v\f$.
-    \param[in]  localPoint
-                The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
-                element.
-    \return     \f$f(x)v(x)\f$
-    **/
-  template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void evaluate(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
-                LocalVectorType& ret) const
-  {
-    // get global point
-    const DomainType globalPoint = localTestBaseFunctionSet.entity().geometry().global(localPoint);
-
-    // evaluate inducing function
-    RangeType functionValue(0.0);
-    inducingFunction_.evaluate(globalPoint, functionValue);
-
-    // evaluate set of local functions
-    std::vector<RangeType> valuesLocalBaseFunctionSet(localTestBaseFunctionSet.size(), RangeType(0.0));
-    localTestBaseFunctionSet.evaluate(localPoint, valuesLocalBaseFunctionSet);
-
-    // do loop over all basis functions
-    for (unsigned int i = 0; i < localTestBaseFunctionSet.size(); ++i) {
-      ret[i] = functionValue * valuesLocalBaseFunctionSet[i];
-    }
-  }
-
-private:
-  const InducingFunctionType inducingFunction_;
-}; // end class ProductEvaluation
-
-
-/**
-  \brief  This represents the operation \f$a\nabla u \nabla v\f$.
-
-          \f$a\f$ is a given scalar function (in this case 1) and \f$u\f$ and \f$u\f$ may be local functions, i.e.
-          ansatz- and testfunctions.
-  \tparam FunctionSpaceImp
-          Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
-  **/
-template <class FunctionSpaceImp>
-class EllipticEvaluation
-{
-public:
-  typedef FunctionSpaceImp FunctionSpaceType;
-
-  typedef typename FunctionSpaceType::DomainType DomainType;
-
-  typedef typename FunctionSpaceType::RangeType RangeType;
-
-  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-  typedef Dune::FemTools::Function::Runtime<FunctionSpaceType> InducingFunctionType;
-
-  //! constructor, takes the inducing functions expression as a runtime parameter
-  EllipticEvaluation(const std::string expression = "[1.0;1.0;1.0]")
-    : inducingFunction_(expression)
-  {
-  }
-
-  //! copy constructor
-  EllipticEvaluation(const EllipticEvaluation& other)
-    : inducingFunction_(other.inducingFunction())
-  {
-  }
-
-  //! returns the inducing function
-  const InducingFunctionType& inducingFunction() const
-  {
-    return inducingFunction_;
-  }
-
-  /**
-    * \brief      Evaluates \f$a(x)\nabla u(x) \nabla v(x)\f$ for a given local point \f$x\f$.
-    *
-    * \tparam     LocalAnsatzFunctionType
-    *             Type of the local ansatz function \f$u\f$, i.e. Dune::LocalFunction.
-    * \tparam     LocalTestFunctionType
-    *             Type of the local test function \f$v\f$, i.e. Dune::LocalFunction.
-    * \tparam     LocalPointType
-    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
-    * \param[in]  localAnsatzFunction
-    *             The local function \f$u\f$.
-    * \param[in]  localTestFunction
-    *             The local function \f$v\f$.
-    * \param[in]  localPoint
-    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
-    *             element.
-    * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
-    **/
-  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType>
-  void evaluate(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
-                LocalMatrixType& ret) const
-  {
-    // std::cout << "EllipticEvaluation::evaluate()" << std::endl;
-    // Dune::FemTools::Printing::printFieldVector( localPoint, "localPoint", std::cout );
-    // get global point
-    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global(localPoint);
-    // Dune::FemTools::Printing::printFieldVector( globalPoint, "globalPoint", std::cout );
-
-    // evaluate first gradient
-    std::vector<JacobianRangeType> gradientLocalAnsatzBaseFunctionSet(localAnsatzBaseFunctionSet.size(),
-                                                                      JacobianRangeType(0.0));
-    localAnsatzBaseFunctionSet.jacobian(localPoint, gradientLocalAnsatzBaseFunctionSet);
-
-    // evaluate second gradient
-    std::vector<JacobianRangeType> gradientLocalTestBaseFunctionSet(localTestBaseFunctionSet.size(),
-                                                                    JacobianRangeType(0.0));
-    localTestBaseFunctionSet.jacobian(localPoint, gradientLocalTestBaseFunctionSet);
-
-    // evaluate inducing function
-    RangeType functionValue(0.0);
-    inducingFunction_.evaluate(globalPoint, functionValue);
-
-    for (unsigned int i = 0; i < localAnsatzBaseFunctionSet.size(); ++i) {
-      // std::cout << "i = " << i << " (of " << localAnsatzBaseFunctionSet.size() << ")" << std::endl;
-      // Dune::FemTools::Printing::printFieldVector( gradientLocalAnsatzBaseFunctionSet[i],
-      // "gradientLocalAnsatzBaseFunctionSet[" + Dune::FemTools::String::toString( i ) + "]", std::cout, "  " );
-      for (unsigned int j = 0; j < localTestBaseFunctionSet.size(); ++j) {
-        // std::cout << "  j = " << j << " (of " << localTestBaseFunctionSet.size() << ")" << std::endl;
-        // Dune::FemTools::Printing::printFieldVector( gradientLocalTestBaseFunctionSet[i],
-        // "gradientLocalTestBaseFunctionSet[" + Dune::FemTools::String::toString( j ) + "]", std::cout, "    " );
-        const RangeFieldType gradientProduct =
-            gradientLocalAnsatzBaseFunctionSet[i][0] * gradientLocalTestBaseFunctionSet[j][0];
-        ret[i][j] = functionValue * gradientProduct;
-      }
-    }
-  }
-
-private:
-  const InducingFunctionType inducingFunction_;
-}; // end class EllipticEvalaution
-
 
 int main(int argc, char** argv)
 {
@@ -252,11 +71,9 @@ int main(int argc, char** argv)
 
 
     // grid
-    static const unsigned int dimRange = 1;
-
     typedef Dune::GridSelector::GridType GridType;
 
-    typedef Dune::AdaptiveLeafGridPart<GridType> GridPartType;
+    typedef Dune::LeafGridPart<GridType> GridPartType;
 
     const std::string dgfFilename = "../macrogrids/unitcube" + Dune::FemTools::String::toString(GRIDDIM) + ".dgf";
 
@@ -264,9 +81,12 @@ int main(int argc, char** argv)
 
     GridPartType gridPart(*gridPtr);
 
+    static const unsigned int dimDomain = GridType::dimension;
+
+    static const unsigned int dimRange = 1;
 
     // function space
-    typedef Dune::FunctionSpace<double, double, GridType::dimension, dimRange> FunctionSpaceType;
+    typedef Dune::FunctionSpace<double, double, dimDomain, dimRange> FunctionSpaceType;
 
     typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
@@ -286,13 +106,13 @@ int main(int argc, char** argv)
 
 
     // local evaluation
-    typedef ProductEvaluation<FunctionSpaceType> ProductEvaluationType;
+    typedef Dune::Functionals::Evaluation::Unary::Product<FunctionSpaceType> ProductEvaluationType;
 
-    ProductEvaluationType productEvaluation("[1.0;1.0;1.0]");
+    ProductEvaluationType productEvaluation("[1.0;1.0;1.0]", 0);
 
-    typedef EllipticEvaluation<FunctionSpaceType> EllipticEvaluationType;
+    typedef Dune::Functionals::Evaluation::Binary::Elliptic<FunctionSpaceType> EllipticEvaluationType;
 
-    EllipticEvaluationType ellipticEvaluation("[1.0;1.0;1.0]");
+    EllipticEvaluationType ellipticEvaluation("[1.0;1.0;1.0]", 0);
 
 
     // operator and functional
@@ -304,11 +124,6 @@ int main(int argc, char** argv)
 
     const LocalL2FunctionalType localL2Functional(productEvaluation);
 
-    //    typedef typename LocalEllipticOperatorType::LocalFunctional< typename DiscreteH1GType::AffineShiftType >::Type
-    //      LocalAffineShiftFunctionalType;
-
-    //    const LocalAffineShiftFunctionalType localAffineShiftFunctional( localEllipticOperator,
-    //    discreteH1G.affineShift() );
 
     // matrix, rhs and solution storage
     typedef Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix MatrixFactory;
@@ -371,19 +186,24 @@ int main(int argc, char** argv)
     // postprocessing
     typedef typename Dune::Functionals::DiscreteFunction::Continuous::BlockVector<DiscreteH1Type> DiscreteFunctionType;
 
-    const DiscreteFunctionType solution(discreteH1, *u0, "solution");
-    //    typedef Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteH1Type >
-    //      LagrangeFemAdapterType;
+    DiscreteFunctionType solution(discreteH1, *u0, "solution");
 
-    //    const LagrangeFemAdapterType lagrangeFemAdapter( discreteH1 );
+    typedef
+        typename Dune::Functionals::DiscreteFunction::FemAdapter<DiscreteFunctionType> DiscreteFunctionFemAdapterType;
 
-    //    typedef Dune::BlockVectorDiscreteFunction< LagrangeFemAdapterType >
-    //      DiscreteFunctionType;
+    DiscreteFunctionFemAdapterType solutionAdapter(solution);
+    ////    typedef Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteH1Type >
+    ////      LagrangeFemAdapterType;
 
-    //    const DiscreteFunctionType solution( "solution", lagrangeFemAdapter );
-    //    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector( lagrangeFemAdapter, *u0 );
+    ////    const LagrangeFemAdapterType lagrangeFemAdapter( discreteH1 );
 
-    Dune::FemTools::Function::writeToVTK(solution, "solution");
+    ////    typedef Dune::BlockVectorDiscreteFunction< LagrangeFemAdapterType >
+    ////      DiscreteFunctionType;
+
+    ////    const DiscreteFunctionType solution( "solution", lagrangeFemAdapter );
+    ////    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector( lagrangeFemAdapter, *u0 );
+
+    //    Dune::FemTools::Function::writeToVTK( solutionAdapter, "solution" );
 
     // done
     return 0;
