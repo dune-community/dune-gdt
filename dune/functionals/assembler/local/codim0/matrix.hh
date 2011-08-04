@@ -25,16 +25,17 @@ public:
 
   typedef typename LocalOperatorType::RangeFieldType RangeFieldType;
 
-  template <class InducingDiscreteFunctionType>
-  class LocalVectorAssembler
-  {
-  private:
-    typedef
-        typename LocalOperatorType::template LocalFunctional<InducingDiscreteFunctionType>::Type InducingFunctionalType;
+  //  template< class InducingDiscreteFunctionType >
+  //  class LocalVectorAssembler
+  //  {
+  //  private:
+  //    typedef typename LocalOperatorType::template LocalFunctional< InducingDiscreteFunctionType >::Type
+  //      InducingFunctionalType;
 
-  public:
-    typedef Dune::Functionals::Assembler::Local::Codim0::Vector<InducingFunctionalType> Type;
-  };
+  //  public:
+  //    typedef Dune::Functionals::Assembler::Local::Codim0::Vector< InducingFunctionalType >
+  //      Type;
+  //  };
 
   //! constructor
   Matrix(const LocalOperatorType& localOperator)
@@ -47,26 +48,26 @@ public:
     return localOperator_;
   }
 
-  template <class InducingDiscreteFunctionType>
-  const typename LocalVectorAssembler<InducingDiscreteFunctionType>::Type
-  localVectorAssembler(const InducingDiscreteFunctionType& inducingDiscreteFunction) const
-  {
-    typedef typename LocalVectorAssembler<InducingDiscreteFunctionType>::Type LocalVectorAssemblerType;
+  //  template< class InducingDiscreteFunctionType >
+  //  const typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type localVectorAssembler( const
+  //  InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  //  {
+  //    typedef typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
+  //      LocalVectorAssemblerType;
 
-    return LocalVectorAssemblerType(localOperator_.localFunctional(inducingDiscreteFunction));
-  }
+  //    return LocalVectorAssemblerType( localOperator_.localFunctional( inducingDiscreteFunction ) );
+  //  }
 
-  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class MatrixType,
-            class LocalMatrixType = Dune::Functionals::Common::LocalMatrix<RangeFieldType>>
+  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class MatrixType, class LocalMatrixType>
   void assembleLocal(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
-                     MatrixType& matrix, LocalMatrixType& localMatrix) const
+                     MatrixType& matrix, LocalMatrixType& tmpLocalMatrix) const
   {
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal(
-        ansatzSpace.localBaseFunctionSet(entity), testSpace.localBaseFunctionSet(entity), localMatrix);
+        ansatzSpace.localBaseFunctionSet(entity), testSpace.localBaseFunctionSet(entity), tmpLocalMatrix);
 
     // write local matrix to global
-    addToMatrix(ansatzSpace, testSpace, entity, localMatrix, matrix);
+    addToMatrix(ansatzSpace, testSpace, entity, tmpLocalMatrix, matrix);
   }
 
 private:
@@ -74,10 +75,10 @@ private:
   void addToMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
                    const LocalMatrixType& localMatrix, MatrixType& matrix) const
   {
-    for (int i = 0; i < ansatzSpace.baseFunctionSet(entity).numBaseFunctions(); ++i) {
-      for (int j = 0; j < testSpace.baseFunctionSet(entity).numBaseFunctions(); ++j) {
-        const int globalI = ansatzSpace.mapToGlobal(entity, i);
-        const int globalJ = testSpace.mapToGlobal(entity, j);
+    for (unsigned int i = 0; i < ansatzSpace.localBaseFunctionSet(entity).size(); ++i) {
+      for (unsigned int j = 0; j < testSpace.localBaseFunctionSet(entity).size(); ++j) {
+        const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
+        const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
 
         matrix[globalI][globalJ] += localMatrix[i][j];
       }

@@ -35,9 +35,10 @@ public:
     *             Number of collumns, the matrix will have.
     **/
   LocalMatrix(const unsigned int rows, const unsigned int cols)
+    : storage_(rows, RowType(cols))
   {
     // resize
-    storage_.resize(rows, RowType(cols));
+    //    storage_.resize( rows, RowType( cols ) );
   }
 
   /**
@@ -76,6 +77,26 @@ public:
     return result;
   }
 
+  void operator*=(const ElementType& scalar)
+  {
+    for (unsigned int i = 0; i < rows(); ++i) {
+      for (unsigned int j = 0; j < cols(); ++j) {
+        storage_[i][j] *= scalar;
+      }
+    }
+  }
+
+  void operator+=(const LocalMatrix<ElementType> other)
+  {
+    assert(rows() == other.rows());
+    assert(cols() == other.cols());
+    for (unsigned int i = 0; i < rows(); ++i) {
+      for (unsigned int j = 0; j < cols(); ++j) {
+        storage_[i][j] += other[i][j];
+      }
+    }
+  }
+
   /**
    * @brief Return number of rows.
    */
@@ -106,6 +127,15 @@ public:
   unsigned int cols() const
   {
     return storage_[0].size();
+  }
+
+  void clear()
+  {
+    for (unsigned int i = 0; i < rows(); ++i) {
+      for (unsigned int j = 0; j < cols(); ++j) {
+        storage_[i][j] = 0.0;
+      }
+    }
   }
 
 private:

@@ -1,6 +1,10 @@
 #ifndef DUNE_FUNCTIONALS_CONSTRAINTS_DIRICHLET_HH
 #define DUNE_FUNCTIONALS_CONSTRAINTS_DIRICHLET_HH
 
+// dune-fem includes
+#include <dune/fem/space/lagrangespace/lagrangespace.hh>
+
+// local includes
 #include "localdefault.hh"
 
 namespace Dune {
@@ -71,20 +75,24 @@ public:
   template <class Entity>
   const LocalConstraintsType local(const Entity& entity) const
   {
-    typedef typename DiscreteFunctionSpaceType::HostSpaceType DiscFuncSpace;
-    typedef typename DiscFuncSpace::BaseFunctionSetType BFS;
-    typedef typename DiscFuncSpace::LagrangePointSetType LPSType;
+    //    typedef typename DiscreteFunctionSpaceType::HostSpaceType
+    //      DiscFuncSpace;
+    //    typedef typename DiscreteFunctionSpaceType::LocalBaseFunctionSetType
+    //      LocalBaseFunctionSetType;
+    //    typedef typename DiscreteFunctionSpaceType::MapperType::LagrangePointSetType
+    //      LPSType;
+    typedef LagrangePointSet<GridPartType, DiscreteFunctionSpaceType::polynomialOrder> LagrangePointSetType;
     typedef typename GridPartType::IntersectionIteratorType IntersectionIterator;
     typedef typename IntersectionIterator::Intersection Intersection;
 
     const int faceCodim = 1;
-    typedef typename LPSType::template Codim<faceCodim>::SubEntityIteratorType FaceDofIteratorType;
+    typedef typename LagrangePointSetType::template Codim<faceCodim>::SubEntityIteratorType FaceDofIteratorType;
 
-    const BFS& bfs             = space_.hostSpace().baseFunctionSet(entity);
-    const unsigned int numCols = bfs.numBaseFunctions();
-    LocalConstraintsType lc(numCols);
+    //    const LocalBaseFunctionSetType& localBaseFunctionSet = space_.localBaseFunctionSet( entity );
+    const unsigned int numCols = space_.localBaseFunctionSet(entity).size();
+    LocalConstraintsType ret(numCols);
 
-    const LPSType& lps = space_.hostSpace().lagrangePointSet(entity);
+    const LagrangePointSetType& lagrangePointSet = space_.map().lagrangePointSet(entity);
 
     /*    // get slave dof structure (for parallel runs)
      *    SlaveDofsType &slaveDofs = this->slaveDofs();
@@ -108,8 +116,8 @@ public:
       const int face = ii.indexInInside();
 
       // get iterator over all local dofs on this face
-      FaceDofIteratorType faceIt          = lps.template beginSubEntity<faceCodim>(face);
-      const FaceDofIteratorType faceEndIt = lps.template endSubEntity<faceCodim>(face);
+      FaceDofIteratorType faceIt          = lagrangePointSet.template beginSubEntity<faceCodim>(face);
+      const FaceDofIteratorType faceEndIt = lagrangePointSet.template endSubEntity<faceCodim>(face);
 
       // iterate over face dofs and set unit row
       for (; faceIt != faceEndIt; ++faceIt) {
@@ -142,15 +150,15 @@ public:
       const unsigned int localDof = *lbit;
       for (unsigned int i = 0; i < numCols; ++i) {
         if (numRows == 0)
-          lc.setColumnDofs(i, space_.hostSpace().mapToGlobal(entity, i));
-        lc.setLocalMatrix(numRows, i, 0.0);
+          ret.setColumnDofs(i, space_.map().toGlobal(entity, i));
+        ret.setLocalMatrix(numRows, i, 0.0);
       }
-      lc.setLocalMatrix(numRows, localDof, 1.0);
-      lc.setRowDofs(numRows, space_.hostSpace().mapToGlobal(entity, localDof));
+      ret.setLocalMatrix(numRows, localDof, 1.0);
+      ret.setRowDofs(numRows, space_.map().toGlobal(entity, localDof));
     }
-    lc.setRowDofsSize(numRows);
+    ret.setRowDofsSize(numRows);
 
-    return lc;
+    return ret;
   }
 
 private:

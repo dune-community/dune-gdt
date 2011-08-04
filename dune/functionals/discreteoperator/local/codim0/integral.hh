@@ -86,7 +86,8 @@ public:
 
   typedef typename FunctionSpaceType::DomainType DomainType;
 
-  typedef Dune::Functionals::Common::LocalMatrix<RangeFieldType> LocalMatrixType;
+  //  typedef Dune::Functionals::Common::LocalMatrix< RangeFieldType >
+  //    LocalMatrixType;
 
   Integral(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
@@ -103,24 +104,25 @@ public:
     return localEvaluation_;
   }
 
-  template <class InducingDiscreteFunctionType>
-  class LocalFunctional
-  {
-  public:
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
-                                                                                  InducingDiscreteFunctionType> Type;
-  };
+  //  template< class InducingDiscreteFunctionType >
+  //  class LocalFunctional
+  //  {
+  //  public:
+  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType,
+  //    InducingDiscreteFunctionType >
+  //      Type;
+  //  };
 
-  template <class InducingDiscreteFunctionType>
-  const typename LocalFunctional<InducingDiscreteFunctionType>::Type
-  localFunctional(const InducingDiscreteFunctionType& inducingDiscreteFunction) const
-  {
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<ThisType,
-                                                                                  InducingDiscreteFunctionType>
-        LocalFunctionalType;
+  //  template< class InducingDiscreteFunctionType >
+  //  const typename LocalFunctional< InducingDiscreteFunctionType >::Type localFunctional( const
+  //  InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  //  {
+  //    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType,
+  //    InducingDiscreteFunctionType >
+  //      LocalFunctionalType;
 
-    return LocalFunctionalType(*this, inducingDiscreteFunction);
-  } // end method localFunctional
+  //    return LocalFunctionalType( *this, inducingDiscreteFunction );
+  //  } // end method localFunctional
 
   /**
     \brief      Local application of the operator.
@@ -134,10 +136,13 @@ public:
                 The entity, on wich the operator is being applied on.
     \return     The matrix \f$\{A( \varphi_i )[\psi_j]\}_{i \in I_E, j \in J_E}\f$.
     **/
-  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType>
+  template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType>
   void applyLocal(const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSet,
                   const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
   {
+    // clear
+    localMatrix.clear();
+
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
@@ -145,49 +150,55 @@ public:
 
     typedef Dune::CachingQuadrature<GridPartType, 0> VolumeQuadratureType;
 
-    typedef typename LocalAnsatzBaseFunctionSetType::LocalBaseFunctionType LocalAnsatzBaseFunctionType;
+    //    typedef typename LocalAnsatzBaseFunctionSetType::LocalBaseFunctionType
+    //      LocalAnsatzBaseFunctionType;
 
-    typedef typename LocalTestBaseFunctionSetType::LocalBaseFunctionType LocalTestBaseFunctionType;
+    //    typedef typename LocalTestBaseFunctionSetType::LocalBaseFunctionType
+    //      LocalTestBaseFunctionType;
 
     // some stuff
-    const unsigned numberOfLocalAnsatzDoFs = localAnsatzBaseFunctionSet.numBaseFunctions();
-    const unsigned numberOfLocalTestDoFs   = localTestBaseFunctionSet.numBaseFunctions();
+    //    const unsigned numberOfLocalAnsatzDoFs = localAnsatzBaseFunctionSet.numBaseFunctions();
+    //    const unsigned numberOfLocalTestDoFs = localTestBaseFunctionSet.numBaseFunctions();
     const unsigned int quadratureOrder = 1 + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
     const VolumeQuadratureType volumeQuadrature(localAnsatzBaseFunctionSet.entity(), quadratureOrder);
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
-    // do loop over all local ansatz DoFs
-    for (unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i) {
-      const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionSet.baseFunction(i);
+    //    // do loop over all local ansatz DoFs
+    //    for( unsigned int i = 0; i < numberOfLocalAnsatzDoFs; ++i )
+    //    {
+    //      const LocalAnsatzBaseFunctionType localAnsatzBaseFunction_i = localAnsatzBaseFunctionSet.baseFunction( i );
 
-      // do loop over all local test DoFs
-      for (unsigned int j = 0; j < numberOfLocalTestDoFs; ++j) {
-        const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionSet.baseFunction(j);
+    //      // do loop over all local test DoFs
+    //      for( unsigned int j = 0; j < numberOfLocalTestDoFs; ++j )
+    //      {
+    //        const LocalTestBaseFunctionType localTestBaseFunction_j = localTestBaseFunctionSet.baseFunction( j );
 
-        // do loop over all quadrature points
-        RangeFieldType operator_i_j(0.0);
-        for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
-          // local coordinate
-          const DomainType x = volumeQuadrature.point(q);
+    // some tmp storage
+    LocalMatrixType tmpMatrix(localAnsatzBaseFunctionSet.size(), localTestBaseFunctionSet.size());
 
-          // integration factors
-          const double integrationFactor = localAnsatzBaseFunctionSet.entity().geometry().integrationElement(x);
-          const double quadratureWeight  = volumeQuadrature.weight(q);
+    // do loop over all quadrature points
+    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
+      // local coordinate
+      const DomainType x = volumeQuadrature.point(q);
 
-          // evaluate the local operation
-          const RangeFieldType localOperationEvalauted =
-              localEvaluation_.evaluate(localAnsatzBaseFunction_i, localTestBaseFunction_j, x);
+      // integration factors
+      const double integrationFactor = localAnsatzBaseFunctionSet.entity().geometry().integrationElement(x);
+      const double quadratureWeight  = volumeQuadrature.weight(q);
 
-          // compute integral
-          operator_i_j += integrationFactor * quadratureWeight * localOperationEvalauted;
-        } // done loop over all quadrature points
+      // evaluate the local operation
+      localEvaluation_.evaluate(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, x, tmpMatrix);
 
-        // set local matrix (the = is important, since we dont assume a clean matrix)
-        localMatrix[i][j] = operator_i_j;
+      // compute integral
+      tmpMatrix *= integrationFactor * quadratureWeight;
+      localMatrix += tmpMatrix;
+    } // done loop over all quadrature points
 
-      } // done loop over all local test DoFs
+    //        // set local matrix (the = is important, since we dont assume a clean matrix)
+    //        localMatrix[i][j] = operator_i_j;
 
-    } // done loop over all local ansatz DoFs
+    //      } // done loop over all local test DoFs
+
+    //    } // done loop over all local ansatz DoFs
 
   } // end method applyLocal
 

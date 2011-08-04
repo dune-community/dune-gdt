@@ -37,14 +37,16 @@ public:
 
   typedef typename BaseSpaceType::FunctionSpaceType FunctionSpaceType;
 
+  enum
+  {
+    polynomialOrder = BaseSpaceType::polynomialOrder
+  };
+
   typedef Dune::FemTools::Function::Runtime<FunctionSpaceType> RuntimeFunctionType;
 
-  //  typedef Dune::AdaptiveDiscreteFunction< typename SuperSpaceType::HostSpaceType >
   typedef Dune::Functionals::DiscreteFunction::Continuous::BlockVector<SuperSpaceType> AffineShiftType;
 
   typedef typename BaseSpaceType::ConstraintsType ConstraintsType;
-
-  typedef typename BaseSpaceType::EntityType EntityType;
 
   typedef typename BaseSpaceType::DomainType DomainType;
 
@@ -58,18 +60,9 @@ public:
 
   typedef typename BaseSpaceType::HessianRangeType HessianRangeType;
 
-  typedef Dune::Functionals::Common::LocalBaseFunctionSet<ThisType> LocalBaseFunctionSetType;
+  typedef typename BaseSpaceType::LocalBaseFunctionSetType LocalBaseFunctionSetType;
 
-  /**
-    \defgroup dune-fem related
-    \{
-    **/
-  typedef typename SuperSpaceType::BaseFunctionSetType BaseFunctionSetType;
-
-  typedef typename SuperSpaceType::IteratorType IteratorType;
-  /**
-    \}
-    **/
+  typedef typename BaseSpaceType::MapperType MapperType;
 
   static const unsigned int dimDomain = BaseSpaceType::dimDomain;
 
@@ -78,11 +71,8 @@ public:
   Dirichlet(const BaseSpaceType& baseSpace, const std::string expression = "[0.0;0.0;0.0]")
     : baseSpace_(baseSpace)
     , runtimeFunction_(expression)
-    ,
-    //      affineShift_( "affineShift", baseSpace.superSpace().hostSpace() )
-    affineShift_(baseSpace.superSpace(), "affineShift", runtimeFunction_, "dirichlet")
+    , affineShift_(baseSpace.superSpace(), "affineShift", runtimeFunction_, "dirichlet")
   {
-    //    Dune::FemTools::Projection::Dirichlet::project( runtimeFunction_, affineShift_ );
   }
 
   const BaseSpaceType& baseSpace() const
@@ -100,17 +90,18 @@ public:
     return affineShift_;
   }
 
+  const GridPartType& gridPart() const
+  {
+    return baseSpace_.gridPart();
+  }
+
+  template <class EntityType>
   const LocalBaseFunctionSetType localBaseFunctionSet(const EntityType& entity) const
   {
-    return LocalBaseFunctionSetType(*this, entity);
+    return baseSpace_.localBaseFunctionSet(entity);
   }
 
-  const int numMaxLocalDoFs() const
-  {
-    return baseSpace_.numMaxLocalDoFs();
-  }
-
-  const int order() const
+  int order() const
   {
     return baseSpace_.order();
   }
@@ -120,32 +111,15 @@ public:
     return baseSpace_.constraints();
   }
 
-  /**
-    \defgroup dune-fem related
-    \{
-    **/
-  IteratorType begin() const
+  const MapperType& map() const
   {
-    return baseSpace_.begin();
+    return baseSpace_.map();
   }
 
-  const IteratorType end() const
+  bool continuous() const
   {
-    return baseSpace_.end();
+    return baseSpace_.continuous();
   }
-
-  const BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
-  {
-    return baseSpace_.baseFunctionSet(entity);
-  }
-
-  const int mapToGlobal(const EntityType& entity, const int localDof) const
-  {
-    return baseSpace_.mapToGlobal(entity, localDof);
-  }
-  /**
-    \}
-    **/
 
 private:
   const BaseSpaceType& baseSpace_;
