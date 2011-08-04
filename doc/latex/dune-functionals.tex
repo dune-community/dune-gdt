@@ -118,18 +118,17 @@ numberstyle=\tiny}
 	Everything presented in this document is in a very early state of development! The presented ideas, concepts and
 	implementation details will possibly be subject to significant change in the future. In particular any implementation
 	specific details, like interfaces, method signatures, reference vs. smart pointer usage, etc is completely neglected in
-	this draft.  
+	this draft.
 \end{disclaimer}\theoremEndLine
 
 The overall goal of \dunefunctionals is the efficient numerical solution of PDE's. To make our intentions clearer,
 here is a short introduction to our ``philosophy''.
 
 \begin{remark}[Philosophy behind \dunefunctionals]
-	We had the following in mind, when we started to design \dunefunctionals:
+We had the following in mind, when we started to design \dunefunctionals:
   \begin{itemize}
-    \item By ``efficient'' we mainly have the efficiency of the programmer in mind, without sacrificing too much of the 
-			efficiency of the program.
-    \item Things should be simple. There should be no ``eierlegende Wollmilchsau''.
+    \item By \textquotedblleft efficient\textquotedblright we mainly have the efficiency of the programmer in mind, without sacrificing too much of the efficiency of the program.
+    \item Things should be simple. There should be no \textquotedblleft eierlegende Wollmilchsau\textquotedblright.
     \item Code is usually more often read than written. Write it readable.
     \item Everything should be highly modularized, where each piece serves a small but distinct purpose.
   \end{itemize}
@@ -141,7 +140,7 @@ One result of these principles is the following.
 
 \begin{remark}[Branches]
   Everything new is created in a seperate (testing-) branch or repository. Only code, that complies to the above philosophy
-  is merged into trunk/mater.
+  is merged into trunk/master.
 \end{remark}
 
 In addition to this philosophy there are some other principles that are constitutive for \dunefunctionals.
@@ -152,217 +151,261 @@ In addition to this philosophy there are some other principles that are constitu
     \item There should be discrete function spaces that do not change during runtime.
     \item There should be discrete functions, whose size do not change during runtime.
     \item Adaptivity is realized by creating a new space from the old one with a new grid view. Prolongation/restriction
-			is carried out by an external structure that prolongs a discrete function from one space to another discrete
-			function in another space. If the user wants to, he can keep the old space and function.
-		\item A discrete function should be some storage and a small interface, nothing more.
-		\item The magic happens in local operators and local functionals, that do integration and stuff on one entity.
-		\item These are either bundled together with a local assembler into a ``systemassembler'' to produce system matrices
-			for a linear algebra backend, or these are incorporated into an operator or functional that work on discrete
-			functions.
+    is carried out by an external structure that prolongs a discrete function from one space to another discrete
+    function in another space. If the user wants to, he can keep the old space and function.
+    \item A discrete function should be some storage and a small interface, nothing more.
+    \item The magic happens in local operators and local functionals, that do integration and stuff on one entity.
+    \item These are either bundled together with a local assembler into a ``systemassembler'' to produce system matrices
+    for a linear algebra backend, or these are incorporated into an operator or functional that work on discrete
+    functions.
   \end{itemize}
 \end{definition}\theoremEndLine
 
 Having this in mind and to elaborate our point, we present two possible discretization schemes for a simple example.
 
 
-\section{Strong and weak formulation}
-	\label{section::strong_weak_formulation}
+\section{The functionals concept}
+\label{section::the_functionals_concept}
 
+In the following we describe the general concept behind \dunefunctionals for {\it linear} problems. In short we can say, that we start with an analytical problem based on analytical operators:
+\begin{align*}
+A(u)[\phi] = F[\phi] \quad \forall \phi \in X_l.
+\end{align*}
+This problem is discretized by means of a 'discrete operator' (the numerical method) so that the corresponding discrete problem reads:
+\begin{align*}
+A_H(u_H)[\phi_H] = F_H[\phi_H] \quad \forall \phi_H \in X_{H,l}.
+\end{align*}
+The discrete operator (the method) $A_H$ is defined via local operators $A_H^{\omega}$ (localized versions of $A_H$), so that we have:
+\begin{align*}
+A_H(\phi_H)[\psi_H] = \sum_{\omega =1}^N A_H^{\omega}(\phi_H)[\psi_H].
+\end{align*}
+These local costituents (local operators) do not only define the chosen numerical method $A_H$, they also define local contributions of the system matrix of the final algebraic problem. 
 
-Assuming standard notation, the following elliptic PDE is one of the simplest sample problem we would like to being
-able to solve with \dunefunctionals.
+\subsection{The concept in details}
+
+Now, we describe the concept in details. We use the following notations:
+\begin{itemize}
+ \item $X$: a Banach-space,
+ \item $X_a$: an affine subspace of $X$,
+ \item $X_l$: a linear subspace of $X$,
+ \item $X^{\prime}_l$: the dual space of $X_l$,
+ \item $F \in X_l^{\prime}$: a functional and
+ \item $A : X \rightarrow X_l^{\prime}$: an operator.
+\end{itemize}
+We are interested in solving: Find $u \in X_a$ with
+\begin{align}
+\label{original-problem} A(u)[\phi] = F[\phi] \quad \forall \phi \in X_l.
+\end{align}
+In this sense, we can say that $A$ describes the differential equation (together with a source term $F$).
+
+$\\$
+In the next step, we specify an according 'discrete operator' $A_H$, i.e. an operator which describes 'the chosen method' or 'the solution scheme for equation \eqref{original-problem})'. For this purpose we introduce finite-dimensional subspaces of $X$:
+\begin{itemize}
+ \item $X_H$: a discrete subspace of $X$,
+ \item $X_{H,a}$: a discrete subspace of $X$ that approximates $X_a$,
+ \item $X_{H,l}$: a discrete subspace of $X_l$,
+ \item $F_H \in X_{H,l}^{\prime}$: a discretized version of $F$ and
+ \item $A_H : X_H \rightarrow X_{H,l}^{\prime}$: the numerical method.
+\end{itemize}
+If possible, we chose $g_H \in X_H$, such that $v_H := u_H - g_H \in X_{H,l}$. Finally, as an approximation of \eqref{original-problem} we solve: Find $v_H \in X_{H,l}$ with
+\begin{align}
+\label{discretized-problem} A_H(v_H)[\phi_H] = F_H[\phi_H] - A_H(g_H)[\phi_H] \quad \forall \phi_H \in X_{H,l}.
+\end{align}
+However, from the implementation point of view, we do not want to define $A_H$ directly. Instead of this we only {\it define} localized components $A_H^{\omega}$.
+This means that the global operator $A_H$ is constructed from $N$ local operators $A_H^{\omega} : X_H \rightarrow X_{H,l}^{\prime} $ ($1 \le \omega \le N$),  such that:
+\begin{align*}
+ A_H( \phi_H )[ \psi_H ] = \sum_{\omega=1}^N A_H^{\omega}( \phi_H )[ \psi_H ] \quad \mbox{forall} \enspace \phi_H,\psi_H \in X_{H,l}.
+\end{align*}
+In this spirit, the local components $A_H^{\omega}$ define the global scheme $A_H$. Furthermore, we will use them to assemble the final system matrix (for the global algebraic problem). Let $S$ denote the system matrix, i.e.:
+\begin{align*}
+S := \left( \begin{array}{ccc}
+  A_H( \phi_{1} )[\phi_{1} ] & ... & A_H^{\omega}( \phi_{1} )[\phi_{n} ] \\
+  \vdots & \enspace & \vdots \\
+  A_H^{\omega}( \phi_{n} )[\phi_{1} ] & ... & A_H^{\omega}( \phi_{n} )[\phi_{n} ] \\
+   \end{array}\right),
+\end{align*}
+where $\phi_1,...\phi_n$ is a basis of $X_{H,l}$. Now, we assemble local matrices $M_{\omega}$ with relevant local base functions $\phi_{\omega_1},...,\phi_{\omega_N}$:
+\begin{align*}
+M_{\omega} = \left( \begin{array}{ccc}
+  A_H^{\omega}( \phi_{\omega_1} )[\phi_{\omega_1} ] & ... & A_H^{\omega}( \phi_{\omega_1} )[\phi_{\omega_N} ] \\
+  \vdots & \enspace & \vdots \\
+  A_H^{\omega}( \phi_{\omega_N} )[\phi_{\omega_1} ] & ... & A_H^{\omega}( \phi_{\omega_N} )[\phi_{\omega_N} ] \\
+   \end{array}\right).
+\end{align*}
+Finally, by means of a method \texttt{mapToGlobal}, we sum up these contributions in the following way, to construct the global system matrix $S$:
+\begin{align*}
+S = \sum_{\omega=1}^N \mbox{\texttt{mapToGlobal}}(M_{\omega}).
+\end{align*}
+All that remains to be specified is the method \texttt{mapToGlobal}, which is typically already given for a large set of problems.
+
+$\\$
+In this sense, the whole concept is a concept of operators and associated localizations of these operators. $A$ contains a describtion of the problem and to define $A_H$, we only need to define the local operators $A_H^{\omega}$ and a method \texttt{mapToGlobal} for the system assembler.
+
+\subsection{Example 1: Standard Finite Elements}
+
+Now we present an easy example for the concept of \dunefunctionals for solving PDE's. We are concerend with a linear elliptic problem with a Dirichlet boundary condition. We want to approach this problem with a standard finite element method with a quadrature formula of order $0$ on each grid element. The notations in this subsection are used in analogy to the notations from the proceding subsection. Beyond this, we assume standard notations. The problem reads as follows:
 
 \begin{example}[Elliptic boundary value problem]\theoremNewline
-	\label{example::strong_weak_formulation::elliptic_pde}
-	Let ${\Omega \subset \R^{d=1,2,3}}$ be a bounded connected lipshitz-domain and let ${a\komma f : \Omega \rightarrow \R}$ and
-	${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
-	\begin{align}
-		\label{equation::strong_weak_formulation::elliptic_pde}
-		- \divergence
-			\big(
-				a \gradient u
-			\big)
-			&= f &&\text{in } \Omega \komma
-		\\
-		u &= g &&\text{on } \boundary\Omega \punkt
-		\notag
-	\end{align}
+\label{example::strong_weak_formulation::elliptic_pde}
+Let ${\Omega \subset \R^{d=1,2,3}}$ be a bounded connected Lipschitz-domain and let ${a\komma f : \Omega \rightarrow \R}$ and
+${g : \boundary\Omega \rightarrow \R}$ be given functions. Find ${u: \Omega \rightarrow \R}$, such that
+\begin{align}
+\label{equation::strong_weak_formulation::elliptic_pde}
+- \divergence \big( a \gradient u \big) &= f &&\text{in } \Omega \komma \\
+u &= g &&\text{on } \boundary\Omega \punkt \notag
+\end{align}
 \end{example}\theoremEndLine
 
-As usual, we will consider the weak formulation of equation \ref{equation::strong_weak_formulation::elliptic_pde}.
+As usual, we will consider the weak formulation of equation \ref{equation::strong_weak_formulation::elliptic_pde}. For this purpose, we define the following operators:
+\begin{align*}
+A(\phi)[\psi] &:= \int_{\Omega} a(x) \nabla \phi(x) \cdot \nabla \psi(x) \hspace{2pt} dx \quad \mbox{for} \enspace \phi,\psi \in H^1(\Omega) \enspace \mbox{and} \\
+F(\phi) &:= \int_{\Omega} f(x) \phi(x) \hspace{2pt} dx \quad \mbox{for} \enspace \phi \in L^2(\Omega).
+\end{align*}
 
-\begin{definition}[Weak formulation]\theoremNewline
-	\label{definition::strong_weak_formulation::weak_formulation}
-	Let $H^1$ and $H^1_0$ be given as usual and let the affine subspace $H^1_g$ be
-	defined as
-	\begin{align}
-		H^1_g :=
-			\big\{
-				v \in H^1
-			\big|
-				v = v_0 + \hat{g} \text{ for a } v_0 \in H^1_0
-			\big\}\komma
-		\notag
-	\end{align}
-	where ${\hat{g} \in H^{1}}$ is a ${H^{1}}$--representation of $g$. Define further the bilinear form
-	$B^{\omega}$ and the linear form
-	$L^{\omega}$ for a suitable subset ${\omega \subseteq \Omega}$ by
-	\begin{align}
-		B^{\omega}: H^1(\omega) \times H^1(\omega) &\rightarrow \R \komma
-			\notag\\
-		(u,v) &\mapsto B^{\omega}(u,v) := \int\limits_{\omega} a \gradient u \gradient v \dx \komma
-			\label{equation::strong_weak_formulation::bilinear_form}\\
-		L^{\omega}: H^1(\omega) &\rightarrow \R \komma
-			\notag\\
-		v &\mapsto L^{\omega}(v) := \int\limits_{\omega} f v \dx \punkt
-			\label{equation::strong_weak_formulation::linear_form}
-	\end{align}
-	The weak formulation of problem \eqref{equation::strong_weak_formulation::elliptic_pde} then reads as follows. Find
-	${u \in H^1_g}$, such that
-	\begin{align}
-		\label{equation::strong_weak_formulation::weak_formulation}
-		B^{\Omega}(u,v) = L^{\Omega}(v)
-			&&\text{for all } v \in H^1_0 \punkt
-	\end{align}
+
+\begin{definition}[Weak formulation]\label{definition::strong_weak_formulation::weak_formulation}\theoremNewline
+Let $H^1(\Omega)$ and $H^1_0(\Omega)$ be given as usual and let the affine subspace $H^1_g(\Omega)$ be the space of $H^1(\Omega)$-functions with trace $g$ on $\partial \Omega$. Now, the weak problem ist to find $u \in H^1_g(\Omega)$ with
+\begin{align}
+\label{equation::strong_weak_formulation::analytical_problem1}
+A(u)[\phi] = F(\phi) \quad \forall \phi \in H^1_0(\Omega).
+\end{align}
+\end{definition}
+
+\begin{remark}\theoremNewline
+In the setting of the concept we have
+\begin{align*}
+X=H^1(\Omega), \enspace X_l=H^1_0(\Omega) \enspace \mbox{and} \enspace X_a=H^1_g(\Omega).
+\end{align*}
+In particular, we get
+\begin{align*}
+A : X \rightarrow X_l^{\prime} \enspace \mbox{and} \enspace F \in X_l^{\prime}.
+\end{align*}
+\end{remark}
+
+In the next step we focus on the discretization of the problem, i.e. we introduce finite dimensional subspaces of the relevant spaces and we introduce a 'discrete operator' that describes the numerical method. For this purpose, let $\Tau_H := \Tau_H(\Omega)$ denote an admissible triangulation of $\Omega$. The elements of $\Tau_H$ (the $codim$ 0 entities) are denoted by $T$ and $H \in \R_{>0}$ defines the maximum diameter of a grid element. Using this notation, we can state the discrete spaces.
+
+\begin{definition}[Finite Element Spaces]\theoremNewline
+\label{definition::discretization::finite_element_spaces}
+Define the usual (Lagrange) Finite Element Space of globally continuous piecewise polynomials of order $1$ by
+\begin{align}
+\label{equation::discretization::lagrange_space}
+S_{H}^{1} &:=
+\big\{ \phi_{H} \in C^{0}(\Omega)
+  \big| \phi_{H}|_{T} \in \mathbb{P}^{1}(T) \quad\forall T \in \Tau_{H}
+ \big\} \komma
+\notag
+\intertext{its linear subspace by}
+{S_{H,0}^{1}} &:=
+\big\{ \phi_{H} \in S_{H}^{1} \big| \phi_{H} = 0 \text{ on } \boundary \Omega \big\}
+\notag
+\intertext{and its affine subspace by}
+{S_{H,g_H}^{1}} &:=
+\big\{ \phi_{H} \in S_{H}^{1}
+   \big| \phi_{H} - g_{H} \in {S_{H,0}^1}
+\big\} \komma \notag
+\end{align}
+where ${g_{H} \in S_{H}^{1}}$ is a projection of $\hat{g}$ (an arbitrary $H^1$-extension of $g$) onto ${S_{H}^{1}}$.
 \end{definition}\theoremEndLine
 
 
-\section{Discretization}
-	\label{section::discretization}
+\begin{definition}[Local and Global Discrete Operators]
+\label{definition::discretization::finite_element_spaces}
+\theoremNewline
+Assume that $a$ and $f$ allow a pointwise evaluation. Then, for $\phi_H,\psi_H \in S_{H}^{1}$, we define the {\it local discrete operators} $A_H^T$ by:
+\begin{align*}
+A_H^T(\psi_H)[\phi_H] := |T| a(x_T) \nabla \phi_H(x_T) \cdot \psi_H(x_T).
+\end{align*}
+Here, $x_T$ denotes the barycenter of $T$. Furthermore, we define $F_H^T$ by:
+\begin{align*}
+F_H^T[\phi_H] := |T| f(x_T) \phi_H(x_T).
+\end{align*}
+The global versions of these operators are therefore given by:
+\begin{align*}
+A_H(\psi_H)[\phi_H] := \sum_{T \in \Tau_H} A_H^T(\psi_H)[\phi_H] \enspace \mbox{and} \enspace F_H[\phi_H] := \sum_{T \in \Tau_H} F_H^T[\phi_H].
+\end{align*}
+\end{definition}\theoremEndLine
 
-We will consider two discretization schemes in the following section. The first discretization (a standard Finite
-Element method) will use globally continuous spaces and is thus, in this context, a conforming discretization. The
-other discretization (a standard interior penalty Discontinuous Galerkin method) will use discontinuous spaces (thus
-being a non--conforming discretization in this context) and will show how we intend to deal with non $codim$ 0 parts
+Finally, we can state the discrete problem (associated with \eqref{equation::strong_weak_formulation::analytical_problem1}):
+
+\begin{definition}[Finite element solution]
+\label{definition::discretization::finite_element_solution}
+\theoremNewline
+Given an approximation ${g_H \in S_H^1}$ of an arbitrary $H^1$-extension of $g$, we are looking for
+${{u_H}_0 \in {S_{H,0}^{1}}}$, such that
+\begin{align}
+A_H({u_H}_0)[\phi_H] = F_H[\phi_H] - A_H(g_H)[\phi_H] &&\text{for all } \phi_H \in {S_{H,0}^{1}} \punkt
+\notag
+\end{align}
+The finite element solution $u_H \in S_{H}^{1} $ for problem \ref{equation::strong_weak_formulation::weak_formulation} is then given by
+\begin{align}
+u_H := {u_H}_0 + g_H\punkt
+\notag
+\end{align}
+\end{definition}\theoremEndLine
+
+
+\begin{remark}\theoremNewline
+In the setting of the concept we have
+\begin{align*}
+S_{H}^{1}=X_H, \enspace {S_{H,0}^{1}}=X_{H,l} \enspace \mbox{and} \enspace {S_{H,g_H}^{1}}=X_{H,a}.
+\end{align*}
+Furthermore, we have
+\begin{align*}
+A_H^T = A_H^{\omega},
+\end{align*}
+where $\omega$ denotes the number of the simplex $T$. The total number of simplices is denoted by $N$ and we get
+\begin{align*}
+A_H(\psi_H)[\phi_H] = \sum_{\omega =1}^N A_H^{\omega}(\psi_H)[\phi_H].
+\end{align*}
+\end{remark}
+
+Now, we are prepared to assemble the algebraic system of equations that we aim solve in the final step.
+
+\begin{definition}[Algebraic system]
+\label{definition::discretization::algebraic_system_fem}
+\theoremNewline
+Given sets of local basefunctions ${B^T:=\big\{ \varphi_i^T \big| i \in I^T \big\}}$
+for all $codim$ 0 entities ${T \in \Tau_H}$ and a suitable local--to--global mapping,
+compute the local matrices $M_{T,T}$ and the local vectors $R_T$, defined by
+\begin{align}
+\left( M_{T,T} \right)_{i,j} &:= A_H^T(\varphi_i^T)[\varphi_j^T] &&\text{for all } i,j \in I^T \enspace \intertext{and}
+\notag
+\left( R_T \right)_j &:= F_H^T[\varphi_j^T] - A_H^T(g_H)[\varphi_j^T]  &&\text{for all } j \in I^T
+\notag
+\end{align}
+for all $codim$ 0 entities ${T \in \Tau_h}$. The global system matrix $S$ and the global right hand side vector $R$ are defined
+by applying the above mentioned local--to--global mapping elementwise and adding up these contributions:
+\begin{align*}
+S = \sum_{ T \in \Tau_H } \hspace{-4pt} \mbox{\texttt{mapToGlobal}}(M_{T,T}) \quad \mbox{and} \quad R = \sum_{ T \in \Tau_H } \hspace{-4pt} \mbox{\texttt{mapToGlobal}}(R_T).
+\end{align*}
+Now, all we need to solve is
+\begin{align}
+S \bar{u} = R
+\end{align}
+to obtain the coefficient vector $\bar{u}$ of ${{u_h}_0 \in {S_{H,0}^1}}$. Then we add $g_H$ to obtain ${u_H = {u_H}_0 + g_H \in S_{H}^{1}}$. For details on \texttt{mapToGlobal}, see \dunefem.
+\end{definition}\theoremEndLine
+
+
+\subsection{Example 2: The Discontinuous Galerkin Method}
+
+In the following subsection, we consider a different discretization scheme. The first discretization (Example 1 - Standard Finite
+Element method) uses globally continuous spaces and is thus, in this context, a conforming discretization. On the other hand, the
+discretization presented in this subsection (a standard interior penalty Discontinuous Galerkin method) will use discontinuous spaces (thus
+is a non-conforming discretization in this context). It will show how we intend to deal with non $codim$ 0 parts
 of the discretization.
 
-Let $\Tau_h := \Tau_h(\Omega)$ be an admissible triangulation of $\Omega$ with grid width $h \in \R^{>0}$.
 
 
-\subsection{Finite Element method}
-	\label{subsection::discretization::finite_element_method}
+
+\section{Implementation of the concept}
+\label{section::implementation}
+
+Note that the notations in this subsection might change again.
+
+
+\subsection{Finite Element Method}
+\label{subsection::discretization::finite_element_method}
 	
-At first, we introduce the following local operator and local functional.
-
-\begin{definition}[Local operator, local functional]\theoremNewline
-	\label{definition::discretization::local_operator_functional_fem}
-	Let ${T \in \Tau_h}$ be a $codim$ 0 entity. Define the local operator $A^T$ by
-	\begin{align}
-		A^T: H^1(T) &\rightarrow H^{-1}(T) \komma
-			\notag\\
-		u &\mapsto A^T(u) \komma
-			\notag
-	\intertext{where $A^T(u)$ itself is a local functional, defined by}
-		A^T(u): H^1(T) &\rightarrow \R \komma
-			\notag\\
-			v &\mapsto A^T(u)[v] := B^T(u,v) \komma
-			\notag
-	\intertext{and the local functional $F^T$ by}
-		F^T: H^1(T) &\rightarrow \R \komma
-			\notag\\
-			v &\mapsto F^T[v] := L^T(v) \punkt
-			\notag
-	\end{align}
-\end{definition}\theoremEndLine
-
-These are bundled together by the following operator and functional.
-
-\begin{definition}[Operator, functional]\theoremNewline
-  \label{definition::discretization::operator_fucntional_fem}
-  Let ${T \in \Tau_h}$ be a $codim$ 0 entity. Define the operator $A$ by
-	\begin{align}
-		A: H^1 &\rightarrow H^{-1} \komma
-			\notag\\
-		u &\mapsto A(u) \komma
-			\notag
-	\intertext{where $A(u)$ itself is a functional, defined by}
-		A(u): H^1 &\rightarrow \R \komma
-			\notag\\
-			v &\mapsto A(u)[v] := \sum\limits_{T \in \Tau_h} A^T(u)[v] \komma
-			\notag
-	\intertext{and the functional $F$ by}
-		F: H^1 &\rightarrow \R \komma
-			\notag\\
-			v &\mapsto F[v] := \sum\limits_{T \in \Tau_h} F^T[v] \punkt
-			\notag
-	\end{align}
-\end{definition}\theoremEndLine
-
-This operator and this functional are used to formulate the Finite Element method to obtain a finite element solution
-for problem \ref{equation::strong_weak_formulation::weak_formulation}.
-
-\begin{definition}[Finite element solution]\theoremNewline
-  \label{definition::discretization::finite_eleemnt_solution}
-  Define the usual Lagrange space of globally continuous piecewise polynomial functions by
-	\begin{align}
-		\label{equation::discretization::lagrange_space}
-		S_{h}^{k} &:=
-			\big\{
-				v_{h} \in C^{0}(\Omega)
-			\big|
-				v_{h}|_{T} \in \mathbb{P}^{k}(T) \quad\forall T \in \Tau_{h}
-			\big\} \komma
-			\notag
-		\intertext{its linear subspace by}
-		{S_{h}^{k}}_{0} &:=
-			\big\{
-				v_{h} \in S_{h}^{k}
-			\big|
-				v_{h} = 0 \text{ on } \boundary \Omega
-			\big\}
-			\notag
-		\intertext{and its affine subspace by}
-		{S_{h}^{k}}_{g} &:=
-			\big\{
-				v_{h} \in S_{h}^{k}
-			\big|
-				{v_{h}}_0 + g_{h} \text{ for a } {v_h}_0 \in {S_h^k}_0
-			\big\} \komma
-			\notag
-	\end{align}
-	where ${g_{h} \in S_{h}^{k}}$ is a projection of $\hat{g}$ onto ${S_{h}^{k}}$. Given ${g_h \in S_h^1}$, find
-	${{u_h}_0 \in {S_{h}^{1}}_{0}}$, such that
-	\begin{align}
-		A({u_h}_0)[v_h] = F[v_h] - A(g_h)[v_h] &&\text{for all } v_h \in {S_{h}^{1}}_{0} \punkt
-			\notag
-	\end{align}
-	The finite element solution for problem \ref{equation::strong_weak_formulation::weak_formulation} is then given by
-	\begin{align}
-	  u_h := {u_h}_0 + g_h && \in S_{h}^{1} \punkt
-			\notag
-	\end{align}
-\end{definition}\theoremEndLine
-
-This is the point where we usually want to assemble a matrix and a vector, to solve an algebraic system for the
-solutions DoF vector.
-
-\begin{definition}[Algebraic system]\theoremNewline
-	\label{definition::discretization::algebraic_system_fem}
-  Given sets of local basefunctions ${B^T:=\big\{ \varphi_i^T \big| i \in I^T \big\}}$ for all $codim$ 0 entity
-  ${T \in \Tau_h}$ and a suitable local--to--global mapping, compute the local matrices $A^{T,T}$ and the local
-  vectors $F^T$ and $G^T$, defined by
-  \begin{align}
-		\left( A^{T,T} \right)_{i,j} &:= A^T(\varphi_i)[\varphi_j] &&\text{for all } i,j \in I^T \komma
-			\notag\\
-		\left( F^T \right)_j &:= F^T[\varphi_j] &&\text{for all } j \in I^T
-			\notag
-	\intertext{and}
-		\left( G^T \right)_j &:= A^T(g_h)[\varphi_j] &&\text{for all } j \in I^T \punkt
-			\notag
-  \end{align}
-  for all $codim$ 0 entities ${T \in \Tau_h}$. The global matrix $A$ and the global vectors $F$ and $G$ are defined
-  by applying the above mentioned local--to--global mapping elementwise and adding up these contributions.
-\end{definition}\theoremEndLine
-
-\begin{definition}[Solver]\theoremNewline
-	\label{definition::discretization::solver_fem}
-  Given $A$, $F$ and $G$, solve
-  \begin{align}
-    A u = F - G
-			\notag
-  \end{align}
-  for $u$ to obtain ${{u_h}_0 \in {S_h^1}_0}$ and add $g_h$ to obtain ${u_h = {u_h}_0 + g_h \in S_{h}^{1}}$.
-\end{definition}
 
 Now that we have a mathematical description of the problem at hand, we would like to highlight some details on how to
 solve the problem using \dunefunctionals. Note that we use the ``assembler/global system'' approach here, another
@@ -385,10 +428,10 @@ possibility is to define a global operator and a global functional (see \ref{}).
 			provides methods to obtain $g_h$ and all methods from the base space.
 	  \item \CodeT{EllipticEvaluation}: given two local basefunction sets $B^T$, $B^S$,\\
 			returns a local matrix ${\big(a \gradient \varphi_i^T \gradient \varphi_j^S\big)_{i,j}}$ for all ${\varphi_i^T \in B^T}$,
-			${\varphi_i^T \in B^T}$.
+			${\varphi_i^T \in B^T}$. It is required for specifying the local discrete operators.
 		\item \CodeT{DiscreteOperator::Local::Codim0::Integral}: given a local evaluation and two local basefunction sets,\\
 			carries out a $codim$ 0 integration by applying a quadrature rule and evaluating the local evaluation at each quadrature point,\\
-			returns a local matrix ${A^{T,T}}$.
+			returns a local matrix ${A^{T,T}}$ (the 'bundle' local discrete operators defines the method, i.e. the global discrete operator).
 		\item \CodeT{Assembler::Local::Codim0::Matrix}: given a local operator, two discrete function spaces, an entity and
 			the global matrix $A$,\\
 			gets the corresponding local basefunction sets, calls the local operator and adds the resulting local matrix to
