@@ -213,7 +213,11 @@ public:
 
 private:
 
+  //! copy constructor
   LagrangeFemAdapter( const ThisType& );
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   const HostSpaceType& hostSpace_;
 

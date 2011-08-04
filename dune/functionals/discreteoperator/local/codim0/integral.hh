@@ -201,6 +201,9 @@ public:
 
 private:
 
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
+
   const LocalEvaluationType& localEvaluation_;
 
 }; // end class Codim0Integration

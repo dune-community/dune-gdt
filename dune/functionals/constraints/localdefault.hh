@@ -8,21 +8,21 @@ namespace Dune
 namespace Functionals
 {
 
-/** 
+/**
  * @addtogroup Constraints Introduction to Constraints
  *
  * Let @f$V_h@f$ be a linear discrete function space, @f$M \in \mathbb{N}_{>0}@f$.
- * Then a set of linear functionals @f$C=\{ C_1, ..., C_M \}@f$ 
+ * Then a set of linear functionals @f$C=\{ C_1, ..., C_M \}@f$
  * on @f$V_h@f$ with the condition
  * @f{align*}{
  *   C_i[v] = 0 \quad \forall 1 \leq i \leq M
  * @f}
  * is called a @e constraint for @f$v@f$.
- * Thus each linear functional implies a constraint. 
+ * Thus each linear functional implies a constraint.
  *
- * Let @f$V_h|_{G}@f$ be a restriction to a local domain @f$G@f$, 
+ * Let @f$V_h|_{G}@f$ be a restriction to a local domain @f$G@f$,
  * for example a support of a basis function.
- * Then we call 
+ * Then we call
  * @f{align*}{
  *   C|_G = \{C_1|_G,\ldots,C_M|_G\}
  * @f}
@@ -41,9 +41,9 @@ namespace Constraints
 /**
  * @brief Class implementing the local constraint interface.
  *
- * The most important method @link LocalDefault::localMatrix() 
- * localMatrix() @endlink returns a local matrix. By means of the 
- * methods @link LocalDefault::rowDofs() rowDofs() @endlink, 
+ * The most important method @link LocalDefault::localMatrix()
+ * localMatrix() @endlink returns a local matrix. By means of the
+ * methods @link LocalDefault::rowDofs() rowDofs() @endlink,
  * @link LocalDefault::columnDofs() columnDofs() @endlink
  * it is possible to get for each row and column number in the
  * local matrix the corresponding row and column number
@@ -75,6 +75,9 @@ private:
     MatrixType;
 
 public:
+  typedef LocalDefault< FieldType, maxRows_, maxCols_ >
+    ThisType;
+
   /**
    * @brief Constructor.
    *
@@ -82,12 +85,37 @@ public:
    *        freedom in the local matrix.
    */
   LocalDefault( int numColumns = 0 )
-    : rowDofs_( 0 ),
-      columnDofs_( 0 ),
-      matrix_( 0 ),
+    : rowDofs_( 0.0 ),
+      columnDofs_( 0.0 ),
+      matrix_( 0.0 ),
       numRows_( 0 ),
       numColumns_( numColumns )
   {
+  }
+
+  //! copy constructor
+  LocalDefault( const ThisType& other )
+    : rowDofs_( 0.0 ),
+      columnDofs_( 0.0 ),
+      matrix_( 0.0 ),
+      numRows_( other.getRowDofsSize() ),
+      numColumns_( other.getColumnDofsSize() )
+  {
+    for( unsigned int i = 0; i < rowDofs_.N(); ++i )
+    {
+      rowDofs_[i] = other.rowDofs( i );
+    }
+    for( unsigned int i = 0; i < columnDofs_.N(); ++i )
+    {
+      columnDofs_[i] = other.columnDofs( i );
+    }
+    for( unsigned int i = 0; i < matrix_.N(); ++i )
+    {
+      for( unsigned int j = 0; j < matrix_.M(); ++j )
+      {
+        setLocalMatrix( i, j, other.localMatrix( i, j ) );
+      }
+    }
   }
 
   /**
@@ -101,6 +129,11 @@ public:
     numRows_ = numRows;
   }
 
+  unsigned int getRowDofsSize() const
+  {
+    return numRows_;
+  }
+
   /**
    * @brief Sets the number of columns for the local matrix.
    *
@@ -110,6 +143,11 @@ public:
   {
     assert( numColumns <= maxCols_ );
     numColumns_ = numColumns;
+  }
+
+  unsigned int getColumnDofsSize() const
+  {
+    return numColumns_;
   }
 
   /**
@@ -141,9 +179,10 @@ public:
    */
   void setRowDofs( unsigned int i, unsigned int globalDof )
   {
+    assert( i < maxRows_ );
     rowDofs_[i] = globalDof;
   }
-  
+
   /**
    * @brief Saves the column mapping between local matrix
    * and global matrix.
@@ -210,6 +249,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
+
   RowDofs      rowDofs_;
   ColumnDofs   columnDofs_;
   MatrixType   matrix_;

@@ -17,10 +17,19 @@ namespace Assembler
 namespace System
 {
 
-template< class AnsatzFunctionSpaceType, class TestFunctionSpaceType = AnsatzFunctionSpaceType >
+template< class AnsatzFunctionSpaceImp, class TestFunctionSpaceImp = AnsatzFunctionSpaceImp >
 class Affine
 {
 public:
+
+  typedef AnsatzFunctionSpaceImp
+    AnsatzFunctionSpaceType;
+
+  typedef TestFunctionSpaceImp
+    TestFunctionSpaceType;
+
+  typedef Affine< AnsatzFunctionSpaceImp, TestFunctionSpaceImp >
+    ThisType;
 
   //! constructor
   Affine( const AnsatzFunctionSpaceType& ansatzSpace, const TestFunctionSpaceType& testSpace )
@@ -34,6 +43,23 @@ public:
     : ansatzSpace_( ansatzSpace ),
       testSpace_( ansatzSpace )
   {
+  }
+
+  //! copy constructor
+  Affine( const ThisType& other )
+    : ansatzSpace_( other.ansatzSpace() ),
+      testSpace_( other.testSpace() )
+  {
+  }
+
+  const AnsatzFunctionSpaceType& ansatzSpace()
+  {
+    return ansatzSpace_;
+  }
+
+  const TestFunctionSpaceType& testSpace()
+  {
+    return testSpace_;
   }
 
   template< class LocalMatrixAssemblerType, class MatrixType,
@@ -93,7 +119,7 @@ public:
 
     } // done first gridwalk to assemble
 
-    const ConstraintsType constraints = ansatzSpace_.constraints();
+    const ConstraintsType& constraints = ansatzSpace_.constraints();
 
     // do second gridwalk, to apply constraints
     for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
@@ -110,6 +136,9 @@ public:
   } // end method assembleSystem
 
 private:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   template< class LocalConstraintsType, class MatrixType >
   void applyLocalMatrixConstraints( const LocalConstraintsType& localConstraints, MatrixType& matrix )

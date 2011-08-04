@@ -3,6 +3,7 @@
 
 // dune-common includes
 #include <dune/common/exceptions.hh>
+#include <dune/common/shared_ptr.hh>
 
 // dune-istl includes
 #include <dune/istl/bcrsmatrix.hh>
@@ -251,7 +252,7 @@ public:
   typedef Dune::BlockVector< T >
     ContainerType;
   //! \copydoc Factory::AutoPtrType
-  typedef std::auto_ptr< ContainerType >
+  typedef Dune::shared_ptr< ContainerType >
     AutoPtrType;
 
 public:

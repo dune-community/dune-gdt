@@ -61,6 +61,32 @@ public:
   {
   }
 
+  //! copy constructor
+  FemAdapter( const ThisType& other )
+    : hostDiscreteFunction_( other.hostDiscreteFunction() )
+  {
+  }
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& other )
+  {
+    if( this != other )
+    {
+      hostDiscreteFunction_ = other.hostDiscreteFunction();
+    }
+    return *this;
+  }
+
+  HostDiscreteFunctionType& hostDiscreteFunction()
+  {
+    return hostDiscreteFunction();
+  }
+
+  const HostDiscreteFunctionType& hostDiscreteFunction() const
+  {
+    return hostDiscreteFunction();
+  }
+
   const DiscreteFunctionSpaceType& space() const
   {
     return hostDiscreteFunction_.space();

@@ -27,6 +27,9 @@ public:
   typedef LocalOperatorImp
     LocalOperatorType;
 
+  typedef Matrix< LocalOperatorType >
+    ThisType;
+
   typedef typename LocalOperatorType::RangeFieldType
     RangeFieldType;
 
@@ -45,6 +48,12 @@ public:
   //! constructor
   Matrix( const LocalOperatorType& localOperator )
     : localOperator_( localOperator )
+  {
+  }
+
+  //! copy constructor
+  Matrix( const ThisType& other )
+    : localOperator_( other.localOperator() )
   {
   }
 
@@ -81,6 +90,9 @@ public:
   }
 
 private:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   template< class AnsatzSpaceType,
             class TestSpaceType,

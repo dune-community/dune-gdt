@@ -83,7 +83,7 @@ public:
                 const std::string name = "continuousBlockVectorFunction"
                 )
     : space_( discreteFunctionSpace ),
-      storage_( discreteFunctionSpace.map().size() ),
+      storage_( space_.map().size() ),
       name_( name )
   {
     assert( storage.size() == storage_.size() );
@@ -99,7 +99,7 @@ public:
                 const FunctionType& function,
                 const std::string projectionType )
     : space_( discreteFunctionSpace ),
-      storage_( discreteFunctionSpace.map().size() ),
+      storage_( space_.map().size() ),
       name_( name )
   {
     if( projectionType.compare( "dirichlet" ) == 0 )
@@ -110,6 +110,34 @@ public:
     {
       throw Dune::NotImplemented();
     }
+  }
+
+  //! copy constructor
+  BlockVector( const ThisType& other )
+    : space_( other.space() ),
+      storage_( space_.map().size() ),
+      name_( "copyOF" + other.name() )
+  {
+    for( unsigned int i = 0; i < storage_.size(); ++i )
+    {
+      operator[](i) = other[i];
+    }
+  }
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& other )
+  {
+    if( this != other )
+    {
+      // we should do something like
+//      assert( this->space() == other.space() );
+      assert( other.space().map().size() == this->space().map().size() );
+      for( unsigned int i = 0; i < storage_.size(); ++i )
+      {
+        operator[](i) = other[i];
+      }
+    }
+    return *this;
   }
 
   const DiscreteFunctionSpaceType& space() const

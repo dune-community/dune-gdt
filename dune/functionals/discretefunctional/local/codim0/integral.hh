@@ -31,6 +31,9 @@ public:
   typedef LocalEvaluationImp
     LocalEvaluationType;
 
+  typedef Integral< LocalEvaluationType >
+    ThisType;
+
   typedef typename LocalEvaluationType::FunctionSpaceType
     FunctionSpaceType;
 
@@ -43,6 +46,16 @@ public:
   Integral( const LocalEvaluationType& localEvaluation )
     : localEvaluation_( localEvaluation )
   {
+  }
+
+  Integral( const ThisType& other )
+    : localEvaluation_( other.localEvaluation() )
+  {
+  }
+
+  const LocalEvaluationType& localEvaluation()
+  {
+    return localEvaluation_;
   }
 
   template< class LocalTestBaseFunctionSetType, class LocalVectorType >
@@ -94,6 +107,9 @@ public:
   } // end method applyLocal
 
 private:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& other );
 
   const LocalEvaluationType& localEvaluation_;
 

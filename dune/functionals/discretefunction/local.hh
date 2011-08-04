@@ -58,6 +58,21 @@ public:
 //Dune::FemTools::Grid::Entity::print( entity_, std::cout, "  " );
   }
 
+  //! copy constructor
+  LocalConst( const ThisType& other )
+    : discreteFunction_( other.discreteFunction() ),
+      entity_( other.entity() ),
+      localBaseFunctionSet_( discreteFunction_.space().baseFunctionSet().local( entity_ ) ),
+      size_( localBaseFunctionSet_.size() ),
+      order_( localBaseFunctionSet_.order() )
+  {
+  }
+
+  const DiscreteFunctionType& discreteFunction() const
+  {
+    return discreteFunction_;
+  }
+
   const EntityType& entity() const
   {
     return entity_;
@@ -108,6 +123,9 @@ Dune::FemTools::Grid::Entity::print( entity_, std::cout, "  " );
   }
 
 private:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   const DiscreteFunctionType& discreteFunction_;
   const EntityType& entity_;

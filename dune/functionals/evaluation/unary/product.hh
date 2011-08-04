@@ -29,6 +29,9 @@ public:
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
+  typedef Product< FunctionSpaceType >
+    ThisType;
+
   typedef typename FunctionSpaceType::DomainType
     DomainType;
 
@@ -114,6 +117,8 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   const InducingFunctionType inducingFunction_;
   unsigned int order_;

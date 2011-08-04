@@ -33,6 +33,9 @@ public:
   typedef BaseSpaceImp
     BaseSpaceType;
 
+  typedef Dirichlet< BaseSpaceType >
+    ThisType;
+
   typedef typename BaseSpaceType::SuperSpaceType
     SuperSpaceType;
 
@@ -43,9 +46,6 @@ public:
     GridPartType;
 
   enum{ polynomialOrder = BaseSpaceType::polynomialOrder };
-
-  typedef Dirichlet< BaseSpaceType >
-    ThisType;
 
 private:
   typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
@@ -169,6 +169,12 @@ public:
    **/
 
 private:
+
+  //! copy constructor
+  Dirichlet( const ThisType& );
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   const BaseSpaceType& baseSpace_;
   const RuntimeFunctionType runtimeFunction_;

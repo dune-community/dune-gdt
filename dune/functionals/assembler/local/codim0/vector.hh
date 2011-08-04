@@ -36,6 +36,7 @@ public:
   {
   }
 
+  //! copy constructor
   Vector( const ThisType& other )
     : localFunctional_( other.localFunctional() )
   {
@@ -63,6 +64,9 @@ public:
   }
 
 private:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
   template< class TestSpaceType,
             class EntityType,

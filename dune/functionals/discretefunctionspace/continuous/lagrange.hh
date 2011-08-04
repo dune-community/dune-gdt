@@ -87,6 +87,14 @@ public:
   {
   }
 
+  //! copy constructor
+  Lagrange( const ThisType& other )
+    : gridPart_( other.gridPart() ),
+      mapper_( gridPart_ ),
+      baseFunctionSet_( *this )
+  {
+  }
+
   const GridPartType& gridPart() const
   {
     return gridPart_;
@@ -133,6 +141,9 @@ public:
    **/
 
 protected:
+
+  //! assignment operator
+  ThisType& operator=( const ThisType& );
 
 //  template< class >
 //  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
