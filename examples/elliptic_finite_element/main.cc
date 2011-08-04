@@ -179,6 +179,8 @@ int main(int argc, char** argv)
 
     Dune::InverseOperatorResult result;
 
+    *u0 = 1.0;
+
     // u_0 = A^(-1) ( F - G )
     solver.apply(*u0, *F, result);
 

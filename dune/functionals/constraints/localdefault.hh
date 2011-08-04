@@ -69,6 +69,8 @@ private:
   typedef FieldMatrix<FieldType, maxRows_, maxCols_> MatrixType;
 
 public:
+  typedef LocalDefault<FieldType, maxRows_, maxCols_> ThisType;
+
   /**
    * @brief Constructor.
    *
@@ -76,12 +78,33 @@ public:
    *        freedom in the local matrix.
    */
   LocalDefault(int numColumns = 0)
-    : rowDofs_(0)
-    , columnDofs_(0)
-    , matrix_(0)
+    : rowDofs_(0.0)
+    , columnDofs_(0.0)
+    , matrix_(0.0)
     , numRows_(0)
     , numColumns_(numColumns)
   {
+  }
+
+  //! copy constructor
+  LocalDefault(const ThisType& other)
+    : rowDofs_(0.0)
+    , columnDofs_(0.0)
+    , matrix_(0.0)
+    , numRows_(other.getRowDofsSize())
+    , numColumns_(other.getColumnDofsSize())
+  {
+    for (unsigned int i = 0; i < rowDofs_.N(); ++i) {
+      rowDofs_[i] = other.rowDofs(i);
+    }
+    for (unsigned int i = 0; i < columnDofs_.N(); ++i) {
+      columnDofs_[i] = other.columnDofs(i);
+    }
+    for (unsigned int i = 0; i < matrix_.N(); ++i) {
+      for (unsigned int j = 0; j < matrix_.M(); ++j) {
+        setLocalMatrix(i, j, other.localMatrix(i, j));
+      }
+    }
   }
 
   /**
@@ -95,6 +118,11 @@ public:
     numRows_ = numRows;
   }
 
+  unsigned int getRowDofsSize() const
+  {
+    return numRows_;
+  }
+
   /**
    * @brief Sets the number of columns for the local matrix.
    *
@@ -104,6 +132,11 @@ public:
   {
     assert(numColumns <= maxCols_);
     numColumns_ = numColumns;
+  }
+
+  unsigned int getColumnDofsSize() const
+  {
+    return numColumns_;
   }
 
   /**
@@ -135,6 +168,7 @@ public:
    */
   void setRowDofs(unsigned int i, unsigned int globalDof)
   {
+    assert(i < maxRows_);
     rowDofs_[i] = globalDof;
   }
 
@@ -201,6 +235,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   RowDofs rowDofs_;
   ColumnDofs columnDofs_;
   MatrixType matrix_;

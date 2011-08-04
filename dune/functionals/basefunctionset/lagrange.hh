@@ -110,6 +110,20 @@ public:
     std::cout << "}" << std::endl;
   }
 
+  //  //! copy constructor
+  //  Lagrange( const ThisType& other )
+  //    : space_( other.space() ),
+  //      hostBaseFunctionSetMap_()
+  //  {
+  //    if( !other.hostBaseFunctionSetMap_.empty() )
+  //    {
+  //      for( unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i )
+  //      {
+  //        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
+  //      }
+  //    }
+  //  }
+
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
@@ -138,6 +152,12 @@ public:
   }
 
 private:
+  //! copy constructor
+  Lagrange(const ThisType&);
+
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   void mapInspector(const std::string prefix = "") const
   {
     std::cout << prefix << "BaseFunctionSet::Lagrange::mapInspector()" << std::endl;

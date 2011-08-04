@@ -53,6 +53,7 @@ public:
 
   typedef typename FunctionSpaceType::HessianRangeType HessianRangeType;
 
+  //! constructor
   Lagrange(const BaseFunctionSetType& baseFunctionSet, const EntityType& entity)
     : baseFunctionSet_(baseFunctionSet)
     , entity_(entity)
@@ -64,6 +65,15 @@ public:
     size_ = tmpBaseFunctionSet.numBaseFunctions();
     // this is still fishy
     order_ = baseFunctionSet_.space().order();
+  }
+
+  //! copy constructor
+  Lagrange(const ThisType& other)
+    : baseFunctionSet_(other.baseFunctionSet())
+    , entity_(other.entity())
+    , size_(other.size())
+    , order_(other.order())
+  {
   }
 
   const BaseFunctionSetType& baseFunctionSet() const
@@ -133,6 +143,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   //  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteFunctionSpaceType
   //  >;
 

@@ -26,6 +26,8 @@ class Dirichlet
 public:
   typedef BaseSpaceImp BaseSpaceType;
 
+  typedef Dirichlet<BaseSpaceType> ThisType;
+
   typedef typename BaseSpaceType::SuperSpaceType SuperSpaceType;
 
   typedef typename BaseSpaceType::FunctionSpaceType FunctionSpaceType;
@@ -36,8 +38,6 @@ public:
   {
     polynomialOrder = BaseSpaceType::polynomialOrder
   };
-
-  typedef Dirichlet<BaseSpaceType> ThisType;
 
 private:
   typedef Dune::FemTools::Function::Runtime<FunctionSpaceType> RuntimeFunctionType;
@@ -148,6 +148,12 @@ public:
    **/
 
 private:
+  //! copy constructor
+  Dirichlet(const ThisType&);
+
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   const BaseSpaceType& baseSpace_;
   const RuntimeFunctionType runtimeFunction_;
   const AffineShiftType affineShift_;

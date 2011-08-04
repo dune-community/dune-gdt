@@ -3,6 +3,7 @@
 
 // dune-common includes
 #include <dune/common/exceptions.hh>
+#include <dune/common/shared_ptr.hh>
 
 // dune-istl includes
 #include <dune/istl/bcrsmatrix.hh>
@@ -226,7 +227,7 @@ public:
   //! \copydoc Factory::ContainerType
   typedef Dune::BlockVector<T> ContainerType;
   //! \copydoc Factory::AutoPtrType
-  typedef std::auto_ptr<ContainerType> AutoPtrType;
+  typedef Dune::shared_ptr<ContainerType> AutoPtrType;
 
 public:
   /** @brief Creates a new vector object and returns an auto_ptr pointing to

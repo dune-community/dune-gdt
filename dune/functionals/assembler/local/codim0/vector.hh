@@ -27,6 +27,7 @@ public:
   {
   }
 
+  //! copy constructor
   Vector(const ThisType& other)
     : localFunctional_(other.localFunctional())
   {
@@ -49,6 +50,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   template <class TestSpaceType, class EntityType, class LocalVectorType, class VectorType>
   void addToVector(const TestSpaceType& testSpace, const EntityType& entity, const LocalVectorType& localVector,
                    VectorType& vector) const

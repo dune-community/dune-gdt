@@ -41,6 +41,8 @@ public:
   //! Discrete function space on which the Dirichlet constraints are applied
   typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
 
+  typedef DirichletZero<DiscreteFunctionSpaceType> ThisType;
+
   //! Underlying grid part
   typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
@@ -51,7 +53,6 @@ public:
   //! interface
   typedef Dune::Functionals::Constraints::LocalDefault<double, 2 * griddim, 6 * griddim> LocalConstraintsType;
 
-public:
   /** @brief Constructor for the Dirichlet constraints
    *
    *  @param space    discrete function space object on which the Dirichlet
@@ -63,7 +64,6 @@ public:
   {
   }
 
-
   /** @brief returns a local constraint object for the entity \a en
    *
    * @param en Entity for which the local constraints shall be compted
@@ -73,7 +73,7 @@ public:
    * implementation.
    */
   template <class Entity>
-  const LocalConstraintsType local(const Entity& entity) const
+  LocalConstraintsType local(const Entity& entity) const
   {
     //    typedef typename DiscreteFunctionSpaceType::HostSpaceType
     //      DiscFuncSpace;
@@ -162,6 +162,12 @@ public:
   }
 
 private:
+  //! copy constructor
+  DirichletZero(const ThisType&);
+
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   const DiscreteFunctionSpaceType& space_;
   const GridPartType& gridPart_;
 }; // end class Dirichlet

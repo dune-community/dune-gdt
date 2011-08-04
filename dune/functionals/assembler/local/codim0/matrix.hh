@@ -20,6 +20,8 @@ class Matrix
 public:
   typedef LocalOperatorImp LocalOperatorType;
 
+  typedef Matrix<LocalOperatorType> ThisType;
+
   typedef typename LocalOperatorType::RangeFieldType RangeFieldType;
 
   //  template< class InducingDiscreteFunctionType >
@@ -37,6 +39,12 @@ public:
   //! constructor
   Matrix(const LocalOperatorType& localOperator)
     : localOperator_(localOperator)
+  {
+  }
+
+  //! copy constructor
+  Matrix(const ThisType& other)
+    : localOperator_(other.localOperator())
   {
   }
 
@@ -68,6 +76,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class LocalMatrixType, class MatrixType>
   void addToMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
                    const LocalMatrixType& localMatrix, MatrixType& matrix) const

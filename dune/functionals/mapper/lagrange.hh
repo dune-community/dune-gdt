@@ -69,7 +69,7 @@ public:
       const GeometryType& geometryType = geometryTypes[i];
 
       if (lagrangePointSet_.find(geometryType) == lagrangePointSet_.end()) {
-        const LagrangePointSetType* lagrangePointSet = new LagrangePointSetType(geometryType);
+        const LagrangePointSetType* lagrangePointSet = new LagrangePointSetType(geometryType, polynomialOrder);
         assert(lagrangePointSet != NULL);
         lagrangePointSet_[geometryType] = lagrangePointSet;
       }
@@ -101,6 +101,11 @@ public:
     }
   }
 
+  const GridPartType& gridPart() const
+  {
+    return gridPart_;
+  }
+
   template <class EntityType>
   unsigned int toGlobal(const EntityType& entity, const unsigned int localDofNumber) const
   {
@@ -126,6 +131,12 @@ public:
   }
 
 private:
+  //! copy constructor
+  Lagrange(const ThisType&);
+
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   template <class>
   friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
 

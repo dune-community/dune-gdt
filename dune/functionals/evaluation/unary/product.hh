@@ -23,6 +23,8 @@ class Product
 public:
   typedef FunctionSpaceImp FunctionSpaceType;
 
+  typedef Product<FunctionSpaceType> ThisType;
+
   typedef typename FunctionSpaceType::DomainType DomainType;
 
   typedef typename FunctionSpaceType::RangeType RangeType;
@@ -103,6 +105,9 @@ public:
   }
 
 private:
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   const InducingFunctionType inducingFunction_;
   unsigned int order_;
 }; // end class Product

@@ -21,6 +21,8 @@ class Dirichlet
 public:
   typedef SuperSpaceImp SuperSpaceType;
 
+  typedef Dirichlet<SuperSpaceType> ThisType;
+
   typedef Dune::Functionals::Constraints::DirichletZero<SuperSpaceType> ConstraintsType;
 
   typedef typename SuperSpaceType::FunctionSpaceType FunctionSpaceType;
@@ -31,8 +33,6 @@ public:
   {
     polynomialOrder = SuperSpaceType::polynomialOrder
   };
-
-  typedef Dirichlet<SuperSpaceType> ThisType;
 
   typedef typename SuperSpaceType::MapperType MapperType;
 
@@ -124,6 +124,12 @@ public:
    **/
 
 private:
+  //! copy constructor
+  Dirichlet(const ThisType&);
+
+  //! assignment operator
+  ThisType& operator=(const ThisType&);
+
   const SuperSpaceType& superSpace_;
   const ConstraintsType constraints_;
 
