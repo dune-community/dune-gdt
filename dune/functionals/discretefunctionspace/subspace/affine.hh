@@ -68,7 +68,7 @@ public:
   static const unsigned int dimRange = BaseSpaceType::dimRange;
 
   /**
-      @name Convenience
+      @name Convenience Types
       @{
    **/
   typedef typename SuperSpaceType::IteratorType IteratorType;

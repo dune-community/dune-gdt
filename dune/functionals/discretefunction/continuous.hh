@@ -165,7 +165,7 @@ public:
   }
 
   template <class EntityType>
-  const ConstLocalFunctionType localFunction(const EntityType& entity) const
+  ConstLocalFunctionType localFunction(const EntityType& entity) const
   {
     return ConstLocalFunctionType((*this), entity);
   }
