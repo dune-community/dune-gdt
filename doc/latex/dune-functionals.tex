@@ -169,17 +169,17 @@ Having this in mind and to elaborate our point, we present two possible discreti
 
 In the following we describe the general concept behind \dunefunctionals for {\it linear} problems. In short we can say, that we start with an analytical problem based on analytical operators:
 \begin{align*}
-A(u)[\phi] = F[\phi] \quad \forall \phi \in X_l.
+\mbox{Find} \enspace u \in X_a \enspace \mbox{with} \qquad A(u)[\phi] = F[\phi] \quad \forall \phi \in X_l.
 \end{align*}
 This problem is discretized by means of a 'discrete operator' (the numerical method) so that the corresponding discrete problem reads:
 \begin{align*}
-A_H(u_H)[\phi_H] = F_H[\phi_H] \quad \forall \phi_H \in X_{H,l}.
+\mbox{Find} \enspace u_h \in X_{h,a} \enspace \mbox{with} \qquad A_h(u_h)[\phi_h] = F_h[\phi_h] \quad \forall \phi_h \in X_{h,l}.
 \end{align*}
-The discrete operator (the method) $A_H$ is defined via local operators $A_H^{\omega}$ (localized versions of $A_H$), so that we have:
+The discrete operator (the method) $A_h$ is defined via local operators $A_h^{\omega}$ (localized versions of $A_h$), so that we have:
 \begin{align*}
-A_H(\phi_H)[\psi_H] = \sum_{\omega =1}^N A_H^{\omega}(\phi_H)[\psi_H].
+A_h(\phi_h)[\psi_h] = \sum_{\omega =1}^N A_h^{\omega}(\phi_h)[\psi_h].
 \end{align*}
-These local costituents (local operators) do not only define the chosen numerical method $A_H$, they also define local contributions of the system matrix of the final algebraic problem. 
+These local costituents (local operators) do not only define the chosen numerical method $A_h$, they also define local contributions of the system matrix of the final algebraic problem. 
 
 \subsection{The concept in details}
 
@@ -188,9 +188,9 @@ Now, we describe the concept in details. We use the following notations:
  \item $X$: a Banach-space,
  \item $X_a$: an affine subspace of $X$,
  \item $X_l$: a linear subspace of $X$,
- \item $X^{\prime}_l$: the dual space of $X_l$,
- \item $F \in X_l^{\prime}$: a functional and
- \item $A : X \rightarrow X_l^{\prime}$: an operator.
+ \item $X^{\prime}$: the dual space of $X$,
+ \item $F \in X^{\prime}$: a functional and
+ \item $A : X \rightarrow X^{\prime}$: an operator.
 \end{itemize}
 We are interested in solving: Find $u \in X_a$ with
 \begin{align}
@@ -199,47 +199,47 @@ We are interested in solving: Find $u \in X_a$ with
 In this sense, we can say that $A$ describes the differential equation (together with a source term $F$).
 
 $\\$
-In the next step, we specify an according 'discrete operator' $A_H$, i.e. an operator which describes 'the chosen method' or 'the solution scheme for equation \eqref{original-problem})'. For this purpose we introduce finite-dimensional subspaces of $X$:
+In the next step, we specify an according 'discrete operator' $A_h$, i.e. an operator which describes 'the chosen method' or 'the solution scheme for equation \eqref{original-problem})'. For this purpose we introduce finite-dimensional subspaces of $X$:
 \begin{itemize}
- \item $X_H$: a discrete subspace of $X$,
- \item $X_{H,a}$: a discrete subspace of $X$ that approximates $X_a$,
- \item $X_{H,l}$: a discrete subspace of $X_l$,
- \item $F_H \in X_{H,l}^{\prime}$: a discretized version of $F$ and
- \item $A_H : X_H \rightarrow X_{H,l}^{\prime}$: the numerical method.
+ \item $X_h$: a discrete subspace of $X$,
+ \item $X_{h,a}$: a discrete subspace of $X$ that approximates $X_a$,
+ \item $X_{h,l}$: a discrete subspace of $X_l$,
+ \item $F_h \in X_{h}^{\prime}$: a discretized version of $F$ (depending on the numerical method) and
+ \item $A_h : X_h \rightarrow X_{h}^{\prime}$: a discretized version of $A$ (describing the numerical method).
 \end{itemize}
-If possible, we chose $g_H \in X_H$, such that $v_H := u_H - g_H \in X_{H,l}$. Finally, as an approximation of \eqref{original-problem} we solve: Find $v_H \in X_{H,l}$ with
+If possible, we chose $g_h \in X_h$, such that $v_h := u_h - g_h \in X_{h,l}$. Finally, as an approximation of \eqref{original-problem} we solve: Find $v_h \in X_{h,l}$ with
 \begin{align}
-\label{discretized-problem} A_H(v_H)[\phi_H] = F_H[\phi_H] - A_H(g_H)[\phi_H] \quad \forall \phi_H \in X_{H,l}.
+\label{discretized-problem} A_h(v_h)[\phi_h] = F_h[\phi_h] - A_h(g_h)[\phi_h] \quad \forall \phi_h \in X_{h,l}.
 \end{align}
-However, from the implementation point of view, we do not want to define $A_H$ directly. Instead of this we only {\it define} localized components $A_H^{\omega}$.
-This means that the global operator $A_H$ is constructed from $N$ local operators $A_H^{\omega} : X_H \rightarrow X_{H,l}^{\prime} $ ($1 \le \omega \le N$),  such that:
+However, from the implementation point of view, we do not want to define $A_h$ directly. Instead of this we only {\it define} localized components $A_h^{\omega}$.
+This means that the global operator $A_h$ is constructed from $N$ local operators $A_h^{\omega} : X_h \rightarrow X_{h,l}^{\prime} $ ($1 \le \omega \le N$),  such that:
 \begin{align*}
- A_H( \phi_H )[ \psi_H ] = \sum_{\omega=1}^N A_H^{\omega}( \phi_H )[ \psi_H ] \quad \mbox{forall} \enspace \phi_H,\psi_H \in X_{H,l}.
+ A_h( \phi_h )[ \psi_h ] = \sum_{\omega=1}^N A_h^{\omega}( \phi_h )[ \psi_h ] \quad \mbox{forall} \enspace \phi_h,\psi_h \in X_{h,l}.
 \end{align*}
-In this spirit, the local components $A_H^{\omega}$ define the global scheme $A_H$. Furthermore, we will use them to assemble the final system matrix (for the global algebraic problem). Let $S$ denote the system matrix, i.e.:
+In this spirit, the local components $A_h^{\omega}$ define the global scheme represented by $A_h$. Furthermore, we will use them to assemble the global system matrix (for the global algebraic problem). Let $S$ denote the system matrix, i.e.:
 \begin{align*}
 S := \left( \begin{array}{ccc}
-  A_H( \phi_{1} )[\phi_{1} ] & ... & A_H^{\omega}( \phi_{1} )[\phi_{n} ] \\
+  A_h( \phi_{1} )[\phi_{1} ] & ... & A_h^{\omega}( \phi_{1} )[\phi_{n} ] \\
   \vdots & \enspace & \vdots \\
-  A_H^{\omega}( \phi_{n} )[\phi_{1} ] & ... & A_H^{\omega}( \phi_{n} )[\phi_{n} ] \\
+  A_h^{\omega}( \phi_{n} )[\phi_{1} ] & ... & A_h^{\omega}( \phi_{n} )[\phi_{n} ] \\
    \end{array}\right),
 \end{align*}
-where $\phi_1,...\phi_n$ is a basis of $X_{H,l}$. Now, we assemble local matrices $M_{\omega}$ with relevant local base functions $\phi_{\omega_1},...,\phi_{\omega_N}$:
+where $\phi_1,...\phi_n$ is a basis of $X_{h,l}$. Now, we assemble local matrices $M_{\omega}$ with relevant local base functions $\phi_{\omega_1},...,\phi_{\omega_N}$:
 \begin{align*}
 M_{\omega} = \left( \begin{array}{ccc}
-  A_H^{\omega}( \phi_{\omega_1} )[\phi_{\omega_1} ] & ... & A_H^{\omega}( \phi_{\omega_1} )[\phi_{\omega_N} ] \\
+  A_h^{\omega}( \phi_{\omega_1} )[\phi_{\omega_1} ] & ... & A_h^{\omega}( \phi_{\omega_1} )[\phi_{\omega_N} ] \\
   \vdots & \enspace & \vdots \\
-  A_H^{\omega}( \phi_{\omega_N} )[\phi_{\omega_1} ] & ... & A_H^{\omega}( \phi_{\omega_N} )[\phi_{\omega_N} ] \\
+  A_h^{\omega}( \phi_{\omega_N} )[\phi_{\omega_1} ] & ... & A_h^{\omega}( \phi_{\omega_N} )[\phi_{\omega_N} ] \\
    \end{array}\right).
 \end{align*}
 Finally, by means of a method \texttt{mapToGlobal}, we sum up these contributions in the following way, to construct the global system matrix $S$:
 \begin{align*}
-S = \sum_{\omega=1}^N \mbox{\texttt{mapToGlobal}}(M_{\omega}).
+S = \sum_{\omega=1}^N \mu(\omega,M_{\omega}).
 \end{align*}
-All that remains to be specified is the method \texttt{mapToGlobal}, which is typically already given for a large set of problems.
+All that remains to be specified is the {\it local-to-global mapping} $\mu$, which is typically already given for a large set of problems.
 
 $\\$
-In this sense, the whole concept is a concept of operators and associated localizations of these operators. $A$ contains a describtion of the problem and to define $A_H$, we only need to define the local operators $A_H^{\omega}$ and a method \texttt{mapToGlobal} for the system assembler.
+In this sense, the whole concept is a concept of operators and associated localizations of these operators. $A$ contains a describtion of the problem and to define $A_h$, we only need to define the local operators $A_h^{\omega}$ and a method \texttt{mapToGlobal} (describing $\mu$) for the system assembler.
 
 \subsection{Example 1: Standard Finite Elements}
 
@@ -256,7 +256,7 @@ u &= g &&\text{on } \boundary\Omega \punkt \notag
 \end{align}
 \end{example}\theoremEndLine
 
-As usual, we will consider the weak formulation of equation \ref{equation::strong_weak_formulation::elliptic_pde}. For this purpose, we define the following operators:
+As usual, we will consider the weak formulation of equation \ref{equation::strong_weak_formulation::elliptic_pde}. For this purpose, we define the following operator and functional:
 \begin{align*}
 A(\phi)[\psi] &:= \int_{\Omega} a(x) \nabla \phi(x) \cdot \nabla \psi(x) \hspace{2pt} dx \quad \mbox{for} \enspace \phi,\psi \in H^1(\Omega) \enspace \mbox{and} \\
 F(\phi) &:= \int_{\Omega} f(x) \phi(x) \hspace{2pt} dx \quad \mbox{for} \enspace \phi \in L^2(\Omega).
@@ -282,46 +282,46 @@ A : X \rightarrow X_l^{\prime} \enspace \mbox{and} \enspace F \in X_l^{\prime}.
 \end{align*}
 \end{remark}
 
-In the next step we focus on the discretization of the problem, i.e. we introduce finite dimensional subspaces of the relevant spaces and we introduce a 'discrete operator' that describes the numerical method. For this purpose, let $\Tau_H := \Tau_H(\Omega)$ denote an admissible triangulation of $\Omega$. The elements of $\Tau_H$ (the $codim$ 0 entities) are denoted by $T$ and $H \in \R_{>0}$ defines the maximum diameter of a grid element. Using this notation, we can state the discrete spaces.
+In the next step we focus on the discretization of the problem, i.e. we introduce finite dimensional subspaces of the relevant spaces and we introduce a 'discrete operator' that describes the numerical method. For this purpose, let $\Tau_h := \Tau_h(\Omega)$ denote an admissible triangulation of $\Omega$. The elements of $\Tau_h$ (the $codim$ 0 entities) are denoted by $T$ and $H \in \R_{>0}$ defines the maximum diameter of all grid elements. Using this notation, we can state the discrete spaces.
 
 \begin{definition}[Finite Element Spaces]\theoremNewline
 \label{definition::discretization::finite_element_spaces}
 Define the usual (Lagrange) Finite Element Space of globally continuous piecewise polynomials of order $1$ by
 \begin{align}
 \label{equation::discretization::lagrange_space}
-S_{H}^{1} &:=
-\big\{ \phi_{H} \in C^{0}(\Omega)
-  \big| \phi_{H}|_{T} \in \mathbb{P}^{1}(T) \quad\forall T \in \Tau_{H}
+S_{h}^{1} &:=
+\big\{ \phi_{h} \in C^{0}(\Omega)
+  \big| \phi_{h}|_{T} \in \mathbb{P}^{1}(T) \quad\forall T \in \Tau_{h}
  \big\} \komma
 \notag
 \intertext{its linear subspace by}
-{S_{H,0}^{1}} &:=
-\big\{ \phi_{H} \in S_{H}^{1} \big| \phi_{H} = 0 \text{ on } \boundary \Omega \big\}
+{S_{h,0}^{1}} &:=
+\big\{ \phi_{h} \in S_{h}^{1} \big| \phi_{h} = 0 \text{ on } \boundary \Omega \big\}
 \notag
 \intertext{and its affine subspace by}
-{S_{H,g_H}^{1}} &:=
-\big\{ \phi_{H} \in S_{H}^{1}
-   \big| \phi_{H} - g_{H} \in {S_{H,0}^1}
+{S_{h,g_h}^{1}} &:=
+\big\{ \phi_{h} \in S_{h}^{1}
+   \big| \phi_{h} - g_{h} \in {S_{h,0}^1}
 \big\} \komma \notag
 \end{align}
-where ${g_{H} \in S_{H}^{1}}$ is a projection of $\hat{g}$ (an arbitrary $H^1$-extension of $g$) onto ${S_{H}^{1}}$.
+where ${g_{h} \in S_{h}^{1}}$ is a projection of $\hat{g}$ (an arbitrary $H^1$-extension of $g$) onto ${S_{h}^{1}}$.
 \end{definition}\theoremEndLine
 
 
 \begin{definition}[Local and Global Discrete Operators]
 \label{definition::discretization::finite_element_spaces}
 \theoremNewline
-Assume that $a$ and $f$ allow a pointwise evaluation. Then, for $\phi_H,\psi_H \in S_{H}^{1}$, we define the {\it local discrete operators} $A_H^T$ by:
+Assume that $a$ and $f$ allow a pointwise evaluation and let $\mathcal{Q}_{T}=\{(q_i,\omega_i)| i \in I_T \}$ denote an quadrature rule on $T$. Then, for $\phi_h,\psi_h \in S_{h}^{1}$, we define the {\it local discrete operators} $A_h^T$ by:
 \begin{align*}
-A_H^T(\psi_H)[\phi_H] := |T| a(x_T) \nabla \phi_H(x_T) \cdot \psi_H(x_T).
+A_h^T(\psi_h)[\phi_h] := \sum_{i \in I_T} \omega_i \hspace{2pt} a(q_i) \nabla \phi_h(q_i) \cdot \nabla \psi_h(q_i).
 \end{align*}
-Here, $x_T$ denotes the barycenter of $T$. Furthermore, we define $F_H^T$ by:
+Here, $q_i$ denotes the quadrature point and $\omega_i$ the weight. Furthermore, we define $F_h^T$ by:
 \begin{align*}
-F_H^T[\phi_H] := |T| f(x_T) \phi_H(x_T).
+F_h^T[\phi_h] := \sum_{i \in I_T} \omega_i \hspace{2pt} f(q_i) \phi_h(q_i).
 \end{align*}
 The global versions of these operators are therefore given by:
 \begin{align*}
-A_H(\psi_H)[\phi_H] := \sum_{T \in \Tau_H} A_H^T(\psi_H)[\phi_H] \enspace \mbox{and} \enspace F_H[\phi_H] := \sum_{T \in \Tau_H} F_H^T[\phi_H].
+A_h(\psi_h)[\phi_h] := \sum_{T \in \Tau_h} A_h^T(\psi_h)[\phi_h] \enspace \mbox{and} \enspace F_h[\phi_h] := \sum_{T \in \Tau_h} F_h^T[\phi_h].
 \end{align*}
 \end{definition}\theoremEndLine
 
@@ -330,15 +330,15 @@ Finally, we can state the discrete problem (associated with \eqref{equation::str
 \begin{definition}[Finite element solution]
 \label{definition::discretization::finite_element_solution}
 \theoremNewline
-Given an approximation ${g_H \in S_H^1}$ of an arbitrary $H^1$-extension of $g$, we are looking for
-${{u_H}_0 \in {S_{H,0}^{1}}}$, such that
+Given an approximation ${g_h \in S_h^1}$ of an arbitrary $H^1$-extension of $g$, we are looking for
+${{u_h}_0 \in {S_{h,0}^{1}}}$, such that
 \begin{align}
-A_H({u_H}_0)[\phi_H] = F_H[\phi_H] - A_H(g_H)[\phi_H] &&\text{for all } \phi_H \in {S_{H,0}^{1}} \punkt
+A_h({u_h}_0)[\phi_h] = F_h[\phi_h] - A_h(g_h)[\phi_h] &&\text{for all } \phi_h \in {S_{h,0}^{1}} \punkt
 \notag
 \end{align}
-The finite element solution $u_H \in S_{H}^{1} $ for problem \ref{equation::strong_weak_formulation::weak_formulation} is then given by
+The finite element solution $u_h \in S_{h}^{1} $ for problem \ref{equation::strong_weak_formulation::weak_formulation} is then given by
 \begin{align}
-u_H := {u_H}_0 + g_H\punkt
+u_h := {u_h}_0 + g_h\punkt
 \notag
 \end{align}
 \end{definition}\theoremEndLine
@@ -347,15 +347,15 @@ u_H := {u_H}_0 + g_H\punkt
 \begin{remark}\theoremNewline
 In the setting of the concept we have
 \begin{align*}
-S_{H}^{1}=X_H, \enspace {S_{H,0}^{1}}=X_{H,l} \enspace \mbox{and} \enspace {S_{H,g_H}^{1}}=X_{H,a}.
+X_hS_{h}^{1}, \enspace X_{h,l}={S_{h,0}^{1}} \enspace \mbox{and} \enspace X_{h,a}={S_{h,g_h}^{1}}.
 \end{align*}
 Furthermore, we have
 \begin{align*}
-A_H^T = A_H^{\omega},
+A_h^T = A_h^{\omega},
 \end{align*}
 where $\omega$ denotes the number of the simplex $T$. The total number of simplices is denoted by $N$ and we get
 \begin{align*}
-A_H(\psi_H)[\phi_H] = \sum_{\omega =1}^N A_H^{\omega}(\psi_H)[\phi_H].
+A_h(\psi_h)[\phi_h] = \sum_{\omega =1}^N A_h^{\omega}(\psi_h)[\phi_h].
 \end{align*}
 \end{remark}
 
@@ -365,24 +365,24 @@ Now, we are prepared to assemble the algebraic system of equations that we aim s
 \label{definition::discretization::algebraic_system_fem}
 \theoremNewline
 Given sets of local basefunctions ${B^T:=\big\{ \varphi_i^T \big| i \in I^T \big\}}$
-for all $codim$ 0 entities ${T \in \Tau_H}$ and a suitable local--to--global mapping,
-compute the local matrices $M_{T,T}$ and the local vectors $R_T$, defined by
+for all $codim$ 0 entities ${T \in \Tau_h}$ and a suitable local--to--global mapping,
+compute the local matrices $M_{T,T}$ and the local vectors $R_T$, $G_T$, defined by
 \begin{align}
-\left( M_{T,T} \right)_{i,j} &:= A_H^T(\varphi_i^T)[\varphi_j^T] &&\text{for all } i,j \in I^T \enspace \intertext{and}
+\left( M_{T,T} \right)_{i,j} &:= A_h^T(\varphi_i^T)[\varphi_j^T] &&\text{for all } i,j \in I^T \enspace \intertext{and}
 \notag
-\left( R_T \right)_j &:= F_H^T[\varphi_j^T] - A_H^T(g_H)[\varphi_j^T]  &&\text{for all } j \in I^T
+\left( R_T \right)_j &:= F_h^T[\varphi_j^T] \quad \left( G_T \right)_j &:= A_h^T(g_h)[\varphi_j^T]  \quad &&\text{for all } j \in I^T
 \notag
 \end{align}
-for all $codim$ 0 entities ${T \in \Tau_h}$. The global system matrix $S$ and the global right hand side vector $R$ are defined
-by applying the above mentioned local--to--global mapping elementwise and adding up these contributions:
+for all $codim$ 0 entities ${T \in \Tau_h}$. The global system matrix $S$ and the global right hand side vectors $R$ and $G$ are defined
+by applying the above mentioned local--to--global mapping $\mu$ elementwise and adding up these contributions:
 \begin{align*}
-S = \sum_{ T \in \Tau_H } \hspace{-4pt} \mbox{\texttt{mapToGlobal}}(M_{T,T}) \quad \mbox{and} \quad R = \sum_{ T \in \Tau_H } \hspace{-4pt} \mbox{\texttt{mapToGlobal}}(R_T).
+S = \sum_{ T \in \Tau_h } \hspace{-4pt} \mu(T,M_{T,T}), \quad R = \sum_{ T \in \Tau_h } \hspace{-4pt} \mu(T,R_T) \quad \mbox{and} \quad G = \sum_{ T \in \Tau_h } \hspace{-4pt} \mu(T,G_T).
 \end{align*}
 Now, all we need to solve is
 \begin{align}
-S \bar{u} = R
+S \bar{u} = R - G
 \end{align}
-to obtain the coefficient vector $\bar{u}$ of ${{u_h}_0 \in {S_{H,0}^1}}$. Then we add $g_H$ to obtain ${u_H = {u_H}_0 + g_H \in S_{H}^{1}}$. For details on \texttt{mapToGlobal}, see \dunefem.
+to obtain the coefficient vector $\bar{u}$ of ${{u_h}_0 \in {S_{h,0}^1}}$. Then we add $g_h$ to obtain ${u_h = {u_h}_0 + g_h \in S_{h}^{1}}$. For details on $\mu$ (\texttt{mapToGlobal}) see \dunefem.
 \end{definition}\theoremEndLine
 
 
