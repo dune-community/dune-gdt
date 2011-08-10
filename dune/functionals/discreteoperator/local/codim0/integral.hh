@@ -96,6 +96,14 @@ public:
   typedef typename FunctionSpaceType::DomainType
     DomainType;
 
+  template< class InducingDiscreteFunctionType >
+  class LocalFunctional
+  {
+  public:
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType, InducingDiscreteFunctionType >
+      Type;
+  };
+
   Integral( const LocalEvaluationType& localEvaluation )
     : localEvaluation_( localEvaluation )
   {
@@ -115,15 +123,7 @@ public:
   }
 
   template< class InducingDiscreteFunctionType >
-  class LocalFunctional
-  {
-  public:
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType, InducingDiscreteFunctionType >
-      Type;
-  };
-
-  template< class InducingDiscreteFunctionType >
-  const typename LocalFunctional< InducingDiscreteFunctionType >::Type localFunctional( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  typename LocalFunctional< InducingDiscreteFunctionType >::Type localFunctional( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
   {
     typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType, InducingDiscreteFunctionType >
       LocalFunctionalType;

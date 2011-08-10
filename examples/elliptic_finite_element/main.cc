@@ -153,10 +153,13 @@ int main( int argc, char** argv )
       VectorPtrType;
 
     VectorPtrType F = VectorFactory::create( discreteH1 );
+    *F = 0.0;
 
     VectorPtrType G = VectorFactory::create( discreteH1 );
+    *G = 0.0;
 
     VectorPtrType u0 = VectorFactory::create( discreteH1 );
+    *u0 = 0.0;
 
 
     // assembler
@@ -203,8 +206,6 @@ int main( int argc, char** argv )
     SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
 
     Dune::InverseOperatorResult result;
-
-    *u0 = 0.0;
 
     // u_0 = A^(-1) ( F - G )
     solver.apply( *u0, *F, result );
