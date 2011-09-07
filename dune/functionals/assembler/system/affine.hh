@@ -60,7 +60,7 @@ public:
             class AffineShiftVectorType>
   void assembleSystem(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& systemMatrix,
                       const LocalVectorAssemblerType& localVectorAssembler, VectorType& systemVector,
-                      AffineShiftVectorType& affineShiftVector)
+                      AffineShiftVectorType& affineShiftVector) const
   {
     // some types
     typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
@@ -124,7 +124,7 @@ private:
   ThisType& operator=(const ThisType&);
 
   template <class LocalConstraintsType, class MatrixType>
-  void applyLocalMatrixConstraints(const LocalConstraintsType& localConstraints, MatrixType& matrix)
+  void applyLocalMatrixConstraints(const LocalConstraintsType& localConstraints, MatrixType& matrix) const
   {
     for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
       for (unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j) {
@@ -134,7 +134,7 @@ private:
   } // end applyLocalMatrixConstraints
 
   template <class LocalConstraintsType, class VectorType>
-  void applyLocalVectorConstraints(const LocalConstraintsType& localConstraints, VectorType& vector)
+  void applyLocalVectorConstraints(const LocalConstraintsType& localConstraints, VectorType& vector) const
   {
     for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
       vector[localConstraints.rowDofs(i)] = 0.0;

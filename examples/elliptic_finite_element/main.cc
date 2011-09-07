@@ -130,7 +130,6 @@ int main(int argc, char** argv)
 
     typedef typename MatrixFactory::AutoPtrType MatrixPtrType;
 
-    //! \todo the matrix factory should get two spaces (ansatz and test)
     MatrixPtrType A = MatrixFactory::create(discreteH1, discreteH1);
 
     typedef Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
@@ -158,7 +157,7 @@ int main(int argc, char** argv)
 
     typedef Assembler::System::Affine<DiscreteH1GType, DiscreteH10Type> SystemAssemblerType;
 
-    SystemAssemblerType systemAssembler(discreteH1G, discreteH10);
+    const SystemAssemblerType systemAssembler(discreteH1G, discreteH10);
 
     systemAssembler.assembleSystem(localMatrixAssembler, *A, localVectorAssembler, *F, *G);
 
