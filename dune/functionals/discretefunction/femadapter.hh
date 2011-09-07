@@ -10,11 +10,11 @@ namespace Functionals {
 
 namespace DiscreteFunction {
 
-template <class FucntionalsDiscreteFunctionImp>
+template <class FunctionalsDiscreteFunctionImp>
 class FemAdapter
 {
 public:
-  typedef FucntionalsDiscreteFunctionImp HostDiscreteFunctionType;
+  typedef FunctionalsDiscreteFunctionImp HostDiscreteFunctionType;
 
   typedef typename HostDiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
@@ -45,6 +45,7 @@ public:
 
   typedef typename HostDiscreteFunctionType::StorageType StorageType;
 
+  //! constructor
   FemAdapter(HostDiscreteFunctionType& hostDiscreteFunction)
     : hostDiscreteFunction_(hostDiscreteFunction)
   {
@@ -124,7 +125,7 @@ public:
   //  }
 
   template <class EntityType>
-  const LocalFunctionType localFunction(const EntityType& entity) const
+  LocalFunctionType localFunction(const EntityType& entity) const
   {
     return LocalFunctionType((*this), entity);
   }
