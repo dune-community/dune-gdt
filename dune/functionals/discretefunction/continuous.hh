@@ -76,6 +76,7 @@ public:
       storage_( discreteFunctionSpace.map().size() ),
       name_( name )
   {
+    clear();
   }
 
   BlockVector(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
@@ -86,6 +87,7 @@ public:
       storage_( space_.map().size() ),
       name_( name )
   {
+    clear();
     assert( storage.size() == storage_.size() );
     for( unsigned int i = 0; i < storage_.size(); ++i )
     {
@@ -102,6 +104,7 @@ public:
       storage_( space_.map().size() ),
       name_( name )
   {
+    clear();
     if( projectionType.compare( "dirichlet" ) == 0 )
     {
       Dune::FemTools::Projection::Dirichlet::project( function, *this );
@@ -119,6 +122,7 @@ private:
       storage_( space_.map().size() ),
       name_( "copyOF" + other.name() )
   {
+    clear();
     for( unsigned int i = 0; i < storage_.size(); ++i )
     {
       operator[](i) = other[i];
@@ -133,6 +137,7 @@ private:
       // we should do something like
 //      assert( this->space() == other.space() );
       assert( other.space().map().size() == this->space().map().size() );
+      clear();
       for( unsigned int i = 0; i < storage_.size(); ++i )
       {
         operator[](i) = other[i];
@@ -159,7 +164,7 @@ public:
 
   void clear()
   {
-    std::cout << "DiscreteFunction::Continuous::BlockVector::clear() does not do anything!" << std::endl;
+    storage_ = 0.0;
   }
 
   const StorageType& storage() const
