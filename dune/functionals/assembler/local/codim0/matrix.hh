@@ -65,7 +65,8 @@ public:
   }
 
   template< class InducingDiscreteFunctionType >
-  typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type localVectorAssembler( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
+    localVectorAssembler( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
   {
     typedef typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
       LocalVectorAssemblerType;
@@ -85,7 +86,9 @@ public:
                       LocalMatrixType& tmpLocalMatrix ) const
   {
     // write local operator application to tmpLocalMatrix
-    localOperator_.applyLocal( ansatzSpace.baseFunctionSet().local( entity ), testSpace.baseFunctionSet().local( entity ), tmpLocalMatrix );
+    localOperator_.applyLocal(  ansatzSpace.baseFunctionSet().local( entity ),
+                                testSpace.baseFunctionSet().local( entity ),
+                                tmpLocalMatrix );
 
     // write local matrix to global
     addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrix, matrix );
