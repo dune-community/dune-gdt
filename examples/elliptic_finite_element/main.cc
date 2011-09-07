@@ -51,7 +51,7 @@
 #include <dune/fem-tools/common/string.hh>
 #include <dune/fem-tools/common/printing.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
-//#include <dune/fem-tools/function/functiontools.hh>
+//#include <dune/fem-tools/discretefunction.hh>
 
 using namespace Dune::Functionals;
 
@@ -194,16 +194,6 @@ int main(int argc, char** argv)
         typename Dune::Functionals::DiscreteFunction::FemAdapter<DiscreteFunctionType> DiscreteFunctionFemAdapterType;
 
     DiscreteFunctionFemAdapterType solutionAdapter(solution);
-    ////    typedef Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter< DiscreteH1Type >
-    ////      LagrangeFemAdapterType;
-
-    ////    const LagrangeFemAdapterType lagrangeFemAdapter( discreteH1 );
-
-    ////    typedef Dune::BlockVectorDiscreteFunction< LagrangeFemAdapterType >
-    ////      DiscreteFunctionType;
-
-    ////    const DiscreteFunctionType solution( "solution", lagrangeFemAdapter );
-    ////    DiscreteFunctionType solution = Dune::FemTools::Function::createFromVector( lagrangeFemAdapter, *u0 );
 
     Dune::FemTools::Function::writeToVTK(solutionAdapter, "solution");
 
