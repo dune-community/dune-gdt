@@ -44,7 +44,7 @@
 #include <dune/functionals/discretefunctionspace/subspace/affine.hh>
 #include <dune/functionals/discreteoperator/local/codim0/integral.hh>
 #include <dune/functionals/discretefunctional/local/codim0/integral.hh>
-#include <dune/functionals/evaluation/unary/product.hh>
+#include <dune/functionals/evaluation/unary/scale.hh>
 #include <dune/functionals/evaluation/binary/elliptic.hh>
 
 // dune-fem-tools includes
@@ -113,7 +113,7 @@ int main( int argc, char** argv )
 
 
     // local evaluation
-    typedef Dune::Functionals::Evaluation::Unary::Product< FunctionSpaceType >
+    typedef Dune::Functionals::Evaluation::Unary::Scale< FunctionSpaceType >
       ProductEvaluationType;
 
     ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
