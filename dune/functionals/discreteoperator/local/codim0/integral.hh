@@ -100,32 +100,33 @@ public:
   class LocalFunctional
   {
   public:
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType, InducingDiscreteFunctionType >
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<  ThisType,
+                                                                                    InducingDiscreteFunctionType >
       Type;
   };
 
-  Integral( const LocalEvaluationType& localEvaluation )
+  Integral( const LocalEvaluationType localEvaluation )
     : localEvaluation_( localEvaluation )
   {
   }
 
-private:
   //! copy constructor
   Integral( const ThisType& other )
     : localEvaluation_( other.localEvaluation() )
   {
   }
 
-public:
   const LocalEvaluationType& localEvaluation() const
   {
     return localEvaluation_;
   }
 
   template< class InducingDiscreteFunctionType >
-  typename LocalFunctional< InducingDiscreteFunctionType >::Type localFunctional( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
+  typename LocalFunctional< InducingDiscreteFunctionType >::Type
+    localFunctional( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
   {
-    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced< ThisType, InducingDiscreteFunctionType >
+    typedef Dune::Functionals::DiscreteFunctional::Local::Codim0::IntegralInduced<  ThisType,
+                                                                                    InducingDiscreteFunctionType >
       LocalFunctionalType;
 
     return LocalFunctionalType( *this, inducingDiscreteFunction );
@@ -207,7 +208,7 @@ private:
   //! assignment operator
   ThisType& operator=( const ThisType& );
 
-  const LocalEvaluationType& localEvaluation_;
+  const LocalEvaluationType localEvaluation_;
 
 }; // end class Codim0Integration
 
