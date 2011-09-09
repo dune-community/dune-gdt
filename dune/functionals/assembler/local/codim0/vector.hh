@@ -22,7 +22,7 @@ public:
   typedef typename LocalFunctionalType::RangeFieldType RangeFieldType;
 
   //! constructor
-  Vector(const LocalFunctionalType& localFunctional)
+  Vector(const LocalFunctionalType localFunctional)
     : localFunctional_(localFunctional)
   {
   }
@@ -36,7 +36,7 @@ public:
   }
 
   // public:
-  const LocalFunctionalType& localFunctional() const
+  LocalFunctionalType localFunctional() const
   {
     return localFunctional_;
   }
@@ -45,10 +45,10 @@ public:
   void assembleLocal(const TestSpaceType& testSpace, const EntityType& entity, VectorType& vector,
                      LocalVectorType& tmpLocalVector) const
   {
-    // write local operator application to tmpLocalMatrix
+    // write local functional application to tmpLocalVector
     localFunctional_.applyLocal(testSpace.baseFunctionSet().local(entity), tmpLocalVector);
 
-    // write local matrix to global
+    // write local vector to global
     addToVector(testSpace, entity, tmpLocalVector, vector);
   }
 
@@ -67,7 +67,7 @@ private:
     }
   } // end method addToVecto
 
-  const LocalFunctionalType& localFunctional_;
+  const LocalFunctionalType localFunctional_;
 
 }; // end class Vector
 
