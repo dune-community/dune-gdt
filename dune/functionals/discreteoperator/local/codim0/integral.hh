@@ -94,19 +94,17 @@ public:
                                                                                   InducingDiscreteFunctionType> Type;
   };
 
-  Integral(const LocalEvaluationType& localEvaluation)
+  Integral(const LocalEvaluationType localEvaluation)
     : localEvaluation_(localEvaluation)
   {
   }
 
-private:
   //! copy constructor
   Integral(const ThisType& other)
     : localEvaluation_(other.localEvaluation())
   {
   }
 
-public:
   const LocalEvaluationType& localEvaluation() const
   {
     return localEvaluation_;
@@ -190,7 +188,7 @@ private:
   //! assignment operator
   ThisType& operator=(const ThisType&);
 
-  const LocalEvaluationType& localEvaluation_;
+  const LocalEvaluationType localEvaluation_;
 
 }; // end class Codim0Integration
 
