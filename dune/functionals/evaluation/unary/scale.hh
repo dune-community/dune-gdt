@@ -1,5 +1,8 @@
-#ifndef DUNE_FUNCTIONALS_EVALUATION_UNARY_PRODUCT_HH
-#define DUNE_FUNCTIONALS_EVALUATION_UNARY_PRODUCT_HH
+#ifndef DUNE_FUNCTIONALS_EVALUATION_UNARY_SCALE_HH
+#define DUNE_FUNCTIONALS_EVALUATION_UNARY_SCALE_HH
+
+// dune-fem-tools includes
+#include <dune/fem-tools/function/runtimefunction.hh>
 
 namespace Dune {
 
@@ -18,12 +21,12 @@ namespace Unary {
           Type of the function space, where \f$f\f$ and \f$v\f$ live in.
   **/
 template <class FunctionSpaceImp>
-class Product
+class Scale
 {
 public:
   typedef FunctionSpaceImp FunctionSpaceType;
 
-  typedef Product<FunctionSpaceType> ThisType;
+  typedef Scale<FunctionSpaceType> ThisType;
 
   typedef typename FunctionSpaceType::DomainType DomainType;
 
@@ -32,34 +35,21 @@ public:
   typedef Dune::FemTools::Function::Runtime<FunctionSpaceType> InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  Product(const std::string expression = "[1.0;1.0;1.0]")
+  Scale(const std::string expression = "[1.0;1.0;1.0]", const int order = 1)
     : inducingFunction_(expression)
-    , order_(1)
+    , order_(std::max(0, order))
   {
   }
 
-  //! constructor, takes the inducing functions expression as a runtime parameter
-  Product(const std::string expression = "[1.0;1.0;1.0]", const int order = 1)
-    : inducingFunction_(expression)
-    , order_(1)
-  {
-    if (order < 0)
-      order_ = 0;
-    else
-      order_ = order;
-  }
-
-private:
   //! copy constructor
-  Product(const Product& other)
+  Scale(const Scale& other)
     : inducingFunction_(other.inducingFunction())
     , order_(other.order())
   {
   }
 
-public:
   //! returns the inducing function
-  const InducingFunctionType& inducingFunction() const
+  InducingFunctionType inducingFunction() const
   {
     return inducingFunction_;
   }
@@ -94,7 +84,7 @@ public:
     RangeType functionValue(0.0);
     inducingFunction_.evaluate(globalPoint, functionValue);
 
-    // evaluate set of local functions
+    // evaluate set of local basis functions
     const unsigned int size = localTestBaseFunctionSet.size();
     std::vector<RangeType> valuesLocalBaseFunctionSet(size, RangeType(0.0));
     localTestBaseFunctionSet.evaluate(localPoint, valuesLocalBaseFunctionSet);
@@ -111,7 +101,7 @@ private:
   ThisType& operator=(const ThisType&);
 
   const InducingFunctionType inducingFunction_;
-  unsigned int order_;
+  const unsigned int order_;
 }; // end class Product
 
 } // end namespace Unary
@@ -122,4 +112,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_FUNCTIONALS_EVALUATION_UNARY_PRODUCT_HH
+#endif // DUNE_FUNCTIONALS_EVALUATION_UNARY_SCALE_HH
