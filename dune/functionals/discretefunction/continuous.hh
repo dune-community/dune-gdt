@@ -72,7 +72,6 @@ public:
     , storage_(space_.map().size())
     , name_(name)
   {
-    clear();
     assert(storage.size() == storage_.size());
     for (unsigned int i = 0; i < storage_.size(); ++i) {
       storage_[i] = storage[i];
@@ -86,7 +85,6 @@ public:
     , storage_(space_.map().size())
     , name_(name)
   {
-    clear();
     if (projectionType.compare("dirichlet") == 0) {
       Dune::FemTools::Projection::Dirichlet::project(function, *this);
     } else {
@@ -94,19 +92,18 @@ public:
     }
   }
 
-private:
   //! copy constructor
   BlockVector(const ThisType& other)
     : space_(other.space())
     , storage_(space_.map().size())
     , name_("copyOF" + other.name())
   {
-    clear();
     for (unsigned int i = 0; i < storage_.size(); ++i) {
       operator[](i) = other[i];
     }
   }
 
+private:
   //! assignment operator
   ThisType& operator=(const ThisType& other)
   {
@@ -114,7 +111,6 @@ private:
       // we should do something like
       //      assert( this->space() == other.space() );
       assert(other.space().map().size() == this->space().map().size());
-      clear();
       for (unsigned int i = 0; i < storage_.size(); ++i) {
         operator[](i) = other[i];
       }
@@ -184,10 +180,26 @@ public:
     return true;
   }
 
+  /**
+      @name Convenience methods
+      @{
+   **/
+
+  /**
+    \attention  someone should think about this at some point (i.e. h-adaptivity)
+    **/
   int oder() const
   {
     return space_.order();
   }
+
+  unsigned int size() const
+  {
+    return space_.map().size();
+  }
+  /**
+      @}
+   **/
 
 private:
   const DiscreteFunctionSpaceType& space_;
