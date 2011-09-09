@@ -48,24 +48,12 @@ public:
     InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  Elliptic( const std::string expression = "[1.0;1.0;1.0]" )
-    : inducingFunction_( expression ),
-      order_( 1 )
-  {
-  }
-
-  //! constructor, takes the inducing functions expression as a runtime parameter
   Elliptic( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
     : inducingFunction_( expression ),
-      order_( 1 )
+      order_( std::max( 0, order ) )
   {
-    if( order < 0 )
-      order_ = 0;
-    else
-      order_ = order;
   }
 
-private:
   //! copy constructor
   Elliptic( const Elliptic& other )
     : inducingFunction_( other.inducingFunction() ),
@@ -73,9 +61,8 @@ private:
   {
   }
 
-public:
   //! returns the inducing function
-  const InducingFunctionType& inducingFunction() const
+  InducingFunctionType inducingFunction() const
   {
     return inducingFunction_;
   }
