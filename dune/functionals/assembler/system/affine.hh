@@ -103,7 +103,8 @@ public:
     typedef typename LocalMatrixAssemblerType::template LocalVectorAssembler< AffineShiftType >::Type
       LocalAffineShiftVectorAssemblerType;
 
-    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler = localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
+    const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler =
+      localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
 
     // common storage for all entities
     LocalMatrixType tmpLocalMatrix( ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) );
@@ -121,9 +122,9 @@ public:
 
     } // done first gridwalk to assemble
 
+    // do second gridwalk, to apply constraints
     const ConstraintsType& constraints = ansatzSpace_.constraints();
 
-    // do second gridwalk, to apply constraints
     for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
     {
       const EntityType& entity = *entityIterator;
