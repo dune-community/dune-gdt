@@ -104,9 +104,9 @@ public:
 
     } // done first gridwalk to assemble
 
+    // do second gridwalk, to apply constraints
     const ConstraintsType& constraints = ansatzSpace_.constraints();
 
-    // do second gridwalk, to apply constraints
     for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
