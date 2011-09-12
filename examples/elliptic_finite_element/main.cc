@@ -51,7 +51,7 @@
 #include <dune/fem-tools/common/string.hh>
 #include <dune/fem-tools/common/printing.hh>
 #include <dune/fem-tools/function/runtimefunction.hh>
-//#include <dune/fem-tools/discretefunction.hh>
+#include <dune/fem-tools/discretefunction.hh>
 
 using namespace Dune::Functionals;
 
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 
     typedef DiscreteFunctionSpace::Subspace::Affine::Dirichlet<DiscreteH10Type> DiscreteH1GType;
 
-    const DiscreteH1GType discreteH1G(discreteH10, "[x+y;y;z]");
+    const DiscreteH1GType discreteH1G(discreteH10, "[1.0+0.01x+0.01y;y;z]");
 
 
     // local evaluation
@@ -182,20 +182,19 @@ int main(int argc, char** argv)
     Dune::InverseOperatorResult result;
 
     // u_0 = A^(-1) ( F - G )
+    *F -= *G;
     solver.apply(*u0, *F, result);
 
+    // u = u0 + g
+    *u0 += discreteH1G.affineShift().storage();
 
     // postprocessing
-    typedef typename Dune::Functionals::DiscreteFunction::Continuous::BlockVector<DiscreteH1Type> DiscreteFunctionType;
+    typedef /*typename*/ Dune::Functionals::DiscreteFunction::Continuous::BlockVector<DiscreteH1Type>
+        DiscreteFunctionType;
 
     DiscreteFunctionType solution(discreteH1, *u0, "solution");
+    Dune::FemTools::DiscreteFunction::IO::writeToVTK(solution, "solution");
 
-    typedef
-        typename Dune::Functionals::DiscreteFunction::FemAdapter<DiscreteFunctionType> DiscreteFunctionFemAdapterType;
-
-    DiscreteFunctionFemAdapterType solutionAdapter(solution);
-
-    Dune::FemTools::Function::writeToVTK(solutionAdapter, "solution");
 
     // done
     return 0;
