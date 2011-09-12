@@ -133,6 +133,7 @@ public:
 
       applyLocalMatrixConstraints( localConstraints, systemMatrix );
       applyLocalVectorConstraints( localConstraints, systemVector );
+      applyLocalVectorConstraints( localConstraints, affineShiftVector );
 
     } // done second gridwalk, to apply constraints
 
