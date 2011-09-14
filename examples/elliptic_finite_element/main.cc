@@ -1,6 +1,6 @@
 /**
   \file   main.cc
-  \brief  Main file fir the finite element example.
+  \brief  Main file for the elliptic finite element example.
   **/
 // disable warnings about problems in dune headers
 #include <dune/fem-tools/header/disablewarnings.hh>
@@ -187,6 +187,7 @@ int main(int argc, char** argv)
 
     // u = u0 + g
     *u0 += discreteH1G.affineShift().storage();
+
 
     // postprocessing
     typedef /*typename*/ Dune::Functionals::DiscreteFunction::Continuous::BlockVector<DiscreteH1Type>

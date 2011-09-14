@@ -16,8 +16,8 @@ namespace DiscreteFunctionSpace {
 
 namespace Continuous {
 
-template <class HostSpaceImp>
-class LagrangeFemAdapter;
+// template< class HostSpaceImp >
+// class LagrangeFemAdapter;
 
 template <class FunctionSpaceImp, class GridPartImp, int polOrder>
 class Lagrange

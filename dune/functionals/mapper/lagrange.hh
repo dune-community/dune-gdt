@@ -4,8 +4,8 @@
 // dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
-// dune-functionals includes
-#include <dune/functionals/discretefunctionspace/continuous/lagrangefemadapter.hh>
+//// dune-functionals includes
+//#include <dune/functionals/discretefunctionspace/continuous/lagrangefemadapter.hh>
 
 namespace Dune {
 
@@ -137,8 +137,8 @@ private:
   //! assignment operator
   ThisType& operator=(const ThisType&);
 
-  template <class>
-  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
+  //  template< class >
+  //  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
 
   const GridPartType& gridPart_;
   mutable LagrangePointSetMapType lagrangePointSet_;
