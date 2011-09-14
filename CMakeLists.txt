@@ -127,5 +127,9 @@ execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/examples/macrogrids .)
 ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} )
 TARGET_LINK_LIBRARIES( examples/elliptic_finite_element_example ${COMMON_LIBS}  )
 
+ADD_EXECUTABLE( examples/elliptic_discontinuous_galerkin "examples/elliptic_discontinuous_galerkin/main.cc" ${common} ${grid} ${grid} ${fem} ${femhowto} ${femtools} ${functionals} )
+TARGET_LINK_LIBRARIES( examples/elliptic_discontinuous_galerkin ${COMMON_LIBS} )
+
+
 
 #HEADERCHECK( ${header} )
