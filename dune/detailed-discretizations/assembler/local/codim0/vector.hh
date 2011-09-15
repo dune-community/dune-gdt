@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 
+// std includes
+#include <vector>
+
 namespace Dune {
 
 namespace DetailedDiscretizations {
@@ -40,13 +43,23 @@ public:
 
   template <class TestSpaceType, class EntityType, class VectorType, class LocalVectorType>
   void assembleLocal(const TestSpaceType& testSpace, const EntityType& entity, VectorType& vector,
-                     LocalVectorType& tmpLocalVector) const
+                     std::vector<LocalVectorType>& tmpLocalVectors) const
   {
+    // get the basefunctionset
+    typedef typename TestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalTestBaseFunctionSetType;
+
+    const LocalTestBaseFunctionSetType localTestBaseFunctionSet = testSpace.baseFunctionSet().local(entity);
+
+    // check, if we have enough tmp local vectors
+    if (tmpLocalVectors.size() < 1) {
+      tmpLocalVectors.resize(1, LocalVectorType(testSpace.map().maxLocalSize(), RangeFieldType(0.0)));
+    }
+
     // write local functional application to tmpLocalVector
-    localFunctional_.applyLocal(testSpace.baseFunctionSet().local(entity), tmpLocalVector);
+    localFunctional_.applyLocal(localTestBaseFunctionSet, tmpLocalVectors[0]);
 
     // write local vector to global
-    addToVector(testSpace, entity, tmpLocalVector, vector);
+    addToVector(testSpace, entity, tmpLocalVectors[0], vector);
   }
 
 private:

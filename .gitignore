@@ -87,3 +87,4 @@ examples/elliptic_finite_element/boundaryData.vtp
 doc/latex/dune-functionals.pdf
 *.orig
 *.tmp
+dune-detailed-discretizations.pc

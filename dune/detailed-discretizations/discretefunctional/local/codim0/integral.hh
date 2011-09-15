@@ -11,6 +11,9 @@
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
+// dune-helper-tools includes
+#include <dune/helper-tools/common/vector.hh>
+
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/basefunctionset/local/wrapper.hh>
 
@@ -55,13 +58,8 @@ public:
   }
 
   template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& ret) const
+  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector) const
   {
-    // clear target
-    for (unsigned int i = 0; i < ret.size(); ++i) {
-      ret[i] = 0.0;
-    }
-
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
@@ -75,8 +73,16 @@ public:
     const VolumeQuadratureType volumeQuadrature(localTestBaseFunctionSet.entity(), quadratureOrder);
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
-    // do loop over all quadrature points
+    // make sure target vector is big enough
+    assert(localVector.size() >= size);
+
+    // clear target vector
+    Dune::HelperTools::Common::Vector::clear(localVector);
+
+    // some common storage for all quadrature points
     LocalVectorType tmpVector(size);
+
+    // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
       // local coordinate
       const DomainType x = volumeQuadrature.point(q);
@@ -90,7 +96,7 @@ public:
 
       // compute integral
       for (unsigned int i = 0; i < size; ++i) {
-        ret[i] += tmpVector[i] * integrationFactor * quadratureWeight;
+        localVector[i] += tmpVector[i] * integrationFactor * quadratureWeight;
       }
     } // done loop over all quadrature points
   } // end method applyLocal
