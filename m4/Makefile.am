@@ -1,4 +1,4 @@
-M4FILES = dune-fem-functionals.m4
+M4FILES = dune-detailed-discretizations.m4
 
 aclocaldir = $(datadir)/aclocal
 aclocal_DATA = $(M4FILES)

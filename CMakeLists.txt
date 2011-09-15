@@ -1,4 +1,4 @@
-PROJECT(dune-fem-functionals)
+PROJECT(dune-detailed-discretizations)
 
 #set minimum cmake version
 cmake_minimum_required(VERSION 2.6)
@@ -76,7 +76,7 @@ SET( CUSTOM_FLAGS
 # 	"metis toplevel directory" )
 
 #needs to come first to include correct config.h
-INCLUDE_DIR( ${dune-fem-functionals_SOURCE_DIR} )
+INCLUDE_DIR( ${dune-detailed-discretizations_SOURCE_DIR} )
 
 # IF( ${GRIDTYPE} STREQUAL "UGGRID" )
 # 	ADD_CXX_FLAGS( -I${UGGRID_BASE_PATH}/include -DENABLE_UG )
@@ -101,7 +101,7 @@ ADD_CXX_FLAGS( -I${ALUGRID_BASE_PATH}/include
 #
 # ENDIF ( ENABLE_PARALELL )
 
-ADD_DUNE_MODULES( common istl grid fem fem-tools)
+ADD_DUNE_MODULES( common istl grid fem helper-tools)
 
 LINK_DIRECTORIES( "/usr/lib" "${ALUGRID_BASE_PATH}/lib" )
 ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
@@ -112,22 +112,21 @@ ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
 FILE( GLOB_RECURSE common "../dune-common/dune/common/*.hh" )
 FILE( GLOB_RECURSE grid "../dune-grid/dune/grid/*.hh" )
 FILE( GLOB_RECURSE istl "../dune-istl/dune/istl/*.hh" )
-FILE( GLOB_RECURSE femhowto "../dune-fem-howto/dune/fem-howto/*.hh" )
 FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
-FILE( GLOB_RECURSE femtools "../dune-fem-tools/dune/fem-tools/*.hh" )
-FILE( GLOB_RECURSE functionals "../dune-fem-functionals/dune/functionals/*.hh" )
+FILE( GLOB_RECURSE helpertools "../dune-helper-tools/dune/helper-tools/*.hh" )
+FILE( GLOB_RECURSE detaileddiscretizations "../dune-detailed-discretizations/dune/detailed-discretizations/*.hh" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${helpertools} ${detaileddiscretizations} PROPERTIES HEADER_FILE_ONLY 1 )
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory tests)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory examples)
 execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/examples/macrogrids .)
 
-ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${femhowto} ${femtools} ${functionals} )
+ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${helpertools} ${detaileddiscretizations} )
 TARGET_LINK_LIBRARIES( examples/elliptic_finite_element_example ${COMMON_LIBS}  )
 
-ADD_EXECUTABLE( examples/elliptic_discontinuous_galerkin "examples/elliptic_discontinuous_galerkin/main.cc" ${common} ${grid} ${grid} ${fem} ${femhowto} ${femtools} ${functionals} )
+ADD_EXECUTABLE( examples/elliptic_discontinuous_galerkin "examples/elliptic_discontinuous_galerkin/main.cc" ${common} ${grid} ${grid} ${fem} ${helpertools} ${detaileddiscretizations} )
 TARGET_LINK_LIBRARIES( examples/elliptic_discontinuous_galerkin ${COMMON_LIBS} )
 
 
