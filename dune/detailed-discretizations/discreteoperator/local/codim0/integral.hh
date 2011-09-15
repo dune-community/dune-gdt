@@ -8,6 +8,9 @@
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
+// dune-helper-tools includes
+#include <dune/helper-tools/common/matrix.hh>
+
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 
@@ -145,15 +148,6 @@ public:
                    const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
                    LocalMatrixType& localMatrix ) const
   {
-    // clear target matrix
-    for( unsigned int i = 0; i < localMatrix.rows(); ++i )
-    {
-      for( unsigned int j = 0; j < localMatrix.cols(); ++j )
-      {
-        localMatrix[i][j] = 0.0;
-      }
-    }
-
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType
       DiscreteFunctionSpaceType;
@@ -171,8 +165,15 @@ public:
     const VolumeQuadratureType volumeQuadrature( localAnsatzBaseFunctionSet.entity(), quadratureOrder );
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
-    // some tmp storage
-    LocalMatrixType tmpMatrix( rows, cols );
+    // make sure target matrix is big enough
+    assert( localMatrix.rows() >= rows );
+    assert( localMatrix.cols() >= cols );
+
+    // clear target matrix
+    Dune::HelperTools::Common::Matrix::clear( localMatrix );
+
+    // some tmp storage for all quadrature points
+    LocalMatrixType tmpMatrix( rows, cols, RangeFieldType( 0.0 ) );
 
     // do loop over all quadrature points
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )

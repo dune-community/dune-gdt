@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_MATRIX_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_MATRIX_HH
 
+// std includes
+#include <vector>
+
 // local includes
 #include "vector.hh"
 
@@ -83,15 +86,33 @@ public:
                       const TestSpaceType& testSpace,
                       const EntityType& entity,
                       MatrixType& matrix,
-                      LocalMatrixType& tmpLocalMatrix ) const
+                      std::vector< LocalMatrixType >& tmpLocalMatrices ) const
   {
+    // get the local basefunctionsets
+    typedef typename AnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType
+      LocalAnsatzBaseFunctionSetType;
+
+    const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSet = ansatzSpace.baseFunctionSet().local( entity );
+
+    typedef typename TestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType
+      LocalTestBaseFunctionSetType;
+
+    const LocalTestBaseFunctionSetType localTestBaseFunctionSet = testSpace.baseFunctionSet().local( entity );
+
+    // check if we have enough tmp local matrices
+    if( tmpLocalMatrices.size() < 1 )
+    {
+      tmpLocalMatrices.resize( 1, LocalMatrixType(  ansatzSpace.map().maxLocalSize(),
+                                                    testSpace.map().maxLocalSize(),
+                                                    RangeFieldType( 0.0 ) ) );
+    }
     // write local operator application to tmpLocalMatrix
-    localOperator_.applyLocal(  ansatzSpace.baseFunctionSet().local( entity ),
-                                testSpace.baseFunctionSet().local( entity ),
-                                tmpLocalMatrix );
+    localOperator_.applyLocal(  localAnsatzBaseFunctionSet,
+                                localTestBaseFunctionSet,
+                                tmpLocalMatrices[0] );
 
     // write local matrix to global
-    addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrix, matrix );
+    addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrices[0], matrix );
   }
 
 private:

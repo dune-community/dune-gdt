@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_AFFINE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_AFFINE_HH
 
+//std includes
+#include <vector>
+
 // dune-common includes
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
@@ -106,11 +109,14 @@ public:
     const LocalAffineShiftVectorAssemblerType localAffineShiftVectorAssembler =
       localMatrixAssembler.localVectorAssembler( ansatzSpace_.affineShift() );
 
-    // common storage for all entities
-    LocalMatrixType tmpLocalMatrix( ansatzSpace_.map().maxLocalSize(),
-                                    testSpace_.map().maxLocalSize(),
-                                    RangeFieldType( 0.0 ) );
-    LocalVectorType tmpLocalVector( testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) );
+    // common tmp storage for all entities
+    std::vector< LocalMatrixType > tmpLocalMatrices(  1,
+                                                      LocalMatrixType(  ansatzSpace_.map().maxLocalSize(),
+                                                                        testSpace_.map().maxLocalSize(),
+                                                                        RangeFieldType( 0.0 ) ) );
+    std::vector< LocalVectorType > tmpLocalVectors( 1,
+                                                    LocalVectorType(  testSpace_.map().maxLocalSize(),
+                                                                      RangeFieldType( 0.0 ) ) );
 
     // do first gridwalk to assemble
     const EntityIteratorType lastEntity = ansatzSpace_.end();
@@ -118,9 +124,9 @@ public:
     {
       const EntityType& entity = *entityIterator;
 
-      localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrix );
-      localVectorAssembler.assembleLocal( testSpace_, entity, systemVector, tmpLocalVector );
-      localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, tmpLocalVector );
+      localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrices );
+      localVectorAssembler.assembleLocal( testSpace_, entity, systemVector, tmpLocalVectors );
+      localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, tmpLocalVectors );
 
     } // done first gridwalk to assemble
 
