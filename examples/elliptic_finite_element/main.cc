@@ -2,8 +2,9 @@
   \file   main.cc
   \brief  Main file for the elliptic finite element example.
   **/
+
 // disable warnings about problems in dune headers
-#include <dune/fem-tools/header/disablewarnings.hh>
+#include <dune/helper-tools/header/disablewarnings.hh>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -23,37 +24,34 @@
 #include <dune/istl/solvers.hh>
 
 // dune-fem includes
-//#include <dune/fem/function/adaptivefunction.hh>
-#include <dune/fem/function/blockvectorfunction.hh>
-#include <dune/fem/gridpart/gridpart.hh>
-#include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 #include <dune/fem/misc/mpimanager.hh>
+#include <dune/fem/gridpart/gridpart.hh>
+#include <dune/fem/space/common/functionspace.hh>
 
 // reenable warnings
-#include <dune/fem-tools/header/enablewarnings.hh>
+#include <dune/helper-tools/header/enablewarnings.hh>
 
-// dune-functionals includes
-#include <dune/functionals/container/factory.hh>
-#include <dune/functionals/assembler/local/codim0/matrix.hh>
-#include <dune/functionals/assembler/local/codim0/vector.hh>
-#include <dune/functionals/assembler/system/affine.hh>
-#include <dune/functionals/discretefunction/continuous.hh>
-#include <dune/functionals/discretefunction/femadapter.hh>
-#include <dune/functionals/discretefunctionspace/continuous/lagrange.hh>
-#include <dune/functionals/discretefunctionspace/subspace/linear.hh>
-#include <dune/functionals/discretefunctionspace/subspace/affine.hh>
-#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
-#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
-#include <dune/functionals/evaluation/unary/scale.hh>
-#include <dune/functionals/evaluation/binary/elliptic.hh>
+// dune-detailed-discretizations includes
+#include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
+#include <dune/detailed-discretizations/discretefunctionspace/subspace/linear.hh>
+#include <dune/detailed-discretizations/discretefunctionspace/subspace/affine.hh>
+#include <dune/detailed-discretizations/evaluation/unary/scale.hh>
+#include <dune/detailed-discretizations/evaluation/binary/elliptic.hh>
+#include <dune/detailed-discretizations/discreteoperator/local/codim0/integral.hh>
+#include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
+#include <dune/detailed-discretizations/container/factory.hh>
+#include <dune/detailed-discretizations/assembler/local/codim0/matrix.hh>
+#include <dune/detailed-discretizations/assembler/local/codim0/vector.hh>
+#include <dune/detailed-discretizations/assembler/system/affine.hh>
+#include <dune/detailed-discretizations/discretefunction/continuous.hh>
+#include <dune/detailed-discretizations/discretefunction/femadapter.hh>
 
-// dune-fem-tools includes
-#include <dune/fem-tools/common/string.hh>
-#include <dune/fem-tools/common/printing.hh>
-#include <dune/fem-tools/function/runtimefunction.hh>
-#include <dune/fem-tools/discretefunction.hh>
+// dune-helper-tools includes
+#include <dune/helper-tools/common/string.hh>
+#include <dune/helper-tools/discretefunction/io.hh>
 
-using namespace Dune::Functionals;
+// only ever do this in a .cc!
+using namespace Dune::DetailedDiscretizations;
 
 #ifndef POLORDER
 const int polOrder = 1;
@@ -75,7 +73,8 @@ int main(int argc, char** argv)
 
     typedef Dune::LeafGridPart<GridType> GridPartType;
 
-    const std::string dgfFilename = "../macrogrids/unitcube" + Dune::FemTools::String::toString(GRIDDIM) + ".dgf";
+    const std::string dgfFilename =
+        "../macrogrids/unitcube" + Dune::HelperTools::Common::String::toString(GRIDDIM) + ".dgf";
 
     Dune::GridPtr<GridType> gridPtr(dgfFilename);
 
@@ -85,10 +84,11 @@ int main(int argc, char** argv)
 
     static const unsigned int dimRange = 1;
 
+
     // function space
     typedef Dune::FunctionSpace<double, double, dimDomain, dimRange> FunctionSpaceType;
 
-    typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
+    typedef /*typename*/ FunctionSpaceType::RangeFieldType RangeFieldType;
 
 
     // discrete function space
@@ -106,11 +106,11 @@ int main(int argc, char** argv)
 
 
     // local evaluation
-    typedef Dune::Functionals::Evaluation::Unary::Scale<FunctionSpaceType> ProductEvaluationType;
+    typedef Evaluation::Unary::Scale<FunctionSpaceType> ProductEvaluationType;
 
     ProductEvaluationType productEvaluation("[1.0;1.0;1.0]", 0);
 
-    typedef Dune::Functionals::Evaluation::Binary::Elliptic<FunctionSpaceType> EllipticEvaluationType;
+    typedef Evaluation::Binary::Elliptic<FunctionSpaceType> EllipticEvaluationType;
 
     EllipticEvaluationType ellipticEvaluation("[1.0;1.0;1.0]", 0);
 
@@ -128,13 +128,13 @@ int main(int argc, char** argv)
     // matrix, rhs and solution storage
     typedef Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix MatrixFactory;
 
-    typedef typename MatrixFactory::AutoPtrType MatrixPtrType;
+    typedef /*typename*/ MatrixFactory::AutoPtrType MatrixPtrType;
 
     MatrixPtrType A = MatrixFactory::create(discreteH1, discreteH1);
 
     typedef Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
 
-    typedef typename VectorFactory::AutoPtrType VectorPtrType;
+    typedef /*typename*/ VectorFactory::AutoPtrType VectorPtrType;
 
     VectorPtrType F = VectorFactory::create(discreteH1);
     *F              = 0.0;
@@ -142,8 +142,8 @@ int main(int argc, char** argv)
     VectorPtrType G = VectorFactory::create(discreteH1);
     *G              = 0.0;
 
-    VectorPtrType u0 = VectorFactory::create(discreteH1);
-    *u0              = 0.0;
+    VectorPtrType u = VectorFactory::create(discreteH1);
+    *u              = 0.0;
 
 
     // assembler
@@ -163,9 +163,9 @@ int main(int argc, char** argv)
 
 
     // preconditioner and solver
-    typedef typename MatrixFactory::ContainerType MatrixContainerType;
+    typedef /*typename*/ MatrixFactory::ContainerType MatrixContainerType;
 
-    typedef typename VectorFactory::ContainerType VectorContainerType;
+    typedef /*typename*/ VectorFactory::ContainerType VectorContainerType;
 
     typedef Dune::MatrixAdapter<MatrixContainerType, VectorContainerType, VectorContainerType> MatrixAdapterType;
 
@@ -183,18 +183,22 @@ int main(int argc, char** argv)
 
     // u_0 = A^(-1) ( F - G )
     *F -= *G;
-    solver.apply(*u0, *F, result);
+    solver.apply(*u, *F, result);
 
     // u = u0 + g
-    *u0 += discreteH1G.affineShift().storage();
+    *u += discreteH1G.affineShift().storage();
 
 
     // postprocessing
-    typedef /*typename*/ Dune::Functionals::DiscreteFunction::Continuous::BlockVector<DiscreteH1Type>
-        DiscreteFunctionType;
+    typedef /*typename*/ DiscreteFunction::Continuous::BlockVector<DiscreteH1Type> DiscreteFunctionType;
 
-    DiscreteFunctionType solution(discreteH1, *u0, "solution");
-    Dune::FemTools::DiscreteFunction::IO::writeToVTK(solution, "solution");
+    DiscreteFunctionType solution(discreteH1, *u, "solution");
+
+    typedef /*typename*/ DiscreteFunction::FemAdapter<DiscreteFunctionType> DiscreteFunctionFemAdapterType;
+
+    DiscreteFunctionFemAdapterType solutionFemAdapter(solution);
+
+    Dune::HelperTools::DiscreteFunction::IO::writeToVTK(solutionFemAdapter, "solution");
 
 
     // done

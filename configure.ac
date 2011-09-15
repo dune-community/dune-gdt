@@ -3,7 +3,7 @@
 AC_PREREQ(2.50)
 DUNE_AC_INIT # gets module version from dune.module file
 AM_INIT_AUTOMAKE
-AC_CONFIG_SRCDIR([src/dune_fem_functionals.cc])
+AC_CONFIG_SRCDIR([])
 AM_CONFIG_HEADER([config.h])
 
 
@@ -23,31 +23,36 @@ AC_CONFIG_FILES([
   doc/doxygen/Makefile
   doc/doxygen/Doxyfile
   dune/Makefile
-  dune/fem/Makefile
-  dune/fem/functional/Makefile
-  dune/fem/functional/common/Makefile
-  dune/functionals/Makefile
-  dune/functionals/assembler/Makefile
-  dune/functionals/assembler/local/Makefile
-  dune/functionals/assembler/local/codim0/Makefile
-  dune/functionals/assembler/system/Makefile
-  dune/functionals/common/Makefile
-  dune/functionals/constraints/Makefile
-  dune/functionals/container/Makefile
-  dune/functionals/discretefunctionspace/Makefile
-  dune/functionals/discretefunctionspace/continuous/Makefile
-  dune/functionals/discretefunctionspace/subspace/Makefile
-  dune/functionals/discretefunctional/Makefile
-  dune/functionals/discretefunctional/local/Makefile
-  dune/functionals/discretefunctional/local/codim0/Makefile
-  dune/functionals/discreteoperator/Makefile
-  dune/functionals/discreteoperator/local/Makefile
-  dune/functionals/discreteoperator/local/codim0/Makefile
+  dune/detailed-discretizations/Makefile
+  dune/detailed-discretizations/assembler/Makefile
+  dune/detailed-discretizations/assembler/local/Makefile
+  dune/detailed-discretizations/assembler/local/codim0/Makefile
+  dune/detailed-discretizations/assembler/system/Makefile
+  dune/detailed-discretizations/basefunctionset/Makefile
+  dune/detailed-discretizations/basefunctionset/continuous/Makefile
+  dune/detailed-discretizations/basefunctionset/local/Makefile
+  dune/detailed-discretizations/constraints/Makefile
+  dune/detailed-discretizations/container/Makefile
+  dune/detailed-discretizations/container/factory/Makefile
+  dune/detailed-discretizations/discretefunction/Makefile
+  dune/detailed-discretizations/discretefunctional/Makefile
+  dune/detailed-discretizations/discretefunctional/local/Makefile
+  dune/detailed-discretizations/discretefunctional/local/codim0/Makefile
+  dune/detailed-discretizations/discretefunctionspace/Makefile
+  dune/detailed-discretizations/discretefunctionspace/continuous/Makefile
+  dune/detailed-discretizations/discretefunctionspace/subspace/Makefile
+  dune/detailed-discretizations/discreteoperator/Makefile
+  dune/detailed-discretizations/discreteoperator/local/Makefile
+  dune/detailed-discretizations/discreteoperator/local/codim0/Makefile
+  dune/detailed-discretizations/evaluation/Makefile
+  dune/detailed-discretizations/evaluation/binary/Makefile
+  dune/detailed-discretizations/evaluation/unary/Makefile
+  dune/detailed-discretizations/mapper/Makefile
+  dune/detailed-discretizations/mapper/continuous/Makefile
   examples/Makefile
-  examples/poisson_new/Makefile
   examples/elliptic_finite_element/Makefile
   m4/Makefile
-  dune-fem-functionals.pc
+  dune-detailed-discretizations.pc
 ])
 AC_OUTPUT
 # finally print the summary information
