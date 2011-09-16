@@ -71,6 +71,14 @@ public:
   //    return LocalFunctionalType( *this, inducingDiscreteFunction );
   //  } // end method localFunctional
 
+  unsigned int numTmpObjectsRequired() const
+  {
+    return 4;
+  }
+
+  /**
+    \todo Rename Entity -> En, Neighbour -> Ne
+    **/
   template <class LocalAnsatzBaseFunctionSetEntityType, class LocalAnsatzBaseFunctionSetNeighbourType,
             class LocalTestBaseFunctionSetEntityType, class LocalTestBaseFunctionSetNeighbourType,
             class IntersectionType, class LocalMatrixType>
@@ -79,24 +87,26 @@ public:
                   const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
                   const LocalTestBaseFunctionSetNeighbourType& localTestBaseFunctionSetNeighbour,
                   const IntersectionType& intersection, LocalMatrixType& localMatrixEnEn,
-                  LocalMatrixType& localMatrixEnNe, LocalMatrixType& localMatrixNeEn,
-                  LocalMatrixType& localMatrixNeNe) const
+                  LocalMatrixType& localMatrixEnNe, LocalMatrixType& localMatrixNeEn, LocalMatrixType& localMatrixNeNe,
+                  std::vector<LocalMatrixType>& tmpLocalMatrices) const
   {
     // some types
-    typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+    typedef typename LocalAnsatzBaseFunctionSetEntityType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
     typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
     typedef Dune::CachingQuadrature<GridPartType, 1> FaceQuadratureType;
 
     // some stuff
-    const GridPartType& gridPart = localAnsatzBaseFunctionSet.space().gridPart();
+    const GridPartType& gridPart = localAnsatzBaseFunctionSetEntity.space().gridPart();
     const unsigned int rowsEn    = localAnsatzBaseFunctionSetEntity.size();
     const unsigned int rowsNe    = localAnsatzBaseFunctionSetNeighbour.size();
     const unsigned int colsEn    = localTestBaseFunctionSetEntity.size();
     const unsigned int colsNe = localTestBaseFunctionSetNeighbour.size();
     const unsigned int quadratureOrder =
-        localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
+        localEvaluation_.order()
+        + std::max(localAnsatzBaseFunctionSetEntity.order(), localAnsatzBaseFunctionSetNeighbour.order())
+        + std::max(localTestBaseFunctionSetEntity.order(), localTestBaseFunctionSetNeighbour.order());
     const FaceQuadratureType faceQuadrature(gridPart, intersection, quadratureOrder, FaceQuadratureType::INSIDE);
     const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
 
@@ -116,18 +126,19 @@ public:
     Dune::HelperTools::Common::Matrix::clear(localMatrixNeEn);
     Dune::HelperTools::Common::Matrix::clear(localMatrixNeNe);
 
-    // some tmp storage for all quadrature points
-    LocalMatrixType tmpLocalMatrixEnEn(rowsEn, colsEn);
-    LocalMatrixType tmpLocalMatrixEnNe(rowsEn, colsNe);
-    LocalMatrixType tmpLocalMatrixNeEn(rowsNe, colsEn);
-    LocalMatrixType tmpLocalMatrixNeNe(rowsNe, colsNe);
+    // check tmp local matrices
+    if (tmpLocalMatrices.size() < 3) {
+      tmpLocalMatrices.resize(
+          3,
+          LocalMatrixType(localAnsatzBaseFunctionSetEntity.baseFunctionSet().space().map().maxLocalSize(),
+                          localTestBaseFunctionSetEntity.baseFunctionSet().space().map().maxLocalSize(),
+                          RangeFieldType(0.0)));
+    }
 
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
       // local coordinates
-      const DomainType x            = faceQuadrature.point(q);
-      const DomainType xInEntity    = intersection.geometryInInside().global(x);
-      const DomainType xInNeighbour = intersection.geometryInOutside().global(x);
+      const DomainType x = faceQuadrature.point(q);
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
@@ -139,18 +150,17 @@ public:
                                 localTestBaseFunctionSetEntity,
                                 localTestBaseFunctionSetNeighbour,
                                 intersection,
-                                xInEntity,
-                                xInNeighbour,
-                                tmpEnEnMatrix,
-                                tmpEnNeMatrix,
-                                tmpNeEnMatrix,
-                                tmpNeNeMatrix);
+                                x,
+                                tmpLocalMatrices[0], /*EnEn*/
+                                tmpLocalMatrices[1], /*EnNe*/
+                                tmpLocalMatrices[2], /*NeEn*/
+                                tmpLocalMatrices[3]); /*NeNe*/
 
       // compute integral
-      addToIntegral(tmpLocalMatrixEnEn, integrationFactor, quadratureWeight, rowsEn, colsEn, localMatrixEnEn);
-      addToIntegral(tmpLocalMatrixEnNe, integrationFactor, quadratureWeight, rowsEn, colsNe, localMatrixEnNe);
-      addToIntegral(tmpLocalMatrixNeEn, integrationFactor, quadratureWeight, rowsNe, colsEn, localMatrixNeEn);
-      addToIntegral(tmpLocalMatrixNeNe, integrationFactor, quadratureWeight, rowsNe, colsNe, localMatrixNeNe);
+      addToIntegral(localMatrixEnEn, integrationFactor, quadratureWeight, rowsEn, colsEn, tmpLocalMatrices[0]);
+      addToIntegral(localMatrixEnNe, integrationFactor, quadratureWeight, rowsEn, colsNe, tmpLocalMatrices[1]);
+      addToIntegral(localMatrixNeEn, integrationFactor, quadratureWeight, rowsNe, colsEn, tmpLocalMatrices[2]);
+      addToIntegral(localMatrixNeNe, integrationFactor, quadratureWeight, rowsNe, colsNe, tmpLocalMatrices[3]);
 
     } // done loop over all quadrature points
 

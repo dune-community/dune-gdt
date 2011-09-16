@@ -4,7 +4,7 @@
   **/
 
 // disable warnings about problems in dune headers
-#include <dune/fem-tools/header/disablewarnings.hh>
+#include <dune/helper-tools/header/disablewarnings.hh>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -24,35 +24,25 @@
 #include <dune/istl/solvers.hh>
 
 // dune-fem includes
-//#include <dune/fem/function/adaptivefunction.hh>
-//#include <dune/fem/function/blockvectorfunction.hh>
+#include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/gridpart/gridpart.hh>
-//#include <dune/fem/gridpart/adaptiveleafgridpart.hh>
 #include <dune/fem/misc/mpimanager.hh>
 
 // reenable warnings
-#include <dune/fem-tools/header/enablewarnings.hh>
+#include <dune/helper-tools/header/enablewarnings.hh>
 
-// dune-functionals includes
-#include <dune/functionals/discretefunctionspace/discontinuous/orthonormal.hh>
-//#include <dune/functionals/container/factory.hh>
-//#include <dune/functionals/assembler/local/codim0/matrix.hh>
-//#include <dune/functionals/assembler/local/codim0/vector.hh>
-//#include <dune/functionals/assembler/system/unconstrained.hh>
-//#include <dune/functionals/discretefunction/continuous.hh>
-//#include <dune/functionals/discretefunction/femadapter.hh>
-//#include <dune/functionals/discreteoperator/local/codim0/integral.hh>
-//#include <dune/functionals/discretefunctional/local/codim0/integral.hh>
-//#include <dune/functionals/evaluation/unary/scale.hh>
-//#include <dune/functionals/evaluation/binary/elliptic.hh>
+// dune-helper-tools includes
+#include <dune/helper-tools/common/string.hh>
 
-// dune-fem-tools includes
-#include <dune/fem-tools/common/string.hh>
-#include <dune/fem-tools/common/printing.hh>
-//#include <dune/fem-tools/function/runtimefunction.hh>
-#include <dune/fem-tools/discretefunction.hh>
+// dune-detailed-discretizations includes
+#include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
+#include <dune/detailed-discretizations/evaluation/local/quaternary/ipdgfluxes.hh>
+#include <dune/detailed-discretizations/discreteoperator/local/codim1/integral.hh>
+#include <dune/detailed-discretizations/container/factory.hh>
+//#include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
 
-using namespace Dune::Functionals;
+// only ever do this in a .cc!
+using namespace Dune::DetailedDiscretizations;
 
 #ifndef POLORDER
 const int polOrder = 1;
@@ -74,7 +64,8 @@ int main(int argc, char** argv)
 
     typedef Dune::LeafGridPart<GridType> GridPartType;
 
-    const std::string dgfFilename = "../macrogrids/unitcube" + Dune::FemTools::String::toString(GRIDDIM) + ".dgf";
+    const std::string dgfFilename =
+        "../macrogrids/unitcube" + Dune::HelperTools::Common::String::toString(GRIDDIM) + ".dgf";
 
     Dune::GridPtr<GridType> gridPtr(dgfFilename);
 
@@ -91,24 +82,34 @@ int main(int argc, char** argv)
 
 
     // discrete function space
-    typedef DiscreteFunctionSpace::Discontinuous::Orthonormal<FunctionSpaceType, GridPartType, polOrder> DGSpaceType;
+    typedef DiscreteFunctionSpace::Continuous::Lagrange<FunctionSpaceType, GridPartType, polOrder> DGSpaceType;
 
     const DGSpaceType dgSpace(gridPart);
 
 
-    //    // local evaluation
-    //    typedef Dune::Functionals::Evaluation::Unary::Scale< FunctionSpaceType >
+    // local evaluation
+    //    typedef Dune::Functionals::Evaluation::Local::Unary::Scale< FunctionSpaceType >
     //      ProductEvaluationType;
 
-    //    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
+    //    const ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
 
-    //    typedef Dune::Functionals::Evaluation::Binary::Elliptic< FunctionSpaceType >
+    //    typedef Dune::Functionals::Evaluation::Loca::Binary::Elliptic< FunctionSpaceType >
     //      EllipticEvaluationType;
 
-    //    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
+    //    const EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
+
+    typedef Dune::DetailedDiscretizations::Evaluation::Local::Quaternary::IPDGFluxes::Inner<FunctionSpaceType>
+        InnerFacesIPDGEvaluationType;
+
+    const InnerFacesIPDGEvaluationType innerFacesIPDGEvaluation("[1.0;1.0;1.0]");
+
+    typedef Dune::DetailedDiscretizations::Evaluation::Local::Quaternary::IPDGFluxes::Dirichlet<FunctionSpaceType>
+        DirichletFacesIPDGEvaluationType;
+
+    const DirichletFacesIPDGEvaluationType dirichletFacesIPDGEvaluation("[1.0;1.0;1.0]");
 
 
-    //    // operator and functional
+    // operator and functional
     //    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
     //      LocalEllipticOperatorType;
 
@@ -119,30 +120,30 @@ int main(int argc, char** argv)
 
     //    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
+    typedef DiscreteOperator::Local::Codim1::Integral<InnerFacesIPDGEvaluationType> LocalIPDGInnerFacesOperatorType;
 
-    //    // matrix, rhs and solution storage
-    //    typedef Container::Matrix::Defaults< RangeFieldType, dimRange, dimRange >::BCRSMatrix
-    //      MatrixFactory;
-
-    //    typedef /*typename*/ MatrixFactory::AutoPtrType
-    //      MatrixPtrType;
-
-    //    MatrixPtrType A = MatrixFactory::create( discreteH1, discreteH1 );
-
-    //    typedef Container::Vector::Defaults< RangeFieldType, dimRange >::BlockVector
-    //      VectorFactory;
-
-    //    typedef /*typename*/ VectorFactory::AutoPtrType
-    //      VectorPtrType;
-
-    //    VectorPtrType F = VectorFactory::create( discreteH1 );
-    //    *F = 0.0;
-
-    //    VectorPtrType u = VectorFactory::create( discreteH1 );
-    //    *u = 0.0;
+    const LocalIPDGInnerFacesOperatorType localIPDGInnerFacesOperator(innerFacesIPDGEvaluation);
 
 
-    //    // assembler
+    // matrix, rhs and solution storage
+    typedef Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix MatrixFactory;
+
+    typedef /*typename*/ MatrixFactory::AutoPtrType MatrixPtrType;
+
+    MatrixPtrType A = MatrixFactory::create(dgSpace, dgSpace);
+
+    typedef Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
+
+    typedef /*typename*/ VectorFactory::AutoPtrType VectorPtrType;
+
+    VectorPtrType F = VectorFactory::create(dgSpace);
+    *F              = 0.0;
+
+    VectorPtrType u = VectorFactory::create(dgSpace);
+    *u              = 0.0;
+
+
+    // assembler
     //    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
     //      LocalMatrixAssemblerType;
 
