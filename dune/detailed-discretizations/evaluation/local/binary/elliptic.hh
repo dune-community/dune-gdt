@@ -1,5 +1,8 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_IPDGFLUXES_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_IPDGFLUXES_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
+
+// dune-helper-tools includes
+#include <dune/helper-tools/function/runtime.hh>
 
 namespace Dune
 {
@@ -10,10 +13,10 @@ namespace DetailedDiscretizations
 namespace Evaluation
 {
 
-namespace Binary
+namespace Local
 {
 
-namespace IPDGFluxes
+namespace Binary
 {
 
 /**
@@ -25,14 +28,14 @@ namespace IPDGFluxes
           Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
   **/
 template< class FunctionSpaceImp >
-class JumpMeanPenalty
+class Elliptic
 {
 public:
 
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef JumpMeanPenalty< FunctionSpaceType >
+  typedef Elliptic< FunctionSpaceType >
     ThisType;
 
   typedef typename FunctionSpaceType::DomainType
@@ -47,18 +50,18 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  typedef Dune::FemTools::Function::Runtime< FunctionSpaceType >
+  typedef Dune::HelperTools::Function::Runtime< FunctionSpaceType >
     InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  JumpMeanPenalty( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
+  Elliptic( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
     : inducingFunction_( expression ),
       order_( std::max( 0, order ) )
   {
   }
 
   //! copy constructor
-  JumpMeanPenalty( const ThisType& other )
+  Elliptic( const Elliptic& other )
     : inducingFunction_( other.inducingFunction() ),
       order_( other.order() )
   {
@@ -75,26 +78,42 @@ public:
     return order_;
   }
 
+  /**
+    * \brief      Evaluates \f$a(x)\nabla u(x) \nabla v(x)\f$ for a given local point \f$x\f$.
+    *
+    * \tparam     LocalAnsatzFunctionType
+    *             Type of the local ansatz function \f$u\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalTestFunctionType
+    *             Type of the local test function \f$v\f$, i.e. Dune::LocalFunction.
+    * \tparam     LocalPointType
+    *             Type of the local point \f$x\f$, i.e. Dune::FieldVector.
+    * \param[in]  localAnsatzFunction
+    *             The local function \f$u\f$.
+    * \param[in]  localTestFunction
+    *             The local function \f$v\f$.
+    * \param[in]  localPoint
+    *             The local point \f$x\f$. This point is local in the sense, that this is a point on a reference
+    *             element.
+    * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
+    **/
   template< class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType >
-  void evaluate(  const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
-                  const DomainType& localPointEntity,
-                  const DomainType& localPointNeighbour,
-                  const DomainType& unitOuterNormal,
-                  LocalMatrixType& ret ) const
+  void evaluateLocal( const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                      const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
+                      const DomainType& localPoint,
+                      LocalMatrixType& ret ) const
   {
     // get global point
-    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global( localPointEntity );
+    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global( localPoint );
 
     // evaluate first gradient
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     std::vector< JacobianRangeType > gradientLocalAnsatzBaseFunctionSet( rows, JacobianRangeType( 0.0 ) );
-    localAnsatzBaseFunctionSet.jacobian( localPointEntity, gradientLocalAnsatzBaseFunctionSet );
+    localAnsatzBaseFunctionSet.jacobian( localPoint, gradientLocalAnsatzBaseFunctionSet );
 
     // evaluate second gradient
     const unsigned int cols = localTestBaseFunctionSet.size();
     std::vector< JacobianRangeType > gradientLocalTestBaseFunctionSet( cols, JacobianRangeType( 0.0 ) );
-    localTestBaseFunctionSet.jacobian( localPointNeighbour, gradientLocalTestBaseFunctionSet );
+    localTestBaseFunctionSet.jacobian( localPoint, gradientLocalTestBaseFunctionSet );
 
     // evaluate inducing function
     RangeType functionValue( 0.0 );
@@ -111,7 +130,7 @@ public:
         ret[i][j] = functionValue * gradientProduct;
       }
     }
-  }
+  } // end method evaluateLocal
 
 private:
   //! assignment operator
@@ -119,11 +138,11 @@ private:
 
   const InducingFunctionType inducingFunction_;
   unsigned int order_;
-}; // end class JumpMeanPenalty
-
-} // end namespace IPDGFluxes
+}; // end class Elliptic
 
 } // end namespace Binary
+
+} // end namespace Local
 
 } // end namespace Evaluation
 
@@ -131,4 +150,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_IPDGFLUXES_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
