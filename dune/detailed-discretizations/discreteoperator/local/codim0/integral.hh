@@ -163,6 +163,9 @@ public:
     assert(localMatrix.rows() >= rows);
     assert(localMatrix.cols() >= cols);
 
+    // clear target matrix
+    Dune::HelperTools::Common::Matrix::clear(localMatrix);
+
     // check tmp local matrices
     if (tmpLocalMatrices.size() < 1) {
       tmpLocalMatrices.resize(1,
@@ -170,9 +173,6 @@ public:
                                               localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                               RangeFieldType(0.0)));
     }
-
-    // clear target matrix
-    Dune::HelperTools::Common::Matrix::clear(localMatrix);
 
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
