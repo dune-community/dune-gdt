@@ -41,22 +41,34 @@ public:
     return localFunctional_;
   }
 
+  std::vector<unsigned int> numTmpObjectsRequired() const
+  {
+    std::vector<unsigned int> ret(2, 0);
+    // we require 1 tmp vector in this local assembler
+    ret[0] = 1;
+    // the functional itself requires that much local matrices
+    ret[1] = localFunctional_.numTmpObjectsRequired();
+    return ret;
+  }
+
   template <class TestSpaceType, class EntityType, class VectorType, class LocalVectorType>
   void assembleLocal(const TestSpaceType& testSpace, const EntityType& entity, VectorType& vector,
-                     std::vector<LocalVectorType>& tmpLocalVectors) const
+                     std::vector<std::vector<LocalVectorType>>& tmpLocalVectorsContainer) const
   {
     // get the basefunctionset
     typedef typename TestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalTestBaseFunctionSetType;
 
     const LocalTestBaseFunctionSetType localTestBaseFunctionSet = testSpace.baseFunctionSet().local(entity);
 
-    // check, if we have enough tmp local vectors
+    // check tmp local vectors
+    assert(tmpLocalVectorsContainer.size() > 1);
+    std::vector<LocalVectorType>& tmpLocalVectors = tmpLocalVectorsContainer[0];
     if (tmpLocalVectors.size() < 1) {
       tmpLocalVectors.resize(1, LocalVectorType(testSpace.map().maxLocalSize(), RangeFieldType(0.0)));
     }
 
     // write local functional application to tmpLocalVector
-    localFunctional_.applyLocal(localTestBaseFunctionSet, tmpLocalVectors[0]);
+    localFunctional_.applyLocal(localTestBaseFunctionSet, tmpLocalVectors[0], tmpLocalVectorsContainer[1]);
 
     // write local vector to global
     addToVector(testSpace, entity, tmpLocalVectors[0], vector);

@@ -5,6 +5,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
 
+// std includes
+#include <vector>
+
 // dune fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
@@ -119,6 +122,11 @@ public:
     return LocalFunctionalType(*this, inducingDiscreteFunction);
   } // end method localFunctional
 
+  unsigned int numTmpObjectsRequired() const
+  {
+    return 1;
+  }
+
   /**
     \brief      Local application of the operator.
 
@@ -133,7 +141,8 @@ public:
     **/
   template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType>
   void applyLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix) const
+                  const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalMatrixType& localMatrix,
+                  std::vector<LocalMatrixType>& tmpLocalMatrices) const
   {
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
@@ -154,11 +163,16 @@ public:
     assert(localMatrix.rows() >= rows);
     assert(localMatrix.cols() >= cols);
 
+    // check tmp local matrices
+    if (tmpLocalMatrices.size() < 1) {
+      tmpLocalMatrices.resize(1,
+                              LocalMatrixType(localAnsatzBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
+                                              localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
+                                              RangeFieldType(0.0)));
+    }
+
     // clear target matrix
     Dune::HelperTools::Common::Matrix::clear(localMatrix);
-
-    // some tmp storage for all quadrature points
-    LocalMatrixType tmpMatrix(rows, cols, RangeFieldType(0.0));
 
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
@@ -170,12 +184,12 @@ public:
       const double quadratureWeight  = volumeQuadrature.weight(q);
 
       // evaluate the local operation
-      localEvaluation_.evaluate(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, x, tmpMatrix);
+      localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, x, tmpLocalMatrices[0]);
 
       // compute integral
       for (unsigned int i = 0; i < rows; ++i) {
         for (unsigned int j = 0; j < cols; ++j) {
-          localMatrix[i][j] += tmpMatrix[i][j] * integrationFactor * quadratureWeight;
+          localMatrix[i][j] += tmpLocalMatrices[0][i][j] * integrationFactor * quadratureWeight;
         }
       }
     } // done loop over all quadrature points

@@ -57,8 +57,14 @@ public:
     return localEvaluation_;
   }
 
+  unsigned int numTmpObjectsRequired() const
+  {
+    return 1;
+  }
+
   template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector) const
+  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector,
+                  std::vector<LocalVectorType>& tmpLocalVectors) const
   {
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
@@ -76,11 +82,15 @@ public:
     // make sure target vector is big enough
     assert(localVector.size() >= size);
 
+    // check tmp local vectors
+    if (tmpLocalVectors.size() < 1) {
+      tmpLocalVectors.resize(1,
+                             LocalVectorType(localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
+                                             RangeFieldType(0.0)));
+    }
+
     // clear target vector
     Dune::HelperTools::Common::Vector::clear(localVector);
-
-    // some common storage for all quadrature points
-    LocalVectorType tmpVector(size);
 
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
@@ -92,11 +102,11 @@ public:
       const double quadratureWeight  = volumeQuadrature.weight(q);
 
       // evaluate the local evaluation
-      localEvaluation_.evaluate(localTestBaseFunctionSet, x, tmpVector);
+      localEvaluation_.evaluateLocal(localTestBaseFunctionSet, x, tmpLocalVectors[0]);
 
       // compute integral
       for (unsigned int i = 0; i < size; ++i) {
-        localVector[i] += tmpVector[i] * integrationFactor * quadratureWeight;
+        localVector[i] += tmpLocalVectors[0][i] * integrationFactor * quadratureWeight;
       }
     } // done loop over all quadrature points
   } // end method applyLocal
@@ -147,14 +157,15 @@ public:
     return inducingDiscreteFunction_;
   }
 
-  template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& ret) const
+  unsigned int numTmpObjectsRequired() const
   {
-    // clear target
-    for (unsigned int i = 0; i < ret.size(); ++i) {
-      ret[i] = 0.0;
-    }
+    return 0;
+  }
 
+  template <class LocalTestBaseFunctionSetType, class LocalVectorType>
+  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& localVector,
+                  std::vector<LocalVectorType>&) const
+  {
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
@@ -184,6 +195,12 @@ public:
     const VolumeQuadratureType volumeQuadrature(entity, quadratureOrder);
     const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
+    // make sure target vector is big enough
+    assert(localVector.size() >= size);
+
+    // clear target vector
+    Dune::HelperTools::Common::Vector::clear(localVector);
+
     // do loop over all quadrature points
     LocalMatrixType tmpMatrix(1, size);
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
@@ -195,11 +212,12 @@ public:
       const double quadratureWeight  = volumeQuadrature.weight(q);
 
       // evaluate the local evaluation
-      inducingOperator_.localEvaluation().evaluate(inducingBaseFunctionSet, localTestBaseFunctionSet, x, tmpMatrix);
+      inducingOperator_.localEvaluation().evaluateLocal(
+          inducingBaseFunctionSet, localTestBaseFunctionSet, x, tmpMatrix);
 
       // compute integral
       for (unsigned int i = 0; i < size; ++i) {
-        ret[i] += tmpMatrix[0][i] * integrationFactor * quadratureWeight;
+        localVector[i] += tmpMatrix[0][i] * integrationFactor * quadratureWeight;
       }
     } // done loop over all quadrature points
 

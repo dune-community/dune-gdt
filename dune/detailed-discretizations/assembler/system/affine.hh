@@ -92,19 +92,37 @@ public:
         localMatrixAssembler.localVectorAssembler(ansatzSpace_.affineShift());
 
     // common tmp storage for all entities
-    std::vector<LocalMatrixType> tmpLocalMatrices(
-        1, LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
-    std::vector<LocalVectorType> tmpLocalVectors(1,
-                                                 LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<unsigned int> numberTmpMatrices = localMatrixAssembler.numTmpObjectsRequired();
+    std::vector<LocalMatrixType> tmpLocalAssemblerMatrices(
+        numberTmpMatrices[0],
+        LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<LocalMatrixType> tmpLocalOperatorMatrices(
+        numberTmpMatrices[1],
+        LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<std::vector<LocalMatrixType>> tmpLocalMatricesContainer;
+    tmpLocalMatricesContainer.push_back(tmpLocalAssemblerMatrices);
+    tmpLocalMatricesContainer.push_back(tmpLocalOperatorMatrices);
+
+    std::vector<unsigned int> numberTmpVectors            = localVectorAssembler.numTmpObjectsRequired();
+    std::vector<unsigned int> numberTmpVectorsAffineShift = localAffineShiftVectorAssembler.numTmpObjectsRequired();
+    std::vector<LocalVectorType> tmpLocalAssemblerVectors(
+        std::max(numberTmpVectors[0], numberTmpVectorsAffineShift[0]),
+        LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<LocalVectorType> tmpLocalFunctionalVectors(
+        std::max(numberTmpVectors[1], numberTmpVectorsAffineShift[1]),
+        LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<std::vector<LocalVectorType>> tmpLocalVectorsContainer;
+    tmpLocalVectorsContainer.push_back(tmpLocalAssemblerVectors);
+    tmpLocalVectorsContainer.push_back(tmpLocalFunctionalVectors);
 
     // do first gridwalk to assemble
     const EntityIteratorType lastEntity = ansatzSpace_.end();
     for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
-      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrices);
-      localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVectors);
-      localAffineShiftVectorAssembler.assembleLocal(testSpace_, entity, affineShiftVector, tmpLocalVectors);
+      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatricesContainer);
+      localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVectorsContainer);
+      localAffineShiftVectorAssembler.assembleLocal(testSpace_, entity, affineShiftVector, tmpLocalVectorsContainer);
 
     } // done first gridwalk to assemble
 
