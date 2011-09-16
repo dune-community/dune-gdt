@@ -1,9 +1,9 @@
 /**
-  \file   integral.hh
+  \file   boundaryintegral.hh
   **/
 
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_BOUNDARYINTEGRAL_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_BOUNDARYINTEGRAL_HH
 
 // dune-fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
@@ -26,15 +26,19 @@ namespace Local
 namespace Codim1
 {
 
+/**
+  \brief  Local operator for inner intersections, i.e. those who have an inner codim 0 entity (Entity or En) and an
+          outer codim 0 neighbouring entity (Neighbour or Ne).
+  **/
 template< class LocalEvaluationImp >
-class Integral
+class BoundaryIntegral
 {
 public:
 
   typedef LocalEvaluationImp
     LocalEvaluationType;
 
-  typedef Integral< LocalEvaluationType >
+  typedef BoundaryIntegral< LocalEvaluationType >
     ThisType;
 
   typedef typename LocalEvaluationType::FunctionSpaceType
@@ -55,13 +59,13 @@ public:
 //      Type;
 //  };
 
-  Integral( const LocalEvaluationType localEvaluation )
+  BoundaryIntegral( const LocalEvaluationType localEvaluation )
     : localEvaluation_( localEvaluation )
   {
   }
 
   //! copy constructor
-  Integral( const ThisType& other )
+  BoundaryIntegral( const ThisType& other )
     : localEvaluation_( other.localEvaluation() )
   {
   }
@@ -84,31 +88,24 @@ public:
 
   unsigned int numTmpObjectsRequired() const
   {
-    return 4;
+    return 1;
   }
 
   /**
     \todo Rename Entity -> En, Neighbour -> Ne
     **/
-  template< class LocalAnsatzBaseFunctionSetEntityType,
-            class LocalAnsatzBaseFunctionSetNeighbourType,
-            class LocalTestBaseFunctionSetEntityType,
-            class LocalTestBaseFunctionSetNeighbourType,
+  template< class LocalAnsatzBaseFunctionSetType,
+            class LocalTestBaseFunctionSetType,
             class IntersectionType,
             class LocalMatrixType >
-  void applyLocal(  const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
-                    const LocalAnsatzBaseFunctionSetNeighbourType& localAnsatzBaseFunctionSetNeighbour,
-                    const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
-                    const LocalTestBaseFunctionSetNeighbourType& localTestBaseFunctionSetNeighbour,
+  void applyLocal(  const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                    const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
                     const IntersectionType& intersection,
-                    LocalMatrixType& localMatrixEnEn,
-                    LocalMatrixType& localMatrixEnNe,
-                    LocalMatrixType& localMatrixNeEn,
-                    LocalMatrixType& localMatrixNeNe,
+                    LocalMatrixType& localMatrix,
                     std::vector< LocalMatrixType >& tmpLocalMatrices ) const
   {
     // some types
-    typedef typename LocalAnsatzBaseFunctionSetEntityType::DiscreteFunctionSpaceType
+    typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType
       DiscreteFunctionSpaceType;
 
     typedef typename DiscreteFunctionSpaceType::GridPartType
@@ -118,15 +115,11 @@ public:
       FaceQuadratureType;
 
     // some stuff
-    const GridPartType& gridPart = localAnsatzBaseFunctionSetEntity.space().gridPart();
-    const unsigned int rowsEn = localAnsatzBaseFunctionSetEntity.size();
-    const unsigned int rowsNe = localAnsatzBaseFunctionSetNeighbour.size();
-    const unsigned int colsEn = localTestBaseFunctionSetEntity.size();
-    const unsigned int colsNe = localTestBaseFunctionSetNeighbour.size();
+    const GridPartType& gridPart = localAnsatzBaseFunctionSet.space().gridPart();
+    const unsigned int rows = localAnsatzBaseFunctionSet.size();
+    const unsigned int cols = localTestBaseFunctionSet.size();
     const unsigned int quadratureOrder =
-      localEvaluation_.order() +
-      std::max( localAnsatzBaseFunctionSetEntity.order(), localAnsatzBaseFunctionSetNeighbour.order() ) +
-      std::max( localTestBaseFunctionSetEntity.order(), localTestBaseFunctionSetNeighbour.order());
+      localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
     const FaceQuadratureType faceQuadrature(  gridPart,
                                               intersection,
                                               quadratureOrder,
@@ -134,27 +127,18 @@ public:
     const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
 
     // make sure, that the target matrices are big enough
-    assert( localMatrixEnEn.rows() >= rowsEn );
-    assert( localMatrixEnEn.cols() >= colsEn );
-    assert( localMatrixEnNe.rows() >= rowsEn );
-    assert( localMatrixEnNe.cols() >= colsNe );
-    assert( localMatrixNeEn.rows() >= rowsNe );
-    assert( localMatrixNeEn.cols() >= colsEn );
-    assert( localMatrixNeNe.rows() >= rowsNe );
-    assert( localMatrixNeNe.cols() >= colsNe );
+    assert( localMatrix.rows() >= rows );
+    assert( localMatrix.cols() >= cols );
 
     // clear target matrices
-    Dune::HelperTools::Common::Matrix::clear( localMatrixEnEn );
-    Dune::HelperTools::Common::Matrix::clear( localMatrixEnNe );
-    Dune::HelperTools::Common::Matrix::clear( localMatrixNeEn );
-    Dune::HelperTools::Common::Matrix::clear( localMatrixNeNe );
+    Dune::HelperTools::Common::Matrix::clear( localMatrix );
 
     // check tmp local matrices
-    if( tmpLocalMatrices.size() < 3 )
+    if( tmpLocalMatrices.size() < 1 )
     {
-      tmpLocalMatrices.resize(  3,
-                                LocalMatrixType(  localAnsatzBaseFunctionSetEntity.baseFunctionSet().space().map().maxLocalSize(),
-                                                  localTestBaseFunctionSetEntity.baseFunctionSet().space().map().maxLocalSize(),
+      tmpLocalMatrices.resize(  1,
+                                LocalMatrixType(  localAnsatzBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
+                                                  localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                                   RangeFieldType( 0.0 ) ) );
     }
 
@@ -169,22 +153,14 @@ public:
       const double quadratureWeight = faceQuadrature.weight( q );
 
       // evaluate the local operation
-      localEvaluation_.evaluate(  localAnsatzBaseFunctionSetEntity,
-                                  localAnsatzBaseFunctionSetNeighbour,
-                                  localTestBaseFunctionSetEntity,
-                                  localTestBaseFunctionSetNeighbour,
+      localEvaluation_.evaluate(  localAnsatzBaseFunctionSet,
+                                  localTestBaseFunctionSet,
                                   intersection,
                                   x,
-                                  tmpLocalMatrices[0],    /*EnEn*/
-                                  tmpLocalMatrices[1],    /*EnNe*/
-                                  tmpLocalMatrices[2],    /*NeEn*/
-                                  tmpLocalMatrices[3] );  /*NeNe*/
+                                  tmpLocalMatrices[0] );  /*NeNe*/
 
-      // compute integral
-      addToIntegral( localMatrixEnEn, integrationFactor, quadratureWeight, rowsEn, colsEn, tmpLocalMatrices[0] );
-      addToIntegral( localMatrixEnNe, integrationFactor, quadratureWeight, rowsEn, colsNe, tmpLocalMatrices[1] );
-      addToIntegral( localMatrixNeEn, integrationFactor, quadratureWeight, rowsNe, colsEn, tmpLocalMatrices[2] );
-      addToIntegral( localMatrixNeNe, integrationFactor, quadratureWeight, rowsNe, colsNe, tmpLocalMatrices[3] );
+      // compute integral (see below)
+      addToIntegral( tmpLocalMatrices[0], integrationFactor, quadratureWeight, rows, cols, localMatrix );
 
     } // done loop over all quadrature points
 
@@ -215,7 +191,7 @@ private:
 
   const LocalEvaluationType localEvaluation_;
 
-}; // end class Codim0Integration
+}; // end class BoundaryIntegral
 
 } // end namespace Codim1
 
@@ -227,4 +203,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
+#endif // end DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_BOUNDARYINTEGRAL_HH

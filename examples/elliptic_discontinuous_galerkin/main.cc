@@ -37,7 +37,8 @@
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed-discretizations/evaluation/local/quaternary/ipdgfluxes.hh>
-#include <dune/detailed-discretizations/discreteoperator/local/codim1/integral.hh>
+#include <dune/detailed-discretizations/discreteoperator/local/codim1/innerintegral.hh>
+#include <dune/detailed-discretizations/discreteoperator/local/codim1/boundaryintegral.hh>
 #include <dune/detailed-discretizations/container/factory.hh>
 //#include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
 
@@ -125,10 +126,15 @@ int main( int argc, char** argv )
 
 //    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
-    typedef DiscreteOperator::Local::Codim1::Integral< InnerFacesIPDGEvaluationType >
+    typedef DiscreteOperator::Local::Codim1::InnerIntegral< InnerFacesIPDGEvaluationType >
       LocalIPDGInnerFacesOperatorType;
 
     const LocalIPDGInnerFacesOperatorType localIPDGInnerFacesOperator( innerFacesIPDGEvaluation );
+
+    typedef DiscreteOperator::Local::Codim1::BoundaryIntegral< DirichletFacesIPDGEvaluationType >
+      LocalIPDGDirichletFacesOperatorType;
+
+    const LocalIPDGDirichletFacesOperatorType localIPDGDirichletFacesOperator( dirichletFacesIPDGEvaluation );
 
 
     // matrix, rhs and solution storage
