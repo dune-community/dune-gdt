@@ -202,7 +202,7 @@ private:
 
   const LocalEvaluationType localEvaluation_;
 
-}; // end class Codim0Integration
+}; // end class Integral
 
 } // end namespace Codim0
 

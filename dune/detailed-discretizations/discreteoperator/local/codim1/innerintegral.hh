@@ -1,9 +1,9 @@
 /**
-  \file   integral.hh
+  \file   innerintegral.hh
   **/
 
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
 
 // dune-fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
@@ -21,13 +21,17 @@ namespace Local {
 
 namespace Codim1 {
 
+/**
+  \brief  Local operator for inner intersections, i.e. those who have an inner codim 0 entity (Entity or En) and an
+          outer codim 0 neighbouring entity (Neighbour or Ne).
+  **/
 template <class LocalEvaluationImp>
-class Integral
+class InnerIntegral
 {
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
 
-  typedef Integral<LocalEvaluationType> ThisType;
+  typedef InnerIntegral<LocalEvaluationType> ThisType;
 
   typedef typename LocalEvaluationType::FunctionSpaceType FunctionSpaceType;
 
@@ -44,13 +48,13 @@ public:
   //      Type;
   //  };
 
-  Integral(const LocalEvaluationType localEvaluation)
+  InnerIntegral(const LocalEvaluationType localEvaluation)
     : localEvaluation_(localEvaluation)
   {
   }
 
   //! copy constructor
-  Integral(const ThisType& other)
+  InnerIntegral(const ThisType& other)
     : localEvaluation_(other.localEvaluation())
   {
   }
@@ -156,11 +160,11 @@ public:
                                 tmpLocalMatrices[2], /*NeEn*/
                                 tmpLocalMatrices[3]); /*NeNe*/
 
-      // compute integral
-      addToIntegral(localMatrixEnEn, integrationFactor, quadratureWeight, rowsEn, colsEn, tmpLocalMatrices[0]);
-      addToIntegral(localMatrixEnNe, integrationFactor, quadratureWeight, rowsEn, colsNe, tmpLocalMatrices[1]);
-      addToIntegral(localMatrixNeEn, integrationFactor, quadratureWeight, rowsNe, colsEn, tmpLocalMatrices[2]);
-      addToIntegral(localMatrixNeNe, integrationFactor, quadratureWeight, rowsNe, colsNe, tmpLocalMatrices[3]);
+      // compute integral (see below)
+      addToIntegral(tmpLocalMatrices[0], integrationFactor, quadratureWeight, rowsEn, colsEn, localMatrixEnEn);
+      addToIntegral(tmpLocalMatrices[1], integrationFactor, quadratureWeight, rowsEn, colsNe, localMatrixEnNe);
+      addToIntegral(tmpLocalMatrices[2], integrationFactor, quadratureWeight, rowsNe, colsEn, localMatrixNeEn);
+      addToIntegral(tmpLocalMatrices[3], integrationFactor, quadratureWeight, rowsNe, colsNe, localMatrixNeNe);
 
     } // done loop over all quadrature points
 
@@ -184,7 +188,7 @@ private:
 
   const LocalEvaluationType localEvaluation_;
 
-}; // end class Codim0Integration
+}; // end class InnerIntegral
 
 } // end namespace Codim1
 
@@ -196,4 +200,4 @@ private:
 
 } // end namespace Dune
 
-#endif // end DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INTEGRAL_HH
+#endif // end DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
