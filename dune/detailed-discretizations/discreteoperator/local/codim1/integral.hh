@@ -8,6 +8,9 @@
 // dune-fem includes
 #include <dune/fem/quadrature/cachingquadrature.hh>
 
+// dune-helper-tools includes
+#include <dune/helper-tools/common/matrix.hh>
+
 namespace Dune
 {
 
@@ -79,24 +82,22 @@ public:
 //    return LocalFunctionalType( *this, inducingDiscreteFunction );
 //  } // end method localFunctional
 
-  template< class IntersectionType,
-           class LocalAnsatzBaseFunctionSetType, /*Entity*/
-           class LocalTestBaseFunctionSetType, /*Neighour*/
-           class LocalMatrixType >
-  void applyLocal( const IntersectionType& intersection,
-                   const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                   const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
-                   LocalMatrixType& localMatrix ) const
+  template< class LocalAnsatzBaseFunctionSetEntityType,
+            class LocalAnsatzBaseFunctionSetNeighbourType,
+            class LocalTestBaseFunctionSetEntityType,
+            class LocalTestBaseFunctionSetNeighbourType,
+            class IntersectionType,
+            class LocalMatrixType >
+  void applyLocal(  const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
+                    const LocalAnsatzBaseFunctionSetNeighbourType& localAnsatzBaseFunctionSetNeighbour,
+                    const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
+                    const LocalTestBaseFunctionSetNeighbourType& localTestBaseFunctionSetNeighbour,
+                    const IntersectionType& intersection,
+                    LocalMatrixType& localMatrixEnEn,
+                    LocalMatrixType& localMatrixEnNe,
+                    LocalMatrixType& localMatrixNeEn,
+                    LocalMatrixType& localMatrixNeNe ) const
   {
-    // clear target matrix
-    for( unsigned int i = 0; i < localMatrix.rows(); ++i )
-    {
-      for( unsigned int j = 0; j < localMatrix.cols(); ++j )
-      {
-        localMatrix[i][j] = 0.0;
-      }
-    }
-
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType
       DiscreteFunctionSpaceType;
@@ -109,17 +110,39 @@ public:
 
     // some stuff
     const GridPartType& gridPart = localAnsatzBaseFunctionSet.space().gridPart();
-    const unsigned int rows = localAnsatzBaseFunctionSet.size();
-    const unsigned int cols = localTestBaseFunctionSet.size();
-    const unsigned int quadratureOrder = localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
+    const unsigned int rowsEn = localAnsatzBaseFunctionSetEntity.size();
+    const unsigned int rowsNe = localAnsatzBaseFunctionSetNeighbour.size();
+    const unsigned int colsEn = localTestBaseFunctionSetEntity.size();
+    const unsigned int colsNe = localTestBaseFunctionSetNeighbour.size();
+    const unsigned int quadratureOrder = localEvaluation_.order() + localAnsatzBaseFunctionSet.order() +
+      localTestBaseFunctionSet.order();
     const FaceQuadratureType faceQuadrature(  gridPart,
                                               intersection,
                                               quadratureOrder,
                                               FaceQuadratureType::INSIDE );
     const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
 
-    // some tmp storage
-    LocalMatrixType tmpMatrix( rows, cols );
+    // make sure, that the target matrices are big enough
+    assert( localMatrixEnEn.rows() >= rowsEn );
+    assert( localMatrixEnEn.cols() >= colsEn );
+    assert( localMatrixEnNe.rows() >= rowsEn );
+    assert( localMatrixEnNe.cols() >= colsNe );
+    assert( localMatrixNeEn.rows() >= rowsNe );
+    assert( localMatrixNeEn.cols() >= colsEn );
+    assert( localMatrixNeNe.rows() >= rowsNe );
+    assert( localMatrixNeNe.cols() >= colsNe );
+
+    // clear target matrices
+    Dune::HelperTools::Common::Matrix::clear( localMatrixEnEn );
+    Dune::HelperTools::Common::Matrix::clear( localMatrixEnNe );
+    Dune::HelperTools::Common::Matrix::clear( localMatrixNeEn );
+    Dune::HelperTools::Common::Matrix::clear( localMatrixNeNe );
+
+    // some tmp storage for all quadrature points
+    LocalMatrixType tmpLocalMatrixEnEn( rowsEn, colsEn );
+    LocalMatrixType tmpLocalMatrixEnNe( rowsEn, colsNe );
+    LocalMatrixType tmpLocalMatrixNeEn( rowsNe, colsEn );
+    LocalMatrixType tmpLocalMatrixNeNe( rowsNe, colsNe );
 
     // do loop over all quadrature points
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
@@ -128,28 +151,30 @@ public:
       const DomainType x = faceQuadrature.point( q );
       const DomainType xInEntity = intersection.geometryInInside().global( x );
       const DomainType xInNeighbour = intersection.geometryInOutside().global( x );
-      const DomainType unitOuterNormal = intersection.unitOuterNormal();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement( x );
       const double quadratureWeight = faceQuadrature.weight( q );
 
       // evaluate the local operation
-      localEvaluation_.evaluate(  localAnsatzBaseFunctionSet,
-                                  localTestBaseFunctionSet,
+      localEvaluation_.evaluate(  localAnsatzBaseFunctionSetEntity,
+                                  localAnsatzBaseFunctionSetNeighbour,
+                                  localTestBaseFunctionSetEntity,
+                                  localTestBaseFunctionSetNeighbour,
+                                  intersection,
                                   xInEntity,
                                   xInNeighbour,
-                                  unitOuterNormal,
-                                  tmpMatrix );
+                                  tmpEnEnMatrix,
+                                  tmpEnNeMatrix,
+                                  tmpNeEnMatrix,
+                                  tmpNeNeMatrix );
 
       // compute integral
-      for( unsigned int i = 0; i < rows; ++i )
-      {
-        for( unsigned int j = 0; j < cols; ++j )
-        {
-          localMatrix[i][j] += tmpMatrix[i][j] * integrationFactor * quadratureWeight;
-        }
-      }
+      addToIntegral( tmpLocalMatrixEnEn, integrationFactor, quadratureWeight, rowsEn, colsEn, localMatrixEnEn );
+      addToIntegral( tmpLocalMatrixEnNe, integrationFactor, quadratureWeight, rowsEn, colsNe, localMatrixEnNe );
+      addToIntegral( tmpLocalMatrixNeEn, integrationFactor, quadratureWeight, rowsNe, colsEn, localMatrixNeEn );
+      addToIntegral( tmpLocalMatrixNeNe, integrationFactor, quadratureWeight, rowsNe, colsNe, localMatrixNeNe );
+
     } // done loop over all quadrature points
 
   } // end method applyLocal
@@ -158,6 +183,24 @@ private:
 
   //! assignment operator
   ThisType& operator=( const ThisType& );
+
+  template< class LocalMatrixType,
+            class RangeFieldType >
+  void addToIntegral( const LocalMatrixType& localMatrix,
+                      const RangeFieldType& integrationFactor,
+                      const RangeFieldType& quadratureWeight,
+                      const unsigned int rows,
+                      const unsigned int cols,
+                      LocalMatrixType& ret ) const
+  {
+    for( unsigned int i = 0; i < rows; ++i )
+    {
+      for( unsigned int j = 0; j < cols; ++j )
+      {
+        ret[i][j] += localMatrix[i][j] * integrationFactor * quadratureWeight;
+      }
+    }
+  } // end method addToIntegral
 
   const LocalEvaluationType localEvaluation_;
 

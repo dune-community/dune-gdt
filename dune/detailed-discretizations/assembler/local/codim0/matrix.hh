@@ -77,6 +77,16 @@ public:
     return LocalVectorAssemblerType( localOperator_.localFunctional( inducingDiscreteFunction ) );
   }
 
+  std::vector< unsigned int > numTmpObjectsRequired() const
+  {
+    std::vector< unsigned int > ret( 2, 0 );
+    // we require 1 tmp matrix in this local assembler
+    ret[0] = 1;
+    // the operator itself requires that much local matrices
+    ret[1] = localOperator_.numTmpObjectsRequired();
+    return ret;
+  }
+
   template< class AnsatzSpaceType,
             class TestSpaceType,
             class EntityType,
@@ -86,7 +96,7 @@ public:
                       const TestSpaceType& testSpace,
                       const EntityType& entity,
                       MatrixType& matrix,
-                      std::vector< LocalMatrixType >& tmpLocalMatrices ) const
+                      std::vector< std::vector< LocalMatrixType > >& tmpLocalMatricesContainer ) const
   {
     // get the local basefunctionsets
     typedef typename AnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType
@@ -99,17 +109,21 @@ public:
 
     const LocalTestBaseFunctionSetType localTestBaseFunctionSet = testSpace.baseFunctionSet().local( entity );
 
-    // check if we have enough tmp local matrices
+    // check tmp local matrices
+    assert( tmpLocalMatricesContainer.size() > 1 );
+    std::vector< LocalMatrixType >& tmpLocalMatrices = tmpLocalMatricesContainer[0];
     if( tmpLocalMatrices.size() < 1 )
     {
       tmpLocalMatrices.resize( 1, LocalMatrixType(  ansatzSpace.map().maxLocalSize(),
                                                     testSpace.map().maxLocalSize(),
                                                     RangeFieldType( 0.0 ) ) );
     }
+
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal(  localAnsatzBaseFunctionSet,
                                 localTestBaseFunctionSet,
-                                tmpLocalMatrices[0] );
+                                tmpLocalMatrices[0],
+                                tmpLocalMatricesContainer[1] );
 
     // write local matrix to global
     addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrices[0], matrix );

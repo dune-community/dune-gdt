@@ -35,8 +35,8 @@
 #include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed-discretizations/discretefunctionspace/subspace/linear.hh>
 #include <dune/detailed-discretizations/discretefunctionspace/subspace/affine.hh>
-#include <dune/detailed-discretizations/evaluation/unary/scale.hh>
-#include <dune/detailed-discretizations/evaluation/binary/elliptic.hh>
+#include <dune/detailed-discretizations/evaluation/local/unary/scale.hh>
+#include <dune/detailed-discretizations/evaluation/local/binary/elliptic.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim0/integral.hh>
 #include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 #include <dune/detailed-discretizations/container/factory.hh>
@@ -113,12 +113,12 @@ int main( int argc, char** argv )
 
 
     // local evaluation
-    typedef Evaluation::Unary::Scale< FunctionSpaceType >
+    typedef Evaluation::Local::Unary::Scale< FunctionSpaceType >
       ProductEvaluationType;
 
     ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
 
-    typedef Evaluation::Binary::Elliptic< FunctionSpaceType >
+    typedef Evaluation::Local::Binary::Elliptic< FunctionSpaceType >
       EllipticEvaluationType;
 
     EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
