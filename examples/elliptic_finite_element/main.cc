@@ -116,12 +116,12 @@ int main( int argc, char** argv )
     typedef Evaluation::Local::Unary::Scale< FunctionSpaceType >
       ProductEvaluationType;
 
-    ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
+    const ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
 
     typedef Evaluation::Local::Binary::Elliptic< FunctionSpaceType >
       EllipticEvaluationType;
 
-    EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
+    const EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
 
 
     // operator and functional
