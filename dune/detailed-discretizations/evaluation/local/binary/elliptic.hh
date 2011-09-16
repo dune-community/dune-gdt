@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_ELLIPTIC_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_ELLIPTIC_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
 
 // dune-helper-tools includes
 #include <dune/helper-tools/function/runtime.hh>
@@ -9,6 +9,8 @@ namespace Dune {
 namespace DetailedDiscretizations {
 
 namespace Evaluation {
+
+namespace Local {
 
 namespace Binary {
 
@@ -82,9 +84,9 @@ public:
     * \return     \f$a(x)\nabla u(x) \nabla v(x)\f$
     **/
   template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class LocalMatrixType>
-  void evaluate(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
-                LocalMatrixType& ret) const
+  void evaluateLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
+                     const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
+                     LocalMatrixType& ret) const
   {
     // get global point
     const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global(localPoint);
@@ -113,7 +115,7 @@ public:
         ret[i][j] = functionValue * gradientProduct;
       }
     }
-  }
+  } // end method evaluateLocal
 
 private:
   //! assignment operator
@@ -125,10 +127,12 @@ private:
 
 } // end namespace Binary
 
+} // end namespace Local
+
 } // end namespace Evaluation
 
 } // end namespace DetailedDiscretizations
 
 } // end namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_BINARY_ELLIPTIC_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH

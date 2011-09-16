@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_UNARY_SCALE_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_UNARY_SCALE_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_UNARY_SCALE_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_UNARY_SCALE_HH
 
 // dune-helper-tools includes
 #include <dune/helper-tools/function/runtime.hh>
@@ -9,6 +9,8 @@ namespace Dune {
 namespace DetailedDiscretizations {
 
 namespace Evaluation {
+
+namespace Local {
 
 namespace Unary {
 
@@ -74,8 +76,8 @@ public:
     \return     \f$f(x)v(x)\f$
     **/
   template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void evaluate(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
-                LocalVectorType& ret) const
+  void evaluateLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const DomainType& localPoint,
+                     LocalVectorType& ret) const
   {
     // get global point
     const DomainType globalPoint = localTestBaseFunctionSet.entity().geometry().global(localPoint);
@@ -94,7 +96,7 @@ public:
     for (unsigned int i = 0; i < size; ++i) {
       ret[i] = functionValue * valuesLocalBaseFunctionSet[i];
     }
-  }
+  } // end method evalauteLocal
 
 private:
   //! assignment operator
@@ -106,10 +108,12 @@ private:
 
 } // end namespace Unary
 
+} // end namespace Local
+
 } // end namespace Evaluation
 
 } // end namespace DetailedDiscretizations
 
 } // end namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_UNARY_SCALE_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_UNARY_SCALE_HH

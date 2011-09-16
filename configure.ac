@@ -45,8 +45,9 @@ AC_CONFIG_FILES([
   dune/detailed-discretizations/discreteoperator/local/Makefile
   dune/detailed-discretizations/discreteoperator/local/codim0/Makefile
   dune/detailed-discretizations/evaluation/Makefile
-  dune/detailed-discretizations/evaluation/binary/Makefile
-  dune/detailed-discretizations/evaluation/unary/Makefile
+  dune/detailed-discretizations/evaluation/local/Makefile
+  dune/detailed-discretizations/evaluation/local/binary/Makefile
+  dune/detailed-discretizations/evaluation/local/unary/Makefile
   dune/detailed-discretizations/mapper/Makefile
   dune/detailed-discretizations/mapper/continuous/Makefile
   examples/Makefile
