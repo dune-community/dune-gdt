@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_UNCONSTRAINED_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_UNCONSTRAINED_HH
 
+// std includes
+#include <vector>
+
 // dune-common includes
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
@@ -89,7 +92,7 @@ public:
       LocalVectorType;
 
     // common storage for all entities
-    LocalMatrixType tmpLocalMatrix( ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) );
+    std::vector< LocalMatrixType > tmpLocalMatrices( 4, LocalMatrixType( ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) ) );
     LocalVectorType tmpLocalVector( testSpace_.map().maxLocalSize(), RangeFieldType( 0.0 ) );
 
     // do gridwalk to assemble

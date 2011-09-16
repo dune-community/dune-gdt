@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_MATRIX_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_MATRIX_HH
 
+// std includes
+#include <vector>
+
 // local includes
 //#include "vector.hh"
 
@@ -93,61 +96,86 @@ public:
                       const TestSpaceType& testSpace,
                       const EntityType& entity,
                       MatrixType& matrix,
-                      LocalMatrixType& tmpLocalMatrix ) const
+                      std::vector< LocalMatrixType >& tmpLocalMatrices ) const
   {
-      typedef typename AnsatzSpaceType::GridPartType
-        GridPartType;
+    // get the local basefunction sets
+    typedef typename AnsatzSpaceType::BaseFunctionSet::Local
+      LocalAnsatzBaseFunctionSetType;
 
-      typedef typename GridPartType::IntersectionIteratorType
-        IntersectionIteratorType;
+    const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSetEntity = ansatzSpace.baseFunctionSet().local( entity );
+    const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSetNeighbour = ansatzSpace.baseFunctionSet().local( neighbour );
 
-      typedef typename IntersectionIteratorType::Intersection
-        IntersectionType;
+    typedef typename TestSpaceType::BaseFunctionSet::Local
+      LocalTesBaseFunctionSetType;
 
-      typedef typename IntersectionType::EntityPointer
-        EntityPointerType;
+    const LocalTesBaseFunctionSetType localTesBaseFunctionSetEntity = testSpace.baseFunctionSet().local( entity );
+    const LocalTesBaseFunctionSetType localTesBaseFunctionSetNeighbour = testSpace.baseFunctionSet().local( neighbour );
 
-      const GridPartType& gridPart = ansatzSpace.gridPart();
+    // check, if we have enough tmp matrices
+    if( tmpLocalMatrices.size() < 4 )
+    {
+      tmpLocalMatrices.resize( 4, LocalMatrixType(  ansatzSpace.map().maxLocalSize(),
+                                                    testSpace.map().maxLocalSize(),
+                                                    RangeFieldType( 0.0 ) ) );
+    }
 
-      const IntersectionIteratorType lastIntersection = gridPart.iend( entity );
+    // some types
+    typedef typename AnsatzSpaceType::GridPartType
+    GridPartType;
 
-      for( IntersectionIteratorType intIt = entity.ibegin(); intIt != lastIntersection; ++intIt )
+    typedef typename GridPartType::IntersectionIteratorType
+    IntersectionIteratorType;
+
+    typedef typename IntersectionIteratorType::Intersection
+    IntersectionType;
+
+    typedef typename IntersectionType::EntityPointer
+    EntityPointerType;
+
+    const GridPartType& gridPart = ansatzSpace.gridPart();
+
+    const IntersectionIteratorType lastIntersection = gridPart.iend( entity );
+
+    // do loop over all intersections
+    for( IntersectionIteratorType intIt = entity.ibegin(); intIt != lastIntersection; ++intIt )
+    {
+      const IntersectionType& intersection = *intIt;
+
+      // if inner intersection
+      if( intersection.neighbor() && !intersection.boundary() )
       {
-          const IntersectionType& intersection = *intIt;
+        const EntityPointerType neighbourPtr = intersection.outside();
+        const EntityType& neighbour = *neighbourPtr;
 
-          // if inner intersection
-          if( intersection.neighbor() && !intersection.boundary() )
-          {
-            const EntityPointerType neighbourPtr = intersection.outside();
-            const EntityType& neighbour = *neighbourPtr;
+        innerLocalOperator_.applyLocal( localAnsatzBaseFunctionSetEntity,
+                                        localAnsatzBaseFunctionSetNeighbour,
+                                        localTesBaseFunctionSetEntity,
+                                        localTesBaseFunctionSetNeighbour,
+                                        intersection,
+                                        tmpLocalMatrices[0],
+                                        tmpLocalMatrices[1],
+                                        tmpLocalMatrices[2],
+                                        tmpLocalMatrices[3] );
 
-            innerLocalOperator_.applyLocal( intersection,
-                                            ansatzSpace.baseFunctionSet().local( entity ),
-                                            testSpace.baseFunctionSet().local( neighbour ),
-                                            tmpLocalMatrix );
+        // write local matrix to global
+        addToMatrix( ansatzSpace, testSpace, entity, neighbour, tmpLocalMatrix, matrix );
 
-            // write local matrix to global
-            addToMatrix( ansatzSpace, testSpace, entity, neighbour, tmpLocalMatrix, matrix );
+      } // end if inner intersection
+      else if( !intersection.neighbor() && intersection.boundary() ) // if boundary intersection
+      {
+        const unsigned int boundaryId = intersection.boundaryId();
 
+        // if dirichlet boundary intersection
+        if( boundaryId == 2 )
+        {
 
-          }
-          else if( !intersection.neighbor() && intersection.boundary() ) // else boundary
-          {
-              const unsigned int boundaryId = intersection.boundaryId();
+        } // end if dirichlet boundary intersection
+        else if( boundaryId == 3 ) // if neumann boundary intersection
+        {
 
-              // if dirichlet
-              if( boundaryId == 2 )
-              {
-
-              }
-              else if( boundaryId == 3 ) // else neumann
-              {
-
-              }
-
-          } // end if boundary intersection
-      }
-
+        } // end if neumann boundary intersection
+      }// end if boundary intersection
+    } // done loop over all intersections
   }
 
 private:
@@ -167,9 +195,11 @@ private:
                     const LocalMatrixType& localMatrix,
                     MatrixType& matrix ) const
   {
-    for( unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local( entity ).size(); ++i )
+    unsigned int rows = ansatzSpace.baseFunctionSet().local( entity ).size();
+    unsigned int cols = testSpace.baseFunctionSet().local( entity ).size();
+    for( unsigned int i = 0; i < rows; ++i )
     {
-      for( unsigned int j = 0; j < testSpace.baseFunctionSet().local( entity ).size(); ++j )
+      for( unsigned int j = 0; j < cols; ++j )
       {
         const unsigned int globalI = ansatzSpace.map().toGlobal( entity, i );
         const unsigned int globalJ = testSpace.map().toGlobal( neighbour, j );
