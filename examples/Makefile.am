@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = elliptic_finite_element
+SUBDIRS = elliptic_finite_element elliptic_discontinuous_galerkin
 
 if BUILD_DOCS
 # TODO: set up documentation tree automatically
