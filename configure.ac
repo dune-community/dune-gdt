@@ -27,6 +27,7 @@ AC_CONFIG_FILES([
   dune/detailed-discretizations/assembler/Makefile
   dune/detailed-discretizations/assembler/local/Makefile
   dune/detailed-discretizations/assembler/local/codim0/Makefile
+  dune/detailed-discretizations/assembler/local/codim1/Makefile
   dune/detailed-discretizations/assembler/system/Makefile
   dune/detailed-discretizations/basefunctionset/Makefile
   dune/detailed-discretizations/basefunctionset/continuous/Makefile
@@ -38,15 +39,18 @@ AC_CONFIG_FILES([
   dune/detailed-discretizations/discretefunctional/Makefile
   dune/detailed-discretizations/discretefunctional/local/Makefile
   dune/detailed-discretizations/discretefunctional/local/codim0/Makefile
+  dune/detailed-discretizations/discretefunctional/local/codim1/Makefile
   dune/detailed-discretizations/discretefunctionspace/Makefile
   dune/detailed-discretizations/discretefunctionspace/continuous/Makefile
   dune/detailed-discretizations/discretefunctionspace/subspace/Makefile
   dune/detailed-discretizations/discreteoperator/Makefile
   dune/detailed-discretizations/discreteoperator/local/Makefile
   dune/detailed-discretizations/discreteoperator/local/codim0/Makefile
+  dune/detailed-discretizations/discreteoperator/local/codim1/Makefile
   dune/detailed-discretizations/evaluation/Makefile
   dune/detailed-discretizations/evaluation/local/Makefile
   dune/detailed-discretizations/evaluation/local/binary/Makefile
+  dune/detailed-discretizations/evaluation/local/quaternary/Makefile
   dune/detailed-discretizations/evaluation/local/unary/Makefile
   dune/detailed-discretizations/mapper/Makefile
   dune/detailed-discretizations/mapper/continuous/Makefile

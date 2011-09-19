@@ -91,9 +91,6 @@ public:
     return 1;
   }
 
-  /**
-    \todo Rename Entity -> En, Neighbour -> Ne
-    **/
   template< class LocalAnsatzBaseFunctionSetType,
             class LocalTestBaseFunctionSetType,
             class IntersectionType,
@@ -157,13 +154,12 @@ public:
                                   localTestBaseFunctionSet,
                                   intersection,
                                   x,
-                                  tmpLocalMatrices[0] );  /*NeNe*/
+                                  tmpLocalMatrices[0] );
 
       // compute integral (see below)
       addToIntegral( tmpLocalMatrices[0], integrationFactor, quadratureWeight, rows, cols, localMatrix );
 
     } // done loop over all quadrature points
-
   } // end method applyLocal
 
 private:
