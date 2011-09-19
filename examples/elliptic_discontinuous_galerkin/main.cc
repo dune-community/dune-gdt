@@ -37,10 +37,13 @@
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed-discretizations/evaluation/local/quaternary/ipdgfluxes.hh>
+#include <dune/detailed-discretizations/evaluation/local/unary/ipdgfluxes.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim1/innerintegral.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim1/boundaryintegral.hh>
+#include <dune/detailed-discretizations/discretefunctional/local/codim1/integral.hh>
 #include <dune/detailed-discretizations/container/factory.hh>
-//#include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
+#include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
+#include <dune/detailed-discretizations/assembler/local/codim1/vector.hh>
 
 // only ever do this in a .cc!
 using namespace Dune::DetailedDiscretizations;
@@ -109,17 +112,16 @@ int main(int argc, char** argv)
 
     const DirichletFacesIPDGEvaluationType dirichletFacesIPDGEvaluation("[1.0;1.0;1.0]");
 
+    typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::IPDGFluxes<FunctionSpaceType> IPDGEvaluationType;
+
+    const IPDGEvaluationType ipdgEvaluation("[1.0;1.0;1.0]", "[0.0;0.0;0.0]", 1);
+
 
     // operator and functional
     //    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
     //      LocalEllipticOperatorType;
 
     //    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
-
-    //    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
-    //      LocalL2FunctionalType;
-
-    //    const LocalL2FunctionalType localL2Functional( productEvaluation );
 
     typedef DiscreteOperator::Local::Codim1::InnerIntegral<InnerFacesIPDGEvaluationType>
         LocalIPDGInnerFacesOperatorType;
@@ -130,6 +132,15 @@ int main(int argc, char** argv)
         LocalIPDGDirichletFacesOperatorType;
 
     const LocalIPDGDirichletFacesOperatorType localIPDGDirichletFacesOperator(dirichletFacesIPDGEvaluation);
+
+    //    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
+    //      LocalL2FunctionalType;
+
+    //    const LocalL2FunctionalType localL2Functional( productEvaluation );
+
+    typedef DiscreteFunctional::Local::Codim1::Integral<IPDGEvaluationType> LocalIPDGFunctionalType;
+
+    const LocalIPDGFunctionalType localIPDGFunctional(ipdgEvaluation);
 
 
     // matrix, rhs and solution storage
@@ -152,14 +163,24 @@ int main(int argc, char** argv)
 
     // assembler
     //    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
-    //      LocalMatrixAssemblerType;
+    //      LocalCodim0MatrixAssemblerType;
 
-    //    const LocalMatrixAssemblerType localMatrixAssembler( localEllipticOperator );
+    //    const LocalCodim0MatrixAssemblerType localCodim0MatrixAssembler( localEllipticOperator );
+
+    typedef Assembler::Local::Codim1::Matrix<LocalIPDGInnerFacesOperatorType, LocalIPDGDirichletFacesOperatorType>
+        LocalCodim1MatrixAssemblerType;
+
+    const LocalCodim1MatrixAssemblerType localCodim1MatrixAssembler(localIPDGInnerFacesOperator,
+                                                                    localIPDGDirichletFacesOperator);
 
     //    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
-    //      LocalVectorAssemblerType;
+    //      LocalCodim0VectorAssemblerType;
 
-    //    const LocalVectorAssemblerType localVectorAssembler( localL2Functional );
+    //    const LocalCodim0VectorAssemblerType localCodim0VectorAssembler( localL2Functional );
+
+    typedef Assembler::Local::Codim1::Vector<LocalIPDGFunctionalType> LocalCodim1VectorAssemblerType;
+
+    const LocalCodim1VectorAssemblerType localCodim1VectorAssembler(localIPDGFunctional);
 
     //    typedef Assembler::System::Unconstrained< DiscreteH1Type, DiscreteH1Type >
     //      SystemAssemblerType;
