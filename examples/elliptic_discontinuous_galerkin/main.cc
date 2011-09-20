@@ -36,14 +36,23 @@
 
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
+#include <dune/detailed-discretizations/evaluation/local/unary/scale.hh>
+#include <dune/detailed-discretizations/evaluation/local/binary/elliptic.hh>
 #include <dune/detailed-discretizations/evaluation/local/quaternary/ipdgfluxes.hh>
 #include <dune/detailed-discretizations/evaluation/local/unary/ipdgfluxes.hh>
+#include <dune/detailed-discretizations/discreteoperator/local/codim0/integral.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim1/innerintegral.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim1/boundaryintegral.hh>
+#include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 #include <dune/detailed-discretizations/discretefunctional/local/codim1/integral.hh>
 #include <dune/detailed-discretizations/container/factory.hh>
+#include <dune/detailed-discretizations/assembler/local/codim0/matrix.hh>
 #include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
+#include <dune/detailed-discretizations/assembler/local/combined/matrix.hh>
+#include <dune/detailed-discretizations/assembler/local/codim0/vector.hh>
 #include <dune/detailed-discretizations/assembler/local/codim1/vector.hh>
+#include <dune/detailed-discretizations/assembler/local/combined/vector.hh>
+#include <dune/detailed-discretizations/assembler/system/unconstrained.hh>
 
 // only ever do this in a .cc!
 using namespace Dune::DetailedDiscretizations;
@@ -82,7 +91,7 @@ int main(int argc, char** argv)
     // function space
     typedef Dune::FunctionSpace<double, double, dimDomain, dimRange> FunctionSpaceType;
 
-    typedef /*typename*/ FunctionSpaceType::RangeFieldType RangeFieldType;
+    typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
 
     // discrete function space
@@ -92,36 +101,31 @@ int main(int argc, char** argv)
 
 
     // local evaluation
-    //    typedef Dune::Functionals::Evaluation::Local::Unary::Scale< FunctionSpaceType >
-    //      ProductEvaluationType;
+    typedef Evaluation::Local::Unary::Scale<FunctionSpaceType> ProductEvaluationType;
 
-    //    const ProductEvaluationType productEvaluation( "[1.0;1.0;1.0]", 0 );
+    const ProductEvaluationType productEvaluation("[1.0;1.0;1.0]", 0);
 
-    //    typedef Dune::Functionals::Evaluation::Loca::Binary::Elliptic< FunctionSpaceType >
-    //      EllipticEvaluationType;
+    typedef Evaluation::Local::Binary::Elliptic<FunctionSpaceType> EllipticEvaluationType;
 
-    //    const EllipticEvaluationType ellipticEvaluation( "[1.0;1.0;1.0]", 0 );
+    const EllipticEvaluationType ellipticEvaluation("[1.0;1.0;1.0]", 0);
 
-    typedef Dune::DetailedDiscretizations::Evaluation::Local::Quaternary::IPDGFluxes::Inner<FunctionSpaceType>
-        InnerFacesIPDGEvaluationType;
+    typedef Evaluation::Local::Quaternary::IPDGFluxes::Inner<FunctionSpaceType> InnerFacesIPDGEvaluationType;
 
     const InnerFacesIPDGEvaluationType innerFacesIPDGEvaluation("[1.0;1.0;1.0]");
 
-    typedef Dune::DetailedDiscretizations::Evaluation::Local::Quaternary::IPDGFluxes::Dirichlet<FunctionSpaceType>
-        DirichletFacesIPDGEvaluationType;
+    typedef Evaluation::Local::Quaternary::IPDGFluxes::Dirichlet<FunctionSpaceType> DirichletFacesIPDGEvaluationType;
 
-    const DirichletFacesIPDGEvaluationType dirichletFacesIPDGEvaluation("[1.0;1.0;1.0]");
+    const DirichletFacesIPDGEvaluationType dirichletFacesIPDGEvaluation("[1.0;1.0;1.0]", 0);
 
-    typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::IPDGFluxes<FunctionSpaceType> IPDGEvaluationType;
+    typedef Evaluation::Local::Unary::IPDGFluxes<FunctionSpaceType> IPDGEvaluationType;
 
-    const IPDGEvaluationType ipdgEvaluation("[1.0;1.0;1.0]", "[0.0;0.0;0.0]", 1);
+    const IPDGEvaluationType ipdgEvaluation("[1.0;1.0;1.0]", "[0.0;0.0;0.0]", 0);
 
 
     // operator and functional
-    //    typedef DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType >
-    //      LocalEllipticOperatorType;
+    typedef DiscreteOperator::Local::Codim0::Integral<EllipticEvaluationType> LocalEllipticOperatorType;
 
-    //    const LocalEllipticOperatorType localEllipticOperator( ellipticEvaluation );
+    const LocalEllipticOperatorType localEllipticOperator(ellipticEvaluation);
 
     typedef DiscreteOperator::Local::Codim1::InnerIntegral<InnerFacesIPDGEvaluationType>
         LocalIPDGInnerFacesOperatorType;
@@ -133,10 +137,9 @@ int main(int argc, char** argv)
 
     const LocalIPDGDirichletFacesOperatorType localIPDGDirichletFacesOperator(dirichletFacesIPDGEvaluation);
 
-    //    typedef DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType >
-    //      LocalL2FunctionalType;
+    typedef DiscreteFunctional::Local::Codim0::Integral<ProductEvaluationType> LocalL2FunctionalType;
 
-    //    const LocalL2FunctionalType localL2Functional( productEvaluation );
+    const LocalL2FunctionalType localL2Functional(productEvaluation);
 
     typedef DiscreteFunctional::Local::Codim1::Integral<IPDGEvaluationType> LocalIPDGFunctionalType;
 
@@ -146,13 +149,13 @@ int main(int argc, char** argv)
     // matrix, rhs and solution storage
     typedef Container::Matrix::Defaults<RangeFieldType, dimRange, dimRange>::BCRSMatrix MatrixFactory;
 
-    typedef /*typename*/ MatrixFactory::AutoPtrType MatrixPtrType;
+    typedef typename MatrixFactory::AutoPtrType MatrixPtrType;
 
     MatrixPtrType A = MatrixFactory::create(dgSpace, dgSpace);
 
     typedef Container::Vector::Defaults<RangeFieldType, dimRange>::BlockVector VectorFactory;
 
-    typedef /*typename*/ VectorFactory::AutoPtrType VectorPtrType;
+    typedef typename VectorFactory::AutoPtrType VectorPtrType;
 
     VectorPtrType F = VectorFactory::create(dgSpace);
     *F              = 0.0;
@@ -161,11 +164,10 @@ int main(int argc, char** argv)
     *u              = 0.0;
 
 
-    // assembler
-    //    typedef Assembler::Local::Codim0::Matrix< LocalEllipticOperatorType >
-    //      LocalCodim0MatrixAssemblerType;
+    // local matrix assembler
+    typedef Assembler::Local::Codim0::Matrix<LocalEllipticOperatorType> LocalCodim0MatrixAssemblerType;
 
-    //    const LocalCodim0MatrixAssemblerType localCodim0MatrixAssembler( localEllipticOperator );
+    const LocalCodim0MatrixAssemblerType localCodim0MatrixAssembler(localEllipticOperator);
 
     typedef Assembler::Local::Codim1::Matrix<LocalIPDGInnerFacesOperatorType, LocalIPDGDirichletFacesOperatorType>
         LocalCodim1MatrixAssemblerType;
@@ -173,22 +175,35 @@ int main(int argc, char** argv)
     const LocalCodim1MatrixAssemblerType localCodim1MatrixAssembler(localIPDGInnerFacesOperator,
                                                                     localIPDGDirichletFacesOperator);
 
-    //    typedef Assembler::Local::Codim0::Vector< LocalL2FunctionalType >
-    //      LocalCodim0VectorAssemblerType;
+    typedef Assembler::Local::Combined::Matrix<LocalCodim0MatrixAssemblerType, LocalCodim1MatrixAssemblerType>
+        LocalCombinedMatrixAssemblerType;
 
-    //    const LocalCodim0VectorAssemblerType localCodim0VectorAssembler( localL2Functional );
+    const LocalCombinedMatrixAssemblerType localCombinedMatrixAssembler(localCodim0MatrixAssembler,
+                                                                        localCodim1MatrixAssembler);
+
+
+    // local vector assembler
+    typedef Assembler::Local::Codim0::Vector<LocalL2FunctionalType> LocalCodim0VectorAssemblerType;
+
+    const LocalCodim0VectorAssemblerType localCodim0VectorAssembler(localL2Functional);
 
     typedef Assembler::Local::Codim1::Vector<LocalIPDGFunctionalType> LocalCodim1VectorAssemblerType;
 
     const LocalCodim1VectorAssemblerType localCodim1VectorAssembler(localIPDGFunctional);
 
-    //    typedef Assembler::System::Unconstrained< DiscreteH1Type, DiscreteH1Type >
-    //      SystemAssemblerType;
+    typedef Assembler::Local::Combined::Vector<LocalCodim0VectorAssemblerType, LocalCodim1VectorAssemblerType>
+        LocalCombinedVectorAssemblerType;
 
-    //    const SystemAssemblerType systemAssembler( discreteH1, discreteH1 );
+    const LocalCombinedVectorAssemblerType localCombinedVectorAssembler(localCodim0VectorAssembler,
+                                                                        localCodim1VectorAssembler);
 
-    //    systemAssembler.assembleSystem( localMatrixAssembler, *A,
-    //                                    localVectorAssembler, *F );
+
+    // system assembler
+    typedef Assembler::System::Unconstrained<DGSpaceType, DGSpaceType> SystemAssemblerType;
+
+    const SystemAssemblerType systemAssembler(dgSpace, dgSpace);
+
+    systemAssembler.assembleSystem(localCombinedMatrixAssembler, *A, localCombinedVectorAssembler, *F);
 
 
     //    // preconditioner and solver

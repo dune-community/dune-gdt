@@ -91,12 +91,12 @@ public:
     const IntersectionIteratorType lastIntersection = gridPart.iend(entity);
 
     // do loop over all intersections
-    for (IntersectionIteratorType intIt = entity.ibegin(); intIt != lastIntersection; ++intIt) {
+    for (IntersectionIteratorType intIt = gridPart.ibegin(entity); intIt != lastIntersection; ++intIt) {
       const IntersectionType& intersection = *intIt;
 
       if (!intersection.neighbor() && intersection.boundary()) // if boundary intersection
       {
-        const unsigned int boundaryId = intersection.boundaryId();
+        //        const unsigned int boundaryId = intersection.boundaryId();
 
         //        // if dirichlet boundary intersection
         //        if( boundaryId == 2 )

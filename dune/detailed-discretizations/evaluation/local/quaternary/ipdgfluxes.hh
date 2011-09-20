@@ -83,7 +83,7 @@ public:
     const DomainType globalPoint     = intersection.geometry().global(localPoint);
     const DomainType localPointEn    = intersection.geometryInInside().global(localPoint);
     const DomainType localPointNe    = intersection.geometryInOutside().global(localPoint);
-    const DomainType unitOuterNormal = intersection.unitOuterNormal();
+    const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
 
     // evaluate ansatz entity basefunctionset
     const unsigned int rowsEntity = localAnsatzBaseFunctionSetEntity.size();
@@ -291,7 +291,7 @@ public:
   {
     // some stuff
     const DomainType globalPoint     = intersection.geometry().global(localPoint);
-    const DomainType unitOuterNormal = intersection.unitOuterNormal();
+    const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
 
     // evaluate ansatz basefunctionset
     const unsigned int rows = localAnsatzBaseFunctionSet.size();

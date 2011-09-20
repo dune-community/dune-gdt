@@ -101,8 +101,10 @@ public:
 
     typedef Dune::CachingQuadrature<GridPartType, 1> FaceQuadratureType;
 
+    typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
+
     // some stuff
-    const GridPartType& gridPart = localAnsatzBaseFunctionSetEntity.space().gridPart();
+    const GridPartType& gridPart = localAnsatzBaseFunctionSetEntity.baseFunctionSet().space().gridPart();
     const unsigned int rowsEn    = localAnsatzBaseFunctionSetEntity.size();
     const unsigned int rowsNe    = localAnsatzBaseFunctionSetNeighbour.size();
     const unsigned int colsEn    = localTestBaseFunctionSetEntity.size();
@@ -142,23 +144,23 @@ public:
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
       // local coordinates
-      const DomainType x = faceQuadrature.point(q);
+      const LocalCoordinateType x = faceQuadrature.point(q);
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
       const double quadratureWeight  = faceQuadrature.weight(q);
 
       // evaluate the local operation
-      localEvaluation_.evaluate(localAnsatzBaseFunctionSetEntity,
-                                localAnsatzBaseFunctionSetNeighbour,
-                                localTestBaseFunctionSetEntity,
-                                localTestBaseFunctionSetNeighbour,
-                                intersection,
-                                x,
-                                tmpLocalMatrices[0], /*EnEn*/
-                                tmpLocalMatrices[1], /*EnNe*/
-                                tmpLocalMatrices[2], /*NeEn*/
-                                tmpLocalMatrices[3]); /*NeNe*/
+      localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSetEntity,
+                                     localAnsatzBaseFunctionSetNeighbour,
+                                     localTestBaseFunctionSetEntity,
+                                     localTestBaseFunctionSetNeighbour,
+                                     intersection,
+                                     x,
+                                     tmpLocalMatrices[0], /*EnEn*/
+                                     tmpLocalMatrices[1], /*EnNe*/
+                                     tmpLocalMatrices[2], /*NeEn*/
+                                     tmpLocalMatrices[3]); /*NeNe*/
 
       // compute integral (see below)
       addToIntegral(tmpLocalMatrices[0], integrationFactor, quadratureWeight, rowsEn, colsEn, localMatrixEnEn);

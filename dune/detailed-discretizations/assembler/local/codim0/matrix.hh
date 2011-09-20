@@ -76,9 +76,10 @@ public:
     return ret;
   }
 
-  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class MatrixType, class LocalMatrixType>
+  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class SystemMatrixType, class LocalMatrixType>
   void assembleLocal(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
-                     MatrixType& matrix, std::vector<std::vector<LocalMatrixType>>& tmpLocalMatricesContainer) const
+                     SystemMatrixType& systemMatrix,
+                     std::vector<std::vector<LocalMatrixType>>& tmpLocalMatricesContainer) const
   {
     // get the local basefunctionsets
     typedef typename AnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalAnsatzBaseFunctionSetType;
@@ -102,23 +103,23 @@ public:
         localAnsatzBaseFunctionSet, localTestBaseFunctionSet, tmpLocalMatrices[0], tmpLocalMatricesContainer[1]);
 
     // write local matrix to global
-    addToMatrix(ansatzSpace, testSpace, entity, tmpLocalMatrices[0], matrix);
+    addToMatrix(ansatzSpace, testSpace, entity, tmpLocalMatrices[0], systemMatrix);
   }
 
 private:
   //! assignment operator
   ThisType& operator=(const ThisType&);
 
-  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class LocalMatrixType, class MatrixType>
+  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class LocalMatrixType, class SystemMatrixType>
   void addToMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
-                   const LocalMatrixType& localMatrix, MatrixType& matrix) const
+                   const LocalMatrixType& localMatrix, SystemMatrixType& systemMatrix) const
   {
     for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
       for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
         const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
         const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
 
-        matrix[globalI][globalJ] += localMatrix[i][j];
+        systemMatrix[globalI][globalJ] += localMatrix[i][j];
       }
     }
   } // end method addToMatrix

@@ -83,7 +83,7 @@ public:
   {
     // some stuff
     const DomainType globalPoint     = intersection.geometry().global(localPoint);
-    const DomainType unitOuterNormal = intersection.unitOuterNormal();
+    const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
 
     // evaluate inducing and dirichlet function
     RangeType inducingFunctionEvaluation(0.0);

@@ -76,18 +76,34 @@ public:
 
     typedef Dune::DynamicVector<RangeFieldType> LocalVectorType;
 
-    // common storage for all entities
-    std::vector<LocalMatrixType> tmpLocalMatrices(
-        4, LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
-    LocalVectorType tmpLocalVector(testSpace_.map().maxLocalSize(), RangeFieldType(0.0));
+    // common tmp storage for all entities
+    std::vector<unsigned int> numberTmpMatrices = localMatrixAssembler.numTmpObjectsRequired();
+    std::vector<LocalMatrixType> tmpLocalAssemblerMatrices(
+        numberTmpMatrices[0],
+        LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<LocalMatrixType> tmpLocalOperatorMatrices(
+        numberTmpMatrices[1],
+        LocalMatrixType(ansatzSpace_.map().maxLocalSize(), testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<std::vector<LocalMatrixType>> tmpLocalMatricesContainer;
+    tmpLocalMatricesContainer.push_back(tmpLocalAssemblerMatrices);
+    tmpLocalMatricesContainer.push_back(tmpLocalOperatorMatrices);
+
+    std::vector<unsigned int> numberTmpVectors = localVectorAssembler.numTmpObjectsRequired();
+    std::vector<LocalVectorType> tmpLocalAssemblerVectors(
+        numberTmpVectors[0], LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<LocalVectorType> tmpLocalFunctionalVectors(
+        numberTmpVectors[1], LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0.0)));
+    std::vector<std::vector<LocalVectorType>> tmpLocalVectorsContainer;
+    tmpLocalVectorsContainer.push_back(tmpLocalAssemblerVectors);
+    tmpLocalVectorsContainer.push_back(tmpLocalFunctionalVectors);
 
     // do gridwalk to assemble
     const EntityIteratorType lastEntity = ansatzSpace_.end();
     for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
       const EntityType& entity = *entityIterator;
 
-      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatrix);
-      localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVector);
+      localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatricesContainer);
+      localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVectorsContainer);
 
     } // done gridwalk to assemble
 
