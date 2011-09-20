@@ -111,8 +111,11 @@ public:
     typedef Dune::CachingQuadrature< GridPartType, 1 >
       FaceQuadratureType;
 
+    typedef typename IntersectionType::LocalCoordinate
+      LocalCoordinateType;
+
     // some stuff
-    const GridPartType& gridPart = localAnsatzBaseFunctionSet.space().gridPart();
+    const GridPartType& gridPart = localAnsatzBaseFunctionSet.baseFunctionSet().space().gridPart();
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     const unsigned int cols = localTestBaseFunctionSet.size();
     const unsigned int quadratureOrder =
@@ -143,18 +146,18 @@ public:
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
     {
       // local coordinates
-      const DomainType x = faceQuadrature.point( q );
+      const LocalCoordinateType x = faceQuadrature.point( q );
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement( x );
       const double quadratureWeight = faceQuadrature.weight( q );
 
       // evaluate the local operation
-      localEvaluation_.evaluate(  localAnsatzBaseFunctionSet,
-                                  localTestBaseFunctionSet,
-                                  intersection,
-                                  x,
-                                  tmpLocalMatrices[0] );
+      localEvaluation_.evaluateLocal( localAnsatzBaseFunctionSet,
+                                      localTestBaseFunctionSet,
+                                      intersection,
+                                      x,
+                                      tmpLocalMatrices[0] );
 
       // compute integral (see below)
       addToIntegral( tmpLocalMatrices[0], integrationFactor, quadratureWeight, rows, cols, localMatrix );

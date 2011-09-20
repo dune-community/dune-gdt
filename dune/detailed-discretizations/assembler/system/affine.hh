@@ -1,7 +1,7 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_AFFINE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_AFFINE_HH
 
-//std includes
+// std includes
 #include <vector>
 
 // dune-common includes
@@ -125,10 +125,12 @@ public:
 
     std::vector< unsigned int > numberTmpVectors = localVectorAssembler.numTmpObjectsRequired();
     std::vector< unsigned int > numberTmpVectorsAffineShift = localAffineShiftVectorAssembler.numTmpObjectsRequired();
-    std::vector< LocalVectorType > tmpLocalAssemblerVectors(  std::max( numberTmpVectors[0], numberTmpVectorsAffineShift[0] ),
+    std::vector< LocalVectorType > tmpLocalAssemblerVectors(  std::max( numberTmpVectors[0],
+                                                                        numberTmpVectorsAffineShift[0] ),
                                                               LocalVectorType(  testSpace_.map().maxLocalSize(),
                                                                                 RangeFieldType( 0.0 ) ) );
-    std::vector< LocalVectorType > tmpLocalFunctionalVectors( std::max( numberTmpVectors[1], numberTmpVectorsAffineShift[1] ),
+    std::vector< LocalVectorType > tmpLocalFunctionalVectors( std::max( numberTmpVectors[1],
+                                                                        numberTmpVectorsAffineShift[1] ),
                                                               LocalVectorType(  testSpace_.map().maxLocalSize(),
                                                                                 RangeFieldType( 0.0 ) ) );
     std::vector< std::vector< LocalVectorType > > tmpLocalVectorsContainer;

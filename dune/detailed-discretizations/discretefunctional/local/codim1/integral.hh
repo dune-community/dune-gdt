@@ -83,14 +83,21 @@ public:
     typedef typename DiscreteFunctionSpaceType::GridPartType
       GridPartType;
 
-    typedef Dune::CachingQuadrature< GridPartType, 0 >
-      VolumeQuadratureType;
+    typedef Dune::CachingQuadrature< GridPartType, 1 >
+      FaceQuadratureType;
+
+    typedef typename IntersectionType::LocalCoordinate
+      LocalCoordinateType;
 
     // some stuff
+    const GridPartType& gridPart = localTestBaseFunctionSet.baseFunctionSet().space().gridPart();
     const unsigned int size = localTestBaseFunctionSet.size();
     const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
-    const VolumeQuadratureType volumeQuadrature( localTestBaseFunctionSet.entity(), quadratureOrder );
-    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
+    const FaceQuadratureType faceQuadrature( gridPart,
+                                             intersection,
+                                             quadratureOrder,
+                                             FaceQuadratureType::INSIDE );
+    const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
 
     // make sure target vector is big enough
     assert( localVector.size() >= size );
@@ -110,14 +117,14 @@ public:
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
     {
       // local coordinate
-      const DomainType x = volumeQuadrature.point( q );
+      const LocalCoordinateType x = faceQuadrature.point( q );
 
       // integration factors
       const double integrationFactor = localTestBaseFunctionSet.entity().geometry().integrationElement( x );
-      const double quadratureWeight = volumeQuadrature.weight( q );
+      const double quadratureWeight = faceQuadrature.weight( q );
 
       // evaluate the local evaluation
-      localEvaluation_.evaluateLocal( localTestBaseFunctionSet, x, tmpLocalVectors[0] );
+      localEvaluation_.evaluateLocal( localTestBaseFunctionSet, intersection, x, tmpLocalVectors[0] );
 
       // compute integral
       for( unsigned int i = 0; i < size; ++i )

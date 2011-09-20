@@ -90,12 +90,12 @@ public:
   template< class AnsatzSpaceType,
             class TestSpaceType,
             class EntityType,
-            class MatrixType,
+            class SystemMatrixType,
             class LocalMatrixType >
   void assembleLocal( const AnsatzSpaceType& ansatzSpace,
                       const TestSpaceType& testSpace,
                       const EntityType& entity,
-                      MatrixType& matrix,
+                      SystemMatrixType& systemMatrix,
                       std::vector< std::vector< LocalMatrixType > >& tmpLocalMatricesContainer ) const
   {
     // get the local basefunctionsets
@@ -126,7 +126,7 @@ public:
                                 tmpLocalMatricesContainer[1] );
 
     // write local matrix to global
-    addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrices[0], matrix );
+    addToMatrix( ansatzSpace, testSpace, entity, tmpLocalMatrices[0], systemMatrix );
   }
 
 private:
@@ -138,12 +138,12 @@ private:
             class TestSpaceType,
             class EntityType,
             class LocalMatrixType,
-            class MatrixType >
+            class SystemMatrixType >
   void addToMatrix( const AnsatzSpaceType& ansatzSpace,
                     const TestSpaceType& testSpace,
                     const EntityType& entity,
                     const LocalMatrixType& localMatrix,
-                    MatrixType& matrix ) const
+                    SystemMatrixType& systemMatrix ) const
   {
     for( unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local( entity ).size(); ++i )
     {
@@ -152,7 +152,7 @@ private:
         const unsigned int globalI = ansatzSpace.map().toGlobal( entity, i );
         const unsigned int globalJ = testSpace.map().toGlobal( entity, j );
 
-        matrix[globalI][globalJ] += localMatrix[i][j];
+        systemMatrix[globalI][globalJ] += localMatrix[i][j];
       }
     }
   } // end method addToMatrix
