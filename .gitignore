@@ -22,7 +22,6 @@ doc/doxygen/Doxyfile
 doc/doxygen/Doxyfile.in
 doc/doxygen/Makefile
 doc/doxygen/Makefile.in
-dune-fem-functionals.pc
 dune/Makefile
 dune/Makefile.in
 dune/fem/Makefile
