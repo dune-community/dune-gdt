@@ -70,12 +70,12 @@ public:
     **/
   template <class LocalAnsatzBaseFunctionSetEntityType, class LocalAnsatzBaseFunctionSetNeighbourType,
             class LocalTestBaseFunctionSetEntityType, class LocalTestBaseFunctionSetNeighbourType,
-            class IntersectionType, class LocalMatrixType>
+            class IntersectionType, class LocalPointType, class LocalMatrixType>
   void evaluateLocal(const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
                      const LocalAnsatzBaseFunctionSetNeighbourType& localAnsatzBaseFunctionSetNeighbour,
                      const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
                      const LocalTestBaseFunctionSetNeighbourType& localTestBaseFunctionSetNeighbour,
-                     const IntersectionType& intersection, const DomainType& localPoint,
+                     const IntersectionType& intersection, const LocalPointType& localPoint,
                      LocalMatrixType& entityEntityRet, LocalMatrixType& entityNeighbourRet,
                      LocalMatrixType& neighbourEntityRet, LocalMatrixType& neighbourNeighbourRet) const
   {
@@ -284,28 +284,29 @@ public:
     \attention  Assumes, that the return vectors are empty, because we do multiple +=
     **/
   template <class LocalAnsatzBaseFunctionSetType, class LocalTestBaseFunctionSetType, class IntersectionType,
-            class LocalMatrixType>
+            class LocalPointType, class LocalMatrixType>
   void evaluateLocal(const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
                      const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const IntersectionType& intersection,
-                     const DomainType& localPoint, LocalMatrixType& ret) const
+                     const LocalPointType& localPoint, LocalMatrixType& ret) const
   {
     // some stuff
     const DomainType globalPoint     = intersection.geometry().global(localPoint);
+    const DomainType localPointEn    = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
 
     // evaluate ansatz basefunctionset
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     std::vector<RangeType> localAnsatzBaseFunctionSetEvaluations(rows, RangeType(0.0));
     std::vector<JacobianRangeType> localAnsatzBaseFunctionSetGradients(rows, JacobianRangeType(0.0));
-    localAnsatzBaseFunctionSet.evaluate(localPoint, localAnsatzBaseFunctionSetEvaluations);
-    localAnsatzBaseFunctionSet.jacobian(localPoint, localAnsatzBaseFunctionSetGradients);
+    localAnsatzBaseFunctionSet.evaluate(localPointEn, localAnsatzBaseFunctionSetEvaluations);
+    localAnsatzBaseFunctionSet.jacobian(localPointEn, localAnsatzBaseFunctionSetGradients);
 
     // evaluate test basefunctionset
     const unsigned int cols = localTestBaseFunctionSet.size();
     std::vector<RangeType> localTestBaseFunctionSetEvaluations(cols, RangeType(0.0));
     std::vector<JacobianRangeType> localTestBaseFunctionSetGradients(cols, JacobianRangeType(0.0));
-    localTestBaseFunctionSet.evaluate(localPoint, localTestBaseFunctionSetEvaluations);
-    localTestBaseFunctionSet.jacobian(localPoint, localTestBaseFunctionSetGradients);
+    localTestBaseFunctionSet.evaluate(localPointEn, localTestBaseFunctionSetEvaluations);
+    localTestBaseFunctionSet.jacobian(localPointEn, localTestBaseFunctionSetGradients);
 
     // evaluate inducing function
     RangeType functionValue(0.0);

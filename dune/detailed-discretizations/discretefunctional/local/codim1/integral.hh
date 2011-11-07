@@ -95,10 +95,10 @@ public:
     // do loop over all quadrature points
     for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
       // local coordinate
-      const LocalCoordinateType x = faceQuadrature.point(q);
+      const LocalCoordinateType x = faceQuadrature.localPoint(q);
 
       // integration factors
-      const double integrationFactor = localTestBaseFunctionSet.entity().geometry().integrationElement(x);
+      const double integrationFactor = intersection.geometry().integrationElement(x);
       const double quadratureWeight  = faceQuadrature.weight(q);
 
       // evaluate the local evaluation
