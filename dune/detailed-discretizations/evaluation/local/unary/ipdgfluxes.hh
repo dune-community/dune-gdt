@@ -92,14 +92,15 @@ public:
   /**
     \attention  Assumes ret to be cleared, since we do multiple +=
     **/
-  template< class LocalTestBaseFunctionSetType, class IntersectionType, class LocalVectorType >
+  template< class LocalTestBaseFunctionSetType, class IntersectionType, class LocalVectorType, class LocalPointType >
   void evaluateLocal( const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
                       const IntersectionType& intersection,
-                      const DomainType& localPoint,
+                      const LocalPointType& localPoint,
                       LocalVectorType& ret ) const
   {
     // some stuff
     const DomainType globalPoint = intersection.geometry().global( localPoint );
+    const DomainType localPointEn = intersection.geometryInInside().global( localPoint );
     const DomainType unitOuterNormal = intersection.unitOuterNormal( localPoint );
 
     // evaluate inducing and dirichlet function
@@ -111,9 +112,9 @@ public:
     // evaluate test basefunctionset
     const unsigned int size = localTestBaseFunctionSet.size();
     std::vector< RangeType > localTestBaseFunctionSetEvaluations( size, RangeType( 0.0 ) );
-    localTestBaseFunctionSet.evaluate( localPoint, localTestBaseFunctionSetEvaluations );
+    localTestBaseFunctionSet.evaluate( localPointEn, localTestBaseFunctionSetEvaluations );
     std::vector< JacobianRangeType > localTestBaseFunctionSetGradients( size, JacobianRangeType( 0.0 ) );
-    localTestBaseFunctionSet.jacobian( localPoint, localTestBaseFunctionSetGradients );
+    localTestBaseFunctionSet.jacobian( localPointEn, localTestBaseFunctionSetGradients );
 
     // evaluate penalty parameter
     const RangeFieldType penaltyParameter = 1.0 / std::pow( intersection.geometry().volume(), 1.0 );

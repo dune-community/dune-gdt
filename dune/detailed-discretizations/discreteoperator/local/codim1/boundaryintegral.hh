@@ -146,7 +146,7 @@ public:
     for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
     {
       // local coordinates
-      const LocalCoordinateType x = faceQuadrature.point( q );
+      const LocalCoordinateType x = faceQuadrature.localPoint( q );
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement( x );
