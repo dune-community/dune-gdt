@@ -27,10 +27,13 @@ class Factory
 };
 
 /**
- * @brief Static factory class for matrix classes of type Dune::BCRSMatrix.
- *
- * @tparam BlockType Type to construct a Dune::BCRSMatrix representing the type for
- * a block, normally a Dune::FieldMatrix.
+  \brief      Static factory class for matrix classes of type Dune::BCRSMatrix.
+
+  \tparam     BlockType Type to construct a Dune::BCRSMatrix representing the type for
+              a block, normally a Dune::FieldMatrix.
+
+  \attention  The sparsity pattern is always created for codim 1 contributions as well! This should be optimized
+  \todo       See \attention
  */
 template <class BlockType>
 class Factory<Dune::BCRSMatrix<BlockType>>
@@ -78,6 +81,12 @@ public:
 
     typedef typename EntityIteratorType::Entity EntityType;
 
+    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
+
+    typedef typename IntersectionIteratorType::Intersection IntersectionType;
+
+    typedef typename IntersectionType::EntityPointer EntityPointerType;
+
     const unsigned int ansatzSize = ansatzSpace.map().size();
     const unsigned int testSize   = testSpace.map().size();
 
@@ -101,6 +110,24 @@ public:
           sPattern.insert(ii, jj);
         }
       }
+      // do loop over all intersections
+      const IntersectionIteratorType lastIntersection = ansatzSpace.gridPart().iend(entity);
+      for (IntersectionIteratorType intIt = ansatzSpace.gridPart().ibegin(entity); intIt != lastIntersection; ++intIt) {
+        const IntersectionType& intersection = *intIt;
+        // if inner intersection
+        if (intersection.neighbor() && !intersection.boundary()) {
+          // get neighbouring entity
+          const EntityPointerType neighbourPtr = intersection.outside();
+          const EntityType& neighbour = *neighbourPtr;
+          for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
+            unsigned int ii = ansatzSpace.map().toGlobal(entity, i);
+            for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(neighbour).size(); ++j) {
+              unsigned int jj = testSpace.map().toGlobal(neighbour, j);
+              sPattern.insert(ii, jj);
+            }
+          }
+        } // end if inner intersection
+      } // done loop over all intersections
     }
 
     for (unsigned int i = 0; i < sPattern.size(); ++i) {
