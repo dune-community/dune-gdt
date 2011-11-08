@@ -52,6 +52,7 @@ public:
     , size_(hostLocalBaseFunctionSet_.size())
     , order_(hostLocalBaseFunctionSet_.order())
   {
+    hostLocalBaseFunctionSet_.size();
   }
 
   //! copy constructor
@@ -106,12 +107,14 @@ public:
     hostLocalBaseFunctionSet_.evaluateJacobian(x, ret);
 
     // evaluate
+    JacobianRowType tmp(0.0);
     for (unsigned int i = 0; i < size_; ++i) {
       // transpose for each dim of range
       const unsigned int dimRange = DiscreteFunctionSpaceType::dimRange;
       for (unsigned int row = 0; row < dimRange; ++row) {
         // transpose
-        jacobianInverseTransposed.mv(ret[i][row], ret[i][row]);
+        tmp = ret[i][row];
+        jacobianInverseTransposed.mv(tmp, ret[i][row]);
       }
     }
   }

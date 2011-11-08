@@ -100,7 +100,7 @@ public:
     localTestBaseFunctionSet.jacobian(localPointEn, localTestBaseFunctionSetGradients);
 
     // evaluate penalty parameter
-    const RangeFieldType penaltyParameter = 1.0 / std::pow(intersection.geometry().volume(), 1.0);
+    const RangeFieldType penaltyParameter = 20.0 / std::pow(intersection.geometry().volume(), 1.0);
 
     // do loop over all basis functions
     assert(ret.size() >= size);

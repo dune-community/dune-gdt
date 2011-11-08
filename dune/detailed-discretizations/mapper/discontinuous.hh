@@ -46,6 +46,8 @@ public:
   template <class EntityType>
   unsigned int toGlobal(const EntityType& entity, const unsigned int localDofNumber) const
   {
+    //    std::cout << indexSet_.index(entity) << ", " << localDofNumber << ": " <<
+    //    indexSet_.index(entity)*maxLocalSize() + localDofNumber << std::endl;
     return indexSet_.index(entity) * maxLocalSize() + localDofNumber;
   }
 

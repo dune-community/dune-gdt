@@ -33,6 +33,7 @@
 
 // dune-helper-tools includes
 #include <dune/helper-tools/common/string.hh>
+#include <dune/helper-tools/common/print.hh>
 #include <dune/helper-tools/discretefunction/io.hh>
 
 // dune-detailed-discretizations includes
@@ -209,6 +210,8 @@ int main(int argc, char** argv)
 
     systemAssembler.assembleSystem(localCombinedMatrixAssembler, *A, localCombinedVectorAssembler, *F);
 
+    //    Dune::HelperTools::Common::Printing::printBCRSMatrix( *A, "A", std::cout );
+    //    Dune::HelperTools::Common::Printing::printBlockVector( *F, "F", std::cout );
 
     // preconditioner and solver
     typedef /*typename*/ MatrixFactory::ContainerType MatrixContainerType;
@@ -225,7 +228,7 @@ int main(int argc, char** argv)
 
     typedef Dune::CGSolver<VectorContainerType> SolverType;
 
-    SolverType solver(matrix, preconditioner, 1e-4, 100, 2);
+    SolverType solver(matrix, preconditioner, 1e-4, 1000, 2);
 
     Dune::InverseOperatorResult result;
 
