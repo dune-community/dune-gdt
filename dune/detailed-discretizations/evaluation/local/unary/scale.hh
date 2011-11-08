@@ -92,7 +92,7 @@ public:
                       LocalVectorType& ret ) const
   {
     // get global point
-    const DomainType globalPoint = localTestBaseFunctionSet.entity().geometry().global( localPoint );
+    const DomainType globalPoint = localTestBaseFunctionSet.gridElement().geometry().global( localPoint );
 
     // evaluate inducing function
     RangeType functionValue( 0.0 );

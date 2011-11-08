@@ -73,14 +73,11 @@ public:
                        const LocalVectorAssemblerType& localVectorAssembler, VectorType& systemVector ) const
   {
     // some types
-    typedef typename AnsatzFunctionSpaceType::GridPartType
-      GridPartType;
+    typedef typename AnsatzFunctionSpaceType::GridElementIteratorType
+      GridElementIteratorType;
 
-    typedef typename AnsatzFunctionSpaceType::IteratorType
-      EntityIteratorType;
-
-    typedef typename AnsatzFunctionSpaceType::EntityType
-      EntityType;
+    typedef typename AnsatzFunctionSpaceType::GridElementType
+      GridElementType;
 
     typedef typename AnsatzFunctionSpaceType::RangeFieldType
       RangeFieldType;
@@ -117,13 +114,13 @@ public:
     tmpLocalVectorsContainer.push_back( tmpLocalFunctionalVectors );
 
     // do gridwalk to assemble
-    const EntityIteratorType lastEntity = ansatzSpace_.end();
-    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
+    const GridElementIteratorType lastElement = ansatzSpace_.gridElementEnd();
+    for( GridElementIteratorType elementIterator = ansatzSpace_.gridElementBegin(); elementIterator != lastElement; ++elementIterator )
     {
-      const EntityType& entity = *entityIterator;
+      const GridElementType& element = *elementIterator;
 
-      localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatricesContainer );
-      localVectorAssembler.assembleLocal( testSpace_, entity, systemVector, tmpLocalVectorsContainer );
+      localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, element, systemMatrix, tmpLocalMatricesContainer );
+      localVectorAssembler.assembleLocal( testSpace_, element, systemVector, tmpLocalVectorsContainer );
 
     } // done gridwalk to assemble
 

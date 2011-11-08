@@ -118,7 +118,7 @@ FILE( GLOB_RECURSE helpertools "../dune-helper-tools/dune/helper-tools/*.hh" )
 FILE( GLOB_RECURSE detaileddiscretizations "../dune-detailed-discretizations/dune/detailed-discretizations/*.hh" )
 
 set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${helpertools} ${detaileddiscretizations} PROPERTIES HEADER_FILE_ONLY 1 )
-set( COMMON_LIBS "localfunctions" "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
+set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory tests)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory examples)

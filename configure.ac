@@ -43,6 +43,7 @@ AC_CONFIG_FILES([
   dune/detailed-discretizations/discretefunctional/local/codim1/Makefile
   dune/detailed-discretizations/discretefunctionspace/Makefile
   dune/detailed-discretizations/discretefunctionspace/continuous/Makefile
+  dune/detailed-discretizations/discretefunctionspace/discontinuous/Makefile
   dune/detailed-discretizations/discretefunctionspace/subspace/Makefile
   dune/detailed-discretizations/discreteoperator/Makefile
   dune/detailed-discretizations/discreteoperator/local/Makefile
