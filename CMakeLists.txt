@@ -101,7 +101,7 @@ ADD_CXX_FLAGS( -I${ALUGRID_BASE_PATH}/include
 #
 # ENDIF ( ENABLE_PARALELL )
 
-ADD_DUNE_MODULES( common istl grid fem helper-tools)
+ADD_DUNE_MODULES( common istl grid fem localfunctions helper-tools)
 
 LINK_DIRECTORIES( "/usr/lib" "${ALUGRID_BASE_PATH}/lib" )
 ADD_CXX_FLAGS( ${CUSTOM_FLAGS} )
@@ -113,20 +113,21 @@ FILE( GLOB_RECURSE common "../dune-common/dune/common/*.hh" )
 FILE( GLOB_RECURSE grid "../dune-grid/dune/grid/*.hh" )
 FILE( GLOB_RECURSE istl "../dune-istl/dune/istl/*.hh" )
 FILE( GLOB_RECURSE fem "../dune-fem/dune/fem/*.hh" )
+FILE( GLOB_RECURSE localfunctions "../dune-localfunctions/dune/localfunctions/*.hh" )
 FILE( GLOB_RECURSE helpertools "../dune-helper-tools/dune/helper-tools/*.hh" )
 FILE( GLOB_RECURSE detaileddiscretizations "../dune-detailed-discretizations/dune/detailed-discretizations/*.hh" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${helpertools} ${detaileddiscretizations} PROPERTIES HEADER_FILE_ONLY 1 )
-set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${helpertools} ${detaileddiscretizations} PROPERTIES HEADER_FILE_ONLY 1 )
+set( COMMON_LIBS "localfunctions" "fem" "grid" "common" ${BLAS_LIB} "alugrid" "GL" )
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory tests)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory examples)
 execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/examples/macrogrids .)
 
-ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${helpertools} ${detaileddiscretizations} )
+ADD_EXECUTABLE( examples/elliptic_finite_element_example "examples/elliptic_finite_element/main.cc" ${common} ${grid} ${istl} ${fem} ${localfunctions} ${helpertools} ${detaileddiscretizations} )
 TARGET_LINK_LIBRARIES( examples/elliptic_finite_element_example ${COMMON_LIBS}  )
 
-ADD_EXECUTABLE( examples/elliptic_discontinuous_galerkin "examples/elliptic_discontinuous_galerkin/main.cc" ${common} ${grid} ${grid} ${fem} ${helpertools} ${detaileddiscretizations} )
+ADD_EXECUTABLE( examples/elliptic_discontinuous_galerkin "examples/elliptic_discontinuous_galerkin/main.cc" ${common} ${grid} ${grid} ${fem} ${localfunctions} ${helpertools} ${detaileddiscretizations} )
 TARGET_LINK_LIBRARIES( examples/elliptic_discontinuous_galerkin ${COMMON_LIBS} )
 
 
