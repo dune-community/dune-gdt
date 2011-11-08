@@ -139,7 +139,7 @@ public:
     inducingFunction_.evaluate( globalPoint, functionValue );
 
     // evaluate penalty parameter
-    const RangeFieldType penaltyParameter = 1.0 / std::pow( intersection.geometry().volume(), 1.0 );
+    const RangeFieldType penaltyParameter = 20.0 / std::pow( intersection.geometry().volume(), 1.0 );
 
     // entity entity combinations
     // do loop over all ansatz and test basefunctions
@@ -341,7 +341,7 @@ public:
     inducingFunction_.evaluate( globalPoint, functionValue );
 
     // evaluate penalty parameter
-    const RangeFieldType penaltyParameter = 1.0 / std::pow( intersection.geometry().volume(), 1.0 );
+    const RangeFieldType penaltyParameter = 20.0 / std::pow( intersection.geometry().volume(), 1.0 );
 
     // do loop over all ansatz and test basefunctions
     assert( ret.rows() == rows );
