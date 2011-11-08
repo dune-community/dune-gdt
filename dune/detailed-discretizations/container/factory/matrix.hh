@@ -75,17 +75,17 @@ public:
   static ContainerType* createPtr(AnsatzSpaceType& ansatzSpace, TestSpaceType& testSpace)
   {
     // some types
-    typedef typename AnsatzSpaceType::GridPartType GridPartType;
+    typedef typename AnsatzSpaceType::GridViewType GridViewType;
 
-    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
+    typedef typename GridViewType::template Codim<0>::Iterator ElementIteratorType;
 
-    typedef typename EntityIteratorType::Entity EntityType;
+    typedef typename ElementIteratorType::Entity ElementType;
 
-    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
+    typedef typename GridViewType::IntersectionIterator IntersectionIteratorType;
 
     typedef typename IntersectionIteratorType::Intersection IntersectionType;
 
-    typedef typename IntersectionType::EntityPointer EntityPointerType;
+    typedef typename IntersectionType::EntityPointer ElementPointerType;
 
     const unsigned int ansatzSize = ansatzSpace.map().size();
     const unsigned int testSize   = testSpace.map().size();
@@ -99,28 +99,29 @@ public:
     // compute sparsity pattern
     // \todo precompile this in linear subspace
     // \todo use constraints for sparsity pattern
-    const EntityIteratorType lastEntity = ansatzSpace.gridPart().template end<0>();
-    for (EntityIteratorType entityIterator = ansatzSpace.gridPart().template begin<0>(); entityIterator != lastEntity;
-         ++entityIterator) {
-      const EntityType& entity = *entityIterator;
-      for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
-        unsigned int ii = ansatzSpace.map().toGlobal(entity, i);
-        for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
-          unsigned int jj = testSpace.map().toGlobal(entity, j);
+    const ElementIteratorType lastElement = ansatzSpace.gridElementEnd();
+    for (ElementIteratorType elementIterator = ansatzSpace.gridElementBegin(); elementIterator != lastElement;
+         ++elementIterator) {
+      const ElementType& element = *elementIterator;
+      for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(element).size(); ++i) {
+        unsigned int ii = ansatzSpace.map().toGlobal(element, i);
+        for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(element).size(); ++j) {
+          unsigned int jj = testSpace.map().toGlobal(element, j);
           sPattern.insert(ii, jj);
         }
       }
       // do loop over all intersections
-      const IntersectionIteratorType lastIntersection = ansatzSpace.gridPart().iend(entity);
-      for (IntersectionIteratorType intIt = ansatzSpace.gridPart().ibegin(entity); intIt != lastIntersection; ++intIt) {
+      const IntersectionIteratorType lastIntersection = ansatzSpace.gridView().iend(element);
+      for (IntersectionIteratorType intIt = ansatzSpace.gridView().ibegin(element); intIt != lastIntersection;
+           ++intIt) {
         const IntersectionType& intersection = *intIt;
         // if inner intersection
         if (intersection.neighbor() && !intersection.boundary()) {
           // get neighbouring entity
-          const EntityPointerType neighbourPtr = intersection.outside();
-          const EntityType& neighbour = *neighbourPtr;
-          for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i) {
-            unsigned int ii = ansatzSpace.map().toGlobal(entity, i);
+          const ElementPointerType neighbourPtr = intersection.outside();
+          const ElementType& neighbour = *neighbourPtr;
+          for (unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(element).size(); ++i) {
+            unsigned int ii = ansatzSpace.map().toGlobal(element, i);
             for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(neighbour).size(); ++j) {
               unsigned int jj = testSpace.map().toGlobal(neighbour, j);
               sPattern.insert(ii, jj);

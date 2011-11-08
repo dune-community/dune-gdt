@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DISCONTINUOUS_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DISCONTINUOUS_HH
 
 // dune-common includes
 #include <dune/common/exceptions.hh>
@@ -20,7 +20,7 @@ namespace DetailedDiscretizations {
 
 namespace DiscreteFunction {
 
-namespace Continuous {
+namespace Discontinuous {
 
 template <class ContinuousDiscreteFunctionSpaceImp>
 class BlockVector
@@ -206,7 +206,7 @@ private:
 
 }; // end class BlockVector
 
-} // end namespace Continuous
+} // end namespace Discontinuous
 
 } // end namespace DiscreteFunction
 
@@ -214,4 +214,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DISCONTINUOUS_HH

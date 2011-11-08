@@ -8,8 +8,8 @@
 // dune-common includes
 #include <dune/common/dynmatrix.hh>
 
-// dune fem includes
-#include <dune/fem/quadrature/cachingquadrature.hh>
+// dune grid includes
+#include <dune/grid/common/quadraturerules.hh>
 
 // dune-helper-tools includes
 #include <dune/helper-tools/common/vector.hh>
@@ -69,15 +69,19 @@ public:
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
 
-    typedef Dune::CachingQuadrature<GridPartType, 0> VolumeQuadratureType;
+    typedef Dune::QuadratureRules<double, LocalTestBaseFunctionSetType::GridElementType::mydimension>
+        VolumeQuadratureRules;
+
+    typedef Dune::QuadratureRule<double, LocalTestBaseFunctionSetType::GridElementType::mydimension>
+        VolumeQuadratureType;
 
     // some stuff
     const unsigned int size            = localTestBaseFunctionSet.size();
     const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
-    const VolumeQuadratureType volumeQuadrature(localTestBaseFunctionSet.entity(), quadratureOrder);
-    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
+    const VolumeQuadratureType& volumeQuadrature =
+        VolumeQuadratureRules::rule(localTestBaseFunctionSet.gridElement().type(), 2 * quadratureOrder + 1);
 
     // make sure target vector is big enough
     assert(localVector.size() >= size);
@@ -92,14 +96,15 @@ public:
     // clear target vector
     Dune::HelperTools::Common::Vector::clear(localVector);
 
-    // do loop over all quadrature points
-    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
-      // local coordinate
-      const DomainType x = volumeQuadrature.point(q);
+    const typename VolumeQuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
+    for (typename VolumeQuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd;
+         ++quadPoint) {
+      // local coordinates
+      const DomainType x = quadPoint->position();
 
       // integration factors
-      const double integrationFactor = localTestBaseFunctionSet.entity().geometry().integrationElement(x);
-      const double quadratureWeight  = volumeQuadrature.weight(q);
+      const double integrationFactor = localTestBaseFunctionSet.gridElement().geometry().integrationElement(x);
+      const double quadratureWeight  = quadPoint->weight();
 
       // evaluate the local evaluation
       localEvaluation_.evaluateLocal(localTestBaseFunctionSet, x, tmpLocalVectors[0]);
@@ -169,9 +174,11 @@ public:
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
 
-    typedef Dune::CachingQuadrature<GridPartType, 0> VolumeQuadratureType;
+    typedef Dune::QuadratureRules<double, GridViewType::dimension> QuadratureRules;
+
+    typedef Dune::QuadratureRule<double, GridViewType::dimension> QuadratureType;
 
     typedef typename LocalTestBaseFunctionSetType::EntityType EntityType;
 
@@ -192,8 +199,8 @@ public:
     const unsigned int size = localTestBaseFunctionSet.size();
     const unsigned int quadratureOrder =
         inducingOperator_.localEvaluation().order() + inducingLocalFunction.order() + localTestBaseFunctionSet.order();
-    const VolumeQuadratureType volumeQuadrature(entity, quadratureOrder);
-    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
+    const QuadratureType& volumeQuadrature =
+        QuadratureRules::rule(localTestBaseFunctionSet.gridElement().type(), 2 * quadratureOrder + 1);
 
     // make sure target vector is big enough
     assert(localVector.size() >= size);
@@ -203,13 +210,15 @@ public:
 
     // do loop over all quadrature points
     LocalMatrixType tmpMatrix(1, size);
-    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
-      // local coordinate
-      const DomainType x = volumeQuadrature.point(q);
+    const typename QuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
+    for (typename QuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd;
+         ++quadPoint) {
+      // local coordinates
+      const DomainType x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = entity.geometry().integrationElement(x);
-      const double quadratureWeight  = volumeQuadrature.weight(q);
+      const double quadratureWeight  = quadPoint->weight();
 
       // evaluate the local evaluation
       inducingOperator_.localEvaluation().evaluateLocal(

@@ -25,7 +25,7 @@
 
 // dune-fem includes
 #include <dune/fem/space/common/functionspace.hh>
-#include <dune/fem/gridpart/gridpart.hh>
+//#include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/misc/mpimanager.hh>
 
 // reenable warnings
@@ -33,9 +33,10 @@
 
 // dune-helper-tools includes
 #include <dune/helper-tools/common/string.hh>
+#include <dune/helper-tools/discretefunction/io.hh>
 
 // dune-detailed-discretizations includes
-#include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
+#include <dune/detailed-discretizations/discretefunctionspace/discontinuous/orthonormal.hh>
 #include <dune/detailed-discretizations/evaluation/local/unary/scale.hh>
 #include <dune/detailed-discretizations/evaluation/local/binary/elliptic.hh>
 #include <dune/detailed-discretizations/evaluation/local/quaternary/ipdgfluxes.hh>
@@ -45,6 +46,7 @@
 #include <dune/detailed-discretizations/discreteoperator/local/codim1/boundaryintegral.hh>
 #include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 #include <dune/detailed-discretizations/discretefunctional/local/codim1/integral.hh>
+#include <dune/detailed-discretizations/discretefunction/discontinuous.hh>
 #include <dune/detailed-discretizations/container/factory.hh>
 #include <dune/detailed-discretizations/assembler/local/codim0/matrix.hh>
 #include <dune/detailed-discretizations/assembler/local/codim1/matrix.hh>
@@ -75,14 +77,16 @@ int main(int argc, char** argv)
     // grid
     typedef Dune::GridSelector::GridType GridType;
 
-    typedef Dune::LeafGridPart<GridType> GridPartType;
+    typedef typename GridType::LeafGridView GridViewType;
 
     const std::string dgfFilename =
         "../macrogrids/unitcube" + Dune::HelperTools::Common::String::toString(GRIDDIM) + ".dgf";
 
     Dune::GridPtr<GridType> gridPtr(dgfFilename);
 
-    GridPartType gridPart(*gridPtr);
+    const GridType& grid(*gridPtr);
+
+    const GridViewType& gridView = grid.leafView();
 
     static const unsigned int dimDomain = GridType::dimension;
 
@@ -95,9 +99,9 @@ int main(int argc, char** argv)
 
 
     // discrete function space
-    typedef DiscreteFunctionSpace::Continuous::Lagrange<FunctionSpaceType, GridPartType, polOrder> DGSpaceType;
+    typedef DiscreteFunctionSpace::Discontinuous::Orthonormal<FunctionSpaceType, GridViewType, polOrder> DGSpaceType;
 
-    const DGSpaceType dgSpace(gridPart);
+    const DGSpaceType dgSpace(gridView);
 
 
     // local evaluation
@@ -206,40 +210,34 @@ int main(int argc, char** argv)
     systemAssembler.assembleSystem(localCombinedMatrixAssembler, *A, localCombinedVectorAssembler, *F);
 
 
-    //    // preconditioner and solver
-    //    typedef /*typename*/ MatrixFactory::ContainerType
-    //      MatrixContainerType;
+    // preconditioner and solver
+    typedef /*typename*/ MatrixFactory::ContainerType MatrixContainerType;
 
-    //    typedef /*typename*/ VectorFactory::ContainerType
-    //      VectorContainerType;
+    typedef /*typename*/ VectorFactory::ContainerType VectorContainerType;
 
-    //    typedef Dune::MatrixAdapter< MatrixContainerType, VectorContainerType, VectorContainerType >
-    //      MatrixAdapterType;
+    typedef Dune::MatrixAdapter<MatrixContainerType, VectorContainerType, VectorContainerType> MatrixAdapterType;
 
-    //    MatrixAdapterType matrix( *A );
+    MatrixAdapterType matrix(*A);
 
-    //    typedef Dune::SeqILU0< MatrixContainerType, VectorContainerType, VectorContainerType, 1 >
-    //      PreconditionerType;
+    typedef Dune::SeqILU0<MatrixContainerType, VectorContainerType, VectorContainerType, 1> PreconditionerType;
 
-    //    PreconditionerType preconditioner( *A, 1.0 );
+    PreconditionerType preconditioner(*A, 1.0);
 
-    //    typedef Dune::CGSolver< VectorContainerType >
-    //      SolverType;
+    typedef Dune::CGSolver<VectorContainerType> SolverType;
 
-    //    SolverType solver( matrix, preconditioner, 1e-4, 100, 2 );
+    SolverType solver(matrix, preconditioner, 1e-4, 100, 2);
 
-    //    Dune::InverseOperatorResult result;
+    Dune::InverseOperatorResult result;
 
-    //    // u_0 = A^(-1) F
-    //    solver.apply( *u, *F, result );
+    // u = A^(-1) F
+    solver.apply(*u, *F, result);
 
 
-    //    // postprocessing
-    //    typedef /*typename*/ Dune::Functionals::DiscreteFunction::Continuous::BlockVector< DiscreteH1Type >
-    //      DiscreteFunctionType;
+    // postprocessing
+    typedef typename DiscreteFunction::Discontinuous::BlockVector<DGSpaceType> DiscreteFunctionType;
 
-    //    DiscreteFunctionType solution( discreteH1, *u, "solution" );
-    //    Dune::FemTools::DiscreteFunction::IO::writeToVTK( solution, "solution" );
+    DiscreteFunctionType solution(dgSpace, *u, "solution");
+    Dune::HelperTools::DiscreteFunction::IO::writeToVTK(solution, "solution");
 
 
     // done

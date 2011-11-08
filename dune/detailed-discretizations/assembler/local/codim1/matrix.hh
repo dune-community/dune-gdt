@@ -130,20 +130,20 @@ public:
     }
 
     // some types
-    typedef typename AnsatzSpaceType::GridPartType GridPartType;
+    typedef typename AnsatzSpaceType::GridViewType GridViewType;
 
-    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
+    typedef typename GridViewType::IntersectionIterator IntersectionIteratorType;
 
     typedef typename IntersectionIteratorType::Intersection IntersectionType;
 
     typedef typename IntersectionType::EntityPointer EntityPointerType;
 
-    const GridPartType& gridPart = ansatzSpace.gridPart();
+    const GridViewType& gridView = ansatzSpace.gridView();
 
-    const IntersectionIteratorType lastIntersection = gridPart.iend(entity);
+    const IntersectionIteratorType lastIntersection = gridView.iend(entity);
 
     // do loop over all intersections
-    for (IntersectionIteratorType intIt = gridPart.ibegin(entity); intIt != lastIntersection; ++intIt) {
+    for (IntersectionIteratorType intIt = gridView.ibegin(entity); intIt != lastIntersection; ++intIt) {
       const IntersectionType& intersection = *intIt;
 
       // if inner intersection
@@ -153,7 +153,7 @@ public:
         const EntityType& neighbour          = *neighbourPtr;
 
         // do visit only once
-        if (gridPart.indexSet().index(entity) < gridPart.indexSet().index(neighbour)) {
+        if (gridView.indexSet().index(entity) < gridView.indexSet().index(neighbour)) {
           // get neighbouring local basefunction sets
           const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSetNe =
               ansatzSpace.baseFunctionSet().local(neighbour);

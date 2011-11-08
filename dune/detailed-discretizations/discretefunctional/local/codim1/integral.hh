@@ -66,18 +66,19 @@ public:
     // some types
     typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
 
-    typedef Dune::CachingQuadrature<GridPartType, 1> FaceQuadratureType;
+    typedef Dune::QuadratureRules<double, IntersectionType::mydimension> FaceQuadratureRules;
+
+    typedef Dune::QuadratureRule<double, IntersectionType::mydimension> FaceQuadratureType;
 
     typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
 
     // some stuff
-    const GridPartType& gridPart       = localTestBaseFunctionSet.baseFunctionSet().space().gridPart();
-    const unsigned int size            = localTestBaseFunctionSet.size();
-    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
-    const FaceQuadratureType faceQuadrature(gridPart, intersection, quadratureOrder, FaceQuadratureType::INSIDE);
-    const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
+    const unsigned int size                  = localTestBaseFunctionSet.size();
+    const unsigned int quadratureOrder       = localEvaluation_.order() + localTestBaseFunctionSet.order();
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
+
 
     // make sure target vector is big enough
     assert(localVector.size() >= size);
@@ -93,13 +94,15 @@ public:
     }
 
     // do loop over all quadrature points
-    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
+    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
+    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd;
+         ++quadPoint) {
       // local coordinate
-      const LocalCoordinateType x = faceQuadrature.localPoint(q);
+      const LocalCoordinateType x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
-      const double quadratureWeight  = faceQuadrature.weight(q);
+      const double quadratureWeight  = quadPoint->weight();
 
       // evaluate the local evaluation
       localEvaluation_.evaluateLocal(localTestBaseFunctionSet, intersection, x, tmpLocalVectors[0]);

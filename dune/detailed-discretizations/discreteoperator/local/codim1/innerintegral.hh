@@ -5,8 +5,8 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
 
-// dune-fem includes
-#include <dune/fem/quadrature/cachingquadrature.hh>
+// dune grid includes
+#include <dune/grid/common/quadraturerules.hh>
 
 // dune-helper-tools includes
 #include <dune/helper-tools/common/matrix.hh>
@@ -97,24 +97,24 @@ public:
     // some types
     typedef typename LocalAnsatzBaseFunctionSetEntityType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
 
-    typedef Dune::CachingQuadrature<GridPartType, 1> FaceQuadratureType;
+    typedef Dune::QuadratureRules<double, IntersectionType::mydimension> FaceQuadratureRules;
+
+    typedef Dune::QuadratureRule<double, IntersectionType::mydimension> FaceQuadratureType;
 
     typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
 
     // some stuff
-    const GridPartType& gridPart = localAnsatzBaseFunctionSetEntity.baseFunctionSet().space().gridPart();
-    const unsigned int rowsEn    = localAnsatzBaseFunctionSetEntity.size();
-    const unsigned int rowsNe    = localAnsatzBaseFunctionSetNeighbour.size();
-    const unsigned int colsEn    = localTestBaseFunctionSetEntity.size();
+    const unsigned int rowsEn = localAnsatzBaseFunctionSetEntity.size();
+    const unsigned int rowsNe = localAnsatzBaseFunctionSetNeighbour.size();
+    const unsigned int colsEn = localTestBaseFunctionSetEntity.size();
     const unsigned int colsNe = localTestBaseFunctionSetNeighbour.size();
     const unsigned int quadratureOrder =
         localEvaluation_.order()
         + std::max(localAnsatzBaseFunctionSetEntity.order(), localAnsatzBaseFunctionSetNeighbour.order())
         + std::max(localTestBaseFunctionSetEntity.order(), localTestBaseFunctionSetNeighbour.order());
-    const FaceQuadratureType faceQuadrature(gridPart, intersection, quadratureOrder, FaceQuadratureType::INSIDE);
-    const unsigned int numberOfQuadraturePoints = faceQuadrature.nop();
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
 
     // make sure, that the target matrices are big enough
     assert(localMatrixEnEn.rows() >= rowsEn);
@@ -142,13 +142,15 @@ public:
     }
 
     // do loop over all quadrature points
-    for (unsigned int q = 0; q < numberOfQuadraturePoints; ++q) {
+    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
+    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd;
+         ++quadPoint) {
       // local coordinates
-      const LocalCoordinateType x = faceQuadrature.localPoint(q);
+      const LocalCoordinateType x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
-      const double quadratureWeight  = faceQuadrature.weight(q);
+      const double quadratureWeight  = quadPoint->weight();
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSetEntity,

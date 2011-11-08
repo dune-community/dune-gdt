@@ -78,20 +78,20 @@ public:
     }
 
     // some types
-    typedef typename TestSpaceType::GridPartType GridPartType;
+    typedef typename TestSpaceType::GridViewType GridViewType;
 
-    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
+    typedef typename GridViewType::IntersectionIterator IntersectionIteratorType;
 
     typedef typename IntersectionIteratorType::Intersection IntersectionType;
 
     typedef typename IntersectionType::EntityPointer EntityPointerType;
 
-    const GridPartType& gridPart = testSpace.gridPart();
+    const GridViewType& gridView = testSpace.gridView();
 
-    const IntersectionIteratorType lastIntersection = gridPart.iend(entity);
+    const IntersectionIteratorType lastIntersection = gridView.iend(entity);
 
     // do loop over all intersections
-    for (IntersectionIteratorType intIt = gridPart.ibegin(entity); intIt != lastIntersection; ++intIt) {
+    for (IntersectionIteratorType intIt = gridView.ibegin(entity); intIt != lastIntersection; ++intIt) {
       const IntersectionType& intersection = *intIt;
 
       if (!intersection.neighbor() && intersection.boundary()) // if boundary intersection

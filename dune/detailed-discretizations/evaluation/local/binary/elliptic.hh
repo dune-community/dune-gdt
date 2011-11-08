@@ -89,7 +89,7 @@ public:
                      LocalMatrixType& ret) const
   {
     // get global point
-    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global(localPoint);
+    const DomainType globalPoint = localAnsatzBaseFunctionSet.gridElement().geometry().global(localPoint);
 
     // evaluate first gradient
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
