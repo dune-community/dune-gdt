@@ -1,5 +1,5 @@
 mapper_includedir = $(includedir)/dune/detailed-discretizations/mapper
-mapper__include_HEADERS = discontinuous.hh
+mapper_include_HEADERS = discontinuous.hh
 
 SUBDIRS = continuous
 

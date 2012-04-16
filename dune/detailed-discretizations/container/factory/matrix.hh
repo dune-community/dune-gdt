@@ -58,7 +58,8 @@ public:
   template <class AnsatzSpaceType, class TestSpaceType>
   static AutoPtrType create(AnsatzSpaceType& ansatzSpace, TestSpaceType& testSpace)
   {
-    return AutoPtrType(createPtr(ansatzSpace, testSpace));
+    AutoPtrType ptr(createPtr(ansatzSpace, testSpace));
+    return ptr;
   }
 
   /** @brief Creates a new BCRSMatrix object and returns a pointer to the
