@@ -138,8 +138,8 @@ FILE( GLOB_RECURSE geometry "../dune-geometry/*.hh" )
 FILE( GLOB_RECURSE geometry_cc "../dune-geometry/*.cc" )
 FILE( GLOB_RECURSE localfunctions "../dune-localfunctions/*.hh" )
 FILE( GLOB_RECURSE localfunctions_cc "../dune-localfunctions/*.cc" )
-#FILE( GLOB_RECURSE pdelab "../dune-pdelab/*.hh" )
-#FILE( GLOB_RECURSE pdelab_cc "../dune-pdelab/*.cc" )
+FILE( GLOB_RECURSE fem-localfunctions "../dune-fem-localfunctions/*.hh" )
+FILE( GLOB_RECURSE fem-localfunctions_cc "../dune-fem-localfunctions/*.cc" )
 #FILE( GLOB_RECURSE pdelab-howto "../dune-pdelab-howto/*.hh" )
 #FILE( GLOB_RECURSE pdelab-howto_cc "../dune-pdelab-howto/*.cc" )
 #FILE( GLOB_RECURSE multidomaingrid "../dune-multidomaingrid/*.hh" )
@@ -147,13 +147,12 @@ FILE( GLOB_RECURSE localfunctions_cc "../dune-localfunctions/*.cc" )
 FILE( GLOB_RECURSE helper-tools "../dune-helper-tools/*.hh" )
 FILE( GLOB_RECURSE helper-tools_cc "../dune-helper-tools/*.cc" )
 FILE( GLOB_RECURSE detailed-discretizations "../dune-detailed-discretizations/*.hh" )
-FILE( GLOB_RECURSE detailed-discretizations_cc "../dune-detailed-discretizations/*.cc" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${helper-tools}
-${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${helper-tools_cc} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem-localfunctions} ${fem} ${localfunctions} ${helper-tools}
+${common_cc} ${grid_cc} ${fem-localfunctions} ${fem_cc} ${istl} ${localfunctions_cc} ${helper-tools_cc} PROPERTIES HEADER_FILE_ONLY 1 )
 
-set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${helper-tools}
-${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${helper-tools_cc} ${detailed-discretizations} ${detailed-discretizations_cc} )
+set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${helper-tools}
+${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${helper-tools_cc} ${fem-localfunctions} ${detailed-discretizations} )
 
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "superlu" )
 
