@@ -31,11 +31,11 @@ SET( BLAS_LIB
   "BLAS LIB" )
 
 SET( GRIDTYPE
-  "ALUGRID_CUBE" CACHE STRING
+  "ALUGRID_SIMPLEX" CACHE STRING
   "GRIDTYPE" )
 
 SET( GRIDDIM
-  "3" CACHE STRING
+  "2" CACHE STRING
   "GRIDDIM" )
 
 SET( POLORDER
@@ -53,14 +53,14 @@ SET( CUSTOM_FLAGS
 # find boost, but not in system paths
 #set( Boost_NO_SYSTEM_PATHS TRUE )
 # the following line is neccessary only if no matching BoostConfig.cmake is in path
-#set( BOOST_ROOT "/opt/local/include" )
+set( BOOST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../boost" )
 find_package( Boost 1.42.0 REQUIRED )
 include_directories(${Boost_INCLUDE_DIR})
 link_directories( ${Boost_LIBRARY_DIRS} )
 
 # find eigen3, but not in system paths
 # the following line is neccessary only if no matching Eigen3Config.cmake is in path
-set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen" )
+set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen")
 find_package( Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
@@ -70,10 +70,10 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 #MARK_AS_ADVANCED(EIGEN_SPARSEMATRIXBASE_PLUGIN)
 
 
-#set( SUPERLU_ROOT "${BASE_PATH}/SuperLU_4.3/" )
-#find_package( SuperLU REQUIRED)
-#include_directories( ${SUPERLU_INCLUDES} )
-#link_directories( ${SUPERLU_LIBRARY_DIRS} )
+set( SUPERLU_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../superlu" )
+find_package( SuperLU REQUIRED)
+include_directories( ${SUPERLU_INCLUDES} )
+link_directories( ${SUPERLU_LIBRARY_DIRS} )
 
 #include(FindPythonInterp)
 #include(FindPythonLibs  )
@@ -96,26 +96,11 @@ add_cxx_flags( -I${ALUGRID_BASE_PATH}/include
 add_cxx_flags(-DBOOST_DATE_TIME_NO_LOCALE)
 link_directories( "${ALUGRID_BASE_PATH}/lib" )
 
-
-#add_cxx_flags(-I/opt/local/include)
-
 add_cxx_flags(-std=c++0x)
 
 add_cxx_flags(${CUSTOM_FLAGS})
 # the other dune modules
-ADD_DUNE_MODULES(common istl grid fem rb geometry localfunctions pdelab multidomaingrid)
-
-# dune-cornerpointgrid
-INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint )
-LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint/lib/.libs/ )
-FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpointgrid/dune/*.hh" )
-LIST( APPEND DUNE_HEADERS ${tmp_header} )
-
-# opm-core
-INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/include )
-LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/lib/ )
-FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/*.hh" )
-LIST( APPEND DUNE_HEADERS ${tmp_header} )
+ADD_DUNE_MODULES(common istl grid fem geometry localfunctions fem-localfunction helper-tools)
 
 # Source listing, relative to the position of this file
 FILE( GLOB_RECURSE detailed-discretizations "../dune-detailed-discretizations/*.hh" )
@@ -145,6 +130,6 @@ ${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_c
 
 set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
-ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${LIST_LIBS} )
+ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${helper-tool} ${LIST_LIBS} )
 TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
 
