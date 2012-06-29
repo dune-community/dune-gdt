@@ -1,4 +1,4 @@
-PROJECT( dune-detailed-discretizations )
+PROJECT( dune-detailed-discretizations)
 
 #set minimum cmake version
 cmake_minimum_required(VERSION 2.6)
@@ -54,15 +54,15 @@ SET( CUSTOM_FLAGS
 #set( Boost_NO_SYSTEM_PATHS TRUE )
 # the following line is neccessary only if no matching BoostConfig.cmake is in path
 #set( BOOST_ROOT "/opt/local/include" )
-#find_package( Boost 1.42.0 REQUIRED )
-#include_directories(${Boost_INCLUDE_DIR})
-#link_directories( ${Boost_LIBRARY_DIRS} )
+find_package( Boost 1.42.0 REQUIRED )
+include_directories(${Boost_INCLUDE_DIR})
+link_directories( ${Boost_LIBRARY_DIRS} )
 
 # find eigen3, but not in system paths
 # the following line is neccessary only if no matching Eigen3Config.cmake is in path
-#set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen" )
-#find_package( Eigen3 REQUIRED)
-#include_directories(${EIGEN3_INCLUDE_DIR})
+set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen" )
+find_package( Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 # add eigen plugins for matrixbase (file io and other nice stuff)
 #SET(EIGEN_SPARSEMATRIXBASE_PLUGIN "<dune/rb/rbasis/twophaseflow/thirdparty/eigen_sparse_plugins.h>" CACHE STRING "Eigen plugin header")
@@ -93,8 +93,8 @@ add_cxx_flags( -I${ALUGRID_BASE_PATH}/include
   -I${ALUGRID_BASE_PATH}/include/duneinterface -DENABLE_ALUGRID )
 
 # without this I get an error with redefinition of tolower
-#add_cxx_flags(-DBOOST_DATE_TIME_NO_LOCALE)
-#link_directories( "${ALUGRID_BASE_PATH}/lib" )
+add_cxx_flags(-DBOOST_DATE_TIME_NO_LOCALE)
+link_directories( "${ALUGRID_BASE_PATH}/lib" )
 
 
 #add_cxx_flags(-I/opt/local/include)
@@ -103,33 +103,27 @@ add_cxx_flags(-std=c++0x)
 
 add_cxx_flags(${CUSTOM_FLAGS})
 # the other dune modules
-ADD_DUNE_MODULES(common istl grid fem rb geometry localfunctions helper-tools)
+ADD_DUNE_MODULES(common istl grid fem rb geometry localfunctions pdelab multidomaingrid)
 
 # dune-cornerpointgrid
-#INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint )
-#LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint/lib/.libs/ )
-#FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpointgrid/dune/*.hh" )
-#LIST( APPEND DUNE_HEADERS ${tmp_header} )
+INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint )
+LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpoint/lib/.libs/ )
+FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../dune-cornerpointgrid/dune/*.hh" )
+LIST( APPEND DUNE_HEADERS ${tmp_header} )
 
 # opm-core
-#INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/include )
-#LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/lib/ )
-#FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/*.hh" )
-#LIST( APPEND DUNE_HEADERS ${tmp_header} )
+INCLUDE_DIR( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/include )
+LINK_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/lib/ )
+FILE( GLOB_RECURSE tmp_header "${CMAKE_CURRENT_SOURCE_DIR}/../opm-core/*.hh" )
+LIST( APPEND DUNE_HEADERS ${tmp_header} )
 
 # Source listing, relative to the position of this file
-FILE( GLOB_RECURSE rb "./dune/rb/*.hh" )
-FILE( GLOB_RECURSE rb_cc "./dune/rb/*.cc" )
+FILE( GLOB_RECURSE detailed-discretizations "../dune-detailed-discretizations/*.hh" )
+FILE( GLOB_RECURSE detailed-discretizations_cc "../dune-detailed-discretizations/*.cc" )
 FILE( GLOB_RECURSE common "../dune-common/*.hh" )
 FILE( GLOB_RECURSE common_cc "../dune-common/*.cc" )
-#FILE( GLOB_RECURSE opm-core "../opm-core/*.hh" )
-#FILE( GLOB_RECURSE opm-core_cc "../opm-core/*.cc" )
-#FILE( GLOB_RECURSE cornerpointgrid "../dune-cornerpointgrid/*.hh" )
-#FILE( GLOB_RECURSE cornerpointgrid_cc "../dune-cornerpointgrid/*.cc" )
 FILE( GLOB_RECURSE grid "../dune-grid/*.hh" )
 FILE( GLOB_RECURSE grid_cc "../dune-grid/*.cc" )
-#FILE( GLOB_RECURSE grid-howto "../dune-grid-howto/*.hh" )
-#FILE( GLOB_RECURSE grid-howto_cc "../dune-grid-howto/*.cc" )
 FILE( GLOB_RECURSE istl "../dune-istl/*.hh" )
 FILE( GLOB_RECURSE istl_cc "../dune-istl/*.cc" )
 FILE( GLOB_RECURSE fem "../dune-fem/*.hh" )
@@ -138,34 +132,19 @@ FILE( GLOB_RECURSE geometry "../dune-geometry/*.hh" )
 FILE( GLOB_RECURSE geometry_cc "../dune-geometry/*.cc" )
 FILE( GLOB_RECURSE localfunctions "../dune-localfunctions/*.hh" )
 FILE( GLOB_RECURSE localfunctions_cc "../dune-localfunctions/*.cc" )
-FILE( GLOB_RECURSE fem-localfunctions "../dune-fem-localfunctions/*.hh" )
-FILE( GLOB_RECURSE fem-localfunctions_cc "../dune-fem-localfunctions/*.cc" )
-#FILE( GLOB_RECURSE pdelab-howto "../dune-pdelab-howto/*.hh" )
-#FILE( GLOB_RECURSE pdelab-howto_cc "../dune-pdelab-howto/*.cc" )
-#FILE( GLOB_RECURSE multidomaingrid "../dune-multidomaingrid/*.hh" )
-#FILE( GLOB_RECURSE multidomaingrid_cc "../dune-multidomaingrid/*.cc" )
 FILE( GLOB_RECURSE helper-tools "../dune-helper-tools/*.hh" )
 FILE( GLOB_RECURSE helper-tools_cc "../dune-helper-tools/*.cc" )
-FILE( GLOB_RECURSE detailed-discretizations "../dune-detailed-discretizations/*.hh" )
+FILE( GLOB_RECURSE fem-localfunctions "../dune-fem-localfunctions/*.hh" )
+FILE( GLOB_RECURSE fem-localfunctions_cc "../dune-fem-localfunctions/*.cc" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem-localfunctions} ${fem} ${localfunctions} ${helper-tools}
-${common_cc} ${grid_cc} ${fem-localfunctions} ${fem_cc} ${istl} ${localfunctions_cc} ${helper-tools_cc} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${helper-tools} ${detailed-discretizations}
+${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_cc} ${fem-localfunctions_cc} ${geometry_cc} ${helper-tools_cc} ${detailed-discretizations_cc} PROPERTIES HEADER_FILE_ONLY 1 )
 
-set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${helper-tools}
-${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${helper-tools_cc} ${fem-localfunctions} ${detailed-discretizations} )
+set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${helper-tools} ${detailed-discretizations}
+${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_cc} ${fem-localfunctions_cc} ${geometry_cc} ${helper-tools_cc} ${detailed-discretizations_cc} )
 
-set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "superlu" )
+set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
-#ADD_EXECUTABLE( thermalblock "dune/rb/rbasis/twophaseflow/tests/thermalblock/thermalblock.cc" ${rb} ${common} ${grid} ${istl} ${fem} )
-#ADD_EXECUTABLE( groundwaterflow "dune/rb/rbasis/twophaseflow/tests/groundwaterflow/groundwaterflow.cc" ${rb} ${common} ${grid} ${istl} ${fem} )
-#ADD_EXECUTABLE( highdimtest "dune/rb/rbasis/twophaseflow/tests/highdimtest/highdimtest.cc" ${rb} ${common} ${grid} ${istl} ${fem} )
-#ADD_EXECUTABLE( plotxdrfunction "dune/rb/rbasis/twophaseflow/helpers/plotxdrfunction.cc" ${rb} ${common} ${grid} ${istl} ${fem} )
-
-#TARGET_LINK_LIBRARIES( thermalblock ${COMMON_LIBS} )
-#TARGET_LINK_LIBRARIES( groundwaterflow ${COMMON_LIBS} )
-#TARGET_LINK_LIBRARIES( highdimtest ${COMMON_LIBS} )
-#TARGET_LINK_LIBRARIES( plotxdrfunction ${COMMON_LIBS} )
-
-ADD_EXECUTABLE( examples_elliptic_finite_element "examples/elliptic_finite_element/main.cc" ${detailed-discretizations} ${common} ${LIST_LIBS} )
-TARGET_LINK_LIBRARIES( examples_elliptic_finite_element ${COMMON_LIBS} )
+ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${LIST_LIBS} )
+TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
 

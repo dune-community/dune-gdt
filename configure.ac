@@ -57,8 +57,7 @@ AC_CONFIG_FILES([
   dune/detailed-discretizations/mapper/Makefile
   dune/detailed-discretizations/mapper/continuous/Makefile
   examples/Makefile
-  examples/elliptic_finite_element/Makefile
-  examples/elliptic_discontinuous_galerkin/Makefile
+  examples/elliptic/Makefile
   m4/Makefile
   dune-detailed-discretizations.pc
 ])
