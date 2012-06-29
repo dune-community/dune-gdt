@@ -12,6 +12,7 @@
 
 // dune-helper-tools
 #include <dune/helper-tools/common/parametertree.hh>
+#include <dune/helper-tools/grid/provider/cube.hh>
 
 /**
   \brief      Creates a parameter file if it does not exist.
@@ -29,8 +30,6 @@ void ensureParamFile(std::string filename)
     file.open(filename);
     file << "[helper-tools.grid.provider.cube]" << std::endl;
     file << "level = 2" << std::endl;
-    file << "visualize.grid = rb_grid_provider_cube_grid" << std::endl;
-    file << "visualize.msGrid = rb_grid_provider_cube_msGrid" << std::endl;
     file.close();
   } // only write param file if there is none
 } // void ensureParamFile()
@@ -44,7 +43,12 @@ int main(int argc, char** argv)
     const std::string filename = "continuous_galerkin.param";
     ensureParamFile(filename);
     Dune::ParameterTree paramTree = Dune::HelperTools::Common::ParameterTree::init(argc, argv, filename);
-    paramTree.report();
+    // grid
+    typedef Dune::HelperTools::Grid::Provider::UnitCube<Dune::GridSelector::GridType> GridProviderType;
+    GridProviderType gridProvider(paramTree);
+    typedef GridProviderType::GridType GridType;
+    GridType& grid = gridProvider.grid();
+
 
     // done
     return 0;
