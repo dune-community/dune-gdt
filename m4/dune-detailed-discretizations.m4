@@ -13,13 +13,17 @@ AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
     AC_LANG_PUSH([C++])
 
     dnl Check for boost/filesystem.hpp
-    AC_CHECK_HEADER([boost/filesystem.hpp],,
-      [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
-      ])
+    dnl AC_CHECK_HEADER([boost/filesystem.hpp],,
+      dnl [
+      dnl AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
+      dnl ],
+      dnl [
+      dnl BOOST_CPPFLAGS
+      dnl ])
 
-    AC_CHECK_LIB([boost_filesystem],[main],,
-      [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
-      ])
+    dnl AC_CHECK_LIB([boost_filesystem],[main],,
+      dnl [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
+      dnl ])
 
     AC_LANG_POP([C++])
 
