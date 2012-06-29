@@ -6,7 +6,35 @@ dnl -*- autoconf -*-
 # Additional checks needed to build dune-detailed-discretizations
 # This macro should be invoked by every module which depends on dune-detailed-discretizations, as
 # well as by dune-detailed-discretizations itself
-AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS])
+AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
+[
+    AX_BOOST_BASE([1.42.0])
+
+    AC_LANG_PUSH([C++])
+
+    dnl Check for boost/filesystem.hpp
+    AC_CHECK_HEADER([boost/filesystem.hpp],,
+      [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
+      ])
+
+    AC_CHECK_LIB([boost_filesystem],[main],,
+      [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
+      ])
+
+    AC_LANG_POP([C++])
+
+    BOOST_LDADD="-lboost_system -lboost_filesystem"
+    AC_SUBST(BOOST_LDADD)
+
+    PKG_CHECK_MODULES([EIGEN], [eigen3], [
+      AC_DEFINE([HAVE_EIGEN],
+        [1],
+        [Define wether the eigen includes were found.])
+    ])
+
+    AC_DEFINE([HAVE_EIGEN],[1],
+      [Define wether the eigen includes were found.])
+])
 
 # Additional checks needed to find dune-detailed-discretizations
 # This macro should be invoked by every module which depends on dune-detailed-discretizations, but
