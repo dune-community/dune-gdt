@@ -11,12 +11,11 @@
 // dune-common
 #include <dune/common/parametertree.hh>
 #include <dune/common/exceptions.hh>
+#include <dune/common/shared_ptr.hh>
 
 // dune-fem
-#include <dune/helper-tools/header/disablewarnings.hh>
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/gridpart/gridpart.hh>
-#include <dune/helper-tools/header/enablewarnings.hh>
 
 // dune-helper-tools
 #include <dune/helper-tools/common/parametertree.hh>
@@ -89,19 +88,14 @@ int main(int argc, char** argv)
     const AnsatzSpaceType ansatzSpace(discreteH1);
     typedef AnsatzSpaceType TestSpaceType;
     const TestSpaceType testSpace(discreteH1);
-    // left hand side operator hand side
+    // left hand side operator
     typedef Dune::HelperTools::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange > DataFunctionType;
-    if (!paramTree.hasSub("data.a")) {
-      std::stringstream msg;
-      msg << "Error in " << filename << ": key 'data.a' not found in the following Dune::Parametertree" << std::endl;
-      paramTree.report(msg);
-      DUNE_THROW(Dune::InvalidStateException, msg.str());
-    }
-    const DataFunctionType a(paramTree.sub("data.a"));
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "data.a", filename);
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
-    EllipticEvaluationType ellipticEvaluation(a);
+    const EllipticEvaluationType ellipticEvaluation(paramTree.sub("data.a"));
     typedef Dune::DetailedDiscretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
+
 
 
 
