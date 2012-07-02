@@ -8,8 +8,8 @@
 // std includes
 #include <vector>
 
-// dune grid includes
-#include <dune/grid/common/quadraturerules.hh>
+// dune geometry includes
+#include <dune/geometry/quadraturerules.hh>
 
 // dune helper tools includes
 #include <dune/helper-tools/common/matrix.hh>
@@ -96,14 +96,8 @@ public:
         IntegralInduced<ThisType, InducingDiscreteFunctionType> Type;
   };
 
-  Integral(const LocalEvaluationType localEvaluation)
+  Integral(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
-  {
-  }
-
-  //! copy constructor
-  Integral(const ThisType& other)
-    : localEvaluation_(other.localEvaluation())
   {
   }
 
@@ -207,7 +201,10 @@ private:
   //! assignment operator
   ThisType& operator=(const ThisType&);
 
-  const LocalEvaluationType localEvaluation_;
+  //! copy constructor
+  Integral(const ThisType&);
+
+  const LocalEvaluationType& localEvaluation_;
 
 }; // end class Integral
 

@@ -8,8 +8,8 @@
 // dune-common includes
 #include <dune/common/dynmatrix.hh>
 
-// dune grid includes
-#include <dune/grid/common/quadraturerules.hh>
+// dune geometry includes
+#include <dune/geometry/quadraturerules.hh>
 
 // dune-helper-tools includes
 #include <dune/helper-tools/common/vector.hh>
