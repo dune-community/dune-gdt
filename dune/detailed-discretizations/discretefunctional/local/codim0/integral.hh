@@ -52,18 +52,12 @@ public:
   typedef typename FunctionSpaceType::DomainType
     DomainType;
 
-  Integral( const LocalEvaluationType localEvaluation )
-    : localEvaluation_( localEvaluation )
+  Integral(const LocalEvaluationType& localEvaluation )
+    : localEvaluation_(localEvaluation)
   {
   }
 
-  //! copy constructor
-  Integral( const ThisType& other )
-    : localEvaluation_( other.localEvaluation() )
-  {
-  }
-
-  LocalEvaluationType localEvaluation() const
+  const LocalEvaluationType& localEvaluation() const
   {
     return localEvaluation_;
   }
@@ -134,9 +128,12 @@ public:
 private:
 
   //! assignment operator
-  ThisType& operator=( const ThisType& other );
+  ThisType& operator=(const ThisType&);
 
-  const LocalEvaluationType localEvaluation_;
+  //! copy constructor
+  Integral(const ThisType&);
+
+  const LocalEvaluationType& localEvaluation_;
 
 }; // end class Integral
 
@@ -167,19 +164,12 @@ public:
   {
   }
 
-  //! copy constructor
-  IntegralInduced( const ThisType& other )
-    : inducingOperator_( other.inducingOperator() ),
-      inducingDiscreteFunction_( other.inducingDiscreteFunction() )
-  {
-  }
-
-  InducingOperatorType inducingOperator() const
+  const InducingOperatorType& inducingOperator() const
   {
     return inducingOperator_;
   }
 
-  InducingDiscreteFunctionType inducingDiscreteFunction() const
+  const InducingDiscreteFunctionType& inducingDiscreteFunction() const
   {
     return inducingDiscreteFunction_;
   }
@@ -266,10 +256,13 @@ public:
 
 private:
   //! assignment operator
-  ThisType& operator=( const ThisType& );
+  ThisType& operator=(const ThisType&);
 
-  const InducingOperatorType inducingOperator_;
-  const InducingDiscreteFunctionType inducingDiscreteFunction_;
+  //! copy constructor
+  IntegralInduced(const ThisType&);
+
+  const InducingOperatorType& inducingOperator_;
+  const InducingDiscreteFunctionType& inducingDiscreteFunction_;
 
 }; // end class IntegralInduced
 

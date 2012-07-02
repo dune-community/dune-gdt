@@ -27,6 +27,8 @@
 #include <dune/detailed-discretizations/discretefunctionspace/subspace/linear.hh>
 #include <dune/detailed-discretizations/evaluation/local/binary/elliptic.hh>
 #include <dune/detailed-discretizations/discreteoperator/local/codim0/integral.hh>
+#include <dune/detailed-discretizations/evaluation/local/unary/scale.hh>
+#include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 
 /**
   \brief      Creates a parameter file if it does not exist.
@@ -45,6 +47,12 @@ void ensureParamFile(std::string filename)
     file << "[helper-tools.grid.provider.cube]" << std::endl;
     file << "level = 2" << std::endl;
     file << "[data.a]" << std::endl;
+    file << "variable = x" << std::endl;
+    file << "expression.0 = 1.0"  << std::endl;
+    file << "expression.1 = 1.0"  << std::endl;
+    file << "expression.2 = 1.0"  << std::endl;
+    file << "order = 0"  << std::endl;
+    file << "[data.f]" << std::endl;
     file << "variable = x" << std::endl;
     file << "expression.0 = 1.0"  << std::endl;
     file << "expression.1 = 1.0"  << std::endl;
@@ -88,13 +96,18 @@ int main(int argc, char** argv)
     const AnsatzSpaceType ansatzSpace(discreteH1);
     typedef AnsatzSpaceType TestSpaceType;
     const TestSpaceType testSpace(discreteH1);
-    // left hand side operator
-    typedef Dune::HelperTools::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange > DataFunctionType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "data.a", filename);
+    // left hand side (operator)
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "data.a", filename);
     const EllipticEvaluationType ellipticEvaluation(paramTree.sub("data.a"));
     typedef Dune::DetailedDiscretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
+    // right hand side (functional)
+    typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType > ProductEvaluationType;
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "data.f", filename);
+    const ProductEvaluationType productEvaluation(paramTree.sub("data.f"));
+    typedef Dune::DetailedDiscretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
+    const L2FunctionalType l2Functional(productEvaluation);
 
 
 

@@ -1,8 +1,12 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_UNARY_SCALE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_UNARY_SCALE_HH
 
+// dune-common
+#include <dune/common/parametertree.hh>
+#include <dune/common/shared_ptr.hh>
+
 //dune-helper-tools includes
-#include <dune/helper-tools/function/runtime.hh>
+#include <dune/helper-tools/function/expression.hh>
 
 namespace Dune
 {
@@ -27,7 +31,7 @@ namespace Unary
   \tparam FunctionSpaceImp
           Type of the function space, where \f$f\f$ and \f$v\f$ live in.
   **/
-template< class FunctionSpaceImp >
+template< class FunctionSpaceImp, class InducingFunctionImp = Dune::HelperTools::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
 class Scale
 {
 public:
@@ -44,27 +48,26 @@ public:
   typedef typename FunctionSpaceType::RangeType
     RangeType;
 
-  typedef Dune::HelperTools::Function::Runtime< FunctionSpaceType >
+  typedef InducingFunctionImp
     InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  Scale( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
-    : inducingFunction_( expression ),
-      order_( std::max( 0, order ) )
+  Scale(const Dune::shared_ptr< const InducingFunctionType >& inducingFunction, int order = 0)
+    : inducingFunction_(inducingFunction),
+      order_(std::max(0, order))
   {
   }
 
-  //! copy constructor
-  Scale( const Scale& other )
-    : inducingFunction_( other.inducingFunction() ),
-      order_( other.order() )
+  Scale(const Dune::ParameterTree& paramTree)
+    : inducingFunction_(new InducingFunctionType(paramTree)),
+      order_(paramTree.get("order", 0))
   {
   }
 
   //! returns the inducing function
-  InducingFunctionType inducingFunction() const
+  const InducingFunctionType& inducingFunction() const
   {
-    return inducingFunction_;
+    return *inducingFunction_;
   }
 
   unsigned int order() const
@@ -113,9 +116,12 @@ public:
 
 private:
   //! assignment operator
-  ThisType& operator=( const ThisType& );
+  ThisType& operator=(const ThisType&);
 
-  const InducingFunctionType inducingFunction_;
+  //! copy constructor
+  Scale(const ThisType&);
+
+  const Dune::shared_ptr< const InducingFunctionType > inducingFunction_;
   const unsigned int order_;
 }; // end class Product
 
