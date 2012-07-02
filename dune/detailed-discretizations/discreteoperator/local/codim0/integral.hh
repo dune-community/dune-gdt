@@ -156,7 +156,6 @@ public:
         localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
     const VolumeQuadratureType& volumeQuadrature =
         VolumeQuadratureRules::rule(localAnsatzBaseFunctionSet.gridElement().type(), 2 * quadratureOrder + 1);
-    // const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
 
     // make sure target matrix is big enough
     assert(localMatrix.rows() >= rows);

@@ -1,6 +1,10 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
 
+// dune-common
+#include <dune/common/parametertree.hh>
+#include <dune/common/shared_ptr.hh>
+
 // dune-helper-tools includes
 #include <dune/helper-tools/function/expression.hh>
 
@@ -42,17 +46,23 @@ public:
 
   typedef InducingFunctionImp InducingFunctionType;
 
-  //! constructor, takes the inducing functions expression as a runtime parameter
-  Elliptic(const InducingFunctionType& inducingFunction, int order = 0)
+  //! constructor, takes the inducing function as a runtime parameter
+  Elliptic(const Dune::shared_ptr<const InducingFunctionType>& inducingFunction, int order = 0)
     : inducingFunction_(inducingFunction)
     , order_(std::max(0, order))
   {
   }
 
-  //! returns the inducing function
-  InducingFunctionType inducingFunction() const
+  Elliptic(const Dune::ParameterTree& paramTree)
+    : inducingFunction_(new InducingFunctionType(paramTree))
+    , order_(paramTree.get("order", 0))
   {
-    return inducingFunction_;
+  }
+
+  //! returns the inducing function
+  InducingFunctionType& inducingFunction() const
+  {
+    return *inducingFunction_;
   }
 
   unsigned int order() const
@@ -119,7 +129,7 @@ private:
   //! copy constructor
   Elliptic(const Elliptic& other);
 
-  const InducingFunctionType& inducingFunction_;
+  const Dune::shared_ptr<const InducingFunctionType> inducingFunction_;
   unsigned int order_;
 }; // end class Elliptic
 
