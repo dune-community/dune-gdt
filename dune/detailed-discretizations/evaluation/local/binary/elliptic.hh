@@ -2,7 +2,7 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_ELLIPTIC_HH
 
 // dune-helper-tools includes
-#include <dune/helper-tools/function/runtime.hh>
+#include <dune/helper-tools/function/expression.hh>
 
 namespace Dune
 {
@@ -27,7 +27,7 @@ namespace Binary
   \tparam FunctionSpaceImp
           Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
   **/
-template< class FunctionSpaceImp >
+template< class FunctionSpaceImp, class InducingFunctionImp = Dune::HelperTools::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
 class Elliptic
 {
 public:
@@ -50,20 +50,12 @@ public:
   typedef typename FunctionSpaceType::JacobianRangeType
     JacobianRangeType;
 
-  typedef Dune::HelperTools::Function::Runtime< FunctionSpaceType >
-    InducingFunctionType;
+  typedef InducingFunctionImp InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  Elliptic( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
-    : inducingFunction_( expression ),
-      order_( std::max( 0, order ) )
-  {
-  }
-
-  //! copy constructor
-  Elliptic( const Elliptic& other )
-    : inducingFunction_( other.inducingFunction() ),
-      order_( other.order() )
+  Elliptic(const InducingFunctionType& inducingFunction, int order = 0)
+    : inducingFunction_(inducingFunction),
+      order_(std::max(0, order))
   {
   }
 
@@ -134,9 +126,12 @@ public:
 
 private:
   //! assignment operator
-  ThisType& operator=( const ThisType& );
+  ThisType& operator=(const ThisType&);
 
-  const InducingFunctionType inducingFunction_;
+  //! copy constructor
+  Elliptic(const Elliptic& other);
+
+  const InducingFunctionType& inducingFunction_;
   unsigned int order_;
 }; // end class Elliptic
 
