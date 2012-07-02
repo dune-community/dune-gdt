@@ -71,7 +71,7 @@ public:
       const GeometryType& geometryType = geometryTypes[i];
 
       if (lagrangePointSet_.find(geometryType) == lagrangePointSet_.end()) {
-        const LagrangePointSetType* lagrangePointSet = new LagrangePointSetType(geometryType, polynomialOrder);
+        const LagrangePointSetType* lagrangePointSet = new LagrangePointSetType(geometryType);
         assert(lagrangePointSet != NULL);
         lagrangePointSet_[geometryType] = lagrangePointSet;
       }
