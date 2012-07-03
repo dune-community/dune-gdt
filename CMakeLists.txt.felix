@@ -128,7 +128,7 @@ ${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_c
 set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${helper-tools} ${detailed-discretizations}
 ${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_cc} ${fem-localfunctions_cc} ${geometry_cc} ${helper-tools_cc} ${detailed-discretizations_cc} )
 
-set( COMMON_LIBS "fem" "grid" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
+set( COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
 ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${helper-tool} ${LIST_LIBS} )
 TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
