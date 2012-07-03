@@ -34,14 +34,8 @@ public:
     RangeFieldType;
 
   //! constructor
-  Vector( const LocalFunctionalType localFunctional )
+  Vector( const LocalFunctionalType& localFunctional )
     : localFunctional_( localFunctional )
-  {
-  }
-
-  //! copy constructor
-  Vector( const ThisType& other )
-    : localFunctional_( other.localFunctional() )
   {
   }
 
@@ -97,6 +91,9 @@ private:
   //! assignment operator
   ThisType& operator=( const ThisType& );
 
+  //! copy constructor
+  Vector(const ThisType&);
+
   template< class TestSpaceType,
             class EntityType,
             class LocalVectorType,
@@ -114,7 +111,7 @@ private:
     }
   } // end method addToVector
 
-  const LocalFunctionalType localFunctional_;
+  const LocalFunctionalType& localFunctional_;
 
 }; // end class Vector
 

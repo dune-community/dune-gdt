@@ -49,19 +49,11 @@ public:
   };
 
   //! constructor
-  Matrix( const LocalOperatorType localOperator )
+  Matrix( const LocalOperatorType& localOperator )
     : localOperator_( localOperator )
   {
   }
 
-private:
-  //! copy constructor
-  Matrix( const ThisType& other )
-    : localOperator_( other.localOperator() )
-  {
-  }
-
-public:
   const LocalOperatorType& localOperator() const
   {
     return localOperator_;
@@ -134,6 +126,9 @@ private:
   //! assignment operator
   ThisType& operator=( const ThisType& );
 
+  //! copy constructor
+  Matrix(const ThisType& other);
+
   template< class AnsatzSpaceType,
             class TestSpaceType,
             class EntityType,
@@ -157,7 +152,7 @@ private:
     }
   } // end method addToMatrix
 
-  const LocalOperatorType localOperator_;
+  const LocalOperatorType& localOperator_;
 
 }; // end class Matrix
 
