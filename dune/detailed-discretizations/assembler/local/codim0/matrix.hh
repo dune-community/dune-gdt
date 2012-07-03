@@ -114,7 +114,7 @@ private:
         const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
         const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
 
-        systemMatrix[globalI][globalJ] += localMatrix[i][j];
+        systemMatrix.add(globalI, globalJ, localMatrix[i][j]);
       }
     }
   } // end method addToMatrix

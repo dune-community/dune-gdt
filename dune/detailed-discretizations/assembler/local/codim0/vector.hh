@@ -82,7 +82,7 @@ private:
     for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
       const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
 
-      vector[globalJ] += localVector[j];
+      vector.add(globalJ, localVector[j]);
     }
   } // end method addToVector
 
