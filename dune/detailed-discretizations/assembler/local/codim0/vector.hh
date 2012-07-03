@@ -107,7 +107,7 @@ private:
     {
       const unsigned int globalJ = testSpace.map().toGlobal( entity, j );
 
-      vector[globalJ] += localVector[j];
+      vector.add(globalJ, localVector[j]);
     }
   } // end method addToVector
 
