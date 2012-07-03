@@ -141,13 +141,11 @@ public:
     // some types
     typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
+    typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
-    typedef Dune::QuadratureRules<double, LocalTestBaseFunctionSetType::GridElementType::mydimension>
-        VolumeQuadratureRules;
+    typedef Dune::QuadratureRules<double, LocalTestBaseFunctionSetType::EntityType::mydimension> VolumeQuadratureRules;
 
-    typedef Dune::QuadratureRule<double, LocalTestBaseFunctionSetType::GridElementType::mydimension>
-        VolumeQuadratureType;
+    typedef Dune::QuadratureRule<double, LocalTestBaseFunctionSetType::EntityType::mydimension> VolumeQuadratureType;
 
     // some stuff
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
@@ -155,7 +153,7 @@ public:
     const unsigned int quadratureOrder =
         localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
     const VolumeQuadratureType& volumeQuadrature =
-        VolumeQuadratureRules::rule(localAnsatzBaseFunctionSet.gridElement().type(), 2 * quadratureOrder + 1);
+        VolumeQuadratureRules::rule(localAnsatzBaseFunctionSet.entity().type(), 2 * quadratureOrder + 1);
 
     // make sure target matrix is big enough
     assert(localMatrix.rows() >= rows);
@@ -180,7 +178,7 @@ public:
       const DomainType x = quadPoint->position();
 
       // integration factors
-      const double integrationFactor = localAnsatzBaseFunctionSet.gridElement().geometry().integrationElement(x);
+      const double integrationFactor = localAnsatzBaseFunctionSet.entity().geometry().integrationElement(x);
       const double quadratureWeight  = quadPoint->weight();
 
       // evaluate the local operation

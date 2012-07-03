@@ -94,7 +94,7 @@ public:
                      LocalMatrixType& ret) const
   {
     // get global point
-    const DomainType globalPoint = localAnsatzBaseFunctionSet.gridElement().geometry().global(localPoint);
+    const DomainType globalPoint = localAnsatzBaseFunctionSet.entity().geometry().global(localPoint);
 
     // evaluate first gradient
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
@@ -108,7 +108,7 @@ public:
 
     // evaluate inducing function
     RangeType functionValue(0.0);
-    inducingFunction_.evaluate(globalPoint, functionValue);
+    inducingFunction_->evaluate(globalPoint, functionValue);
 
     // do loop over all ansatz and test basefunctions
     assert(ret.rows() == rows);
