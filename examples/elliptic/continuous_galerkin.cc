@@ -164,11 +164,16 @@ int main(int argc, char** argv)
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // solve system
-    //typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabIlut Solver;
-    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalUp Solver;
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", filename);
+
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabIlut Solver;
+    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalUpper Solver;
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalLower Solver;
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver;
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver;
     std::cout << "solving linear system using " << Solver::id << "... " << std::flush;
     timer.reset();
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", filename);
     Solver::apply(
       systemMatrix,
       solution,
