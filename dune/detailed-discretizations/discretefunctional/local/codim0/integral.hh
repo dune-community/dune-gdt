@@ -57,7 +57,7 @@ public:
   }
 
   template <class LocalTestBaseFunctionSetType, class LocalVectorType>
-  void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, LocalVectorType& localVector,
+  void applyLocal(const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, LocalVectorType& localVector,
                   std::vector<LocalVectorType>& tmpLocalVectors) const
   {
     // some types
