@@ -27,8 +27,7 @@ public:
   typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType
     DiscreteFunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::GridViewType::template Codim< 0 >::Iterator::Entity
-    EntityType;
+  typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
 
   typedef typename DiscreteFunctionType::DomainType
     DomainType;
