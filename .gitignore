@@ -68,3 +68,8 @@ examples/elliptic_discontinuous_galerkin/elliptic_discontinuous_galerkin
 examples/elliptic_discontinuous_galerkin/elliptic_discontinuous_galerkin-main.o
 examples/elliptic_finite_element/solution.vtp
 examples/elliptic_finite_element/solution.vtu
+CMakeLists.txt
+CMakeLists.txt.user*
+*.deps
+examples/elliptic/continuous_galerkin
+examples/elliptic/continuous_galerkin-continuous_galerkin.o
