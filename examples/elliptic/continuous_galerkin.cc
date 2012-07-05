@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     // grid
     std::cout << "setting up grid:" << std::endl;
     typedef Dune::HelperTools::Grid::Provider::UnitCube< Dune::GridSelector::GridType > GridProviderType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, GridProviderType::id, filename);
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, GridProviderType::id, id);
     GridProviderType gridProvider(paramTree.sub(GridProviderType::id));
     typedef GridProviderType::GridType GridType;
     GridType& grid = gridProvider.grid();
@@ -130,14 +130,14 @@ int main(int argc, char** argv)
     std::cout << "setting up operator and functional... " << std::flush;
     timer.reset();
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "diffusion", filename);
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "diffusion", id);
     const EllipticEvaluationType ellipticEvaluation(paramTree.sub("diffusion"));
     typedef Dune::DetailedDiscretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
 
     // right hand side (functional)
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType > ProductEvaluationType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "force", filename);
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "force", id);
     const ProductEvaluationType productEvaluation(paramTree.sub("force"));
     typedef Dune::DetailedDiscretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
     const L2FunctionalType l2Functional(productEvaluation);
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver;
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver;
     std::cout << "solving linear system using " << Solver::id << "... " << std::flush;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", filename);
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", id);
     timer.reset();
     Solver::apply(
       systemMatrix,
