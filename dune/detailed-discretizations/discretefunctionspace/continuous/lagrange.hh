@@ -3,6 +3,7 @@
 
 // dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
+#include <dune/fem/gridpart/gridpartview.hh>
 
 // dune-detailed-discretizations includes
 #include <dune/detailed-discretizations/basefunctionset/continuous/lagrange.hh>
@@ -23,6 +24,8 @@ public:
   typedef FunctionSpaceImp FunctionSpaceType;
 
   typedef GridPartImp GridPartType;
+
+  typedef Dune::GridPartView<GridPartType> GridViewType;
 
   enum
   {
@@ -65,6 +68,7 @@ public:
 
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
+    , gridView_(gridPart_)
     , mapper_(gridPart_)
     , baseFunctionSet_(*this)
   {
@@ -74,6 +78,7 @@ private:
   //! copy constructor
   Lagrange(const ThisType& other)
     : gridPart_(other.gridPart())
+    , gridView_(gridPart_)
     , mapper_(gridPart_)
     , baseFunctionSet_(*this)
   {
@@ -83,6 +88,11 @@ public:
   const GridPartType& gridPart() const
   {
     return gridPart_;
+  }
+
+  const GridViewType& gridView() const
+  {
+    return gridView_;
   }
 
   const MapperType& map() const
@@ -130,6 +140,7 @@ protected:
   ThisType& operator=(const ThisType&);
 
   const GridPartType& gridPart_;
+  const GridViewType gridView_;
   const MapperType mapper_;
   const BaseFunctionSetType baseFunctionSet_;
 

@@ -2,7 +2,7 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 
 // dune-detailed-discretizations includes
-#include <dune/detailed-discretizations/basefunctionset/local/lagrange.hh>
+//#include <dune/detailed-discretizations/basefunctionset/local/lagrange.hh>
 #include <dune/detailed-discretizations/constraints/dirichlet.hh>
 
 namespace Dune {
@@ -28,6 +28,8 @@ public:
   typedef typename SuperSpaceType::FunctionSpaceType FunctionSpaceType;
 
   typedef typename SuperSpaceType::GridPartType GridPartType;
+
+  typedef typename SuperSpaceType::GridViewType GridViewType;
 
   enum
   {
@@ -84,6 +86,11 @@ public:
   const GridPartType& gridPart() const
   {
     return superSpace_.gridPart();
+  }
+
+  const GridViewType& gridView() const
+  {
+    return superSpace_.gridView();
   }
 
   const MapperType& map() const
