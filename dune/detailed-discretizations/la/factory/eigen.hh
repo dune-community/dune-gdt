@@ -3,6 +3,10 @@
 
 #ifdef HAVE_EIGEN
 
+// system
+#include <vector>
+#include <set>
+
 // dune-common
 #include <dune/common/shared_ptr.hh>
 
@@ -39,12 +43,40 @@ public:
   {
     // init
     SparseMatrixType matrix(ansatzSpace.map().size(), testSpace.map().size());
-    // compute max number of dofs per entity
-    const unsigned int maxNumberLocalDofs = std::max(ansatzSpace.map().maxLocalSize(), testSpace.map().maxLocalSize());
-    // compute max number of neighbours
-    const unsigned int maxNumberNeighbors = Dune::HelperTools::Grid::Information::maxNumberOfNeighbors(ansatzSpace.gridPart());
-    // reserve
-    matrix.reserve((maxNumberNeighbors + 1)*maxNumberLocalDofs);
+    std::vector< std::set< unsigned int > > pattern(ansatzSpace.map().size());
+
+    // generate sparsity pattern
+    typedef typename AnsatzSpaceType::GridPartType::template Codim< 0 >::IteratorType IteratorType;
+    IteratorType itEnd = ansatzSpace.gridPart().template end< 0 >();
+    for (IteratorType it = ansatzSpace.gridPart().template begin< 0 >(); it != itEnd; ++it) {
+      typename AnsatzSpaceType::GridPartType::template Codim< 0 >::IteratorType::Entity& entity = *it;
+      for( unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i )
+      {
+        for( unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j )
+        {
+          const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
+          const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
+          pattern[globalI].insert(globalJ);
+        }
+      }
+    } // generate sparsity pattern
+
+    // tell pattern to matrix
+    for (unsigned int row = 0; row < ansatzSpace.map().size(); ++row)
+    {
+      matrix.storage()->startVec(row);
+      for (typename std::set< unsigned int >::iterator it = pattern[row].begin();
+          it != pattern[row].end(); ++it)
+      {
+        unsigned int column = *it;
+        matrix.storage()->insertBackByOuterInner(row, column);
+      }
+    } // tell pattern to matrix
+
+    // finalize matrix
+    matrix.storage()->finalize();
+    matrix.storage()->makeCompressed();
+
     // return
     return matrix;
   }
