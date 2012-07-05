@@ -268,6 +268,16 @@ public:
     return storage_->operator()(i);
   }
 
+  const EntryType& operator[](unsigned int i) const
+  {
+    return storage_->coeff(i);
+  }
+
+  EntryType& operator[](unsigned int i)
+  {
+    return storage_->coeffRef(i);
+  }
+
 private:
   unsigned int size_;
   Dune::shared_ptr<StorageType> storage_;
