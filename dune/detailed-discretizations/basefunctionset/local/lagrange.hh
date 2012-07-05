@@ -1,6 +1,10 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_LAGRANGE_HH
 
+// dune-common
+#include <dune/common/shared_ptr.hh>
+#include <dune/common/timer.hh>
+
 namespace Dune {
 
 namespace DetailedDiscretizations {
@@ -46,6 +50,8 @@ public:
   Lagrange(const BaseFunctionSetType& baseFunctionSet, const EntityType& entity)
     : baseFunctionSet_(baseFunctionSet)
     , entity_(entity)
+    , size_(0)
+    , order_(0)
   {
     // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType HostBaseFunctionSetType;
@@ -87,11 +93,12 @@ public:
 
   void evaluate(const DomainType& x, std::vector<RangeType>& ret) const
   {
-    // clear target
-    for (unsigned int i = 0; i < ret.size(); ++i) {
-      ret[i] = 0.0;
-    }
-
+    //    typedef typename BaseFunctionSetType::EvaluationCacheMapType EvaluationCacheMapType;
+    //    const EvaluationCacheMapType& constEvaluationCacheMap = baseFunctionSet_.evaluationCacheMap();
+    //    EvaluationCacheMapType& evaluationCacheMap = const_cast< EvaluationCacheMapType& >(constEvaluationCacheMap);
+    //    if (evaluationCacheMap.find(x) != evaluationCacheMap.end()) {
+    //        ret = evaluationCacheMap[x];
+    //    } else {
     // get the host basefunctioset
     typedef typename BaseFunctionSetType::BaseFunctionSetType HostBaseFunctionSetType;
     const HostBaseFunctionSetType baseFunctionSet = baseFunctionSet_.baseFunctionSet(entity_);
@@ -100,15 +107,18 @@ public:
     for (unsigned int i = 0; i < size_; ++i) {
       baseFunctionSet.evaluate(i, x, ret[i]);
     }
+    //      evaluationCacheMap[x] = ret;
+    //    }
   }
 
   void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
   {
-    // clear target
-    for (unsigned int i = 0; i < ret.size(); ++i) {
-      ret[i] = 0.0;
-    }
-
+    //    typedef typename BaseFunctionSetType::JacobianCacheMapType JacobianCacheMapType;
+    //    const JacobianCacheMapType& constJacobianCacheMap = baseFunctionSet_.jacobianCacheMap();
+    //    JacobianCacheMapType& jacobianCacheMap = const_cast< JacobianCacheMapType& >(constJacobianCacheMap);
+    //    if (jacobianCacheMap.find(x) != jacobianCacheMap.end()) {
+    //        ret = jacobianCacheMap[x];
+    //    } else {
     // some types we will need
     typedef typename EntityType::Geometry EntityGeometryType;
     typedef typename EntityGeometryType::Jacobian JacobianInverseTransposedType;
@@ -139,6 +149,8 @@ public:
         ret[i][row] = jacobianTransposed[row];
       }
     }
+    //      jacobianCacheMap[x] = ret;
+    //    }
   }
 
 private:

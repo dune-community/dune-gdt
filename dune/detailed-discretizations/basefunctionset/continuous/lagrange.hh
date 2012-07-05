@@ -56,7 +56,30 @@ private:
 
   typedef std::map<const GeometryType, const BaseFunctionSetImp*> HostBaseFunctionMapType;
 
-  typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
+  class FieldVectorComp
+  {
+  public:
+    bool operator()(const DomainType& lhs, const DomainType& rhs) const
+    {
+      DomainFieldType lhsNorm = lhs.two_norm();
+      DomainFieldType rhsNorm = rhs.two_norm();
+      if (lhsNorm < rhsNorm) {
+        return true;
+      } else {
+        if (lhsNorm > rhsNorm) {
+          return false;
+        } else {
+          return (lhs[0] < rhs[0]);
+        }
+      }
+    }
+  };
+
+  //  typedef /*std::map< GeometryType,*/ std::map< DomainType, std::vector< RangeType >, FieldVectorComp > /*>*/
+  //  EvaluationCacheMapType;
+
+  //  typedef /*std::map< GeometryType,*/ std::map< DomainType, std::vector< JacobianRangeType >, FieldVectorComp >
+  //  /*>*/ JacobianCacheMapType;
 
   typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType IndexSetType;
 
@@ -82,11 +105,13 @@ public:
   //! does, whatever the constructor of the fem LagrangeDiscreteFunctionSpace does
   Lagrange(const DiscreteFunctionSpaceType& space)
     : space_(space)
-    , hostBaseFunctionSetMap_()
+    , hostBaseFunctionSetMap_() /*,
+       evaluationCacheMap_(),
+       jacobianCacheMap_()*/
   {
     const IndexSetType& indexSet = space_.gridPart().indexSet();
 
-    AllGeomTypes<IndexSetType, GridType> allGeometryTypes(indexSet);
+    const AllGeomTypes<IndexSetType, GridType> allGeometryTypes(indexSet);
 
     const std::vector<GeometryType>& geometryTypes = allGeometryTypes.geomTypes(0);
 
@@ -104,16 +129,18 @@ public:
 
 private:
   //! copy constructor
-  Lagrange(const ThisType& other)
-    : space_(other.space())
-    , hostBaseFunctionSetMap_()
-  {
-    if (!other.hostBaseFunctionSetMap_.empty()) {
-      for (unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i) {
-        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
-      }
-    }
-  }
+  Lagrange(const ThisType& other);
+  //    : space_( other.space() ),
+  //      hostBaseFunctionSetMap_()
+  //  {
+  //    if( !other.hostBaseFunctionSetMap_.empty() )
+  //    {
+  //      for( unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i )
+  //      {
+  //        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
+  //      }
+  //    }
+  //  }
 
 public:
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
@@ -134,7 +161,7 @@ public:
   }
 
   template <class EntityType>
-  LocalBaseFunctionSetType local(const EntityType& entity) const
+  const LocalBaseFunctionSetType local(const EntityType& entity) const
   {
     return LocalBaseFunctionSetType(*this, entity);
   }
@@ -154,9 +181,20 @@ private:
 
   friend class Dune::DetailedDiscretizations::BaseFunctionSet::Local::Lagrange<ThisType>;
 
+  //  const EvaluationCacheMapType& evaluationCacheMap() const
+  //  {
+  //    return evaluationCacheMap_;
+  //  }
+
+  //  const JacobianCacheMapType& jacobianCacheMap() const
+  //  {
+  //    return jacobianCacheMap_;
+  //  }
+
   const DiscreteFunctionSpaceType& space_;
   mutable HostBaseFunctionMapType hostBaseFunctionSetMap_;
-
+  //  mutable EvaluationCacheMapType evaluationCacheMap_;
+  //  mutable JacobianCacheMapType jacobianCacheMap_;
 }; // end class Lagrange
 
 } // end namespace BaseFunctionSet
