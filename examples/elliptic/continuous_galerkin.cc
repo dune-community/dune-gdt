@@ -14,9 +14,13 @@
 #include <dune/common/shared_ptr.hh>
 #include <dune/common/timer.hh>
 
+// dune-grid
+#include <dune/grid/io/file/vtk/vtkwriter.hh>
+
 // dune-fem
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/gridpart/gridpart.hh>
+#include <dune/fem/gridpart/gridpartview.hh>
 
 // dune-helper-tools
 #include <dune/helper-tools/common/parametertree.hh>
@@ -35,6 +39,7 @@
 #include <dune/detailed-discretizations/assembler/local/codim0/vector.hh>
 #include <dune/detailed-discretizations/assembler/system/constrained.hh>
 #include <dune/detailed-discretizations/la/backend/solver/eigen.hh>
+#include <dune/detailed-discretizations/discretefunction/default.hh>
 
 /**
   \brief      Creates a parameter file if it does not exist.
@@ -84,7 +89,8 @@ int main(int argc, char** argv)
     Dune::MPIHelper::instance(argc, argv);
 
     // parameter
-    const std::string filename = "continuous_galerkin.param";
+    const std::string id = "continuous_galerkin";
+    const std::string filename = id + ".param";
     ensureParamFile(filename);
     Dune::ParameterTree paramTree = Dune::HelperTools::Common::ParameterTree::init(argc, argv, filename);
 
@@ -100,7 +106,9 @@ int main(int argc, char** argv)
     GridType& grid = gridProvider.grid();
     typedef Dune::LeafGridPart< GridType > GridPartType;
     GridPartType gridPart(grid);
-    std::cout << "took " << timer.elapsed() << " sec" << std::endl;
+    typedef Dune::GridPartView< GridPartType > GridViewType;
+    GridViewType gridView(gridPart);
+    std::cout << "took " << timer.elapsed() << " sec, has " << gridView.size(0) << " entities" << std::endl;
 
     // function spaces
     std::cout << "setting up function spaces... " << std::flush;
@@ -164,15 +172,14 @@ int main(int argc, char** argv)
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // solve system
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", filename);
-
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabIlut Solver;
-    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
-//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalUpper Solver;
+//    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
+    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalUpper Solver;
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalLower Solver;
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver;
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver;
     std::cout << "solving linear system using " << Solver::id << "... " << std::flush;
+    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", filename);
     timer.reset();
     Solver::apply(
       systemMatrix,
@@ -181,6 +188,14 @@ int main(int argc, char** argv)
       paramTree.sub("solver").get("maxIter", 5000),
       paramTree.sub("solver").get("precision", 1e-12));
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+
+    // postprocess
+    typedef Dune::DetailedDiscretizations::DiscreteFunction::Default< AnsatzSpaceType, VectorType > DiscreteFunctionType;
+    Dune::shared_ptr< DiscreteFunctionType > u(new DiscreteFunctionType(ansatzSpace, solution, "solution"));
+    typedef Dune::VTKWriter< typename AnsatzSpaceType::GridViewType > VTKWriterType;
+    VTKWriterType vtkWriter(ansatzSpace.gridView());
+    vtkWriter.addVertexData(u);
+    vtkWriter.write(id + "_solution");
 
     // done
     return 0;
