@@ -100,7 +100,7 @@ add_cxx_flags(-std=c++0x)
 
 add_cxx_flags(${CUSTOM_FLAGS})
 # the other dune modules
-ADD_DUNE_MODULES(common istl grid fem geometry localfunctions fem-localfunction helper-tools)
+ADD_DUNE_MODULES(common istl grid fem geometry localfunctions stuff)
 
 # Source listing, relative to the position of this file
 FILE( GLOB_RECURSE detailed-discretizations "../dune-detailed-discretizations/*.hh" )
@@ -117,19 +117,17 @@ FILE( GLOB_RECURSE geometry "../dune-geometry/*.hh" )
 FILE( GLOB_RECURSE geometry_cc "../dune-geometry/*.cc" )
 FILE( GLOB_RECURSE localfunctions "../dune-localfunctions/*.hh" )
 FILE( GLOB_RECURSE localfunctions_cc "../dune-localfunctions/*.cc" )
-FILE( GLOB_RECURSE helper-tools "../dune-helper-tools/*.hh" )
-FILE( GLOB_RECURSE helper-tools_cc "../dune-helper-tools/*.cc" )
-FILE( GLOB_RECURSE fem-localfunctions "../dune-fem-localfunctions/*.hh" )
-FILE( GLOB_RECURSE fem-localfunctions_cc "../dune-fem-localfunctions/*.cc" )
+FILE( GLOB_RECURSE stuff "../dune-stuff/*.hh" )
+FILE( GLOB_RECURSE stuff_cc "../dune-stuff/*.cc" )
 
-set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${helper-tools} ${detailed-discretizations}
-${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_cc} ${fem-localfunctions_cc} ${geometry_cc} ${helper-tools_cc} ${detailed-discretizations_cc} PROPERTIES HEADER_FILE_ONLY 1 )
+set_source_files_properties( ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${stuff} ${detailed-discretizations}
+${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${geometry_cc} ${stuff_cc} ${detailed-discretizations_cc} PROPERTIES HEADER_FILE_ONLY 1 )
 
-set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${fem-localfunctions} ${geometry} ${helper-tools} ${detailed-discretizations}
-${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${grid-howto_cc} ${fem-localfunctions_cc} ${geometry_cc} ${helper-tools_cc} ${detailed-discretizations_cc} )
+set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${geometry} ${stuff} ${detailed-discretizations}
+${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${geometry_cc} ${stuff_cc} ${detailed-discretizations_cc} )
 
 set( COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
-ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${helper-tool} ${LIST_LIBS} )
+ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${LIST_LIBS} )
 TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
 
