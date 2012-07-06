@@ -5,16 +5,16 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM0_INTEGRAL_HH
 
-// std includes
+// system
 #include <vector>
 
-// dune geometry includes
+// dune-geometry
 #include <dune/geometry/quadraturerules.hh>
 
-// dune helper tools includes
-#include <dune/helper-tools/common/matrix.hh>
+// dune-stuff
+#include <dune/stuff/common/matrix.hh>
 
-// dune detailed discretizations includes
+// dune-detailed-discretizations
 #include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
 
 namespace Dune {
@@ -160,7 +160,7 @@ public:
     assert(localMatrix.cols() >= cols);
 
     // clear target matrix
-    Dune::HelperTools::Common::Matrix::clear(localMatrix);
+    Dune::Stuff::Common::Matrix::clear(localMatrix);
 
     // check tmp local matrices
     if (tmpLocalMatrices.size() < 1) {

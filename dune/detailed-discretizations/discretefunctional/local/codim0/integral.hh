@@ -5,16 +5,16 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM0_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM0_INTEGRAL_HH
 
-// dune-common includes
+// dune-common
 #include <dune/common/dynmatrix.hh>
 
-// dune geometry includes
+// dune-geometry
 #include <dune/geometry/quadraturerules.hh>
 
-// dune-helper-tools includes
-#include <dune/helper-tools/common/vector.hh>
+// dune-stuff
+#include <dune/stuff/common/vector.hh>
 
-// dune-detailed-discretizations includes
+// dune-detailed-discretizations
 #include <dune/detailed-discretizations/basefunctionset/local/wrapper.hh>
 
 namespace Dune {
@@ -86,7 +86,7 @@ public:
     }
 
     // clear target vector
-    Dune::HelperTools::Common::Vector::clear(localVector);
+    Dune::Stuff::Common::Vector::clear(localVector);
 
     const typename VolumeQuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
     for (typename VolumeQuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd;
@@ -194,7 +194,7 @@ public:
     assert(localVector.size() >= size);
 
     // clear target vector
-    Dune::HelperTools::Common::Vector::clear(localVector);
+    Dune::Stuff::Common::Vector::clear(localVector);
 
     // do loop over all quadrature points
     LocalMatrixType tmpMatrix(1, size);
