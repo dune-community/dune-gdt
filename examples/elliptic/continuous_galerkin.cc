@@ -22,10 +22,10 @@
 #include <dune/fem/gridpart/gridpart.hh>
 #include <dune/fem/gridpart/gridpartview.hh>
 
-// dune-helper-tools
-#include <dune/helper-tools/common/parametertree.hh>
-#include <dune/helper-tools/grid/provider/cube.hh>
-#include <dune/helper-tools/function/expression.hh>
+// dune-stuff
+#include <dune/stuff/common/parameter/tree.hh>
+#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/stuff/function/expression.hh>
 
 // dune-detailed-discretizations
 #include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
@@ -55,7 +55,7 @@ void ensureParamFile(std::string filename)
   if (!boost::filesystem::exists(filename)) {
     std::ofstream file;
     file.open(filename);
-    file << "[helper-tools.grid.provider.cube]" << std::endl;
+    file << "[stuff.grid.provider.cube]" << std::endl;
     file << "level = 4" << std::endl;
     file << "[diffusion]" << std::endl;
     file << "variable = x" << std::endl;
@@ -92,15 +92,15 @@ int main(int argc, char** argv)
     const std::string id = "continuous_galerkin";
     const std::string filename = id + ".param";
     ensureParamFile(filename);
-    Dune::ParameterTree paramTree = Dune::HelperTools::Common::ParameterTree::init(argc, argv, filename);
+    Dune::ParameterTree paramTree = Dune::Stuff::Common::Parameter::Tree::init(argc, argv, filename);
 
     // timer
     Dune::Timer timer;
 
     // grid
     std::cout << "setting up grid:" << std::endl;
-    typedef Dune::HelperTools::Grid::Provider::UnitCube< Dune::GridSelector::GridType > GridProviderType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, GridProviderType::id, id);
+    typedef Dune::Stuff::Grid::Provider::UnitCube< Dune::GridSelector::GridType > GridProviderType;
+    Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, GridProviderType::id, id);
     GridProviderType gridProvider(paramTree.sub(GridProviderType::id));
     typedef GridProviderType::GridType GridType;
     GridType& grid = gridProvider.grid();
@@ -130,14 +130,14 @@ int main(int argc, char** argv)
     std::cout << "setting up operator and functional... " << std::flush;
     timer.reset();
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "diffusion", id);
+    Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "diffusion", id);
     const EllipticEvaluationType ellipticEvaluation(paramTree.sub("diffusion"));
     typedef Dune::DetailedDiscretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
 
     // right hand side (functional)
     typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType > ProductEvaluationType;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "force", id);
+    Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "force", id);
     const ProductEvaluationType productEvaluation(paramTree.sub("force"));
     typedef Dune::DetailedDiscretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
     const L2FunctionalType l2Functional(productEvaluation);
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver;
 //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver;
     std::cout << "solving linear system using " << Solver::id << "... " << std::flush;
-    Dune::HelperTools::Common::ParameterTree::assertSub(paramTree, "solver", id);
+    Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "solver", id);
     timer.reset();
     Solver::apply(
       systemMatrix,

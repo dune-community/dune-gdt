@@ -10,9 +10,6 @@
 // dune-common
 #include <dune/common/shared_ptr.hh>
 
-// dune-helper-tools
-#include <dune/helper-tools/grid/information.hh>
-
 // local
 #include "../backend/container/eigen.hh"
 
