@@ -1,5 +1,5 @@
 
-SUBDIRS = doxygen latex
+SUBDIRS = doxygen
 CURDIR = doc
 BASEDIR = ..
 
