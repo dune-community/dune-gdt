@@ -147,9 +147,9 @@ int main(int argc, char** argv)
     std::cout << "setting up matrix and vector container... " << std::flush;
     timer.reset();
     typedef Dune::DetailedDiscretizations::LA::Factory::Eigen< RangeFieldType > ContainerFactory;
-    typedef typename ContainerFactory::SparseMatrixType MatrixType;
+    typedef ContainerFactory::SparseMatrixType MatrixType;
     MatrixType systemMatrix = ContainerFactory::createSparseMatrix(ansatzSpace, testSpace);
-    typedef typename ContainerFactory::DenseVectorType VectorType;
+    typedef ContainerFactory::DenseVectorType VectorType;
     VectorType rhs = ContainerFactory::createDenseVector(testSpace);
     VectorType solution = ContainerFactory::createDenseVector(testSpace);
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
@@ -192,7 +192,7 @@ int main(int argc, char** argv)
     // postprocess
     typedef Dune::DetailedDiscretizations::DiscreteFunction::Default< AnsatzSpaceType, VectorType > DiscreteFunctionType;
     Dune::shared_ptr< DiscreteFunctionType > u(new DiscreteFunctionType(ansatzSpace, solution, "solution"));
-    typedef Dune::VTKWriter< typename AnsatzSpaceType::GridViewType > VTKWriterType;
+    typedef Dune::VTKWriter< AnsatzSpaceType::GridViewType > VTKWriterType;
     VTKWriterType vtkWriter(ansatzSpace.gridView());
     vtkWriter.addVertexData(u);
     vtkWriter.write(id + "_solution");

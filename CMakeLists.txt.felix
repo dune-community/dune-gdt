@@ -1,5 +1,10 @@
 PROJECT( dune-detailed-discretizations)
 
+SET( CMAKE_CXX_COMPILER
+  "g++-4.4" CACHE FORCE
+  "" )
+
+
 #set minimum cmake version
 cmake_minimum_required(VERSION 2.6)
 
