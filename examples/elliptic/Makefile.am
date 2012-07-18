@@ -9,7 +9,7 @@ CUSTOM_CPPFLAGS = -DALUGRID_SIMPLEX -DGRIDDIM=2 -DWORLDDIM=2 -Wall -O0 -DDEBUG -
 
 continuous_galerkin_SOURCES = continuous_galerkin.cc 
 continuous_galerkin_CPPFLAGS = $(AM_CPPFLAGS) $(EIGEN_CFLAGS) $(CUSTOM_CPPFLAGS) $(BOOST_CPPFLAGS)
-continuous_galerkin_LDFLAGS = $(ALL_PKG_LDFLAGS) $(DUNEMPILDFLAGS) -lboost_system -lboost_filesystem
-continuous_galerkin_LDADD = $(ALL_PKG_LIBS) $(LOCAL_LIBS)
+continuous_galerkin_LDFLAGS = $(ALL_LDFLAGS) $(BOOST_LDFLAGS) -lboost_system -lboost_filesystem
+continuous_galerkin_LDADD = $(LDADD) $(BOOST_LDADD)
 
 include $(top_srcdir)/am/global-rules

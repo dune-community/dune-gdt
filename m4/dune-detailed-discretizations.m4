@@ -8,27 +8,8 @@ dnl -*- autoconf -*-
 # well as by dune-detailed-discretizations itself
 AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
 [
-    AX_BOOST_BASE([1.42.0])
-
-    AC_LANG_PUSH([C++])
-
-    dnl Check for boost/filesystem.hpp
-    dnl AC_CHECK_HEADER([boost/filesystem.hpp],,
-      dnl [
-      dnl AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
-      dnl ],
-      dnl [
-      dnl BOOST_CPPFLAGS
-      dnl ])
-
-    dnl AC_CHECK_LIB([boost_filesystem],[main],,
-      dnl [AC_MSG_ERROR([you must install libboost-filesystem to compile dune-detailed-discretizations.])
-      dnl ])
-
-    AC_LANG_POP([C++])
-
-    BOOST_LDADD="-lboost_system -lboost_filesystem"
-    AC_SUBST(BOOST_LDADD)
+    AX_BOOST_BASE([1.50.0])
+    AX_BOOST_FILESYSTEM([1.50.0])
 
     PKG_CHECK_MODULES([EIGEN], [eigen3], [
       AC_DEFINE([HAVE_EIGEN],
