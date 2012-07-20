@@ -51,6 +51,10 @@ SET( ALUGRID_BASE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/../alugrid" CACHE STRING
   "ALUGRID_BASE_PATH" )
 
+SET( ALBERTAGRID_BASE_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/../alberta" CACHE STRING
+  "ALBERTAGRID_BASE_PATH" )
+
 SET( CUSTOM_FLAGS
   "-Wall -O0 -DDEBUG -g -fdiagnostics-show-option" CACHE LIST
   "CUSTOM FLAGS" )
@@ -96,10 +100,16 @@ add_cxx_flags( -DPOLORDER=${POLORDER} )
 add_cxx_flags( -I${ALUGRID_BASE_PATH}/include
   -I${ALUGRID_BASE_PATH}/include/serial
   -I${ALUGRID_BASE_PATH}/include/duneinterface -DENABLE_ALUGRID )
+add_cxx_flags( -DENABLE_ALBERTA=1
+  -DWORLDDIM=${GRIDDIM}
+  -DALBERTA_DIM=${GRIDDIM}
+  -I${ALBERTAGRID_BASE_PATH}/include
+  -I${ALBERTAGRID_BASE_PATH}/include/alberta )
 
 # without this I get an error with redefinition of tolower
 add_cxx_flags(-DBOOST_DATE_TIME_NO_LOCALE)
 link_directories( "${ALUGRID_BASE_PATH}/lib" )
+link_directories( "${ALBERTAGRID_BASE_PATH}/lib" )
 
 add_cxx_flags(-std=c++0x)
 
@@ -131,7 +141,7 @@ ${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${geometry_cc}
 set( LIST_LIBS ${common} ${grid} ${istl} ${fem} ${localfunctions} ${geometry} ${stuff} ${detailed-discretizations}
 ${common_cc} ${grid_cc} ${istl_cc} ${fem_cc} ${localfunctions_cc} ${geometry_cc} ${stuff_cc} ${detailed-discretizations_cc} )
 
-set( COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
+set( COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "alberta_utilities" "alberta_${GRIDDIM}d" "dunealbertagrid_${GRIDDIM}d" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
 ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${LIST_LIBS} )
 TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
