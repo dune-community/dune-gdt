@@ -1,6 +1,13 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 
+// system
+#include <map>
+#include <set>
+
+// dune-common
+#include <dune/common/shared_ptr.hh>
+
 // dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
 #include <dune/fem/gridpart/gridpartview.hh>
@@ -69,6 +76,8 @@ public:
 
   static const unsigned int dimRange = FunctionSpaceType::dimRange;
 
+  typedef std::map< unsigned int, std::set< unsigned int > > PatternType;
+
   /**
       @name Convenience typedefs
       @{
@@ -87,18 +96,11 @@ public:
       gridView_(gridPart_),
       mapper_( gridPart_ ),
       baseFunctionSet_( *this )
-  {
-  }
+  {}
 
 private:
   //! copy constructor
-  Lagrange( const ThisType& other )
-    : gridPart_( other.gridPart() ),
-      gridView_(gridPart_),
-      mapper_( gridPart_ ),
-      baseFunctionSet_( *this )
-  {
-  }
+  Lagrange( const ThisType& other );
 
 public:
   const GridPartType& gridPart() const
@@ -151,6 +153,34 @@ public:
       @}
    **/
 
+  template< class OtherDiscreteFunctionSpaceType>
+  PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  {
+    std::map< unsigned int, std::set< unsigned int > > ret;
+    // generate sparsity pattern
+    for (IteratorType it = begin(); it != end(); ++it) {
+      const EntityType& entity = *it;
+      for(unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
+        for(unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
+          const unsigned int globalI = map().toGlobal(entity, i);
+          const unsigned int globalJ = other.map().toGlobal(entity, j);
+          std::map< unsigned int, std::set< unsigned int > >::iterator result = ret.find(globalI);
+          if (result == ret.end())
+            ret.insert(std::pair< unsigned int, std::set< unsigned int > >(globalI, std::set< unsigned int >()));
+          result = ret.find(globalI);
+          assert(result != ret.end());
+          result->second.insert(globalJ);
+        }
+      }
+    } // generate sparsity pattern
+    return ret;
+  } // PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+
+  PatternType computePattern() const
+  {
+    return computePattern(*this);
+  }
+
 protected:
 
   //! assignment operator
@@ -160,7 +190,6 @@ protected:
   const GridViewType gridView_;
   const MapperType mapper_;
   const BaseFunctionSetType baseFunctionSet_;
-
 }; // end class Lagrange
 
 } // end namespace Continuous
