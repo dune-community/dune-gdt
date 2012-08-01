@@ -1,7 +1,7 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_CONTAINER_FACTORY_EIGEN_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_CONTAINER_FACTORY_EIGEN_HH
 
-#ifdef HAVE_EIGEN
+//#ifdef HAVE_EIGEN
 
 // system
 #include <vector>
@@ -37,37 +37,29 @@ public:
 
   typedef Dune::Detailed::Discretizations::LA::Backend::Container::Eigen::DenseVector< EntryType > DenseVectorType;
 
+  typedef std::map< unsigned int, std::set< unsigned int > > PatternType;
+
   template< class AnsatzSpaceType, class TestSpaceType >
   static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
   {
-    // init
-    SparseMatrixType matrix(ansatzSpace.map().size(), testSpace.map().size());
-    std::vector< std::set< unsigned int > > pattern(ansatzSpace.map().size());
-
     // generate sparsity pattern
-    typedef typename AnsatzSpaceType::GridPartType::template Codim< 0 >::IteratorType IteratorType;
-    IteratorType itEnd = ansatzSpace.gridPart().template end< 0 >();
-    for (IteratorType it = ansatzSpace.gridPart().template begin< 0 >(); it != itEnd; ++it) {
-      typename AnsatzSpaceType::GridPartType::template Codim< 0 >::IteratorType::Entity& entity = *it;
-      for( unsigned int i = 0; i < ansatzSpace.baseFunctionSet().local(entity).size(); ++i )
-      {
-        for( unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j )
-        {
-          const unsigned int globalI = ansatzSpace.map().toGlobal(entity, i);
-          const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
-          pattern[globalI].insert(globalJ);
-        }
-      }
-    } // generate sparsity pattern
+    const PatternType pattern = ansatzSpace.computePattern(testSpace);
+    return createSparseMatrix(ansatzSpace.map().size(), testSpace.map().size(), pattern);
+  } // static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
+
+  static SparseMatrixType createSparseMatrix(const unsigned int rows, const unsigned int cols, const PatternType& pattern)
+  {
+    // init
+    SparseMatrixType matrix(rows, cols);
 
     // tell pattern to matrix
-    for (unsigned int row = 0; row < ansatzSpace.map().size(); ++row)
-    {
+    for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
+      const unsigned int row = rowSet->first;
+      const std::set< unsigned int >& rowEntries = rowSet->second;
       matrix.storage()->startVec(row);
-      for (typename std::set< unsigned int >::iterator it = pattern[row].begin();
-          it != pattern[row].end(); ++it)
-      {
-        unsigned int column = *it;
+      for (typename std::set< unsigned int >::iterator rowEntry = rowEntries.begin();
+          rowEntry != rowEntries.end(); ++rowEntry) {
+        unsigned int column = *rowEntry;
         matrix.storage()->insertBackByOuterInner(row, column);
       }
     } // tell pattern to matrix
@@ -78,29 +70,39 @@ public:
 
     // return
     return matrix;
-  }
+  } // static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
 
   template< class AnsatzSpaceType, class TestSpaceType >
   static DenseMatrixType createDenseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
   {
+    return createDenseMatrix(ansatzSpace.map().size(), testSpace.map().size());
+  }
+
+  static DenseMatrixType createDenseMatrix(const unsigned int rows, const unsigned int cols)
+  {
     // init
-    DenseMatrixType matrix(ansatzSpace.map().size(), testSpace.map().size());
+    DenseMatrixType matrix(rows, cols);
     // reserve
     matrix.reserve();
     // return
     return matrix;
-  }
+  } // static DenseMatrixType createDenseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
 
   template< class SpaceType >
   static DenseVectorType createDenseVector(const SpaceType& space)
   {
+    return createDenseVector(space.map().size());
+  }
+
+  static DenseVectorType createDenseVector(const unsigned int size)
+  {
     // init
-    DenseVectorType vector(space.map().size());
+    DenseVectorType vector(size);
     // reserve
     vector.reserve();
     // return
     return vector;
-  }
+  } // static DenseVectorType createDenseVector(const SpaceType& space)
 }; // class Eigen
 
 } // namespace Factory
@@ -113,6 +115,6 @@ public:
 
 } // namespace Dune
 
-#endif // HAVE_EIGEN
+//#endif // HAVE_EIGEN
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_CONTAINER_FACTORY_EIGEN_HH
