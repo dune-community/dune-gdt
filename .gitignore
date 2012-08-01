@@ -73,3 +73,4 @@ CMakeLists.txt.user*
 *.deps
 examples/elliptic/continuous_galerkin
 examples/elliptic/continuous_galerkin-continuous_galerkin.o
+demos

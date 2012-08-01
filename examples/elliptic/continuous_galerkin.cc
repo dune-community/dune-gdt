@@ -17,10 +17,12 @@
 // dune-grid
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
+// dune-grid-multiscale
+#include <dune/grid/part/leaf.hh>
+//#include <dune/fem/gridpart/gridpartview.hh>
+
 // dune-fem
 #include <dune/fem/space/common/functionspace.hh>
-#include <dune/fem/gridpart/gridpart.hh>
-#include <dune/fem/gridpart/gridpartview.hh>
 
 // dune-stuff
 #include <dune/stuff/common/parameter/tree.hh>
@@ -101,20 +103,18 @@ int main(int argc, char** argv)
     std::cout << "setting up grid:" << std::endl;
     typedef Dune::Stuff::Grid::Provider::UnitCube<Dune::GridSelector::GridType> GridProviderType;
     Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, GridProviderType::id, id);
-    GridProviderType gridProvider(paramTree.sub(GridProviderType::id));
+    const GridProviderType gridProvider(paramTree.sub(GridProviderType::id));
     typedef GridProviderType::GridType GridType;
-    GridType& grid = gridProvider.grid();
-    typedef Dune::LeafGridPart<GridType> GridPartType;
-    GridPartType gridPart(grid);
-    typedef Dune::GridPartView<GridPartType> GridViewType;
-    GridViewType gridView(gridPart);
-    std::cout << "took " << timer.elapsed() << " sec, has " << gridView.size(0) << " entities" << std::endl;
+    const GridType& grid = gridProvider.grid();
+    typedef Dune::grid::Part::Leaf::Const<GridType> GridPartType;
+    const GridPartType gridPart(grid);
+    std::cout << "took " << timer.elapsed() << " sec, has " << grid.size(0) << " entities" << std::endl;
 
     // function spaces
     std::cout << "setting up function spaces... " << std::flush;
     timer.reset();
-    const int dimDomain = GridProviderType::dim;
-    const int dimRange  = 1;
+    const int DUNE_UNUSED(dimDomain) = GridProviderType::dim;
+    const int DUNE_UNUSED(dimRange) = 1;
     typedef double DomainFieldType;
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace<DomainFieldType, RangeFieldType, dimDomain, dimRange> FunctionSpaceType;
@@ -152,9 +152,12 @@ int main(int argc, char** argv)
     // system matrix and right hand side
     std::cout << "setting up matrix and vector container... " << std::flush;
     timer.reset();
-    typedef Dune::DetailedDiscretizations::LA::Factory::Eigen<RangeFieldType> ContainerFactory;
+    typedef AnsatzSpaceType::PatternType SparsityPatternType;
+    const SparsityPatternType sparsityPattern = ansatzSpace.computePattern(testSpace);
+    typedef Dune::Detailed::Discretizations::LA::Factory::Eigen<RangeFieldType> ContainerFactory;
     typedef ContainerFactory::SparseMatrixType MatrixType;
-    MatrixType systemMatrix = ContainerFactory::createSparseMatrix(ansatzSpace, testSpace);
+    MatrixType systemMatrix =
+        ContainerFactory::createSparseMatrix(ansatzSpace.map().size(), testSpace.map().size(), sparsityPattern);
     typedef ContainerFactory::DenseVectorType VectorType;
     VectorType rhs      = ContainerFactory::createDenseVector(testSpace);
     VectorType solution = ContainerFactory::createDenseVector(testSpace);
@@ -181,12 +184,16 @@ int main(int argc, char** argv)
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // solve system
-    //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabIlut Solver;
-    //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
-    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalUpper Solver;
-    //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::CgDiagonalLower Solver;
-    //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver;
-    //    typedef Dune::DetailedDiscretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver;
+    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::BicgstabIlut Solver;
+    //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
+    //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::CgDiagonalUpper Solver; // seems to produce
+    //    strange results
+    //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::CgDiagonalLower Solver; // seems to produce
+    //    strange results
+    //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver; // seems to
+    //    produce strange results
+    //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver; // seems to
+    //    produce strange results
     std::cout << "solving linear system using " << Solver::id << "... " << std::flush;
     Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "solver", id);
     timer.reset();
