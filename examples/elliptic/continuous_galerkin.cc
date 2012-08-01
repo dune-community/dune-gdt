@@ -28,18 +28,18 @@
 #include <dune/stuff/function/expression.hh>
 
 // dune-detailed-discretizations
-#include <dune/detailed-discretizations/discretefunctionspace/continuous/lagrange.hh>
-#include <dune/detailed-discretizations/discretefunctionspace/subspace/linear.hh>
-#include <dune/detailed-discretizations/evaluation/local/binary/elliptic.hh>
-#include <dune/detailed-discretizations/discreteoperator/local/codim0/integral.hh>
-#include <dune/detailed-discretizations/evaluation/local/unary/scale.hh>
-#include <dune/detailed-discretizations/discretefunctional/local/codim0/integral.hh>
-#include <dune/detailed-discretizations/la/factory/eigen.hh>
-#include <dune/detailed-discretizations/assembler/local/codim0/matrix.hh>
-#include <dune/detailed-discretizations/assembler/local/codim0/vector.hh>
-#include <dune/detailed-discretizations/assembler/system/constrained.hh>
-#include <dune/detailed-discretizations/la/backend/solver/eigen.hh>
-#include <dune/detailed-discretizations/discretefunction/default.hh>
+#include <dune/detailed/discretizations/discretefunctionspace/continuous/lagrange.hh>
+#include <dune/detailed/discretizations/discretefunctionspace/sub/linear.hh>
+#include <dune/detailed/discretizations/evaluation/local/binary/elliptic.hh>
+#include <dune/detailed/discretizations/discreteoperator/local/codim0/integral.hh>
+#include <dune/detailed/discretizations/evaluation/local/unary/scale.hh>
+#include <dune/detailed/discretizations/discretefunctional/local/codim0/integral.hh>
+#include <dune/detailed/discretizations/la/factory/eigen.hh>
+#include <dune/detailed/discretizations/assembler/local/codim0/matrix.hh>
+#include <dune/detailed/discretizations/assembler/local/codim0/vector.hh>
+#include <dune/detailed/discretizations/assembler/system/constrained.hh>
+#include <dune/detailed/discretizations/la/backend/solver/eigen.hh>
+#include <dune/detailed/discretizations/discretefunction/default.hh>
 
 /**
   \brief      Creates a parameter file if it does not exist.
@@ -118,9 +118,9 @@ int main(int argc, char** argv)
     typedef double DomainFieldType;
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
-    typedef Dune::DetailedDiscretizations::DiscreteFunctionSpace::Continuous::Lagrange< FunctionSpaceType, GridPartType, polOrder > DiscreteH1Type;
+    typedef Dune::Detailed::Discretizations::DiscreteFunctionSpace::Continuous::Lagrange< FunctionSpaceType, GridPartType, polOrder > DiscreteH1Type;
     const DiscreteH1Type discreteH1(gridPart);
-    typedef Dune::DetailedDiscretizations::DiscreteFunctionSpace::Subspace::Linear::Dirichlet< DiscreteH1Type > AnsatzSpaceType;
+    typedef Dune::Detailed::Discretizations::DiscreteFunctionSpace::Sub::Linear::Dirichlet< DiscreteH1Type > AnsatzSpaceType;
     const AnsatzSpaceType ansatzSpace(discreteH1);
     typedef AnsatzSpaceType TestSpaceType;
     const TestSpaceType testSpace(discreteH1);
@@ -129,17 +129,17 @@ int main(int argc, char** argv)
     // left hand side (operator)
     std::cout << "setting up operator and functional... " << std::flush;
     timer.reset();
-    typedef Dune::DetailedDiscretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
+    typedef Dune::Detailed::Discretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType > EllipticEvaluationType;
     Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "diffusion", id);
     const EllipticEvaluationType ellipticEvaluation(paramTree.sub("diffusion"));
-    typedef Dune::DetailedDiscretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
+    typedef Dune::Detailed::Discretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
 
     // right hand side (functional)
-    typedef Dune::DetailedDiscretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType > ProductEvaluationType;
+    typedef Dune::Detailed::Discretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType > ProductEvaluationType;
     Dune::Stuff::Common::Parameter::Tree::assertSub(paramTree, "force", id);
     const ProductEvaluationType productEvaluation(paramTree.sub("force"));
-    typedef Dune::DetailedDiscretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
+    typedef Dune::Detailed::Discretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
     const L2FunctionalType l2Functional(productEvaluation);
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -157,11 +157,11 @@ int main(int argc, char** argv)
     // assembler
     std::cout << "setting up assembler... " << std::flush;
     timer.reset();
-    typedef Dune::DetailedDiscretizations::Assembler::Local::Codim0::Matrix< EllipticOperatorType > LocalMatrixAssemblerType;
+    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Matrix< EllipticOperatorType > LocalMatrixAssemblerType;
     const LocalMatrixAssemblerType localmatrixAssembler(ellipticOperator);
-    typedef Dune::DetailedDiscretizations::Assembler::Local::Codim0::Vector< L2FunctionalType > LocalVectorAssemblerType;
+    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Vector< L2FunctionalType > LocalVectorAssemblerType;
     const LocalVectorAssemblerType localVectorAssembler(l2Functional);
-    typedef Dune::DetailedDiscretizations::Assembler::System::Constrained< AnsatzSpaceType, TestSpaceType > SystemAssemblerType;
+    typedef Dune::Detailed::Discretizations::Assembler::System::Constrained< AnsatzSpaceType, TestSpaceType > SystemAssemblerType;
     const SystemAssemblerType systemAssembler(ansatzSpace, testSpace);
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // postprocess
-    typedef Dune::DetailedDiscretizations::DiscreteFunction::Default< AnsatzSpaceType, VectorType > DiscreteFunctionType;
+    typedef Dune::Detailed::Discretizations::DiscreteFunction::Default< AnsatzSpaceType, VectorType > DiscreteFunctionType;
     Dune::shared_ptr< DiscreteFunctionType > u(new DiscreteFunctionType(ansatzSpace, solution, "solution"));
     typedef Dune::VTKWriter< AnsatzSpaceType::GridViewType > VTKWriterType;
     VTKWriterType vtkWriter(ansatzSpace.gridView());

@@ -26,5 +26,5 @@ AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
 # not by dune-detailed-discretizations itself
 AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECK_MODULE],
 [
-  DUNE_CHECK_MODULES([dune-detailed-discretizations],[detailed-discretizations/assembler/system/affine.hh])
+  DUNE_CHECK_MODULES([dune-detailed-discretizations],[detailed/discretizations/exists.hh])
 ])
