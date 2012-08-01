@@ -58,6 +58,8 @@ public:
 
   static const unsigned int dimRange = SuperSpaceType::dimRange;
 
+  typedef typename SuperSpaceType::PatternType PatternType;
+
   /**
       @name Convenience
       @{
@@ -131,6 +133,17 @@ public:
   /**
       @}
    **/
+
+  template <class OtherDiscreteFunctionSpaceType>
+  PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  {
+    return superSpace_.computePattern(other);
+  }
+
+  PatternType computePattern() const
+  {
+    return superSpace_.computePattern();
+  }
 
 private:
   //! copy constructor
