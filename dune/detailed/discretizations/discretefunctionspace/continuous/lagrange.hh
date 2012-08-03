@@ -148,14 +148,14 @@ public:
     for (IteratorType it = begin(); it != end(); ++it) {
       const EntityType& entity = *it;
       for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
+        const unsigned int globalI                                      = map().toGlobal(entity, i);
+        std::map<unsigned int, std::set<unsigned int>>::iterator result = ret.find(globalI);
+        if (result == ret.end())
+          ret.insert(std::pair<unsigned int, std::set<unsigned int>>(globalI, std::set<unsigned int>()));
+        result = ret.find(globalI);
+        assert(result != ret.end());
         for (unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
-          const unsigned int globalI                                      = map().toGlobal(entity, i);
-          const unsigned int globalJ                                      = other.map().toGlobal(entity, j);
-          std::map<unsigned int, std::set<unsigned int>>::iterator result = ret.find(globalI);
-          if (result == ret.end())
-            ret.insert(std::pair<unsigned int, std::set<unsigned int>>(globalI, std::set<unsigned int>()));
-          result = ret.find(globalI);
-          assert(result != ret.end());
+          const unsigned int globalJ = other.map().toGlobal(entity, j);
           result->second.insert(globalJ);
         }
       }
