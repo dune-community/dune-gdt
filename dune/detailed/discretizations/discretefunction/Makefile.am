@@ -1,4 +1,4 @@
 discretefunction_includedir = $(includedir)/dune/detailed/discretizations/discretefunction
-discretefunction_include_HEADERS = continuous.hh femadapter.hh local.hh
+discretefunction_include_HEADERS = default.hh multiscale.hh
 
 include $(top_srcdir)/am/global-rules
