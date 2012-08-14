@@ -23,6 +23,8 @@ namespace LA {
 
 namespace Factory {
 
+//! \attention There might be a problem with the sparsity pattern.
+//! \todo Understand the eigen sparsity pattern and which insertion method to use!
 template <class EntryType>
 class Eigen
 {
@@ -53,11 +55,11 @@ public:
     for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
       const unsigned int row                   = rowSet->first;
       const std::set<unsigned int>& rowEntries = rowSet->second;
-      matrix.storage()->startVec(row);
+      //      matrix.storage()->startVec(row);
       for (typename std::set<unsigned int>::iterator rowEntry = rowEntries.begin(); rowEntry != rowEntries.end();
            ++rowEntry) {
         unsigned int column = *rowEntry;
-        matrix.storage()->insertBackByOuterInner(row, column);
+        matrix.storage()->insert /*BackByOuterInner*/ (row, column);
       }
     } // tell pattern to matrix
 
