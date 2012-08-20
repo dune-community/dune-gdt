@@ -54,22 +54,22 @@ public:
     InducingFunctionType;
 
   //! constructor, takes the inducing functions expression as a runtime parameter
-  Scale(const Dune::shared_ptr< const InducingFunctionType >& inducingFunction, int order = 0)
+  Scale(const Dune::shared_ptr< const InducingFunctionType > inducingFunction, const unsigned int order)
     : inducingFunction_(inducingFunction),
-      order_(std::max(0, order))
+      order_(order)
   {
   }
 
-  Scale(const Dune::ParameterTree& paramTree)
-    : inducingFunction_(new InducingFunctionType(paramTree)),
-      order_(paramTree.get("order", 0))
-  {
-  }
+//  Scale(const Dune::ParameterTree& paramTree)
+//    : inducingFunction_(new InducingFunctionType(paramTree)),
+//      order_(paramTree.get("order", 0))
+//  {
+//  }
 
   //! returns the inducing function
-  const InducingFunctionType& inducingFunction() const
+  Dune::shared_ptr< const InducingFunctionType > inducingFunction() const
   {
-    return *inducingFunction_;
+    return inducingFunction_;
   }
 
   unsigned int order() const
