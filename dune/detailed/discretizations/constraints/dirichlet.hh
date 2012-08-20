@@ -1,11 +1,20 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_DIRICHLET_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_DIRICHLET_HH
 
+// system
+#include <set>
+
+// dune-common
+#include <dune/common/shared_ptr.hh>
+
 // dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
 // local includes
 #include "localdefault.hh"
+
+// dune-stuff
+#include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune
 {
@@ -39,7 +48,7 @@ namespace Constraints
  * @tparam DiscFuncSpace discrete function space on which constraints shall
  * be applied.
  */
-template< class DiscreteFunctionSpaceImp >
+template< class DiscreteFunctionSpaceImp, class BoundaryInfoImp = Dune::Stuff::Grid::BoundaryInfo::AllDirichlet >
 class DirichletZero
 {
 public:
@@ -47,7 +56,9 @@ public:
   typedef DiscreteFunctionSpaceImp
     DiscreteFunctionSpaceType;
 
-  typedef DirichletZero< DiscreteFunctionSpaceType >
+  typedef BoundaryInfoImp BoundaryInfoType;
+
+  typedef DirichletZero< DiscreteFunctionSpaceType, BoundaryInfoType >
     ThisType;
 
   //! Underlying grid part
@@ -67,9 +78,11 @@ public:
    *  @param space    discrete function space object on which the Dirichlet
    *                  constraints are applied
    */
-  DirichletZero( const DiscreteFunctionSpaceType& space )
-    : space_( space ),
-      gridPart_( space.gridPart() )
+  DirichletZero(const DiscreteFunctionSpaceType& space,
+                const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo = Dune::shared_ptr< const BoundaryInfoType >(new Dune::Stuff::Grid::BoundaryInfo::AllDirichlet()))
+    : space_( space )
+    , boundaryInfo_(boundaryInfo)
+    , gridPart_( space.gridPart() )
   {
   }
 
@@ -114,46 +127,45 @@ public:
     // set of local boundary dofs
     std::set< unsigned int > localBoundaryDofs;
 
-    // loop over all intersections and find dirichlet
-    // boundaries
+    // loop over all intersections
     const IntersectionIterator endIt = gridPart_.iend( entity );
     for( IntersectionIterator it = gridPart_.ibegin( entity ); it != endIt ; ++it )
     {
       // get intersection
       const Intersection& ii = *it;
 
-      // skip non-boundary elements
-      if( !ii.boundary() )
-        continue;
+      // only work on dirichlet intersections
+      if (boundaryInfo_->dirichlet(ii)) {
 
-      // get local face number of boundary intersection
-      const int face = ii.indexInInside();
+        // get local face number of boundary intersection
+        const int face = ii.indexInInside();
 
-      // get iterator over all local dofs on this face
-      FaceDofIteratorType faceIt
-        = lagrangePointSet.template beginSubEntity< faceCodim >( face );
-      const FaceDofIteratorType faceEndIt
-        = lagrangePointSet.template endSubEntity< faceCodim >( face );
+        // get iterator over all local dofs on this face
+        FaceDofIteratorType faceIt
+          = lagrangePointSet.template beginSubEntity< faceCodim >( face );
+        const FaceDofIteratorType faceEndIt
+          = lagrangePointSet.template endSubEntity< faceCodim >( face );
 
-      // iterate over face dofs and set unit row
-      for( ; faceIt != faceEndIt; ++faceIt )
-      {
-        const int localDof = *faceIt;
+        // iterate over face dofs and set unit row
+        for( ; faceIt != faceEndIt; ++faceIt )
+        {
+          const int localDof = *faceIt;
 
-        localBoundaryDofs.insert( localDof );
+          localBoundaryDofs.insert( localDof );
 
-/*        // clear all other columns
- *        const int globalDof = dfSpace.mapToGlobal( entity, localDof );
+  /*        // clear all other columns
+   *        const int globalDof = dfSpace.mapToGlobal( entity, localDof );
 
- *        // cancel all slave dofs (for parallel runs)
- *        for( int i = 0; i < numSlaveDofs; ++i )
- *        {
- *          // slave dofs are canceled
- *          if( globalDof == slaveDofs[ i ] )
- *            localMatrix.set( localDof, localDof, 0 );
- *        }*/
-      }
-    }
+   *        // cancel all slave dofs (for parallel runs)
+   *        for( int i = 0; i < numSlaveDofs; ++i )
+   *        {
+   *          // slave dofs are canceled
+   *          if( globalDof == slaveDofs[ i ] )
+   *            localMatrix.set( localDof, localDof, 0 );
+   *        }*/
+        }
+      } // only work on dirichlet intersections
+    } // loop over all intersections
 
 
     /************************************************************************
@@ -189,6 +201,7 @@ private:
   ThisType& operator=( const ThisType& );
 
   const DiscreteFunctionSpaceType& space_;
+  const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
   const GridPartType& gridPart_;
 }; // end class Dirichlet
 

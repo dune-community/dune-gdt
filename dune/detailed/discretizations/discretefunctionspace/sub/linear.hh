@@ -1,9 +1,14 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 
+// dune-common
+#include <dune/common/shared_ptr.hh>
+
 // dune-detailed-discretizations includes
-//#include <dune/detailed/discretizations/basefunctionset/local/lagrange.hh>
 #include <dune/detailed/discretizations/constraints/dirichlet.hh>
+
+// dune-stuff
+#include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune
 {
@@ -22,18 +27,19 @@ namespace Sub
 namespace Linear
 {
 
-template< class SuperSpaceImp >
+template< class SuperSpaceImp, class BoundaryInfoImp = Dune::Stuff::Grid::BoundaryInfo::AllDirichlet >
 class Dirichlet
 {
 public:
-
   typedef SuperSpaceImp
     SuperSpaceType;
 
-  typedef Dirichlet< SuperSpaceType >
+  typedef BoundaryInfoImp BoundaryInfoType;
+
+  typedef Dirichlet< SuperSpaceType, BoundaryInfoType >
     ThisType;
 
-  typedef Dune::Detailed::Discretizations::Constraints::DirichletZero< SuperSpaceType >
+  typedef Dune::Detailed::Discretizations::Constraints::DirichletZero< SuperSpaceType, BoundaryInfoType >
     ConstraintsType;
 
   typedef typename SuperSpaceType::FunctionSpaceType
@@ -90,11 +96,12 @@ public:
       @}
    **/
 
-  Dirichlet( const SuperSpaceType& superSpace )
-    : superSpace_( superSpace ),
-      constraints_( superSpace_ )
-  {
-  }
+  Dirichlet(const SuperSpaceType& superSpace,
+            const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo = Dune::shared_ptr< const BoundaryInfoType >(new BoundaryInfoType(Dune::Stuff::Grid::BoundaryInfo::AllDirichlet())))
+    : superSpace_(superSpace)
+    , boundaryInfo_(boundaryInfo)
+    , constraints_(superSpace_, boundaryInfo_)
+  {}
 
   const SuperSpaceType& superSpace() const
   {
@@ -173,6 +180,7 @@ private:
   ThisType& operator=( const ThisType& );
 
   const SuperSpaceType& superSpace_;
+  const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
   const ConstraintsType constraints_;
 
 }; // end class Dirichlet
