@@ -19,171 +19,96 @@ namespace Local {
 
 namespace Codim1 {
 
-/**
-  \todo Add neumann boundary treatment
-  \todo When adding neumann: think of numTmpObjectsRequired()!
-  \todo Add vector assembler
-  \todo Add penalty parameter
-  **/
-template <class LocalInnerOperatorImp /*, class LocalDirichletOperatorImp*/ /*, class LocalNeumannOperatorImp*/>
-class Matrix
+template <class LocalOperatorImp>
+class Inner
 {
 public:
-  typedef LocalInnerOperatorImp LocalInnerOperatorType;
+  typedef LocalOperatorImp LocalOperatorType;
 
-  //  typedef LocalDirichletOperatorImp
-  //    LocalDirichletOperatorType;
+  typedef Inner<LocalOperatorType> ThisType;
 
-  //  typedef LocalNeumannOperatorImp
-  //    LocalNeumannOperatorType;
+  typedef typename LocalOperatorType::RangeFieldType RangeFieldType;
 
-  typedef Matrix<LocalInnerOperatorType /*, LocalDirichletOperatorType*/ /*, LocalNeumannOperatorType*/> ThisType;
-
-  typedef typename LocalInnerOperatorType::RangeFieldType RangeFieldType;
-
-  //  template< class InducingDiscreteFunctionType >
-  //  class LocalVectorAssembler
-  //  {
-  //  private:
-  //    typedef typename LocalOperatorType::template LocalFunctional< InducingDiscreteFunctionType >::Type
-  //      InducingFunctionalType;
-
-  //  public:
-  //    typedef Dune::Functionals::Assembler::Local::Codim0::Vector< InducingFunctionalType >
-  //      Type;
-  //  };
-
-  //! constructor
-  Matrix(const LocalInnerOperatorType& localInnerOperator /*,
-          const LocalDirichletOperatorType localDirichletOperator*/ /*,
-          const LocalNeumannOperatorType localNeumannOperator*/)
-    : localInnerOperator_(localInnerOperator) /*,
-    localDirichletOperator_( localDirichletOperator )*/ /*,
-localNeumannOperator_( localNeumannOperator )*/
+  Inner(const LocalOperatorType& localOperator)
+    : localOperator_(localOperator)
   {
+  }
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
   }
 
 private:
-  //! copy constructor
-  Matrix(const ThisType& other);
+  static const unsigned int numTmpObjectsRequired_ = 4;
 
 public:
-  const LocalInnerOperatorType& localInnerOperator() const
-  {
-    return localInnerOperator_;
-  }
-
-  //  const LocalDirichletOperatorType& localDirichletOperator() const
-  //  {
-  //    return localDirichletOperator_;
-  //  }
-
-  //  const LocalNeumannOperatorType& localNeumannOperator() const
-  //  {
-  //    return localNeumannOperator_;
-  //  }
-
-  //  template< class InducingDiscreteFunctionType >
-  //  typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
-  //    localVectorAssembler( const InducingDiscreteFunctionType& inducingDiscreteFunction ) const
-  //  {
-  //    typedef typename LocalVectorAssembler< InducingDiscreteFunctionType >::Type
-  //      LocalVectorAssemblerType;
-
-  //    return LocalVectorAssemblerType( localOperator_.localFunctional( inducingDiscreteFunction ) );
-  //  }
-
-  /**
-    \todo Add neumann treatment here!
-    **/
   std::vector<unsigned int> numTmpObjectsRequired() const
   {
     std::vector<unsigned int> ret(2, 0);
-    // we require 4 tmp matrix in this local assembler
-    ret[0] = 4;
-    // the operator itself requires that much local matrices
-    ret[1] = /*std::max(*/ localInnerOperator_
-                 .numTmpObjectsRequired() /*, localDirichletOperator_.numTmpObjectsRequired() )*/;
+    ret[0] = numTmpObjectsRequired_;
+    ret[1] = localOperator_.numTmpObjectsRequired();
     return ret;
-  }
+  } // std::vector< unsigned int > numTmpObjectsRequired() const
 
-  template <class AnsatzSpaceType, class TestSpaceType, class EntityType, class SystemMatrixType, class LocalMatrixType>
-  void assembleLocal(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace, const EntityType& entity,
-                     SystemMatrixType& systemMatrix,
+  template <class IntersectionType, class InnerAnsatzSpaceType, class InnerTestSpaceType, class OuterAnsatzSpaceType,
+            class OuterTestSpaceType, class MatrixBackendType, class LocalMatrixType>
+  void assembleLocal(const IntersectionType& intersection, const InnerAnsatzSpaceType& innerAnsatzSpace,
+                     const InnerTestSpaceType& innerTestSpace, const OuterAnsatzSpaceType& outerAnsatzSpace,
+                     const OuterTestSpaceType& outerTestSpace, MatrixBackendType& innerInnerMatrix,
+                     MatrixBackendType& outerOuterMatrix, MatrixBackendType& innerOuterMatrix,
+                     MatrixBackendType& outerInnerMatrix,
                      std::vector<std::vector<LocalMatrixType>>& tmpLocalMatricesContainer) const
   {
-    // get the local basefunction sets
-    typedef typename AnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalAnsatzBaseFunctionSetType;
-
-    const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSetEn = ansatzSpace.baseFunctionSet().local(entity);
-
-    typedef typename TestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalTesBaseFunctionSetType;
-
-    const LocalTesBaseFunctionSetType localTestBaseFunctionSetEntity = testSpace.baseFunctionSet().local(entity);
-
-    // check tmp local matrices
+    // preparations
+    assert(intersection.neighbor() && !intersection.boundary());
+    typedef typename IntersectionType::EntityPointer EntityPointerType;
+    typedef typename IntersectionType::Entity EntityType;
+    typedef typename InnerAnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType InnerAnsatzBaseFunctionSetType;
+    typedef typename InnerTestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType InnerTestBaseFunctionSetType;
+    typedef typename OuterAnsatzSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType OuterAnsatzBaseFunctionSetType;
+    typedef typename OuterTestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType OuterTestBaseFunctionSetType;
+    // get inside entity and basefunctionsets
+    const EntityPointerType insideEntityPtr = intersection.inside();
+    const EntityType& insideEntity = *insideEntityPtr;
+    const InnerAnsatzBaseFunctionSetType innerAnsatzBaseFunctionSet =
+        innerAnsatzSpace.baseFunctionSet().local(insideEntity);
+    const InnerTestBaseFunctionSetType innerTestBaseFunctionSet = innerTestSpace.baseFunctionSet().local(insideEntity);
+    // get outside neighbor and basefunctionsets
+    const EntityPointerType outsideNeighborPtr = intersection.outside();
+    const EntityType& outsideNeighbor = *outsideNeighborPtr;
+    const OuterAnsatzBaseFunctionSetType outerAnsatzBaseFunctionSet =
+        outerAnsatzSpace.baseFunctionSet().local(outsideNeighbor);
+    const OuterTestBaseFunctionSetType outerTestBaseFunctionSet =
+        outerTestSpace.baseFunctionSet().local(outsideNeighbor);
+    // ensure enough tmp local matrices
     assert(tmpLocalMatricesContainer.size() > 1);
     std::vector<LocalMatrixType>& tmpLocalMatrices = tmpLocalMatricesContainer[0];
-    if (tmpLocalMatrices.size() < 4) {
+    if (tmpLocalMatrices.size() < numTmpObjectsRequired_) {
       tmpLocalMatrices.resize(
-          4, LocalMatrixType(ansatzSpace.map().maxLocalSize(), testSpace.map().maxLocalSize(), RangeFieldType(0.0)));
-    }
-
-    // some types
-    typedef typename AnsatzSpaceType::GridPartType GridPartType;
-
-    typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
-
-    typedef typename IntersectionIteratorType::Intersection IntersectionType;
-
-    typedef typename IntersectionType::EntityPointer EntityPointerType;
-
-    const GridPartType& gridPart = ansatzSpace.gridPart();
-
-    // do loop over all intersections
-    for (IntersectionIteratorType intIt = gridPart.ibegin(entity); intIt != gridPart.iend(entity); ++intIt) {
-      const IntersectionType& intersection = *intIt;
-      // if inner intersection
-      if (intersection.neighbor() && !intersection.boundary()) {
-        // get neighbouring entity
-        const EntityPointerType neighbourPtr = intersection.outside();
-        const EntityType& neighbour          = *neighbourPtr;
-
-        // do visit only once
-        if (gridPart.indexSet().index(entity) < gridPart.indexSet().index(neighbour)) {
-          // get neighbouring local basefunction sets
-          const LocalAnsatzBaseFunctionSetType localAnsatzBaseFunctionSetNe =
-              ansatzSpace.baseFunctionSet().local(neighbour);
-          const LocalTesBaseFunctionSetType localTesBaseFunctionSetNe = testSpace.baseFunctionSet().local(neighbour);
-          // apply local inner operator
-          localInnerOperator_.applyLocal(localAnsatzBaseFunctionSetEn,
-                                         localAnsatzBaseFunctionSetNe,
-                                         localTestBaseFunctionSetEntity,
-                                         localTesBaseFunctionSetNe,
-                                         intersection,
-                                         tmpLocalMatrices[0],
-                                         tmpLocalMatrices[1],
-                                         tmpLocalMatrices[2],
-                                         tmpLocalMatrices[3],
-                                         tmpLocalMatricesContainer[1]);
-
-          // write local matrix to global (see below)
-          addToMatrix(ansatzSpace, testSpace, entity, entity, tmpLocalMatrices[0], systemMatrix);
-          addToMatrix(ansatzSpace, testSpace, entity, neighbour, tmpLocalMatrices[1], systemMatrix);
-          addToMatrix(ansatzSpace, testSpace, neighbour, entity, tmpLocalMatrices[2], systemMatrix);
-          addToMatrix(ansatzSpace, testSpace, neighbour, neighbour, tmpLocalMatrices[3], systemMatrix);
-        } // done visit only once
-      } /*else if(!intersection.neighbor() && intersection.boundary()) {
-        localDirichletOperator_.applyLocal( localAnsatzBaseFunctionSetEn,
-                                            localTestBaseFunctionSetEntity,
-                                            intersection,
-                                            tmpLocalMatrices[0],
-                                            tmpLocalMatricesContainer[1] );
-
-        addToMatrix( ansatzSpace, testSpace, entity, entity, tmpLocalMatrices[0], systemMatrix );
-      }*/ // end if boundary intersection
-    } // done loop over all intersections
-  } // end method assembleLocal
+          numTmpObjectsRequired_,
+          LocalMatrixType(std::max(innerAnsatzSpace.map().maxLocalSize(), outerAnsatzSpace.map().maxLocalSize()),
+                          std::max(innerTestSpace.map().maxLocalSize(), outerTestSpace.map().maxLocalSize()),
+                          RangeFieldType(0.0)));
+    } // ensure enough tmp local matrices
+    // apply local operator
+    localOperator_.applyLocal(innerAnsatzBaseFunctionSet,
+                              innerTestBaseFunctionSet,
+                              outerAnsatzBaseFunctionSet,
+                              outerTestBaseFunctionSet,
+                              intersection,
+                              tmpLocalMatrices[0], // inside/inside
+                              tmpLocalMatrices[1], // outside/outside
+                              tmpLocalMatrices[2], // inside/outside
+                              tmpLocalMatrices[3], // outside/inside
+                              tmpLocalMatricesContainer[1]);
+    // write local matrices to global (see below)
+    addToMatrix(innerAnsatzSpace, innerTestSpace, insideEntity, insideEntity, tmpLocalMatrices[0], innerInnerMatrix);
+    addToMatrix(
+        outerAnsatzSpace, outerTestSpace, outsideNeighbor, outsideNeighbor, tmpLocalMatrices[1], outerOuterMatrix);
+    addToMatrix(innerAnsatzSpace, outerTestSpace, insideEntity, outsideNeighbor, tmpLocalMatrices[2], innerOuterMatrix);
+    addToMatrix(outerAnsatzSpace, innerTestSpace, outsideNeighbor, insideEntity, tmpLocalMatrices[3], outerInnerMatrix);
+  } // void assembleLocal() const
 
 private:
   //! assignment operator
@@ -206,11 +131,8 @@ private:
     }
   } // end method addToMatrix
 
-  const LocalInnerOperatorType& localInnerOperator_;
-  //  const LocalDirichletOperatorType localDirichletOperator_;
-  //  const LocalNeumannOperatorType localNeumannOperator;
-
-}; // end class Matrix
+  const LocalOperatorType& localOperator_;
+}; // end class Inner
 
 } // end namespace Codim1
 
