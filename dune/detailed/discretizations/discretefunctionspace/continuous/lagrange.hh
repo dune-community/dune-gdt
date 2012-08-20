@@ -140,30 +140,83 @@ public:
       @}
    **/
 
-  template <class OtherDiscreteFunctionSpaceType>
-  PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
+  Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
+                                                          const OtherDiscreteFunctionSpaceType& other) const
   {
-    std::map<unsigned int, std::set<unsigned int>> ret;
-    // generate sparsity pattern
-    for (IteratorType it = begin(); it != end(); ++it) {
-      const EntityType& entity = *it;
+    Dune::shared_ptr<PatternType> ret(new PatternType());
+    PatternType& pattern = *ret;
+    // walk the grid part
+    for (typename LocalGridPartType::template Codim<0>::IteratorType entityIt = localGridPart.template begin<0>();
+         entityIt != localGridPart.template end<0>();
+         ++entityIt) {
+      const EntityType& entity = *entityIt;
       for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
-        const unsigned int globalI                                      = map().toGlobal(entity, i);
-        std::map<unsigned int, std::set<unsigned int>>::iterator result = ret.find(globalI);
-        if (result == ret.end())
-          ret.insert(std::pair<unsigned int, std::set<unsigned int>>(globalI, std::set<unsigned int>()));
-        result = ret.find(globalI);
-        assert(result != ret.end());
+        const unsigned int globalI     = map().toGlobal(entity, i);
+        std::set<unsigned int>& rowSet = pattern[globalI];
         for (unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
           const unsigned int globalJ = other.map().toGlobal(entity, j);
-          result->second.insert(globalJ);
+          rowSet.insert(globalJ);
         }
       }
-    } // generate sparsity pattern
+    } // walk the grid part
     return ret;
-  } // PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  } // computeLocalPattern()
 
-  PatternType computePattern() const
+  template <class LocalGridPartType>
+  Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart) const
+  {
+    return computeLocalPattern(localGridPart, *this);
+  }
+
+  template <class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType>
+  Dune::shared_ptr<const PatternType> computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+                                                             const OutsideDiscreteFunctionSpaceType& outerSpace) const
+  {
+    Dune::shared_ptr<PatternType> ret(new PatternType());
+    PatternType& pattern = *ret;
+    // walk the coupling grid part
+    for (typename CouplingGridPartType::template Codim<0>::IteratorType entityIt = couplingGridPart.template begin<0>();
+         entityIt != couplingGridPart.template end<0>();
+         ++entityIt) {
+      // get the inside entity and basefunctionset
+      const EntityType& insideEntity = *entityIt;
+      const typename BaseFunctionSetType::LocalBaseFunctionSetType ansatzBaseFunctionSet =
+          baseFunctionSet().local(insideEntity);
+      // walk the neighbors
+      for (typename CouplingGridPartType::IntersectionIteratorType intersectionIt =
+               couplingGridPart.ibegin(insideEntity);
+           intersectionIt != couplingGridPart.iend(insideEntity);
+           ++intersectionIt) {
+        // get the outside neighboring entity and basefunctionset (of the other space)
+        const typename CouplingGridPartType::IntersectionIteratorType::Intersection& intersection = *intersectionIt;
+        assert(intersection.neighbor() && !intersection.boundary());
+        const typename CouplingGridPartType::IntersectionIteratorType::Intersection::EntityPointer outsideNeighborPtr =
+            intersection.outside();
+        const EntityType& outsideNeighbor = *outsideNeighborPtr;
+        const typename BaseFunctionSetType::LocalBaseFunctionSetType testBaseFunctionSet =
+            outerSpace.baseFunctionSet().local(outsideNeighbor);
+        // compute pattern
+        for (unsigned int i = 0; i < ansatzBaseFunctionSet.size(); ++i) {
+          const unsigned int globalI     = map().toGlobal(insideEntity, i);
+          std::set<unsigned int>& rowSet = pattern[globalI];
+          for (unsigned int j = 0; j < testBaseFunctionSet.size(); ++j) {
+            const unsigned int globalJ = outerSpace.map().toGlobal(outsideNeighbor, j);
+            rowSet.insert(globalJ);
+          }
+        } // compute pattern
+      } // walk the neighbors
+    } // walk the coupling grid part
+    return ret;
+  } // computeCouplingPattern()
+
+  template <class OtherDiscreteFunctionSpaceType>
+  Dune::shared_ptr<const PatternType> computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  {
+    return computeLocalPattern(gridPart_, other);
+  }
+
+  Dune::shared_ptr<const PatternType> computePattern() const
   {
     return computePattern(*this);
   }
