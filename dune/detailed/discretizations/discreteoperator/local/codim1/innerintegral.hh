@@ -84,12 +84,12 @@ public:
   /**
     \todo Rename Entity -> En, Neighbor -> Ne
     **/
-  template <class LocalAnsatzBaseFunctionSetEntityType, class LocalAnsatzBaseFunctionSetNeighborType,
-            class LocalTestBaseFunctionSetEntityType, class LocalTestBaseFunctionSetNeighborType,
+  template <class LocalAnsatzBaseFunctionSetEntityType, class LocalTestBaseFunctionSetEntityType,
+            class LocalAnsatzBaseFunctionSetNeighborType, class LocalTestBaseFunctionSetNeighborType,
             class IntersectionType, class LocalMatrixType>
   void applyLocal(const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
-                  const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
                   const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
+                  const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
                   const LocalTestBaseFunctionSetNeighborType& localTestBaseFunctionSetNeighbor,
                   const IntersectionType& intersection, LocalMatrixType& localMatrixEnEn,
                   LocalMatrixType& localMatrixEnNe, LocalMatrixType& localMatrixNeEn, LocalMatrixType& localMatrixNeNe,
@@ -138,8 +138,8 @@ public:
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
 
     // do loop over all quadrature points
-    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
-    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd;
+    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin();
+         quadPoint != faceQuadrature.end();
          ++quadPoint) {
       // local coordinates
       typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
