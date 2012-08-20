@@ -160,19 +160,38 @@ public:
       @}
    **/
 
+  template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
+  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
+                                                            const OtherDiscreteFunctionSpaceType& other) const
+  {
+    return superSpace_.computeLocalPattern(localGridPart, other);
+  }
+
+  template< class LocalGridPartType >
+  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
+  {
+    return superSpace_.computeLocalPattern(localGridPart);
+  }
+
+  template< class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType >
+  Dune::shared_ptr< const PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+                                                               const OutsideDiscreteFunctionSpaceType& outerSpace) const
+  {
+    return superSpace_.computeCouplingPattern(couplingGridPart, outerSpace);
+  }
+
   template< class OtherDiscreteFunctionSpaceType>
-  PatternType computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  Dune::shared_ptr< const PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
   {
     return superSpace_.computePattern(other);
   }
 
-  PatternType computePattern() const
+  Dune::shared_ptr< const PatternType > computePattern() const
   {
     return superSpace_.computePattern();
   }
 
 private:
-
   //! copy constructor
   Dirichlet( const ThisType& );
 
