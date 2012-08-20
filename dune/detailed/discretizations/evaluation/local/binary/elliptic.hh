@@ -50,17 +50,16 @@ public:
   typedef InducingFunctionImp InducingFunctionType;
 
   //! constructor, takes the inducing function as a runtime parameter
-  Elliptic(const Dune::shared_ptr<const InducingFunctionType>& inducingFunction, int order = 0)
+  Elliptic(const Dune::shared_ptr<const InducingFunctionType> inducingFunction, const unsigned int order)
     : inducingFunction_(inducingFunction)
-    , order_(std::max(0, order))
+    , order_(order)
   {
   }
 
-  Elliptic(const Dune::ParameterTree& paramTree)
-    : inducingFunction_(new InducingFunctionType(paramTree))
-    , order_(paramTree.get("order", 0))
-  {
-  }
+  //  Elliptic(const Dune::ParameterTree& paramTree)
+  //    : inducingFunction_(new InducingFunctionType(paramTree)),
+  //      order_(paramTree.get("order", 0))
+  //  {}
 
   //! returns the inducing function
   const Dune::shared_ptr<const InducingFunctionType> inducingFunction() const
@@ -133,7 +132,7 @@ private:
   Elliptic(const Elliptic& other);
 
   const Dune::shared_ptr<const InducingFunctionType> inducingFunction_;
-  unsigned int order_;
+  const unsigned int order_;
 }; // end class Elliptic
 
 } // end namespace Binary

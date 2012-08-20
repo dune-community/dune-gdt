@@ -2,6 +2,7 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_QUATERNARY_IPDGFLUXES_HH
 
 // dune-common
+#include <dune/common/shared_ptr.hh>
 #include <dune/common/densematrix.hh>
 
 // dune-stuff
@@ -46,9 +47,11 @@ public:
 
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  Inner(const Dune::shared_ptr<const InducingFunctionType> inducingFunction, int order = 0)
+  Inner(const Dune::shared_ptr<const InducingFunctionType> inducingFunction, const unsigned int order,
+        const RangeFieldType penaltyFactor)
     : inducingFunction_(inducingFunction)
-    , order_(std::max(0, order))
+    , order_(order)
+    , penaltyFactor_(penaltyFactor)
   {
   }
 
@@ -124,7 +127,7 @@ public:
     inducingFunction_->evaluate(globalPoint, functionValue);
 
     // evaluate penalty parameter
-    const RangeFieldType penaltyParameter = 20.0 / std::pow(intersection.geometry().volume(), 1.0);
+    const RangeFieldType penaltyParameter = penaltyFactor_ / std::pow(intersection.geometry().volume(), 1.0);
 
     // entity entity combinations
     assert(entityEntityRet.rows() == rowsEntity);
@@ -154,7 +157,7 @@ public:
       } // loop over all test function
     } // loop over all ansatz functions
 
-    // do entity Neighbor combinations
+    // do entity neighbor combinations
     assert(entityNeighborRet.rows() == rowsEntity);
     assert(entityNeighborRet.cols() == colsNeighbor);
     for (unsigned int i = 0; i < rowsEntity; ++i) {
@@ -237,7 +240,8 @@ private:
   ThisType& operator=(const ThisType&);
 
   const Dune::shared_ptr<const InducingFunctionType> inducingFunction_;
-  unsigned int order_;
+  const unsigned int order_;
+  const RangeFieldType penaltyFactor_;
 }; // end class Inner
 
 #if 0
@@ -367,7 +371,7 @@ private:
   ThisType& operator=( const ThisType& );
 
   const InducingFunctionType inducingFunction_;
-  unsigned int order_;
+  const unsigned int order_;
 }; // end class Dirichlet
 #endif
 
