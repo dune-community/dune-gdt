@@ -72,6 +72,7 @@ private:
     BlockMapperProviderType;
 
 public:
+  typedef typename GridPartType::IndexSetType::IndexType IndexType;
 
   //! does, whatever the constructor of the fem LagrangeDiscreteFunctionSpace does
   Lagrange( const GridPartType& gridPart )
@@ -86,7 +87,7 @@ public:
 
     const std::vector< GeometryType >& geometryTypes = allGeometryTypes.geomTypes( 0 );
 
-    for( unsigned int i = 0; i < geometryTypes.size(); ++i )
+    for( IndexType i = 0; i < geometryTypes.size(); ++i )
     {
       const GeometryType& geometryType = geometryTypes[ i ];
 
@@ -131,17 +132,17 @@ public:
   }
 
   template< class EntityType >
-  unsigned int toGlobal( const EntityType& entity, const unsigned int localDofNumber ) const
+  IndexType toGlobal( const EntityType& entity, const IndexType localDofNumber ) const
   {
     return mapper_->mapToGlobal( entity, localDofNumber );
   }
 
-  unsigned int size() const
+  IndexType size() const
   {
     return mapper_->size();
   }
 
-  unsigned int maxLocalSize() const
+  IndexType maxLocalSize() const
   {
     return mapper_->maxNumDofs();
   }
