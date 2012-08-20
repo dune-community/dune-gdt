@@ -151,8 +151,8 @@ public:
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSetEntity,
-                                     localAnsatzBaseFunctionSetNeighbor,
                                      localTestBaseFunctionSetEntity,
+                                     localAnsatzBaseFunctionSetNeighbor,
                                      localTestBaseFunctionSetNeighbor,
                                      intersection,
                                      x,

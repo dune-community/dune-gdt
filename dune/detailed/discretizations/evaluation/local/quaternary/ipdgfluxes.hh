@@ -68,18 +68,18 @@ public:
     \todo       There are currently four nested loops, these can be simplyfied to two (see msdg-matlab)
     \todo       Rename Entity -> En, Neighbor -> Ne (otherwise stuff is too long)
     **/
-  template <class LocalAnsatzBaseFunctionSetEntityType, class LocalAnsatzBaseFunctionSetNeighborType,
-            class LocalTestBaseFunctionSetEntityType, class LocalTestBaseFunctionSetNeighborType,
+  template <class LocalAnsatzBaseFunctionSetEntityType, class LocalTestBaseFunctionSetEntityType,
+            class LocalAnsatzBaseFunctionSetNeighborType, class LocalTestBaseFunctionSetNeighborType,
             class IntersectionType, class LocalPointType, class LocalMatrixImp>
   void evaluateLocal(const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
-                     const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
                      const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
+                     const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
                      const LocalTestBaseFunctionSetNeighborType& localTestBaseFunctionSetNeighbor,
                      const IntersectionType& intersection, const LocalPointType& localPoint,
                      Dune::DenseMatrix<LocalMatrixImp>& entityEntityRet,
+                     Dune::DenseMatrix<LocalMatrixImp>& NeighborNeighborRet,
                      Dune::DenseMatrix<LocalMatrixImp>& entityNeighborRet,
-                     Dune::DenseMatrix<LocalMatrixImp>& NeighborEntityRet,
-                     Dune::DenseMatrix<LocalMatrixImp>& NeighborNeighborRet) const
+                     Dune::DenseMatrix<LocalMatrixImp>& NeighborEntityRet) const
   {
     // some stuff
     const DomainType globalPoint        = intersection.geometry().global(localPoint);
