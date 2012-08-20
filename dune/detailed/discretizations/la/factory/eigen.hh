@@ -45,28 +45,41 @@ public:
     return createSparseMatrix(ansatzSpace.map().size(), testSpace.map().size(), pattern);
   } // static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
 
+  //! \attention  This is really slow if the pattern contains empty rows!
+  //! \todo       Fix this, should be easy (call startVec() for each empty row)!
   static SparseMatrixType createSparseMatrix(const unsigned int rows, const unsigned int cols,
                                              const PatternType& pattern)
   {
     // init
     SparseMatrixType matrix(rows, cols);
-
-    // tell pattern to matrix
-    for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
-      const unsigned int row                   = rowSet->first;
-      const std::set<unsigned int>& rowEntries = rowSet->second;
-      //      matrix.storage()->startVec(row);
-      for (typename std::set<unsigned int>::iterator rowEntry = rowEntries.begin(); rowEntry != rowEntries.end();
-           ++rowEntry) {
-        unsigned int column = *rowEntry;
-        matrix.storage()->insert /*BackByOuterInner*/ (row, column);
-      }
-    } // tell pattern to matrix
-
+    // use faster method if possible
+    if (pattern.size() == rows) {
+      // tell pattern to matrix
+      for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
+        const unsigned int row                   = rowSet->first;
+        const std::set<unsigned int>& rowEntries = rowSet->second;
+        matrix.storage()->startVec(row);
+        for (typename std::set<unsigned int>::iterator rowEntry = rowEntries.begin(); rowEntry != rowEntries.end();
+             ++rowEntry) {
+          unsigned int column = *rowEntry;
+          matrix.storage()->insertBackByOuterInner(row, column);
+        }
+      } // tell pattern to matrix
+    } else { // use faster method if possible
+      // tell pattern to matrix
+      for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
+        const unsigned int row                   = rowSet->first;
+        const std::set<unsigned int>& rowEntries = rowSet->second;
+        for (typename std::set<unsigned int>::iterator rowEntry = rowEntries.begin(); rowEntry != rowEntries.end();
+             ++rowEntry) {
+          unsigned int column = *rowEntry;
+          matrix.storage()->insert(row, column);
+        }
+      } // tell pattern to matrix
+    } // use faster method if possible
     // finalize matrix
     matrix.storage()->finalize();
     matrix.storage()->makeCompressed();
-
     // return
     return matrix;
   } // static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
