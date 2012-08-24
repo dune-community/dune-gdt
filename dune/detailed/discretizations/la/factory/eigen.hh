@@ -65,21 +65,31 @@ public:
           matrix.storage()->insertBackByOuterInner(row, column);
         }
       } // tell pattern to matrix
+      // finalize matrix
+      matrix.storage()->finalize();
+      matrix.storage()->makeCompressed();
     } else { // use faster method if possible
       // tell pattern to matrix
+      // use triplets
+      unsigned int numTriplets = 0;
+      for (typename PatternType::const_iterator rowIt = pattern.begin(); rowIt != pattern.end(); ++rowIt) {
+        numTriplets += rowIt->second.size();
+      }
+      typedef typename ::Eigen::Triplet<EntryType> TripletType;
+      std::vector<TripletType> tripletList;
+      tripletList.reserve(numTriplets);
+      const EntryType zero(0.0);
       for (typename PatternType::const_iterator rowSet = pattern.begin(); rowSet != pattern.end(); ++rowSet) {
         const unsigned int row                   = rowSet->first;
         const std::set<unsigned int>& rowEntries = rowSet->second;
         for (typename std::set<unsigned int>::iterator rowEntry = rowEntries.begin(); rowEntry != rowEntries.end();
              ++rowEntry) {
           unsigned int column = *rowEntry;
-          matrix.storage()->insert(row, column);
+          tripletList.push_back(TripletType(row, column, zero));
         }
-      } // tell pattern to matrix
+      }
+      matrix.storage()->setFromTriplets(tripletList.begin(), tripletList.end());
     } // use faster method if possible
-    // finalize matrix
-    matrix.storage()->finalize();
-    matrix.storage()->makeCompressed();
     // return
     return matrix;
   } // static SparseMatrixType createSparseMatrix(const AnsatzSpaceType& ansatzSpace, const TestSpaceType& testSpace)
