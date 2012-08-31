@@ -53,25 +53,24 @@ public:
   }
 
   template <class LocalMatrixAssemblerType, class MatrixType, class LocalVectorAssemblerType, class VectorType>
+  void assemble(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& systemMatrix,
+                const LocalVectorAssemblerType& localVectorAssembler, VectorType& systemVector) const
+  {
+    assembleSystem(localMatrixAssembler, systemMatrix, localVectorAssembler, systemVector);
+    applyConstraints(systemMatrix, systemVector);
+  } // void assemble()
+
+  template <class LocalMatrixAssemblerType, class MatrixType, class LocalVectorAssemblerType, class VectorType>
   void assembleSystem(const LocalMatrixAssemblerType& localMatrixAssembler, MatrixType& systemMatrix,
                       const LocalVectorAssemblerType& localVectorAssembler, VectorType& systemVector) const
   {
     // some types
     typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
-
-    typedef typename AnsatzFunctionSpaceType::IteratorType EntityIteratorType;
-
-    typedef typename AnsatzFunctionSpaceType::EntityType EntityType;
-
+    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
+    typedef typename GridPartType::template Codim<0>::EntityType EntityType;
     typedef typename AnsatzFunctionSpaceType::RangeFieldType RangeFieldType;
-
     typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
-
     typedef Dune::DynamicVector<RangeFieldType> LocalVectorType;
-
-    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
-
-    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
 
     // common tmp storage for all entities
     std::vector<unsigned int> numberTmpMatrices = localMatrixAssembler.numTmpObjectsRequired();
@@ -94,36 +93,41 @@ public:
     tmpLocalVectorsContainer.push_back(tmpLocalAssemblerVectors);
     tmpLocalVectorsContainer.push_back(tmpLocalFunctionalVectors);
 
-    // do first gridwalk to assemble
-    const EntityIteratorType lastEntity = ansatzSpace_.end();
-    for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
+    // walk the grid to assemble
+    for (EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin<0>();
+         entityIterator != ansatzSpace_.gridPart().template end<0>();
+         ++entityIterator) {
       const EntityType& entity = *entityIterator;
-
       localMatrixAssembler.assembleLocal(ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatricesContainer);
       localVectorAssembler.assembleLocal(testSpace_, entity, systemVector, tmpLocalVectorsContainer);
+    } // walk the grid to assemble
+  } // void assembleSystem()
 
-    } // done first gridwalk to assemble
-
-    // do second gridwalk, to apply constraints
+  template <class MatrixType, class VectorType>
+  void applyConstraints(MatrixType& matrix, VectorType& vector) const
+  {
+    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
+    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
+    typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
+    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
+    // walk the grid to apply constraints
     const ConstraintsType& constraints = ansatzSpace_.constraints();
-
-    for (EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator) {
-      const EntityType& entity = *entityIterator;
-
+    for (EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin<0>();
+         entityIterator != ansatzSpace_.gridPart().template end<0>();
+         ++entityIterator) {
+      const EntityType& entity                     = *entityIterator;
       const LocalConstraintsType& localConstraints = constraints.local(entity);
+      applyLocalMatrixConstraints(localConstraints, matrix);
+      applyLocalVectorConstraints(localConstraints, vector);
 
-      applyLocalMatrixConstraints(localConstraints, systemMatrix);
-      applyLocalVectorConstraints(localConstraints, systemVector);
+    } // walk the grid to apply constraints
 
-    } // done second gridwalk, to apply constraints
+  } // void applyConstraints()
 
-  } // end method assembleSystem
 
 private:
-  //! assignment operator
   ThisType& operator=(const ThisType&);
-
-  //! copy constructor
   Constrained(const ThisType&);
 
   template <class LocalConstraintsType, class MatrixType>
