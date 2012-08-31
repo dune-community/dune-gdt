@@ -66,17 +66,6 @@ public:
 
   typedef std::map<unsigned int, std::set<unsigned int>> PatternType;
 
-  /**
-      @name Convenience typedefs
-      @{
-   **/
-  typedef typename GridPartType::template Codim<0>::IteratorType IteratorType;
-
-  typedef typename IteratorType::Entity EntityType;
-  /**
-      @}
-   **/
-
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
     , gridView_(gridPart_)
@@ -85,11 +74,6 @@ public:
   {
   }
 
-private:
-  //! copy constructor
-  Lagrange(const ThisType& other);
-
-public:
   const GridPartType& gridPart() const
   {
     return gridPart_;
@@ -123,23 +107,6 @@ public:
       return true;
   }
 
-  /**
-      @name Convenience methods
-      @{
-   **/
-  IteratorType begin() const
-  {
-    return gridPart_.template begin<0>();
-  }
-
-  IteratorType end() const
-  {
-    return gridPart_.template end<0>();
-  }
-  /**
-      @}
-   **/
-
   template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
   Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
                                                           const OtherDiscreteFunctionSpaceType& other) const
@@ -150,7 +117,7 @@ public:
     for (typename LocalGridPartType::template Codim<0>::IteratorType entityIt = localGridPart.template begin<0>();
          entityIt != localGridPart.template end<0>();
          ++entityIt) {
-      const EntityType& entity = *entityIt;
+      const typename LocalGridPartType::template Codim<0>::EntityType& entity = *entityIt;
       for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
         const unsigned int globalI     = map().toGlobal(entity, i);
         std::set<unsigned int>& rowSet = pattern[globalI];
@@ -180,7 +147,7 @@ public:
          entityIt != couplingGridPart.template end<0>();
          ++entityIt) {
       // get the inside entity and basefunctionset
-      const EntityType& insideEntity = *entityIt;
+      const typename CouplingGridPartType::template Codim<0>::EntityType& insideEntity = *entityIt;
       const typename BaseFunctionSetType::LocalBaseFunctionSetType ansatzBaseFunctionSet =
           baseFunctionSet().local(insideEntity);
       // walk the neighbors
@@ -193,7 +160,7 @@ public:
         assert(intersection.neighbor() && !intersection.boundary());
         const typename CouplingGridPartType::IntersectionIteratorType::Intersection::EntityPointer outsideNeighborPtr =
             intersection.outside();
-        const EntityType& outsideNeighbor = *outsideNeighborPtr;
+        const typename CouplingGridPartType::template Codim<0>::EntityType& outsideNeighbor = *outsideNeighborPtr;
         const typename BaseFunctionSetType::LocalBaseFunctionSetType testBaseFunctionSet =
             outerSpace.baseFunctionSet().local(outsideNeighbor);
         // compute pattern
@@ -222,7 +189,7 @@ public:
   }
 
 protected:
-  //! assignment operator
+  Lagrange(const ThisType& other);
   ThisType& operator=(const ThisType&);
 
   const GridPartType& gridPart_;
