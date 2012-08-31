@@ -67,17 +67,6 @@ public:
 
   typedef typename SuperSpaceType::PatternType PatternType;
 
-  /**
-      @name Convenience
-      @{
-   **/
-  typedef typename SuperSpaceType::IteratorType IteratorType;
-
-  typedef typename SuperSpaceType::EntityType EntityType;
-  /**
-      @}
-   **/
-
   Dirichlet(const SuperSpaceType& superSpace,
             const Dune::shared_ptr<const BoundaryInfoType> boundaryInfo = Dune::shared_ptr<const BoundaryInfoType>(
                 new BoundaryInfoType(Dune::Stuff::Grid::BoundaryInfo::AllDirichlet())))
@@ -126,23 +115,6 @@ public:
   {
     return superSpace_.continuous();
   }
-
-  /**
-      @name Convenience methods
-      @{
-   **/
-  IteratorType begin() const
-  {
-    return superSpace_.gridPart().template begin<0>();
-  }
-
-  IteratorType end() const
-  {
-    return superSpace_.gridPart().template end<0>();
-  }
-  /**
-      @}
-   **/
 
   template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
   Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
