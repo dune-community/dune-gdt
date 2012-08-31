@@ -27,7 +27,7 @@ public:
 
   typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
-  typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
+  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
 
   enum
   {
