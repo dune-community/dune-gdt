@@ -1,31 +1,28 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 
-// dune-helper-tools includes
-#include <dune/helper-tools/function/runtime.hh>
+// dune-common
+#include <dune/common/shared_ptr.hh>
 
-// dune-detailed-discretizations includes
-#include <dune/detailed/discretizations/basefunctionset/local/lagrange.hh>
-#include <dune/detailed/discretizations/discretefunction/continuous.hh>
+// dune-stuff
+#include <dune/stuff/function/expression.hh>
 
-namespace Dune
-{
+// dune-detailed-discretizations
+#include <dune/detailed/discretizations/discretefunction/default.hh>
 
-namespace Detailed
-{
+namespace Dune {
+
+namespace Detailed {
 
 namespace Discretizations {
 
-namespace DiscreteFunctionSpace
-{
+namespace DiscreteFunctionSpace {
 
-namespace Sub
-{
+namespace Sub {
 
-namespace Affine
-{
+namespace Affine {
 
-template< class BaseSpaceImp >
+template< class BaseSpaceImp, class AffineShiftImp >
 class Dirichlet
 {
 public:
@@ -33,8 +30,9 @@ public:
   typedef BaseSpaceImp
     BaseSpaceType;
 
-  typedef Dirichlet< BaseSpaceType >
-    ThisType;
+  typedef AffineShiftImp AffineShiftType;
+
+  typedef Dirichlet< BaseSpaceType, AffineShiftType > ThisType;
 
   typedef typename BaseSpaceType::SuperSpaceType
     SuperSpaceType;
@@ -45,15 +43,10 @@ public:
   typedef typename BaseSpaceType::GridPartType
     GridPartType;
 
+  typedef typename BaseSpaceType::GridViewType
+    GridViewType;
+
   enum{ polynomialOrder = BaseSpaceType::polynomialOrder };
-
-private:
-  typedef Dune::HelperTools::Function::Runtime< FunctionSpaceType >
-    RuntimeFunctionType;
-
-public:
-  typedef Dune::Detailed::Discretizations::DiscreteFunction::Continuous::BlockVector< SuperSpaceType >
-    AffineShiftType;
 
   typedef typename BaseSpaceType::ConstraintsType
     ConstraintsType;
@@ -86,35 +79,11 @@ public:
 
   static const unsigned int dimRange = BaseSpaceType::dimRange;
 
-  /**
-      @name Convenience Types
-      @{
-   **/
-  typedef typename SuperSpaceType::IteratorType
-    IteratorType;
+  typedef typename BaseSpaceType::PatternType PatternType;
 
-  typedef typename SuperSpaceType::EntityType
-    EntityType;
-  /**
-      @}
-   **/
-
-  /**
-    \brief  constructor, taking an analytical expression for the boundary data, does a dirichlet projection to generate
-            the affine shift
-    **/
-  Dirichlet( const BaseSpaceType& baseSpace, const std::string expression = "[0.0;0.0;0.0]" )
-    : baseSpace_( baseSpace ),
-      affineShift_( baseSpace.superSpace(), "affineShift", RuntimeFunctionType( expression ), "dirichlet" )
-  {
-  }
-
-  /**
-    \brief  constructor, taking a discrete function as affine shift
-    **/
-  Dirichlet( const BaseSpaceType& baseSpace ,const AffineShiftType& affineShift )
-    : baseSpace_( baseSpace ),
-      affineShift_( affineShift )
+  Dirichlet(const BaseSpaceType& baseSpace, const Dune::shared_ptr< const AffineShiftType > affineShift)
+    : baseSpace_(baseSpace)
+    , affineShift_(affineShift)
   {
   }
 
@@ -128,7 +97,7 @@ public:
     return baseSpace_.superSpace();
   }
 
-  const AffineShiftType& affineShift() const
+  const Dune::shared_ptr< const AffineShiftType > affineShift() const
   {
     return affineShift_;
   }
@@ -138,12 +107,17 @@ public:
     return baseSpace_.gridPart();
   }
 
+  const GridViewType& gridView() const
+  {
+    return baseSpace_.gridView();
+  }
+
   const BaseFunctionSetType& baseFunctionSet() const
   {
     return baseSpace_.baseFunctionSet();
   }
 
-  int order() const
+  unsigned int order() const
   {
     return baseSpace_.order();
   }
@@ -163,33 +137,43 @@ public:
     return baseSpace_.continuous();
   }
 
-  /**
-      @name Convenience methods
-      @{
-   **/
-  IteratorType begin() const
+  template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
+  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
+                                                            const OtherDiscreteFunctionSpaceType& other) const
   {
-    return baseSpace_.gridPart().template begin< 0 >();
+    return baseSpace_.computeLocalPattern(localGridPart, other);
   }
 
-  IteratorType end() const
+  template< class LocalGridPartType >
+  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
   {
-    return baseSpace_.gridPart().template end< 0 >();
+    return baseSpace_.computeLocalPattern(localGridPart);
   }
-  /**
-      @}
-   **/
+
+  template< class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType >
+  Dune::shared_ptr< const PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+                                                               const OutsideDiscreteFunctionSpaceType& outerSpace) const
+  {
+    return baseSpace_.computeCouplingPattern(couplingGridPart, outerSpace);
+  }
+
+  template< class OtherDiscreteFunctionSpaceType>
+  Dune::shared_ptr< const PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  {
+    return baseSpace_.computePattern(other);
+  }
+
+  Dune::shared_ptr< const PatternType > computePattern() const
+  {
+    return baseSpace_.computePattern();
+  }
 
 private:
-
-  //! copy constructor
-  Dirichlet( const ThisType& );
-
-  //! assignment operator
-  ThisType& operator=( const ThisType& );
+  Dirichlet(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
   const BaseSpaceType& baseSpace_;
-  const AffineShiftType affineShift_;
+  const Dune::shared_ptr< const AffineShiftType > affineShift_;
 }; // end class Dirichlet
 
 } // end namespace Affine
