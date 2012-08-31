@@ -1,6 +1,8 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_LOCALDEFAULT_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_LOCALDEFAULT_HH
 
+// dune-common
+#include <dune/common/fmatrix.hh>
 
 namespace Dune
 {
