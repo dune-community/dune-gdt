@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
 
 // dune-common includes
 #include <dune/common/exceptions.hh>
@@ -77,25 +77,6 @@ public:
   {
   }
 
-  //  template< class FunctionType >
-  //  BlockVector(  const DiscreteFunctionSpaceType& discreteFunctionSpace,
-  //                const std::string name,
-  //                const FunctionType function,
-  //                const std::string projectionType )
-  //    : space_( discreteFunctionSpace ),
-  //      storage_( space_.map().size() ),
-  //      name_( name )
-  //  {
-  //    if( projectionType.compare( "dirichlet" ) == 0 )
-  //    {
-  //      Dune::HelperTools::Projection::Dirichlet::project( function, *this );
-  //    }
-  //    else
-  //    {
-  //      throw Dune::NotImplemented();
-  //    }
-  //  }
-
 private:
   //! copy constructor
   Default(const ThisType& other)
@@ -105,7 +86,7 @@ private:
     , name_("copyOF" + other.name())
   {
     for (unsigned int i = 0; i < storage_.size(); ++i) {
-      storage_[i] = storage[i];
+      storage_[i] = other.storage_[i];
     }
   }
 
@@ -115,7 +96,7 @@ private:
     if (this != other) {
       assert(other.space().map().size() == this->space().map().size());
       for (unsigned int i = 0; i < storage_.size(); ++i) {
-        storage_[i] = storage[i];
+        storage_[i] = other.storage_[i];
       }
     }
     return *this;
@@ -137,41 +118,45 @@ public:
     name_ = newName;
   }
 
-  //  void clear()
+  void clear()
+  {
+    const RangeFieldType zero(0.0);
+    for (unsigned int i = 0; i < size(); ++i)
+      this->operator[](i) = zero;
+  } // void clear()
+
+  //  const StorageType& storage() const
   //  {
-  //    storage_ = 0.0;
+  //    return storage_;
   //  }
 
-  const StorageType& storage() const
-  {
-    return storage_;
-  }
-
-  StorageType& storage()
-  {
-    return storage_;
-  }
+  //  StorageType& storage()
+  //  {
+  //    return storage_;
+  //  }
 
   RangeFieldType& operator[](const unsigned int globalDofNumber)
   {
+    assert(globalDofNumber < size());
     return storage_[globalDofNumber];
   }
 
   const RangeFieldType& operator[](const unsigned int globalDofNumber) const
   {
+    assert(globalDofNumber < size());
     return storage_[globalDofNumber];
   }
 
   //  template< class EntityType >
   LocalFunctionType localFunction(const EntityType& entity)
   {
-    return LocalFunctionType((*this), entity);
+    return LocalFunctionType(*this, entity);
   }
 
   //  template< class EntityType >
   ConstLocalFunctionType localFunction(const EntityType& entity) const
   {
-    return ConstLocalFunctionType((*this), entity);
+    return ConstLocalFunctionType(*this, entity);
   }
 
   //  /**
@@ -238,4 +223,4 @@ private:
 
 } // end namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_CONTINUOUS_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
