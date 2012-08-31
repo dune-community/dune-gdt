@@ -36,7 +36,7 @@ public:
   typedef typename DiscreteFunctionSpaceType::GridPartType
     GridPartType;
 
-  typedef typename DiscreteFunctionSpaceType::EntityType
+  typedef typename GridPartType::template Codim< 0 >::EntityType
     EntityType;
 
   enum{ polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder };
