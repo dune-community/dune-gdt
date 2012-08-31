@@ -22,7 +22,7 @@ public:
 
   typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::EntityType EntityType;
+  typedef typename DiscreteFunctionSpaceType::GridPartType::template Codim<0>::EntityType EntityType;
 
   typedef typename DiscreteFunctionType::DomainType DomainType;
 
