@@ -6,6 +6,7 @@
 // system
 #include <vector>
 #include <set>
+#include <map>
 
 // dune-common
 #include <dune/common/shared_ptr.hh>
