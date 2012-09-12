@@ -146,13 +146,12 @@ private:
   Constrained(const ThisType&);
 
   template< class LocalConstraintsType, class MatrixType >
-  void applyLocalMatrixConstraints( const LocalConstraintsType& localConstraints, MatrixType& matrix ) const
+  void applyLocalMatrixConstraints(const LocalConstraintsType& localConstraints, MatrixType& matrix) const
   {
-    for( unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i )
-    {
-      for( unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j )
-      {
-        matrix.set(localConstraints.rowDofs(i), localConstraints.columnDofs(j), localConstraints.localMatrix(i,j));
+    for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
+      const unsigned int rowDof = localConstraints.rowDofs(i);
+      for (unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j) {
+        matrix.set(rowDof, localConstraints.columnDofs(j), localConstraints.localMatrix(i,j));
       }
     }
   } // end applyLocalMatrixConstraints
