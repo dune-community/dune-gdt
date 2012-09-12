@@ -100,6 +100,11 @@ public:
     return constraints_;
   }
 
+  const BoundaryInfoType& boundaryInfo() const
+  {
+    return *boundaryInfo_;
+  }
+
   const GridPartType& gridPart() const
   {
     return superSpace_.gridPart();
