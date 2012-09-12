@@ -107,9 +107,9 @@ public:
                     const LocalTestBaseFunctionSetNeighborType& localTestBaseFunctionSetNeighbor,
                     const IntersectionType& intersection,
                     LocalMatrixType& localMatrixEnEn,
+                    LocalMatrixType& localMatrixNeNe,
                     LocalMatrixType& localMatrixEnNe,
                     LocalMatrixType& localMatrixNeEn,
-                    LocalMatrixType& localMatrixNeNe,
                     std::vector< LocalMatrixType >& tmpLocalMatrices ) const
   {
     // preparations
@@ -172,15 +172,15 @@ public:
                                       intersection,
                                       x,
                                       tmpLocalMatrices[0],    /*EnEn*/
-                                      tmpLocalMatrices[1],    /*EnNe*/
-                                      tmpLocalMatrices[2],    /*NeEn*/
-                                      tmpLocalMatrices[3] );  /*NeNe*/
+                                      tmpLocalMatrices[1],    /*NeNe*/
+                                      tmpLocalMatrices[2],    /*EnNe*/
+                                      tmpLocalMatrices[3] );  /*NeEn*/
 
       // compute integral (see below)
       addToIntegral(tmpLocalMatrices[0], integrationFactor, quadratureWeight, rowsEn, colsEn, localMatrixEnEn);
-      addToIntegral(tmpLocalMatrices[1], integrationFactor, quadratureWeight, rowsEn, colsNe, localMatrixEnNe);
-      addToIntegral(tmpLocalMatrices[2], integrationFactor, quadratureWeight, rowsNe, colsEn, localMatrixNeEn);
-      addToIntegral(tmpLocalMatrices[3], integrationFactor, quadratureWeight, rowsNe, colsNe, localMatrixNeNe);
+      addToIntegral(tmpLocalMatrices[1], integrationFactor, quadratureWeight, rowsNe, colsNe, localMatrixNeNe);
+      addToIntegral(tmpLocalMatrices[2], integrationFactor, quadratureWeight, rowsEn, colsNe, localMatrixEnNe);
+      addToIntegral(tmpLocalMatrices[3], integrationFactor, quadratureWeight, rowsNe, colsEn, localMatrixNeEn);
     } // done loop over all quadrature points
   } // void applyLocal
 
