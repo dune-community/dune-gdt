@@ -76,8 +76,8 @@ public:
 
   template <class LocalAssemblerType, class MatrixBackendType>
   void assembleMatrices(const LocalAssemblerType& localAssembler, MatrixBackendType& innerInnerMatrix,
-                        MatrixBackendType& outerOuterMatrix, MatrixBackendType& innerOuterMatrix,
-                        MatrixBackendType& outerInnerMatrix) const
+                        MatrixBackendType& innerOuterMatrix, MatrixBackendType& outerInnerMatrix,
+                        MatrixBackendType& outerOuterMatrix) const
   {
     // preparations
     typedef typename CouplingGridPartType::template Codim<0>::EntityType EntityType;
