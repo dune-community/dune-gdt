@@ -8,25 +8,19 @@
 // dune-stuff
 #include <dune/stuff/function/expression.hh>
 
-namespace Dune
-{
+namespace Dune {
 
 namespace Detailed {
 
-namespace Discretizations
-{
+namespace Discretizations {
 
-namespace Evaluation
-{
+namespace Evaluation {
 
-namespace Local
-{
+namespace Local {
 
-namespace Quaternary
-{
+namespace Quaternary {
 
-namespace IPDGfluxes
-{
+namespace IPDGfluxes {
 
 /**
   \todo       Implement penalty parameter
@@ -37,25 +31,19 @@ template< class FunctionSpaceImp,
 class Inner
 {
 public:
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
+  typedef FunctionSpaceImp FunctionSpaceType;
 
   typedef InducingFunctionImp InducingFunctionType;
 
-  typedef Inner< FunctionSpaceType, InducingFunctionType >
-    ThisType;
+  typedef Inner< FunctionSpaceType, InducingFunctionType > ThisType;
 
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
 
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
+  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
   Inner(const Dune::shared_ptr< const InducingFunctionType > inducingFunction,
         const unsigned int order,
@@ -248,137 +236,6 @@ private:
   const unsigned int order_;
   const RangeFieldType penaltyFactor_;
 }; // end class Inner
-
-#if 0
-/**
-  \todo       Implement penalty parameter
-  \todo       Implement different constructor, for function and discretefunction
-  **/
-template< class FunctionSpaceImp >
-class Dirichlet
-{
-public:
-
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
-
-  typedef Dirichlet< FunctionSpaceType >
-    ThisType;
-
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
-
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
-
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
-
-  typedef Dune::HelperTools::Function::Runtime< FunctionSpaceType >
-    InducingFunctionType;
-
-  //! constructor, takes the inducing functions expression as a runtime parameter
-  Dirichlet( const std::string expression = "[1.0;1.0;1.0]", const int order = 1 )
-    : inducingFunction_( expression ),
-      order_( std::max( 0, order ) )
-  {
-  }
-
-  //! copy constructor
-  Dirichlet( const ThisType& other )
-    : inducingFunction_( other.inducingFunction() ),
-      order_( other.order() )
-  {
-  }
-
-  //! returns the inducing function
-  InducingFunctionType inducingFunction() const
-  {
-    return inducingFunction_;
-  }
-
-  unsigned int order() const
-  {
-    return order_;
-  }
-
-  /**
-    \attention  Assumes, that the return vectors are empty, because we do multiple +=
-    **/
-  template< class LocalAnsatzBaseFunctionSetType,
-            class LocalTestBaseFunctionSetType,
-            class IntersectionType,
-            class LocalPointType,
-            class LocalMatrixType >
-  void evaluateLocal( const LocalAnsatzBaseFunctionSetType& localAnsatzBaseFunctionSet,
-                      const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
-                      const IntersectionType& intersection,
-                      const LocalPointType& localPoint,
-                      LocalMatrixType& ret ) const
-  {
-    // some stuff
-    const DomainType globalPoint = intersection.geometry().global( localPoint );
-    const DomainType localPointEntity = intersection.geometryInInside().global( localPoint );
-    const DomainType unitOuterNormal = intersection.unitOuterNormal( localPoint );
-
-    // evaluate ansatz basefunctionset
-    const unsigned int rows = localAnsatzBaseFunctionSet.size();
-    std::vector< RangeType > localAnsatzBaseFunctionSetEvaluations( rows, RangeType( 0.0 ) );
-    std::vector< JacobianRangeType > localAnsatzBaseFunctionSetGradients( rows, JacobianRangeType( 0.0 ) );
-    localAnsatzBaseFunctionSet.evaluate( localPointEntity, localAnsatzBaseFunctionSetEvaluations );
-    localAnsatzBaseFunctionSet.jacobian( localPointEntity, localAnsatzBaseFunctionSetGradients );
-
-    // evaluate test basefunctionset
-    const unsigned int cols = localTestBaseFunctionSet.size();
-    std::vector< RangeType > localTestBaseFunctionSetEvaluations( cols, RangeType( 0.0 ) );
-    std::vector< JacobianRangeType > localTestBaseFunctionSetGradients( cols, JacobianRangeType( 0.0 ) );
-    localTestBaseFunctionSet.evaluate( localPointEntity, localTestBaseFunctionSetEvaluations );
-    localTestBaseFunctionSet.jacobian( localPointEntity, localTestBaseFunctionSetGradients );
-
-    // evaluate inducing function
-    RangeType functionValue( 0.0 );
-    inducingFunction_.evaluate( globalPoint, functionValue );
-
-    // evaluate penalty parameter
-    const RangeFieldType penaltyParameter = 20.0 / std::pow( intersection.geometry().volume(), 1.0 );
-
-    // do loop over all ansatz and test basefunctions
-    assert( ret.rows() == rows );
-    assert( ret.cols() == cols );
-    for( unsigned int i = 0; i < rows; ++i )
-    {
-      for( unsigned int j = 0; j < cols; ++j )
-      {
-        {
-          gradientTimesNormal = localTestBaseFunctionSetGradients[j][0] * unitOuterNormal;
-          gradientTimesNormalTimesEvaluation = localAnsatzBaseFunctionSetEvaluations[i] * gradientTimesNormal;
-          ret[i][j] += -1.0 * functionValue * gradientTimesNormalTimesEvaluation;
-        }
-        {
-          const RangeFieldType normalTimesGradient = unitOuterNormal * localAnsatzBaseFunctionSetGradients[i][0];
-          const RangeType evalautionTimesNormalTimesGradient = localTestBaseFunctionSetEvaluations[j] * normalTimesGradient;
-          ret[i][j] += -1.0 * functionValue * evalautionTimesNormalTimesGradient;
-        }
-        {
-          const RangeFieldType evalautionTimesEvaluation = localAnsatzBaseFunctionSetEvaluations[i] * localTestBaseFunctionSetEvaluations[j];
-          ret[i][j] += penaltyParameter * evalautionTimesEvaluation;
-        }
-      }
-    } // done loop over all ansatz and test basefunctions
-
-  } // end method evaluateLocal
-
-private:
-  //! assignment operator
-  ThisType& operator=( const ThisType& );
-
-  const InducingFunctionType inducingFunction_;
-  const unsigned int order_;
-}; // end class Dirichlet
-#endif
 
 } // end namespace IPDGfluxes
 
