@@ -49,9 +49,9 @@ public:
   }
 
   SparseMatrix(const ThisType& other)
-    : rows_(other.rows())
-    , cols_(other.cols())
-    , storage_(other.storage())
+    : rows_(other.rows_)
+    , cols_(other.cols_)
+    , storage_(other.storage_)
   {
   }
 
