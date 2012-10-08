@@ -5,11 +5,14 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_BOUNDARYINTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_BOUNDARYINTEGRAL_HH
 
-// dune grid includes
-#include <dune/grid/common/quadraturerules.hh>
+// dune-common
+#include <dune/common/densematrix.hh>
 
-// dune-helper-tools includes
-#include <dune/helper-tools/common/matrix.hh>
+// dune-geometry
+#include <dune/geometry/quadraturerules.hh>
+
+// dune-stuff
+#include <dune/stuff/common/matrix.hh>
 
 namespace Dune {
 
@@ -41,6 +44,8 @@ public:
 
   typedef typename FunctionSpaceType::DomainType DomainType;
 
+  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+
   //  template< class InducingDiscreteFunctionType >
   //  class LocalFunctional
   //  {
@@ -50,14 +55,8 @@ public:
   //      Type;
   //  };
 
-  BoundaryIntegral(const LocalEvaluationType localEvaluation)
+  BoundaryIntegral(const LocalEvaluationType& localEvaluation)
     : localEvaluation_(localEvaluation)
-  {
-  }
-
-  //! copy constructor
-  BoundaryIntegral(const ThisType& other)
-    : localEvaluation_(other.localEvaluation())
   {
   }
 
@@ -88,44 +87,38 @@ public:
                   const LocalTestBaseFunctionSetType& localTestBaseFunctionSet, const IntersectionType& intersection,
                   LocalMatrixType& localMatrix, std::vector<LocalMatrixType>& tmpLocalMatrices) const
   {
-    // some types
-    typedef typename LocalAnsatzBaseFunctionSetType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
-
-    typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
-
-    typedef Dune::QuadratureRules<double, IntersectionType::mydimension> FaceQuadratureRules;
-
-    typedef Dune::QuadratureRule<double, IntersectionType::mydimension> FaceQuadratureType;
-
-    typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
-
     // some stuff
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     const unsigned int cols = localTestBaseFunctionSet.size();
-    const unsigned int quadratureOrder =
-        localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
 
-    // make sure, that the target matrices are big enough
+    // make sure, that the target matrix is big enough
     assert(localMatrix.rows() >= rows);
     assert(localMatrix.cols() >= cols);
 
-    // clear target matrices
-    Dune::HelperTools::Common::Matrix::clear(localMatrix);
+    // clear target matrix
+    Dune::Stuff::Common::Matrix::clear(localMatrix);
 
     // check tmp local matrices
-    if (tmpLocalMatrices.size() < 1) {
-      tmpLocalMatrices.resize(1,
+    if (tmpLocalMatrices.size() < numTmpObjectsRequired()) {
+      tmpLocalMatrices.resize(numTmpObjectsRequired(),
                               LocalMatrixType(localAnsatzBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                               localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                               RangeFieldType(0.0)));
-    }
+    } // check tmp local matrices
 
-    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
-    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd;
+    // quadrature
+    const unsigned int quadratureOrder =
+        localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
+    typedef Dune::QuadratureRules<DomainFieldType, IntersectionType::mydimension> FaceQuadratureRules;
+    typedef Dune::QuadratureRule<DomainFieldType, IntersectionType::mydimension> FaceQuadratureType;
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
+
+    // loop over all quadrature points
+    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin();
+         quadPoint != faceQuadrature.end();
          ++quadPoint) {
       // local coordinates
-      const LocalCoordinateType x = quadPoint->position();
+      const typename IntersectionType::LocalCoordinate x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
@@ -138,27 +131,31 @@ public:
       // compute integral (see below)
       addToIntegral(tmpLocalMatrices[0], integrationFactor, quadratureWeight, rows, cols, localMatrix);
 
-    } // done loop over all quadrature points
+    } // loop over all quadrature points
   } // end method applyLocal
 
 private:
-  //! assignment operator
+  BoundaryIntegral(const ThisType&);
   ThisType& operator=(const ThisType&);
 
-  template <class LocalMatrixType, class RangeFieldType>
-  void addToIntegral(const LocalMatrixType& localMatrix, const RangeFieldType& integrationFactor,
+  template <class MatrixImp, class RangeFieldType>
+  void addToIntegral(const Dune::DenseMatrix<MatrixImp>& localMatrix, const RangeFieldType& integrationFactor,
                      const RangeFieldType& quadratureWeight, const unsigned int rows, const unsigned int cols,
-                     LocalMatrixType& ret) const
+                     Dune::DenseMatrix<MatrixImp>& ret) const
   {
+    // loop over all rows
     for (unsigned int i = 0; i < rows; ++i) {
+      // get row
+      const typename Dune::DenseMatrix<MatrixImp>::const_row_reference localMatrixRow = localMatrix[i];
+      typename Dune::DenseMatrix<MatrixImp>::row_reference retRow                     = ret[i];
+      // loop over all cols
       for (unsigned int j = 0; j < cols; ++j) {
-        ret[i][j] += localMatrix[i][j] * integrationFactor * quadratureWeight;
-      }
-    }
-  } // end method addToIntegral
+        retRow[j] += localMatrixRow[j] * integrationFactor * quadratureWeight;
+      } // loop over all cols
+    } // loop over all rows
+  } // void addToIntegral(...) const
 
-  const LocalEvaluationType localEvaluation_;
-
+  const LocalEvaluationType& localEvaluation_;
 }; // end class BoundaryIntegral
 
 } // end namespace Codim1
