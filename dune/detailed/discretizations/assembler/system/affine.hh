@@ -80,10 +80,10 @@ public:
     typedef typename AnsatzFunctionSpaceType::GridPartType
       GridPartType;
 
-    typedef typename AnsatzFunctionSpaceType::IteratorType
+    typedef typename GridPartType::template Codim< 0 >::IteratorType
       EntityIteratorType;
 
-    typedef typename AnsatzFunctionSpaceType::EntityType
+    typedef typename GridPartType::template Codim< 0 >::EntityType
       EntityType;
 
     typedef typename AnsatzFunctionSpaceType::RangeFieldType
@@ -139,12 +139,11 @@ public:
     tmpLocalVectorsContainer.push_back( tmpLocalAssemblerVectors );
     tmpLocalVectorsContainer.push_back( tmpLocalFunctionalVectors );
 
-    // do first gridwalk to assemble
-    const EntityIteratorType lastEntity = ansatzSpace_.end();
-    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
-    {
+    // walk the grid to assemble
+    for(EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin< 0 >();
+        entityIterator != ansatzSpace_.gridPart().template end< 0 >();
+        ++entityIterator ) {
       const EntityType& entity = *entityIterator;
-
       localMatrixAssembler.assembleLocal( ansatzSpace_, testSpace_, entity, systemMatrix, tmpLocalMatricesContainer );
       localVectorAssembler.assembleLocal( testSpace_, entity, systemVector, tmpLocalVectorsContainer );
       localAffineShiftVectorAssembler.assembleLocal( testSpace_, entity, affineShiftVector, tmpLocalVectorsContainer );
@@ -153,9 +152,9 @@ public:
 
     // do second gridwalk, to apply constraints
     const ConstraintsType& constraints = ansatzSpace_.constraints();
-
-    for( EntityIteratorType entityIterator = ansatzSpace_.begin(); entityIterator != lastEntity; ++entityIterator )
-    {
+    for(EntityIteratorType entityIterator = ansatzSpace_.gridPart().template begin< 0 >();
+        entityIterator != ansatzSpace_.gridPart().template end< 0 >();
+        ++entityIterator ) {
       const EntityType& entity = *entityIterator;
 
       const LocalConstraintsType& localConstraints = constraints.local( entity );
@@ -174,14 +173,12 @@ private:
   ThisType& operator=( const ThisType& );
 
   template< class LocalConstraintsType, class MatrixType >
-  void applyLocalMatrixConstraints( const LocalConstraintsType& localConstraints, MatrixType& matrix ) const
+  void applyLocalMatrixConstraints(const LocalConstraintsType& localConstraints, MatrixType& matrix) const
   {
-    for( unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i )
-    {
-      for( unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j )
-      {
-        matrix[localConstraints.rowDofs(i)][localConstraints.columnDofs(j)]
-          = localConstraints.localMatrix(i,j);
+    for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
+      const unsigned int rowDof = localConstraints.rowDofs(i);
+      for (unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j) {
+        matrix.set(rowDof, localConstraints.columnDofs(j), localConstraints.localMatrix(i,j));
       }
     }
   } // end applyLocalMatrixConstraints
@@ -191,7 +188,7 @@ private:
   {
     for( unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i )
     {
-      vector[localConstraints.rowDofs(i)] = 0.0;
+        vector.set(localConstraints.rowDofs(i), 0.0);
     }
   } // end applyLocalVectorConstraints
 
