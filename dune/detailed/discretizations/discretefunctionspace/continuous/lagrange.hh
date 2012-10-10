@@ -10,67 +10,53 @@
 
 // dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
-#include <dune/fem/gridpart/gridpartview.hh>
 
 // dune-detailed-discretizations includes
 #include <dune/detailed/discretizations/basefunctionset/continuous/lagrange.hh>
 #include <dune/detailed/discretizations/mapper/continuous/lagrange.hh>
 
-namespace Dune
-{
+namespace Dune {
 
 namespace Detailed {
 
-namespace Discretizations
-{
+namespace Discretizations {
 
-namespace DiscreteFunctionSpace
-{
+namespace DiscreteFunctionSpace {
 
-namespace Continuous
-{
+namespace Continuous {
 
 template< class FunctionSpaceImp, class GridPartImp, int polOrder >
 class Lagrange
 {
 public:
 
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
+  typedef FunctionSpaceImp FunctionSpaceType;
 
-  typedef GridPartImp
-    GridPartType;
+  typedef GridPartImp GridPartType;
 
-  typedef Dune::GridPartView< GridPartType > GridViewType;
+  typedef typename GridPartType::GridViewType GridViewType;
 
-  enum{ polynomialOrder = polOrder };
+  static const int polynomialOrder = polOrder;
 
-  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
-    ThisType;
+  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder > ThisType;
 
-  typedef Dune::Detailed::Discretizations::Mapper::Continuous::Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
-    MapperType;
+  typedef Dune::Detailed::Discretizations
+    ::Mapper::Continuous::Lagrange< FunctionSpaceType, GridPartType, polynomialOrder > MapperType;
 
-  typedef Dune::Detailed::Discretizations::BaseFunctionSet::Continuous::Lagrange< ThisType >
-    BaseFunctionSetType;
+  typedef Dune::Detailed::Discretizations
+    ::BaseFunctionSet::Continuous::Lagrange< ThisType > BaseFunctionSetType;
 
-  typedef typename FunctionSpaceType::DomainFieldType
-    DomainFieldType;
+  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
 
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
 
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
+  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  typedef typename FunctionSpaceType::HessianRangeType
-    HessianRangeType;
+  typedef typename FunctionSpaceType::HessianRangeType HessianRangeType;
 
   static const unsigned int dimDomain = FunctionSpaceType::dimDomain;
 
@@ -78,11 +64,15 @@ public:
 
   typedef std::map< unsigned int, std::set< unsigned int > > PatternType;
 
+private:
+  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polynomialOrder > HostSpaceType;
+
   Lagrange(const GridPartType& gridPart)
-    : gridPart_(gridPart),
-      gridView_(gridPart_),
-      mapper_(gridPart_),
-      baseFunctionSet_(*this)
+    : gridPart_(gridPart)
+    , gridView_(gridPart_.gridView())
+    , hostSpace_(gridPart_)
+    , mapper_(*this)
+    , baseFunctionSet_(*this)
   {}
 
   const GridPartType& gridPart() const
@@ -103,19 +93,6 @@ public:
   const BaseFunctionSetType& baseFunctionSet() const
   {
     return baseFunctionSet_;
-  }
-
-  int order() const
-  {
-    return polynomialOrder;
-  }
-
-  bool continuous() const
-  {
-    if( order() > 0 )
-      return false;
-    else
-      return true;
   }
 
   template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
@@ -198,11 +175,12 @@ public:
   }
 
 protected:
-  Lagrange( const ThisType& other );
-  ThisType& operator=( const ThisType& );
+  Lagrange(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
   const GridPartType& gridPart_;
   const GridViewType gridView_;
+  const HostSpaceType hostSpace_;
   const MapperType mapper_;
   const BaseFunctionSetType baseFunctionSet_;
 }; // end class Lagrange
