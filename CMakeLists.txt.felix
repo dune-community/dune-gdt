@@ -1,7 +1,7 @@
 PROJECT( dune-detailed-discretizations)
 
 SET( CMAKE_CXX_COMPILER
-  "g++-4.4" CACHE FORCE
+  "g++-4.6" CACHE FORCE
   "" )
 
 # cmake settings
@@ -33,30 +33,25 @@ SET( POLORDER
   "POLORDER" )
 
 SET( ALUGRID_BASE_PATH
-  "${CMAKE_CURRENT_SOURCE_DIR}/../alugrid" CACHE STRING
+  "${CMAKE_CURRENT_SOURCE_DIR}/../local" CACHE STRING
   "ALUGRID_BASE_PATH" )
-
-#SET( ALBERTAGRID_BASE_PATH
-#  "${CMAKE_CURRENT_SOURCE_DIR}/../alberta" CACHE STRING
-#  "ALBERTAGRID_BASE_PATH" )
 
 SET( CUSTOM_FLAGS
   "-Wall -O0 -DDEBUG -g -fdiagnostics-show-option" CACHE LIST
   "CUSTOM_FLAGS" )
 
 # boost
-set( BOOST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../boost" )
+set( BOOST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../local" )
 find_package( Boost 1.42.0 REQUIRED )
 include_directories(${Boost_INCLUDE_DIR})
 link_directories( ${Boost_LIBRARY_DIRS} )
 
 # eigen3
-set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen")
+set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../local/include/eigen3")
 find_package( Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 # superlu
-set( SUPERLU_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../superlu" )
 find_package( SuperLU REQUIRED)
 include_directories( ${SUPERLU_INCLUDES} )
 link_directories( ${SUPERLU_LIBRARY_DIRS} )
@@ -69,14 +64,8 @@ add_cxx_flags( -DPOLORDER=${POLORDER} )
 add_cxx_flags( -I${ALUGRID_BASE_PATH}/include
   -I${ALUGRID_BASE_PATH}/include/serial
   -I${ALUGRID_BASE_PATH}/include/duneinterface -DENABLE_ALUGRID )
-#add_cxx_flags( -DENABLE_ALBERTA=1
-#  -DWORLDDIM=${GRIDDIM}
-#  -DALBERTA_DIM=${GRIDDIM}
-#  -I${ALBERTAGRID_BASE_PATH}/include
-#  -I${ALBERTAGRID_BASE_PATH}/include/alberta )
 add_cxx_flags(-DBOOST_DATE_TIME_NO_LOCALE)
 link_directories( "${ALUGRID_BASE_PATH}/lib" )
-#link_directories( "${ALBERTAGRID_BASE_PATH}/lib" )
 add_cxx_flags(-std=c++0x)
 add_cxx_flags(${CUSTOM_FLAGS})
 
