@@ -88,7 +88,7 @@ public:
     }
 
     // clear target vector
-    Dune::Stuff::Common::Vector::clear(localVector);
+    Dune::Stuff::Common::clear(localVector);
 
     const typename VolumeQuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
     for (typename VolumeQuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd;
@@ -196,7 +196,7 @@ public:
     assert(localVector.size() >= size);
 
     // clear target vector
-    Dune::Stuff::Common::Vector::clear(localVector);
+    Dune::Stuff::Common::clear(localVector);
 
     // do loop over all quadrature points
     LocalMatrixType tmpMatrix(1, size);

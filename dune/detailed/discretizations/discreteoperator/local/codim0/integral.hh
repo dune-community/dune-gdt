@@ -162,7 +162,7 @@ public:
     assert(localMatrix.cols() >= cols);
 
     // clear target matrix
-    Dune::Stuff::Common::Matrix::clear(localMatrix);
+    Dune::Stuff::Common::clear(localMatrix);
 
     // check tmp local matrices
     if (tmpLocalMatrices.size() < 1) {
