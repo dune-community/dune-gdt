@@ -10,7 +10,6 @@
 
 // dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
-#include <dune/fem/gridpart/gridpartview.hh>
 
 // dune-detailed-discretizations includes
 #include <dune/detailed/discretizations/basefunctionset/continuous/lagrange.hh>
@@ -34,12 +33,9 @@ public:
 
   typedef GridPartImp GridPartType;
 
-  typedef Dune::GridPartView<GridPartType> GridViewType;
+  typedef typename GridPartType::GridViewType GridViewType;
 
-  enum
-  {
-    polynomialOrder = polOrder
-  };
+  static const int polynomialOrder = polOrder;
 
   typedef Lagrange<FunctionSpaceType, GridPartType, polynomialOrder> ThisType;
 
@@ -66,10 +62,14 @@ public:
 
   typedef std::map<unsigned int, std::set<unsigned int>> PatternType;
 
+private:
+  typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polynomialOrder> HostSpaceType;
+
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
-    , gridView_(gridPart_)
-    , mapper_(gridPart_)
+    , gridView_(gridPart_.gridView())
+    , hostSpace_(gridPart_)
+    , mapper_(*this)
     , baseFunctionSet_(*this)
   {
   }
@@ -92,19 +92,6 @@ public:
   const BaseFunctionSetType& baseFunctionSet() const
   {
     return baseFunctionSet_;
-  }
-
-  int order() const
-  {
-    return polynomialOrder;
-  }
-
-  bool continuous() const
-  {
-    if (order() > 0)
-      return false;
-    else
-      return true;
   }
 
   template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
@@ -189,11 +176,12 @@ public:
   }
 
 protected:
-  Lagrange(const ThisType& other);
+  Lagrange(const ThisType&);
   ThisType& operator=(const ThisType&);
 
   const GridPartType& gridPart_;
   const GridViewType gridView_;
+  const HostSpaceType hostSpace_;
   const MapperType mapper_;
   const BaseFunctionSetType baseFunctionSet_;
 }; // end class Lagrange
