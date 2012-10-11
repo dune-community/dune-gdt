@@ -98,6 +98,6 @@ set(LIST_LIBS ${common} ${grid} ${grid_multiscale} ${fem} ${localfunctions} ${ge
 
 set(COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "lapack" "boost_filesystem" "boost_system" "superlu" )
 
-ADD_EXECUTABLE( examples_elliptic_continuous_galerkin "examples/elliptic/continuous_galerkin.cc" ${LIST_LIBS} )
-TARGET_LINK_LIBRARIES( examples_elliptic_continuous_galerkin ${COMMON_LIBS} )
+ADD_EXECUTABLE( examples_elliptic_continuousgalerkin "examples/elliptic/continuousgalerkin.cc" ${LIST_LIBS} )
+TARGET_LINK_LIBRARIES( examples_elliptic_continuousgalerkin ${COMMON_LIBS} )
 
