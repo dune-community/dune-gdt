@@ -1,6 +1,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_WRAPPER_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_WRAPPER_HH
 
+// system
+#include <vector>
+
 namespace Dune {
 
 namespace Detailed {

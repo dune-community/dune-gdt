@@ -1,8 +1,8 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_LOCAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_LOCAL_HH
 
-// dune-fem-tools includes, should be removed in the end!
-//#include <dune/fem-tools/grid/entity.hh>
+// system
+#include <vector>
 
 namespace Dune {
 
