@@ -1,4 +1,4 @@
 Module: dune-detailed-discretizations
-Version: 2.2.0
+Version: 2.2.1
 Maintainer: felix.albrecht@uni-muenster.de
-Depends: dune-common dune-grid-multiscale dune-stuff dune-fem
+Depends: dune-common (>= 2.2) dune-grid-multiscale (>= 2.2) dune-stuff (>= 2.2) dune-fem (>= 1.3)
