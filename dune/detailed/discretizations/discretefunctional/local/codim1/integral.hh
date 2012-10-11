@@ -5,14 +5,14 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 
-// dune-common includes
+// dune-common
 #include <dune/common/dynmatrix.hh>
 
-// dune fem includes
-#include <dune/fem/quadrature/cachingquadrature.hh>
+//// dune-fem
+//#include <dune/fem/quadrature/cachingquadrature.hh>
 
-// dune-helper-tools includes
-#include <dune/helper-tools/common/vector.hh>
+// dune-stuff
+#include <dune/stuff/common/vector.hh>
 
 namespace Dune
 {
@@ -53,14 +53,12 @@ public:
 
   Integral( const LocalEvaluationType localEvaluation )
     : localEvaluation_( localEvaluation )
-  {
-  }
+  {}
 
   //! copy constructor
   Integral( const ThisType& other )
     : localEvaluation_( other.localEvaluation() )
-  {
-  }
+  {}
 
   LocalEvaluationType localEvaluation() const
   {
@@ -78,62 +76,62 @@ public:
                    LocalVectorType& localVector,
                    std::vector< LocalVectorType >& tmpLocalVectors ) const
   {
-    // some types
-    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
-      DiscreteFunctionSpaceType;
+//    // some types
+//    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
+//      DiscreteFunctionSpaceType;
 
-    typedef typename DiscreteFunctionSpaceType::GridViewType
-      GridViewType;
+//    typedef typename DiscreteFunctionSpaceType::GridViewType
+//      GridViewType;
 
-    typedef Dune::QuadratureRules< double, IntersectionType::mydimension >
-      FaceQuadratureRules;
+//    typedef Dune::QuadratureRules< double, IntersectionType::mydimension >
+//      FaceQuadratureRules;
 
-    typedef Dune::QuadratureRule< double, IntersectionType::mydimension >
-      FaceQuadratureType;
+//    typedef Dune::QuadratureRule< double, IntersectionType::mydimension >
+//      FaceQuadratureType;
 
-    typedef typename IntersectionType::LocalCoordinate
-      LocalCoordinateType;
+//    typedef typename IntersectionType::LocalCoordinate
+//      LocalCoordinateType;
 
-    // some stuff
-    const unsigned int size = localTestBaseFunctionSet.size();
-    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule( intersection.type(), 2*quadratureOrder+1 );
+//    // some stuff
+//    const unsigned int size = localTestBaseFunctionSet.size();
+//    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
+//    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule( intersection.type(), 2*quadratureOrder+1 );
 
 
-    // make sure target vector is big enough
-    assert( localVector.size() >= size );
+//    // make sure target vector is big enough
+//    assert( localVector.size() >= size );
 
-    // clear target vector
-    Dune::HelperTools::Common::Vector::clear( localVector );
+//    // clear target vector
+//    Dune::Stuff::Common::Vector::clear( localVector );
 
-    // check tmp local vectors
-    if( tmpLocalVectors.size() < 1 )
-    {
-      tmpLocalVectors.resize( 1,
-                              LocalVectorType(  localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
-                                                RangeFieldType( 0.0 ) ) );
-    }
+//    // check tmp local vectors
+//    if( tmpLocalVectors.size() < 1 )
+//    {
+//      tmpLocalVectors.resize( 1,
+//                              LocalVectorType(  localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
+//                                                RangeFieldType( 0.0 ) ) );
+//    }
 
-    // do loop over all quadrature points
-    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
-    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd; ++quadPoint )
-    {
-      // local coordinate
-      const LocalCoordinateType x = quadPoint->position();
+//    // do loop over all quadrature points
+//    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
+//    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint != quadratureEnd; ++quadPoint )
+//    {
+//      // local coordinate
+//      const LocalCoordinateType x = quadPoint->position();
 
-      // integration factors
-      const double integrationFactor = intersection.geometry().integrationElement( x );
-      const double quadratureWeight = quadPoint->weight();
+//      // integration factors
+//      const double integrationFactor = intersection.geometry().integrationElement( x );
+//      const double quadratureWeight = quadPoint->weight();
 
-      // evaluate the local evaluation
-      localEvaluation_.evaluateLocal( localTestBaseFunctionSet, intersection, x, tmpLocalVectors[0] );
+//      // evaluate the local evaluation
+//      localEvaluation_.evaluateLocal( localTestBaseFunctionSet, intersection, x, tmpLocalVectors[0] );
 
-      // compute integral
-      for( unsigned int i = 0; i < size; ++i )
-      {
-        localVector[i] += tmpLocalVectors[0][i] * integrationFactor * quadratureWeight;
-      }
-    } // done loop over all quadrature points
+//      // compute integral
+//      for( unsigned int i = 0; i < size; ++i )
+//      {
+//        localVector[i] += tmpLocalVectors[0][i] * integrationFactor * quadratureWeight;
+//      }
+//    } // done loop over all quadrature points
   } // end method applyLocal
 
 private:
