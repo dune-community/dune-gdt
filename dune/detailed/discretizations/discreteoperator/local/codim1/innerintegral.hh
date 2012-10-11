@@ -129,10 +129,10 @@ public:
     assert(localMatrixNeNe.cols() >= colsNe);
 
     // clear target matrices
-    Dune::Stuff::Common::Matrix::clear(localMatrixEnEn);
-    Dune::Stuff::Common::Matrix::clear(localMatrixEnNe);
-    Dune::Stuff::Common::Matrix::clear(localMatrixNeEn);
-    Dune::Stuff::Common::Matrix::clear(localMatrixNeNe);
+    Dune::Stuff::Common::clear(localMatrixEnEn);
+    Dune::Stuff::Common::clear(localMatrixEnNe);
+    Dune::Stuff::Common::clear(localMatrixNeEn);
+    Dune::Stuff::Common::clear(localMatrixNeNe);
 
     // check tmp local matrices
     if(tmpLocalMatrices.size() < numTmpObjectsRequired()) {

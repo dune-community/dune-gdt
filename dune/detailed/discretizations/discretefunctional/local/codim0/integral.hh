@@ -104,7 +104,7 @@ public:
     }
 
     // clear target vector
-    Dune::Stuff::Common::clear( localVector );
+    Dune::Stuff::Common::clear(localVector);
 
     const typename VolumeQuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
     for (typename VolumeQuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd; ++quadPoint )
