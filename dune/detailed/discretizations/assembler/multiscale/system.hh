@@ -14,7 +14,9 @@
 #include <dune/detailed/discretizations/assembler/multiscale/coupling.hh>
 
 // dune-detailed-solvers
+#if HAVE_DUNE_DETAILED_SOLVERS
 #include <dune/detailed/solvers/stationary/linear/elliptic/continuousgalerkin/dune-detailed-discretizations.hh>
+#endif // HAVE_DUNE_DETAILED_SOLVERS
 
 namespace Dune {
 
@@ -31,6 +33,7 @@ namespace System {
 template <class MsGridImp, class LocalSolverImp>
 class Primal;
 
+#if HAVE_DUNE_DETAILED_SOLVERS
 template <class GridImp, class ModelImp, int polynomialOrder>
 class Primal<Dune::grid::Multiscale::Default<GridImp>,
              Dune::Detailed::Solvers::Stationary::Linear::Elliptic::ContinuousGalerkin::
@@ -105,6 +108,7 @@ private:
   const MsGridType& msGrid_;
   const std::vector<Dune::shared_ptr<LocalSolverType>> localSolvers_;
 }; // class Primal
+#endif // HAVE_DUNE_DETAILED_SOLVERS
 
 } // namespace System
 
