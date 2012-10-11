@@ -64,16 +64,17 @@ public:
 
   typedef std::map< unsigned int, std::set< unsigned int > > PatternType;
 
-private:
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polynomialOrder > HostSpaceType;
-
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
     , gridView_(gridPart_.gridView())
-    , hostSpace_(gridPart_)
-    , mapper_(*this)
+    , mapper_(gridPart_)
     , baseFunctionSet_(*this)
   {}
+
+  int order() const
+  {
+    return polynomialOrder;
+  }
 
   const GridPartType& gridPart() const
   {
@@ -96,7 +97,7 @@ private:
   }
 
   template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
-  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
+  Dune::shared_ptr< PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
                                                             const OtherDiscreteFunctionSpaceType& other) const
   {
     Dune::shared_ptr< PatternType > ret(new PatternType());
@@ -119,13 +120,13 @@ private:
   } // computeLocalPattern()
 
   template< class LocalGridPartType >
-  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
+  Dune::shared_ptr< PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
   {
     return computeLocalPattern(localGridPart, *this);
   }
 
   template< class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType >
-  Dune::shared_ptr< const PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+  Dune::shared_ptr< PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
                                                                const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
     Dune::shared_ptr< PatternType > ret(new PatternType());
@@ -164,12 +165,12 @@ private:
   } // computeCouplingPattern()
 
   template< class OtherDiscreteFunctionSpaceType >
-  Dune::shared_ptr< const PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  Dune::shared_ptr< PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
   {
     return computeLocalPattern(gridPart_, other);
   }
 
-  Dune::shared_ptr< const PatternType > computePattern() const
+  Dune::shared_ptr< PatternType > computePattern() const
   {
     return computePattern(*this);
   }
@@ -180,7 +181,6 @@ protected:
 
   const GridPartType& gridPart_;
   const GridViewType gridView_;
-  const HostSpaceType hostSpace_;
   const MapperType mapper_;
   const BaseFunctionSetType baseFunctionSet_;
 }; // end class Lagrange

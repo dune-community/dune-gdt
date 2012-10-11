@@ -25,159 +25,59 @@ template< class DiscreteFunctionSpaceImp >
 class Lagrange
 {
 public:
+  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
 
-  typedef DiscreteFunctionSpaceImp
-    DiscreteFunctionSpaceType;
+  typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::FunctionSpaceType
-    FunctionSpaceType;
+  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
 
-  typedef typename DiscreteFunctionSpaceType::GridPartType
-    GridPartType;
+  static const int polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder;
 
-  enum{ polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder };
+  typedef Lagrange< DiscreteFunctionSpaceType > ThisType;
 
-  typedef Lagrange< DiscreteFunctionSpaceType >
-    ThisType;
-
-  typedef typename FunctionSpaceType::DomainFieldType
-    DomainFieldType;
-
-  typedef typename FunctionSpaceType::DomainType
-    DomainType;
-
-  typedef typename FunctionSpaceType::RangeFieldType
-    RangeFieldType;
-
-  typedef typename FunctionSpaceType::RangeType
-    RangeType;
-
-  typedef typename FunctionSpaceType::JacobianRangeType
-    JacobianRangeType;
-
-  typedef typename FunctionSpaceType::HessianRangeType
-    HessianRangeType;
-
-  typedef Dune::Detailed::Discretizations::BaseFunctionSet::Local::Lagrange< ThisType >
-    LocalBaseFunctionSetType;
+  typedef Dune::Detailed::Discretizations::BaseFunctionSet::Local::Lagrange< ThisType > LocalBaseFunctionSetType;
 
 private:
+  typedef typename GridPartType::GridType GridType;
 
-  typedef typename GridPartType::GridType
-    GridType;
+  static const int dimension = GridType::dimension;
 
-  typedef Dune::LagrangeDiscreteFunctionSpaceTraits<  FunctionSpaceType,
-                                                      GridPartType,
-                                                      polynomialOrder >
-    LagrangeDiscreteFunctionSpaceTraitsType;
+  typedef Dune::LagrangeDiscreteFunctionSpaceTraits< FunctionSpaceType, GridPartType, polynomialOrder > HostTraits;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetImp
-    BaseFunctionSetImp;
+  typedef typename HostTraits::ShapeFunctionSetType ShapeFunctionSetType;
 
-  typedef std::map< const GeometryType, const BaseFunctionSetImp* >
-    HostBaseFunctionMapType;
+  typedef Fem::BaseSetLocalKeyStorage< ShapeFunctionSetType > ShapeSetStorageType;
 
-  class FieldVectorComp
-  {
-  public:
-    bool operator()(const DomainType& lhs, const DomainType& rhs) const
-    {
-      DomainFieldType lhsNorm = lhs.two_norm();
-      DomainFieldType rhsNorm = rhs.two_norm();
-      if (lhsNorm < rhsNorm) {
-        return true;
-      } else {
-        if (lhsNorm > rhsNorm) {
-          return false;
-        } else {
-            return (lhs[0] < rhs[0]);
-        }
-      }
-    }
-  };
+  typedef typename GridPartType::IndexSetType IndexSetType;
 
-//  typedef /*std::map< GeometryType,*/ std::map< DomainType, std::vector< RangeType >, FieldVectorComp > /*>*/ EvaluationCacheMapType;
+  typedef typename HostTraits::BaseFunctionSpaceType BaseFunctionSpaceType;
 
-//  typedef /*std::map< GeometryType,*/ std::map< DomainType, std::vector< JacobianRangeType >, FieldVectorComp > /*>*/ JacobianCacheMapType;
+  typedef LagrangeBaseFunctionFactory< typename BaseFunctionSpaceType::ScalarFunctionSpaceType, dimension, polynomialOrder > ScalarFactoryType;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
-    IndexSetType;
+  typedef BaseFunctionSetSingletonFactory< GeometryType, ShapeFunctionSetType, ScalarFactoryType > BaseFunctionSetSingletonFactoryType;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSpaceType
-    BaseFunctionSpaceType;
+  typedef SingletonList< GeometryType, ShapeFunctionSetType, BaseFunctionSetSingletonFactoryType > BaseFunctionSetSingletonProviderType;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BaseFunctionSetType
-    BaseFunctionSetType;
-
-  enum{ dimension = GridType::dimension };
-
-  typedef LagrangeBaseFunctionFactory< typename BaseFunctionSpaceType::ScalarFunctionSpaceType, dimension, polynomialOrder >
-    ScalarFactoryType;
-
-  typedef BaseFunctionSetSingletonFactory < GeometryType, BaseFunctionSetImp, ScalarFactoryType >
-    BaseFunctionSetSingletonFactoryType;
-
-  typedef SingletonList< GeometryType, BaseFunctionSetImp, BaseFunctionSetSingletonFactoryType >
-    BaseFunctionSetSingletonProviderType;
+  typedef typename HostTraits::BaseFunctionSetType BaseFunctionSetType;
 
 public:
-
-  //! does, whatever the constructor of the fem LagrangeDiscreteFunctionSpace does
-  Lagrange( const DiscreteFunctionSpaceType& space )
-    : space_( space ),
-      hostBaseFunctionSetMap_()/*,
-      evaluationCacheMap_(),
-      jacobianCacheMap_()*/
+  //! does, whatever the constructor of the dune-fem LagrangeDiscreteFunctionSpace does
+  Lagrange(const DiscreteFunctionSpaceType& space)
+    : space_( space )
+    , shapeFunctionSets_()
   {
-    const IndexSetType& indexSet = space_.gridPart().indexSet();
-
-    const AllGeomTypes< IndexSetType, GridType > allGeometryTypes( indexSet );
-
-    const std::vector< GeometryType >& geometryTypes = allGeometryTypes.geomTypes( 0 );
-
-    for( unsigned int i = 0; i < geometryTypes.size(); ++i )
-    {
-      const GeometryType& geometryType = geometryTypes[ i ];
-
-      if( hostBaseFunctionSetMap_.find( geometryType ) == hostBaseFunctionSetMap_.end() )
-      {
-        const BaseFunctionSetImp* baseFunctionSet = &( BaseFunctionSetSingletonProviderType::getObject( geometryType ) );
-        assert( baseFunctionSet != NULL );
-
-        hostBaseFunctionSetMap_[ geometryType ] = baseFunctionSet;
-      }
+    const IndexSetType& indexSet = space.gridPart().indexSet();
+    const AllGeomTypes< IndexSetType, GridType > allGeometryTypes(indexSet);
+    const std::vector< GeometryType >& geometryTypes = allGeometryTypes.geomTypes(0);
+    for (unsigned int i = 0; i < geometryTypes.size(); ++i) {
+      const GeometryType& gt = geometryTypes[i];
+      shapeFunctionSets_.template insert< BaseFunctionSetSingletonProviderType >(gt);
     }
-  } // end constructor
+  } // Lagrange(const DiscreteFunctionSpaceType& space)
 
-private:
-  //! copy constructor
-  Lagrange( const ThisType& other );
-//    : space_( other.space() ),
-//      hostBaseFunctionSetMap_()
-//  {
-//    if( !other.hostBaseFunctionSetMap_.empty() )
-//    {
-//      for( unsigned int i = 0; i < other.hostBaseFunctionSetMap_.size(); ++i )
-//      {
-//        hostBaseFunctionSetMap_[i] = other.hostBaseFunctionSetMap_[i];
-//      }
-//    }
-//  }
-
-public:
   //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
-  {
-    typedef typename HostBaseFunctionMapType::iterator
-      BFIteratorType;
-    BFIteratorType bfend = hostBaseFunctionSetMap_.end();
-    for( BFIteratorType it = hostBaseFunctionSetMap_.begin(); it != bfend; ++it )
-    {
-      const BaseFunctionSetImp* baseFunctionSet = (*it).second;
-      if( baseFunctionSet != NULL )
-        BaseFunctionSetSingletonProviderType::removeObject( *baseFunctionSet );
-    }
-  }
+  {}
 
   const DiscreteFunctionSpaceType& space() const
   {
@@ -191,34 +91,19 @@ public:
   }
 
 private:
-  //! assignment operator
-  ThisType& operator=( const ThisType& );
+  Lagrange(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
   template< class EntityType >
   BaseFunctionSetType baseFunctionSet( const EntityType& entity ) const
   {
-    // get the basefunctionset
-    assert( hostBaseFunctionSetMap_.find( entity.type() ) != hostBaseFunctionSetMap_.end() );
-    assert( hostBaseFunctionSetMap_[ entity.type() ] != NULL );
-    return BaseFunctionSetType( hostBaseFunctionSetMap_[ entity.type() ] );
+    return BaseFunctionSetType(&shapeFunctionSets_[entity.type()]);
   }
 
   friend class Dune::Detailed::Discretizations::BaseFunctionSet::Local::Lagrange< ThisType >;
 
-//  const EvaluationCacheMapType& evaluationCacheMap() const
-//  {
-//    return evaluationCacheMap_;
-//  }
-
-//  const JacobianCacheMapType& jacobianCacheMap() const
-//  {
-//    return jacobianCacheMap_;
-//  }
-
   const DiscreteFunctionSpaceType& space_;
-  mutable HostBaseFunctionMapType hostBaseFunctionSetMap_;
-//  mutable EvaluationCacheMapType evaluationCacheMap_;
-//  mutable JacobianCacheMapType jacobianCacheMap_;
+  mutable ShapeSetStorageType shapeFunctionSets_;
 }; // end class Lagrange
 
 } // end namespace BaseFunctionSet

@@ -1,11 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_MAPPER_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_MAPPER_CONTINUOUS_LAGRANGE_HH
 
+// system
+#include <vector>
+
 // dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
-
-//// dune-functionals includes
-//#include <dune/functionals/discretefunctionspace/continuous/lagrangefemadapter.hh>
 
 namespace Dune
 {
@@ -25,106 +25,77 @@ template< class FunctionSpaceImp, class GridPartImp, int polOrder >
 class Lagrange
 {
 public:
+  typedef FunctionSpaceImp FunctionSpaceType;
 
-  typedef FunctionSpaceImp
-    FunctionSpaceType;
+  typedef GridPartImp GridPartType;
 
-  typedef GridPartImp
-    GridPartType;
+  static const int polynomialOrder = polOrder;
 
-  enum{ polynomialOrder = polOrder };
+  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder > ThisType;
 
-  typedef Lagrange< FunctionSpaceType, GridPartType, polynomialOrder >
-    ThisType;
-
-  typedef LagrangePointSet< GridPartType, polynomialOrder >
-    LagrangePointSetType;
+  typedef LagrangePointSet< GridPartType, polynomialOrder > LagrangePointSetType;
 
 private:
+  typedef typename GridPartType::GridType GridType;
 
-  typedef typename GridPartType::GridType
-    GridType;
+  static const int dimension = GridType::dimension;
 
-  typedef Dune::LagrangeDiscreteFunctionSpaceTraits<  FunctionSpaceType,
-                                                      GridPartType,
-                                                      polynomialOrder >
-    LagrangeDiscreteFunctionSpaceTraitsType;
+  typedef LagrangeDiscreteFunctionSpaceTraits< FunctionSpaceType, GridPartType, polynomialOrder > HostTraits;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::MapperType
-    MapperType;
+  typedef typename HostTraits::MapperType MapperType;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::BlockMapperType
-    BlockMapperType;
+  typedef typename HostTraits::BlockMapperType BlockMapperType;
 
-  typedef std::map< const GeometryType, const LagrangePointSetType* >
-    LagrangePointSetMapType;
+  typedef std::vector< const LagrangePointSetType* > LagrangePointSetContainerType;
 
-  typedef typename LagrangeDiscreteFunctionSpaceTraitsType::IndexSetType
-    IndexSetType;
+  typedef typename GridPartType::IndexSetType IndexSetType;
 
-  typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetMapType >
-    MapperSingletonKeyType;
+  typedef LagrangeMapperSingletonKey< GridPartType, LagrangePointSetContainerType > MapperSingletonKeyType;
 
-  typedef LagrangeMapperSingletonFactory< MapperSingletonKeyType, BlockMapperType >
-    BlockMapperSingletonFactoryType;
+  typedef LagrangeMapperSingletonFactory< MapperSingletonKeyType, BlockMapperType > BlockMapperSingletonFactoryType;
 
-  typedef SingletonList< MapperSingletonKeyType, BlockMapperType, BlockMapperSingletonFactoryType >
-    BlockMapperProviderType;
+  typedef SingletonList< MapperSingletonKeyType, BlockMapperType, BlockMapperSingletonFactoryType > BlockMapperProviderType;
 
 public:
-  typedef typename GridPartType::IndexSetType::IndexType IndexType;
+  typedef typename IndexSetType::IndexType IndexType;
 
-  //! does, whatever the constructor of the fem LagrangeDiscreteFunctionSpace does
-  Lagrange( const GridPartType& gridPart )
-    : gridPart_( gridPart ),
-      lagrangePointSet_(),
-      mapper_( 0 ),
-      blockMapper_( 0 )
+  //! does, whatever the constructor of the dune-fem LagrangeDiscreteFunctionSpace does
+  Lagrange(const GridPartType& gridPart)
+    : gridPart_(gridPart)
+    , lagrangePointSetContainer_(LocalGeometryTypeIndex::size(dimension), nullptr)
+    , mapper_(0)
+    , blockMapper_(0)
   {
-    const IndexSetType& indexSet = gridPart_.indexSet();
-
-    AllGeomTypes< IndexSetType, GridType > allGeometryTypes( indexSet );
-
-    const std::vector< GeometryType >& geometryTypes = allGeometryTypes.geomTypes( 0 );
-
-    for( IndexType i = 0; i < geometryTypes.size(); ++i )
-    {
-      const GeometryType& geometryType = geometryTypes[ i ];
-
-      if( lagrangePointSet_.find( geometryType ) == lagrangePointSet_.end() )
-      {
-        const LagrangePointSetType* lagrangePointSet = new LagrangePointSetType(geometryType);
-        assert( lagrangePointSet != NULL );
-        lagrangePointSet_[ geometryType ] = lagrangePointSet;
-      }
+    const IndexSetType& indexSet = gridPart.indexSet();
+    const AllGeomTypes< IndexSetType, GridType > allGeometryTypes(indexSet);
+    const std::vector< GeometryType >& geometryTypes = allGeometryTypes.geomTypes(0);
+    for (unsigned int i = 0; i < geometryTypes.size(); ++i) {
+      const GeometryType &gt = geometryTypes[i];
+      const LagrangePointSetType*& lagrangePointSet = lagrangePointSetContainer_[LocalGeometryTypeIndex::index(gt)];
+      if (!lagrangePointSet)
+        lagrangePointSet = new LagrangePointSetType(gt, polynomialOrder);
+      assert(lagrangePointSet);
     }
+    MapperSingletonKeyType key(gridPart, lagrangePointSetContainer_, polynomialOrder);
+    blockMapper_ = &BlockMapperProviderType::getObject(key);
+    assert(blockMapper_ != 0);
+    mapper_ = new MapperType(*blockMapper_);
+    assert(mapper_ != 0);
+  } // Lagrange(const GridPartType& gridPart)
 
-    MapperSingletonKeyType key( gridPart_, lagrangePointSet_, polynomialOrder );
-
-    blockMapper_ = &( BlockMapperProviderType::getObject( key ) );
-    assert( blockMapper_ != 0 );
-
-    mapper_ = new MapperType( *blockMapper_ );
-    assert( mapper_ != 0 );
-  }
-
-  //! does, whatever the destructor of the fem LagrangeDiscreteFunctionSpace does
+  //! does, whatever the destructor of the dune-fem LagrangeDiscreteFunctionSpace does
   ~Lagrange()
   {
     delete mapper_;
-
-    BlockMapperProviderType::removeObject( *blockMapper_ );
-
-    typedef typename LagrangePointSetMapType::iterator LPIteratorType;
-
-    LPIteratorType lpend = lagrangePointSet_.end();
-    for( LPIteratorType it = lagrangePointSet_.begin(); it != lpend; ++it )
-    {
-      const LagrangePointSetType *lagrangePointSet = (*it).second;
-      if( lagrangePointSet != NULL )
+    BlockMapperProviderType::removeObject(*blockMapper_);
+    typedef typename LagrangePointSetContainerType::const_iterator IteratorType;
+    const IteratorType end = lagrangePointSetContainer_.end();
+    for (IteratorType it = lagrangePointSetContainer_.begin(); it != end; ++it) {
+      const LagrangePointSetType* lagrangePointSet = *it;
+      if (lagrangePointSet)
         delete lagrangePointSet;
     }
-  }
+  } // ~Lagrange()
 
   const GridPartType& gridPart() const
   {
@@ -132,9 +103,9 @@ public:
   }
 
   template< class EntityType >
-  IndexType toGlobal( const EntityType& entity, const IndexType localDofNumber ) const
+  IndexType toGlobal(const EntityType& entity, const IndexType localDofNumber) const
   {
-    return mapper_->mapToGlobal( entity, localDofNumber );
+    return mapper_->mapToGlobal(entity, localDofNumber);
   }
 
   IndexType size() const
@@ -148,28 +119,21 @@ public:
   }
 
   template< class EntityType >
-  const LagrangePointSetType& lagrangePointSet( const EntityType& entity ) const
+  const LagrangePointSetType& lagrangePointSet(const EntityType& entity) const
   {
-    assert( lagrangePointSet_.find( entity.type() ) != lagrangePointSet_.end() );
-    assert( lagrangePointSet_[entity.type()] != NULL );
-    return *( lagrangePointSet_[entity.type()] );
-  }
+    const LagrangePointSetType* lagrangePointSet = lagrangePointSetContainer_[LocalGeometryTypeIndex::index(entity.type())];
+    assert(lagrangePointSet);
+    return *lagrangePointSet;
+  } // const LagrangePointSetType& lagrangePointSet(const EntityType& entity) const
 
 private:
-  //! copy constructor
-  Lagrange( const ThisType& );
-
-  //! assignment operator
-  ThisType& operator=( const ThisType& );
-
-//  template< class >
-//  friend class Dune::Functionals::DiscreteFunctionSpace::Continuous::LagrangeFemAdapter;
+  Lagrange(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
   const GridPartType& gridPart_;
-  mutable LagrangePointSetMapType lagrangePointSet_;
+  mutable LagrangePointSetContainerType lagrangePointSetContainer_;
   MapperType* mapper_;
   BlockMapperType* blockMapper_;
-
 }; // end class Lagrange
 
 } // end namespace Mapper
