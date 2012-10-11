@@ -7,6 +7,9 @@
 #include <sstream>
 #include <vector>
 
+// dune-common
+#include <dune/common/exceptions.hh>
+
 namespace Dune {
 
 namespace Detailed {
