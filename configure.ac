@@ -36,8 +36,6 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/basefunctionset/continuous/Makefile
   dune/detailed/discretizations/basefunctionset/local/Makefile
   dune/detailed/discretizations/constraints/Makefile
-  dune/detailed/discretizations/container/Makefile
-  dune/detailed/discretizations/container/factory/Makefile
   dune/detailed/discretizations/discretefunction/Makefile
   dune/detailed/discretizations/discretefunctional/Makefile
   dune/detailed/discretizations/discretefunctional/local/Makefile
@@ -45,7 +43,6 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/discretefunctional/local/codim1/Makefile
   dune/detailed/discretizations/discretefunctionspace/Makefile
   dune/detailed/discretizations/discretefunctionspace/continuous/Makefile
-  dune/detailed/discretizations/discretefunctionspace/discontinuous/Makefile
   dune/detailed/discretizations/discretefunctionspace/sub/Makefile
   dune/detailed/discretizations/discreteoperator/Makefile
   dune/detailed/discretizations/discreteoperator/local/Makefile
