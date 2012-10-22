@@ -67,8 +67,8 @@ public:
   }
 
   template< class DirichletAssemblerType, class MatrixBackendType >
-  void assembleMatrices(const DirichletAssemblerType& dirichletAssembler,
-                        MatrixBackendType& matrix) const
+  void assemble(const DirichletAssemblerType& dirichletAssembler,
+                MatrixBackendType& matrix) const
   {
     // preparations
     typedef typename BoundaryGridPartType::template Codim< 0 >::EntityType EntityType;
@@ -112,7 +112,7 @@ public:
         } // call the local assembler
       } // walk the intersections
     } // walk the coupling grid part
-  } // void assembleMatrices(...) const
+  } // void assemble(...) const
 
 private:
   const BoundaryGridPartType& boundaryGridPart_;
