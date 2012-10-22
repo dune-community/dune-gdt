@@ -113,8 +113,8 @@ int main(int argc, char** argv)
     // grid
     std::cout << "setting up grid:" << std::endl;
     typedef Dune::Stuff::Grid::Provider::UnitCube<> GridProviderType;
-    paramTree.assertSub(GridProviderType::id, id);
-    const GridProviderType gridProvider(paramTree.sub(GridProviderType::id));
+    paramTree.assertSub(GridProviderType::id(), id);
+    const GridProviderType gridProvider(paramTree.sub(GridProviderType::id()));
     typedef GridProviderType::GridType GridType;
     const GridType& grid = gridProvider.grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     std::cout << "  took " << timer.elapsed() << " sec, has " << grid.size(0) << " entities" << std::endl;
     std::cout << "visualizing grid... " << std::flush;
     timer.reset();
-    gridProvider.visualize(paramTree.sub(GridProviderType::id).get("filename", id + ".grid"));
+    gridProvider.visualize(paramTree.sub(GridProviderType::id()).get("filename", id + ".grid"));
     std::cout << " done (took " << timer.elapsed() << " sek)" << std::endl;
 
     // spaces
