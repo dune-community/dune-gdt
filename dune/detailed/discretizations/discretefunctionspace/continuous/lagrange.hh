@@ -98,7 +98,7 @@ public:
 
   template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
   Dune::shared_ptr< PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
-                                                            const OtherDiscreteFunctionSpaceType& other) const
+                                                      const OtherDiscreteFunctionSpaceType& other) const
   {
     Dune::shared_ptr< PatternType > ret(new PatternType());
     PatternType& pattern = *ret;
@@ -107,10 +107,10 @@ public:
          entityIt != localGridPart.template end< 0 >();
          ++entityIt) {
       const typename LocalGridPartType::template Codim< 0 >::EntityType& entity = *entityIt;
-      for(unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
+      for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
         const unsigned int globalI = map().toGlobal(entity, i);
         std::set< unsigned int >& rowSet = pattern[globalI];
-        for(unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
+        for (unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
           const unsigned int globalJ = other.map().toGlobal(entity, j);
           rowSet.insert(globalJ);
         }
@@ -127,7 +127,7 @@ public:
 
   template< class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType >
   Dune::shared_ptr< PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
-                                                               const OutsideDiscreteFunctionSpaceType& outerSpace) const
+                                                         const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
     Dune::shared_ptr< PatternType > ret(new PatternType());
     PatternType& pattern = *ret;

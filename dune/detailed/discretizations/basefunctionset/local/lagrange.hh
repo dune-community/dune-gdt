@@ -113,24 +113,15 @@ public:
 
   void evaluate( const DomainType& x, std::vector< RangeType >& ret) const
   {
-//    typedef typename BaseFunctionSetType::EvaluationCacheMapType EvaluationCacheMapType;
-//    const EvaluationCacheMapType& constEvaluationCacheMap = baseFunctionSet_.evaluationCacheMap();
-//    EvaluationCacheMapType& evaluationCacheMap = const_cast< EvaluationCacheMapType& >(constEvaluationCacheMap);
-//    if (evaluationCacheMap.find(x) != evaluationCacheMap.end()) {
-//        ret = evaluationCacheMap[x];
-//    } else {
-      // get the host basefunctioset
-      typedef typename BaseFunctionSetType::BaseFunctionSetType
-        HostBaseFunctionSetType;
-      const HostBaseFunctionSetType baseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
+    // get the host basefunctioset
+    typedef typename BaseFunctionSetType::BaseFunctionSetType
+      HostBaseFunctionSetType;
+    const HostBaseFunctionSetType baseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
 
-      // and evaluate
-      for( unsigned int i = 0; i < size_; ++i )
-      {
-        baseFunctionSet.evaluate( i, x, ret[i] );
-      }
-//      evaluationCacheMap[x] = ret;
-//    }
+    // and evaluate
+    for (unsigned int i = 0; i < size_; ++i) {
+      baseFunctionSet.evaluate( i, x, ret[i] );
+    }
   }
 
   void jacobian( const DomainType& x, std::vector< JacobianRangeType >& ret ) const
