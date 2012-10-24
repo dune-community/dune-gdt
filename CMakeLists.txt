@@ -42,7 +42,7 @@ SET( CUSTOM_FLAGS
 
 # boost
 set( BOOST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../local" )
-find_package( Boost 1.42.0 REQUIRED )
+find_package( Boost 1.48.0 REQUIRED )
 include_directories(${Boost_INCLUDE_DIR})
 link_directories( ${Boost_LIBRARY_DIRS} )
 

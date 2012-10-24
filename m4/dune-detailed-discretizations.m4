@@ -8,8 +8,8 @@ dnl -*- autoconf -*-
 # well as by dune-detailed-discretizations itself
 AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
 [
-    AX_BOOST_BASE([1.50.0])
-    AX_BOOST_FILESYSTEM([1.50.0])
+    AX_BOOST_BASE([1.48.0])
+    AX_BOOST_FILESYSTEM([1.48.0])
 
     PKG_CHECK_MODULES([EIGEN], [eigen3], [
       AC_DEFINE([HAVE_EIGEN],
