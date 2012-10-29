@@ -174,7 +174,7 @@ public:
   }
 
 private:
-  static const unsigned int numTmpObjectsRequired_ = 4;
+  static const unsigned int numTmpObjectsRequired_ = 1;
 
 public:
   std::vector< unsigned int > numTmpObjectsRequired() const

@@ -88,9 +88,14 @@ public:
                       Dune::DenseMatrix< LocalMatrixImp >& NeighborEntityRet) const
   {
     // some stuff
+//    std::cout << "========================================================" << std::endl;
+//    std::cout << "localPoint = " << localPoint << std::endl;
     const DomainType globalPoint = intersection.geometry().global(localPoint);
+//    std::cout << "globalPoint = " << globalPoint << std::endl;
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
+//    std::cout << "localPointEntity = " << localPointEntity << std::endl;
     const DomainType localPointNeighbor = intersection.geometryInOutside().global(localPoint);
+//    std::cout << "localPointNeighbor = " << localPointNeighbor << std::endl;
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
     const RangeType zeroRange(0.0);
     const JacobianRangeType zeroJacobainRange(0.0);
@@ -102,35 +107,47 @@ public:
     std::vector< RangeType > localAnsatzBaseFunctionSetEntityEvaluations(rowsEntity, zeroRange);
     std::vector< JacobianRangeType > localAnsatzBaseFunctionSetEntityGradients(rowsEntity, zeroJacobainRange);
     localAnsatzBaseFunctionSetEntity.evaluate(localPointEntity, localAnsatzBaseFunctionSetEntityEvaluations);
+//    print_info("phi_j_entity", localAnsatzBaseFunctionSetEntityEvaluations);
     localAnsatzBaseFunctionSetEntity.jacobian(localPointEntity, localAnsatzBaseFunctionSetEntityGradients);
+//    print_info("grad_phi_j_entity", localAnsatzBaseFunctionSetEntityGradients);
 
     // evaluate ansatz Neighbor basefunctionset
     const unsigned int rowsNeighbor = localAnsatzBaseFunctionSetNeighbor.size();
     std::vector< RangeType > localAnsatzBaseFunctionSetNeighborEvaluations(rowsNeighbor, zeroRange);
     std::vector< JacobianRangeType > localAnsatzBaseFunctionSetNeighborGradients(rowsNeighbor, zeroJacobainRange);
     localAnsatzBaseFunctionSetNeighbor.evaluate(localPointNeighbor, localAnsatzBaseFunctionSetNeighborEvaluations);
+//    print_info("phi_j_neighbor", localAnsatzBaseFunctionSetNeighborEvaluations);
     localAnsatzBaseFunctionSetNeighbor.jacobian(localPointNeighbor, localAnsatzBaseFunctionSetNeighborGradients);
+//    print_info("grad_phi_j_neighbor", localAnsatzBaseFunctionSetNeighborGradients);
 
     // evaluate test entity basefunctionset
     const unsigned int colsEntity = localTestBaseFunctionSetEntity.size();
     std::vector< RangeType > localTestBaseFunctionSetEntityEvaluations(colsEntity, zeroRange);
     std::vector< JacobianRangeType > localTestBaseFunctionSetEntityGradients(colsEntity, zeroJacobainRange);
     localTestBaseFunctionSetEntity.evaluate(localPointEntity, localTestBaseFunctionSetEntityEvaluations);
+//    print_info("phi_i_entity", localTestBaseFunctionSetEntityEvaluations);
     localTestBaseFunctionSetEntity.jacobian(localPointEntity, localTestBaseFunctionSetEntityGradients);
+//    print_info("grad_phi_i_entity", localTestBaseFunctionSetEntityGradients);
 
     // evaluate test Neighbor basefunctionset
     const unsigned int colsNeighbor = localTestBaseFunctionSetNeighbor.size();
     std::vector< RangeType > localTestBaseFunctionSetNeighborEvaluations(colsNeighbor, zeroRange);
     std::vector< JacobianRangeType > localTestBaseFunctionSetNeighborGradients(colsNeighbor, zeroJacobainRange);
     localTestBaseFunctionSetNeighbor.evaluate(localPointNeighbor, localTestBaseFunctionSetNeighborEvaluations);
+//    print_info("phi_i_neighbor", localTestBaseFunctionSetNeighborEvaluations);
     localTestBaseFunctionSetNeighbor.jacobian(localPointNeighbor, localTestBaseFunctionSetNeighborGradients);
+//    print_info("grad_phi_i_neighbor", localTestBaseFunctionSetNeighborGradients);
 
     // evaluate inducing function
     RangeType functionValue(0.0);
     inducingFunction_->evaluate(globalPoint, functionValue);
+//    std::cout << "functionValue: " << functionValue << std::endl;
 
     // evaluate penalty parameter
     const RangeFieldType penaltyParameter = penaltyFactor_ / std::pow(intersection.geometry().volume(), 1.0);
+//    std::cout << "penaltyFactor_: " << penaltyFactor_ << std::endl;
+//    std::cout << "intersection.geometry().volume(): " << intersection.geometry().volume() << std::endl;
+//    std::cout << "penaltyParameter: " << penaltyParameter << std::endl;
 
     // entity entity combinations
     assert(entityEntityRet.rows() == rowsEntity);
@@ -229,6 +246,14 @@ public:
   } // end method evaluateLocal
 
 private:
+//  template< class VectorImp >
+//  void print_info(const std::string name, const VectorImp& vector) const
+//  {
+//    for (unsigned int i = 0; i < vector.size(); ++i) {
+//      std::cout << name << "^" << i << ": " << vector[i] << std::endl;
+//    }
+//  }
+
   Inner(const ThisType&);
   ThisType& operator=(const ThisType&);
 

@@ -7,6 +7,7 @@
 
 // dune-stuff
 #include <dune/stuff/function/expression.hh>
+//#include <dune/stuff/common/print.hh>
 
 namespace Dune {
 
@@ -83,29 +84,41 @@ public:
     const DomainType globalPoint = intersection.geometry().global(localPoint);
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
-    const RangeType zeroRange(0.0);
-    const JacobianRangeType zeroJacobainRange(0.0);
+    const RangeType zeroRange(0);
+    const JacobianRangeType zeroJacobainRange(0);
+
+//    // info
+//    Stuff::Common::print(globalPoint, "globalPoint");
+//    Stuff::Common::print(localPointEntity, "localPointEntity");
+//    Stuff::Common::print(unitOuterNormal, "unitOuterNormal");
+//    Stuff::Common::print(ret, "ret");
 
     // evaluate ansatz basefunctionset
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     std::vector< RangeType > localAnsatzBaseFunctionSetEvaluations(rows, zeroRange);
     std::vector< JacobianRangeType > localAnsatzBaseFunctionSetGradients(rows, zeroJacobainRange);
     localAnsatzBaseFunctionSet.evaluate(localPointEntity, localAnsatzBaseFunctionSetEvaluations);
+//    Stuff::Common::print(localAnsatzBaseFunctionSetEvaluations, "localAnsatzBaseFunctionSetEvaluations");
     localAnsatzBaseFunctionSet.jacobian(localPointEntity, localAnsatzBaseFunctionSetGradients);
+//    Stuff::Common::print(localAnsatzBaseFunctionSetGradients, "localAnsatzBaseFunctionSetGradients");
 
     // evaluate test basefunctionset
     const unsigned int cols = localTestBaseFunctionSet.size();
     std::vector< RangeType > localTestBaseFunctionSetEvaluations(cols, zeroRange);
     std::vector< JacobianRangeType > localTestBaseFunctionSetGradients(cols, zeroJacobainRange);
     localTestBaseFunctionSet.evaluate(localPointEntity, localTestBaseFunctionSetEvaluations);
+//    Stuff::Common::print(localTestBaseFunctionSetEvaluations, "localTestBaseFunctionSetEvaluations");
     localTestBaseFunctionSet.jacobian(localPointEntity, localTestBaseFunctionSetGradients);
+//    Stuff::Common::print(localTestBaseFunctionSetGradients, "localTestBaseFunctionSetGradients");
 
     // evaluate inducing function
     RangeType functionValue(0.0);
     inducingFunction_->evaluate(globalPoint, functionValue);
+//    Stuff::Common::print(functionValue, "functionValue");
 
     // evaluate penalty parameter
     const RangeFieldType penaltyParameter = penaltyFactor_ / std::pow(intersection.geometry().volume(), 1.0);
+//    Stuff::Common::print(penaltyParameter, "penaltyParameter");
 
     // do loop over all ansatz and test basefunctions
     assert(ret.rows() == rows);
@@ -116,18 +129,32 @@ public:
       typename Dune::DenseMatrix< LocalMatrixImp >::row_reference retRow = ret[i];
       // loop over all test function
       for (unsigned int j = 0; j < cols; ++j) { {
+//          std::cout << "i = " << i << ", j = " << j << std::endl;
+//          Stuff::Common::print(retRow[j], "retRow[j]", std::cout, "  ");
           const RangeFieldType gradientTimesNormal = localTestBaseFunctionSetGradients[j][0] * unitOuterNormal;
+//          Stuff::Common::print(gradientTimesNormal, "gradientTimesNormal", std::cout, "  ");
           const RangeType gradientTimesNormalTimesEvaluation = localAnsatzBaseFunctionSetEvaluations[i] * gradientTimesNormal;
+//          Stuff::Common::print(gradientTimesNormalTimesEvaluation, "gradientTimesNormalTimesEvaluation", std::cout, "  ");
+//          Stuff::Common::print(-1.0 * functionValue * gradientTimesNormalTimesEvaluation, "-1.0 * functionValue * gradientTimesNormalTimesEvaluation", std::cout, "  ");
           retRow[j] += -1.0 * functionValue * gradientTimesNormalTimesEvaluation;
+//          Stuff::Common::print(retRow[j], "retRow[j]", std::cout, "  ");
         } {
           const RangeFieldType normalTimesGradient = unitOuterNormal * localAnsatzBaseFunctionSetGradients[i][0];
+//          Stuff::Common::print(normalTimesGradient, "normalTimesGradient", std::cout, "  ");
           const RangeType evalautionTimesNormalTimesGradient = localTestBaseFunctionSetEvaluations[j] * normalTimesGradient;
+//          Stuff::Common::print(evalautionTimesNormalTimesGradient, "evalautionTimesNormalTimesGradient", std::cout, "  ");
+//          Stuff::Common::print(-1.0 * functionValue * evalautionTimesNormalTimesGradient, "-1.0 * functionValue * evalautionTimesNormalTimesGradient", std::cout, "  ");
           retRow[j] += -1.0 * functionValue * evalautionTimesNormalTimesGradient;
+//          Stuff::Common::print(retRow[j], "retRow[j]", std::cout, "  ");
         } {
           const RangeFieldType evalautionTimesEvaluation = localAnsatzBaseFunctionSetEvaluations[i] * localTestBaseFunctionSetEvaluations[j];
+//          Stuff::Common::print(evalautionTimesEvaluation, "evalautionTimesEvaluation", std::cout, "  ");
+//          Stuff::Common::print(penaltyParameter * evalautionTimesEvaluation, "penaltyParameter * evalautionTimesEvaluation", std::cout, "  ");
           retRow[j] += penaltyParameter * evalautionTimesEvaluation;
+//          Stuff::Common::print(retRow[j], "retRow[j]", std::cout, "  ");
       } } // loop over all test function
     } // loop over all ansatz functions
+//    Stuff::Common::print(ret, "ret");
   } // void evaluateLocal(...) const
 
 private:

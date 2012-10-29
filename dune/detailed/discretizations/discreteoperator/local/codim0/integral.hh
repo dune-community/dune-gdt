@@ -162,7 +162,8 @@ public:
     // some stuff
     const unsigned int rows = localAnsatzBaseFunctionSet.size();
     const unsigned int cols = localTestBaseFunctionSet.size();
-    const unsigned int quadratureOrder = localEvaluation_.order() + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order();
+    const unsigned int quadratureOrder = std::max(int(localEvaluation_.order()) + localAnsatzBaseFunctionSet.order() + localTestBaseFunctionSet.order(),
+                                                  0);
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule( localAnsatzBaseFunctionSet.entity().type(), 2*quadratureOrder+1 );
 
     // make sure target matrix is big enough

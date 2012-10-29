@@ -76,6 +76,7 @@ public:
                    LocalVectorType& localVector,
                    std::vector< LocalVectorType >& tmpLocalVectors ) const
   {
+    assert(false && "Implement me?");
 //    // some types
 //    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
 //      DiscreteFunctionSpaceType;
