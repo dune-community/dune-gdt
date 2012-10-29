@@ -1,8 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM0_VECTOR_HH
 
-// std includes
+// system
 #include <vector>
+
+// dune-stuff
+#include <dune/stuff/common/vector.hh>
 
 namespace Dune {
 
@@ -62,6 +65,9 @@ public:
     if (tmpLocalVectors.size() < 1) {
       tmpLocalVectors.resize(1, LocalVectorType(testSpace.map().maxLocalSize(), RangeFieldType(0.0)));
     }
+
+    // clear target vector
+    Dune::Stuff::Common::clear(tmpLocalVectors[0]);
 
     // write local functional application to tmpLocalVector
     localFunctional_.applyLocal(localTestBaseFunctionSet, tmpLocalVectors[0], tmpLocalVectorsContainer[1]);

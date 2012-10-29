@@ -111,12 +111,6 @@ public:
     assert(localMatrixNeNe.rows() >= rowsNe);
     assert(localMatrixNeNe.cols() >= colsNe);
 
-    // clear target matrices
-    Dune::Stuff::Common::clear(localMatrixEnEn);
-    Dune::Stuff::Common::clear(localMatrixEnNe);
-    Dune::Stuff::Common::clear(localMatrixNeEn);
-    Dune::Stuff::Common::clear(localMatrixNeNe);
-
     // check tmp local matrices
     if (tmpLocalMatrices.size() < numTmpObjectsRequired()) {
       tmpLocalMatrices.resize(
@@ -143,11 +137,17 @@ public:
          ++quadPoint) {
       // local coordinates
       typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
-      const LocalCoordinateType x = quadPoint->position();
+      const LocalCoordinateType& x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
       const double quadratureWeight  = quadPoint->weight();
+
+      // clear target matrices
+      Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[1]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[2]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[3]);
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSetEntity,

@@ -161,15 +161,12 @@ public:
     assert(localMatrix.rows() >= rows);
     assert(localMatrix.cols() >= cols);
 
-    // clear target matrix
-    Dune::Stuff::Common::clear(localMatrix);
-
     // check tmp local matrices
     if (tmpLocalMatrices.size() < 1) {
       tmpLocalMatrices.resize(1,
                               LocalMatrixType(localAnsatzBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                               localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
-                                              RangeFieldType(0.0)));
+                                              RangeFieldType(0)));
     }
 
     // do loop over all quadrature points
@@ -182,6 +179,9 @@ public:
       // integration factors
       const double integrationFactor = localAnsatzBaseFunctionSet.entity().geometry().integrationElement(x);
       const double quadratureWeight  = quadPoint->weight();
+
+      // clear target matrix
+      Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSet, localTestBaseFunctionSet, x, tmpLocalMatrices[0]);

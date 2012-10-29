@@ -1,8 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
 
-// std includes
+// system
 #include <vector>
+
+// dune-stuff
+#include <dune/stuff/common/vector.hh>
 
 namespace Dune {
 
@@ -98,21 +101,15 @@ public:
 
       if (!intersection.neighbor() && intersection.boundary()) // if boundary intersection
       {
-        //        const unsigned int boundaryId = intersection.boundaryId();
+        // clear target vectors
+        Dune::Stuff::Common::clear(tmpLocalVectors[0]);
 
-        //        // if dirichlet boundary intersection
-        //        if( boundaryId == 2 )
-        //        {
         localFunctional_.applyLocal(
             localTestBaseFunctionSet, intersection, tmpLocalVectors[0], tmpLocalVectorsContainer[1]);
 
         // write local vector to global
         addToVector(testSpace, entity, tmpLocalVectors[0], systemVector);
 
-        //        } // end if dirichlet boundary intersection
-        //        else if( boundaryId == 3 ) // if neumann boundary intersection
-        //        {
-        //        } // end if neumann boundary intersection
       } // end if boundary intersection
     } // done loop over all intersections
   } // end method assembleLocal
