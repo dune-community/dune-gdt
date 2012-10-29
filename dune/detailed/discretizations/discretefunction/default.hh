@@ -120,7 +120,7 @@ public:
 
   void clear()
   {
-    const RangeFieldType zero(0.0);
+    const RangeFieldType zero(0);
     for (unsigned int i = 0; i < size(); ++i)
       this->operator[](i) = zero;
   } // void clear()

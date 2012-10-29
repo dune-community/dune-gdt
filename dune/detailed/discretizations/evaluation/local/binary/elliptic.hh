@@ -117,9 +117,11 @@ public:
     assert(ret.cols() == cols);
     for (unsigned int i = 0; i < rows; ++i) {
       for (unsigned int j = 0; j < cols; ++j) {
-        const RangeFieldType gradientProduct =
-            gradientLocalAnsatzBaseFunctionSet[i][0] * gradientLocalTestBaseFunctionSet[j][0];
-        ret[i][j] = functionValue * gradientProduct;
+        for (unsigned int d = 0; d < JacobianRangeType::rows; ++d) {
+          const RangeFieldType gradientProduct =
+              gradientLocalAnsatzBaseFunctionSet[i][d] * gradientLocalTestBaseFunctionSet[j][d];
+          ret[i][j] = functionValue * gradientProduct;
+        }
       }
     }
   } // end method evaluateLocal
