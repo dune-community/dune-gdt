@@ -101,3 +101,5 @@ set(COMMON_LIBS "fem" "grid" "dunegeometry" "common" ${BLAS_LIB} "alugrid" "lapa
 ADD_EXECUTABLE( examples_elliptic_continuousgalerkin "examples/elliptic/continuousgalerkin.cc" ${LIST_LIBS} )
 TARGET_LINK_LIBRARIES( examples_elliptic_continuousgalerkin ${COMMON_LIBS} )
 
+ADD_EXECUTABLE( examples_basefunctionset_continuous_lagrange "examples/basefunctionset/continuous/lagrange.cc" ${LIST_LIBS} )
+TARGET_LINK_LIBRARIES( examples_basefunctionset_continuous_lagrange ${COMMON_LIBS} )
