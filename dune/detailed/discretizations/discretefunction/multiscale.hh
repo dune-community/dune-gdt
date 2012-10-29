@@ -44,6 +44,10 @@ public:
 
   typedef Dune::Detailed::Discretizations::DiscreteFunction::Default< LocalDiscreteFunctionSpaceImp, LocalVectorBackendImp > LocalDiscreteFunctionType;
 
+  typedef typename LocalDiscreteFunctionType::LocalFunctionType LocalFunctionType;
+
+  typedef typename LocalDiscreteFunctionType::ConstLocalFunctionType ConstLocalFunctionType;
+
   typedef typename Dune::VTKFunction< GlobalGridViewType > BaseType;
 
   typedef typename GlobalGridViewType::template Codim< 0 >::Iterator::Entity EntityType;
@@ -81,6 +85,16 @@ public:
     assert(localDiscreteFunctions_.size() == msGrid_.size());
   }
 
+  const MsGridType& msGrid() const
+  {
+    return msGrid_;
+  }
+
+  unsigned int size() const
+  {
+    return msGrid_.size();
+  }
+
   Dune::shared_ptr< const LocalDiscreteFunctionType > localDiscreteFunction(const unsigned int subdomain) const
   {
     assert(subdomain < msGrid_.size());
@@ -91,6 +105,42 @@ public:
   {
     assert(subdomain < msGrid_.size());
     return localDiscreteFunctions_[subdomain];
+  }
+
+  LocalFunctionType localFunction(const EntityType& entity)
+  {
+    // get the subdomain of this entity
+    const unsigned int globalIndex = msGrid_.globalGridView()->indexSet().index(entity);
+    const typename EntityToSubdomainMapType::const_iterator result = entityToSubdomainMap_->find(globalIndex);
+    if (result == entityToSubdomainMap_->end()) {
+      std::stringstream msg;
+      msg << "Error in " << id << ": Entity " << globalIndex << " not found in the multiscale grid!";
+      DUNE_THROW(Dune::InvalidStateException, msg.str());
+    }
+    const unsigned int subdomain = result->second;
+    assert(subdomain < msGrid_.size());
+    // get the corresponding local discrete function
+    const LocalDiscreteFunctionType& localDiscreteFunction = *(localDiscreteFunctions_[subdomain]);
+    // and return its local function
+    return localDiscreteFunction.localFunction(entity);
+  }
+
+  ConstLocalFunctionType localFunction(const EntityType& entity) const
+  {
+    // get the subdomain of this entity
+    const unsigned int globalIndex = msGrid_.globalGridView()->indexSet().index(entity);
+    const typename EntityToSubdomainMapType::const_iterator result = entityToSubdomainMap_->find(globalIndex);
+    if (result == entityToSubdomainMap_->end()) {
+      std::stringstream msg;
+      msg << "Error in " << id << ": Entity " << globalIndex << " not found in the multiscale grid!";
+      DUNE_THROW(Dune::InvalidStateException, msg.str());
+    }
+    const unsigned int subdomain = result->second;
+    assert(subdomain < msGrid_.size());
+    // get the corresponding local discrete function
+    const LocalDiscreteFunctionType& localDiscreteFunction = *(localDiscreteFunctions_[subdomain]);
+    // and return its local function
+    return localDiscreteFunction.localFunction(entity);
   }
 
   virtual std::string name() const
@@ -104,9 +154,9 @@ public:
   }
 
   /**
-      @name Methods to comply with the Dune::VTKFunction interface
+      @name Methods needed, to comply with the Dune::VTKFunction interface
       @{
-   **/
+    */
   virtual int ncomps() const
   {
     return dimRange;
@@ -130,7 +180,7 @@ public:
   } // virtual RangeFieldType evaluate(const int component, const EntityType& entity, const DomainType& x) const
   /**
       @}
-     **/
+    */
 
 private:
   const MsGridType& msGrid_;
