@@ -98,9 +98,6 @@ public:
     assert(localMatrix.rows() >= rows);
     assert(localMatrix.cols() >= cols);
 
-    // clear target matrix
-    Dune::Stuff::Common::clear(localMatrix);
-
     // check tmp local matrices
     if (tmpLocalMatrices.size() < numTmpObjectsRequired())
     {
@@ -108,7 +105,7 @@ public:
                               LocalMatrixType(
                                 localAnsatzBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
                                 localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
-                                RangeFieldType(0.0)));
+                                RangeFieldType(0)));
     } // check tmp local matrices
 
     // quadrature
@@ -129,6 +126,9 @@ public:
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement( x );
       const double quadratureWeight = quadPoint->weight();
+
+      // clear target matrix
+      Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal(localAnsatzBaseFunctionSet,

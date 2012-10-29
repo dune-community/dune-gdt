@@ -103,9 +103,6 @@ public:
                                                 RangeFieldType( 0.0 ) ) );
     }
 
-    // clear target vector
-    Dune::Stuff::Common::clear(localVector);
-
     const typename VolumeQuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
     for (typename VolumeQuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd; ++quadPoint )
     {
@@ -115,6 +112,9 @@ public:
       // integration factors
       const double integrationFactor = localTestBaseFunctionSet.entity().geometry().integrationElement( x );
       const double quadratureWeight = quadPoint->weight();
+
+      // clear target vector
+      Dune::Stuff::Common::clear(tmpLocalVectors[0]);
 
       // evaluate the local evaluation
       localEvaluation_.evaluateLocal( localTestBaseFunctionSet, x, tmpLocalVectors[0] );

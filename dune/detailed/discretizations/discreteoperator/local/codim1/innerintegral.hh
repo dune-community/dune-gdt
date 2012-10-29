@@ -101,16 +101,16 @@ public:
             class LocalTestBaseFunctionSetNeighborType,
             class IntersectionType,
             class LocalMatrixType >
-  void applyLocal(  const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
-                    const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
-                    const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
-                    const LocalTestBaseFunctionSetNeighborType& localTestBaseFunctionSetNeighbor,
-                    const IntersectionType& intersection,
-                    LocalMatrixType& localMatrixEnEn,
-                    LocalMatrixType& localMatrixNeNe,
-                    LocalMatrixType& localMatrixEnNe,
-                    LocalMatrixType& localMatrixNeEn,
-                    std::vector< LocalMatrixType >& tmpLocalMatrices ) const
+  void applyLocal(const LocalAnsatzBaseFunctionSetEntityType& localAnsatzBaseFunctionSetEntity,
+                  const LocalTestBaseFunctionSetEntityType& localTestBaseFunctionSetEntity,
+                  const LocalAnsatzBaseFunctionSetNeighborType& localAnsatzBaseFunctionSetNeighbor,
+                  const LocalTestBaseFunctionSetNeighborType& localTestBaseFunctionSetNeighbor,
+                  const IntersectionType& intersection,
+                  LocalMatrixType& localMatrixEnEn,
+                  LocalMatrixType& localMatrixNeNe,
+                  LocalMatrixType& localMatrixEnNe,
+                  LocalMatrixType& localMatrixNeEn,
+                  std::vector< LocalMatrixType >& tmpLocalMatrices ) const
   {
     // preparations
     const unsigned int rowsEn = localAnsatzBaseFunctionSetEntity.size();
@@ -127,12 +127,6 @@ public:
     assert(localMatrixNeEn.cols() >= colsEn);
     assert(localMatrixNeNe.rows() >= rowsNe);
     assert(localMatrixNeNe.cols() >= colsNe);
-
-    // clear target matrices
-    Dune::Stuff::Common::clear(localMatrixEnEn);
-    Dune::Stuff::Common::clear(localMatrixEnNe);
-    Dune::Stuff::Common::clear(localMatrixNeEn);
-    Dune::Stuff::Common::clear(localMatrixNeNe);
 
     // check tmp local matrices
     if(tmpLocalMatrices.size() < numTmpObjectsRequired()) {
@@ -158,11 +152,17 @@ public:
          ++quadPoint) {
       // local coordinates
       typedef typename IntersectionType::LocalCoordinate LocalCoordinateType;
-      const LocalCoordinateType x = quadPoint->position();
+      const LocalCoordinateType& x = quadPoint->position();
 
       // integration factors
       const double integrationFactor = intersection.geometry().integrationElement(x);
       const double quadratureWeight = quadPoint->weight();
+
+      // clear target matrices
+      Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[1]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[2]);
+      Dune::Stuff::Common::clear(tmpLocalMatrices[3]);
 
       // evaluate the local operation
       localEvaluation_.evaluateLocal( localAnsatzBaseFunctionSetEntity,
@@ -185,7 +185,6 @@ public:
   } // void applyLocal
 
 private:
-
   InnerIntegral(const ThisType& other);
   ThisType& operator=(const ThisType&);
 

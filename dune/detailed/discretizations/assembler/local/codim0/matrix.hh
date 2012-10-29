@@ -4,6 +4,9 @@
 // std includes
 #include <vector>
 
+// dune-stuff
+#include <dune/stuff/common/matrix.hh>
+
 // local includes
 #include "vector.hh"
 
@@ -112,6 +115,9 @@ public:
                                                     testSpace.map().maxLocalSize(),
                                                     RangeFieldType( 0.0 ) ) );
     }
+
+    // clear target matrix
+    Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
 
     // write local operator application to tmpLocalMatrix
     localOperator_.applyLocal(  localAnsatzBaseFunctionSet,

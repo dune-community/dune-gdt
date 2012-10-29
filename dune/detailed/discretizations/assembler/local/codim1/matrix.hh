@@ -1,8 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_MATRIX_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_MATRIX_HH
 
-// std includes
+// system
 #include <vector>
+
+// dune-stuff
+#include <dune/stuff/common/matrix.hh>
 
 // local includes
 //#include "vector.hh"
@@ -94,6 +97,11 @@ public:
                                                                       std::max(innerTestSpace.map().maxLocalSize(), outerTestSpace.map().maxLocalSize()),
                                                                       RangeFieldType(0.0)));
     } // ensure enough tmp local matrices
+    // clear matrices
+    Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
+    Dune::Stuff::Common::clear(tmpLocalMatrices[1]);
+    Dune::Stuff::Common::clear(tmpLocalMatrices[2]);
+    Dune::Stuff::Common::clear(tmpLocalMatrices[3]);
     // apply local operator
     localOperator_.applyLocal(innerAnsatzBaseFunctionSet,
                               innerTestBaseFunctionSet,
@@ -206,8 +214,10 @@ public:
       tmpLocalMatrices.resize(numTmpObjectsRequired_,
                               LocalMatrixType(ansatzSpace.map().maxLocalSize(),
                                               testSpace.map().maxLocalSize(),
-                                              RangeFieldType(0.0)));
+                                              RangeFieldType(0)));
     } // ensure enough tmp local matrices
+    // clear matric
+    Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
     // apply local operator
     localOperator_.applyLocal(localAnsatzBaseFunctionSet,
                               localTestBaseFunctionSet,
