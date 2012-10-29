@@ -9,7 +9,6 @@
 #include <boost/filesystem.hpp>
 
 // dune-common
-#include <dune/common/parametertree.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/common/shared_ptr.hh>
 #include <dune/common/timer.hh>
