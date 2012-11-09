@@ -1,0 +1,38 @@
+#ifndef DUNE_STUFF_CONFIG_H
+#define DUNE_STUFF_CONFIG_H
+
+#undef COMMIT
+
+/* the git tag / commit we build from */
+#define COMMIT "@COMMIT@"
+
+#define @GRIDTYPE@
+#define GRIDDIM @GRIDDIM@
+#define POLORDER @POLORDER@
+
+#define DUNE_COMMON_FIELDVECTOR_SIZE_IS_METHOD 1
+
+#ifdef NDEBUG
+	#define DNDEBUG
+#endif
+
+#include "config.h"
+
+#if !HAVE_GRIDTYPE
+  #include <dune/grid/yaspgrid.hh>
+  namespace Dune
+  {
+    namespace GridSelector
+    {
+      const int dimgrid = GRIDDIM;
+      const int dimworld = GRIDDIM;
+      typedef Dune::YaspGrid< dimgrid > GridType;
+    }
+  }
+#endif
+
+// enable these when dropping autotools
+//#cmakedefine HAS_LAMBDA_FUNCTIONS 1
+//#cmakedefine HAS_STD_BEGIN_END 1
+
+#endif	/* DUNE_STUFF_CONFIG_H */
