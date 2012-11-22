@@ -66,6 +66,8 @@ SET_CONFIGHEADER_VARS()
 include_dir( ${dune-detailed-discretizations_SOURCE_DIR} )
 INCLUDE_DIR( ${dune-detailed-discretizations_BINARY_DIR} )
 
+ADD_DEFINITIONS(${CUSTOM_FLAGS})
+
 IF( ${GRIDTYPE} STREQUAL "UGGRID" )
   ADD_DEFINITIONS( -DENABLE_UG )
   INCLUDE_SYS_DIR( ${UGGRID_BASE_PATH}/include )
