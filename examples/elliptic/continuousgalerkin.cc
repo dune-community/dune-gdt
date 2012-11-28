@@ -59,32 +59,26 @@ void ensureParamFile(std::string filename)
     std::ofstream file;
     file.open(filename);
     file << "[stuff.grid.provider.cube]" << std::endl;
-    file << "level = 4" << std::endl;
+    file << "numElements = 4" << std::endl;
     file << "filename = " << id << ".grid" << std::endl;
     file << "[diffusion]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
-    file << "expression.0 = 1.0"  << std::endl;
-    file << "expression.1 = 1.0"  << std::endl;
-    file << "expression.2 = 1.0"  << std::endl;
+    file << "expression = [1.0; 1.0; 1.0]" << std::endl;
     file << "[force]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
-    file << "expression.0 = 1.0"  << std::endl;
-    file << "expression.1 = 1.0"  << std::endl;
-    file << "expression.2 = 1.0"  << std::endl;
+    file << "expression = [1.0; 1.0; 1.0]" << std::endl;
     file << "[dirichlet]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
-    file << "expression.0 = 0.0"  << std::endl;
-    file << "expression.1 = 0.0"  << std::endl;
-    file << "expression.2 = 0.0"  << std::endl;
+    file << "expression = [0.0; 0.0; 0.0]" << std::endl;
     file << "[solver]" << std::endl;
     file << "maxIter = 5000"  << std::endl;
     file << "precision = 1e-12"  << std::endl;
     file << "[visualization]" << std::endl;
-    file << "filename = " << id << ".solution"  << std::endl;
-    file << "name = solution"  << std::endl;
+    file << "filename = " << id << ".solution" << std::endl;
+    file << "name = solution" << std::endl;
     file.close();
   } // only write param file if there is none
 } // void ensureParamFile()
@@ -111,7 +105,7 @@ int main(int argc, char** argv)
 
     // grid
     std::cout << "setting up grid:" << std::endl;
-    typedef Dune::Stuff::Grid::Provider::UnitCube<> GridProviderType;
+    typedef Dune::Stuff::Grid::Provider::Cube<> GridProviderType;
     paramTree.assertSub(GridProviderType::id(), id);
     const GridProviderType gridProvider(paramTree.sub(GridProviderType::id()));
     typedef GridProviderType::GridType GridType;
