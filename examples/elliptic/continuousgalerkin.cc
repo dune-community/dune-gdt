@@ -1,34 +1,29 @@
+#ifdef HAVE_CMAKE_CONFIG
+  #include "cmake_config.h"
+#elif defined (HAVE_CONFIG_H)
+  #include "config.h"
+#endif // ifdef HAVE_CMAKE_CONFIG
 
-#include "config.h"
-
-// system
 #include <iostream>
 #include <sstream>
 
-// boost
 #include <boost/filesystem.hpp>
 
-// dune-common
 #include <dune/common/exceptions.hh>
 #include <dune/common/shared_ptr.hh>
 #include <dune/common/timer.hh>
 
-// dune-grid
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
-// dune-grid-multiscale
 #include <dune/grid/part/leaf.hh>
 
-// dune-fem
 #include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/space/common/functionspace.hh>
 
-// dune-stuff
 #include <dune/stuff/common/parameter/tree.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/function/expression.hh>
 
-// dune-detailed-discretizations
 #include <dune/detailed/discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed/discretizations/discretefunctionspace/sub/linear.hh>
 #include <dune/detailed/discretizations/evaluation/local/binary/elliptic.hh>
@@ -58,9 +53,10 @@ void ensureParamFile(std::string filename)
   if (!boost::filesystem::exists(filename)) {
     std::ofstream file;
     file.open(filename);
+    file << "[" << id << "]" << std::endl;
+    file << "filename = " << id << ".grid" << std::endl;
     file << "[stuff.grid.provider.cube]" << std::endl;
     file << "numElements = 4" << std::endl;
-    file << "filename = " << id << ".grid" << std::endl;
     file << "[diffusion]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
@@ -99,6 +95,9 @@ int main(int argc, char** argv)
     const std::string paramFilename = id + ".param";
     ensureParamFile(paramFilename);
     Dune::Stuff::Common::ExtendedParameterTree paramTree(argc, argv, paramFilename);
+    if (!paramTree.hasSub(id))
+      DUNE_THROW(Dune::RangeError,
+                 "\nError: missing sub " << id << " in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
 
     // timer
     Dune::Timer timer;
@@ -106,14 +105,16 @@ int main(int argc, char** argv)
     // grid
     std::cout << "setting up grid:" << std::endl;
     typedef Dune::Stuff::Grid::Provider::Cube<> GridProviderType;
-    paramTree.assertSub(GridProviderType::id(), id);
-    const GridProviderType gridProvider(paramTree.sub(GridProviderType::id()));
+    const GridProviderType gridProvider = GridProviderType::createFromParamTree(paramTree);
     typedef GridProviderType::GridType GridType;
-    const GridType& grid = gridProvider.grid();
+    const Dune::shared_ptr< const GridType > grid = gridProvider.grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
-    const GridPartType gridPart(grid);
-    std::cout << "  took " << timer.elapsed() << " sec, has " << grid.size(0) << " entities" << std::endl;
+    const GridPartType gridPart(*grid);
+    std::cout << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
     std::cout << "visualizing grid... " << std::flush;
+    if (!paramTree.sub(id).hasKey("filename"))
+      DUNE_THROW(Dune::RangeError,
+                 "\nError: missing key 'filename' in the following Dune::parameterTree:\n" << paramTree.sub(id).reportString("  "););
     timer.reset();
     gridProvider.visualize(paramTree.sub(GridProviderType::id()).get("filename", id + ".grid"));
     std::cout << " done (took " << timer.elapsed() << " sek)" << std::endl;
@@ -135,25 +136,56 @@ int main(int argc, char** argv)
     // data
     std::cout << "initializing data functions... " << std::flush;
     timer.reset();
-    typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange > DiffusionType;
-    paramTree.assertSub("diffusion", id);
-    const Dune::shared_ptr< const DiffusionType > diffusion(new DiffusionType(paramTree.sub("diffusion")));
-    typedef DiffusionType ForceType;
-    paramTree.assertSub("force", id);
-    const Dune::shared_ptr< const ForceType > force(new ForceType(paramTree.sub("force")));
+    typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange > ExpressionFunctionType;
+    if (!paramTree.hasSub("diffusion"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing sub 'diffusion' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
+    if (!paramTree.sub("diffusion").hasKey("order"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'order' in the following Dune::ParameterTree:\n" << paramTree.sub("order").reportString("  "));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        diffusion(new ExpressionFunctionType(ExpressionFunctionType::createFromParamTree(paramTree.sub("diffusion"))));
+    if (!paramTree.hasSub("force"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing sub 'force' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
+    if (!paramTree.sub("force").hasKey("order"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'order' in the following Dune::ParameterTree:\n" << paramTree.sub("force").reportString("  "));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        force(new ExpressionFunctionType(ExpressionFunctionType::createFromParamTree(paramTree.sub("force"))));
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // left hand side (operator)
     std::cout << "initializing operator and functional... " << std::flush;
     timer.reset();
-    typedef Dune::Detailed::Discretizations::Evaluation::Local::Binary::Elliptic< FunctionSpaceType, DiffusionType > EllipticEvaluationType;
+    typedef Dune::Detailed::Discretizations
+        ::Evaluation
+        ::Local
+        ::Binary
+        ::Elliptic< FunctionSpaceType, ExpressionFunctionType >
+      EllipticEvaluationType;
     const EllipticEvaluationType ellipticEvaluation(diffusion, paramTree.sub("diffusion").get("order", 0));
-    typedef Dune::Detailed::Discretizations::DiscreteOperator::Local::Codim0::Integral< EllipticEvaluationType > EllipticOperatorType;
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteOperator
+        ::Local
+        ::Codim0
+        ::Integral< EllipticEvaluationType >
+      EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
     // right hand side (functional)
-    typedef Dune::Detailed::Discretizations::Evaluation::Local::Unary::Scale< FunctionSpaceType, ForceType > ProductEvaluationType;
+    typedef Dune::Detailed::Discretizations
+        ::Evaluation
+        ::Local
+        ::Unary
+        ::Scale< FunctionSpaceType, ExpressionFunctionType >
+      ProductEvaluationType;
     const ProductEvaluationType productEvaluation(force, paramTree.sub("force").get("order", 0));
-    typedef Dune::Detailed::Discretizations::DiscreteFunctional::Local::Codim0::Integral< ProductEvaluationType > L2FunctionalType;
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteFunctional
+        ::Local
+        ::Codim0
+        ::Integral< ProductEvaluationType >
+      L2FunctionalType;
     const L2FunctionalType l2Functional(productEvaluation);
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -192,7 +224,15 @@ int main(int argc, char** argv)
 //    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver; // seems to produce strange results
     std::cout << "solving linear system (of size " << systemMatrix.rows() << "x" << systemMatrix.cols() << ")" << std::endl
               << "  using " << Solver::id << "... " << std::flush;
-    paramTree.assertSub("solver", id);
+    if (!paramTree.hasSub("solver"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing sub 'solver' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
+    if (!paramTree.sub("solver").hasKey("maxIter"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'maxIter' in the following Dune::ParameterTree:\n" << paramTree.sub("solver").reportString("  "));
+    if (!paramTree.sub("solver").hasKey("precision"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'precision' in the following Dune::ParameterTree:\n" << paramTree.sub("solver").reportString("  "));
     timer.reset();
     Solver::apply(
       systemMatrix,
@@ -203,7 +243,15 @@ int main(int argc, char** argv)
     std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // postprocess
-    paramTree.assertSub("visualization");
+    if (!paramTree.hasSub("visualization"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing sub 'visualization' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
+    if (!paramTree.sub("visualization").hasKey("name"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'name' in the following Dune::ParameterTree:\n" << paramTree.sub("visualization").reportString("  "));
+    if (!paramTree.sub("visualization").hasKey("filename"))
+      DUNE_THROW(Dune::RangeError,
+                 "\Error: missing key 'filename' in the following Dune::ParameterTree:\n" << paramTree.sub("visualization").reportString("  "));
     const std::string solutionName = paramTree.sub("visualization").get("name", "solution");
     const std::string solutionFilename = paramTree.sub("visualization").get("filename", id + ".solution");
     std::cout << "writing '" << solutionName << "' to '" << solutionFilename;
