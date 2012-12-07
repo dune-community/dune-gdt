@@ -120,7 +120,7 @@ public:
 
   typedef DenseMatrix<EntryType> ThisType;
 
-  typedef ::Eigen::MatrixXd StorageType;
+  typedef ::Eigen::Matrix<EntryType, ::Eigen::Dynamic, ::Eigen::Dynamic> StorageType;
 
   DenseMatrix(unsigned int rows, unsigned int cols)
     : rows_(rows)
@@ -208,7 +208,7 @@ public:
 
   typedef DenseVector<EntryType> ThisType;
 
-  typedef ::Eigen::VectorXd StorageType;
+  typedef ::Eigen::Matrix<EntryType, ::Eigen::Dynamic, 1> StorageType;
 
   DenseVector(unsigned int size)
     : size_(size)
