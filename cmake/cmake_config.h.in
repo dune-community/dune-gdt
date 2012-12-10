@@ -19,14 +19,14 @@
 #include "config.h"
 
 #if !HAVE_GRIDTYPE
-  #include <dune/grid/yaspgrid.hh>
+  #include <dune/grid/sgrid.hh>
   namespace Dune
   {
     namespace GridSelector
     {
       const int dimgrid = GRIDDIM;
       const int dimworld = GRIDDIM;
-      typedef Dune::YaspGrid< dimgrid > GridType;
+      typedef Dune::SGrid< dimgrid, dimworld > GridType;
     }
   }
 #endif
