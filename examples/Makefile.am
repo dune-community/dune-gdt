@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = basefunctionset elliptic
+SUBDIRS = elliptic
 
 
 include $(top_srcdir)/am/global-rules
