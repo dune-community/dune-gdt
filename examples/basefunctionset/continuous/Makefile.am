@@ -8,7 +8,7 @@ noinst_PROGRAMS = lagrange
 CUSTOM_CPPFLAGS = -DSGRID -DGRIDDIM=1 -DWORLDDIM=1 -Wall -O0 -DDEBUG -g -fdiagnostics-show-option -std=c++0x
 
 lagrange_SOURCES = lagrange.cc 
-lagrange_CPPFLAGS = $(AM_CPPFLAGS) $(CUSTOM_CPPFLAGS)
+lagrange_CPPFLAGS = $(AM_CPPFLAGS) $(EIGEN_CFLAGS) $(CUSTOM_CPPFLAGS)
 lagrange_LDFLAGS = $(ALL_LDFLAGS)
 lagrange_LDADD = $(LDADD)
 
