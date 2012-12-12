@@ -1,38 +1,25 @@
-/**
-  \file   integral.hh
-  **/
-
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 
-// dune-common
-#include <dune/common/dynmatrix.hh>
+#include <dune/geometry/quadraturerules.hh>
 
-//// dune-fem
-//#include <dune/fem/quadrature/cachingquadrature.hh>
-
-// dune-stuff
 #include <dune/stuff/common/vector.hh>
 
 namespace Dune {
-
 namespace Detailed {
-
 namespace Discretizations {
-
 namespace DiscreteFunctional {
-
 namespace Local {
-
 namespace Codim1 {
+namespace Integral {
 
 template <class LocalEvaluationImp>
-class Integral
+class Boundary
 {
 public:
   typedef LocalEvaluationImp LocalEvaluationType;
 
-  typedef Integral<LocalEvaluationType> ThisType;
+  typedef Boundary<LocalEvaluationType> ThisType;
 
   typedef typename LocalEvaluationType::FunctionSpaceType FunctionSpaceType;
 
@@ -40,18 +27,14 @@ public:
 
   typedef typename FunctionSpaceType::DomainType DomainType;
 
-  Integral(const LocalEvaluationType localEvaluation)
-    : localEvaluation_(localEvaluation)
+  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+
+  Boundary(const LocalEvaluationType& _localEvaluation)
+    : localEvaluation_(_localEvaluation)
   {
   }
 
-  //! copy constructor
-  Integral(const ThisType& other)
-    : localEvaluation_(other.localEvaluation())
-  {
-  }
-
-  LocalEvaluationType localEvaluation() const
+  const LocalEvaluationType& localEvaluation() const
   {
     return localEvaluation_;
   }
@@ -65,216 +48,53 @@ public:
   void applyLocal(const LocalTestBaseFunctionSetType localTestBaseFunctionSet, const IntersectionType& intersection,
                   LocalVectorType& localVector, std::vector<LocalVectorType>& tmpLocalVectors) const
   {
-    assert(false && "Implement me?");
-    //    // some types
-    //    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
-    //      DiscreteFunctionSpaceType;
+    // sanity checks
+    const unsigned int size = localTestBaseFunctionSet.size();
+    assert(localVector.size() >= size);
+    if (tmpLocalVectors.size() < numTmpObjectsRequired())
+      tmpLocalVectors.resize(
+          numTmpObjectsRequired(),
+          LocalVectorType(localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(), RangeFieldType(0)));
 
-    //    typedef typename DiscreteFunctionSpaceType::GridViewType
-    //      GridViewType;
+    // quadrature
+    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
+    typedef Dune::QuadratureRules<DomainFieldType, IntersectionType::mydimension> FaceQuadratureRules;
+    typedef Dune::QuadratureRule<DomainFieldType, IntersectionType::mydimension> FaceQuadratureType;
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
 
-    //    typedef Dune::QuadratureRules< double, IntersectionType::mydimension >
-    //      FaceQuadratureRules;
-
-    //    typedef Dune::QuadratureRule< double, IntersectionType::mydimension >
-    //      FaceQuadratureType;
-
-    //    typedef typename IntersectionType::LocalCoordinate
-    //      LocalCoordinateType;
-
-    //    // some stuff
-    //    const unsigned int size = localTestBaseFunctionSet.size();
-    //    const unsigned int quadratureOrder = localEvaluation_.order() + localTestBaseFunctionSet.order();
-    //    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule( intersection.type(), 2*quadratureOrder+1
-    //    );
-
-
-    //    // make sure target vector is big enough
-    //    assert( localVector.size() >= size );
-
-    //    // clear target vector
-    //    Dune::Stuff::Common::Vector::clear( localVector );
-
-    //    // check tmp local vectors
-    //    if( tmpLocalVectors.size() < 1 )
-    //    {
-    //      tmpLocalVectors.resize( 1,
-    //                              LocalVectorType(
-    //                              localTestBaseFunctionSet.baseFunctionSet().space().map().maxLocalSize(),
-    //                                                RangeFieldType( 0.0 ) ) );
-    //    }
-
-    //    // do loop over all quadrature points
-    //    const typename FaceQuadratureType::const_iterator quadratureEnd = faceQuadrature.end();
-    //    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin(); quadPoint !=
-    //    quadratureEnd; ++quadPoint )
-    //    {
-    //      // local coordinate
-    //      const LocalCoordinateType x = quadPoint->position();
-
-    //      // integration factors
-    //      const double integrationFactor = intersection.geometry().integrationElement( x );
-    //      const double quadratureWeight = quadPoint->weight();
-
-    //      // evaluate the local evaluation
-    //      localEvaluation_.evaluateLocal( localTestBaseFunctionSet, intersection, x, tmpLocalVectors[0] );
-
-    //      // compute integral
-    //      for( unsigned int i = 0; i < size; ++i )
-    //      {
-    //        localVector[i] += tmpLocalVectors[0][i] * integrationFactor * quadratureWeight;
-    //      }
-    //    } // done loop over all quadrature points
-  } // end method applyLocal
+    // loop over all quadrature points
+    for (typename FaceQuadratureType::const_iterator quadPoint = faceQuadrature.begin();
+         quadPoint != faceQuadrature.end();
+         ++quadPoint) {
+      // coordinates
+      const typename IntersectionType::LocalCoordinate xIntersection = quadPoint->position();
+      const DomainType xEntity                                       = intersection.geometryInInside().global(xIntersection);
+      // integration factors
+      const double integrationFactor = intersection.geometry().integrationElement(xIntersection);
+      const double quadratureWeight  = quadPoint->weight();
+      // clear target matrix
+      Dune::Stuff::Common::clear(tmpLocalVectors[0]);
+      // evaluate the local operation
+      localEvaluation_.evaluateLocal(localTestBaseFunctionSet, xEntity, tmpLocalVectors[0]);
+      // compute integral
+      for (unsigned int i = 0; i < size; ++i)
+        localVector[i] += tmpLocalVectors[0][i] * integrationFactor * quadratureWeight;
+    } // loop over all quadrature points
+  } // void apply(...)
 
 private:
-  //! assignment operator
-  ThisType& operator=(const ThisType& other);
+  Boundary(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
-  const LocalEvaluationType localEvaluation_;
+  const LocalEvaluationType& localEvaluation_;
+}; // class Boundary
 
-}; // end class Integral
-
-// template< class InducingOperatorImp, class InducingDiscreteFunctionImp >
-// class IntegralInduced
-//{
-// public:
-
-//  typedef InducingOperatorImp
-//    InducingOperatorType;
-
-//  typedef InducingDiscreteFunctionImp
-//    InducingDiscreteFunctionType;
-
-//  typedef IntegralInduced< InducingOperatorType, InducingDiscreteFunctionType >
-//    ThisType;
-
-//  typedef typename InducingDiscreteFunctionType::RangeFieldType
-//    RangeFieldType;
-
-//  typedef typename InducingDiscreteFunctionType::DomainType
-//    DomainType;
-
-//  IntegralInduced(  const InducingOperatorType& inducingOperator,
-//                    const InducingDiscreteFunctionType& inducingDiscreteFunction )
-//    : inducingOperator_( inducingOperator ),
-//      inducingDiscreteFunction_( inducingDiscreteFunction )
-//  {
-//  }
-
-//  //! copy constructor
-//  IntegralInduced( const ThisType& other )
-//    : inducingOperator_( other.inducingOperator() ),
-//      inducingDiscreteFunction_( other.inducingDiscreteFunction() )
-//  {
-//  }
-
-//  InducingOperatorType inducingOperator() const
-//  {
-//    return inducingOperator_;
-//  }
-
-//  InducingDiscreteFunctionType inducingDiscreteFunction() const
-//  {
-//    return inducingDiscreteFunction_;
-//  }
-
-//  unsigned int numTmpObjectsRequired() const
-//  {
-//    return 0;
-//  }
-
-//  template< class LocalTestBaseFunctionSetType, class LocalVectorType >
-//  void applyLocal( const LocalTestBaseFunctionSetType& localTestBaseFunctionSet,
-//                   LocalVectorType& localVector,
-//                   std::vector< LocalVectorType >& ) const
-//  {
-//    // some types
-//    typedef typename LocalTestBaseFunctionSetType::DiscreteFunctionSpaceType
-//      DiscreteFunctionSpaceType;
-
-//    typedef typename DiscreteFunctionSpaceType::GridPartType
-//      GridPartType;
-
-//    typedef Dune::CachingQuadrature< GridPartType, 0 >
-//      VolumeQuadratureType;
-
-//    typedef typename LocalTestBaseFunctionSetType::EntityType
-//      EntityType;
-
-//    typedef typename InducingDiscreteFunctionType::ConstLocalFunctionType
-//      InducingLocalFunctionType;
-
-//    typedef typename Dune::Detailed::Discretizations::BaseFunctionSet::Local::Wrapper< InducingLocalFunctionType >
-//      InducingBaseFunctionSetType;
-
-//    typedef Dune::DynamicMatrix< RangeFieldType >
-//      LocalMatrixType;
-
-//    const EntityType& entity = localTestBaseFunctionSet.entity();
-
-//    // wrap inducing local function
-//    const InducingLocalFunctionType inducingLocalFunction = inducingDiscreteFunction_.localFunction( entity );
-//    const InducingBaseFunctionSetType inducingBaseFunctionSet( inducingLocalFunction );
-
-//    // some stuff
-//    const unsigned int size = localTestBaseFunctionSet.size();
-//    const unsigned int quadratureOrder =
-//      inducingOperator_.localEvaluation().order() + inducingLocalFunction.order() + localTestBaseFunctionSet.order();
-//    const VolumeQuadratureType volumeQuadrature( entity, quadratureOrder );
-//    const unsigned int numberOfQuadraturePoints = volumeQuadrature.nop();
-
-//    // make sure target vector is big enough
-//    assert( localVector.size() >= size );
-
-//    // clear target vector
-//    Dune::HelperTools::Common::Vector::clear( localVector );
-
-//    // do loop over all quadrature points
-//    LocalMatrixType tmpMatrix( 1, size );
-//    for( unsigned int q = 0; q < numberOfQuadraturePoints; ++q )
-//    {
-//      // local coordinate
-//      const DomainType x = volumeQuadrature.point( q );
-
-//      // integration factors
-//      const double integrationFactor = entity.geometry().integrationElement( x );
-//      const double quadratureWeight = volumeQuadrature.weight( q );
-
-//      // evaluate the local evaluation
-//      inducingOperator_.localEvaluation().evaluateLocal(  inducingBaseFunctionSet,
-//                                                          localTestBaseFunctionSet,
-//                                                          x,
-//                                                          tmpMatrix );
-
-//      // compute integral
-//      for( unsigned int i = 0; i < size; ++i )
-//      {
-//        localVector[i] += tmpMatrix[0][i] * integrationFactor * quadratureWeight;
-//      }
-//    } // done loop over all quadrature points
-
-//  } // end method applyLocal
-
-// private:
-//  //! assignment operator
-//  ThisType& operator=( const ThisType& );
-
-//  const InducingOperatorType inducingOperator_;
-//  const InducingDiscreteFunctionType inducingDiscreteFunction_;
-
-//}; // end class IntegralInduced
-
-} // end namespace Codim1
-
-} // end namespace Local
-
-} // end namespace DiscreteFunctional
-
+} // namespace Integral
+} // namespace Codim1
+} // namespace Local
+} // namespace DiscreteFunctional
 } // namespace Discretizations
-
 } // namespace Detailed
-
-} // end namespace Dune
+} // namespace Dune
 
 #endif // end DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM0_INTEGRAL_HH
