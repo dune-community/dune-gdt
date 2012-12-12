@@ -31,7 +31,6 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/assembler/local/codim1/Makefile
   dune/detailed/discretizations/assembler/local/combined/Makefile
   dune/detailed/discretizations/assembler/multiscale/Makefile
-  dune/detailed/discretizations/assembler/system/Makefile
   dune/detailed/discretizations/basefunctionset/Makefile
   dune/detailed/discretizations/basefunctionset/continuous/Makefile
   dune/detailed/discretizations/basefunctionset/local/Makefile
@@ -54,10 +53,8 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/evaluation/local/quaternary/Makefile
   dune/detailed/discretizations/evaluation/local/unary/Makefile
   dune/detailed/discretizations/la/Makefile
-  dune/detailed/discretizations/la/backend/Makefile
-  dune/detailed/discretizations/la/backend/container/Makefile
-  dune/detailed/discretizations/la/backend/solver/Makefile
-  dune/detailed/discretizations/la/factory/Makefile
+  dune/detailed/discretizations/la/container/Makefile
+  dune/detailed/discretizations/la/container/factory/Makefile
   dune/detailed/discretizations/mapper/Makefile
   dune/detailed/discretizations/mapper/continuous/Makefile
   examples/Makefile
