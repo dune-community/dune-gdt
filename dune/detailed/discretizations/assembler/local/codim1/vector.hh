@@ -1,61 +1,47 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
 
-// system
 #include <vector>
 
-// dune-stuff
+#include <dune/common/shared_ptr.hh>
+
 #include <dune/stuff/common/vector.hh>
+#include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune {
-
 namespace Detailed {
-
 namespace Discretizations {
-
 namespace Assembler {
-
 namespace Local {
-
 namespace Codim1 {
+namespace Vector {
 
-/**
-  \todo Add neumann boundary treatment
-  \todo When adding neumann: think of numTmpObjectsRequired()!
-  \todo Add penalty parameter
-  **/
-template <class LocalFunctionalImp>
-class Vector
+template <class LocalFunctionalImp, class BoundaryInfoImp>
+class Neumann
 {
 public:
   typedef LocalFunctionalImp LocalFunctionalType;
 
-  typedef Vector<LocalFunctionalType> ThisType;
+  typedef BoundaryInfoImp BoundaryInfoType;
 
-  typedef typename LocalFunctionalType::RangeFieldType RangeFieldType;
+  typedef Neumann<LocalFunctionalType, BoundaryInfoType> ThisType;
 
-  //! constructor
-  Vector(const LocalFunctionalType localFunctional)
-    : localFunctional_(localFunctional)
+  Neumann(const LocalFunctionalType& _localFunctional, const Dune::shared_ptr<const BoundaryInfoType> _boundaryInfo)
+    : localFunctional_(_localFunctional)
+    , boundaryInfo_(_boundaryInfo)
   {
   }
 
-private:
-  //! copy constructor
-  Vector(const ThisType& other)
-    : localFunctional_(other.localFunctional())
-  {
-  }
-
-public:
   const LocalFunctionalType& localFunctional() const
   {
     return localFunctional_;
   }
 
-  /**
-    \todo Add neumann treatment here!
-    **/
+  const Dune::shared_ptr<const BoundaryInfoType> boundaryInfo() const
+  {
+    return boundaryInfo_;
+  }
+
   std::vector<unsigned int> numTmpObjectsRequired() const
   {
     std::vector<unsigned int> ret(2, 0);
@@ -64,58 +50,44 @@ public:
     // the functional itself requires that much local matrices
     ret[1] = localFunctional_.numTmpObjectsRequired();
     return ret;
-  }
+  } // std::vector< unsigned int > numTmpObjectsRequired() const
 
-  template <class TestSpaceType, class EntityType, class SystemVectorType, class LocalVectorType>
-  void assembleLocal(const TestSpaceType& testSpace, const EntityType& entity, SystemVectorType& systemVector,
+  template <class TestSpaceType, class EntityType, class VectorType, class LocalVectorType>
+  void assembleLocal(const TestSpaceType& testSpace, const EntityType& entity, VectorType& vector,
                      std::vector<std::vector<LocalVectorType>>& tmpLocalVectorsContainer) const
   {
     // get the local basefunction set
     typedef typename TestSpaceType::BaseFunctionSetType::LocalBaseFunctionSetType LocalTesBaseFunctionSetType;
-
     const LocalTesBaseFunctionSetType localTestBaseFunctionSet = testSpace.baseFunctionSet().local(entity);
 
     // check tmp local vectors
+    typedef typename LocalFunctionalType::FunctionSpaceType::RangeFieldType RangeFieldType;
     assert(tmpLocalVectorsContainer.size() > 1);
     std::vector<LocalVectorType>& tmpLocalVectors = tmpLocalVectorsContainer[0];
-    if (tmpLocalVectors.size() < 1) {
-      tmpLocalVectors.resize(1, LocalVectorType(testSpace.map().maxLocalSize(), RangeFieldType(0.0)));
-    }
-
-    // some types
-    typedef typename TestSpaceType::GridViewType GridViewType;
-
-    typedef typename GridViewType::IntersectionIterator IntersectionIteratorType;
-
-    typedef typename IntersectionIteratorType::Intersection IntersectionType;
-
-    typedef typename IntersectionType::EntityPointer EntityPointerType;
-
-    const GridViewType& gridView = testSpace.gridView();
-
-    const IntersectionIteratorType lastIntersection = gridView.iend(entity);
+    if (tmpLocalVectors.size() < numTmpObjectsRequired()[0])
+      tmpLocalVectors.resize(numTmpObjectsRequired()[0],
+                             LocalVectorType(testSpace.map().maxLocalSize(), RangeFieldType(0)));
 
     // do loop over all intersections
-    for (IntersectionIteratorType intIt = gridView.ibegin(entity); intIt != lastIntersection; ++intIt) {
-      const IntersectionType& intersection = *intIt;
-
-      if (!intersection.neighbor() && intersection.boundary()) // if boundary intersection
-      {
-        // clear target vectors
+    typedef typename TestSpaceType::GridViewType GridViewType;
+    typedef typename GridViewType::IntersectionIterator IntersectionIteratorType;
+    typedef typename IntersectionIteratorType::Intersection IntersectionType;
+    typedef typename IntersectionType::EntityPointer EntityPointerType;
+    const GridViewType& gridView = testSpace.gridView();
+    for (IntersectionIteratorType intersectionIt = gridView.ibegin(entity); intersectionIt != gridView.iend(entity);
+         ++intersectionIt) {
+      const IntersectionType& intersection = *intersectionIt;
+      if (boundaryInfo_->neumann(intersection)) {
         Dune::Stuff::Common::clear(tmpLocalVectors[0]);
-
         localFunctional_.applyLocal(
             localTestBaseFunctionSet, intersection, tmpLocalVectors[0], tmpLocalVectorsContainer[1]);
-
-        // write local vector to global
-        addToVector(testSpace, entity, tmpLocalVectors[0], systemVector);
-
-      } // end if boundary intersection
-    } // done loop over all intersections
-  } // end method assembleLocal
+        addToVector(testSpace, entity, tmpLocalVectors[0], vector);
+      }
+    } // do loop over all intersections
+  } // void assembleLocal(...)
 
 private:
-  //! assignment operator
+  Neumann(const ThisType&);
   ThisType& operator=(const ThisType&);
 
   template <class TestSpaceType, class EntityType, class LocalVectorType, class SystemVectorType>
@@ -124,24 +96,20 @@ private:
   {
     for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
       const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
-
       systemVector[globalJ] += localVector[j];
     }
-  } // end method addToVector
+  } // vodi addToVector(...)
 
-  const LocalFunctionalType localFunctional_;
-}; // end class Vector
+  const LocalFunctionalType& localFunctional_;
+  const Dune::shared_ptr<const BoundaryInfoType> boundaryInfo_;
+}; // class Neumann
 
-} // end namespace Codim1
-
-} // end namespace Local
-
-} // end namespace Assembler
-
+} // namespace Vector
+} // namespace Codim1
+} // namespace Local
+} // namespace Assembler
 } // namespace Discretizations
-
 } // namespace Detailed
-
-} // end namespace Dune
+} // namespace Dune
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
