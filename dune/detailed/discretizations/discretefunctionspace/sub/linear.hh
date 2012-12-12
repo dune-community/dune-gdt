@@ -27,31 +27,25 @@ namespace Sub
 namespace Linear
 {
 
-template< class SuperSpaceImp, class BoundaryInfoImp = Dune::Stuff::Grid::BoundaryInfo::AllDirichlet >
+template< class SuperSpaceImp >
 class Dirichlet
 {
 public:
-  typedef SuperSpaceImp
-    SuperSpaceType;
+  typedef SuperSpaceImp SuperSpaceType;
 
-  typedef BoundaryInfoImp BoundaryInfoType;
+  typedef Dirichlet< SuperSpaceType > ThisType;
 
-  typedef Dirichlet< SuperSpaceType, BoundaryInfoType >
-    ThisType;
+  typedef typename SuperSpaceType::GridPartType GridPartType;
 
-  typedef Dune::Detailed::Discretizations::Constraints::DirichletZero< SuperSpaceType, BoundaryInfoType >
-    ConstraintsType;
+  typedef typename SuperSpaceType::GridViewType GridViewType;
 
-  typedef typename SuperSpaceType::FunctionSpaceType
-    FunctionSpaceType;
+  typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< GridViewType > BoundaryInfoType;
 
-  typedef typename SuperSpaceType::GridPartType
-    GridPartType;
+  typedef Dune::Detailed::Discretizations::Constraints::DirichletZero< SuperSpaceType > ConstraintsType;
 
-  typedef typename SuperSpaceType::GridViewType
-    GridViewType;
+  typedef typename SuperSpaceType::FunctionSpaceType FunctionSpaceType;
 
-  enum{ polynomialOrder = SuperSpaceType::polynomialOrder };
+  static const int polynomialOrder = SuperSpaceType::polynomialOrder;
 
   typedef typename SuperSpaceType::MapperType
     MapperType;
@@ -83,11 +77,14 @@ public:
 
   typedef typename SuperSpaceType::PatternType PatternType;
 
+  typedef typename Dune::Stuff::Grid::BoundaryInfo::AllDirichlet< GridViewType > DefaultBoundaryInfoType;
+
   Dirichlet(const SuperSpaceType& superSpace,
-            const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo = Dune::shared_ptr< const BoundaryInfoType >(new BoundaryInfoType(Dune::Stuff::Grid::BoundaryInfo::AllDirichlet())))
+            const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo
+                = Dune::shared_ptr< const DefaultBoundaryInfoType >(new DefaultBoundaryInfoType(DefaultBoundaryInfoType())))
     : superSpace_(superSpace)
     , boundaryInfo_(boundaryInfo)
-    , constraints_(superSpace_, boundaryInfo_)
+    , constraints_(superSpace_, *boundaryInfo_)
   {}
 
   const SuperSpaceType& superSpace() const
