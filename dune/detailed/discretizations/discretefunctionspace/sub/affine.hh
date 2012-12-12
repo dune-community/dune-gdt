@@ -1,38 +1,31 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 
-// dune-common
 #include <dune/common/shared_ptr.hh>
 
-// dune-stuff
 #include <dune/stuff/function/expression.hh>
 
-// dune-detailed-discretizations
 #include <dune/detailed/discretizations/discretefunction/default.hh>
 
 namespace Dune {
-
 namespace Detailed {
-
 namespace Discretizations {
-
 namespace DiscreteFunctionSpace {
-
 namespace Sub {
-
 namespace Affine {
 
-template <class BaseSpaceImp, class AffineShiftImp>
+template <class BaseSpaceImp, class VectorType>
 class Dirichlet
 {
 public:
   typedef BaseSpaceImp BaseSpaceType;
 
-  typedef AffineShiftImp AffineShiftType;
-
-  typedef Dirichlet<BaseSpaceType, AffineShiftType> ThisType;
+  typedef Dirichlet<BaseSpaceType, VectorType> ThisType;
 
   typedef typename BaseSpaceType::SuperSpaceType SuperSpaceType;
+
+  typedef
+      typename Dune::Detailed::Discretizations::DiscreteFunction::Default<SuperSpaceType, VectorType> AffineShiftType;
 
   typedef typename BaseSpaceType::FunctionSpaceType FunctionSpaceType;
 
@@ -40,10 +33,7 @@ public:
 
   typedef typename BaseSpaceType::GridViewType GridViewType;
 
-  enum
-  {
-    polynomialOrder = BaseSpaceType::polynomialOrder
-  };
+  static const int polynomialOrder = BaseSpaceType::polynomialOrder;
 
   typedef typename BaseSpaceType::ConstraintsType ConstraintsType;
 
@@ -164,16 +154,11 @@ private:
   const Dune::shared_ptr<const AffineShiftType> affineShift_;
 }; // end class Dirichlet
 
-} // end namespace Affine
-
-} // end namespace Sub
-
-} // end namespace DiscreteFunctionSpace
-
+} // namespace Affine
+} // namespace Sub
+} // namespace DiscreteFunctionSpace
 } // namespace Discretizations
-
-} // end namespace Detailed
-
-} // end namespace Dune
+} // namespace Detailed
+} // namespace Dune
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
