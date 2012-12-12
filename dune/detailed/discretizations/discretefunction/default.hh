@@ -1,44 +1,35 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
 
-// dune-common includes
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
+#include <dune/common/shared_ptr.hh>
 
-// dune-grid
 #include <dune/grid/io/file/vtk/function.hh>
 
-// local includes
 #include "local.hh"
 
 namespace Dune {
-
 namespace Detailed {
-
 namespace Discretizations {
-
 namespace DiscreteFunction {
 
-template <class DiscreteFunctionSpaceImp, class VectorBackendImp>
+template <class DiscreteFunctionSpaceImp, class VectorImp>
 class Default : public Dune::VTKFunction<typename DiscreteFunctionSpaceImp::GridViewType>
 {
-public:
-  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
-
-  typedef VectorBackendImp StorageType;
-
-  typedef Default<DiscreteFunctionSpaceType, StorageType> ThisType;
-
 private:
   typedef Dune::VTKFunction<typename DiscreteFunctionSpaceImp::GridViewType> BaseType;
 
 public:
+  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
+
+  typedef VectorImp VectorType;
+
+  typedef Default<DiscreteFunctionSpaceType, VectorType> ThisType;
+
   typedef typename DiscreteFunctionSpaceType::GridViewType::template Codim<0>::Iterator::Entity EntityType;
 
-  enum
-  {
-    polynomialOrder = DiscreteFunctionSpaceType::polynomialOrder
-  };
+  static const int polOrder = DiscreteFunctionSpaceType::polynomialOrder;
 
   typedef Dune::Detailed::Discretizations::DiscreteFunction::Local<ThisType> LocalFunctionType;
 
@@ -46,61 +37,39 @@ public:
 
   typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
 
-  typedef typename DiscreteFunctionSpaceType::DomainFieldType DomainFieldType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
 
-  typedef typename DiscreteFunctionSpaceType::DomainType DomainType;
+  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename DiscreteFunctionSpaceType::RangeFieldType RangeFieldType;
-
-  typedef typename DiscreteFunctionSpaceType::RangeType RangeType;
-
-  typedef typename DiscreteFunctionSpaceType::JacobianRangeType JacobianRangeType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
 
   static const int dimDomain = DiscreteFunctionSpaceType::dimDomain;
 
   static const int dimRange = DiscreteFunctionSpaceType::dimRange;
 
-  Default(const DiscreteFunctionSpaceType& space, const std::string name = "default")
+  typedef typename VectorType::size_type size_type;
+
+  Default(const DiscreteFunctionSpaceType& _space, const std::string _name = "discrete_function")
     : BaseType()
-    , space_(space)
-    , storage_(space_.map().size())
-    , name_(name)
+    , space_(_space)
+    , name_(_name)
+    , vector_(new VectorType(space_.map().size()))
   {
-    //    clear();
   }
 
-  Default(const DiscreteFunctionSpaceType& space, StorageType storage, const std::string name = "default")
+  Default(const DiscreteFunctionSpaceType& _space, Dune::shared_ptr<VectorType> _vector,
+          const std::string _name = "discrete_function")
     : BaseType()
-    , space_(space)
-    , storage_(storage)
-    , name_(name)
+    , space_(_space)
+    , name_(_name)
+    , vector_(_vector)
   {
+    assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
   }
 
 private:
-  //! copy constructor
-  Default(const ThisType& other)
-    : BaseType()
-    , space_(other.space())
-    , storage_(space_.map().size())
-    , name_("copyOF" + other.name())
-  {
-    for (unsigned int i = 0; i < storage_.size(); ++i) {
-      storage_[i] = other.storage_[i];
-    }
-  }
-
-  //! assignment operator
-  ThisType& operator=(const ThisType& other)
-  {
-    if (this != other) {
-      assert(other.space().map().size() == this->space().map().size());
-      for (unsigned int i = 0; i < storage_.size(); ++i) {
-        storage_[i] = other.storage_[i];
-      }
-    }
-    return *this;
-  }
+  Default(const ThisType&);
+  ThisType& operator=(const ThisType&);
 
 public:
   const DiscreteFunctionSpaceType& space() const
@@ -113,77 +82,59 @@ public:
     return name_;
   }
 
-  void setName(const std::string& newName = "")
+  void setName(const std::string& _name)
   {
-    name_ = newName;
+    name_ = _name;
   }
 
   void clear()
   {
     const RangeFieldType zero(0);
-    for (unsigned int i = 0; i < size(); ++i)
-      this->operator[](i) = zero;
+    for (size_type ii = 0; ii < size(); ++ii)
+      vector_->operator[](ii) = zero;
   } // void clear()
 
-  //  const StorageType& storage() const
+  //  RangeFieldType& operator[](const size_type globalDofNumber)
   //  {
-  //    return storage_;
+  //    assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
+  //    assert(globalDofNumber < size());
+  //    return vector_->operator[](globalDofNumber);
   //  }
 
-  //  StorageType& storage()
+  //  const RangeFieldType& operator[](const size_type globalDofNumber) const
   //  {
-  //    return storage_;
+  //    assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
+  //    assert(globalDofNumber < size());
+  //    return vector_->operator[](globalDofNumber);
   //  }
 
-  RangeFieldType& operator[](const unsigned int globalDofNumber)
-  {
-    assert(globalDofNumber < size());
-    return storage_[globalDofNumber];
-  }
-
-  const RangeFieldType& operator[](const unsigned int globalDofNumber) const
-  {
-    assert(globalDofNumber < size());
-    return storage_[globalDofNumber];
-  }
-
-  //  template< class EntityType >
   LocalFunctionType localFunction(const EntityType& entity)
   {
     return LocalFunctionType(*this, entity);
   }
 
-  //  template< class EntityType >
   ConstLocalFunctionType localFunction(const EntityType& entity) const
   {
     return ConstLocalFunctionType(*this, entity);
   }
 
-  //  /**
-  //    \attention  This is not correct for order 0
-  //    \todo       fix me
-  //    **/
-  //  bool continuous() const
-  //  {
-  //    return true;
-  //  }
+  Dune::shared_ptr<VectorType> vector()
+  {
+    return vector_;
+  }
+
+  const Dune::shared_ptr<const VectorType> vector() const
+  {
+    return vector_;
+  }
 
   /**
       @name Convenience methods
       @{
    **/
-
-  /**
-    \attention  someone should think about this at some point (i.e. h-adaptivity)
-    **/
-  int order() const
+  size_type size() const
   {
-    return space_.order();
-  }
-
-  unsigned int size() const
-  {
-    return space_.map().size();
+    return vector_->size();
   }
   /**
       @}
@@ -200,27 +151,24 @@ public:
 
   virtual RangeFieldType evaluate(int component, const EntityType& entity, const DomainType& x) const
   {
+    assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
     RangeType ret(0.0);
     localFunction(entity).evaluate(x, ret);
     return ret[component];
   }
-
   /**
       @}
      **/
+
 private:
   const DiscreteFunctionSpaceType& space_;
-  StorageType storage_;
   std::string name_;
+  Dune::shared_ptr<VectorType> vector_;
+}; // class Default
 
-}; // end class Default
-
-} // end namespace DiscreteFunction
-
+} // namespace DiscreteFunction
 } // namespace Discretizations
-
 } // namespace Detailed
-
-} // end namespace Dune
+} // namespace Dune
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
