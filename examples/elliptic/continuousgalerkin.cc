@@ -4,6 +4,8 @@
   #include "config.h"
 #endif // ifdef HAVE_CMAKE_CONFIG
 
+#define HAVE_DUNE_DETAILED_DISCRETIZATIONS 1
+
 #include <iostream>
 #include <sstream>
 
@@ -21,23 +23,37 @@
 #include <dune/fem/space/common/functionspace.hh>
 
 #include <dune/stuff/common/parameter/tree.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/stuff/common/logging.hh>
+#include <dune/stuff/grid/provider.hh>
+#include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/function/expression.hh>
+#include <dune/stuff/discretefunction/projection/dirichlet.hh>
+#include <dune/stuff/la/solver/eigen/sparse.hh>
 
 #include <dune/detailed/discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed/discretizations/discretefunctionspace/sub/linear.hh>
+#include <dune/detailed/discretizations/la/container/factory/eigen.hh>
+#include <dune/detailed/discretizations/discretefunction/default.hh>
+#include <dune/detailed/discretizations/discretefunctionspace/sub/affine.hh>
 #include <dune/detailed/discretizations/evaluation/local/binary/elliptic.hh>
 #include <dune/detailed/discretizations/discreteoperator/local/codim0/integral.hh>
 #include <dune/detailed/discretizations/evaluation/local/unary/scale.hh>
 #include <dune/detailed/discretizations/discretefunctional/local/codim0/integral.hh>
-#include <dune/detailed/discretizations/la/factory/eigen.hh>
+#include <dune/detailed/discretizations/discretefunctional/local/codim1/integral.hh>
 #include <dune/detailed/discretizations/assembler/local/codim0/matrix.hh>
 #include <dune/detailed/discretizations/assembler/local/codim0/vector.hh>
-#include <dune/detailed/discretizations/assembler/system/constrained.hh>
-#include <dune/detailed/discretizations/la/backend/solver/eigen.hh>
-#include <dune/detailed/discretizations/discretefunction/default.hh>
+#include <dune/detailed/discretizations/assembler/local/codim1/vector.hh>
+#include <dune/detailed/discretizations/assembler/system.hh>
+
 
 const std::string id = "elliptic.continuousgalerkin";
+
+#ifndef POLORDER
+  const int polOrder = 1;
+#else
+  const int polOrder = POLORDER;
+#endif
+
 
 /**
   \brief      Creates a parameter file if it does not exist.
@@ -47,16 +63,23 @@ const std::string id = "elliptic.continuousgalerkin";
   \param[in]  filename
               (Relative) path to the file.
   **/
-void ensureParamFile(std::string filename)
+void ensureParamFile(const std::string& filename)
 {
   // only write param file if there is none
   if (!boost::filesystem::exists(filename)) {
     std::ofstream file;
     file.open(filename);
     file << "[" << id << "]" << std::endl;
-    file << "filename = " << id << ".grid" << std::endl;
+    file << "filename = " << id << std::endl;
+    file << "grid = " << "stuff.grid.provider.cube" << std::endl;
+    file << "boundaryinfo = " << "stuff.grid.boundaryinfo.alldirichlet" << std::endl;
     file << "[stuff.grid.provider.cube]" << std::endl;
-    file << "numElements = 4" << std::endl;
+    file << "lowerLeft = [0.0; 0.0; 0.0]" << std::endl;
+    file << "upperRight = [1.0; 1.0; 1.0]" << std::endl;
+    file << "numElements = [12; 12; 12]" << std::endl;
+    file << "[stuff.grid.boundaryinfo.idbased]" << std::endl;
+    file << "dirichlet = [1; 2; 3]" << std::endl;
+    file << "neumann = [4]" << std::endl;
     file << "[diffusion]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
@@ -68,22 +91,19 @@ void ensureParamFile(std::string filename)
     file << "[dirichlet]" << std::endl;
     file << "order = 0"  << std::endl;
     file << "variable = x" << std::endl;
-    file << "expression = [0.0; 0.0; 0.0]" << std::endl;
+    file << "expression = [0.1*x[0]; 0.0; 0.0]" << std::endl;
+    file << "[neumann]" << std::endl;
+    file << "order = 0"  << std::endl;
+    file << "variable = x" << std::endl;
+    file << "expression = [0.1; 0.0; 0.0]" << std::endl;
     file << "[solver]" << std::endl;
+    file << "type = eigen.bicgstab.incompletelut"  << std::endl;
     file << "maxIter = 5000"  << std::endl;
     file << "precision = 1e-12"  << std::endl;
-    file << "[visualization]" << std::endl;
-    file << "filename = " << id << ".solution" << std::endl;
-    file << "name = solution" << std::endl;
     file.close();
   } // only write param file if there is none
 } // void ensureParamFile()
 
-#ifndef POLORDER
-const int polOrder = 1;
-#else
-const int polOrder = POLORDER;
-#endif
 
 int main(int argc, char** argv)
 {
@@ -95,69 +115,93 @@ int main(int argc, char** argv)
     const std::string paramFilename = id + ".param";
     ensureParamFile(paramFilename);
     Dune::Stuff::Common::ExtendedParameterTree paramTree(argc, argv, paramFilename);
-    if (!paramTree.hasSub(id))
-      DUNE_THROW(Dune::RangeError,
-                 "\nError: missing sub " << id << " in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
+    paramTree.assertSub(id);
+
+    // logger
+    Dune::Stuff::Common::Logger().create(Dune::Stuff::Common::LOG_INFO |
+                                         Dune::Stuff::Common::LOG_CONSOLE);
+    Dune::Stuff::Common::LogStream& info = Dune::Stuff::Common::Logger().info();
 
     // timer
     Dune::Timer timer;
 
-    // grid
-    std::cout << "setting up grid:" << std::endl;
-    typedef Dune::Stuff::Grid::Provider::Cube<> GridProviderType;
-    const GridProviderType gridProvider = GridProviderType::createFromParamTree(paramTree);
+    info << "setting up grid:" << std::endl;
+    typedef Dune::Stuff::Grid::Provider::Interface<> GridProviderType;
+    const GridProviderType* gridProvider
+        = Dune::Stuff::Grid::Provider::create(paramTree.get(id + ".grid", "stuff.grid.provider.cube"),
+                                              paramTree);
     typedef GridProviderType::GridType GridType;
-    const Dune::shared_ptr< const GridType > grid = gridProvider.grid();
+    const Dune::shared_ptr< const GridType > grid = gridProvider->grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
     const GridPartType gridPart(*grid);
-    std::cout << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
-    std::cout << "visualizing grid... " << std::flush;
-    if (!paramTree.sub(id).hasKey("filename"))
-      DUNE_THROW(Dune::RangeError,
-                 "\nError: missing key 'filename' in the following Dune::parameterTree:\n" << paramTree.sub(id).reportString("  "););
-    timer.reset();
-    gridProvider.visualize(paramTree.sub(GridProviderType::id()).get("filename", id + ".grid"));
-    std::cout << " done (took " << timer.elapsed() << " sek)" << std::endl;
+    typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< typename GridPartType::GridViewType > BoundaryInfoType;
+    const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo(
+          Dune::Stuff::Grid::BoundaryInfo::create< typename GridPartType::GridViewType >(
+              paramTree.get(id + ".boundaryinfo", "stuff.grid.boundaryinfo.alldirichlet"),
+                            paramTree));
 
-    // spaces
-    std::cout << "initializing spaces... " << std::flush;
+    info << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
+    info << "visualizing grid... " << std::flush;
+    timer.reset();
+    gridProvider->visualize(paramTree.get(id + ".filename", id) + ".grid");
+    info << " done (took " << timer.elapsed() << " sek)" << std::endl;
+
+    info << "initializing function space and data functions... " << std::flush;
     timer.reset();
     const int DUNE_UNUSED(dimDomain) = GridProviderType::dim;
     const int DUNE_UNUSED(dimRange) = 1;
     typedef double DomainFieldType;
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
-    typedef Dune::Detailed::Discretizations::DiscreteFunctionSpace::Continuous::Lagrange< FunctionSpaceType, GridPartType, polOrder > TestSpaceType;
-    const TestSpaceType testSpace(gridPart);
-    typedef Dune::Detailed::Discretizations::DiscreteFunctionSpace::Sub::Linear::Dirichlet< TestSpaceType > AnsatzSpaceType;
-    const AnsatzSpaceType ansatzSpace(testSpace);
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
-
-    // data
-    std::cout << "initializing data functions... " << std::flush;
     timer.reset();
-    typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange > ExpressionFunctionType;
-    if (!paramTree.hasSub("diffusion"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing sub 'diffusion' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
-    if (!paramTree.sub("diffusion").hasKey("order"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'order' in the following Dune::ParameterTree:\n" << paramTree.sub("order").reportString("  "));
-    const Dune::shared_ptr< const ExpressionFunctionType >
-        diffusion(new ExpressionFunctionType(ExpressionFunctionType::createFromParamTree(paramTree.sub("diffusion"))));
-    if (!paramTree.hasSub("force"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing sub 'force' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
-    if (!paramTree.sub("force").hasKey("order"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'order' in the following Dune::ParameterTree:\n" << paramTree.sub("force").reportString("  "));
-    const Dune::shared_ptr< const ExpressionFunctionType >
-        force(new ExpressionFunctionType(ExpressionFunctionType::createFromParamTree(paramTree.sub("force"))));
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+    typedef Dune::Stuff::Function::Expression<  DomainFieldType, dimDomain,
+                                                RangeFieldType, dimRange >
+        ExpressionFunctionType;
+    const Dune::shared_ptr< const ExpressionFunctionType > diffusion(new ExpressionFunctionType(
+        ExpressionFunctionType::createFromParamTree(paramTree.sub("diffusion"))));
+    const Dune::shared_ptr< const ExpressionFunctionType > force(new ExpressionFunctionType(
+        ExpressionFunctionType::createFromParamTree(paramTree.sub("force"))));
+    const Dune::shared_ptr< const ExpressionFunctionType > dirichlet(new ExpressionFunctionType(
+        ExpressionFunctionType::createFromParamTree(paramTree.sub("dirichlet"))));
+    const Dune::shared_ptr< const ExpressionFunctionType > neumann(new ExpressionFunctionType(
+        ExpressionFunctionType::createFromParamTree(paramTree.sub("neumann"))));
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    // left hand side (operator)
-    std::cout << "initializing operator and functional... " << std::flush;
+    info << "initializing discrete function spaces... " << std::flush;
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteFunctionSpace
+        ::Continuous
+        ::Lagrange< FunctionSpaceType, GridPartType, polOrder >
+      LagrangeSpaceType;
+    const LagrangeSpaceType lagrangeSpace(gridPart);
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteFunctionSpace
+        ::Sub
+        ::Linear
+        ::Dirichlet< LagrangeSpaceType >
+      TestSpaceType;
+    const TestSpaceType testSpace(lagrangeSpace, boundaryInfo);
+    typedef typename Dune::Detailed::Discretizations::LA::Container::Factory::Eigen< RangeFieldType > ContainerFactory;
+    typedef typename ContainerFactory::DenseVectorType VectorType;
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteFunction
+        ::Default< LagrangeSpaceType, VectorType >
+      DiscreteFunctionType;
+    Dune::shared_ptr< DiscreteFunctionType > discreteDirichlet(new DiscreteFunctionType(lagrangeSpace, "dirichlet"));
+    Dune::Stuff::DiscreteFunction::Projection::Dirichlet::project(*boundaryInfo, *dirichlet, *discreteDirichlet);
+    typedef typename Dune::Detailed::Discretizations
+        ::DiscreteFunctionSpace
+        ::Sub
+        ::Affine
+        ::Dirichlet< TestSpaceType, VectorType >
+      AnsatzSpaceType;
+    const AnsatzSpaceType ansatzSpace(testSpace, discreteDirichlet);
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
+
+    info << "initializing operator and functionals... " << std::flush;
     timer.reset();
+    // * left hand side
+    //   * elliptic operator
     typedef Dune::Detailed::Discretizations
         ::Evaluation
         ::Local
@@ -172,101 +216,121 @@ int main(int argc, char** argv)
         ::Integral< EllipticEvaluationType >
       EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(ellipticEvaluation);
-    // right hand side (functional)
+    // * right hand side
+    //   * L2 force functional
     typedef Dune::Detailed::Discretizations
         ::Evaluation
         ::Local
         ::Unary
         ::Scale< FunctionSpaceType, ExpressionFunctionType >
       ProductEvaluationType;
-    const ProductEvaluationType productEvaluation(force, paramTree.sub("force").get("order", 0));
+    const ProductEvaluationType forceEvaluation(force, paramTree.sub("force").get("order", 0));
     typedef Dune::Detailed::Discretizations
         ::DiscreteFunctional
         ::Local
         ::Codim0
         ::Integral< ProductEvaluationType >
-      L2FunctionalType;
-    const L2FunctionalType l2Functional(productEvaluation);
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+      L2VolumeFunctionalType;
+    const L2VolumeFunctionalType forceFunctional(forceEvaluation);
+    //   * L2 neumann functional
+    const ProductEvaluationType neumannEvaluation(neumann, paramTree.sub("neumann").get("order", 0));
+    typedef typename Dune::Detailed::Discretizations
+        ::DiscreteFunctional
+        ::Local
+        ::Codim1
+        ::Integral
+        ::Boundary< ProductEvaluationType >
+      L2BoundaryFunctionalType;
+    const L2BoundaryFunctionalType neumannFunctional(neumannEvaluation);
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    // system matrix and right hand side
-    std::cout << "initializing matrix and vector containers..." << std::flush;
+    info << "initializing matrix (of size " << testSpace.map().size() << "x" << ansatzSpace.map().size()
+         << ") and vectors... " << std::flush;
     timer.reset();
-    typedef AnsatzSpaceType::PatternType PatternType;
-    const Dune::shared_ptr< const PatternType > pattern = ansatzSpace.computePattern(testSpace);
-    typedef Dune::Detailed::Discretizations::LA::Factory::Eigen< RangeFieldType > ContainerFactory;
-    typedef ContainerFactory::SparseMatrixType MatrixBackendType;
-    MatrixBackendType systemMatrix = ContainerFactory::createSparseMatrix(ansatzSpace.map().size(), testSpace.map().size(), *pattern);
-    typedef ContainerFactory::DenseVectorType VectorBackendType;
-    VectorBackendType rhs = ContainerFactory::createDenseVector(testSpace.map().size());
-    VectorBackendType ret = ContainerFactory::createDenseVector(testSpace);
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+    typedef ContainerFactory::SparseMatrixType MatrixType;
+    Dune::shared_ptr< MatrixType > systemMatrix = ContainerFactory::createSparseMatrix(testSpace, ansatzSpace);
+    Dune::shared_ptr< VectorType > forceVector = ContainerFactory::createDenseVector(testSpace);
+    Dune::shared_ptr< VectorType > neumannVector = ContainerFactory::createDenseVector(testSpace);
+    Dune::shared_ptr< VectorType > rhsVector = ContainerFactory::createDenseVector(testSpace);
+    Dune::shared_ptr< VectorType > solutionVector = ContainerFactory::createDenseVector(testSpace);
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    // assembler
-    std::cout << "assembing system... " << std::flush;
+    info << "assembing system... " << std::flush;
     timer.reset();
-    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Matrix< EllipticOperatorType > LocalMatrixAssemblerType;
-    const LocalMatrixAssemblerType localmatrixAssembler(ellipticOperator);
-    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Vector< L2FunctionalType > LocalVectorAssemblerType;
-    const LocalVectorAssemblerType localVectorAssembler(l2Functional);
-    typedef Dune::Detailed::Discretizations::Assembler::System::Constrained< AnsatzSpaceType, TestSpaceType > SystemAssemblerType;
-    const SystemAssemblerType systemAssembler(ansatzSpace, testSpace);
-    systemAssembler.assembleSystem(localmatrixAssembler, systemMatrix, localVectorAssembler, rhs);
-    systemAssembler.applyConstraints(systemMatrix, rhs);
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+    // * local matrix assembler
+    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Matrix< EllipticOperatorType >
+        LocalMatrixAssemblerType;
+    const Dune::shared_ptr< const LocalMatrixAssemblerType > localMatrixAssembler(
+          new LocalMatrixAssemblerType(ellipticOperator));
+    // * local vector assemblers
+    //   * force vector
+    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim0::Vector< L2VolumeFunctionalType >
+        LocalVolumeVectorAssemblerType;
+    const Dune::shared_ptr< const LocalVolumeVectorAssemblerType > localforceVectorAssembler(
+          new LocalVolumeVectorAssemblerType(forceFunctional));
+    //   * neumann vector
+    typedef Dune::Detailed::Discretizations::Assembler::Local::Codim1::Vector::Neumann< L2BoundaryFunctionalType,
+                                                                                        BoundaryInfoType >
+        LocalNeumannVectorAssemblerType;
+    const Dune::shared_ptr< const LocalNeumannVectorAssemblerType > localNeumannVectorAssembler(
+          new LocalNeumannVectorAssemblerType(neumannFunctional, boundaryInfo));
+    typedef Dune::Detailed::Discretizations::Assembler::System< TestSpaceType, AnsatzSpaceType > SystemAssemblerType;
+    // * system assembler
+    SystemAssemblerType systemAssembler(testSpace, ansatzSpace);
+    systemAssembler.addLocalMatrixAssembler(localMatrixAssembler, systemMatrix);
+    systemAssembler.addLocalVectorAssembler(localforceVectorAssembler, forceVector);
+    systemAssembler.addLocalVectorAssembler(localNeumannVectorAssembler, neumannVector);
+    systemAssembler.assemble();
 
-    // solve system
-    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::BicgstabIlut Solver;
-//    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::BicgstabDiagonal Solver;
-//    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::CgDiagonalUpper Solver; // seems to produce strange results
-//    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::CgDiagonalLower Solver; // seems to produce strange results
-//    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::SimplicialcholeskyUpper Solver; // seems to produce strange results
-//    typedef Dune::Detailed::Discretizations::LA::Solver::Eigen::SimplicialcholeskyLower Solver; // seems to produce strange results
-    std::cout << "solving linear system (of size " << systemMatrix.rows() << "x" << systemMatrix.cols() << ")" << std::endl
-              << "  using " << Solver::id << "... " << std::flush;
-    if (!paramTree.hasSub("solver"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing sub 'solver' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
-    if (!paramTree.sub("solver").hasKey("maxIter"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'maxIter' in the following Dune::ParameterTree:\n" << paramTree.sub("solver").reportString("  "));
-    if (!paramTree.sub("solver").hasKey("precision"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'precision' in the following Dune::ParameterTree:\n" << paramTree.sub("solver").reportString("  "));
+    info << "applying constraints... " << std::flush;
     timer.reset();
-    Solver::apply(
-      systemMatrix,
-      ret,
-      rhs,
-      paramTree.sub("solver").get("maxIter", 5000),
-      paramTree.sub("solver").get("precision", 1e-12));
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+    rhsVector->base() = forceVector->base()
+        + neumannVector->base()
+        - systemMatrix->base() * discreteDirichlet->vector()->base();
+    systemAssembler.applyConstraints(*systemMatrix, *rhsVector);
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    // postprocess
-    if (!paramTree.hasSub("visualization"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing sub 'visualization' in the following Dune::ParameterTree:\n" << paramTree.reportString("  "));
-    if (!paramTree.sub("visualization").hasKey("name"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'name' in the following Dune::ParameterTree:\n" << paramTree.sub("visualization").reportString("  "));
-    if (!paramTree.sub("visualization").hasKey("filename"))
-      DUNE_THROW(Dune::RangeError,
-                 "\Error: missing key 'filename' in the following Dune::ParameterTree:\n" << paramTree.sub("visualization").reportString("  "));
-    const std::string solutionName = paramTree.sub("visualization").get("name", "solution");
-    const std::string solutionFilename = paramTree.sub("visualization").get("filename", id + ".solution");
-    std::cout << "writing '" << solutionName << "' to '" << solutionFilename;
+    info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")" << std::endl;
+    const std::string solverType = paramTree.get("solver.type", "eigen.bicgstab.incompletelut");
+    const unsigned int solverMaxIter = paramTree.get("solver.maxIter", 5000);
+    const double solverPrecision = paramTree.get("solver.precision", 1e-12);
+    info << "  using '" << solverType << "'... " << std::flush;
+    timer.reset();
+    typedef typename Dune::Stuff::LA::Solver::Eigen::Sparse::Interface< RangeFieldType > SolverType;
+    const SolverType* solver = Dune::Stuff::LA::Solver::Eigen::Sparse::create(solverType);
+    const bool success = solver->apply(*systemMatrix,
+                                       *rhsVector,
+                                       *solutionVector,
+                                       solverMaxIter,
+                                       solverPrecision);
+    if (!success)
+      DUNE_THROW(Dune::MathError,
+                 "\nERROR: linear solver '" << solverType << "' did not converge in " << solverMaxIter << " iterations"
+                 << " with a tolerance of " << solverPrecision << "!");
+    if (solutionVector->size() != ansatzSpace.map().size())
+      DUNE_THROW(Dune::MathError,
+                 "\nERROR: linear solver '" << solverType << "' produced a solution of wrong size (is "
+                 << solutionVector->size() << ", should be " << ansatzSpace.map().size() << ")!");
+    solutionVector->base() += discreteDirichlet->vector()->base();
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
+
+    const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";
+    const std::string solutionName = id + ".solution";
+    info << "writing solution to '" << solutionFilename;
     if (dimDomain == 1)
-      std::cout << ".vtp";
+      info << ".vtp";
     else
-      std::cout << ".vtu";
-    std::cout << "'... " << std::flush;
-    typedef Dune::Detailed::Discretizations::DiscreteFunction::Default< AnsatzSpaceType, VectorBackendType > DiscreteFunctionType;
-    Dune::shared_ptr< DiscreteFunctionType > solution(new DiscreteFunctionType(ansatzSpace, ret, solutionName));
-    typedef Dune::VTKWriter< AnsatzSpaceType::GridViewType > VTKWriterType;
-    VTKWriterType vtkWriter(ansatzSpace.gridView());
+      info << ".vtu";
+    info << "'... " << std::flush;
+    timer.reset();
+    const Dune::shared_ptr< const DiscreteFunctionType > solution(new DiscreteFunctionType(lagrangeSpace,
+                                                                                           solutionVector,
+                                                                                           solutionName));
+    typedef Dune::VTKWriter< LagrangeSpaceType::GridViewType > VTKWriterType;
+    VTKWriterType vtkWriter(lagrangeSpace.gridView());
     vtkWriter.addVertexData(solution);
     vtkWriter.write(solutionFilename);
-    std::cout << "done (took " << timer.elapsed() << " sec)" << std::endl;
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // done
     return 0;
