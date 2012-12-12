@@ -48,22 +48,21 @@ namespace Constraints
  * @tparam DiscFuncSpace discrete function space on which constraints shall
  * be applied.
  */
-template< class DiscreteFunctionSpaceImp, class BoundaryInfoImp = Dune::Stuff::Grid::BoundaryInfo::AllDirichlet >
+template< class DiscreteFunctionSpaceImp >
 class DirichletZero
 {
 public:
   //! Discrete function space on which the Dirichlet constraints are applied
-  typedef DiscreteFunctionSpaceImp
-    DiscreteFunctionSpaceType;
+  typedef DiscreteFunctionSpaceImp DiscreteFunctionSpaceType;
 
-  typedef BoundaryInfoImp BoundaryInfoType;
-
-  typedef DirichletZero< DiscreteFunctionSpaceType, BoundaryInfoType >
-    ThisType;
+  typedef DirichletZero< DiscreteFunctionSpaceType > ThisType;
 
   //! Underlying grid part
-  typedef typename DiscreteFunctionSpaceType::GridPartType
-    GridPartType;
+  typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+
+  typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
+
+  typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< GridViewType > BoundaryInfoType;
 
   //! @brief dimension of the grid part
   static const int griddim = GridPartType::GridType::dimension;
@@ -79,7 +78,7 @@ public:
    *                  constraints are applied
    */
   DirichletZero(const DiscreteFunctionSpaceType& space,
-                const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo = Dune::shared_ptr< const BoundaryInfoType >(new Dune::Stuff::Grid::BoundaryInfo::AllDirichlet()))
+                const BoundaryInfoType& boundaryInfo)
     : space_( space )
     , boundaryInfo_(boundaryInfo)
     , gridPart_( space.gridPart() )
@@ -115,7 +114,7 @@ public:
       // get intersection
       const Intersection& ii = *it;
       // only work on dirichlet intersections
-      if (boundaryInfo_->dirichlet(ii)) {
+      if (boundaryInfo_.dirichlet(ii)) {
         // get local face number of boundary intersection
         const int face = ii.indexInInside();
 //        std::cout << "    intersection " << face << std::endl;
@@ -157,7 +156,7 @@ private:
   ThisType& operator=(const ThisType&);
 
   const DiscreteFunctionSpaceType& space_;
-  const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
+  const BoundaryInfoType& boundaryInfo_;
   const GridPartType& gridPart_;
 }; // end class Dirichlet
 
