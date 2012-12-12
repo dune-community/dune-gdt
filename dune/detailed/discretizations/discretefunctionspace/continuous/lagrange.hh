@@ -1,17 +1,12 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 
-// system
-#include <map>
-#include <set>
-
-// dune-common
 #include <dune/common/shared_ptr.hh>
 
-// dune-fem includes
 #include <dune/fem/space/lagrangespace.hh>
 
-// dune-detailed-discretizations includes
+#include <dune/stuff/la/container/pattern.hh>
+
 #include <dune/detailed/discretizations/basefunctionset/continuous/lagrange.hh>
 #include <dune/detailed/discretizations/mapper/continuous/lagrange.hh>
 
@@ -46,23 +41,23 @@ public:
   typedef Dune::Detailed::Discretizations
     ::BaseFunctionSet::Continuous::Lagrange< ThisType > BaseFunctionSetType;
 
-  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+//  typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
 
-  typedef typename FunctionSpaceType::DomainType DomainType;
+//  typedef typename FunctionSpaceType::DomainType DomainType;
 
-  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
+//  typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename FunctionSpaceType::RangeType RangeType;
+//  typedef typename FunctionSpaceType::RangeType RangeType;
 
-  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
+//  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  typedef typename FunctionSpaceType::HessianRangeType HessianRangeType;
+//  typedef typename FunctionSpaceType::HessianRangeType HessianRangeType;
 
   static const unsigned int dimDomain = FunctionSpaceType::dimDomain;
 
   static const unsigned int dimRange = FunctionSpaceType::dimRange;
 
-  typedef std::map< unsigned int, std::set< unsigned int > > PatternType;
+  typedef Dune::Stuff::LA::Container::Pattern::Default PatternType;
 
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
@@ -100,7 +95,8 @@ public:
   Dune::shared_ptr< PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
                                                       const OtherDiscreteFunctionSpaceType& other) const
   {
-    Dune::shared_ptr< PatternType > ret(new PatternType());
+    typedef typename PatternType::size_type size_type;
+    Dune::shared_ptr< PatternType > ret(new PatternType(mapper_.size()));
     PatternType& pattern = *ret;
     // walk the grid part
     for (typename LocalGridPartType::template Codim< 0 >::IteratorType entityIt = localGridPart.template begin< 0 >();
@@ -108,11 +104,11 @@ public:
          ++entityIt) {
       const typename LocalGridPartType::template Codim< 0 >::EntityType& entity = *entityIt;
       for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
-        const unsigned int globalI = map().toGlobal(entity, i);
-        std::set< unsigned int >& rowSet = pattern[globalI];
+        const size_type globalI = map().toGlobal(entity, i);
+        typename PatternType::ColumnsType& columns = pattern.columns(globalI);
         for (unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
-          const unsigned int globalJ = other.map().toGlobal(entity, j);
-          rowSet.insert(globalJ);
+          const size_type globalJ = other.map().toGlobal(entity, j);
+          columns.insert(globalJ);
         }
       }
     } // walk the grid part
@@ -129,7 +125,8 @@ public:
   Dune::shared_ptr< PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
                                                          const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
-    Dune::shared_ptr< PatternType > ret(new PatternType());
+    typedef typename PatternType::size_type size_type;
+    Dune::shared_ptr< PatternType > ret(new PatternType(mapper_.size()));
     PatternType& pattern = *ret;
     // walk the coupling grid part
     for (typename CouplingGridPartType::template Codim< 0 >::IteratorType entityIt = couplingGridPart.template begin< 0 >();
@@ -152,11 +149,11 @@ public:
             testBaseFunctionSet = outerSpace.baseFunctionSet().local(outsideNeighbor);
         // compute pattern
         for (unsigned int i = 0; i < ansatzBaseFunctionSet.size(); ++i) {
-          const unsigned int globalI = map().toGlobal(insideEntity, i);
-          std::set< unsigned int >& rowSet = pattern[globalI];
+          const size_type globalI = map().toGlobal(insideEntity, i);
+          typename PatternType::ColumnsType& columns = pattern.columns(globalI);
           for (unsigned int j = 0; j < testBaseFunctionSet.size(); ++j ) {
-            const unsigned int globalJ = outerSpace.map().toGlobal(outsideNeighbor, j);
-            rowSet.insert(globalJ);
+            const size_type globalJ = outerSpace.map().toGlobal(outsideNeighbor, j);
+            columns.insert(globalJ);
           }
         } // compute pattern
       } // walk the neighbors
