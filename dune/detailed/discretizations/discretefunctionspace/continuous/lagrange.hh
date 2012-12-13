@@ -3,6 +3,7 @@
 
 #include <dune/common/shared_ptr.hh>
 
+#include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrangespace.hh>
 
 #include <dune/stuff/la/container/pattern.hh>
