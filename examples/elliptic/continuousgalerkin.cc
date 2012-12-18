@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     const double solverPrecision     = paramTree.get("solver.precision", 1e-12);
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
-    typedef typename Dune::Stuff::LA::Solver::Eigen::Interface<MatrixType, VectorType> SolverType;
+    typedef typename Dune::Stuff::LA::Solver::Interface<MatrixType, VectorType> SolverType;
     SolverType* solver = Dune::Stuff::LA::Solver::Eigen::create<MatrixType, VectorType>(solverType);
     solver->init(*systemMatrix);
     const bool success = solver->apply(*rhsVector, *solutionVector, solverMaxIter, solverPrecision);
