@@ -1,4 +1,4 @@
-PROJECT( dune-detailed-discretizations)
+PROJECT(dune-detailed-discretizations)
 
 #set minimum cmake version
 cmake_minimum_required(VERSION 2.6)
@@ -6,8 +6,16 @@ cmake_policy(SET CMP0009 NEW)
 # tell cmake where to look for .cmake files
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/../dune-stuff/cmake )
 
+SET(ENV{PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/bin:$ENV{PATH}" )
+SET(ENV{LD_LIBRARY_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib:$ENV{LD_LIBRARY_PATH}" )
+SET(ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}" )
+
 # stuff needed for dune
 include(DuneUtils)
+
+# needs to come first to include correct config.h
+include_dir( ${dune-detailed-discretizations_SOURCE_DIR} )
+INCLUDE_DIR( ${dune-detailed-discretizations_BINARY_DIR} )
 
 # General Settings
 SET( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true )
@@ -51,14 +59,12 @@ SET( CUSTOM_FLAGS
   "-Wall -O0 -DDEBUG -g -fdiagnostics-show-option" CACHE LIST
   "CUSTOM_FLAGS" )
 
-# eigen3
-set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../local/include/eigen3")
-find_package( Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
 
-# needs to come first to include correct config.h
-include_dir( ${dune-detailed-discretizations_SOURCE_DIR} )
-INCLUDE_DIR( ${dune-detailed-discretizations_BINARY_DIR} )
+# eigen3
+pkg_check_modules(Eigen3, eigen3, REQUIRED)
+#set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../local/include/eigen3")
+#find_package(Eigen3 REQUIRED)
+#include_directories(${EIGEN3_INCLUDE_DIR})
 
 ADD_DEFINITIONS(${CUSTOM_FLAGS})
 
