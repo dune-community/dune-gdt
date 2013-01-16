@@ -1,20 +1,9 @@
-#ifndef DUNE_STUFF_CONFIG_H
-#define DUNE_STUFF_CONFIG_H
-
-#undef COMMIT
-
-/* the git tag / commit we build from */
-#define COMMIT "@COMMIT@"
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_CONFIG_H
+#define DUNE_DETAILED_DISCRETIZATIONS_CONFIG_H
 
 #define @GRIDTYPE@
 #define GRIDDIM @GRIDDIM@
 #define POLORDER @POLORDER@
-
-#define DUNE_COMMON_FIELDVECTOR_SIZE_IS_METHOD 1
-
-#ifdef NDEBUG
-	#define DNDEBUG
-#endif
 
 #include "config.h"
 
@@ -31,8 +20,4 @@
   }
 #endif
 
-// enable these when dropping autotools
-//#cmakedefine HAS_LAMBDA_FUNCTIONS 1
-//#cmakedefine HAS_STD_BEGIN_END 1
-
-#endif	/* DUNE_STUFF_CONFIG_H */
+#endif	/* DUNE_DETAILED_DISCRETIZATIONS_CONFIG_H */

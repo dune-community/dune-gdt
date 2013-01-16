@@ -97,7 +97,7 @@ ENDIF( ${GRIDTYPE} MATCHES "ALBERTAGRID" )
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h )
 
 # other dune modules
-ADD_DUNE_MODULES(common fem geometry grid grid-multiscale stuff)
+ADD_DUNE_MODULES(common fem geometry grid grid-multiscale stuff localfunctions)
 set(COMMON_LIBS
     ${DUNE_LIBS}
     ${BLAS_LIB}
