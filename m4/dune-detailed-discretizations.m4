@@ -8,14 +8,6 @@ dnl -*- autoconf -*-
 # well as by dune-detailed-discretizations itself
 AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
 [ 
-  AX_BOOST_BASE([1.48.0],
-                [AC_DEFINE([HAVE_BOOST],
-                           [1],
-                           [Define wether boost was found.])],
-                [AC_MSG_ERROR([Boost 1.48 is required])])
-
-  AX_BOOST_FILESYSTEM([1.48.0])
-
   PKG_CHECK_MODULES([EIGEN],
                     [eigen3],
                     [AC_DEFINE([HAVE_EIGEN],
