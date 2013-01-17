@@ -13,6 +13,7 @@ AC_DEFUN([DUNE_DETAILED_DISCRETIZATIONS_CHECKS],
                     [AC_DEFINE([HAVE_EIGEN],
                                [1],
                                [Define wether the eigen includes were found.])])
+  CFLAGS="$CFLAGS $EIGEN_CFLAGS"
 ])
 
 # Additional checks needed to find dune-detailed-discretizations
