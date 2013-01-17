@@ -61,10 +61,7 @@ SET( CUSTOM_FLAGS
 
 
 # eigen3
-pkg_check_modules(Eigen3, eigen3, REQUIRED)
-#set( EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../local/include/eigen3")
-#find_package(Eigen3 REQUIRED)
-#include_directories(${EIGEN3_INCLUDE_DIR})
+pkg_check_modules(Eigen3 eigen3 REQUIRED)
 
 ADD_DEFINITIONS(${CUSTOM_FLAGS})
 
