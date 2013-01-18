@@ -1,9 +1,7 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM1_INTEGRAL_HH
 
-#include <dune/stuff/common/header/disable_warnings.hh>
 #include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/header/reenable_warnings.hh>
 
 #include <dune/stuff/common/vector.hh>
 
