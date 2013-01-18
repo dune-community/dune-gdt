@@ -5,14 +5,16 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM0_INTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONAL_LOCAL_CODIM0_INTEGRAL_HH
 
-#include <dune/stuff/common/header/disable_warnings.hh>
-  #include <dune/common/dynmatrix.hh>
+// dune-common
+#include <dune/common/dynmatrix.hh>
 
-  #include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/header/reenable_warnings.hh>
+// dune-geometry
+#include <dune/geometry/quadraturerules.hh>
 
+// dune-stuff
 #include <dune/stuff/common/vector.hh>
 
+// dune-detailed-discretizations
 #include <dune/detailed/discretizations/basefunctionset/local/wrapper.hh>
 
 namespace Dune
