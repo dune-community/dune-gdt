@@ -1,3 +1,4 @@
+#include <dune/stuff/common/header/disable_warnings.hh>
 #ifdef HAVE_CMAKE_CONFIG
 #include "cmake_config.h"
 #elif defined(HAVE_CONFIG_H)
@@ -21,6 +22,7 @@
 
 #include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/space/common/functionspace.hh>
+#include <dune/stuff/common/header/reenable_warnings.hh>
 
 #include <dune/stuff/common/parameter/tree.hh>
 #include <dune/stuff/common/logging.hh>
