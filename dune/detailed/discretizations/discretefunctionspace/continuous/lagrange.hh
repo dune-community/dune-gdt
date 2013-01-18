@@ -1,10 +1,12 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 
-#include <dune/common/shared_ptr.hh>
+#include <dune/stuff/common/header/disable_warnings.hh>
+  #include <dune/common/shared_ptr.hh>
 
-#include <dune/fem/space/common/functionspace.hh>
-#include <dune/fem/space/lagrangespace.hh>
+  #include <dune/fem/space/common/functionspace.hh>
+  #include <dune/fem/space/lagrangespace.hh>
+#include <dune/stuff/common/header/reenable_warnings.hh>
 
 #include <dune/stuff/la/container/pattern.hh>
 

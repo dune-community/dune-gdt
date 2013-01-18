@@ -5,11 +5,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEOPERATOR_LOCAL_CODIM1_INNERINTEGRAL_HH
 
-// dune-common
-#include <dune/common/densematrix.hh>
+#include <dune/stuff/common/header/disable_warnings.hh>
+  #include <dune/common/densematrix.hh>
 
-// dune-geometry
-#include <dune/geometry/quadraturerules.hh>
+  #include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/header/reenable_warnings.hh>
 
 // dune-stuff
 #include <dune/stuff/common/matrix.hh>
