@@ -40,6 +40,7 @@ public:
   static Dune::shared_ptr<DenseMatrixType> createDenseMatrix(const TestSpaceType& testSpace,
                                                              const AnsatzSpaceType& ansatzSpace)
   {
+    //! TODO make_shared
     Dune::shared_ptr<DenseMatrixType> denseMatrix(
         new DenseMatrixType(testSpace.map().size(), ansatzSpace.map().size()));
     return denseMatrix;
@@ -48,6 +49,7 @@ public:
   template <class SpaceType>
   static Dune::shared_ptr<DenseVectorType> createDenseVector(const SpaceType& space)
   {
+    //! TODO make_shared
     Dune::shared_ptr<DenseVectorType> denseVector(new DenseVectorType(space.map().size()));
     return denseVector;
   } // static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
