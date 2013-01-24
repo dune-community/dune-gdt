@@ -77,10 +77,8 @@ public:
       HostBaseFunctionSetType;
     const HostBaseFunctionSetType tmpBaseFunctionSet = baseFunctionSet_.baseFunctionSet( entity_ );
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    size_ = tmpBaseFunctionSet.numBaseFunctions();
-#pragma GCC diagnostic pop
+    size_ = tmpBaseFunctionSet.size();
+
     // this is still fishy, i.e. p-adaptivity
     order_ = baseFunctionSet_.space().order();
   }
@@ -123,10 +121,7 @@ public:
 
     // and evaluate
     for (unsigned int i = 0; i < size_; ++i) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       baseFunctionSet.evaluate( i, x, ret[i] );
-#pragma GCC diagnostic pop
     }
   }
 
@@ -163,11 +158,7 @@ public:
       for( unsigned int i = 0; i < size_; ++i )
       {
         // get untransposed jacobian
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         baseFunctionSet.jacobian( i, x, jacobianUntransposed );
-#pragma GCC diagnostic pop
-
         // transpose for each dim of range
         const unsigned int dimRange = DiscreteFunctionSpaceType::dimRange;
         for( unsigned int row = 0; row < dimRange; ++row )
