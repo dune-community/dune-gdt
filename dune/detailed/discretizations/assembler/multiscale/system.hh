@@ -62,10 +62,7 @@ public:
       // loop over all neighbors
       typedef typename MsGridType::NeighboringSubdomainsSetType NeighboringSubdomainsSetType;
       const Dune::shared_ptr< const NeighboringSubdomainsSetType > neighbors = msGrid_.neighborsOf(subdomain);
-      for (typename NeighboringSubdomainsSetType::const_iterator neighborIt = neighbors->begin();
-           neighborIt != neighbors->end();
-           ++neighborIt) {
-        const unsigned int neighbor = *neighborIt;
+      for (const unsigned int neighbor : *neighbors) {
         // ensure primal assembling
         if (subdomain < neighbor) {
           // get coupling grid part
