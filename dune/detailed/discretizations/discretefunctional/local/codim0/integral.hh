@@ -200,15 +200,13 @@ public:
 
     // do loop over all quadrature points
     LocalMatrixType tmpMatrix(1, size);
-    const typename QuadratureType::const_iterator quadratureEnd = volumeQuadrature.end();
-    for (typename QuadratureType::const_iterator quadPoint = volumeQuadrature.begin(); quadPoint != quadratureEnd;
-         ++quadPoint) {
+    for (auto quadPoint : volumeQuadrature) {
       // local coordinates
-      const DomainType x = quadPoint->position();
+      const DomainType x = quadPoint.position();
 
       // integration factors
       const double integrationFactor = entity.geometry().integrationElement(x);
-      const double quadratureWeight  = quadPoint->weight();
+      const double quadratureWeight  = quadPoint.weight();
 
       // evaluate the local evaluation
       inducingOperator_.localEvaluation().evaluateLocal(
