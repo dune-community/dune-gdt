@@ -77,12 +77,10 @@ public:
     **/
   std::vector<unsigned int> numTmpObjectsRequired() const
   {
-    std::vector<unsigned int> ret(2, 0);
-    std::vector<unsigned int> numTmpObjectsRequiredFirst  = first_.numTmpObjectsRequired();
-    std::vector<unsigned int> numTmpObjectsRequiredSecond = second_.numTmpObjectsRequired();
-    ret[0]                                                = std::max(numTmpObjectsRequiredFirst[0], numTmpObjectsRequiredSecond[0]);
-    ret[1]                                                = std::max(numTmpObjectsRequiredFirst[1], numTmpObjectsRequiredSecond[1]);
-    return ret;
+    const auto& numTmpObjectsRequiredFirst  = first_.numTmpObjectsRequired();
+    const auto& numTmpObjectsRequiredSecond = second_.numTmpObjectsRequired();
+    return {std::max(numTmpObjectsRequiredFirst[0], numTmpObjectsRequiredSecond[0]),
+            std::max(numTmpObjectsRequiredFirst[1], numTmpObjectsRequiredSecond[1])};
   }
 
   /**
