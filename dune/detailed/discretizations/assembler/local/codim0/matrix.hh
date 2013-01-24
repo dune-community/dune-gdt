@@ -76,12 +76,7 @@ public:
 
   std::vector< unsigned int > numTmpObjectsRequired() const
   {
-    std::vector< unsigned int > ret( 2, 0 );
-    // we require 1 tmp matrix in this local assembler
-    ret[0] = 1;
-    // the operator itself requires that much local matrices
-    ret[1] = localOperator_.numTmpObjectsRequired();
-    return ret;
+    return { 1, localOperator_.numTmpObjectsRequired() };
   }
 
   template< class AnsatzSpaceType,

@@ -71,6 +71,7 @@ public:
                      MatrixBackendType& outerInnerMatrix,
                      std::vector< std::vector< LocalMatrixType > >& tmpLocalMatricesContainer) const
   {
+    //!TODO tmp memory from OUTSIDE the class????
     // preparations
     assert(intersection.neighbor() && !intersection.boundary());
     typedef typename IntersectionType::EntityPointer EntityPointerType;
@@ -179,10 +180,7 @@ private:
 public:
   std::vector< unsigned int > numTmpObjectsRequired() const
   {
-    std::vector< unsigned int > ret(2, 0);
-    ret[0] = numTmpObjectsRequired_;
-    ret[1] = localOperator_.numTmpObjectsRequired();
-    return ret;
+    return { numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired() };
   } // std::vector< unsigned int > numTmpObjectsRequired() const
 
   template< class IntersectionType,
