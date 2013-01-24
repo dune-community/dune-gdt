@@ -49,6 +49,7 @@ public:
                   LocalVectorType& localVector,
                   std::vector< LocalVectorType >& tmpLocalVectors) const
   {
+    //!TODO tmp memory from OUTSIDE the class????
     // sanity checks
     const unsigned int size = localTestBaseFunctionSet.size();
     assert(localVector.size() >= size);

@@ -253,8 +253,8 @@ private:
 
   const TestFunctionSpaceType& testSpace_;
   const AnsatzFunctionSpaceType& ansatzSpace_;
-  std::vector< LocalMatrixAssemblerApplication* > localMatrixAssemblers_;
-  std::vector< LocalVectorAssemblerApplication* > localVectorAssemblers_;
+  std::vector< LocalMatrixAssemblerApplication* > localMatrixAssemblers_;//!TODO leaks
+  std::vector< LocalVectorAssemblerApplication* > localVectorAssemblers_;//!TODO leaks
 }; // class System
 
 } // namespace Assembler
