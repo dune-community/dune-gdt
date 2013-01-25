@@ -24,8 +24,7 @@ public:
 
   typedef typename BaseSpaceType::SuperSpaceType SuperSpaceType;
 
-  typedef typename Dune::Detailed::Discretizations::DiscreteFunction::Default<  SuperSpaceType,
-                                                                                VectorType >
+  typedef typename Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst< SuperSpaceType, VectorType >
       AffineShiftType;
 
   typedef typename BaseSpaceType::FunctionSpaceType FunctionSpaceType;
