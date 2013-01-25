@@ -28,7 +28,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/function/expression.hh>
 #include <dune/stuff/discretefunction/projection/dirichlet.hh>
-#include <dune/stuff/la/solver/eigen.hh>
+#include <dune/stuff/la/solver.hh>
 
 #include <dune/detailed/discretizations/discretefunctionspace/continuous/lagrange.hh>
 #include <dune/detailed/discretizations/discretefunctionspace/sub/linear.hh>
@@ -97,7 +97,7 @@ void ensureParamFile(const std::string& filename)
     file << "variable = x" << std::endl;
     file << "expression = [1.0; 0.0; 0.0]" << std::endl;
     file << "[solver]" << std::endl;
-    file << "type = eigen.iterative.bicgstab.diagonal"  << std::endl;
+    file << "type = bicgstab"  << std::endl;
     file << "maxIter = 5000"  << std::endl;
     file << "precision = 1e-12"  << std::endl;
     file.close();
@@ -297,15 +297,15 @@ int main(int argc, char** argv)
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")" << std::endl;
-    const std::string solverType = paramTree.get("solver.type", "eigen.iterative.bicgstab.diagonal");
+    const std::string solverType = paramTree.get("solver.type", "bicgstab");
     const unsigned int solverMaxIter = paramTree.get("solver.maxIter", 5000);
     const double solverPrecision = paramTree.get("solver.precision", 1e-12);
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
     typedef typename Dune::Stuff::LA::Solver::Interface< MatrixType, VectorType > SolverType;
-    SolverType* solver = Dune::Stuff::LA::Solver::Eigen::create< MatrixType, VectorType >(solverType);
-    solver->init(*systemMatrix);
-    const bool success = solver->apply(*rhsVector,
+    Dune::shared_ptr< SolverType > solver = Dune::Stuff::LA::Solver::create< MatrixType, VectorType >(solverType);
+    const bool success = solver->apply(*systemMatrix,
+                                       *rhsVector,
                                        *solutionVector,
                                        solverMaxIter,
                                        solverPrecision);
