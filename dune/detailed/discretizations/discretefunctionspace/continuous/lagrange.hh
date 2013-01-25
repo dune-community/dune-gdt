@@ -104,8 +104,8 @@ public:
          ++entityIt) {
       const typename LocalGridPartType::template Codim<0>::EntityType& entity = *entityIt;
       for (unsigned int i = 0; i < baseFunctionSet().local(entity).size(); ++i) {
-        const size_type globalI                    = map().toGlobal(entity, i);
-        typename PatternType::ColumnsType& columns = pattern.columns(globalI);
+        const size_type globalI                = map().toGlobal(entity, i);
+        typename PatternType::SetType& columns = pattern.set(globalI);
         for (unsigned int j = 0; j < other.baseFunctionSet().local(entity).size(); ++j) {
           const size_type globalJ = other.map().toGlobal(entity, j);
           columns.insert(globalJ);
@@ -151,8 +151,8 @@ public:
             outerSpace.baseFunctionSet().local(outsideNeighbor);
         // compute pattern
         for (unsigned int i = 0; i < ansatzBaseFunctionSet.size(); ++i) {
-          const size_type globalI                    = map().toGlobal(insideEntity, i);
-          typename PatternType::ColumnsType& columns = pattern.columns(globalI);
+          const size_type globalI                = map().toGlobal(insideEntity, i);
+          typename PatternType::SetType& columns = pattern.set(globalI);
           for (unsigned int j = 0; j < testBaseFunctionSet.size(); ++j) {
             const size_type globalJ = outerSpace.map().toGlobal(outsideNeighbor, j);
             columns.insert(globalJ);

@@ -19,11 +19,11 @@ template <class ElementType>
 class Eigen
 {
 public:
-  typedef Dune::Stuff::LA::Container::Eigen::RowMajorSparseMatrix<ElementType> RowMajorSparseMatrixType;
+  typedef Dune::Stuff::LA::Container::EigenRowMajorSparseMatrix<ElementType> RowMajorSparseMatrixType;
 
-  typedef Dune::Stuff::LA::Container::Eigen::DenseMatrix<ElementType> DenseMatrixType;
+  typedef Dune::Stuff::LA::Container::EigenDenseMatrix<ElementType> DenseMatrixType;
 
-  typedef Dune::Stuff::LA::Container::Eigen::DenseVector<ElementType> DenseVectorType;
+  typedef Dune::Stuff::LA::Container::EigenDenseVector<ElementType> DenseVectorType;
 
   template <class TestSpaceType, class AnsatzSpaceType>
   static Dune::shared_ptr<RowMajorSparseMatrixType> createRowMajorSparseMatrix(const TestSpaceType& testSpace,

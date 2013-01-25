@@ -91,7 +91,7 @@ private:
   {
     for (unsigned int j = 0; j < testSpace.baseFunctionSet().local(entity).size(); ++j) {
       const unsigned int globalJ = testSpace.map().toGlobal(entity, j);
-      systemVector[globalJ] += localVector[j];
+      systemVector.add(globalJ, localVector[j]);
     }
   } // vodi addToVector(...)
 
