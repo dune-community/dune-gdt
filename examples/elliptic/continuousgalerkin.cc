@@ -179,10 +179,14 @@ int main(int argc, char** argv)
         DiscreteFunctionType;
     Dune::shared_ptr<DiscreteFunctionType> discreteDirichlet(new DiscreteFunctionType(lagrangeSpace, "dirichlet"));
     Dune::Stuff::DiscreteFunction::Projection::Dirichlet::project(*boundaryInfo, *dirichlet, *discreteDirichlet);
+    typedef Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst<LagrangeSpaceType, VectorType>
+        ConstDiscreteFunctionType;
+    const Dune::shared_ptr<const ConstDiscreteFunctionType> constDiscreteDirichlet(
+        new ConstDiscreteFunctionType(*discreteDirichlet));
     typedef typename Dune::Detailed::Discretizations::DiscreteFunctionSpace::Sub::Affine::Dirichlet<TestSpaceType,
                                                                                                     VectorType>
         AnsatzSpaceType;
-    const AnsatzSpaceType ansatzSpace(testSpace, discreteDirichlet);
+    const AnsatzSpaceType ansatzSpace(testSpace, constDiscreteDirichlet);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing operator and functionals... " << std::flush;
@@ -253,7 +257,7 @@ int main(int argc, char** argv)
     info << "applying constraints... " << std::flush;
     timer.reset();
     rhsVector->base() =
-        forceVector->base() + neumannVector->base() - systemMatrix->base() * discreteDirichlet->vector()->base();
+        forceVector->base() + neumannVector->base() - systemMatrix->base() * constDiscreteDirichlet->vector()->base();
     systemAssembler.applyConstraints(*systemMatrix, *rhsVector);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -277,7 +281,7 @@ int main(int argc, char** argv)
                                             << ", should be "
                                             << ansatzSpace.map().size()
                                             << ")!");
-    solutionVector->base() += discreteDirichlet->vector()->base();
+    solutionVector->base() += constDiscreteDirichlet->vector()->base();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";
@@ -289,8 +293,8 @@ int main(int argc, char** argv)
       info << ".vtu";
     info << "'... " << std::flush;
     timer.reset();
-    const Dune::shared_ptr<const DiscreteFunctionType> solution(
-        new DiscreteFunctionType(lagrangeSpace, solutionVector, solutionName));
+    const Dune::shared_ptr<const ConstDiscreteFunctionType> solution(
+        new ConstDiscreteFunctionType(lagrangeSpace, solutionVector, solutionName));
     typedef Dune::VTKWriter<LagrangeSpaceType::GridViewType> VTKWriterType;
     VTKWriterType vtkWriter(lagrangeSpace.gridView());
     vtkWriter.addVertexData(solution);
