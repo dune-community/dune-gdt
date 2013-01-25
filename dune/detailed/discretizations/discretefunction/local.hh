@@ -63,11 +63,12 @@ public:
     return entity_;
   }
 
-  const RangeFieldType& operator[](const size_type localDofNumber) const
+  const RangeFieldType get(const size_type localDofNumber) const
   {
+    assert(localDofNumber < size());
     const size_type globalDofNumber = discreteFunction_.space().map().toGlobal(entity_, localDofNumber);
-    assert(discreteFunction_.vector()->size() == discreteFunction_.space().map().size());
-    return discreteFunction_.vector()->operator[](globalDofNumber);
+    assert(globalDofNumber < discreteFunction_.vector()->size());
+    return discreteFunction_.vector()->get(globalDofNumber);
   }
 
   int order() const
@@ -87,7 +88,7 @@ public:
     ret = 0.0;
     for( size_type i = 0; i < size(); ++i )
     {
-      baseFunctionValues[i] *= operator[](i);
+      baseFunctionValues[i] *= get(i);
       ret += baseFunctionValues[i];
     }
   }
@@ -99,7 +100,7 @@ public:
     ret = 0.0;
     for( size_type i = 0; i < size(); ++i )
     {
-      baseFunctionJacobianValues[i] *= operator[](i);
+      baseFunctionJacobianValues[i] *= get(i);
       ret += baseFunctionJacobianValues[i];
     }
   }
@@ -138,20 +139,21 @@ public:
 
   using BaseType::entity;
 
-  using BaseType::operator[];
-
-  RangeFieldType& operator[]( const size_type localDofNumber )
-  {
-    const size_type globalDofNumber = discreteFunction_.space().map().toGlobal(BaseType::entity(), localDofNumber);
-    assert(discreteFunction_.vector()->size() == discreteFunction_.space().map().size());
-    return discreteFunction_.vector()->operator[](globalDofNumber);
-  }
+  using BaseType::get;
 
   using BaseType::size;
 
   using BaseType::evaluate;
 
   using BaseType::jacobian;
+
+  void set(const size_type _localDofNumber, const RangeFieldType& _val)
+  {
+    assert(_localDofNumber < size());
+    const size_type globalDofNumber = discreteFunction_.space().map().toGlobal(BaseType::entity(), _localDofNumber);
+    assert(globalDofNumber < discreteFunction_.vector()->size());
+    discreteFunction_.vector()->set(globalDofNumber, _val);
+  }
 
 private:
   DiscreteFunctionType& discreteFunction_;
