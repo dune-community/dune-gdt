@@ -225,7 +225,45 @@ public:
       applyLocalMatrixConstraints(localConstraints, matrix);
       applyLocalVectorConstraints(localConstraints, vector);
     } // walk the grid to apply constraints
-  } // void applyConstraints()
+  } // void applyConstraints(MatrixType& matrix, VectorType& vector) const
+
+  template< class MatrixType >
+  void applyMatrixConstraints(MatrixType& matrix) const
+  {
+    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
+    typedef typename GridPartType::template Codim< 0 >::IteratorType EntityIteratorType;
+    typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
+    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
+    // walk the grid to apply constraints
+    const ConstraintsType& constraints = testSpace_.constraints();
+    for(EntityIteratorType entityIterator = testSpace_.gridPart().template begin< 0 >();
+        entityIterator != testSpace_.gridPart().template end< 0 >();
+        ++entityIterator ) {
+      const EntityType& entity = *entityIterator;
+      const LocalConstraintsType& localConstraints = constraints.local(entity);
+      applyLocalMatrixConstraints(localConstraints, matrix);
+    } // walk the grid to apply constraints
+  } // void applyMatrixConstraints(MatrixType& matrix) const
+
+  template< class VectorType >
+  void applyVectorConstraints(VectorType& vector) const
+  {
+    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
+    typedef typename GridPartType::template Codim< 0 >::IteratorType EntityIteratorType;
+    typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
+    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
+    // walk the grid to apply constraints
+    const ConstraintsType& constraints = testSpace_.constraints();
+    for(EntityIteratorType entityIterator = testSpace_.gridPart().template begin< 0 >();
+        entityIterator != testSpace_.gridPart().template end< 0 >();
+        ++entityIterator ) {
+      const EntityType& entity = *entityIterator;
+      const LocalConstraintsType& localConstraints = constraints.local(entity);
+      applyLocalVectorConstraints(localConstraints, vector);
+    } // walk the grid to apply constraints
+  } // void applyVectorConstraints(VectorType& vector) const
 
 private:
   System(const ThisType&);
