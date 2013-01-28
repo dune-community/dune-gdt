@@ -189,18 +189,13 @@ int main(int argc, char** argv)
       DiscreteFunctionType;
     Dune::shared_ptr< DiscreteFunctionType > discreteDirichlet(new DiscreteFunctionType(lagrangeSpace, "dirichlet"));
     Dune::Stuff::DiscreteFunction::Projection::Dirichlet::project(*boundaryInfo, *dirichlet, *discreteDirichlet);
-    typedef Dune::Detailed::Discretizations
-        ::DiscreteFunction
-        ::DefaultConst< LagrangeSpaceType, VectorType >
-      ConstDiscreteFunctionType;
-    const Dune::shared_ptr< const ConstDiscreteFunctionType > constDiscreteDirichlet(new ConstDiscreteFunctionType(*discreteDirichlet));
     typedef typename Dune::Detailed::Discretizations
         ::DiscreteFunctionSpace
         ::Sub
         ::Affine
         ::Dirichlet< TestSpaceType, VectorType >
       AnsatzSpaceType;
-    const AnsatzSpaceType ansatzSpace(testSpace, constDiscreteDirichlet);
+    const AnsatzSpaceType ansatzSpace(testSpace, discreteDirichlet->createConst());
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing operator and functionals... " << std::flush;
@@ -292,7 +287,7 @@ int main(int argc, char** argv)
     timer.reset();
     rhsVector->backend() = forceVector->backend()
         + neumannVector->backend()
-        - systemMatrix->backend() * constDiscreteDirichlet->vector()->backend();
+        - systemMatrix->backend() * ansatzSpace.affineShift()->vector()->backend();
     systemAssembler.applyConstraints(*systemMatrix, *rhsVector);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -316,7 +311,7 @@ int main(int argc, char** argv)
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver '" << solverType << "' produced a solution of wrong size (is "
                  << solutionVector->size() << ", should be " << ansatzSpace.map().size() << ")!");
-    solutionVector->backend() += constDiscreteDirichlet->vector()->backend();
+    solutionVector->backend() += ansatzSpace.affineShift()->vector()->backend();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";
@@ -328,6 +323,10 @@ int main(int argc, char** argv)
       info << ".vtu";
     info << "'... " << std::flush;
     timer.reset();
+    typedef Dune::Detailed::Discretizations
+        ::DiscreteFunction
+        ::DefaultConst< LagrangeSpaceType, VectorType >
+      ConstDiscreteFunctionType;
     const Dune::shared_ptr< const ConstDiscreteFunctionType > solution(new ConstDiscreteFunctionType(lagrangeSpace,
                                                                                                      solutionVector,
                                                                                                      solutionName));
