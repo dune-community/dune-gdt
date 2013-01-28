@@ -256,8 +256,8 @@ int main(int argc, char** argv)
 
     info << "applying constraints... " << std::flush;
     timer.reset();
-    rhsVector->base() =
-        forceVector->base() + neumannVector->base() - systemMatrix->base() * constDiscreteDirichlet->vector()->base();
+    rhsVector->backend() = forceVector->backend() + neumannVector->backend()
+                           - systemMatrix->backend() * constDiscreteDirichlet->vector()->backend();
     systemAssembler.applyConstraints(*systemMatrix, *rhsVector);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
                                             << ", should be "
                                             << ansatzSpace.map().size()
                                             << ")!");
-    solutionVector->base() += constDiscreteDirichlet->vector()->base();
+    solutionVector->backend() += constDiscreteDirichlet->vector()->backend();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";

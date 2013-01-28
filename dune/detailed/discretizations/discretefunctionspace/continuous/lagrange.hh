@@ -56,7 +56,7 @@ public:
 
   static const unsigned int dimRange = FunctionSpaceType::dimRange;
 
-  typedef Dune::Stuff::LA::Container::Pattern::Default PatternType;
+  typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
 
   Lagrange(const GridPartType& gridPart)
     : gridPart_(gridPart)
