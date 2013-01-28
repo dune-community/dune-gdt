@@ -73,9 +73,10 @@ public:
     assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
   }
 
-  operator ConstType() const
+  Dune::shared_ptr<const ConstType> createConst() const
   {
-    return ConstType(space_, vector_, name_);
+    Dune::shared_ptr<const ConstType> ret(new ConstType(*this));
+    return ret;
   }
 
 private:
