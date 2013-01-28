@@ -29,7 +29,7 @@ public:
   static Dune::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
                                                                                  const AnsatzSpaceType& ansatzSpace)
   {
-    typedef Dune::Stuff::LA::Container::Pattern::Default PatternType;
+    typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
 
     const Dune::shared_ptr< const PatternType > pattern = testSpace.computePattern(ansatzSpace);
     return Dune::shared_ptr< RowMajorSparseMatrixType >(new RowMajorSparseMatrixType(testSpace.map().size(),
