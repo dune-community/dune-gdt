@@ -87,11 +87,8 @@ public:
     BlockMapperProviderType::removeObject(*blockMapper_);
     typedef typename LagrangePointSetContainerType::const_iterator IteratorType;
     const IteratorType end = lagrangePointSetContainer_.end();
-    for (IteratorType it = lagrangePointSetContainer_.begin(); it != end; ++it) {
-      const LagrangePointSetType* lagrangePointSet = *it;
-      if (lagrangePointSet)
-        delete lagrangePointSet;
-    }
+    for (IteratorType it = lagrangePointSetContainer_.begin(); it != end; ++it)
+      delete *it;
   } // ~Lagrange()
 
   const GridPartType& gridPart() const
