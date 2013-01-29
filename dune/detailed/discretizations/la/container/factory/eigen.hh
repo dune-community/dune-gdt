@@ -30,8 +30,8 @@ public:
                                                                                const AnsatzSpaceType& ansatzSpace)
   {
     typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
-
     const Dune::shared_ptr<const PatternType> pattern = testSpace.computePattern(ansatzSpace);
+    //! TODO uses naked deref'ed pointer
     return Dune::shared_ptr<RowMajorSparseMatrixType>(
         new RowMajorSparseMatrixType(testSpace.map().size(), ansatzSpace.map().size(), *pattern));
   } // static ... createRowMajorSparseMatrix(...)
@@ -40,18 +40,13 @@ public:
   static Dune::shared_ptr<DenseMatrixType> createDenseMatrix(const TestSpaceType& testSpace,
                                                              const AnsatzSpaceType& ansatzSpace)
   {
-    //! TODO make_shared
-    Dune::shared_ptr<DenseMatrixType> denseMatrix(
-        new DenseMatrixType(testSpace.map().size(), ansatzSpace.map().size()));
-    return denseMatrix;
+    return Dune::make_shared<DenseMatrixType>(testSpace.map().size(), ansatzSpace.map().size());
   } // static ... createDenseMatrix(...)
 
   template <class SpaceType>
   static Dune::shared_ptr<DenseVectorType> createDenseVector(const SpaceType& space)
   {
-    //! TODO make_shared
-    Dune::shared_ptr<DenseVectorType> denseVector(new DenseVectorType(space.map().size()));
-    return denseVector;
+    return Dune::make_shared<DenseVectorType>(space.map().size());
   } // static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
 }; // class Eigen
 
