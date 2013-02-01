@@ -3,7 +3,7 @@
 
 #include <dune/common/shared_ptr.hh>
 
-#include <dune/stuff/function/expression.hh>
+//#include <dune/stuff/function/expression.hh>
 
 #include <dune/detailed/discretizations/discretefunction/default.hh>
 
