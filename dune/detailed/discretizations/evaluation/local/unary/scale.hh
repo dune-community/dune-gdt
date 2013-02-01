@@ -5,9 +5,6 @@
 #include <dune/common/parametertree.hh>
 #include <dune/common/shared_ptr.hh>
 
-// dune-stuff
-#include <dune/stuff/function/expression.hh>
-
 namespace Dune
 {
 
@@ -33,7 +30,7 @@ namespace Unary
   \tparam FunctionSpaceImp
           Type of the function space, where \f$f\f$ and \f$v\f$ live in.
   **/
-template< class FunctionSpaceImp, class InducingFunctionImp = Dune::Stuff::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
+template< class FunctionSpaceImp, class InducingFunctionImp /*= Dune::Stuff::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange >*/ >
 class Scale
 {
 public:
@@ -41,7 +38,7 @@ public:
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef Scale< FunctionSpaceType >
+  typedef Scale< FunctionSpaceType, InducingFunctionImp >
     ThisType;
 
   typedef typename FunctionSpaceType::DomainType

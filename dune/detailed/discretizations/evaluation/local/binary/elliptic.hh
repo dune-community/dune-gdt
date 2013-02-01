@@ -5,9 +5,6 @@
 #include <dune/common/parametertree.hh>
 #include <dune/common/shared_ptr.hh>
 
-// dune-stuff includes
-#include <dune/stuff/function/expression.hh>
-
 namespace Dune
 {
 
@@ -33,14 +30,14 @@ namespace Binary
   \tparam FunctionSpaceImp
           Type of the function space, where \f$f\f$, \f$u\f$ and \f$v\f$ live in.
   **/
-template< class FunctionSpaceImp, class InducingFunctionImp = Dune::Stuff::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
+template< class FunctionSpaceImp, class InducingFunctionImp /*= Dune::Stuff::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange >*/ >
 class Elliptic
 {
 public:
   typedef FunctionSpaceImp
     FunctionSpaceType;
 
-  typedef Elliptic< FunctionSpaceType >
+  typedef Elliptic< FunctionSpaceType, InducingFunctionImp >
     ThisType;
 
   typedef typename FunctionSpaceType::DomainType
