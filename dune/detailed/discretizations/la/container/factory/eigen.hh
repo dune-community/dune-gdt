@@ -19,11 +19,10 @@ template< class ElementType >
 class Eigen
 {
 public:
-  typedef Dune::Stuff::LA::Container::EigenRowMajorSparseMatrix< ElementType > RowMajorSparseMatrixType;
-
-  typedef Dune::Stuff::LA::Container::EigenDenseMatrix< ElementType > DenseMatrixType;
-
-  typedef Dune::Stuff::LA::Container::EigenDenseVector< ElementType > DenseVectorType;
+  typedef Dune::Stuff::LA::Container::EigenRowMajorSparseMatrix< ElementType >  RowMajorSparseMatrixType;
+  typedef Dune::Stuff::LA::Container::EigenDenseMatrix< ElementType >           DenseMatrixType;
+  typedef Dune::Stuff::LA::Container::EigenDenseVector< ElementType >           DenseVectorType;
+  typedef Dune::Stuff::LA::Container::SparsityPatternDefault                    PatternType;
 
   template< class TestSpaceType, class AnsatzSpaceType >
   static Dune::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
@@ -31,24 +30,31 @@ public:
   {
     typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
     const Dune::shared_ptr< const PatternType > pattern = testSpace.computePattern(ansatzSpace);
-    //!TODO uses naked deref'ed pointer
-    return Dune::shared_ptr< RowMajorSparseMatrixType >(new RowMajorSparseMatrixType(testSpace.map().size(),
-                                                                                     ansatzSpace.map().size(),
-                                                                                     *pattern));
+    return createRowMajorSparseMatrix(testSpace, ansatzSpace, *pattern);
+  } // static ... createRowMajorSparseMatrix(...)
+
+  template< class TestSpaceType, class AnsatzSpaceType >
+  static Dune::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
+                                                                                 const AnsatzSpaceType& ansatzSpace,
+                                                                                 const PatternType& pattern)
+  {
+    return Dune::make_shared< RowMajorSparseMatrixType >(testSpace.map().size(),
+                                                         ansatzSpace.map().size(),
+                                                         pattern);
   } // static ... createRowMajorSparseMatrix(...)
 
   template< class TestSpaceType, class AnsatzSpaceType >
   static Dune::shared_ptr< DenseMatrixType > createDenseMatrix(const TestSpaceType& testSpace,
                                                                const AnsatzSpaceType& ansatzSpace)
   {
-    return Dune::make_shared<DenseMatrixType>(testSpace.map().size(),
+    return Dune::make_shared< DenseMatrixType >(testSpace.map().size(),
                                                 ansatzSpace.map().size());
   } // static ... createDenseMatrix(...)
 
   template< class SpaceType >
   static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
   {
-    return Dune::make_shared<DenseVectorType>(space.map().size());
+    return Dune::make_shared< DenseVectorType >(space.map().size());
   } // static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
 }; // class Eigen
 
