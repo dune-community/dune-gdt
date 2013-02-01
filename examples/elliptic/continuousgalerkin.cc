@@ -26,7 +26,7 @@
 #include <dune/stuff/common/logging.hh>
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/function/expression.hh>
+#include <dune/stuff/function/nonparametric/expression.hh>
 #include <dune/stuff/discretefunction/projection/dirichlet.hh>
 #include <dune/stuff/la/solver.hh>
 
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace<DomainFieldType, RangeFieldType, dimDomain, dimRange> FunctionSpaceType;
     timer.reset();
-    typedef Dune::Stuff::Function::Expression<DomainFieldType, dimDomain, RangeFieldType, dimRange>
+    typedef Dune::Stuff::Function::NonparametricExpression<DomainFieldType, dimDomain, RangeFieldType, dimRange>
         ExpressionFunctionType;
     const Dune::shared_ptr<const ExpressionFunctionType> diffusion(
         new ExpressionFunctionType(ExpressionFunctionType::createFromParamTree(paramTree.sub("diffusion"))));
@@ -173,16 +173,14 @@ int main(int argc, char** argv)
     typedef Dune::Detailed::Discretizations::DiscreteFunctionSpace::Sub::Linear::Dirichlet<LagrangeSpaceType>
         TestSpaceType;
     const TestSpaceType testSpace(lagrangeSpace, boundaryInfo);
+    typedef TestSpaceType AnsatzSpaceType;
+    const AnsatzSpaceType ansatzSpace(lagrangeSpace, boundaryInfo);
     typedef typename Dune::Detailed::Discretizations::LA::Container::Factory::Eigen<RangeFieldType> ContainerFactory;
     typedef typename ContainerFactory::DenseVectorType VectorType;
     typedef Dune::Detailed::Discretizations::DiscreteFunction::Default<LagrangeSpaceType, VectorType>
         DiscreteFunctionType;
-    Dune::shared_ptr<DiscreteFunctionType> discreteDirichlet(new DiscreteFunctionType(lagrangeSpace, "dirichlet"));
-    Dune::Stuff::DiscreteFunction::Projection::Dirichlet::project(*boundaryInfo, *dirichlet, *discreteDirichlet);
-    typedef typename Dune::Detailed::Discretizations::DiscreteFunctionSpace::Sub::Affine::Dirichlet<TestSpaceType,
-                                                                                                    VectorType>
-        AnsatzSpaceType;
-    const AnsatzSpaceType ansatzSpace(testSpace, discreteDirichlet->createConst());
+    DiscreteFunctionType discreteDirichlet(lagrangeSpace, "dirichlet");
+    Dune::Stuff::DiscreteFunction::Projection::Dirichlet::project(*boundaryInfo, *dirichlet, discreteDirichlet);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing operator and functionals... " << std::flush;
@@ -253,7 +251,7 @@ int main(int argc, char** argv)
     info << "applying constraints... " << std::flush;
     timer.reset();
     rhsVector->backend() = forceVector->backend() + neumannVector->backend()
-                           - systemMatrix->backend() * ansatzSpace.affineShift()->vector()->backend();
+                           - systemMatrix->backend() * discreteDirichlet.vector()->backend();
     systemAssembler.applyConstraints(*systemMatrix, *rhsVector);
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
@@ -276,7 +274,7 @@ int main(int argc, char** argv)
                                             << ", should be "
                                             << ansatzSpace.map().size()
                                             << ")!");
-    solutionVector->backend() += ansatzSpace.affineShift()->vector()->backend();
+    solutionVector->backend() += discreteDirichlet.vector()->backend();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";
