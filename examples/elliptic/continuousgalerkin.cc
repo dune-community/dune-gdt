@@ -26,7 +26,7 @@
 #include <dune/stuff/common/logging.hh>
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/function/nonparametric/expression.hh>
+#include <dune/stuff/function/expression.hh>
 #include <dune/stuff/discretefunction/projection/dirichlet.hh>
 #include <dune/stuff/la/solver.hh>
 
@@ -97,7 +97,7 @@ void ensureParamFile(const std::string& filename)
     file << "variable = x" << std::endl;
     file << "expression = [1.0; 0.0; 0.0]" << std::endl;
     file << "[solver]" << std::endl;
-    file << "type = bicgstab"  << std::endl;
+    file << "type = bicgstab.diagonal"  << std::endl;
     file << "maxIter = 5000"  << std::endl;
     file << "precision = 1e-12"  << std::endl;
     file.close();
@@ -112,10 +112,10 @@ int main(int argc, char** argv)
     Dune::MPIManager::initialize(argc, argv);
 
     // parameter
-    const std::string paramFilename = id + ".param";
+    const std::string paramFilename = id + ".description";
     ensureParamFile(paramFilename);
-    Dune::Stuff::Common::ExtendedParameterTree paramTree(argc, argv, paramFilename);
-    paramTree.assertSub(id);
+    Dune::Stuff::Common::ExtendedParameterTree description(argc, argv, paramFilename);
+    description.assertSub(id);
 
     // logger
     Dune::Stuff::Common::Logger().create(Dune::Stuff::Common::LOG_INFO |
@@ -128,8 +128,8 @@ int main(int argc, char** argv)
     info << "setting up grid:" << std::endl;
     typedef Dune::Stuff::Grid::Provider::Interface<> GridProviderType;
     const GridProviderType* gridProvider
-        = Dune::Stuff::Grid::Provider::create(paramTree.get(id + ".grid", "stuff.grid.provider.cube"),
-                                              paramTree);
+        = Dune::Stuff::Grid::Provider::create(description.get(id + ".grid", "stuff.grid.provider.cube"),
+                                              description);
     typedef GridProviderType::GridType GridType;
     const Dune::shared_ptr< const GridType > grid = gridProvider->grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
@@ -137,13 +137,13 @@ int main(int argc, char** argv)
     typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< typename GridPartType::GridViewType > BoundaryInfoType;
     const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo(
           Dune::Stuff::Grid::BoundaryInfo::create< typename GridPartType::GridViewType >(
-              paramTree.get(id + ".boundaryinfo", "stuff.grid.boundaryinfo.alldirichlet"),
-                            paramTree));
+              description.get(id + ".boundaryinfo", "stuff.grid.boundaryinfo.alldirichlet"),
+                            description));
 
     info << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
     info << "visualizing grid... " << std::flush;
     timer.reset();
-    gridProvider->visualize(paramTree.get(id + ".filename", id) + ".grid");
+    gridProvider->visualize(description.get(id + ".filename", id) + ".grid");
     info << " done (took " << timer.elapsed() << " sek)" << std::endl;
 
     info << "initializing function space and data functions... " << std::flush;
@@ -154,17 +154,16 @@ int main(int argc, char** argv)
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
     timer.reset();
-    typedef Dune::Stuff::Function::NonparametricExpression< DomainFieldType, dimDomain,
-                                                            RangeFieldType, dimRange >
+    typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
         ExpressionFunctionType;
     const Dune::shared_ptr< const ExpressionFunctionType > diffusion(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromParamTree(paramTree.sub("diffusion"))));
+        ExpressionFunctionType::createFromDescription(description.sub("diffusion"))));
     const Dune::shared_ptr< const ExpressionFunctionType > force(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromParamTree(paramTree.sub("force"))));
+        ExpressionFunctionType::createFromDescription(description.sub("force"))));
     const Dune::shared_ptr< const ExpressionFunctionType > dirichlet(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromParamTree(paramTree.sub("dirichlet"))));
+        ExpressionFunctionType::createFromDescription(description.sub("dirichlet"))));
     const Dune::shared_ptr< const ExpressionFunctionType > neumann(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromParamTree(paramTree.sub("neumann"))));
+        ExpressionFunctionType::createFromDescription(description.sub("neumann"))));
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing discrete function spaces... " << std::flush;
@@ -203,7 +202,7 @@ int main(int argc, char** argv)
         ::Binary
         ::Elliptic< FunctionSpaceType, ExpressionFunctionType >
       EllipticEvaluationType;
-    const EllipticEvaluationType ellipticEvaluation(diffusion, paramTree.sub("diffusion").get("order", 0));
+    const EllipticEvaluationType ellipticEvaluation(diffusion, description.sub("diffusion").get("order", 0));
     typedef Dune::Detailed::Discretizations
         ::DiscreteOperator
         ::Local
@@ -219,7 +218,7 @@ int main(int argc, char** argv)
         ::Unary
         ::Scale< FunctionSpaceType, ExpressionFunctionType >
       ProductEvaluationType;
-    const ProductEvaluationType forceEvaluation(force, paramTree.sub("force").get("order", 0));
+    const ProductEvaluationType forceEvaluation(force, description.sub("force").get("order", 0));
     typedef Dune::Detailed::Discretizations
         ::DiscreteFunctional
         ::Local
@@ -228,7 +227,7 @@ int main(int argc, char** argv)
       L2VolumeFunctionalType;
     const L2VolumeFunctionalType forceFunctional(forceEvaluation);
     //   * L2 neumann functional
-    const ProductEvaluationType neumannEvaluation(neumann, paramTree.sub("neumann").get("order", 0));
+    const ProductEvaluationType neumannEvaluation(neumann, description.sub("neumann").get("order", 0));
     typedef typename Dune::Detailed::Discretizations
         ::DiscreteFunctional
         ::Local
@@ -287,19 +286,19 @@ int main(int argc, char** argv)
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")" << std::endl;
-    const std::string solverType = paramTree.get("solver.type", "bicgstab");
-    const unsigned int solverMaxIter = paramTree.get("solver.maxIter", 5000);
-    const double solverPrecision = paramTree.get("solver.precision", 1e-12);
+    const std::string solverType = description.get("solver.type", "bicgstab");
+    const unsigned int solverMaxIter = description.get("solver.maxIter", 5000);
+    const double solverPrecision = description.get("solver.precision", 1e-12);
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
     typedef typename Dune::Stuff::LA::Solver::Interface< MatrixType, VectorType > SolverType;
     Dune::shared_ptr< SolverType > solver = Dune::Stuff::LA::Solver::create< MatrixType, VectorType >(solverType);
-    const bool success = solver->apply(*systemMatrix,
-                                       *rhsVector,
-                                       *solutionVector,
-                                       solverMaxIter,
-                                       solverPrecision);
-    if (!success)
+    const unsigned int failure = solver->apply(*systemMatrix,
+                                               *rhsVector,
+                                               *solutionVector,
+                                               solverMaxIter,
+                                               solverPrecision);
+    if (failure)
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver '" << solverType << "' reported a problem!");
     if (solutionVector->size() != ansatzSpace.map().size())
@@ -309,7 +308,7 @@ int main(int argc, char** argv)
     solutionVector->backend() += discreteDirichlet.vector()->backend();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    const std::string solutionFilename = paramTree.get(id + ".filename", id) + ".solution";
+    const std::string solutionFilename = description.get(id + ".filename", id) + ".solution";
     const std::string solutionName = id + ".solution";
     info << "writing solution to '" << solutionFilename;
     if (dimDomain == 1)
