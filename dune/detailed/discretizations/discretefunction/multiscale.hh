@@ -32,23 +32,24 @@ class Multiscale;
 
 template <class GridImp, class LocalDiscreteFunctionSpaceImp, class LocalVectorBackendImp>
 class Multiscale<Dune::grid::Multiscale::Default<GridImp>,
-                 Dune::Detailed::Discretizations::DiscreteFunction::Default<LocalDiscreteFunctionSpaceImp,
-                                                                            LocalVectorBackendImp>>
+                 Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst<LocalDiscreteFunctionSpaceImp,
+                                                                                 LocalVectorBackendImp>>
     : public Dune::VTKFunction<typename Dune::grid::Multiscale::Default<GridImp>::GlobalGridViewType>
 {
 public:
   typedef Multiscale<Dune::grid::Multiscale::Default<GridImp>,
-                     Dune::Detailed::Discretizations::DiscreteFunction::Default<LocalDiscreteFunctionSpaceImp,
-                                                                                LocalVectorBackendImp>> ThisType;
+                     Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst<LocalDiscreteFunctionSpaceImp,
+                                                                                     LocalVectorBackendImp>> ThisType;
 
   typedef Dune::grid::Multiscale::Default<GridImp> MsGridType;
 
   typedef typename MsGridType::GlobalGridViewType GlobalGridViewType;
 
-  typedef Dune::Detailed::Discretizations::DiscreteFunction::Default<LocalDiscreteFunctionSpaceImp,
-                                                                     LocalVectorBackendImp> LocalDiscreteFunctionType;
+  typedef Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst<LocalDiscreteFunctionSpaceImp,
+                                                                          LocalVectorBackendImp>
+      LocalDiscreteFunctionType;
 
-  typedef typename LocalDiscreteFunctionType::LocalFunctionType LocalFunctionType;
+  //  typedef typename LocalDiscreteFunctionType::LocalFunctionType LocalFunctionType;
 
   typedef typename LocalDiscreteFunctionType::ConstLocalFunctionType ConstLocalFunctionType;
 
@@ -111,23 +112,23 @@ public:
     return localDiscreteFunctions_[subdomain];
   }
 
-  LocalFunctionType localFunction(const EntityType& entity)
-  {
-    // get the subdomain of this entity
-    const unsigned int globalIndex                                 = msGrid_.globalGridView()->indexSet().index(entity);
-    const typename EntityToSubdomainMapType::const_iterator result = entityToSubdomainMap_->find(globalIndex);
-    if (result == entityToSubdomainMap_->end()) {
-      std::stringstream msg;
-      msg << "Error in " << id << ": Entity " << globalIndex << " not found in the multiscale grid!";
-      DUNE_THROW(Dune::InvalidStateException, msg.str());
-    }
-    const unsigned int subdomain = result->second;
-    assert(subdomain < msGrid_.size());
-    // get the corresponding local discrete function
-    const LocalDiscreteFunctionType& localDiscreteFunction = *(localDiscreteFunctions_[subdomain]);
-    // and return its local function
-    return localDiscreteFunction.localFunction(entity);
-  }
+  //  LocalFunctionType localFunction(const EntityType& entity)
+  //  {
+  //    // get the subdomain of this entity
+  //    const unsigned int globalIndex = msGrid_.globalGridView()->indexSet().index(entity);
+  //    const typename EntityToSubdomainMapType::const_iterator result = entityToSubdomainMap_->find(globalIndex);
+  //    if (result == entityToSubdomainMap_->end()) {
+  //      std::stringstream msg;
+  //      msg << "Error in " << id << ": Entity " << globalIndex << " not found in the multiscale grid!";
+  //      DUNE_THROW(Dune::InvalidStateException, msg.str());
+  //    }
+  //    const unsigned int subdomain = result->second;
+  //    assert(subdomain < msGrid_.size());
+  //    // get the corresponding local discrete function
+  //    const LocalDiscreteFunctionType& localDiscreteFunction = *(localDiscreteFunctions_[subdomain]);
+  //    // and return its local function
+  //    return localDiscreteFunction.localFunction(entity);
+  //  }
 
   ConstLocalFunctionType localFunction(const EntityType& entity) const
   {
@@ -194,10 +195,11 @@ private:
 }; // class Multiscale
 
 template <class GridType, class LocalDiscreteFunctionSpaceType, class LocalVectorBackendType>
-const std::string Multiscale<Dune::grid::Multiscale::Default<GridType>,
-                             Dune::Detailed::Discretizations::DiscreteFunction::Default<LocalDiscreteFunctionSpaceType,
-                                                                                        LocalVectorBackendType>>::id =
-    "detailed.discretizations.discretefunction.multiscale";
+const std::string
+    Multiscale<Dune::grid::Multiscale::Default<GridType>,
+               Dune::Detailed::Discretizations::DiscreteFunction::DefaultConst<LocalDiscreteFunctionSpaceType,
+                                                                               LocalVectorBackendType>>::id =
+        "detailed.discretizations.discretefunction.multiscale";
 
 } // namespace DiscreteFunction
 
