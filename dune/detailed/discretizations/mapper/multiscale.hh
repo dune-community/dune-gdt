@@ -18,7 +18,7 @@ namespace Discretizations {
 
 namespace Mapper {
 
-template< class IndexImp >
+template< class IndexImp = size_t >
 class Multiscale
 {
 public:
