@@ -7,6 +7,8 @@
 
 #include "config.h"
 
+#undef HAVE_DUNE_ISTL
+
 #if !HAVE_GRIDTYPE
   #include <dune/grid/sgrid.hh>
   namespace Dune
