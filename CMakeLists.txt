@@ -65,6 +65,7 @@ set( COMMON_LIBS
      ${CCGNU_LIBRARIES}
      "boost_system" "boost_filesystem"
      ${GRIDLIBS}
+     ${FASPLIB}
 )
 
 add_subdirectory( doc )
