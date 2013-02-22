@@ -26,10 +26,6 @@ set( ENABLE_MPI
      "0" CACHE STRING
      "set to 1 to enable mpi")
 
-set( BLAS_LIB
-     "blas" CACHE STRING
-     "BLAS_LIB" )
-
 set( CUSTOM_FLAGS
      "-Wall -Wextra -O0 -DDEBUG -g -ggdb -fdiagnostics-show-option" CACHE LIST
      "CUSTOM_FLAGS" )
