@@ -156,14 +156,14 @@ int main(int argc, char** argv)
     timer.reset();
     typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
         ExpressionFunctionType;
-    const Dune::shared_ptr< const ExpressionFunctionType > diffusion(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromDescription(description.sub("diffusion"))));
-    const Dune::shared_ptr< const ExpressionFunctionType > force(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromDescription(description.sub("force"))));
-    const Dune::shared_ptr< const ExpressionFunctionType > dirichlet(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromDescription(description.sub("dirichlet"))));
-    const Dune::shared_ptr< const ExpressionFunctionType > neumann(new ExpressionFunctionType(
-        ExpressionFunctionType::createFromDescription(description.sub("neumann"))));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        diffusion(ExpressionFunctionType::createFromDescription(description.sub("diffusion")));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        force(ExpressionFunctionType::createFromDescription(description.sub("force")));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        dirichlet(ExpressionFunctionType::createFromDescription(description.sub("dirichlet")));
+    const Dune::shared_ptr< const ExpressionFunctionType >
+        neumann(ExpressionFunctionType::createFromDescription(description.sub("neumann")));
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing discrete function spaces... " << std::flush;
@@ -292,7 +292,7 @@ int main(int argc, char** argv)
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
     typedef typename Dune::Stuff::LA::Solver::Interface< MatrixType, VectorType > SolverType;
-    Dune::shared_ptr< SolverType > solver = Dune::Stuff::LA::Solver::create< MatrixType, VectorType >(solverType);
+    Dune::shared_ptr< SolverType > solver(Dune::Stuff::LA::Solver::create< MatrixType, VectorType >(solverType));
     const unsigned int failure = solver->apply(*systemMatrix,
                                                *rhsVector,
                                                *solutionVector,
