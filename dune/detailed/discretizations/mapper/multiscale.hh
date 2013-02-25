@@ -85,7 +85,7 @@ public:
     return;
   } // void finalize()
 
-  unsigned int numSubdomains() const
+  IndexType numSubdomains() const
   {
     assert(finalized_);
     return numSubdomains_;
