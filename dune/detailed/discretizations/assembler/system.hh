@@ -123,6 +123,14 @@ public:
   {
   }
 
+  ~System()
+  {
+    for (auto& localMatrixAssembler : localMatrixAssemblers_)
+      delete localMatrixAssembler;
+    for (auto& localVectorAssembler : localVectorAssemblers_)
+      delete localVectorAssembler;
+  }
+
   const TestFunctionSpaceType& testSpace()
   {
     return testSpace_;
@@ -283,8 +291,8 @@ private:
 
   const TestFunctionSpaceType& testSpace_;
   const AnsatzFunctionSpaceType& ansatzSpace_;
-  std::vector<LocalMatrixAssemblerApplication*> localMatrixAssemblers_; //! TODO leaks
-  std::vector<LocalVectorAssemblerApplication*> localVectorAssemblers_; //! TODO leaks
+  std::vector<LocalMatrixAssemblerApplication*> localMatrixAssemblers_;
+  std::vector<LocalVectorAssemblerApplication*> localVectorAssemblers_;
 }; // class System
 
 } // namespace Assembler
