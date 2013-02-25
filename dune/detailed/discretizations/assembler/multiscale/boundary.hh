@@ -36,6 +36,54 @@ public:
 
   typedef Boundary< BoundaryGridPartType, BoundaryInfoType, AnsatzSpaceType, TestSpaceType > ThisType;
 
+private:
+  typedef typename BoundaryGridPartType::IntersectionIteratorType IntersectionIteratorType;
+  typedef typename IntersectionIteratorType::Intersection IntersectionType;
+  typedef typename AnsatzSpaceType::RangeFieldType RangeFieldType;
+  typedef Dune::DynamicMatrix< RangeFieldType > LocalMatrixType;
+  typedef std::vector< std::vector< LocalMatrixType > > LocalMatricesContainerType;
+
+  class LocalMatrixAssemblerApplication
+  {
+  public:
+    virtual void apply(const AnsatzSpaceType& /*ansatzSpace_*/,
+                       const TestSpaceType& /*testSpace_*/,
+                       const IntersectionType& /*intersection*/,
+                       LocalMatricesContainerType& /*_localMatricesContainer*/) const = 0;
+
+    virtual std::vector< unsigned int > numTmpObjectsRequired() const = 0;
+  }; // class LocalOperatorApplication
+
+  template< class LocalMatrixAssemblerType, class MatrixType >
+  class LocalMatrixAssemblerApplicationWrapper
+    : public LocalMatrixAssemblerApplication
+  {
+  public:
+    LocalMatrixAssemblerApplicationWrapper(const Dune::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
+                                           Dune::shared_ptr< MatrixType > _matrix)
+      : localMatrixAssembler_(_localMatrixAssembler)
+      , matrix_(_matrix)
+    {}
+
+    virtual void apply(const AnsatzSpaceType& _ansatzSpace,
+                       const TestSpaceType& _testSpace,
+                       const IntersectionType& _intersection,
+                       LocalMatricesContainerType& _localMatricesContainer) const
+    {
+      localMatrixAssembler_->assembleLocal(_intersection, _ansatzSpace, _testSpace, *matrix_, _localMatricesContainer);
+    } // virtual void applyLocal(...) const
+
+    virtual std::vector< unsigned int > numTmpObjectsRequired() const
+    {
+      return localMatrixAssembler_->numTmpObjectsRequired();
+    } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
+
+  private:
+    const Dune::shared_ptr< const LocalMatrixAssemblerType > localMatrixAssembler_;
+    Dune::shared_ptr< MatrixType > matrix_;
+  }; // class LocalMatrixAssemblerApplicationWrapper
+
+public:
   Boundary(const BoundaryGridPartType& boundaryGridPart,
            const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo,
            const AnsatzSpaceType& ansatzSpace,
@@ -45,6 +93,14 @@ public:
     , ansatzSpace_(ansatzSpace)
     , testSpace_(testSpace)
   {}
+
+  ~Boundary()
+  {
+    for (auto& localMatrixAssembler: localMatrixAssemblers_)
+      delete localMatrixAssembler;
+//    for (auto& localVectorAssembler: localVectorAssemblers_)
+//      delete localVectorAssembler;
+  }
 
   const BoundaryGridPartType& boundaryGridPart() const
   {
@@ -66,24 +122,35 @@ public:
     return boundaryInfo_;
   }
 
-  template< class DirichletAssemblerType, class MatrixBackendType >
-  void assemble(const DirichletAssemblerType& dirichletAssembler,
-                MatrixBackendType& matrix) const
+  template< class LocalMatrixAssemblerType, class MatrixType >
+  void addLocalMatrixAssembler(const Dune::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
+                               Dune::shared_ptr< MatrixType > _matrix)
+  {
+    typedef LocalMatrixAssemblerApplicationWrapper< LocalMatrixAssemblerType, MatrixType > WrapperType;
+    WrapperType* wrapper = new WrapperType(_localMatrixAssembler, _matrix);
+    localMatrixAssemblers_.push_back(wrapper);
+  }
+
+//  template< class DirichletAssemblerType, class MatrixBackendType >
+  void assemble(/*const DirichletAssemblerType& dirichletAssembler,
+                MatrixBackendType& matrix*/) const
   {
     // preparations
     typedef typename BoundaryGridPartType::template Codim< 0 >::EntityType EntityType;
-    typedef typename BoundaryGridPartType::IntersectionIteratorType IntersectionIteratorType;
-    typedef typename IntersectionIteratorType::Intersection IntersectionType;
     typedef typename IntersectionType::EntityPointer EntityPointerType;
-    typedef typename AnsatzSpaceType::RangeFieldType RangeFieldType;
-    typedef Dune::DynamicMatrix< RangeFieldType > LocalMatrixType;
     // common tmp storage for all entities
-    std::vector< unsigned int > numberTmpMatrices = dirichletAssembler.numTmpObjectsRequired();
-    std::vector< LocalMatrixType > tmpLocalAssemblerMatrices(numberTmpMatrices[0],
+    // * for the matrix assemblers
+    std::vector< unsigned int > numberOfTmpMatricesNeeded(2, 0);
+    for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii) {
+      const std::vector< unsigned int > tmp = localMatrixAssemblers_[ii]->numTmpObjectsRequired();
+      numberOfTmpMatricesNeeded[0] = std::max(numberOfTmpMatricesNeeded[0], tmp[0]);
+      numberOfTmpMatricesNeeded[1] = std::max(numberOfTmpMatricesNeeded[1], tmp[1]);
+    }
+    std::vector< LocalMatrixType > tmpLocalAssemblerMatrices(numberOfTmpMatricesNeeded[0],
                                                              LocalMatrixType(ansatzSpace_.map().maxLocalSize(),
                                                                              testSpace_.map().maxLocalSize(),
                                                                              RangeFieldType(0.0)));
-    std::vector< LocalMatrixType > tmpLocalOperatorMatrices(numberTmpMatrices[1],
+    std::vector< LocalMatrixType > tmpLocalOperatorMatrices(numberOfTmpMatricesNeeded[1],
                                                             LocalMatrixType(ansatzSpace_.map().maxLocalSize(),
                                                                             testSpace_.map().maxLocalSize(),
                                                                             RangeFieldType(0.0)));
@@ -101,15 +168,9 @@ public:
           ++interectionIt ) {
         // get the intersection
         const IntersectionType& intersection = *interectionIt;
-        // call the local assembler
-        if (boundaryInfo_->dirichlet(intersection)) {
-          dirichletAssembler.assembleLocal(intersection,
-                                           ansatzSpace_,
-                                           testSpace_,
-                                           matrix,
-                                           tmpLocalMatricesContainer);
-
-        } // call the local assembler
+        // assemble local matrices
+        for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii)
+          localMatrixAssemblers_[ii]->apply(testSpace_, ansatzSpace_, intersection, tmpLocalMatricesContainer);
       } // walk the intersections
     } // walk the coupling grid part
   } // void assemble(...) const
@@ -119,6 +180,8 @@ private:
   const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
   const AnsatzSpaceType& ansatzSpace_;
   const TestSpaceType& testSpace_;
+  std::vector< LocalMatrixAssemblerApplication* > localMatrixAssemblers_;
+//  std::vector< LocalVectorAssemblerApplication* > localVectorAssemblers_;
 }; // class Boundary
 
 } // namespace Multiscale
