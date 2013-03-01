@@ -38,6 +38,72 @@ public:
   typedef Primal<CouplingGridPartType, InnerAnsatzSpaceType, InnerTestSpaceType, OuterAnsatzSpaceType,
                  OuterTestSpaceType> ThisType;
 
+private:
+  typedef typename CouplingGridPartType::IntersectionIteratorType IntersectionIteratorType;
+  typedef typename IntersectionIteratorType::Intersection IntersectionType;
+  typedef typename InnerAnsatzSpaceType::RangeFieldType RangeFieldType;
+  typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
+  typedef std::vector<std::vector<LocalMatrixType>> LocalMatricesContainerType;
+
+  class LocalMatrixAssemblerApplication
+  {
+  public:
+    virtual void apply(const IntersectionType& /*_intersection*/, const InnerAnsatzSpaceType& /*_innerAnsatzSpace*/,
+                       const InnerTestSpaceType& /*_innerTestSpace*/, const OuterAnsatzSpaceType& /*_outerAnsatzSpace*/,
+                       const OuterTestSpaceType& /*_outerTestSpace*/,
+                       LocalMatricesContainerType& /*_localMatricesContainer*/) const = 0;
+
+    virtual std::vector<unsigned int> numTmpObjectsRequired() const = 0;
+  }; // class LocalOperatorApplication
+
+  template <class LocalMatrixAssemblerType, class MatrixType>
+  class LocalMatrixAssemblerApplicationWrapper : public LocalMatrixAssemblerApplication
+  {
+  public:
+    LocalMatrixAssemblerApplicationWrapper(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                                           Dune::shared_ptr<MatrixType> _innerInnerMatrix,
+                                           Dune::shared_ptr<MatrixType> _outerOuterMatrix,
+                                           Dune::shared_ptr<MatrixType> _innerOuterMatrix,
+                                           Dune::shared_ptr<MatrixType> _outerInnerMatrix)
+      : localMatrixAssembler_(_localMatrixAssembler)
+      , innerInnerMatrix_(_innerInnerMatrix)
+      , outerOuterMatrix_(_outerOuterMatrix)
+      , innerOuterMatrix_(_innerOuterMatrix)
+      , outerInnerMatrix_(_outerInnerMatrix)
+    {
+    }
+
+    virtual void apply(const IntersectionType& _intersection, const InnerAnsatzSpaceType& _innerAnsatzSpace,
+                       const InnerTestSpaceType& _innerTestSpace, const OuterAnsatzSpaceType& _outerAnsatzSpace,
+                       const OuterTestSpaceType& _outerTestSpace,
+                       LocalMatricesContainerType& _localMatricesContainer) const
+    {
+      localMatrixAssembler_->assembleLocal(_intersection,
+                                           _innerAnsatzSpace,
+                                           _innerTestSpace,
+                                           _outerAnsatzSpace,
+                                           _outerTestSpace,
+                                           *innerInnerMatrix_,
+                                           *outerOuterMatrix_,
+                                           *innerOuterMatrix_,
+                                           *outerInnerMatrix_,
+                                           _localMatricesContainer);
+    } // virtual void applyLocal(...) const
+
+    virtual std::vector<unsigned int> numTmpObjectsRequired() const
+    {
+      return localMatrixAssembler_->numTmpObjectsRequired();
+    } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
+
+  private:
+    const Dune::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
+    Dune::shared_ptr<MatrixType> innerInnerMatrix_;
+    Dune::shared_ptr<MatrixType> outerOuterMatrix_;
+    Dune::shared_ptr<MatrixType> innerOuterMatrix_;
+    Dune::shared_ptr<MatrixType> outerInnerMatrix_;
+  }; // class LocalMatrixAssemblerApplicationWrapper
+
+public:
   Primal(const CouplingGridPartType& couplingGridPart, const InnerAnsatzSpaceType& innerAnsatzSpace,
          const InnerTestSpaceType& innerTestSpace, const OuterAnsatzSpaceType& outerAnsatzSpace,
          const OuterTestSpaceType& outerTestSpace)
@@ -74,33 +140,67 @@ public:
     return outerTestSpace_;
   }
 
-  template <class LocalAssemblerType, class MatrixBackendType>
-  void assembleMatrices(const LocalAssemblerType& localAssembler, MatrixBackendType& innerInnerMatrix,
-                        MatrixBackendType& innerOuterMatrix, MatrixBackendType& outerInnerMatrix,
-                        MatrixBackendType& outerOuterMatrix) const
+  template <class LocalMatrixAssemblerType, class MatrixType>
+  void addLocalMatrixAssembler(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                               Dune::shared_ptr<MatrixType> _innerInnerMatrix,
+                               Dune::shared_ptr<MatrixType> _outerOuterMatrix,
+                               Dune::shared_ptr<MatrixType> _innerOuterMatrix,
+                               Dune::shared_ptr<MatrixType> _outerInnerMatrix)
+  {
+    typedef LocalMatrixAssemblerApplicationWrapper<LocalMatrixAssemblerType, MatrixType> WrapperType;
+    WrapperType* wrapper = new WrapperType(
+        _localMatrixAssembler, _innerInnerMatrix, _outerOuterMatrix, _innerOuterMatrix, _outerInnerMatrix);
+    localMatrixAssemblers_.push_back(wrapper);
+  }
+
+  //  template< class LocalAssemblerType, class MatrixBackendType >
+  void assemble /*Matrices*/ (/*const LocalAssemblerType& localAssembler,
+                        MatrixBackendType& innerInnerMatrix,
+                        MatrixBackendType& innerOuterMatrix,
+                        MatrixBackendType& outerInnerMatrix,
+                        MatrixBackendType& outerOuterMatrix*/) const
   {
     // preparations
     typedef typename CouplingGridPartType::template Codim<0>::EntityType EntityType;
-    typedef typename CouplingGridPartType::IntersectionIteratorType IntersectionIteratorType;
-    typedef typename IntersectionIteratorType::Intersection IntersectionType;
     typedef typename IntersectionType::EntityPointer EntityPointerType;
-    typedef typename InnerAnsatzSpaceType::RangeFieldType RangeFieldType;
-    typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
     // common tmp storage for all entities
-    std::vector<unsigned int> numberTmpMatrices = localAssembler.numTmpObjectsRequired();
+    // * for the matrix assemblers
+    std::vector<unsigned int> numberOfTmpMatricesNeeded(2, 0);
+    for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii) {
+      const std::vector<unsigned int> tmp = localMatrixAssemblers_[ii]->numTmpObjectsRequired();
+      numberOfTmpMatricesNeeded[0]        = std::max(numberOfTmpMatricesNeeded[0], tmp[0]);
+      numberOfTmpMatricesNeeded[1]        = std::max(numberOfTmpMatricesNeeded[1], tmp[1]);
+    }
     std::vector<LocalMatrixType> tmpLocalAssemblerMatrices(
-        numberTmpMatrices[0],
+        numberOfTmpMatricesNeeded[0],
         LocalMatrixType(std::max(innerAnsatzSpace_.map().maxLocalSize(), outerAnsatzSpace_.map().maxLocalSize()),
                         std::max(innerTestSpace_.map().maxLocalSize(), outerTestSpace_.map().maxLocalSize()),
                         RangeFieldType(0.0)));
     std::vector<LocalMatrixType> tmpLocalOperatorMatrices(
-        numberTmpMatrices[1],
+        numberOfTmpMatricesNeeded[1],
         LocalMatrixType(std::max(innerAnsatzSpace_.map().maxLocalSize(), outerAnsatzSpace_.map().maxLocalSize()),
                         std::max(innerTestSpace_.map().maxLocalSize(), outerTestSpace_.map().maxLocalSize()),
                         RangeFieldType(0.0)));
     std::vector<std::vector<LocalMatrixType>> tmpLocalMatricesContainer;
     tmpLocalMatricesContainer.push_back(tmpLocalAssemblerMatrices);
     tmpLocalMatricesContainer.push_back(tmpLocalOperatorMatrices);
+    //    // common tmp storage for all entities
+    //    std::vector< unsigned int > numberTmpMatrices = localAssembler.numTmpObjectsRequired();
+    //    std::vector< LocalMatrixType > tmpLocalAssemblerMatrices(numberTmpMatrices[0],
+    //                                                             LocalMatrixType(std::max(innerAnsatzSpace_.map().maxLocalSize(),
+    //                                                             outerAnsatzSpace_.map().maxLocalSize()),
+    //                                                                             std::max(innerTestSpace_.map().maxLocalSize(),
+    //                                                                             outerTestSpace_.map().maxLocalSize()),
+    //                                                                             RangeFieldType(0.0)));
+    //    std::vector< LocalMatrixType > tmpLocalOperatorMatrices(numberTmpMatrices[1],
+    //                                                            LocalMatrixType(std::max(innerAnsatzSpace_.map().maxLocalSize(),
+    //                                                            outerAnsatzSpace_.map().maxLocalSize()),
+    //                                                                            std::max(innerTestSpace_.map().maxLocalSize(),
+    //                                                                            outerTestSpace_.map().maxLocalSize()),
+    //                                                                            RangeFieldType(0.0)));
+    //    std::vector< std::vector< LocalMatrixType > > tmpLocalMatricesContainer;
+    //    tmpLocalMatricesContainer.push_back(tmpLocalAssemblerMatrices);
+    //    tmpLocalMatricesContainer.push_back(tmpLocalOperatorMatrices);
     // walk the coupling grid part
     for (typename CouplingGridPartType::template Codim<0>::IteratorType entityIt =
              couplingGridPart_.template begin<0>();
@@ -116,16 +216,14 @@ public:
         const IntersectionType& intersection = *interectionIt;
         assert(intersection.neighbor() && !intersection.boundary());
         // call the local assembler
-        localAssembler.assembleLocal(intersection,
-                                     innerAnsatzSpace_,
-                                     innerTestSpace_,
-                                     outerAnsatzSpace_,
-                                     outerTestSpace_,
-                                     innerInnerMatrix,
-                                     outerOuterMatrix,
-                                     innerOuterMatrix,
-                                     outerInnerMatrix,
-                                     tmpLocalMatricesContainer);
+        // assemble local matrices
+        for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii)
+          localMatrixAssemblers_[ii]->apply(intersection,
+                                            innerAnsatzSpace_,
+                                            innerTestSpace_,
+                                            outerAnsatzSpace_,
+                                            outerTestSpace_,
+                                            tmpLocalMatricesContainer);
       } // walk the intersections
     } // walk the coupling grid part
   } // void assembleMatrices() const
@@ -136,6 +234,7 @@ private:
   const InnerTestSpaceType& innerTestSpace_;
   const OuterAnsatzSpaceType& outerAnsatzSpace_;
   const OuterTestSpaceType& outerTestSpace_;
+  std::vector<LocalMatrixAssemblerApplication*> localMatrixAssemblers_;
 }; // class Primal
 
 } // namespace Coupling
