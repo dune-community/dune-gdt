@@ -58,6 +58,9 @@ public:
     if (subdomainMap_->find(subdomain) == subdomainMap_->end()) {
       subdomainMap_->insert(std::pair<unsigned int, IndexType>(subdomain, size));
       ++numSubdomains_;
+    } else {
+      if (subdomainMap_->find(subdomain)->second != size)
+        DUNE_THROW(Dune::InvalidStateException, "ERROR: can not add subdomain twice!");
     }
     return;
   } // void add(const unsigned int subdomain, const IndexType size)
