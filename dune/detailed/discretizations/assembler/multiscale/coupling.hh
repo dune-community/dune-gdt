@@ -216,7 +216,6 @@ public:
         const IntersectionType& intersection = *interectionIt;
         assert(intersection.neighbor() && !intersection.boundary());
         // call the local assembler
-        // assemble local matrices
         for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii)
           localMatrixAssemblers_[ii]->apply(intersection,
                                             innerAnsatzSpace_,
