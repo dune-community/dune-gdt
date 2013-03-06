@@ -66,10 +66,11 @@ public:
 
   //! @brief dimension of the grid part
   static const int griddim = GridPartType::GridType::dimension;
+  static const int polorder = DiscreteFunctionSpaceType::polynomialOrder;
 
   //! @brief Return type of local() method, implementing the LocalConstraints
   //! interface
-  typedef Dune::Detailed::Discretizations::Constraints::LocalDefault< double, 2*griddim, 6*griddim >
+  typedef Dune::Detailed::Discretizations::Constraints::LocalDefault< double, 2*griddim*polorder, 6*griddim*polorder >
     LocalConstraintsType;
 
   /** @brief Constructor for the Dirichlet constraints
