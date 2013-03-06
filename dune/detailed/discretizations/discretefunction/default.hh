@@ -145,7 +145,7 @@ public:
     return dimRange;
   }
 
-  virtual RangeFieldType evaluate(int component, const EntityType& entity, const DomainType& x) const
+  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
   {
     assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
     RangeType ret(0.0);
@@ -263,7 +263,7 @@ public:
     return dimRange;
   }
 
-  virtual RangeFieldType evaluate(int component, const EntityType& entity, const DomainType& x) const
+  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
   {
     assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
     RangeType ret(0.0);

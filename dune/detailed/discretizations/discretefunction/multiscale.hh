@@ -162,7 +162,7 @@ public:
     return dimRange;
   }
 
-  virtual RangeFieldType evaluate(const int component, const EntityType& entity, const DomainType& x) const
+  virtual double evaluate(const int component, const EntityType& entity, const DomainType& x) const
   {
     // get the subdomain of this entity
     const unsigned int globalIndex = msGrid_.globalGridView()->indexSet().index(entity);
