@@ -1,10 +1,14 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_MAPPER_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_MAPPER_CONTINUOUS_LAGRANGE_HH
 
-// system
+#ifdef HAVE_CMAKE_CONFIG
+  #include "cmake_config.h"
+#elif defined (HAVE_CONFIG_H)
+  #include "config.h"
+#endif
+
 #include <vector>
 
-// dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
 namespace Dune

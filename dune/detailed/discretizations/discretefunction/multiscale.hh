@@ -1,22 +1,15 @@
-
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_MULTISCALE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_MULTISCALE_HH
 
-// system
 #include <sstream>
 #include <vector>
 
-// dune-common
 #include <dune/common/exceptions.hh>
-#include <dune/common/shared_ptr.hh>
 
-// dune-grid
 #include <dune/grid/io/file/vtk/function.hh>
 
-// dune-grid-multiscale
 #include <dune/grid/multiscale/default.hh>
 
-// dune-detailed-discretizations
 #include <dune/detailed/discretizations/discretefunction/default.hh>
 
 namespace Dune {
@@ -75,7 +68,7 @@ private:
 
 public:
   Multiscale(const MsGridType& msGrid,
-             const std::vector< Dune::shared_ptr< LocalDiscreteFunctionType > >& localDiscreteFunctions,
+             const std::vector< std::shared_ptr< LocalDiscreteFunctionType > >& localDiscreteFunctions,
              const std::string name = id)
     : msGrid_(msGrid),
       entityToSubdomainMap_(msGrid_.entityToSubdomainMap()),
@@ -95,13 +88,13 @@ public:
     return msGrid_.size();
   }
 
-  Dune::shared_ptr< const LocalDiscreteFunctionType > localDiscreteFunction(const unsigned int subdomain) const
+  std::shared_ptr< const LocalDiscreteFunctionType > localDiscreteFunction(const unsigned int subdomain) const
   {
     assert(subdomain < msGrid_.size());
     return localDiscreteFunctions_[subdomain];
   }
 
-  Dune::shared_ptr< LocalDiscreteFunctionType > localDiscreteFunction(const unsigned int subdomain)
+  std::shared_ptr< LocalDiscreteFunctionType > localDiscreteFunction(const unsigned int subdomain)
   {
     assert(subdomain < msGrid_.size());
     return localDiscreteFunctions_[subdomain];
@@ -184,8 +177,8 @@ public:
 
 private:
   const MsGridType& msGrid_;
-  const Dune::shared_ptr< const EntityToSubdomainMapType > entityToSubdomainMap_;
-  std::vector< Dune::shared_ptr< LocalDiscreteFunctionType > > localDiscreteFunctions_;
+  const std::shared_ptr< const EntityToSubdomainMapType > entityToSubdomainMap_;
+  std::vector< std::shared_ptr< LocalDiscreteFunctionType > > localDiscreteFunctions_;
   std::string name_;
 }; // class Multiscale
 

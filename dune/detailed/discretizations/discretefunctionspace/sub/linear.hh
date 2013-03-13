@@ -1,13 +1,10 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_LINEAR_HH
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
+#include <memory>
 
-// dune-detailed-discretizations includes
 #include <dune/detailed/discretizations/constraints/dirichlet.hh>
 
-// dune-stuff
 #include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune
@@ -80,8 +77,8 @@ public:
   typedef typename Dune::Stuff::Grid::BoundaryInfo::AllDirichlet< GridViewType > DefaultBoundaryInfoType;
 
   Dirichlet(const SuperSpaceType& superSpace,
-            const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo
-                = Dune::shared_ptr< const DefaultBoundaryInfoType >(new DefaultBoundaryInfoType(DefaultBoundaryInfoType())))
+            const std::shared_ptr< const BoundaryInfoType > boundaryInfo
+                = std::shared_ptr< const DefaultBoundaryInfoType >(new DefaultBoundaryInfoType(DefaultBoundaryInfoType())))
     : superSpace_(superSpace)
     , boundaryInfo_(boundaryInfo)
     , constraints_(superSpace_, *boundaryInfo_)
@@ -133,32 +130,32 @@ public:
   }
 
   template< class LocalGridPartType, class OtherDiscreteFunctionSpaceType >
-  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
+  std::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart,
                                                             const OtherDiscreteFunctionSpaceType& other) const
   {
     return superSpace_.computeLocalPattern(localGridPart, other);
   }
 
   template< class LocalGridPartType >
-  Dune::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
+  std::shared_ptr< const PatternType > computeLocalPattern(const LocalGridPartType& localGridPart) const
   {
     return superSpace_.computeLocalPattern(localGridPart);
   }
 
   template< class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType >
-  Dune::shared_ptr< const PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+  std::shared_ptr< const PatternType > computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
                                                                const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
     return superSpace_.computeCouplingPattern(couplingGridPart, outerSpace);
   }
 
   template< class OtherDiscreteFunctionSpaceType>
-  Dune::shared_ptr< const PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  std::shared_ptr< const PatternType > computePattern(const OtherDiscreteFunctionSpaceType& other) const
   {
     return superSpace_.computePattern(other);
   }
 
-  Dune::shared_ptr< const PatternType > computePattern() const
+  std::shared_ptr< const PatternType > computePattern() const
   {
     return superSpace_.computePattern();
   }
@@ -171,7 +168,7 @@ private:
   ThisType& operator=( const ThisType& );
 
   const SuperSpaceType& superSpace_;
-  const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
+  const std::shared_ptr< const BoundaryInfoType > boundaryInfo_;
   const ConstraintsType constraints_;
 
 }; // end class Dirichlet

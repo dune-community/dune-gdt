@@ -1,20 +1,19 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_DIRICHLET_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_CONSTRAINTS_DIRICHLET_HH
 
-// system
+#ifdef HAVE_CMAKE_CONFIG
+  #include "cmake_config.h"
+#elif defined (HAVE_CONFIG_H)
+  #include "config.h"
+#endif
+
 #include <set>
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
-
-// dune-fem includes
 #include <dune/fem/space/lagrangespace/lagrangespace.hh>
 
-// local includes
-#include "localdefault.hh"
-
-// dune-stuff
 #include <dune/stuff/grid/boundaryinfo.hh>
+
+#include "localdefault.hh"
 
 namespace Dune
 {

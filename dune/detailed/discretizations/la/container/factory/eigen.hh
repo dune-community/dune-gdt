@@ -3,7 +3,7 @@
 
 #ifdef HAVE_EIGEN
 
-#include <dune/common/shared_ptr.hh>
+#include <memory>
 
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/la/container/eigen.hh>
@@ -25,37 +25,37 @@ public:
   typedef Dune::Stuff::LA::Container::SparsityPatternDefault                    PatternType;
 
   template< class TestSpaceType, class AnsatzSpaceType >
-  static Dune::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
+  static std::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
                                                                                  const AnsatzSpaceType& ansatzSpace)
   {
     typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
-    const Dune::shared_ptr< const PatternType > pattern = testSpace.computePattern(ansatzSpace);
+    const std::shared_ptr< const PatternType > pattern = testSpace.computePattern(ansatzSpace);
     return createRowMajorSparseMatrix(testSpace, ansatzSpace, *pattern);
   } // static ... createRowMajorSparseMatrix(...)
 
   template< class TestSpaceType, class AnsatzSpaceType >
-  static Dune::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
+  static std::shared_ptr< RowMajorSparseMatrixType > createRowMajorSparseMatrix(const TestSpaceType& testSpace,
                                                                                  const AnsatzSpaceType& ansatzSpace,
                                                                                  const PatternType& pattern)
   {
-    return Dune::make_shared< RowMajorSparseMatrixType >(testSpace.map().size(),
+    return std::make_shared< RowMajorSparseMatrixType >(testSpace.map().size(),
                                                          ansatzSpace.map().size(),
                                                          pattern);
   } // static ... createRowMajorSparseMatrix(...)
 
   template< class TestSpaceType, class AnsatzSpaceType >
-  static Dune::shared_ptr< DenseMatrixType > createDenseMatrix(const TestSpaceType& testSpace,
+  static std::shared_ptr< DenseMatrixType > createDenseMatrix(const TestSpaceType& testSpace,
                                                                const AnsatzSpaceType& ansatzSpace)
   {
-    return Dune::make_shared< DenseMatrixType >(testSpace.map().size(),
+    return std::make_shared< DenseMatrixType >(testSpace.map().size(),
                                                 ansatzSpace.map().size());
   } // static ... createDenseMatrix(...)
 
   template< class SpaceType >
-  static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
+  static std::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
   {
-    return Dune::make_shared< DenseVectorType >(space.map().size());
-  } // static Dune::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
+    return std::make_shared< DenseVectorType >(space.map().size());
+  } // static std::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
 }; // class Eigen
 
 } // namespace Factory

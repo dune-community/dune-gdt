@@ -1,13 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_IPDGFLUXES_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_LOCAL_BINARY_IPDGFLUXES_HH
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
+#include <memory>
+
 #include <dune/common/densematrix.hh>
 
-// dune-stuff
 #include <dune/stuff/function/expression.hh>
-//#include <dune/stuff/common/print.hh>
 
 namespace Dune {
 
@@ -28,7 +26,7 @@ namespace IPDGfluxes {
   \todo       Implement different constructor, for function and discretefunction
   **/
 template< class FunctionSpaceImp,
-          class InducingFunctionImp = Dune::Stuff::Function::Expression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
+          class InducingFunctionImp = Dune::Stuff::FunctionExpression< typename FunctionSpaceImp::DomainFieldType, FunctionSpaceImp::DimDomain, typename FunctionSpaceImp::RangeFieldType, FunctionSpaceImp::DimRange > >
 class Dirichlet
 {
 public:
@@ -47,7 +45,7 @@ public:
 
   typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-  Dirichlet(const Dune::shared_ptr< const InducingFunctionType > inducingFunction,
+  Dirichlet(const std::shared_ptr< const InducingFunctionType > inducingFunction,
             const unsigned int order,
             const RangeFieldType penaltyFactor)
     : inducingFunction_(inducingFunction)
@@ -56,7 +54,7 @@ public:
   {}
 
   //! returns the inducing function
-  const Dune::shared_ptr< const InducingFunctionType > inducingFunction() const
+  const std::shared_ptr< const InducingFunctionType > inducingFunction() const
   {
     return inducingFunction_;
   }
@@ -161,7 +159,7 @@ private:
   Dirichlet(const ThisType&);
   ThisType& operator=(const ThisType&);
 
-  const Dune::shared_ptr< const InducingFunctionType > inducingFunction_;
+  const std::shared_ptr< const InducingFunctionType > inducingFunction_;
   const unsigned int order_;
   const RangeFieldType penaltyFactor_;
 }; // end class Dirichlet

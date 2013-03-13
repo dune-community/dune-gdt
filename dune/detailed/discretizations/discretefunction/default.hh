@@ -1,9 +1,10 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
 
+#include <memory>
+
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
-#include <dune/common/shared_ptr.hh>
 
 #include <dune/grid/io/file/vtk/function.hh>
 
@@ -56,7 +57,7 @@ public:
   typedef typename VectorType::size_type size_type;
 
   Default(const DiscreteFunctionSpaceType& _space,
-          Dune::shared_ptr< VectorType > _vector,
+          std::shared_ptr< VectorType > _vector,
           const std::string _name = "discrete_function")
     : BaseType(),
       space_(_space)
@@ -76,9 +77,9 @@ public:
     assert(vector_->size() == space_.map().size() && "Given vector has wrong size!");
   }
 
-  Dune::shared_ptr< const ConstType > createConst() const
+  std::shared_ptr< const ConstType > createConst() const
   {
-    Dune::shared_ptr< const ConstType > ret(new ConstType(*this));
+    std::shared_ptr< const ConstType > ret(new ConstType(*this));
     return ret;
   }
 
@@ -107,12 +108,12 @@ public:
     return LocalFunctionType(*this, entity);
   }
 
-  Dune::shared_ptr< VectorType > vector()
+  std::shared_ptr< VectorType > vector()
   {
     return vector_;
   }
 
-  const Dune::shared_ptr< const VectorType > vector() const
+  const std::shared_ptr< const VectorType > vector() const
   {
     return vector_;
   }
@@ -158,7 +159,7 @@ public:
 
 private:
   const DiscreteFunctionSpaceType& space_;
-  Dune::shared_ptr< VectorType > vector_;
+  std::shared_ptr< VectorType > vector_;
   const std::string name_;
 }; // class Defaul
 
@@ -200,7 +201,7 @@ public:
   typedef typename VectorType::size_type size_type;
 
   DefaultConst(const DiscreteFunctionSpaceType& _space,
-               const Dune::shared_ptr< const VectorType > _vector,
+               const std::shared_ptr< const VectorType > _vector,
                const std::string _name = "discrete_function")
     : BaseType()
     , space_(_space)
@@ -237,7 +238,7 @@ public:
     return ConstLocalFunctionType(*this, entity);
   }
 
-  const Dune::shared_ptr< const VectorType > vector() const
+  const std::shared_ptr< const VectorType > vector() const
   {
     return vector_;
   }
@@ -277,7 +278,7 @@ public:
 private:
   const DiscreteFunctionSpaceType& space_;
   const std::string name_;
-  const Dune::shared_ptr< const VectorType > vector_;
+  const std::shared_ptr< const VectorType > vector_;
 }; // class DefaulConst
 
 } // namespace DiscreteFunction

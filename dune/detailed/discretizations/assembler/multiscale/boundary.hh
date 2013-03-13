@@ -2,11 +2,9 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_BOUNDARY_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_BOUNDARY_HH
 
-// system
 #include <vector>
+#include <memory>
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
 #include <dune/common/dynmatrix.hh>
 
 namespace Dune {
@@ -61,8 +59,8 @@ private:
     : public LocalMatrixAssemblerApplication
   {
   public:
-    LocalMatrixAssemblerApplicationWrapper(const Dune::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
-                                           Dune::shared_ptr< MatrixType > _matrix)
+    LocalMatrixAssemblerApplicationWrapper(const std::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
+                                           std::shared_ptr< MatrixType > _matrix)
       : localMatrixAssembler_(_localMatrixAssembler)
       , matrix_(_matrix)
     {}
@@ -81,13 +79,13 @@ private:
     } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
 
   private:
-    const Dune::shared_ptr< const LocalMatrixAssemblerType > localMatrixAssembler_;
-    Dune::shared_ptr< MatrixType > matrix_;
+    const std::shared_ptr< const LocalMatrixAssemblerType > localMatrixAssembler_;
+    std::shared_ptr< MatrixType > matrix_;
   }; // class LocalMatrixAssemblerApplicationWrapper
 
 public:
   Boundary(const BoundaryGridPartType& boundaryGridPart,
-           const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo,
+           const std::shared_ptr< const BoundaryInfoType > boundaryInfo,
            const AnsatzSpaceType& ansatzSpace,
            const TestSpaceType& testSpace)
     : boundaryGridPart_(boundaryGridPart)
@@ -119,14 +117,14 @@ public:
     return testSpace_;
   }
 
-  const Dune::shared_ptr< const BoundaryInfoType >boundaryInfo() const
+  const std::shared_ptr< const BoundaryInfoType >boundaryInfo() const
   {
     return boundaryInfo_;
   }
 
   template< class LocalMatrixAssemblerType, class MatrixType >
-  void addLocalMatrixAssembler(const Dune::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
-                               Dune::shared_ptr< MatrixType > _matrix)
+  void addLocalMatrixAssembler(const std::shared_ptr< const LocalMatrixAssemblerType > _localMatrixAssembler,
+                               std::shared_ptr< MatrixType > _matrix)
   {
     typedef LocalMatrixAssemblerApplicationWrapper< LocalMatrixAssemblerType, MatrixType > WrapperType;
     WrapperType* wrapper = new WrapperType(_localMatrixAssembler, _matrix);
@@ -179,7 +177,7 @@ public:
 
 private:
   const BoundaryGridPartType& boundaryGridPart_;
-  const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo_;
+  const std::shared_ptr< const BoundaryInfoType > boundaryInfo_;
   const AnsatzSpaceType& ansatzSpace_;
   const TestSpaceType& testSpace_;
   std::vector< LocalMatrixAssemblerApplication* > localMatrixAssemblers_;
