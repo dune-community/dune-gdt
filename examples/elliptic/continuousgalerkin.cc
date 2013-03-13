@@ -2,7 +2,7 @@
   #include "cmake_config.h"
 #elif defined (HAVE_CONFIG_H)
   #include "config.h"
-#endif // ifdef HAVE_CMAKE_CONFIG
+#endif
 
 #define HAVE_DUNE_DETAILED_DISCRETIZATIONS 1
 
@@ -126,10 +126,10 @@ int main(int argc, char** argv)
     Dune::Timer timer;
 
     info << "setting up grid:" << std::endl;
-    typedef Dune::Stuff::Grid::Provider::Interface<> GridProviderType;
+    typedef Dune::Stuff::GridProviderInterface<> GridProviderType;
     const GridProviderType* gridProvider
-        = Dune::Stuff::Grid::Provider::create(description.get(id + ".grid", "stuff.grid.provider.cube"),
-                                              description);
+        = Dune::Stuff::GridProviders<>::create(description.get(id + ".grid", "stuff.grid.provider.cube"),
+                                               description);
     typedef GridProviderType::GridType GridType;
     const Dune::shared_ptr< const GridType > grid = gridProvider->grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
@@ -154,16 +154,16 @@ int main(int argc, char** argv)
     typedef double RangeFieldType;
     typedef Dune::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
     timer.reset();
-    typedef Dune::Stuff::Function::Expression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
+    typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
         ExpressionFunctionType;
     const Dune::shared_ptr< const ExpressionFunctionType >
-        diffusion(ExpressionFunctionType::createFromDescription(description.sub("diffusion")));
+        diffusion(ExpressionFunctionType::create(description.sub("diffusion")));
     const Dune::shared_ptr< const ExpressionFunctionType >
-        force(ExpressionFunctionType::createFromDescription(description.sub("force")));
+        force(ExpressionFunctionType::create(description.sub("force")));
     const Dune::shared_ptr< const ExpressionFunctionType >
-        dirichlet(ExpressionFunctionType::createFromDescription(description.sub("dirichlet")));
+        dirichlet(ExpressionFunctionType::create(description.sub("dirichlet")));
     const Dune::shared_ptr< const ExpressionFunctionType >
-        neumann(ExpressionFunctionType::createFromDescription(description.sub("neumann")));
+        neumann(ExpressionFunctionType::create(description.sub("neumann")));
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "initializing discrete function spaces... " << std::flush;
