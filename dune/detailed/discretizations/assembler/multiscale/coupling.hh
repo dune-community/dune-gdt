@@ -119,6 +119,13 @@ public:
   {
   }
 
+  ~Primal()
+  {
+    for (auto& localMatrixAssembler : localMatrixAssemblers_)
+      delete localMatrixAssembler;
+  }
+
+
   const CouplingGridPartType& couplingGridPart() const
   {
     return couplingGridPart_;
