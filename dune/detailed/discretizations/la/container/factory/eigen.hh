@@ -1,7 +1,7 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 
-//#ifdef HAVE_EIGEN
+#ifdef HAVE_EIGEN
 
 #include <dune/common/shared_ptr.hh>
 
@@ -65,6 +65,6 @@ public:
 } // namespace Detailed
 } // namespace Dune
 
-//#endif // HAVE_EIGEN
+#endif // HAVE_EIGEN
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
