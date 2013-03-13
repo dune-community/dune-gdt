@@ -1,10 +1,6 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_SUBSPACE_AFFINE_HH
 
-#include <dune/common/shared_ptr.hh>
-
-//#include <dune/stuff/function/expression.hh>
-
 #include <dune/detailed/discretizations/discretefunction/default.hh>
 
 namespace Dune {
@@ -59,7 +55,7 @@ public:
 
   typedef typename BaseSpaceType::PatternType PatternType;
 
-  Dirichlet(const BaseSpaceType& baseSpace, const Dune::shared_ptr<const AffineShiftType> affineShift)
+  Dirichlet(const BaseSpaceType& baseSpace, const std::shared_ptr<const AffineShiftType> affineShift)
     : baseSpace_(baseSpace)
     , affineShift_(affineShift)
   {
@@ -75,7 +71,7 @@ public:
     return baseSpace_.superSpace();
   }
 
-  const Dune::shared_ptr<const AffineShiftType> affineShift() const
+  const std::shared_ptr<const AffineShiftType> affineShift() const
   {
     return affineShift_;
   }
@@ -116,32 +112,32 @@ public:
   }
 
   template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
-  Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
-                                                          const OtherDiscreteFunctionSpaceType& other) const
+  std::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
+                                                         const OtherDiscreteFunctionSpaceType& other) const
   {
     return baseSpace_.computeLocalPattern(localGridPart, other);
   }
 
   template <class LocalGridPartType>
-  Dune::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart) const
+  std::shared_ptr<const PatternType> computeLocalPattern(const LocalGridPartType& localGridPart) const
   {
     return baseSpace_.computeLocalPattern(localGridPart);
   }
 
   template <class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType>
-  Dune::shared_ptr<const PatternType> computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
-                                                             const OutsideDiscreteFunctionSpaceType& outerSpace) const
+  std::shared_ptr<const PatternType> computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+                                                            const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
     return baseSpace_.computeCouplingPattern(couplingGridPart, outerSpace);
   }
 
   template <class OtherDiscreteFunctionSpaceType>
-  Dune::shared_ptr<const PatternType> computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  std::shared_ptr<const PatternType> computePattern(const OtherDiscreteFunctionSpaceType& other) const
   {
     return baseSpace_.computePattern(other);
   }
 
-  Dune::shared_ptr<const PatternType> computePattern() const
+  std::shared_ptr<const PatternType> computePattern() const
   {
     return baseSpace_.computePattern();
   }
@@ -151,7 +147,7 @@ private:
   ThisType& operator=(const ThisType&);
 
   const BaseSpaceType& baseSpace_;
-  const Dune::shared_ptr<const AffineShiftType> affineShift_;
+  const std::shared_ptr<const AffineShiftType> affineShift_;
 }; // end class Dirichlet
 
 } // namespace Affine

@@ -2,8 +2,7 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_VECTOR_HH
 
 #include <vector>
-
-#include <dune/common/shared_ptr.hh>
+#include <memory>
 
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -26,7 +25,7 @@ public:
 
   typedef Neumann<LocalFunctionalType, BoundaryInfoType> ThisType;
 
-  Neumann(const LocalFunctionalType& _localFunctional, const Dune::shared_ptr<const BoundaryInfoType> _boundaryInfo)
+  Neumann(const LocalFunctionalType& _localFunctional, const std::shared_ptr<const BoundaryInfoType> _boundaryInfo)
     : localFunctional_(_localFunctional)
     , boundaryInfo_(_boundaryInfo)
   {
@@ -37,7 +36,7 @@ public:
     return localFunctional_;
   }
 
-  const Dune::shared_ptr<const BoundaryInfoType> boundaryInfo() const
+  const std::shared_ptr<const BoundaryInfoType> boundaryInfo() const
   {
     return boundaryInfo_;
   }
@@ -96,7 +95,7 @@ private:
   } // vodi addToVector(...)
 
   const LocalFunctionalType& localFunctional_;
-  const Dune::shared_ptr<const BoundaryInfoType> boundaryInfo_;
+  const std::shared_ptr<const BoundaryInfoType> boundaryInfo_;
 }; // class Neumann
 
 } // namespace Vector

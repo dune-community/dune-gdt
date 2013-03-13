@@ -1,19 +1,13 @@
 #ifndef DUNE_DETIALED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_SYSTEM_HH
 #define DUNE_DETIALED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_SYSTEM_HH
 
-// system
+#include <memory>
 #include <vector>
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
-
-// dune-grid-multiscale
 #include <dune/grid/multiscale/default.hh>
 
-// dune-detailed-discretizations
 #include <dune/detailed/discretizations/assembler/multiscale/coupling.hh>
 
-// dune-detailed-solvers
 #if HAVE_DUNE_DETAILED_SOLVERS
 #include <dune/detailed/solvers/stationary/linear/elliptic/continuousgalerkin/dune-detailed-discretizations.hh>
 #endif // HAVE_DUNE_DETAILED_SOLVERS
@@ -49,7 +43,7 @@ public:
   typedef typename Dune::Detailed::Solvers::Stationary::Linear::Elliptic::ContinuousGalerkin::
       DuneDetailedDiscretizations<ModelImp, LocalGridPartType, polynomialOrder> LocalSolverType;
 
-  Primal(const MsGridType& msGrid, const std::vector<Dune::shared_ptr<LocalSolverType>> localSolvers)
+  Primal(const MsGridType& msGrid, const std::vector<std::shared_ptr<LocalSolverType>> localSolvers)
     : msGrid_(msGrid)
     , localSolvers_(localSolvers)
   {
@@ -64,13 +58,13 @@ public:
       std::map<unsigned int, CouplingMatrixType>& subdomainCouplingMatricesMap = couplingMatricesMaps[subdomain];
       // loop over all neighbors
       typedef typename MsGridType::NeighboringSubdomainsSetType NeighboringSubdomainsSetType;
-      const Dune::shared_ptr<const NeighboringSubdomainsSetType> neighbors = msGrid_.neighborsOf(subdomain);
+      const std::shared_ptr<const NeighboringSubdomainsSetType> neighbors = msGrid_.neighborsOf(subdomain);
       for (const unsigned int neighbor : *neighbors) {
         // ensure primal assembling
         if (subdomain < neighbor) {
           // get coupling grid part
           typedef typename MsGridType::CouplingGridPartType CouplingGridPartType;
-          const Dune::shared_ptr<const CouplingGridPartType> couplingGridPart =
+          const std::shared_ptr<const CouplingGridPartType> couplingGridPart =
               msGrid_.couplingGridPart(subdomain, neighbor);
           // get neighbor matrices map
           std::map<unsigned int, CouplingMatrixType>& neighborCouplingMatricesMap = couplingMatricesMaps[neighbor];
@@ -103,7 +97,7 @@ public:
 
 private:
   const MsGridType& msGrid_;
-  const std::vector<Dune::shared_ptr<LocalSolverType>> localSolvers_;
+  const std::vector<std::shared_ptr<LocalSolverType>> localSolvers_;
 }; // class Primal
 #endif // HAVE_DUNE_DETAILED_SOLVERS
 

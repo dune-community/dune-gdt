@@ -2,10 +2,10 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_HH
 
 #include <vector>
+#include <memory>
 
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
-#include <dune/common/shared_ptr.hh>
 
 namespace Dune {
 namespace Detailed {
@@ -55,8 +55,8 @@ private:
   class LocalMatrixAssemblerApplicationWrapper : public LocalMatrixAssemblerApplication
   {
   public:
-    LocalMatrixAssemblerApplicationWrapper(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                                           Dune::shared_ptr<MatrixType> _matrix)
+    LocalMatrixAssemblerApplicationWrapper(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                                           std::shared_ptr<MatrixType> _matrix)
       : localMatrixAssembler_(_localMatrixAssembler)
       , matrix_(_matrix)
     {
@@ -74,8 +74,8 @@ private:
     } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
 
   private:
-    const Dune::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
-    Dune::shared_ptr<MatrixType> matrix_;
+    const std::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
+    std::shared_ptr<MatrixType> matrix_;
   }; // class LocalMatrixAssemblerApplicationWrapper
 
   class LocalVectorAssemblerApplication
@@ -91,8 +91,8 @@ private:
   class LocalVectorAssemblerApplicationWrapper : public LocalVectorAssemblerApplication
   {
   public:
-    LocalVectorAssemblerApplicationWrapper(const Dune::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
-                                           Dune::shared_ptr<VectorType> _vector)
+    LocalVectorAssemblerApplicationWrapper(const std::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
+                                           std::shared_ptr<VectorType> _vector)
       : localVectorAssembler_(_localVectorAssembler)
       , vector_(_vector)
     {
@@ -110,8 +110,8 @@ private:
     } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
 
   private:
-    const Dune::shared_ptr<const LocalVectorAssemblerType> localVectorAssembler_;
-    Dune::shared_ptr<VectorType> vector_;
+    const std::shared_ptr<const LocalVectorAssemblerType> localVectorAssembler_;
+    std::shared_ptr<VectorType> vector_;
   }; // class LocalMatrixAssemblerApplicationWrapper
 
 public:
@@ -146,8 +146,8 @@ public:
   }
 
   template <class LocalMatrixAssemblerType, class MatrixType>
-  void addLocalMatrixAssembler(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                               Dune::shared_ptr<MatrixType> _matrix)
+  void addLocalMatrixAssembler(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                               std::shared_ptr<MatrixType> _matrix)
   {
     typedef LocalMatrixAssemblerApplicationWrapper<LocalMatrixAssemblerType, MatrixType> WrapperType;
     WrapperType* wrapper = new WrapperType(_localMatrixAssembler, _matrix);
@@ -155,8 +155,8 @@ public:
   }
 
   template <class LocalVectorAssemblerType, class VectorType>
-  void addLocalVectorAssembler(const Dune::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
-                               Dune::shared_ptr<VectorType> _vector)
+  void addLocalVectorAssembler(const std::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
+                               std::shared_ptr<VectorType> _vector)
   {
     typedef LocalVectorAssemblerApplicationWrapper<LocalVectorAssemblerType, VectorType> WrapperType;
     WrapperType* wrapper = new WrapperType(_localVectorAssembler, _vector);

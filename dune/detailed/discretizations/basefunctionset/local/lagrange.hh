@@ -1,11 +1,8 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_LOCAL_LAGRANGE_HH
 
-// system
 #include <vector>
 
-// dune-common
-#include <dune/common/shared_ptr.hh>
 #include <dune/common/timer.hh>
 
 namespace Dune {

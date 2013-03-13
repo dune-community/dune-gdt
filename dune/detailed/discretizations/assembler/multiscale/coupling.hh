@@ -1,11 +1,9 @@
-
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_COUPLING_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_MULTISCALE_COUPLING_HH
 
-// system
 #include <vector>
+#include <memory>
 
-// dune-common
 #include <dune/common/dynmatrix.hh>
 
 namespace Dune {
@@ -64,11 +62,11 @@ private:
   class LocalMatrixAssemblerApplicationWrapper : public LocalMatrixAssemblerApplication
   {
   public:
-    LocalMatrixAssemblerApplicationWrapper(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                                           Dune::shared_ptr<MatrixType> _innerInnerMatrix,
-                                           Dune::shared_ptr<MatrixType> _outerOuterMatrix,
-                                           Dune::shared_ptr<MatrixType> _innerOuterMatrix,
-                                           Dune::shared_ptr<MatrixType> _outerInnerMatrix)
+    LocalMatrixAssemblerApplicationWrapper(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                                           std::shared_ptr<MatrixType> _innerInnerMatrix,
+                                           std::shared_ptr<MatrixType> _outerOuterMatrix,
+                                           std::shared_ptr<MatrixType> _innerOuterMatrix,
+                                           std::shared_ptr<MatrixType> _outerInnerMatrix)
       : localMatrixAssembler_(_localMatrixAssembler)
       , innerInnerMatrix_(_innerInnerMatrix)
       , outerOuterMatrix_(_outerOuterMatrix)
@@ -100,11 +98,11 @@ private:
     } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
 
   private:
-    const Dune::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
-    Dune::shared_ptr<MatrixType> innerInnerMatrix_;
-    Dune::shared_ptr<MatrixType> outerOuterMatrix_;
-    Dune::shared_ptr<MatrixType> innerOuterMatrix_;
-    Dune::shared_ptr<MatrixType> outerInnerMatrix_;
+    const std::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
+    std::shared_ptr<MatrixType> innerInnerMatrix_;
+    std::shared_ptr<MatrixType> outerOuterMatrix_;
+    std::shared_ptr<MatrixType> innerOuterMatrix_;
+    std::shared_ptr<MatrixType> outerInnerMatrix_;
   }; // class LocalMatrixAssemblerApplicationWrapper
 
 public:
@@ -152,11 +150,10 @@ public:
   }
 
   template <class LocalMatrixAssemblerType, class MatrixType>
-  void addLocalMatrixAssembler(const Dune::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                               Dune::shared_ptr<MatrixType> _innerInnerMatrix,
-                               Dune::shared_ptr<MatrixType> _outerOuterMatrix,
-                               Dune::shared_ptr<MatrixType> _innerOuterMatrix,
-                               Dune::shared_ptr<MatrixType> _outerInnerMatrix)
+  void
+  addLocalMatrixAssembler(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
+                          std::shared_ptr<MatrixType> _innerInnerMatrix, std::shared_ptr<MatrixType> _outerOuterMatrix,
+                          std::shared_ptr<MatrixType> _innerOuterMatrix, std::shared_ptr<MatrixType> _outerInnerMatrix)
   {
     typedef LocalMatrixAssemblerApplicationWrapper<LocalMatrixAssemblerType, MatrixType> WrapperType;
     WrapperType* wrapper = new WrapperType(

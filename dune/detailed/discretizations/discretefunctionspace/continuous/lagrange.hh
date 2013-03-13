@@ -1,7 +1,11 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTIONSPACE_CONTINUOUS_LAGRANGE_HH
 
-#include <dune/common/shared_ptr.hh>
+#ifdef HAVE_CMAKE_CONFIG
+#include "cmake_config.h"
+#elif defined(HAVE_CONFIG_H)
+#include "config.h"
+#endif
 
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrangespace.hh>
@@ -92,11 +96,11 @@ public:
   }
 
   template <class LocalGridPartType, class OtherDiscreteFunctionSpaceType>
-  Dune::shared_ptr<PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
-                                                    const OtherDiscreteFunctionSpaceType& other) const
+  std::shared_ptr<PatternType> computeLocalPattern(const LocalGridPartType& localGridPart,
+                                                   const OtherDiscreteFunctionSpaceType& other) const
   {
     typedef typename PatternType::size_type size_type;
-    Dune::shared_ptr<PatternType> ret(new PatternType(mapper_.size()));
+    std::shared_ptr<PatternType> ret(new PatternType(mapper_.size()));
     PatternType& pattern = *ret;
     // walk the grid part
     for (typename LocalGridPartType::template Codim<0>::IteratorType entityIt = localGridPart.template begin<0>();
@@ -116,17 +120,17 @@ public:
   } // computeLocalPattern()
 
   template <class LocalGridPartType>
-  Dune::shared_ptr<PatternType> computeLocalPattern(const LocalGridPartType& localGridPart) const
+  std::shared_ptr<PatternType> computeLocalPattern(const LocalGridPartType& localGridPart) const
   {
     return computeLocalPattern(localGridPart, *this);
   }
 
   template <class CouplingGridPartType, class OutsideDiscreteFunctionSpaceType>
-  Dune::shared_ptr<PatternType> computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
-                                                       const OutsideDiscreteFunctionSpaceType& outerSpace) const
+  std::shared_ptr<PatternType> computeCouplingPattern(const CouplingGridPartType& couplingGridPart,
+                                                      const OutsideDiscreteFunctionSpaceType& outerSpace) const
   {
     typedef typename PatternType::size_type size_type;
-    Dune::shared_ptr<PatternType> ret(new PatternType(mapper_.size()));
+    std::shared_ptr<PatternType> ret(new PatternType(mapper_.size()));
     PatternType& pattern = *ret;
     // walk the coupling grid part
     for (typename CouplingGridPartType::template Codim<0>::IteratorType entityIt = couplingGridPart.template begin<0>();
@@ -164,12 +168,12 @@ public:
   } // computeCouplingPattern()
 
   template <class OtherDiscreteFunctionSpaceType>
-  Dune::shared_ptr<PatternType> computePattern(const OtherDiscreteFunctionSpaceType& other) const
+  std::shared_ptr<PatternType> computePattern(const OtherDiscreteFunctionSpaceType& other) const
   {
     return computeLocalPattern(gridPart_, other);
   }
 
-  Dune::shared_ptr<PatternType> computePattern() const
+  std::shared_ptr<PatternType> computePattern() const
   {
     return computePattern(*this);
   }
