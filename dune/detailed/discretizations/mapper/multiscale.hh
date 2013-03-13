@@ -1,13 +1,11 @@
-
 #ifndef DUNE_DETAILEL_DISCRETIZATIONS_MAPPER_MULTISCALE_HH
 #define DUNE_DETAILEL_DISCRETIZATIONS_MAPPER_MULTISCALE_HH
 
-// system
 #include <map>
 #include <sstream>
 #include <vector>
+#include <assert.h>
 
-// dune-common
 #include <dune/common/exceptions.hh>
 
 namespace Dune {
