@@ -48,6 +48,10 @@ private:
   class LocalMatrixAssemblerApplication
   {
   public:
+    virtual ~LocalMatrixAssemblerApplication()
+    {
+    }
+
     virtual void apply(const IntersectionType& /*_intersection*/, const InnerAnsatzSpaceType& /*_innerAnsatzSpace*/,
                        const InnerTestSpaceType& /*_innerTestSpace*/, const OuterAnsatzSpaceType& /*_outerAnsatzSpace*/,
                        const OuterTestSpaceType& /*_outerTestSpace*/,

@@ -40,6 +40,10 @@ private:
   class LocalMatrixAssemblerApplication
   {
   public:
+    virtual ~LocalMatrixAssemblerApplication()
+    {
+    }
+
     virtual void apply(const TestFunctionSpaceType& /*_testSpace*/, const AnsatzFunctionSpaceType& /*_ansatzSpace*/,
                        const EntityType& /*_entity*/,
                        LocalMatricesContainerType& /*_localMatricesContainer*/) const = 0;
