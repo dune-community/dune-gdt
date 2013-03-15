@@ -134,9 +134,9 @@ int main(int argc, char** argv)
     const Dune::shared_ptr< const GridType > grid = gridProvider->grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
     const GridPartType gridPart(*grid);
-    typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< typename GridPartType::GridViewType > BoundaryInfoType;
+    typedef typename Dune::Stuff::GridboundaryInterface< typename GridPartType::GridViewType > BoundaryInfoType;
     const Dune::shared_ptr< const BoundaryInfoType > boundaryInfo(
-          Dune::Stuff::Grid::BoundaryInfo::create< typename GridPartType::GridViewType >(
+          Dune::Stuff::Gridboundaries< typename GridPartType::GridViewType >::create(
               description.get(id + ".boundaryinfo", "stuff.grid.boundaryinfo.alldirichlet"),
                             description));
 
