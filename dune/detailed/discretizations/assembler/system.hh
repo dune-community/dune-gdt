@@ -82,6 +82,8 @@ private:
   class LocalVectorAssemblerApplication
   {
   public:
+    virtual ~LocalVectorAssemblerApplication(){}
+
     virtual void apply(const TestFunctionSpaceType& /*_testSpace*/,
                        const EntityType& /*_entity*/,
                        LocalVectorsContainerType& /*_localMatricesContainer*/) const = 0;
