@@ -36,7 +36,7 @@ public:
 
   typedef typename SuperSpaceType::GridViewType GridViewType;
 
-  typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< GridViewType > BoundaryInfoType;
+  typedef typename Dune::Stuff::GridboundaryInterface< GridViewType > BoundaryInfoType;
 
   typedef Dune::Detailed::Discretizations::Constraints::DirichletZero< SuperSpaceType > ConstraintsType;
 
@@ -74,7 +74,7 @@ public:
 
   typedef typename SuperSpaceType::PatternType PatternType;
 
-  typedef typename Dune::Stuff::Grid::BoundaryInfo::AllDirichlet< GridViewType > DefaultBoundaryInfoType;
+  typedef typename Dune::Stuff::GridboundaryAllDirichlet< GridViewType > DefaultBoundaryInfoType;
 
   Dirichlet(const SuperSpaceType& superSpace,
             const std::shared_ptr< const BoundaryInfoType > boundaryInfo

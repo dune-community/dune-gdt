@@ -61,7 +61,7 @@ public:
 
   typedef typename DiscreteFunctionSpaceType::GridViewType GridViewType;
 
-  typedef typename Dune::Stuff::Grid::BoundaryInfo::Interface< GridViewType > BoundaryInfoType;
+  typedef typename Dune::Stuff::GridboundaryInterface< GridViewType > BoundaryInfoType;
 
   //! @brief dimension of the grid part
   static const int griddim = GridPartType::GridType::dimension;
