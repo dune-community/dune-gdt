@@ -44,12 +44,12 @@ add_definitions( ${CUSTOM_FLAGS} )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h )
 
 add_dune_modules(
+  stuff
   common
   fem
   geometry
   grid
   grid-multiscale
-  stuff
   localfunctions
 )
 
