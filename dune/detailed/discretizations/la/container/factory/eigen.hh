@@ -55,7 +55,7 @@ public:
   static std::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
   {
     return std::make_shared< DenseVectorType >(space.map().size());
-  } // static std::shared_ptr< DenseVectorType > createDenseVector(const SpaceType& space)
+  } // static ... createDenseVector(const SpaceType& space)
 }; // class Eigen
 
 } // namespace Factory
