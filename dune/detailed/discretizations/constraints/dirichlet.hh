@@ -96,39 +96,11 @@ public:
   template< class Entity >
   LocalConstraintsType local(const Entity& entity) const
   {
-    typedef LagrangePointSet< GridPartType, DiscreteFunctionSpaceType::polynomialOrder >
-      LagrangePointSetType;
-    typedef typename GridPartType::IntersectionIteratorType
-      IntersectionIterator;
-    typedef typename IntersectionIterator::Intersection
-      Intersection;
-    typedef typename LagrangePointSetType::template Codim< 1 >::SubEntityIteratorType
-       FaceDofIteratorType;
+    // set of local boundary dofs
+    std::set< unsigned int > localBoundaryDofs = localDirichletDofs(entity);
+
     const unsigned int numCols = space_.baseFunctionSet().local(entity).size();
     LocalConstraintsType ret(numCols);
-    const LagrangePointSetType& lagrangePointSet = space_.map().lagrangePointSet(entity);
-    // set of local boundary dofs
-    std::set< unsigned int > localBoundaryDofs;
-    // loop over all intersections
-    for (IntersectionIterator it = gridPart_.ibegin(entity); it != gridPart_.iend(entity); ++it) {
-      // get intersection
-      const Intersection& ii = *it;
-      // only work on dirichlet intersections
-      if (boundaryInfo_.dirichlet(ii)) {
-        // get local face number of boundary intersection
-        const int face = ii.indexInInside();
-//        std::cout << "    intersection " << face << std::endl;
-        // iterate over face dofs and set unit row
-        for (FaceDofIteratorType faceIt = lagrangePointSet.template beginSubEntity< 1 >(face) ;
-             faceIt != lagrangePointSet.template endSubEntity< 1 >(face);
-             ++faceIt ) {
-          const int localDof = *faceIt;
-          localBoundaryDofs.insert(localDof);
-//          std::cout << "      DoF " << localDof
-//                    << " (" << entity.geometry().global(lagrangePointSet.point(localDof)) << ")" << std::endl;
-        } // iterate over face dofs and set unit row
-      } // only work on dirichlet intersections
-    } // loop over all intersections
 
     /************************************************************************
      * iterate over local boundary dof set and fill local constraint matrix *
@@ -150,6 +122,40 @@ public:
     ret.setRowDofsSize(numRows);
     return ret;
   } // LocalConstraintsType local(const Entity& entity) const
+
+  template< class EntityType >
+  std::set< unsigned int > localDirichletDofs(const EntityType& entity) const
+  {
+    typedef LagrangePointSet< GridPartType, DiscreteFunctionSpaceType::polynomialOrder >
+      LagrangePointSetType;
+    typedef typename GridPartType::IntersectionIteratorType
+      IntersectionIterator;
+    typedef typename IntersectionIterator::Intersection
+      Intersection;
+    typedef typename LagrangePointSetType::template Codim< 1 >::SubEntityIteratorType
+       FaceDofIteratorType;
+    const LagrangePointSetType& lagrangePointSet = space_.map().lagrangePointSet(entity);
+    // set of local boundary dofs
+    std::set< unsigned int > localBoundaryDofs;
+    // loop over all intersections
+    for (IntersectionIterator it = gridPart_.ibegin(entity); it != gridPart_.iend(entity); ++it) {
+      // get intersection
+      const Intersection& ii = *it;
+      // only work on dirichlet intersections
+      if (boundaryInfo_.dirichlet(ii)) {
+        // get local face number of boundary intersection
+        const int face = ii.indexInInside();
+        // iterate over face dofs and set unit row
+        for (FaceDofIteratorType faceIt = lagrangePointSet.template beginSubEntity< 1 >(face) ;
+             faceIt != lagrangePointSet.template endSubEntity< 1 >(face);
+             ++faceIt ) {
+          const int localDof = *faceIt;
+          localBoundaryDofs.insert(localDof);
+        } // iterate over face dofs and set unit row
+      } // only work on dirichlet intersections
+    } // loop over all intersections
+    return localBoundaryDofs;
+  } // ... localDirichletDofs(...) const
 
 private:
   DirichletZero(const ThisType&);
