@@ -7,6 +7,9 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
+#include <dune/stuff/la/container/interface.hh>
+#include <dune/stuff/la/container/pattern.hh>
+
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
@@ -218,6 +221,124 @@ public:
         localVectorAssemblers_[ii]->apply(testSpace_, entity, tmpLocalVectorsContainer);
     } // walk the grid
   } // void assemble() const
+
+  template< class MatrixTraits >
+  void clearMatrixRows(Dune::Stuff::LA::Container::MatrixInterface< MatrixTraits >& matrix,
+                       const Dune::Stuff::LA::Container::SparsityPatternDefault& pattern,
+                       bool setDiagonalEntries = true) const
+  {
+    const auto& constraints = testSpace_.constraints();
+    const typename Dune::Stuff::LA::Container::MatrixInterface< MatrixTraits >::ElementType zero(0);
+    const typename Dune::Stuff::LA::Container::MatrixInterface< MatrixTraits >::ElementType one(1);
+    // walk the grid
+    for (auto entityIt = testSpace_.gridPart().template begin< 0 >();
+         entityIt != testSpace_.gridPart().template end< 0 >();
+         ++ entityIt) {
+      const auto& entity = *entityIt;
+      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
+      // walk the local dofs
+      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
+        const unsigned int& localDof = *dofIt;
+        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
+        // walk all column entries for this row
+        const auto& columnEntries = pattern.set(globalDof);
+        for (auto columnIt = columnEntries.begin(); columnIt != columnEntries.end(); ++columnIt) {
+          const unsigned int& column = *columnIt;
+          matrix.set(globalDof, column, zero);
+        } // walk all column entries for this row
+        // set diagonal entry
+        if (setDiagonalEntries)
+          matrix.set(globalDof, globalDof, one);
+      } // walk the local dofs
+    } // walk the grid
+  } // void clearMatrixRows(...)
+
+  template< class MatrixType >
+  void clearMatrixRows(std::vector< std::shared_ptr< MatrixType > > matrices,
+                       const Dune::Stuff::LA::Container::SparsityPatternDefault& pattern,
+                       bool setDiagonalEntries = true) const
+  {
+    const auto& constraints = testSpace_.constraints();
+    const typename MatrixType::ElementType zero(0);
+    const typename MatrixType::ElementType one(1);
+    // walk the grid
+    for (auto entityIt = testSpace_.gridPart().template begin< 0 >();
+         entityIt != testSpace_.gridPart().template end< 0 >();
+         ++ entityIt) {
+      const auto& entity = *entityIt;
+      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
+      // walk the local dofs
+      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
+        const unsigned int& localDof = *dofIt;
+        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
+        // walk all column entries for this row
+        const auto& columnEntries = pattern.set(globalDof);
+        for (auto columnIt = columnEntries.begin(); columnIt != columnEntries.end(); ++columnIt) {
+          const unsigned int& column = *columnIt;
+          for (auto& matrix : matrices)
+            matrix->set(globalDof, column, zero);
+        } // walk all column entries for this row
+        // set diagonal entry
+        if (setDiagonalEntries) {
+          for (auto& matrix : matrices)
+            matrix->set(globalDof, globalDof, one);
+        }
+      } // walk the local dofs
+    } // walk the grid
+  } // void clearMatrixRows(...)
+
+  template< class VectorTraits >
+  void clearVectorEntries(Dune::Stuff::LA::Container::VectorInterface< VectorTraits >& vector,
+                          bool setEntries = true) const
+  {
+    const auto& constraints = testSpace_.constraints();
+    const typename Dune::Stuff::LA::Container::VectorInterface< VectorTraits >::ElementType zero(0);
+    const typename Dune::Stuff::LA::Container::VectorInterface< VectorTraits >::ElementType one(1);
+    // walk the grid
+    for (auto entityIt = testSpace_.gridPart().template begin< 0 >();
+         entityIt != testSpace_.gridPart().template end< 0 >();
+         ++ entityIt) {
+      const auto& entity = *entityIt;
+      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
+      // walk the local dofs
+      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
+        const unsigned int& localDof = *dofIt;
+        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
+        if (setEntries)
+          vector.set(globalDof, one);
+        else
+          vector.set(globalDof, zero);
+      } // walk the local dofs
+    } // walk the grid
+  } // void clearVectorEntries(...)
+
+  template< class VectorType >
+  void clearVectorEntries(std::vector< std::shared_ptr< VectorType > > vectors,
+                          bool setEntries = true) const
+  {
+    const auto& constraints = testSpace_.constraints();
+    const typename VectorType::ElementType zero(0);
+    const typename VectorType::ElementType one(1);
+    // walk the grid
+    for (auto entityIt = testSpace_.gridPart().template begin< 0 >();
+         entityIt != testSpace_.gridPart().template end< 0 >();
+         ++ entityIt) {
+      const auto& entity = *entityIt;
+      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
+      // walk the local dofs
+      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
+        const unsigned int& localDof = *dofIt;
+        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
+        if (setEntries) {
+          for (auto& vector : vectors)
+            vector->set(globalDof, one);
+        } else {
+          for (auto& vector : vectors)
+            vector->set(globalDof, zero);
+        }
+      } // walk the local dofs
+    } // walk the grid
+  } // void clearVectorEntries(...)
 
   template< class MatrixType, class VectorType >
   void applyConstraints(MatrixType& matrix, VectorType& vector) const
