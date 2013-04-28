@@ -72,14 +72,14 @@ void ensureParamFile(const std::string& filename)
     file << "[" << id << "]" << std::endl;
     file << "filename = " << id << std::endl;
     file << "grid = "
-         << "stuff.grid.provider.cube" << std::endl;
+         << "gridprovider.cube" << std::endl;
     file << "boundaryinfo = "
-         << "stuff.grid.boundaryinfo.alldirichlet" << std::endl;
-    file << "[stuff.grid.provider.cube]" << std::endl;
+         << "boundaryinfo.alldirichlet" << std::endl;
+    file << "[gridprovider.cube]" << std::endl;
     file << "lowerLeft = [0.0; 0.0; 0.0]" << std::endl;
     file << "upperRight = [1.0; 1.0; 1.0]" << std::endl;
     file << "numElements = [12; 12; 12]" << std::endl;
-    file << "[stuff.grid.boundaryinfo.idbased]" << std::endl;
+    file << "[boundaryinfo.idbased]" << std::endl;
     file << "dirichlet = [1; 2; 3]" << std::endl;
     file << "neumann = [4]" << std::endl;
     file << "[diffusion]" << std::endl;
@@ -99,7 +99,7 @@ void ensureParamFile(const std::string& filename)
     file << "variable = x" << std::endl;
     file << "expression = [1.0; 0.0; 0.0]" << std::endl;
     file << "[solver]" << std::endl;
-    file << "type = bicgstab.diagonal" << std::endl;
+    file << "type = bicgstab.ilut" << std::endl;
     file << "maxIter = 5000" << std::endl;
     file << "precision = 1e-12" << std::endl;
     file.close();
