@@ -69,8 +69,7 @@ set( COMMON_LIBS
      ${FASPLIB}
 )
 
-add_subdirectory( doc )
-add_subdirectory( examples )
-
-HEADERCHECK( ${detailed-discretizations} )
+add_subdirectory(doc)
+add_subdirectory(dune)
+add_subdirectory(examples)
 
