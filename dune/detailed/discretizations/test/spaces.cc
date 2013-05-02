@@ -27,7 +27,7 @@ typedef double                                            RangeFieldType;
 static const unsigned int                                 dimRange = 1;
 typedef Dune::grid::Part::Leaf::Const< GridType >         GridPartType;
 
-typedef testing::Types< DD::ContinuousLagrangeSpace< GridPartType, RangeFieldType, dimRange, 1 >
+typedef testing::Types< DD::ContinuousLagrangeSpace< GridPartType, 1, RangeFieldType, dimRange >
                       > SpaceTypes;
 
 template< class T >
@@ -46,7 +46,8 @@ struct SpaceCRTPtest
     typedef typename SpaceType::DomainFieldType     S_DomainFieldType;
     static const unsigned int DUNE_UNUSED(          s_dimDomain) = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType      S_RangeFieldType;
-    static const unsigned int DUNE_UNUSED(          s_dimRange) = SpaceType::dimRange;
+    static const unsigned int DUNE_UNUSED(          s_dimRangeRows) = SpaceType::dimRangeRows;
+    static const unsigned int DUNE_UNUSED(          s_dimRangeCols) = SpaceType::dimRangeCols;
     static const int DUNE_UNUSED(                   s_polOrder) = SpaceType::polOrder;
     typedef typename SpaceType::BackendType         S_BackendType;
     typedef typename SpaceType::MapperType          MapperType;
@@ -66,36 +67,30 @@ struct SpaceCRTPtest
     // check the mapper for static information
     typedef typename MapperType::Traits M_Traits;
     typedef typename M_Traits::BackendType M_BackendType;
-    typedef typename M_Traits::SpaceType M_SpaceType;
-    typedef typename M_Traits::IndexType M_IndexType;
     // check the mapper for functionality
-    typedef DD::Mapper::Interface< M_Traits > MapperInterfaceType;
+    typedef DD::MapperInterface< M_Traits > MapperInterfaceType;
     const MapperInterfaceType& mapperAsInterface = static_cast< const MapperInterfaceType& >(mapper);
-    const M_SpaceType& DUNE_UNUSED(   m_space)      = mapperAsInterface.space();
     const M_BackendType& DUNE_UNUSED( m_backend)    = mapperAsInterface.backend();
-    const M_IndexType                 m_maxNumDofs  = mapperAsInterface.maxNumDofs();
-    const M_IndexType DUNE_UNUSED(    m_numDofs)    = mapperAsInterface.numDofs(entity);
-    Dune::DynamicVector< M_IndexType > globalIndices(m_maxNumDofs, M_IndexType(0));
+    const size_t                      m_maxNumDofs  = mapperAsInterface.maxNumDofs();
+    const size_t DUNE_UNUSED(         m_numDofs)    = mapperAsInterface.numDofs(entity);
+    Dune::DynamicVector< size_t > globalIndices(m_maxNumDofs, size_t(0));
     mapperAsInterface.mapToGlobal(entity, globalIndices);
-    const M_IndexType DUNE_UNUSED(    globalIndex)  = mapperAsInterface.mapToGlobal(entity, 0);
+    const size_t DUNE_UNUSED(         globalIndex)  = mapperAsInterface.mapToGlobal(entity, 0);
 
     // check the basefunctionset for static information
     typedef typename BaseFunctionSetType::Traits  B_Traits;
-    typedef typename B_Traits::SpaceType          B_SpaceType;
     typedef typename B_Traits::BackendType        B_BackendType;
-    typedef typename B_Traits::IndexType          B_IndexType;
     typedef typename B_Traits::EntityType         B_EntityType;
     typedef typename B_Traits::DomainType         B_DomainType;
     typedef typename B_Traits::RangeType          B_RangeType;
     typedef typename B_Traits::JacobianRangeType  B_JacobianRangeType;
     // check the basefunctionset for functionality
-    typedef DD::BaseFunctionSet::Interface< B_Traits > BaseFunctionSetInterfaceType;
+    typedef DD::BaseFunctionSetInterface< B_Traits > BaseFunctionSetInterfaceType;
     const BaseFunctionSetInterfaceType& baseFunctionSetAsInterface
         = static_cast< const BaseFunctionSetInterfaceType& >(baseFunctionSet);
-    const B_SpaceType& DUNE_UNUSED(   b_space)    = baseFunctionSetAsInterface.space();
     const B_EntityType& DUNE_UNUSED(  b_entity)   = baseFunctionSetAsInterface.entity();
     const B_BackendType& DUNE_UNUSED( b_backend)  = baseFunctionSetAsInterface.backend();
-    const B_IndexType                 b_size      = baseFunctionSetAsInterface.size();
+    const size_t                      b_size      = baseFunctionSetAsInterface.size();
     const unsigned int DUNE_UNUSED(   b_order)    = baseFunctionSetAsInterface.order();
     const B_DomainType x = entity.geometry().center();
     std::vector< B_RangeType > values(b_size, B_RangeType(0));
@@ -126,7 +121,7 @@ int main(int argc, char** argv)
 #else
 int main(int argc, char** argv)
 {
-  std::cerr << "'HAVE_ALUGRID' not set!"
+  std::cerr << "'HAVE_ALUGRID' not set!";
   return 1;
 }
 #endif // HAVE_ALUGRID
