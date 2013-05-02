@@ -10,110 +10,98 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace Mapper {
 
 
-// forward, to be used in the traits and to allow for specialization
-template< class SpaceTraits >
-class FemWrapper;
+//// forward, to be used in the traits and to allow for specialization
+template< class FemDofMapperImp >
+class MapperWrappedFemDofMapper;
 
 
-template< class SpaceTraits >
-class FemWrapperTraits
+template< class FemDofMapperImp >
+class MapperWrappedFemDofMapperTraits
 {
 public:
-  typedef FemWrapper< SpaceTraits >                                   derived_type;
-  typedef typename SpaceTraits::derived_type                          SpaceType;
-  typedef typename SpaceTraits::BackendType::MapperType               BackendType;
-  typedef typename SpaceTraits::GridPartType::IndexSetType::IndexType IndexType;
+  typedef MapperWrappedFemDofMapper< FemDofMapperImp >              derived_type;
+  typedef Dune::Fem::DofMapper< typename FemDofMapperImp::Traits >  BackendType;
 };
 
 
-template< class SpaceTraits >
-class FemWrapper
-  : public Interface< FemWrapperTraits< SpaceTraits > >
+template< class FemDofMapperImp >
+class MapperWrappedFemDofMapper
+  : public MapperInterface< MapperWrappedFemDofMapperTraits< FemDofMapperImp > >
 {
 public:
-  typedef FemWrapper< SpaceTraits >       ThisType;
-  typedef FemWrapperTraits< SpaceTraits > Traits;
-  typedef Interface< Traits >             InterfaceType;
+  typedef MapperWrappedFemDofMapperTraits< FemDofMapperImp > Traits;
+  typedef typename Traits::BackendType    BackendType;
 
-  typedef typename Traits::SpaceType    SpaceType;
-  typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::IndexType    IndexType;
-
-  FemWrapper(const SpaceType& _space)
-    : space_(_space)
+  MapperWrappedFemDofMapper(const BackendType& femMapper)
+    : backend_(femMapper)
   {}
-
-  const SpaceType& space() const
-  {
-    return space_;
-  }
 
   const BackendType& backend() const
   {
-    return space_.backend().mapper();
+    return backend_;
   }
 
   template< class EntityType >
-  IndexType numDofs(const EntityType& entity) const
+  size_t numDofs(const EntityType& entity) const
   {
-    return backend().numDofs(entity);
+    return backend_.numDofs(entity);
   }
 
-  IndexType maxNumDofs() const
+  size_t maxNumDofs() const
   {
-    return backend().maxNumDofs();
+    return backend_.maxNumDofs();
   }
 
+private:
   class Functor
   {
   public:
-    Functor(Dune::DynamicVector< IndexType >& globalIndices)
+    Functor(Dune::DynamicVector< size_t >& globalIndices)
       : globalIndices_(globalIndices)
     {}
 
-    void operator()(int localDoF,int globalDoF)
+    void operator()(int localDoF, int globalDoF)
     {
-      assert(localDoF < int(globalIndices_.size()));
+      assert(localDoF < globalIndices_.size());
       globalIndices_[localDoF] = globalDoF;
     }
   private:
-    Dune::DynamicVector< IndexType >& globalIndices_;
+    Dune::DynamicVector< size_t >& globalIndices_;
   };
 
+public:
   template< class EntityType >
-  void mapToGlobal(const EntityType& entity, Dune::DynamicVector< IndexType >& globalIndices) const
+  void mapToGlobal(const EntityType& entity, Dune::DynamicVector< size_t >& globalIndices) const
   {
     // some checks
-    const IndexType numLocalDofs = numDofs(entity);
+    const size_t numLocalDofs = numDofs(entity);
     if (globalIndices.size() < numLocalDofs)
       globalIndices.resize(numLocalDofs);
     // compute
     Functor functor(globalIndices);
-    backend().mapEachEntityDof(entity, functor);
+    backend_.mapEachEntityDof(entity, functor);
   }
 
   /**
    *  \attention  This method is implemented using mapToGlobal(entity, globalIndices) and thus not optimal!
    */
   template< class EntityType >
-  IndexType mapToGlobal(const EntityType& entity, const IndexType& localIndex) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    const IndexType numLocalDofs = numDofs(entity);
+    const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);
-    Dune::DynamicVector< IndexType > globalIndices(numLocalDofs);
+    Dune::DynamicVector< size_t > globalIndices(numLocalDofs);
     mapToGlobal(entity, globalIndices);
     return globalIndices[localIndex];
   }
 
 private:
-  const SpaceType& space_;
-}; // class FemWrapper
+  const BackendType& backend_;
+}; // class MapperWrappedFemDofMapper
 
 
-} // namespace Mapper
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
