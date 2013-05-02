@@ -16,11 +16,12 @@ public:
   typedef typename Traits::derived_type derived_type;
 
   typedef typename Traits::GridPartType GridPartType;
+  static const int polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = Traits::dimRange;
-  static const int polOrder          = Traits::polynomialOrder;
+  static const unsigned int dimRangeRows = Traits::dimRangeRows;
+  static const unsigned int dimRangeCols = Traits::dimRangeCols;
 
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
