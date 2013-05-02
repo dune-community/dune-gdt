@@ -8,30 +8,20 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace BaseFunctionSet {
 
 
 template< class Traits >
-class Interface
+class BaseFunctionSetInterface
 {
 public:
-  typedef Interface< Traits >           ThisType;
   typedef typename Traits::derived_type derived_type;
 
-  typedef typename Traits::SpaceType    SpaceType;
   typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::IndexType    IndexType;
   typedef typename Traits::EntityType   EntityType;
 
   typedef typename Traits::DomainType         DomainType;
   typedef typename Traits::RangeType          RangeType;
   typedef typename Traits::JacobianRangeType  JacobianRangeType;
-
-  const SpaceType& space() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().space());
-    return asImp().space();
-  }
 
   const EntityType& entity() const
   {
@@ -45,13 +35,13 @@ public:
     return asImp().backend();
   }
 
-  IndexType size() const
+  size_t size() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().size());
     return asImp().size();
   }
 
-  unsigned int order() const
+  size_t order() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().order());
     return asImp().order();
@@ -78,10 +68,9 @@ public:
   {
     return static_cast< const derived_type& >(*this);
   }
-}; // class Interface
+}; // class BaseFunctionSetInterface
 
 
-} // namespace BaseFunctionSet
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune

@@ -8,23 +8,19 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class SpaceTraits >
-class FemLocalfunctionsWrapper;
+template< class BaseFunctionSetMapImp >
+class BaseFunctionSetFemLocalfunctionsWrapper;
 
 
-template< class SpaceTraits >
-class FemLocalfunctionsWrapperTraits
+template< class BaseFunctionSetMapImp >
+class BaseFunctionSetFemLocalfunctionsWrapperTraits
 {
 public:
-  typedef FemLocalfunctionsWrapper< SpaceTraits >                                         derived_type;
-  typedef typename SpaceTraits::derived_type                                              SpaceType;
-  typedef typename SpaceTraits::BackendType::BaseFunctionSetMapType::BaseFunctionSetType  BackendType;
-  typedef typename SpaceTraits::MapperType::IndexType                                     IndexType;
-
+  typedef BaseFunctionSetFemLocalfunctionsWrapper< BaseFunctionSetMapImp >  derived_type;
+  typedef typename BaseFunctionSetMapImp::BaseFunctionSetType               BackendType;
   typedef typename BackendType::EntityType        EntityType;
   typedef typename BackendType::DomainType        DomainType;
   typedef typename BackendType::RangeType         RangeType;
@@ -32,34 +28,23 @@ public:
 };
 
 
-template< class SpaceTraits >
-class FemLocalfunctionsWrapper
-  : public Interface< FemLocalfunctionsWrapperTraits< SpaceTraits > >
+template< class BaseFunctionSetMapImp >
+class BaseFunctionSetFemLocalfunctionsWrapper
+  : public BaseFunctionSetInterface< BaseFunctionSetFemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > >
 {
 public:
-  typedef FemLocalfunctionsWrapper< SpaceTraits >       ThisType;
-  typedef FemLocalfunctionsWrapperTraits< SpaceTraits > Traits;
-  typedef Interface< Traits >                           InterfaceType;
-
-  typedef typename Traits::SpaceType    SpaceType;
+  typedef BaseFunctionSetFemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > Traits;
   typedef typename Traits::BackendType  BackendType;
-
-  typedef typename Traits::IndexType          IndexType;
   typedef typename Traits::EntityType         EntityType;
   typedef typename Traits::DomainType         DomainType;
   typedef typename Traits::RangeType          RangeType;
   typedef typename Traits::JacobianRangeType  JacobianRangeType;
 
-  FemLocalfunctionsWrapper(const SpaceType& _space, const EntityType& _entity)
-    : space_(_space)
-    , entity_(_entity)
-    , backend_(space_.backend().baseFunctionSetMap().find(entity_))
+  BaseFunctionSetFemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
+    : baseFunctionSetMap_(baseFunctionSetMap)
+    , entity_(en)
+    , backend_(baseFunctionSetMap_.find(entity_))
   {}
-
-  const SpaceType& space() const
-  {
-    return space_;
-  }
 
   const EntityType& entity() const
   {
@@ -71,14 +56,14 @@ public:
     return backend_;
   }
 
-  IndexType size() const
+  size_t size() const
   {
     return backend_.size();
   }
 
-  unsigned int order() const
+  size_t order() const
   {
-    return space_.backend().baseFunctionSetMap().getOrder(entity_);
+    return baseFunctionSetMap_.getOrder(entity_);
   }
 
   void evaluate(const DomainType& x, std::vector< RangeType >& ret) const
@@ -92,13 +77,12 @@ public:
   }
 
 private:
-  const SpaceType& space_;
+  const BaseFunctionSetMapImp& baseFunctionSetMap_;
   const EntityType& entity_;
   const BackendType backend_;
-}; // class FemLocalfunctionsWrapper
+}; // class BaseFunctionSetFemLocalfunctionsWrapper
 
 
-} // namespace BaseFunctionSet
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
