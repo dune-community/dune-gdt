@@ -23,6 +23,12 @@ public:
     return asImp().backend();
   }
 
+  size_t size() const
+  {
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().size());
+    return asImp().size();
+  }
+
   size_t maxNumDofs() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().maxNumDofs());

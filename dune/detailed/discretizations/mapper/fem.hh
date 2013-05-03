@@ -43,6 +43,11 @@ public:
     return backend_;
   }
 
+  size_t size() const
+  {
+    return backend_.size();
+  }
+
   template <class EntityType>
   size_t numDofs(const EntityType& entity) const
   {
@@ -65,7 +70,7 @@ private:
 
     void operator()(int localDoF, int globalDoF)
     {
-      assert(localDoF < globalIndices_.size());
+      assert(localDoF < int(globalIndices_.size()));
       globalIndices_[localDoF] = globalDoF;
     }
 
