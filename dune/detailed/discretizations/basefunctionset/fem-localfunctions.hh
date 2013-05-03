@@ -22,7 +22,11 @@ public:
   typedef BaseFunctionSetFemLocalfunctionsWrapper< BaseFunctionSetMapImp >  derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType               BackendType;
   typedef typename BackendType::EntityType        EntityType;
+  typedef typename BackendType::DomainFieldType   DomainFieldType;
+  static const unsigned int                       dimDomain = BackendType::dimDomain;
   typedef typename BackendType::DomainType        DomainType;
+  typedef typename BackendType::RangeFieldType    RangeFieldType;
+  static const unsigned int                       dimRange = BackendType::dimRange;
   typedef typename BackendType::RangeType         RangeType;
   typedef typename BackendType::JacobianRangeType JacobianRangeType;
 };
@@ -35,9 +39,13 @@ class BaseFunctionSetFemLocalfunctionsWrapper
 public:
   typedef BaseFunctionSetFemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > Traits;
   typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::EntityType         EntityType;
-  typedef typename Traits::DomainType         DomainType;
-  typedef typename Traits::RangeType          RangeType;
+  typedef typename Traits::EntityType   EntityType;
+  typedef typename Traits::DomainFieldType  DomainFieldType;
+  static const unsigned int                 dimDomain = Traits::dimDomain;
+  typedef typename Traits::DomainType       DomainType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const unsigned int               dimRange = Traits::dimRange;
+  typedef typename Traits::RangeType      RangeType;
   typedef typename Traits::JacobianRangeType  JacobianRangeType;
 
   BaseFunctionSetFemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)

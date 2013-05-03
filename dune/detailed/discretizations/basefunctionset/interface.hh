@@ -15,12 +15,14 @@ class BaseFunctionSetInterface
 {
 public:
   typedef typename Traits::derived_type derived_type;
-
   typedef typename Traits::BackendType  BackendType;
   typedef typename Traits::EntityType   EntityType;
-
-  typedef typename Traits::DomainType         DomainType;
-  typedef typename Traits::RangeType          RangeType;
+  typedef typename Traits::DomainFieldType  DomainFieldType;
+  static const unsigned int                 dimDomain = Traits::dimDomain;
+  typedef typename Traits::DomainType       DomainType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const unsigned int               dimRange = Traits::dimRange;
+  typedef typename Traits::RangeType      RangeType;
   typedef typename Traits::JacobianRangeType  JacobianRangeType;
 
   const EntityType& entity() const
