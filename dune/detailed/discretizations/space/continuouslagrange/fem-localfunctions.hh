@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_LAGRANGE_CONTINUOUS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_LAGRANGE_CONTINUOUS_HH
+#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
+#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
@@ -16,30 +16,31 @@
 
 #include <dune/stuff/common/color.hh>
 
-#include "../mapper/fem.hh"
-#include "../basefunctionset/fem-localfunctions.hh"
-#include "interface.hh"
+#include "../../mapper/fem.hh"
+#include "../../basefunctionset/fem-localfunctions.hh"
+#include "../interface.hh"
 
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace ContinuousLagrangeSpace {
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDimRows = 1, int rangeDimCols = 1>
-class ContinuousLagrangeSpace;
+class FemLocalfunctionsWrapper;
 
 
 // forward, to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDimRows = 1, int rangeDimCols = 1>
-class ContinuousLagrangeSpaceTraits;
+class FemLocalfunctionsWrapperTraits;
 
 
 /**
  *  \brief Traits class for ContinuousLagrangeSpace for dimRange 1x1.
  */
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class ContinuousLagrangeSpaceTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+class FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
 {
 public:
   typedef GridPartImp GridPartType;
@@ -54,10 +55,10 @@ public:
   typedef RangeFieldImp RangeFieldType;
   static const unsigned int dimRangeRows = 1;
   static const unsigned int dimRangeCols = 1;
-  typedef ContinuousLagrangeSpace<GridPartType, polOrder, RangeFieldType, dimRangeRows, dimRangeCols> derived_type;
+  typedef FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRangeRows, dimRangeCols> derived_type;
 
 private:
-  typedef ContinuousLagrangeSpaceTraits<GridPartType, polOrder, RangeFieldType, dimRangeRows, dimRangeCols> ThisType;
+  typedef FemLocalfunctionsWrapperTraits<GridPartType, polOrder, RangeFieldType, dimRangeRows, dimRangeCols> ThisType;
   typedef Dune::LagrangeLocalFiniteElement<Dune::EquidistantPointSet, dimDomain, DomainFieldType, RangeFieldType>
       FiniteElementType;
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType, FiniteElementType,
@@ -67,21 +68,22 @@ private:
 
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
-  typedef MapperWrappedFemDofMapper<typename BackendType::MapperType> MapperType;
-  typedef BaseFunctionSetFemLocalfunctionsWrapper<BaseFunctionSetMapType> BaseFunctionSetType;
+  typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
+  typedef BaseFunctionSet::FemLocalfunctionsWrapper<BaseFunctionSetMapType> BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
 
 private:
-  friend class ContinuousLagrangeSpace<GridPartType, polOrder, RangeFieldType, dimRangeRows, dimRangeCols>;
-}; // class ContinuousLagrangeSpaceTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+  template <class G, int p, class R, int rR, int rD>
+  friend class FemLocalfunctionsWrapper;
+}; // class FemLocalfunctionsWrapperTraits< ..., 1, 1 >
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class ContinuousLagrangeSpace<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public SpaceInterface<ContinuousLagrangeSpaceTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>>
+class FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>>
 {
 public:
-  typedef ContinuousLagrangeSpaceTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
+  typedef FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename GridPartType::ctype DomainFieldType;
@@ -100,8 +102,8 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  ContinuousLagrangeSpace(const GridPartType& gridP)
-    : gridPart_(checkGridPart(gridP))
+  FemLocalfunctionsWrapper(const GridPartType& gridP)
+    : gridPart_(assertGridPart(gridP))
     , baseFunctionSetMap_(gridPart_)
     , backend_(const_cast<GridPartType&>(gridPart_), baseFunctionSetMap_)
     , mapper_(backend_.mapper())
@@ -134,7 +136,7 @@ public:
   }
 
 private:
-  static const GridPartType& checkGridPart(const GridPartType& gP)
+  static const GridPartType& assertGridPart(const GridPartType& gP)
   {
     // check
     typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
@@ -152,11 +154,12 @@ private:
   BaseFunctionSetMapType baseFunctionSetMap_;
   const BackendType backend_;
   const MapperType mapper_;
-}; // class ContinuousLagrangeSpace< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+}; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
 
+} // namespace ContinuousLagrangeSpace
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_LAGRANGE_CONTINUOUS_HH
+#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
