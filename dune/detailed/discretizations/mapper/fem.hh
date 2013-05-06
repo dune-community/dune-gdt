@@ -10,30 +10,31 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace Mapper {
 
 
 //// forward, to be used in the traits and to allow for specialization
 template <class FemDofMapperImp>
-class MapperWrappedFemDofMapper;
+class FemDofWrapper;
 
 
 template <class FemDofMapperImp>
-class MapperWrappedFemDofMapperTraits
+class FemDofWrapperTraits
 {
 public:
-  typedef MapperWrappedFemDofMapper<FemDofMapperImp> derived_type;
+  typedef FemDofWrapper<FemDofMapperImp> derived_type;
   typedef Dune::Fem::DofMapper<typename FemDofMapperImp::Traits> BackendType;
 };
 
 
 template <class FemDofMapperImp>
-class MapperWrappedFemDofMapper : public MapperInterface<MapperWrappedFemDofMapperTraits<FemDofMapperImp>>
+class FemDofWrapper : public MapperInterface<FemDofWrapperTraits<FemDofMapperImp>>
 {
 public:
-  typedef MapperWrappedFemDofMapperTraits<FemDofMapperImp> Traits;
+  typedef FemDofWrapperTraits<FemDofMapperImp> Traits;
   typedef typename Traits::BackendType BackendType;
 
-  MapperWrappedFemDofMapper(const BackendType& femMapper)
+  FemDofWrapper(const BackendType& femMapper)
     : backend_(femMapper)
   {
   }
@@ -80,35 +81,36 @@ private:
 
 public:
   template <class EntityType>
-  void mapToGlobal(const EntityType& entity, Dune::DynamicVector<size_t>& globalIndices) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     // some checks
     const size_t numLocalDofs = numDofs(entity);
-    if (globalIndices.size() < numLocalDofs)
-      globalIndices.resize(numLocalDofs);
+    if (ret.size() < numLocalDofs)
+      ret.resize(numLocalDofs);
     // compute
-    Functor functor(globalIndices);
+    Functor functor(ret);
     backend_.mapEachEntityDof(entity, functor);
   }
 
   /**
-   *  \attention  This method is implemented using mapToGlobal(entity, globalIndices) and thus not optimal!
+   *  \attention  This method is implemented using globalIndices() and thus not optimal!
    */
   template <class EntityType>
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);
-    Dune::DynamicVector<size_t> globalIndices(numLocalDofs);
-    mapToGlobal(entity, globalIndices);
-    return globalIndices[localIndex];
+    Dune::DynamicVector<size_t> tmpGlobalIndices(numLocalDofs);
+    globalIndices(entity, tmpGlobalIndices);
+    return tmpGlobalIndices[localIndex];
   }
 
 private:
   const BackendType& backend_;
-}; // class MapperWrappedFemDofMapper
+}; // class FemDof
 
 
+} // namespace Mapper
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
