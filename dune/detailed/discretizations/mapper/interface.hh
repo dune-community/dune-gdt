@@ -43,10 +43,10 @@ public:
   }
 
   template <class EntityType>
-  void mapToGlobal(const EntityType& entity, Dune::DynamicVector<size_t>& globalIndices) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().mapToGlobal(entity, globalIndices));
-    asImp().mapToGlobal(entity, globalIndices);
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().globalIndices(entity, ret));
+    asImp().globalIndices(entity, ret);
   }
 
   template <class EntityType>
