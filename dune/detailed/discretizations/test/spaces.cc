@@ -10,7 +10,8 @@
 
 #include <dune/stuff/grid/provider.hh>
 
-#include <dune/detailed/discretizations/space/lagrange-continuous.hh>
+#include <dune/detailed/discretizations/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/detailed/discretizations/space/continuouslagrange/fem.hh>
 #include <dune/detailed/discretizations/mapper/interface.hh>
 #include <dune/detailed/discretizations/basefunctionset/interface.hh>
 
@@ -26,7 +27,8 @@ typedef double RangeFieldType;
 static const unsigned int dimRange = 1;
 typedef Dune::grid::Part::Leaf::Const<GridType> GridPartType;
 
-typedef testing::Types<DD::ContinuousLagrangeSpace<GridPartType, 1, RangeFieldType, dimRange>> SpaceTypes;
+typedef testing::Types<DD::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 1, RangeFieldType, dimRange>,
+                       DD::ContinuousLagrangeSpace::FemWrapper<GridPartType, 1, RangeFieldType, dimRange>> SpaceTypes;
 
 template <class T>
 struct SpaceCRTPtest : public ::testing::Test
@@ -71,7 +73,7 @@ struct SpaceCRTPtest : public ::testing::Test
     const size_t m_maxNumDofs = mapperAsInterface.maxNumDofs();
     const size_t DUNE_UNUSED(m_numDofs) = mapperAsInterface.numDofs(entity);
     Dune::DynamicVector<size_t> globalIndices(m_maxNumDofs, size_t(0));
-    mapperAsInterface.mapToGlobal(entity, globalIndices);
+    mapperAsInterface.globalIndices(entity, globalIndices);
     const size_t DUNE_UNUSED(globalIndex) = mapperAsInterface.mapToGlobal(entity, 0);
 
     // check the basefunctionset for static information
