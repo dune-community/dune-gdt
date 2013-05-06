@@ -8,18 +8,19 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
 template< class BaseFunctionSetMapImp >
-class BaseFunctionSetFemLocalfunctionsWrapper;
+class FemLocalfunctionsWrapper;
 
 
 template< class BaseFunctionSetMapImp >
-class BaseFunctionSetFemLocalfunctionsWrapperTraits
+class FemLocalfunctionsWrapperTraits
 {
 public:
-  typedef BaseFunctionSetFemLocalfunctionsWrapper< BaseFunctionSetMapImp >  derived_type;
+  typedef FemLocalfunctionsWrapper< BaseFunctionSetMapImp >  derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType               BackendType;
   typedef typename BackendType::EntityType        EntityType;
   typedef typename BackendType::DomainFieldType   DomainFieldType;
@@ -33,11 +34,11 @@ public:
 
 
 template< class BaseFunctionSetMapImp >
-class BaseFunctionSetFemLocalfunctionsWrapper
-  : public BaseFunctionSetInterface< BaseFunctionSetFemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > >
+class FemLocalfunctionsWrapper
+  : public BaseFunctionSetInterface< FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > >
 {
 public:
-  typedef BaseFunctionSetFemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > Traits;
+  typedef FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > Traits;
   typedef typename Traits::BackendType  BackendType;
   typedef typename Traits::EntityType   EntityType;
   typedef typename Traits::DomainFieldType  DomainFieldType;
@@ -48,7 +49,7 @@ public:
   typedef typename Traits::RangeType      RangeType;
   typedef typename Traits::JacobianRangeType  JacobianRangeType;
 
-  BaseFunctionSetFemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
+  FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
     : baseFunctionSetMap_(baseFunctionSetMap)
     , entity_(en)
     , backend_(baseFunctionSetMap_.find(entity_))
@@ -76,11 +77,13 @@ public:
 
   void evaluate(const DomainType& x, std::vector< RangeType >& ret) const
   {
+    assert(ret.size() >= backend_.size());
     backend_.evaluateAll(x, ret);
   }
 
   void jacobian(const DomainType& x, std::vector< JacobianRangeType >& ret) const
   {
+    assert(ret.size() >= backend_.size());
     backend_.jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
   }
 
@@ -88,9 +91,10 @@ private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
   const EntityType& entity_;
   const BackendType backend_;
-}; // class BaseFunctionSetFemLocalfunctionsWrapper
+}; // class FemLocalfunctionsWrapper
 
 
+} // namespace BaseFunctionSet
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
