@@ -77,13 +77,13 @@ public:
 
   void evaluate(const DomainType& x, std::vector<RangeType>& ret) const
   {
-    assert(ret.size() >= backend_.size());
+    assert(ret.size() >= size());
     backend_.evaluateAll(x, ret);
   }
 
   void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
   {
-    assert(ret.size() >= backend_.size());
+    assert(ret.size() >= size());
     backend_.jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
   }
 
