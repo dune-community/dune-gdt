@@ -6,6 +6,8 @@
 
 #include <dune/stuff/la/container/pattern.hh>
 
+#include "constraints.hh"
+
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
@@ -60,6 +62,13 @@ public:
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().baseFunctionSet(entity));
     return asImp().baseFunctionSet(entity);
+  }
+
+  template <class ConstraintsType>
+  void localConstraints(const EntityType& entity, ConstraintsType& ret) const
+  {
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().localConstraints(entity, ret));
+    asImp().localConstraints(entity, ret);
   }
 
   PatternType* computePattern() const
