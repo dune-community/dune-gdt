@@ -18,6 +18,7 @@
 
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem-localfunctions.hh"
+#include "../constraints.hh"
 #include "../interface.hh"
 
 namespace Dune {
@@ -133,6 +134,13 @@ public:
     return BaseFunctionSetType(baseFunctionSetMap_, entity);
   }
 
+  template< class R >
+  void localConstraints(const EntityType& /*entity*/,
+                        Constraints::LocalDefault< R >& /*ret*/) const
+  {
+    dune_static_assert(Dune::AlwaysFalse< R >::value, "ERROR: not implemented for arbitrary constraints!");
+  }
+
 private:
   static const GridPartType& assertGridPart(const GridPartType& gP)
   {
@@ -146,7 +154,7 @@ private:
                  "\n" << Dune::Stuff::Common::colorStringRed("ERROR:")
                  << " this space is only implemented for simplicial grids!");
     return gP;
-  }
+  } // ... assertGridPart(...)
 
   const GridPartType& gridPart_;
   BaseFunctionSetMapType baseFunctionSetMap_;
