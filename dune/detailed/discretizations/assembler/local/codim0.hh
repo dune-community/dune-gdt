@@ -89,8 +89,8 @@ public:
     const size_t cols = ansatzSpace.mapper().numDofs(entity);
     assert(globalRows.size() >= rows);
     assert(globalCols.size() >= cols);
-    testSpace.mapper().mapToGlobal(entity, globalRows);
-    ansatzSpace.mapper().mapToGlobal(entity, globalCols);
+    testSpace.mapper().globalIndices(entity, globalRows);
+    ansatzSpace.mapper().globalIndices(entity, globalCols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& localRow = localMatrix[ii];
       for (size_t jj = 0; jj < cols; ++jj)
