@@ -8,6 +8,7 @@
 #include "../../basefunctionset/fem.hh"
 
 #include "../interface.hh"
+#include "../constraints.hh"
 
 namespace Dune {
 namespace Detailed {
@@ -82,6 +83,8 @@ public:
     : gridPart_(gridP)
     , backend_(const_cast<GridPartType&>(gridPart_))
     , mapper_(backend_.mapper())
+    , tmpMappedRows_(mapper_.maxNumDofs())
+    , tmpMappedCols_(mapper_.maxNumDofs())
   {
   }
 
@@ -110,10 +113,67 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
+  template <class R>
+  void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault<R>& /*ret*/) const
+  {
+    dune_static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for arbitrary constraints!");
+  }
+
+  void localConstraints(const EntityType& entity,
+                        Constraints::Dirichlet<typename GridPartType::GridViewType, RangeFieldType>& ret) const
+  {
+    const auto& lagrangePointSet = backend_.lagrangePointSet(entity);
+    std::set<size_t> localDirichletDofs;
+    // loop over all intersections
+    const auto& gridBoundary     = ret.gridBoundary();
+    const auto intersectionEndIt = gridPart_.iend(entity);
+    for (auto intersectionIt = gridPart_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
+      const auto& intersection = *intersectionIt;
+      // only work on dirichlet intersections
+      if (gridBoundary.dirichlet(intersection)) {
+        // get local face number of boundary intersection
+        const int intersectionIndex = intersection.indexInInside();
+        // iterate over face dofs and set unit row
+        const auto faceDofEndIt = lagrangePointSet.template endSubEntity<1>(intersectionIndex);
+        for (auto faceDofIt = lagrangePointSet.template beginSubEntity<1>(intersectionIndex); faceDofIt != faceDofEndIt;
+             ++faceDofIt) {
+          const size_t localDofIndex = *faceDofIt;
+          localDirichletDofs.insert(localDofIndex);
+        } // iterate over face dofs and set unit row
+      } // only work on dirichlet intersections
+    } // loop over all intersections
+    const BaseFunctionSetType basis = baseFunctionSet(entity);
+    const size_t numRows = localDirichletDofs.size();
+    if (numRows > 0) {
+      const size_t numCols = basis.size();
+      ret.setSize(numRows, numCols);
+      mapper_.globalIndices(entity, tmpMappedRows_);
+      mapper_.globalIndices(entity, tmpMappedCols_);
+      size_t localRow = 0;
+      const RangeFieldType zero(0);
+      const RangeFieldType one(1);
+      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
+           ++localDirichletDofIt) {
+        const size_t& localDirichletDofIndex = *localDirichletDofIt;
+        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
+        for (size_t jj = 0; jj < ret.cols(); ++jj) {
+          ret.globalCol(jj) = tmpMappedCols_[jj];
+          ret.value(localRow, jj) = zero;
+        }
+        ret.value(localRow, localRow) = one;
+        ++localRow;
+      }
+    } else {
+      ret.setSize(0, 0);
+    }
+  } // ... localConstraints(..., Dirichlet)
+
 private:
   const GridPartType& gridPart_;
   const BackendType backend_;
   const MapperType mapper_;
+  mutable Dune::DynamicVector<size_t> tmpMappedRows_;
+  mutable Dune::DynamicVector<size_t> tmpMappedCols_;
 }; // class FemWrapper< ..., 1, 1 >
 
 
