@@ -93,9 +93,9 @@ public:
       const auto testBase   = baseFunctionSet(entity);
       const auto ansatzBase = otherSpace.baseFunctionSet(entity);
       Dune::DynamicVector<size_t> globalRows(testBase.size(), 0);
-      mapper().mapToGlobal(entity, globalRows);
+      mapper().globalIndices(entity, globalRows);
       Dune::DynamicVector<size_t> globalCols(ansatzBase.size(), 0);
-      otherSpace.mapper().mapToGlobal(entity, globalCols);
+      otherSpace.mapper().globalIndices(entity, globalCols);
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
         auto& columns = pattern.inner(globalRows[ii]);
         for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
