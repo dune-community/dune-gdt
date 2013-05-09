@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 }
 
 #else
-int main(int argc, char** argv)
+int main(int /*argc*/, char** /*argv*/)
 {
   std::cerr << "'HAVE_ALUGRID' not set!";
   return 1;
