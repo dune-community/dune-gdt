@@ -3,148 +3,139 @@
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/dynmatrix.hh>
-#include <dune/common/bartonnackmanifcheck.hh>
-#include <dune/common/static_assert.hh>
 
-#include "interface.hh"
-#include "lagrange-continuous.hh"
+#include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
 
 
-template <class Traits>
-class ConstraintsInterface;
+namespace Constraints {
 
 
 template <class RangeFieldImp = double>
-class LocalConstraints
+class LocalDefault
 {
 public:
   typedef RangeFieldImp RangeFieldType;
 
+private:
   typedef Dune::DynamicVector<size_t> IndicesType;
   typedef Dune::DynamicMatrix<RangeFieldType> ValuesType;
 
 public:
-  LocalConstraints(const size_t numRows, const size_t numCols)
-    : globalRows_(numRows)
-    , globalCols_(numCols)
-    , values_(numRows, numCols)
+  LocalDefault(const size_t numRows, const size_t numCols)
+    : rows_(numRows)
+    , cols_(numCols)
+    , globalRows_(rows_)
+    , globalCols_(cols_)
+    , values_(rows_, cols_)
   {
   }
 
-  size_t rows() const
+  virtual ~LocalDefault()
   {
-    return globalRows_.size();
   }
 
-  size_t cols() const
+  virtual size_t rows() const
   {
-    return globalCols_.size();
+    return rows_;
   }
 
-  const IndicesType& globalRows() const
+  virtual size_t cols() const
   {
-    return globalRows_;
+    return cols_;
   }
 
-  const IndicesType& globalCols() const
+  void setSize(const size_t rr, const size_t cc)
   {
-    return globalCols_;
+    rows_        = rr;
+    cols_        = cc;
+    bool changed = false;
+    if (rows_ > globalRows_.size()) {
+      globalRows_.resize(rows_, 0);
+      changed = true;
+    }
+    if (cols_ > globalCols_.size()) {
+      globalCols_.resize(cols_, 0);
+      changed = true;
+    }
+    if (changed)
+      values_.resize(globalRows_.size(), globalCols_.size(), 0);
+  } // ... setSize(...)
+
+  virtual size_t& globalRow(const size_t ii)
+  {
+    assert(ii < std::min(rows_, globalRows_.size()));
+    return globalRows_[ii];
   }
 
-  const ValuesType& values() const
+  virtual const size_t& globalRow(const size_t ii) const
   {
-    return values_;
+    assert(ii < std::min(rows_, globalRows_.size()));
+    return globalRows_[ii];
+  }
+
+  virtual size_t& globalCol(const size_t jj)
+  {
+    assert(jj < std::min(cols_, globalCols_.size()));
+    return globalCols_[jj];
+  }
+
+  virtual const size_t& globalCol(const size_t jj) const
+  {
+    assert(jj < std::min(cols_, globalCols_.size()));
+    return globalCols_[jj];
+  }
+
+  virtual RangeFieldType& value(const size_t ii, const size_t jj)
+  {
+    assert(ii < std::min(rows_, globalRows_.size()));
+    assert(jj < std::min(cols_, globalCols_.size()));
+    return values_[ii][jj];
+  }
+
+  virtual const RangeFieldType& value(const size_t ii, const size_t jj) const
+  {
+    assert(ii < std::min(rows_, globalRows_.size()));
+    assert(jj < std::min(cols_, globalCols_.size()));
+    return values_[ii][jj];
   }
 
 private:
-  template <class Traits>
-  friend class ConstraintsInterface;
-
+  size_t rows_;
+  size_t cols_;
   IndicesType globalRows_;
   IndicesType globalCols_;
   ValuesType values_;
-}; // class LocalConstraints
+}; // class LocalDefault
 
 
-template <class Traits>
-class ConstraintsInterface
+template <class GridViewType, class RangeFieldImp = double>
+class Dirichlet : public LocalDefault<RangeFieldImp>
 {
 public:
-  typedef typename Traits::derived_type derived_type;
+  typedef LocalDefault<RangeFieldImp> BaseType;
+  typedef Dune::Stuff::GridboundaryInterface<GridViewType> GridBoundaryType;
 
-  template <class T, class A>
-  LocalConstraints<typename SpaceInterface<T>::RangeFieldType>
-  local(const SpaceInterface<T>& testSpace, const SpaceInterface<A>& ansatzSpace,
-        const typename SpaceInterface<T>::EntityType& entity) const
+  Dirichlet(const GridBoundaryType& gB, const size_t numRows, const size_t numCols)
+    : BaseType(numRows, numCols)
+    , gridBoundary_(gB)
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().local(testSpace, ansatzSpace, entity));
-    return asImp().local(testSpace, ansatzSpace, entity);
   }
 
-  derived_type& asImp()
+  const GridBoundaryType& gridBoundary() const
   {
-    return static_cast<derived_type&>(*this);
+    return gridBoundary_;
   }
 
-  const derived_type& asImp() const
-  {
-    return static_cast<const derived_type&>(*this);
-  }
-}; // class ConstraintsInterface
+private:
+  const GridBoundaryType& gridBoundary_;
+}; // class Dirichlet
 
 
-// forward, to be used in the traits
-class NoConstraints;
-
-class NoConstraintsTraits
-{
-public:
-  typedef NoConstraints derived_type;
-};
-
-class NoConstraints : public ConstraintsInterface<NoConstraintsTraits>
-{
-public:
-  typedef NoConstraintsTraits Traits;
-
-  template <class T, class A>
-  LocalConstraints<typename SpaceInterface<T>::RangeFieldType>
-  local(const SpaceInterface<T>& /*testSpace*/, const SpaceInterface<A>& /*ansatzSpace*/,
-        const typename SpaceInterface<T>::EntityType& /*entity*/) const
-  {
-    return LocalConstraints<typename SpaceInterface<T>::RangeFieldType>(0, 0);
-  }
-};
-
-
-// forward, to be used in the traits
-class DirichletConstraints;
-
-class DirichletConstraintsTraits
-{
-public:
-  typedef DirichletConstraints derived_type;
-};
-
-class DirichletConstraints
-{
-public:
-  typedef DirichletConstraintsTraits Traits;
-
-  template <class T, class A>
-  LocalConstraints<typename SpaceInterface<T>::RangeFieldType>
-  local(const SpaceInterface<T>& testSpace, const SpaceInterface<A>& ansatzSpace,
-        const typename SpaceInterface<T>::EntityType& entity) const
-  {
-    dune_static_assert((Dune::AlwaysFalse<T>::value), "ERROR: not implemeneted for arbitrary test spaces!");
-  }
-}; // class DirichletConstraints
-
-
+} // namespace Constraints
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
