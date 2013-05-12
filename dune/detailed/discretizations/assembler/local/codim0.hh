@@ -59,10 +59,11 @@ public:
 
   /**
    *  \tparam T           Traits of the SpaceInterface implementation, representing the type of testSpace
-   *  \tparam A
-   *  \tparam EntityType
-   *  \tparam M
-   *  \tparam L
+   *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatzSpace
+   *  \tparam EntityType  A model of Dune::Entity< 0 >
+   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the
+   * type of systemMatrix
+   *  \tparam R           RangeFieldType, i.e. double
    */
   template <class T, class A, class EntityType, class M, class R>
   void assembleLocal(const SpaceInterface<T>& testSpace, const SpaceInterface<A>& ansatzSpace, const EntityType& entity,
@@ -94,7 +95,7 @@ public:
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& localRow = localMatrix[ii];
       for (size_t jj = 0; jj < cols; ++jj)
-        systemMatrix.set(globalRows[ii], globalCols[jj], localRow[jj]);
+        systemMatrix.add(globalRows[ii], globalCols[jj], localRow[jj]);
     } // write local matrix to global
   } // ... assembleLocal(...)
 
