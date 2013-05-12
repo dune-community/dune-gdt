@@ -21,7 +21,7 @@ public:
   typedef typename Traits::derived_type derived_type;
 
   /**
-   *  \brief  Computes an elliptic evaluation.
+   *  \brief  Computes a binary evaluation.
    *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
    *  \tparam T Traits of the test BaseFunctionSetInterface implementation
    *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
