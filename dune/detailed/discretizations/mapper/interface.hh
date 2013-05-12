@@ -45,8 +45,7 @@ public:
   template <class EntityType>
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().globalIndices(entity, ret));
-    asImp().globalIndices(entity, ret);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().globalIndices(entity, ret));
   }
 
   template <class EntityType>

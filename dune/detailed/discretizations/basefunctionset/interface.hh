@@ -51,14 +51,12 @@ public:
 
   void evaluate(const DomainType& x, std::vector<RangeType>& ret) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().evaluate(x, ret));
-    return asImp().evaluate(x, ret);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(x, ret));
   }
 
   void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().jacobian(x, ret));
-    return asImp().jacobian(x, ret);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().jacobian(x, ret));
   }
 
   derived_type& asImp()
