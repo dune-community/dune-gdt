@@ -1,8 +1,6 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_ELLIPTIC_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_ELLIPTIC_HH
 
-#include <memory>
-
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/stuff/function/interface.hh>
@@ -37,6 +35,11 @@ public:
 };
 
 
+/**
+ *  \brief Elliptic evaluation for matrix valued inducing functions (not implemented).
+ *
+ *        See specialization for rangeDimCols = 1 for scalar and vector valued inducing functions.
+ */
 template <class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols>
 class EvaluationElliptic
 {
@@ -91,9 +94,10 @@ public:
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
+      auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
-        const RangeFieldType gradientProduct = ansatzGradients[jj][0] * testGradients[jj][0];
-        ret[ii][jj]                          = functionValue * gradientProduct;
+        const RangeFieldType gradientProduct = ansatzGradients[jj][0] * testGradients[ii][0];
+        retRow[jj]                           = functionValue * gradientProduct;
       }
     }
   } // ... evaluate(...)
