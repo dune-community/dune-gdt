@@ -158,9 +158,11 @@ public:
         ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
         for (size_t jj = 0; jj < ret.cols(); ++jj) {
           ret.globalCol(jj) = tmpMappedCols_[jj];
-          ret.value(localRow, jj) = zero;
+          if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
+            ret.value(localRow, jj) = one;
+          else
+            ret.value(localRow, jj) = zero;
         }
-        ret.value(localRow, localRow) = one;
         ++localRow;
       }
     } else {
