@@ -10,6 +10,7 @@
 #include <dune/stuff/la/container/interface.hh>
 
 #include <dune/detailed/discretizations/localoperator/codim0.hh>
+#include <dune/detailed/discretizations/localfunctional/codim0.hh>
 #include <dune/detailed/discretizations/space/interface.hh>
 
 namespace Dune {
@@ -102,6 +103,84 @@ public:
 private:
   const LocalOperatorType& localOperator_;
 }; // class LocalAssemblerCodim0Matrix
+
+
+// forward, to be used in the traits
+template <class LocalOperatorImp>
+class LocalAssemblerCodim0Vector;
+
+
+template <class LocalFunctionalImp>
+class LocalAssemblerCodim0VectorTraits
+{
+public:
+  typedef LocalAssemblerCodim0Vector<LocalFunctionalImp> derived_type;
+  typedef LocalFunctionalCodim0Interface<typename LocalFunctionalImp::Traits> LocalFunctionalType;
+}; // class LocalAssemblerCodim0MatrixTraits
+
+
+template <class LocalFunctionalImp>
+class LocalAssemblerCodim0Vector
+{
+public:
+  typedef LocalAssemblerCodim0VectorTraits<LocalFunctionalImp> Traits;
+  typedef typename Traits::LocalFunctionalType LocalFunctionalType;
+
+  LocalAssemblerCodim0Vector(const LocalFunctionalType& func)
+    : localFunctional_(func)
+  {
+  }
+
+  const LocalFunctionalType& localFunctional() const
+  {
+    return localFunctional_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector<size_t> numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localFunctional_.numTmpObjectsRequired()};
+  }
+
+  /**
+   *  \tparam T           Traits of the SpaceInterface implementation, representing the type of testSpace
+   *  \tparam EntityType  A model of Dune::Entity< 0 >
+   *  \tparam V           Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the
+   * type of systemVector
+   *  \tparam R           RangeFieldType, i.e. double
+   */
+  template <class T, class EntityType, class V, class R>
+  void assembleLocal(const SpaceInterface<T>& testSpace, const EntityType& entity,
+                     Dune::Stuff::LA::Container::VectorInterface<V>& systemVector,
+                     std::vector<std::vector<Dune::DynamicVector<R>>>& tmpLocalVectorContainer,
+                     Dune::DynamicVector<size_t>& tmpIndices) const
+  {
+    // check
+    assert(tmpLocalVectorContainer.size() >= 1);
+    assert(tmpLocalVectorContainer[0].size() >= numTmpObjectsRequired_);
+    assert(tmpLocalVectorContainer[1].size() >= localFunctional_.numTmpObjectsRequired());
+    // get and clear vector
+    auto& localVector = tmpLocalVectorContainer[0][0];
+    Dune::Stuff::Common::clear(localVector);
+    auto& tmpFunctionalVectors = tmpLocalVectorContainer[1];
+    // apply local functional (result is in localVector)
+    localFunctional_.apply(testSpace.baseFunctionSet(entity), localVector, tmpFunctionalVectors);
+    // write local vector to global
+    const size_t size = testSpace.mapper().numDofs(entity);
+    assert(tmpIndices.size() >= size);
+    testSpace.mapper().globalIndices(entity, tmpIndices);
+    for (size_t ii = 0; ii < size; ++ii) {
+      systemVector.add(tmpIndices[ii], localVector[ii]);
+    } // write local matrix to global
+  } // ... assembleLocal(...)
+
+private:
+  const LocalFunctionalType& localFunctional_;
+}; // class LocalAssemblerCodim0Vector
+
 
 } // namespace Discretizations
 } // namespace Detailed
