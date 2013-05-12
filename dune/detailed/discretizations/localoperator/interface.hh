@@ -45,8 +45,7 @@ public:
              Dune::DynamicMatrix< RangeFieldType >& ret,
              std::vector< Dune::DynamicMatrix< RangeFieldType > >& tmpLocalMatrices) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, ansatzBase, ret, tmpLocalMatrices));
-    asImp().apply(testBase, ansatzBase, ret, tmpLocalMatrices);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, ansatzBase, ret, tmpLocalMatrices));
   }
 
   derived_type& asImp()
