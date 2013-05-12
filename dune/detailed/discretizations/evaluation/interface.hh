@@ -14,6 +14,7 @@ namespace Dune {
 namespace Detailed {
 namespace Discretizations {
 
+
 template <class Traits>
 class BinaryEvaluationInterface
 {
@@ -34,6 +35,28 @@ public:
     derived_type::evaluate(localFunction, testBase, ansatzBase, localPoint, ret);
   }
 }; // class BinaryEvaluationInterface
+
+
+template <class Traits>
+class UnaryEvaluationInterface
+{
+public:
+  typedef typename Traits::derived_type derived_type;
+
+  /**
+   *  \brief  Computes a unary evaluation.
+   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
+   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
+   */
+  template <class L, class T, class D, int d, class R, int rR, int rC>
+  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rR, rC>& localFunction,
+                       const BaseFunctionSetInterface<T>& testBase, const Dune::FieldVector<D, d>& localPoint,
+                       Dune::DynamicVector<R>& ret)
+  {
+    derived_type::evaluate(localFunction, testBase, localPoint, ret);
+  }
+}; // class UnaryEvaluationInterface
+
 
 } // namespace Discretizations
 } // namespace Detailed
