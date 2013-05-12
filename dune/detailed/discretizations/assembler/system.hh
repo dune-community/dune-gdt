@@ -10,416 +10,258 @@
 #include <dune/stuff/la/container/interface.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
+#include <dune/detailed/discretizations/space/interface.hh>
+#include <dune/detailed/discretizations/space/constraints.hh>
+
+#include "local/codim0.hh"
+
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace Assembler {
 
-template <class TestFunctionSpaceImp, class AnsatzFunctionSpaceImp = TestFunctionSpaceImp>
-class System
+template <class TestSpaceImp, class AnsatzSpaceImp>
+class SystemAssembler
 {
 public:
-  typedef TestFunctionSpaceImp TestFunctionSpaceType;
-
-  typedef AnsatzFunctionSpaceImp AnsatzFunctionSpaceType;
-
-  typedef System<TestFunctionSpaceImp, AnsatzFunctionSpaceImp> ThisType;
+  typedef SpaceInterface<typename TestSpaceImp::Traits> TestSpaceType;
+  typedef SpaceInterface<typename AnsatzSpaceImp::Traits> AnsatzSpaceType;
 
 private:
-  typedef typename TestFunctionSpaceType::GridViewType GridViewType;
-
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-
-  typedef typename TestFunctionSpaceType::FunctionSpaceType::RangeFieldType RangeFieldType;
-
+  typedef typename TestSpaceType::GridPartType GridPartType;
+  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+  typedef typename TestSpaceType::RangeFieldType RangeFieldType;
   typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
-
   typedef Dune::DynamicVector<RangeFieldType> LocalVectorType;
-
   typedef std::vector<std::vector<LocalMatrixType>> LocalMatricesContainerType;
-
   typedef std::vector<std::vector<LocalVectorType>> LocalVectorsContainerType;
+  typedef std::vector<Dune::DynamicVector<size_t>> IndicesContainer;
 
-  class LocalMatrixAssemblerApplication
+  class LocalCodim0MatrixAssemblerApplication
   {
   public:
-    virtual ~LocalMatrixAssemblerApplication()
+    virtual ~LocalCodim0MatrixAssemblerApplication()
     {
     }
 
-    virtual void apply(const TestFunctionSpaceType& /*_testSpace*/, const AnsatzFunctionSpaceType& /*_ansatzSpace*/,
-                       const EntityType& /*_entity*/,
-                       LocalMatricesContainerType& /*_localMatricesContainer*/) const = 0;
+    virtual void apply(const TestSpaceType& /*_testSpace*/, const AnsatzSpaceType& /*_ansatzSpace*/,
+                       const EntityType& /*_entity*/, LocalMatricesContainerType& /*_localMatricesContainer*/,
+                       IndicesContainer& /*indicesContainer*/) const = 0;
 
-    virtual std::vector<unsigned int> numTmpObjectsRequired() const = 0;
-  }; // class LocalOperatorApplication
+    virtual std::vector<size_t> numTmpObjectsRequired() const = 0;
+  };
 
-  template <class LocalMatrixAssemblerType, class MatrixType>
-  class LocalMatrixAssemblerApplicationWrapper : public LocalMatrixAssemblerApplication
+  template <class L, class M>
+  class LocalCodim0MatrixAssemblerWrapper : public LocalCodim0MatrixAssemblerApplication
   {
   public:
-    LocalMatrixAssemblerApplicationWrapper(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                                           std::shared_ptr<MatrixType> _matrix)
-      : localMatrixAssembler_(_localMatrixAssembler)
-      , matrix_(_matrix)
+    LocalCodim0MatrixAssemblerWrapper(const LocalAssemblerCodim0Matrix<L>& localAssembler,
+                                      Dune::Stuff::LA::Container::MatrixInterface<M>& matrix)
+      : localMatrixAssembler_(localAssembler)
+      , matrix_(matrix)
     {
     }
 
-    virtual void apply(const TestFunctionSpaceType& _testSpace, const AnsatzFunctionSpaceType& _ansatzSpace,
-                       const EntityType& _entity, LocalMatricesContainerType& _localMatricesContainer) const
+    virtual void apply(const TestSpaceType& testSpace, const AnsatzSpaceType& ansatzSpace, const EntityType& entity,
+                       LocalMatricesContainerType& localMatricesContainer, IndicesContainer& indicesContainer) const
     {
-      localMatrixAssembler_->assembleLocal(_testSpace, _ansatzSpace, _entity, *matrix_, _localMatricesContainer);
-    } // virtual void applyLocal(...) const
+      localMatrixAssembler_.assembleLocal(
+          testSpace, ansatzSpace, entity, matrix_, localMatricesContainer, indicesContainer);
+    }
 
-    virtual std::vector<unsigned int> numTmpObjectsRequired() const
+    virtual std::vector<size_t> numTmpObjectsRequired() const
     {
-      return localMatrixAssembler_->numTmpObjectsRequired();
-    } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
+      return localMatrixAssembler_.numTmpObjectsRequired();
+    }
 
   private:
-    const std::shared_ptr<const LocalMatrixAssemblerType> localMatrixAssembler_;
-    std::shared_ptr<MatrixType> matrix_;
-  }; // class LocalMatrixAssemblerApplicationWrapper
+    const LocalAssemblerCodim0Matrix<L>& localMatrixAssembler_;
+    Dune::Stuff::LA::Container::MatrixInterface<M>& matrix_;
+  }; // class LocalCodim0MatrixAssemblerWrapper
 
-  class LocalVectorAssemblerApplication
+  class LocalCodim0VectorAssemblerApplication
   {
   public:
-    virtual ~LocalVectorAssemblerApplication()
+    virtual ~LocalCodim0VectorAssemblerApplication()
     {
     }
 
-    virtual void apply(const TestFunctionSpaceType& /*_testSpace*/, const EntityType& /*_entity*/,
-                       LocalVectorsContainerType& /*_localMatricesContainer*/) const = 0;
+    virtual void apply(const TestSpaceType& /*_testSpace*/, const EntityType& /*_entity*/,
+                       LocalVectorsContainerType& /*_localVectorsContainer*/,
+                       Dune::DynamicVector<size_t>& /*indices*/) const = 0;
 
-    virtual std::vector<unsigned int> numTmpObjectsRequired() const = 0;
-  }; // class LocalOperatorApplication
+    virtual std::vector<size_t> numTmpObjectsRequired() const = 0;
+  };
 
-  template <class LocalVectorAssemblerType, class VectorType>
-  class LocalVectorAssemblerApplicationWrapper : public LocalVectorAssemblerApplication
+  template <class L, class V>
+  class LocalCodim0VectorAssemblerWrapper : public LocalCodim0VectorAssemblerApplication
   {
   public:
-    LocalVectorAssemblerApplicationWrapper(const std::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
-                                           std::shared_ptr<VectorType> _vector)
-      : localVectorAssembler_(_localVectorAssembler)
-      , vector_(_vector)
+    LocalCodim0VectorAssemblerWrapper(const LocalAssemblerCodim0Vector<L>& localAssembler,
+                                      Dune::Stuff::LA::Container::VectorInterface<V>& vector)
+      : localVectorAssembler_(localAssembler)
+      , vector_(vector)
     {
     }
 
-    virtual void apply(const TestFunctionSpaceType& _testSpace, const EntityType& _entity,
-                       LocalVectorsContainerType& _localVectorsContainer) const
+    virtual void apply(const TestSpaceType& testSpace, const EntityType& entity,
+                       LocalVectorsContainerType& localVectorsContainer, Dune::DynamicVector<size_t>& indices) const
     {
-      localVectorAssembler_->assembleLocal(_testSpace, _entity, *vector_, _localVectorsContainer);
-    } // virtual void applyLocal(...) const
+      localVectorAssembler_.assembleLocal(testSpace, entity, vector_, localVectorsContainer, indices);
+    }
 
-    virtual std::vector<unsigned int> numTmpObjectsRequired() const
+    virtual std::vector<size_t> numTmpObjectsRequired() const
     {
-      return localVectorAssembler_->numTmpObjectsRequired();
-    } // virtual std::vector< unsigned int > numTmpObjectsRequired() const
+      return localVectorAssembler_.numTmpObjectsRequired();
+    }
 
   private:
-    const std::shared_ptr<const LocalVectorAssemblerType> localVectorAssembler_;
-    std::shared_ptr<VectorType> vector_;
-  }; // class LocalMatrixAssemblerApplicationWrapper
+    const LocalAssemblerCodim0Vector<L>& localVectorAssembler_;
+    Dune::Stuff::LA::Container::VectorInterface<V>& vector_;
+  }; // class LocalCodim0VectorAssemblerWrapper
 
 public:
-  System(const TestFunctionSpaceType& _testSpace, const AnsatzFunctionSpaceType& _ansatzSpace)
-    : testSpace_(_testSpace)
-    , ansatzSpace_(_ansatzSpace)
+  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz)
+    : testSpace_(test)
+    , ansatzSpace_(ansatz)
   {
   }
 
-  System(const TestFunctionSpaceType& _testSpace)
-    : testSpace_(_testSpace)
-    , ansatzSpace_(_testSpace)
+  SystemAssembler(const TestSpaceType& test)
+    : testSpace_(test)
+    , ansatzSpace_(test)
   {
   }
 
-  ~System()
+  ~SystemAssembler()
   {
-    for (auto& localMatrixAssembler : localMatrixAssemblers_)
-      delete localMatrixAssembler;
-    for (auto& localVectorAssembler : localVectorAssemblers_)
-      delete localVectorAssembler;
+    for (auto& localCodim0MatrixAssembler : localCodim0MatrixAssemblers_)
+      delete localCodim0MatrixAssembler;
+    for (auto& localCodim0VectorAssembler : localCodim0VectorAssemblers_)
+      delete localCodim0VectorAssembler;
   }
 
-  const TestFunctionSpaceType& testSpace()
+  const TestSpaceType& testSpace()
   {
     return testSpace_;
   }
 
-  const AnsatzFunctionSpaceType& ansatzSpace()
+  const AnsatzSpaceType& ansatzSpace()
   {
     return ansatzSpace_;
   }
 
-  template <class LocalMatrixAssemblerType, class MatrixType>
-  void addLocalMatrixAssembler(const std::shared_ptr<const LocalMatrixAssemblerType> _localMatrixAssembler,
-                               std::shared_ptr<MatrixType> _matrix)
+  template <class L, class M>
+  void addLocalMatrixAssembler(const LocalAssemblerCodim0Matrix<L>& localAssembler,
+                               Dune::Stuff::LA::Container::MatrixInterface<M>& matrix)
   {
-    typedef LocalMatrixAssemblerApplicationWrapper<LocalMatrixAssemblerType, MatrixType> WrapperType;
-    WrapperType* wrapper = new WrapperType(_localMatrixAssembler, _matrix);
-    localMatrixAssemblers_.push_back(wrapper);
+    assert(matrix.rows() == int(testSpace_.mapper().size()));
+    assert(matrix.cols() == int(ansatzSpace_.mapper().size()));
+    localCodim0MatrixAssemblers_.push_back(new LocalCodim0MatrixAssemblerWrapper<L, M>(localAssembler, matrix));
   }
 
-  template <class LocalVectorAssemblerType, class VectorType>
-  void addLocalVectorAssembler(const std::shared_ptr<const LocalVectorAssemblerType> _localVectorAssembler,
-                               std::shared_ptr<VectorType> _vector)
+  template <class L, class V>
+  void addLocalVectorAssembler(const LocalAssemblerCodim0Vector<L>& localAssembler,
+                               Dune::Stuff::LA::Container::VectorInterface<V>& vector)
   {
-    typedef LocalVectorAssemblerApplicationWrapper<LocalVectorAssemblerType, VectorType> WrapperType;
-    WrapperType* wrapper = new WrapperType(_localVectorAssembler, _vector);
-    localVectorAssemblers_.push_back(wrapper);
+    assert(vector.size() == int(testSpace_.mapper().size()));
+    localCodim0VectorAssemblers_.push_back(new LocalCodim0VectorAssemblerWrapper<L, V>(localAssembler, vector));
   }
 
   void assemble() const
   {
     // common tmp storage for all entities
     // * for the matrix assemblers
-    std::vector<unsigned int> numberOfTmpMatricesNeeded(2, 0);
-    for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii) {
-      const std::vector<unsigned int> tmp = localMatrixAssemblers_[ii]->numTmpObjectsRequired();
-      numberOfTmpMatricesNeeded[0]        = std::max(numberOfTmpMatricesNeeded[0], tmp[0]);
-      numberOfTmpMatricesNeeded[1]        = std::max(numberOfTmpMatricesNeeded[1], tmp[1]);
+    std::vector<size_t> numberOfTmpMatricesNeeded(2, 0);
+    for (auto& localCodim0MatrixAssembler : localCodim0MatrixAssemblers_) {
+      const auto tmp = localCodim0MatrixAssembler->numTmpObjectsRequired();
+      assert(tmp.size() == 2);
+      numberOfTmpMatricesNeeded[0] = std::max(numberOfTmpMatricesNeeded[0], tmp[0]);
+      numberOfTmpMatricesNeeded[1] = std::max(numberOfTmpMatricesNeeded[1], tmp[1]);
     }
+    const size_t maxLocalSize = std::max(testSpace_.mapper().maxNumDofs(), ansatzSpace_.mapper().maxNumDofs());
     std::vector<LocalMatrixType> tmpLocalAssemblerMatrices(
-        numberOfTmpMatricesNeeded[0],
-        LocalMatrixType(testSpace_.map().maxLocalSize(), ansatzSpace_.map().maxLocalSize(), RangeFieldType(0)));
+        numberOfTmpMatricesNeeded[0], LocalMatrixType(maxLocalSize, maxLocalSize, RangeFieldType(0)));
     std::vector<LocalMatrixType> tmpLocalOperatorMatrices(
-        numberOfTmpMatricesNeeded[1],
-        LocalMatrixType(testSpace_.map().maxLocalSize(), ansatzSpace_.map().maxLocalSize(), RangeFieldType(0)));
+        numberOfTmpMatricesNeeded[1], LocalMatrixType(maxLocalSize, maxLocalSize, RangeFieldType(0)));
     std::vector<std::vector<LocalMatrixType>> tmpLocalMatricesContainer;
     tmpLocalMatricesContainer.push_back(tmpLocalAssemblerMatrices);
     tmpLocalMatricesContainer.push_back(tmpLocalOperatorMatrices);
     // * for the vector assemblers
-    std::vector<unsigned int> numberOfTmpVectorsNeeded(2, 0);
-    for (unsigned int ii = 0; ii < localVectorAssemblers_.size(); ++ii) {
-      const std::vector<unsigned int> tmp = localVectorAssemblers_[ii]->numTmpObjectsRequired();
-      numberOfTmpVectorsNeeded[0]         = std::max(numberOfTmpVectorsNeeded[0], tmp[0]);
-      numberOfTmpVectorsNeeded[1]         = std::max(numberOfTmpVectorsNeeded[1], tmp[1]);
+    std::vector<size_t> numberOfTmpVectorsNeeded(2, 0);
+    for (auto& localCodim0VectorAssembler : localCodim0VectorAssemblers_) {
+      const auto tmp = localCodim0VectorAssembler->numTmpObjectsRequired();
+      assert(tmp.size() == 2);
+      numberOfTmpVectorsNeeded[0] = std::max(numberOfTmpVectorsNeeded[0], tmp[0]);
+      numberOfTmpVectorsNeeded[1] = std::max(numberOfTmpVectorsNeeded[1], tmp[1]);
     }
-    std::vector<LocalVectorType> tmpLocalAssemblerVectors(
-        numberOfTmpVectorsNeeded[0], LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0)));
-    std::vector<LocalVectorType> tmpLocalFunctionalVectors(
-        numberOfTmpVectorsNeeded[1], LocalVectorType(testSpace_.map().maxLocalSize(), RangeFieldType(0)));
+    std::vector<LocalVectorType> tmpLocalAssemblerVectors(numberOfTmpVectorsNeeded[0],
+                                                          LocalVectorType(maxLocalSize, RangeFieldType(0)));
+    std::vector<LocalVectorType> tmpLocalFunctionalVectors(numberOfTmpVectorsNeeded[1],
+                                                           LocalVectorType(maxLocalSize, RangeFieldType(0)));
     std::vector<std::vector<LocalVectorType>> tmpLocalVectorsContainer;
     tmpLocalVectorsContainer.push_back(tmpLocalAssemblerVectors);
     tmpLocalVectorsContainer.push_back(tmpLocalFunctionalVectors);
+    // * for the global indices
+    std::vector<Dune::DynamicVector<size_t>> tmpIndices = {Dune::DynamicVector<size_t>(maxLocalSize),
+                                                           Dune::DynamicVector<size_t>(maxLocalSize)};
 
     // walk the grid
-    typedef typename GridViewType::template Codim<0>::Iterator EntityIteratorType;
-    for (EntityIteratorType entityIt = ansatzSpace_.gridView().template begin<0>();
-         entityIt != ansatzSpace_.gridView().template end<0>();
-         ++entityIt) {
+    const auto entityEndIt = testSpace_.gridPart().template end<0>();
+    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != entityEndIt; ++entityIt) {
       const EntityType& entity = *entityIt;
       // assemble local matrices
-      for (unsigned int ii = 0; ii < localMatrixAssemblers_.size(); ++ii)
-        localMatrixAssemblers_[ii]->apply(testSpace_, ansatzSpace_, entity, tmpLocalMatricesContainer);
+      for (auto& localCodim0MatrixAssembler : localCodim0MatrixAssemblers_) {
+        localCodim0MatrixAssembler->apply(testSpace_, ansatzSpace_, entity, tmpLocalMatricesContainer, tmpIndices);
+      }
       // assemble local vectors
-      for (unsigned int ii = 0; ii < localVectorAssemblers_.size(); ++ii)
-        localVectorAssemblers_[ii]->apply(testSpace_, entity, tmpLocalVectorsContainer);
+      for (auto& localCodim0VectorAssembler : localCodim0VectorAssemblers_) {
+        localCodim0VectorAssembler->apply(testSpace_, entity, tmpLocalVectorsContainer, tmpIndices[0]);
+      }
     } // walk the grid
   } // void assemble() const
 
-  template <class MatrixTraits>
-  void clearMatrixRows(Dune::Stuff::LA::Container::MatrixInterface<MatrixTraits>& matrix,
-                       const Dune::Stuff::LA::Container::SparsityPatternDefault& pattern,
-                       bool setDiagonalEntries = true) const
+  template <class ConstraintsType, class M, class V>
+  void applyConstraints(ConstraintsType& constraints, Dune::Stuff::LA::Container::MatrixInterface<M>& matrix,
+                        Dune::Stuff::LA::Container::VectorInterface<V>& vector) const
   {
-    const auto& constraints = testSpace_.constraints();
-    const typename Dune::Stuff::LA::Container::MatrixInterface<MatrixTraits>::ElementType zero(0);
-    const typename Dune::Stuff::LA::Container::MatrixInterface<MatrixTraits>::ElementType one(1);
     // walk the grid
-    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != testSpace_.gridPart().template end<0>();
-         ++entityIt) {
-      const auto& entity            = *entityIt;
-      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
-      // walk the local dofs
-      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
-        const unsigned int& localDof = *dofIt;
-        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
-        // walk all column entries for this row
-        const auto& columnEntries = pattern.set(globalDof);
-        for (auto columnIt = columnEntries.begin(); columnIt != columnEntries.end(); ++columnIt) {
-          const unsigned int& column = *columnIt;
-          matrix.set(globalDof, column, zero);
-        } // walk all column entries for this row
-        // set diagonal entry
-        if (setDiagonalEntries)
-          matrix.set(globalDof, globalDof, one);
-      } // walk the local dofs
-    } // walk the grid
-  } // void clearMatrixRows(...)
-
-  template <class MatrixType>
-  void clearMatrixRows(std::vector<std::shared_ptr<MatrixType>> matrices,
-                       const Dune::Stuff::LA::Container::SparsityPatternDefault& pattern,
-                       bool setDiagonalEntries = true) const
-  {
-    const auto& constraints = testSpace_.constraints();
-    const typename MatrixType::ElementType zero(0);
-    const typename MatrixType::ElementType one(1);
-    // walk the grid
-    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != testSpace_.gridPart().template end<0>();
-         ++entityIt) {
-      const auto& entity            = *entityIt;
-      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
-      // walk the local dofs
-      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
-        const unsigned int& localDof = *dofIt;
-        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
-        // walk all column entries for this row
-        const auto& columnEntries = pattern.set(globalDof);
-        for (auto columnIt = columnEntries.begin(); columnIt != columnEntries.end(); ++columnIt) {
-          const unsigned int& column = *columnIt;
-          for (auto& matrix : matrices)
-            matrix->set(globalDof, column, zero);
-        } // walk all column entries for this row
-        // set diagonal entry
-        if (setDiagonalEntries) {
-          for (auto& matrix : matrices)
-            matrix->set(globalDof, globalDof, one);
-        }
-      } // walk the local dofs
-    } // walk the grid
-  } // void clearMatrixRows(...)
-
-  template <class VectorTraits>
-  void clearVectorEntries(Dune::Stuff::LA::Container::VectorInterface<VectorTraits>& vector,
-                          bool setEntries = true) const
-  {
-    const auto& constraints = testSpace_.constraints();
-    const typename Dune::Stuff::LA::Container::VectorInterface<VectorTraits>::ElementType zero(0);
-    const typename Dune::Stuff::LA::Container::VectorInterface<VectorTraits>::ElementType one(1);
-    // walk the grid
-    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != testSpace_.gridPart().template end<0>();
-         ++entityIt) {
-      const auto& entity            = *entityIt;
-      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
-      // walk the local dofs
-      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
-        const unsigned int& localDof = *dofIt;
-        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
-        if (setEntries)
-          vector.set(globalDof, one);
-        else
-          vector.set(globalDof, zero);
-      } // walk the local dofs
-    } // walk the grid
-  } // void clearVectorEntries(...)
-
-  template <class VectorType>
-  void clearVectorEntries(std::vector<std::shared_ptr<VectorType>> vectors, bool setEntries = true) const
-  {
-    const auto& constraints = testSpace_.constraints();
-    const typename VectorType::ElementType zero(0);
-    const typename VectorType::ElementType one(1);
-    // walk the grid
-    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != testSpace_.gridPart().template end<0>();
-         ++entityIt) {
-      const auto& entity            = *entityIt;
-      const auto localDirichletDofs = constraints.localDirichletDofs(entity);
-      // walk the local dofs
-      for (auto dofIt = localDirichletDofs.begin(); dofIt != localDirichletDofs.end(); ++dofIt) {
-        const unsigned int& localDof = *dofIt;
-        const unsigned int globalDof = ansatzSpace_.map().toGlobal(entity, localDof);
-        if (setEntries) {
-          for (auto& vector : vectors)
-            vector->set(globalDof, one);
-        } else {
-          for (auto& vector : vectors)
-            vector->set(globalDof, zero);
-        }
-      } // walk the local dofs
-    } // walk the grid
-  } // void clearVectorEntries(...)
-
-  template <class MatrixType, class VectorType>
-  void applyConstraints(MatrixType& matrix, VectorType& vector) const
-  {
-    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
-    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
-    typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
-    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
-    // walk the grid to apply constraints
-    const ConstraintsType& constraints = testSpace_.constraints();
-    for (EntityIteratorType entityIterator = testSpace_.gridPart().template begin<0>();
-         entityIterator != testSpace_.gridPart().template end<0>();
-         ++entityIterator) {
-      const EntityType& entity                     = *entityIterator;
-      const LocalConstraintsType& localConstraints = constraints.local(entity);
-      applyLocalMatrixConstraints(localConstraints, matrix);
-      applyLocalVectorConstraints(localConstraints, vector);
+    const auto entityEndIt = testSpace_.gridPart().template end<0>();
+    for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != entityEndIt; ++entityIt) {
+      const EntityType& entity = *entityIt;
+      testSpace_.localConstraints(entity, constraints);
+      applyLocalMatrixConstraints(constraints, matrix);
+      applyLocalVectorConstraints(constraints, vector);
     } // walk the grid to apply constraints
-  } // void applyConstraints(MatrixType& matrix, VectorType& vector) const
-
-  template <class MatrixType>
-  void applyMatrixConstraints(MatrixType& matrix) const
-  {
-    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
-    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
-    typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
-    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
-    // walk the grid to apply constraints
-    const ConstraintsType& constraints = testSpace_.constraints();
-    for (EntityIteratorType entityIterator = testSpace_.gridPart().template begin<0>();
-         entityIterator != testSpace_.gridPart().template end<0>();
-         ++entityIterator) {
-      const EntityType& entity                     = *entityIterator;
-      const LocalConstraintsType& localConstraints = constraints.local(entity);
-      applyLocalMatrixConstraints(localConstraints, matrix);
-    } // walk the grid to apply constraints
-  } // void applyMatrixConstraints(MatrixType& matrix) const
-
-  template <class VectorType>
-  void applyVectorConstraints(VectorType& vector) const
-  {
-    typedef typename AnsatzFunctionSpaceType::GridPartType GridPartType;
-    typedef typename GridPartType::template Codim<0>::IteratorType EntityIteratorType;
-    typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-    typedef typename AnsatzFunctionSpaceType::ConstraintsType ConstraintsType;
-    typedef typename ConstraintsType::LocalConstraintsType LocalConstraintsType;
-    // walk the grid to apply constraints
-    const ConstraintsType& constraints = testSpace_.constraints();
-    for (EntityIteratorType entityIterator = testSpace_.gridPart().template begin<0>();
-         entityIterator != testSpace_.gridPart().template end<0>();
-         ++entityIterator) {
-      const EntityType& entity                     = *entityIterator;
-      const LocalConstraintsType& localConstraints = constraints.local(entity);
-      applyLocalVectorConstraints(localConstraints, vector);
-    } // walk the grid to apply constraints
-  } // void applyVectorConstraints(VectorType& vector) const
+  } // void applyConstraints(...) const
 
 private:
-  System(const ThisType&);
-  ThisType& operator=(const ThisType&);
-
-  template <class LocalConstraintsType, class MatrixType>
-  void applyLocalMatrixConstraints(const LocalConstraintsType& localConstraints, MatrixType& matrix) const
+  template <class M>
+  void applyLocalMatrixConstraints(const Constraints::LocalDefault<RangeFieldType>& localConstraints,
+                                   Dune::Stuff::LA::Container::MatrixInterface<M>& matrix) const
   {
-    for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
-      const unsigned int rowDof = localConstraints.rowDofs(i);
-      for (unsigned int j = 0; j < localConstraints.columnDofsSize(); ++j) {
-        matrix.set(rowDof, localConstraints.columnDofs(j), localConstraints.localMatrix(i, j));
+    for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
+      const size_t row = localConstraints.globalRow(ii);
+      for (size_t jj = 0; jj < localConstraints.cols(); ++jj) {
+        matrix.set(row, localConstraints.globalCol(jj), localConstraints.value(ii, jj));
       }
     }
   } // void applyLocalMatrixConstraints(...)
 
-  template <class LocalConstraintsType, class VectorType>
-  void applyLocalVectorConstraints(const LocalConstraintsType& localConstraints, VectorType& vector) const
+  template <class V>
+  void applyLocalVectorConstraints(const Constraints::LocalDefault<RangeFieldType>& localConstraints,
+                                   Dune::Stuff::LA::Container::VectorInterface<V>& vector) const
   {
-    for (unsigned int i = 0; i < localConstraints.rowDofsSize(); ++i) {
-      vector.set(localConstraints.rowDofs(i), 0.0);
+    for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
+      vector.set(localConstraints.globalRow(ii), RangeFieldType(0));
     }
   } // void applyLocalVectorConstraints(...)
 
-  const TestFunctionSpaceType& testSpace_;
-  const AnsatzFunctionSpaceType& ansatzSpace_;
-  std::vector<LocalMatrixAssemblerApplication*> localMatrixAssemblers_;
-  std::vector<LocalVectorAssemblerApplication*> localVectorAssemblers_;
-}; // class System
+  const TestSpaceType& testSpace_;
+  const AnsatzSpaceType& ansatzSpace_;
+  std::vector<LocalCodim0MatrixAssemblerApplication*> localCodim0MatrixAssemblers_;
+  std::vector<LocalCodim0VectorAssemblerApplication*> localCodim0VectorAssemblers_;
+}; // class SystemAssembler
 
-} // namespace Assembler
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
