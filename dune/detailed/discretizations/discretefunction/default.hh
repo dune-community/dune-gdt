@@ -172,7 +172,7 @@ namespace Discretizations {
 template< class SpaceImp, class VectorImp >
 class DiscreteFunctionDefaultConst
   : public Dune::VTKFunction< typename SpaceImp::GridPartType::GridViewType >
-  , Dune::Stuff::LocalizableFunction
+  , public Dune::Stuff::LocalizableFunction
 {
 public:
   typedef typename SpaceInterface< typename SpaceImp::Traits >::derived_type SpaceType;
@@ -235,6 +235,66 @@ private:
   const std::string name_;
   const std::shared_ptr< const VectorType > vector_;
 }; // class DiscreteFunctionDefaultConst
+
+
+template< class SpaceImp, class VectorImp >
+class DiscreteFunctionDefault
+  : public DiscreteFunctionDefaultConst< SpaceImp, VectorImp >
+{
+  typedef DiscreteFunctionDefaultConst< SpaceImp, VectorImp > BaseType;
+public:
+  typedef typename SpaceInterface< typename SpaceImp::Traits >::derived_type SpaceType;
+  typedef typename Dune::Stuff::LA::Container::VectorInterface< typename VectorImp::Traits >::derived_type VectorType;
+
+  typedef typename SpaceType::EntityType EntityType;
+
+  typedef DiscreteFunctionLocal< SpaceType, VectorType > LocalFunctionType;
+  typedef typename LocalFunctionType::DomainType DomainType;
+
+  DiscreteFunctionDefault(const SpaceType& sp,
+                          std::shared_ptr< VectorType > vec,
+                          const std::string nm = "discrete_function")
+    : BaseType(sp, vec, nm)
+    , nonConstVector_(vec)
+  {}
+
+//  DiscreteFunctionDefault(const SpaceType& sp,
+//                          const std::string nm = "discrete_function")
+//    : nonConstVector_(std::make_shared< VectorType >(sp.mapper().size()))
+//    , BaseType(sp, nonConstVector_, nm)
+//  {}
+
+  LocalFunctionType localFunction(const EntityType& entity)
+  {
+    return LocalFunctionType(*this, entity);
+  }
+
+  std::shared_ptr< VectorType > vector()
+  {
+    return nonConstVector_;
+  }
+
+//  virtual std::string name() const
+//  {
+//    return BaseType::name();
+//  }
+
+//  /** \defgroup vtk ´´Methods to comply with the Dune::VTKFunction interface.'' */
+//  /* @{ */
+//  virtual int ncomps() const
+//  {
+//    return BaseType::ncomps();
+//  }
+
+//  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
+//  {
+//    BaseType::evaluate(component, entity, x);
+//  }
+//  /* @} */
+
+private:
+  std::shared_ptr< VectorType > nonConstVector_;
+}; // class DiscreteFunctionDefault
 
 
 } // namespace Discretizations
