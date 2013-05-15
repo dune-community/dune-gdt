@@ -64,6 +64,8 @@ private:
 // forward, includes are below
 template <class SpaceImp, class VectorImp>
 class DiscreteFunctionDefaultConst;
+template <class SpaceImp, class VectorImp>
+class DiscreteFunctionDefault;
 
 
 // forward, to be used in the traits
@@ -169,55 +171,69 @@ private:
   const DiscreteFunctionType& function_;
   const EntityType& entity_;
   const BaseFunctionSetType base_;
+
+protected:
   LocalDoFVectorType localVector_;
+
+private:
   mutable std::vector<RangeType> tmpBaseValues_;
   mutable std::vector<JacobianRangeType> tmpBaseJacobianValues_;
 }; // class DiscreteFunctionLocalConst
 
 
-// template< class DiscreteFunctionImp >
-// class Local
-//  : public LocalConst< DiscreteFunctionImp >
-//{
-// public:
-//  typedef DiscreteFunctionImp DiscreteFunctionType;
+// forward, to be used in the traits
+template <class SpaceImp, class VectorImp>
+class DiscreteFunctionLocal;
 
-//  typedef Local< DiscreteFunctionType > ThisType;
 
-//  typedef LocalConst< DiscreteFunctionType > BaseType;
+template <class SpaceImp, class VectorImp>
+class DiscreteFunctionLocalTraits
+{
+public:
+  typedef DiscreteFunctionLocal<SpaceImp, VectorImp> derived_type;
+  typedef typename DiscreteFunctionDefault<SpaceImp, VectorImp>::EntityType EntityType;
+};
 
-//  typedef typename BaseType::EntityType EntityType;
 
-//  typedef typename BaseType::RangeFieldType RangeFieldType;
+template <class SpaceImp, class VectorImp>
+class DiscreteFunctionLocal
+    : public DiscreteFunctionLocalConst<SpaceImp, VectorImp>,
+      public Dune::Stuff::LocalFunctionInterface<DiscreteFunctionLocalTraits<SpaceImp, VectorImp>,
+                                                 typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
+                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRangeRows,
+                                                 SpaceImp::dimRangeCols>
+{
+  typedef DiscreteFunctionLocalConst<SpaceImp, VectorImp> BaseType;
 
-//  typedef typename DiscreteFunctionType::size_type size_type;
+public:
+  typedef DiscreteFunctionDefault<SpaceImp, VectorImp> DiscreteFunctionType;
+  typedef typename DiscreteFunctionType::SpaceType SpaceType;
+  typedef LocalDoFVector<typename DiscreteFunctionType::VectorType> LocalDoFVectorType;
+  typedef typename DiscreteFunctionType::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRangeRows = SpaceType::dimRangeRows;
+  static const unsigned int dimRangeCols = SpaceType::dimRangeCols;
 
-//  Local(DiscreteFunctionType& discreteFunction, const EntityType& entity)
-//    : BaseType(const_cast< const DiscreteFunctionType& >(discreteFunction), entity)
-//    , discreteFunction_(discreteFunction)
-//  {}
+private:
+  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
-//  using BaseType::entity;
+public:
+  typedef typename BaseFunctionSetType::DomainType DomainType;
+  typedef typename BaseFunctionSetType::RangeType RangeType;
+  typedef typename BaseFunctionSetType::JacobianRangeType JacobianRangeType;
 
-//  using BaseType::get;
+  DiscreteFunctionLocal(const DiscreteFunctionType& discreteFunction, const EntityType& entity)
+    : BaseType(discreteFunction, entity)
+  {
+  }
 
-//  using BaseType::size;
-
-//  using BaseType::evaluate;
-
-//  using BaseType::jacobian;
-
-//  void set(const size_type _localDofNumber, const RangeFieldType& _val)
-//  {
-//    assert(_localDofNumber < size());
-//    const size_type globalDofNumber = discreteFunction_.space().map().toGlobal(BaseType::entity(), _localDofNumber);
-//    assert(globalDofNumber < discreteFunction_.vector()->size());
-//    discreteFunction_.vector()->set(globalDofNumber, _val);
-//  }
-
-// private:
-//  DiscreteFunctionType& discreteFunction_;
-//}; // end class Local
+  LocalDoFVectorType& vector()
+  {
+    return BaseType::localVector_;
+  }
+}; // class DiscreteFunctionLocal
 
 
 } // namespace Discretizations
