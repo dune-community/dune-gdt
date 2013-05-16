@@ -1,3 +1,3 @@
-SUBDIRS =  assembler basefunctionset constraints discretefunction discretefunctional discretefunctionspace discreteoperator evaluation la mapper
+SUBDIRS = assembler basefunctionset discretefunction evaluation la mapper localfunctional localoperator space
 
 include $(top_srcdir)/am/global-rules

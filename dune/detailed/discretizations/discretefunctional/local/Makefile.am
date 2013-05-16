@@ -1,3 +1,3 @@
-SUBDIRS = codim0 codim1
+SUBDIRS = codim1
 
 include $(top_srcdir)/am/global-rules
