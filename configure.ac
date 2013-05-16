@@ -27,36 +27,16 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/Makefile
   dune/detailed/discretizations/assembler/Makefile
   dune/detailed/discretizations/assembler/local/Makefile
-  dune/detailed/discretizations/assembler/local/codim0/Makefile
-  dune/detailed/discretizations/assembler/local/codim1/Makefile
-  dune/detailed/discretizations/assembler/local/combined/Makefile
-  dune/detailed/discretizations/assembler/multiscale/Makefile
   dune/detailed/discretizations/basefunctionset/Makefile
-  dune/detailed/discretizations/basefunctionset/continuous/Makefile
-  dune/detailed/discretizations/basefunctionset/local/Makefile
-  dune/detailed/discretizations/constraints/Makefile
   dune/detailed/discretizations/discretefunction/Makefile
-  dune/detailed/discretizations/discretefunctional/Makefile
-  dune/detailed/discretizations/discretefunctional/local/Makefile
-  dune/detailed/discretizations/discretefunctional/local/codim0/Makefile
-  dune/detailed/discretizations/discretefunctional/local/codim1/Makefile
-  dune/detailed/discretizations/discretefunctionspace/Makefile
-  dune/detailed/discretizations/discretefunctionspace/continuous/Makefile
-  dune/detailed/discretizations/discretefunctionspace/sub/Makefile
-  dune/detailed/discretizations/discreteoperator/Makefile
-  dune/detailed/discretizations/discreteoperator/local/Makefile
-  dune/detailed/discretizations/discreteoperator/local/codim0/Makefile
-  dune/detailed/discretizations/discreteoperator/local/codim1/Makefile
   dune/detailed/discretizations/evaluation/Makefile
-  dune/detailed/discretizations/evaluation/local/Makefile
-  dune/detailed/discretizations/evaluation/local/binary/Makefile
-  dune/detailed/discretizations/evaluation/local/quaternary/Makefile
-  dune/detailed/discretizations/evaluation/local/unary/Makefile
   dune/detailed/discretizations/la/Makefile
-  dune/detailed/discretizations/la/container/Makefile
-  dune/detailed/discretizations/la/container/factory/Makefile
+  dune/detailed/discretizations/la/containerfactory/Makefile
+  dune/detailed/discretizations/localfunctional/Makefile
+  dune/detailed/discretizations/localoperator/Makefile
   dune/detailed/discretizations/mapper/Makefile
-  dune/detailed/discretizations/mapper/continuous/Makefile
+  dune/detailed/discretizations/space/Makefile
+  dune/detailed/discretizations/space/continuouslagrange/Makefile
   examples/Makefile
   examples/elliptic/Makefile
   m4/Makefile
