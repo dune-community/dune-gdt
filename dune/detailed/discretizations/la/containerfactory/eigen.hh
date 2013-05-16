@@ -1,8 +1,6 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 
-//#ifdef HAVE_EIGEN
-
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
@@ -59,7 +57,5 @@ public:
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
-
-//#endif // HAVE_EIGEN
 
 #endif // DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH

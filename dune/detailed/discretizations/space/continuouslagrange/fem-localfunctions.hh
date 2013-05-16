@@ -1,6 +1,12 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 
+#ifdef HAVE_CMAKE_CONFIG
+  #include "cmake_config.h"
+#elif defined (HAVE_CONFIG_H)
+  #include "config.h"
+#endif
+
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 
