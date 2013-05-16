@@ -75,3 +75,4 @@ examples/elliptic/continuous_galerkin-continuous_galerkin.o
 demos
 *.param
 *.vtu
+hctest.*
