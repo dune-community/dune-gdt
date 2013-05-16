@@ -155,8 +155,8 @@ public:
   void addLocalMatrixAssembler(const LocalAssemblerCodim0Matrix< L >& localAssembler,
                                Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
   {
-    assert(matrix.rows() == int(testSpace_.mapper().size()));
-    assert(matrix.cols() == int(ansatzSpace_.mapper().size()));
+    assert(matrix.rows() == testSpace_.mapper().size());
+    assert(matrix.cols() == ansatzSpace_.mapper().size());
     localCodim0MatrixAssemblers_.push_back(new LocalCodim0MatrixAssemblerWrapper< L, M >(localAssembler, matrix));
   }
 

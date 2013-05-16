@@ -91,7 +91,6 @@ public:
   PatternType* computePattern(const LocalGridPartType& localGridPart,
                               const SpaceInterface< O >& otherSpace) const
   {
-    typedef typename PatternType::size_type size_type;
     PatternType* ret = new PatternType(mapper().size());
     PatternType& pattern = *ret;
     // walk the grid part
