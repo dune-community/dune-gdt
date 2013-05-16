@@ -167,23 +167,18 @@ int main(int argc, char** argv)
 
     // info << "initializing discrete function spaces... " << std::flush;
     // timer.reset();
-    typedef Dune::Detailed::Discretizations
-        ::ContinuousLagrangeSpace::FemWrapper< GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
+    typedef ContinuousLagrangeSpace::FemWrapper< GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
     const SpaceType space(gridPart);
 
     // left hand side
     // * elliptic diffusion operator
-    typedef Dune::Detailed::Discretizations::EvaluationElliptic<  DomainFieldType, dimDomain,
-                                                                  RangeFieldType, dimRange >  EllipticEvaluationType;
-    typedef Dune::Detailed::Discretizations::LocalOperatorCodim0Integral< EllipticEvaluationType,
-                                                                  ExpressionFunctionType >    EllipticOperatorType;
+    typedef EvaluationElliptic< DomainFieldType, dimDomain, RangeFieldType, dimRange >    EllipticEvaluationType;
+    typedef LocalOperatorCodim0Integral< EllipticEvaluationType, ExpressionFunctionType > EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef Dune::Detailed::Discretizations::EvaluationProduct< DomainFieldType, dimDomain,
-                                                                RangeFieldType, dimRange >  ProductEvaluationType;
-    typedef Dune::Detailed::Discretizations::LocalFunctionalCodim0Integral< ProductEvaluationType,
-                                                                ExpressionFunctionType >    L2FunctionalType;
+    typedef EvaluationProduct< DomainFieldType, dimDomain, RangeFieldType, dimRange >       ProductEvaluationType;
+    typedef LocalFunctionalCodim0Integral< ProductEvaluationType, ExpressionFunctionType >  L2FunctionalType;
     const L2FunctionalType forceFunctional(*force);
     //   * L2 neumann functional
     const L2FunctionalType neumannFunctional(*neumann);
@@ -205,23 +200,21 @@ int main(int argc, char** argv)
     info << "assembing system... " << std::flush;
     timer.reset();
     // * dirichlet boundary values
-    typedef Dune::Detailed::Discretizations::DiscreteFunctionDefault< SpaceType, VectorType > DiscreteFunctionType;
+    typedef DiscreteFunctionDefault< SpaceType, VectorType > DiscreteFunctionType;
     DiscreteFunctionType dirichletProjection(space, dirichletVector, "dirichlet");
     Dune::Stuff::DiscreteFunction::project(*boundaryInfo, *dirichlet, dirichletProjection);
 
     // * local matrix assembler
-    typedef Dune::Detailed::Discretizations::LocalAssemblerCodim0Matrix< EllipticOperatorType >
-        LocalEllipticOperatorMatrixAssemblerType;
+    typedef LocalAssemblerCodim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
     const LocalEllipticOperatorMatrixAssemblerType diffusionMatrixAssembler(diffusionOperator);
     // * local vector assemblers
-    typedef Dune::Detailed::Discretizations::LocalAssemblerCodim0Vector< L2FunctionalType >
-        LocalL2FunctionalVectorAssemblerType;
+    typedef LocalAssemblerCodim0Vector< L2FunctionalType > LocalL2FunctionalVectorAssemblerType;
     //   * force vector
     const LocalL2FunctionalVectorAssemblerType forceVectorAssembler(forceFunctional);
     //   * neumann vector
     const LocalL2FunctionalVectorAssemblerType neumannVectorAssembler(neumannFunctional);
     // * system assembler
-    typedef Dune::Detailed::Discretizations::SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
+    typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
     SystemAssemblerType systemAssembler(space);
     systemAssembler.addLocalMatrixAssembler(diffusionMatrixAssembler, *systemMatrix);
     systemAssembler.addLocalVectorAssembler(forceVectorAssembler, *forceVector);
@@ -272,7 +265,7 @@ int main(int argc, char** argv)
       info << ".vtu";
     info << "'... " << std::flush;
     timer.reset();
-    typedef Dune::Detailed::Discretizations::DiscreteFunctionDefaultConst< SpaceType, VectorType > ConstDiscreteFunctionType;
+    typedef DiscreteFunctionDefaultConst< SpaceType, VectorType > ConstDiscreteFunctionType;
     const std::shared_ptr< const ConstDiscreteFunctionType > solution(new ConstDiscreteFunctionType(space,
                                                                                                     solutionVector,
                                                                                                     solutionName));
