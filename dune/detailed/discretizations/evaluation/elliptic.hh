@@ -19,63 +19,54 @@ namespace Evaluation {
 
 
 // forward, to be used in the traits
-// template< class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols = 1 >
 class Elliptic;
 
 
-// template< class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols = 1 >
+/**
+ *  \brief  Traits for the Elliptic evaluation.
+ */
 class EllipticTraits
 {
 public:
-  typedef Elliptic /*< DomainFieldImp, domainDim, RangeFieldImp, rangeDimRows, rangeDimCols >*/ derived_type;
-  //  typedef DomainFieldImp                                  DomainFieldType;
-  //  static const unsigned int                               dimDomain = domainDim;
-  //  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
-
-  //  typedef RangeFieldImp                                 RangeFieldType;
-  //  static const unsigned int                             dimRangeRows = rangeDimRows;
-  //  static const unsigned int                             dimRangeCols = rangeDimCols;
+  typedef Elliptic derived_type;
 };
 
 
+/**
+ *  \brief  Computes an elliptic evaluation.
+ */
 class Elliptic : public BinaryEvaluationInterface<EllipticTraits>
 {
 public:
-  typedef /*Evaluation*/ EllipticTraits /*< DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >*/ Traits;
+  typedef EllipticTraits Traits;
 
-  //  typedef typename Traits::DomainFieldType  DomainFieldType;
-  //  static const unsigned int                 dimDomain = Traits::dimDomain;
-  //  typedef typename Traits::DomainType       DomainType;
-
-  //  typedef typename Traits::RangeFieldType RangeFieldType;
-  //  static const unsigned int               dimRangeRows = Traits::dimRangeRows;
-  //  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
-
-  template <class L, class T, class A, class D, int d, class R, int r, int rC>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, r, rC>& /*localFunction*/,
-                       const BaseFunctionSetInterface<T, D, d, R, r, rC>& /*testBase*/,
-                       const BaseFunctionSetInterface<A, D, d, R, r, rC>& /*ansatzBase*/,
+  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
+                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
+                       const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& /*ansatzBase*/,
                        const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/)
   {
-    dune_static_assert((Dune::AlwaysFalse<R>::value),
-                       "ERROR: not implemented for this combination of dimensions d, r and rC!");
+    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
   }
 
 
   /**
    *  \brief  Computes an elliptic evaluationf for a scalar local function and scalar basefunctionsets.
+   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
    *  \tparam T Traits of the test BaseFunctionSetInterface implementation
    *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
-   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
+   *  \tparam D DomainFieldType
+   *  \tparam d dimDomain
+   *  \tparam R RangeFieldType
    */
-  template <class L, class T, class A, class D, int d, class RangeFieldType>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, RangeFieldType, 1, 1>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, RangeFieldType, 1, 1>& testBase,
-                       const BaseFunctionSetInterface<A, D, d, RangeFieldType, 1, 1>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<RangeFieldType>& ret)
+  template <class L, class T, class A, class D, int d, class R>
+  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
+                       const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
+                       const BaseFunctionSetInterface<A, D, d, R, 1, 1>& ansatzBase,
+                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
   {
-    typedef typename BaseFunctionSetInterface<A, D, d, RangeFieldType, 1, 1>::RangeType RangeType;
-    typedef typename BaseFunctionSetInterface<A, D, d, RangeFieldType, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // evaluate local function
     const RangeType functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
@@ -92,11 +83,11 @@ public:
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
-        const RangeFieldType gradientProduct = ansatzGradients[jj][0] * testGradients[ii][0];
-        retRow[jj]                           = functionValue * gradientProduct;
+        const R gradientProduct = ansatzGradients[jj][0] * testGradients[ii][0];
+        retRow[jj]              = functionValue * gradientProduct;
       }
     }
-  } // ... evaluate(...)
+  } // ... evaluate< ..., 1, 1 >(...)
 }; // class Elliptic
 
 
