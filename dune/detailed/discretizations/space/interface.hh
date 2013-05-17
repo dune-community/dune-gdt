@@ -24,7 +24,7 @@ public:
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int dimRangeRows = Traits::dimRangeRows;
+  static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
 
   typedef typename Traits::BackendType BackendType;

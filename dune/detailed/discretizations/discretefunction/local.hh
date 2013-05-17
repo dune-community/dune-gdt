@@ -86,7 +86,7 @@ template <class SpaceImp, class VectorImp>
 class DiscreteFunctionLocalConst
     : public Dune::Stuff::LocalFunctionInterface<DiscreteFunctionLocalConstTraits<SpaceImp, VectorImp>,
                                                  typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRangeRows,
+                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
                                                  SpaceImp::dimRangeCols>
 {
 public:
@@ -97,7 +97,7 @@ public:
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRangeRows = SpaceType::dimRangeRows;
+  static const unsigned int dimRange     = SpaceType::dimRange;
   static const unsigned int dimRangeCols = SpaceType::dimRangeCols;
 
 private:
@@ -200,7 +200,7 @@ class DiscreteFunctionLocal
     : public DiscreteFunctionLocalConst<SpaceImp, VectorImp>,
       public Dune::Stuff::LocalFunctionInterface<DiscreteFunctionLocalTraits<SpaceImp, VectorImp>,
                                                  typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRangeRows,
+                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
                                                  SpaceImp::dimRangeCols>
 {
   typedef DiscreteFunctionLocalConst<SpaceImp, VectorImp> BaseType;
@@ -213,7 +213,7 @@ public:
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRangeRows = SpaceType::dimRangeRows;
+  static const unsigned int dimRange     = SpaceType::dimRange;
   static const unsigned int dimRangeCols = SpaceType::dimRangeCols;
 
 private:

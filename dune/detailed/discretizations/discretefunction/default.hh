@@ -223,7 +223,7 @@ public:
   /* @{ */
   virtual int ncomps() const
   {
-    return SpaceType::dimRangeRows;
+    return SpaceType::dimRange;
   }
 
   virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
