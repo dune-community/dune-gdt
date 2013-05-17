@@ -60,7 +60,8 @@ public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::FemWrapper<typename BackendType::BaseFunctionSetType, EntityType> BaseFunctionSetType;
+  typedef BaseFunctionSet::FemWrapper<typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain,
+                                      RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
 }; // class SpaceWrappedFemContinuousLagrangeTraits< ..., 1, 1 >
 
 

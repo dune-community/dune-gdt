@@ -76,7 +76,8 @@ private:
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
-  typedef BaseFunctionSet::FemLocalfunctionsWrapper<BaseFunctionSetMapType> BaseFunctionSetType;
+  typedef BaseFunctionSet::FemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain, RangeFieldType,
+                                                    dimRange, dimRangeCols> BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
 
 private:
