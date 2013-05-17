@@ -23,17 +23,17 @@ namespace ContinuousLagrangeSpace {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDimRows = 1, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapper;
 
 
 // forward, to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDimRows = 1, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapperTraits;
 
 
 /**
- *  \brief Traits class for ContinuousLagrangeSpace for dimRange 1x1.
+ *  \brief Traits class for ContinuousLagrangeSpace for dimRangeCols = 1.
  */
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
@@ -48,10 +48,10 @@ private:
   static const unsigned int             dimDomain = GridPartType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRangeRows = 1;
+  static const unsigned int             dimRange = 1;
   static const unsigned int             dimRangeCols = 1;
 private:
-  typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRangeRows > FunctionSpaceType;
+  typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
   typedef Mapper::FemDofWrapper< typename BackendType::MapperType > MapperType;
@@ -67,12 +67,12 @@ class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
 public:
   typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
-  typedef typename Traits::GridPartType   GridPartType;
-  typedef typename GridPartType::ctype    DomainFieldType;
-  static const int                        polOrder = Traits::polOrder;
-  static const unsigned int               dimDomain = GridPartType::dimension;
+  typedef typename Traits::GridPartType GridPartType;
+  static const int                      polOrder = Traits::polOrder;
+  typedef typename GridPartType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridPartType::dimension;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRangeRows = Traits::dimRangeRows;
+  static const unsigned int               dimRange = Traits::dimRange;
   static const unsigned int               dimRangeCols = Traits::dimRangeCols;
 
   typedef typename Traits::BackendType          BackendType;
