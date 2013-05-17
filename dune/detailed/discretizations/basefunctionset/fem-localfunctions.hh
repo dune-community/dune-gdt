@@ -12,42 +12,45 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class BaseFunctionSetMapImp >
+template< class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemLocalfunctionsWrapper;
 
 
-template< class BaseFunctionSetMapImp >
+template< class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemLocalfunctionsWrapperTraits
 {
 public:
-  typedef FemLocalfunctionsWrapper< BaseFunctionSetMapImp >  derived_type;
-  typedef typename BaseFunctionSetMapImp::BaseFunctionSetType               BackendType;
-  typedef typename BackendType::EntityType        EntityType;
-  typedef typename BackendType::DomainFieldType   DomainFieldType;
-  static const unsigned int                       dimDomain = BackendType::dimDomain;
-  typedef typename BackendType::DomainType        DomainType;
-  typedef typename BackendType::RangeFieldType    RangeFieldType;
-  static const unsigned int                       dimRange = BackendType::dimRange;
-  typedef typename BackendType::RangeType         RangeType;
-  typedef typename BackendType::JacobianRangeType JacobianRangeType;
+  typedef FemLocalfunctionsWrapper< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols >  derived_type;
+  typedef typename BaseFunctionSetMapImp::BaseFunctionSetType BackendType;
+  typedef typename BackendType::EntityType                    EntityType;
+//  typedef typename BackendType::DomainFieldType   DomainFieldType;
+//  static const unsigned int                       dimDomain = BackendType::dimDomain;
+//  typedef typename BackendType::DomainType        DomainType;
+//  typedef typename BackendType::RangeFieldType    RangeFieldType;
+//  static const unsigned int                       dimRange = BackendType::dimRange;
+//  typedef typename BackendType::RangeType         RangeType;
+//  typedef typename BackendType::JacobianRangeType JacobianRangeType;
 };
 
 
-template< class BaseFunctionSetMapImp >
-class FemLocalfunctionsWrapper
-  : public BaseFunctionSetInterface< FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > >
+template< class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim >
+class FemLocalfunctionsWrapper< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
+  : public BaseFunctionSetInterface<  FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >,
+                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
 {
 public:
-  typedef FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp > Traits;
+  typedef FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
   typedef typename Traits::BackendType  BackendType;
   typedef typename Traits::EntityType   EntityType;
-  typedef typename Traits::DomainFieldType  DomainFieldType;
-  static const unsigned int                 dimDomain = Traits::dimDomain;
-  typedef typename Traits::DomainType       DomainType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  typedef typename Traits::RangeType      RangeType;
-  typedef typename Traits::JacobianRangeType  JacobianRangeType;
+
+  typedef DomainFieldImp                                  DomainFieldType;
+  static const unsigned int                               dimDomain = domainDim;
+  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef RangeFieldImp                                 RangeFieldType;
+  static const unsigned int                             dimRange = rangeDim;
+  static const unsigned int                             dimRangeCols = 1;
+  typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
+  typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
 
   FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
     : baseFunctionSetMap_(baseFunctionSetMap)

@@ -39,11 +39,11 @@ public:
    *  \tparam A   Traits of the BaseFunctionSetInterface implementation, representing the type of the ansatzBase
    *  \attention  ret is assumed to be zero!
    */
-  template< class T, class A, class RangeFieldType >
-  void apply(const BaseFunctionSetInterface< T >& testBase,
-             const BaseFunctionSetInterface< A >& ansatzBase,
-             Dune::DynamicMatrix< RangeFieldType >& ret,
-             std::vector< Dune::DynamicMatrix< RangeFieldType > >& tmpLocalMatrices) const
+  template< class T, class A, class D, int d, class R, int r, int rC >
+  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
+             const BaseFunctionSetInterface< A, D, d, R, r, rC >& ansatzBase,
+             Dune::DynamicMatrix< R >& ret,
+             std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {
     CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, ansatzBase, ret, tmpLocalMatrices));
   }

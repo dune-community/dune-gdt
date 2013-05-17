@@ -38,10 +38,10 @@ public:
    *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
    *  \attention  ret is assumed to be zero!
    */
-  template< class T, class RangeFieldType >
-  void apply(const BaseFunctionSetInterface< T >& testBase,
-             Dune::DynamicVector< RangeFieldType >& ret,
-             std::vector< Dune::DynamicVector< RangeFieldType > >& tmpLocalVectors) const
+  template< class T, class D, int d, class R, int r, int rC >
+  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
+             Dune::DynamicVector< R >& ret,
+             std::vector< Dune::DynamicVector< R > >& tmpLocalVectors) const
   {
     CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, ret, tmpLocalVectors));
   }

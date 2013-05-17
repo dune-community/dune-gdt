@@ -7,6 +7,9 @@
   #include "config.h"
 #endif
 
+#include <dune/common/fvector.hh>
+#include <dune/common/fmatrix.hh>
+
 #include <dune/fem/space/basefunctions/basefunctionsetinterface.hh>
 #include <dune/fem/space/common/discretefunctionspace.hh>
 
@@ -19,43 +22,37 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class FemBaseFunctionSetTraits, class EntityImp >
+template< class FemBaseFunctionSetTraits, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapper;
 
 
-template< class FemBaseFunctionSetTraits, class EntityImp >
+template< class FemBaseFunctionSetTraits, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapperTraits
 {
 public:
-  typedef FemWrapper< FemBaseFunctionSetTraits, EntityImp >                                             derived_type;
+  typedef FemWrapper< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   typedef typename Dune::Fem::BaseFunctionSetInterface< FemBaseFunctionSetTraits >::BaseFunctionSetType BackendType;
   typedef EntityImp                                                                                     EntityType;
-  typedef typename BackendType::DomainFieldType DomainFieldType;
-  static const unsigned int                     dimDomain = BackendType::dimDomain;
-  typedef typename BackendType::DomainType      DomainType;
-  typedef typename BackendType::RangeFieldType  RangeFieldType;
-  static const unsigned int                     dimRange = BackendType::dimRange;
-  typedef typename BackendType::RangeType       RangeType;
-  typedef typename BackendType::JacobianRangeType JacobianRangeType;
 };
 
 
-template< class FemBaseFunctionSetTraits, class EntityImp >
-class FemWrapper
-  : public BaseFunctionSetInterface< FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp > >
+template< class FemBaseFunctionSetTraits, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim >
+class FemWrapper< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
+  : public BaseFunctionSetInterface< FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
 {
 public:
-  typedef FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp > Traits;
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::EntityType EntityType;
+  typedef FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
+  typedef typename Traits::BackendType  BackendType;
+  typedef typename Traits::EntityType   EntityType;
 
-  typedef typename Traits::DomainFieldType  DomainFieldType;
-  static const unsigned int                 dimDomain = Traits::dimDomain;
-  typedef typename Traits::DomainType       DomainType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  typedef typename Traits::RangeType      RangeType;
-  typedef typename Traits::JacobianRangeType  JacobianRangeType;
+  typedef DomainFieldImp                                  DomainFieldType;
+  static const unsigned int                               dimDomain = domainDim;
+  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef RangeFieldImp                                 RangeFieldType;
+  static const unsigned int                             dimRange = rangeDim;
+  static const unsigned int                             dimRangeCols = 1;
+  typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
+  typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
 
   template< class S >
   FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface< S >& femSpace, const EntityType& en)

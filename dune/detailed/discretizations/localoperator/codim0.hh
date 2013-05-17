@@ -70,25 +70,18 @@ public:
    *  \tparam A   Traits of the BaseFunctionSetInterface implementation, representing the type of the ansatzBase
    *  \attention  ret is assumed to be zero!
    */
-  template< class T, class A, class RangeFieldType >
-  void apply(const BaseFunctionSetInterface< T >& testBase,
-             const BaseFunctionSetInterface< A >& ansatzBase,
-             Dune::DynamicMatrix< RangeFieldType >& ret,
-             std::vector< Dune::DynamicMatrix< RangeFieldType > >& tmpLocalMatrices) const
+  template< class T, class A, class D, int d, class R, int r, int rC >
+  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
+             const BaseFunctionSetInterface< A, D, d, R, r, rC >& ansatzBase,
+             Dune::DynamicMatrix< R >& ret,
+             std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {
-    // checks
-    typedef BaseFunctionSetInterface< A > AnsatzBaseType;
-    typedef BaseFunctionSetInterface< T > TestBaseType;
-    static const unsigned int dimDomain = AnsatzBaseType::dimDomain;
-    dune_static_assert((dimDomain == TestBaseType::dimDomain), "ERROR: BaseFunctionSets do not match!");
-    typedef typename AnsatzBaseType::DomainFieldType DomainFieldType;
-    typedef typename AnsatzBaseType::DomainType DomainType;
     // local inducing function
     const auto& entity = ansatzBase.entity();
     const auto localFunction = inducingFunction_.localFunction(entity);
     // quadrature
-    typedef Dune::QuadratureRules< DomainFieldType, dimDomain > VolumeQuadratureRules;
-    typedef Dune::QuadratureRule< DomainFieldType, dimDomain > VolumeQuadratureType;
+    typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
+    typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
     assert(localFunction.order() >= 0 && "Not implemented for negative integration orders!");
     const size_t quadratureOrder = std::max(int(localFunction.order()), 0)
                                    + std::max(int(ansatzBase.order()) - 1, 0)
@@ -103,7 +96,7 @@ public:
     // loop over all quadrature points
     const auto quadPointEndIt = volumeQuadrature.end();
     for (auto quadPointIt = volumeQuadrature.begin(); quadPointIt != quadPointEndIt; ++quadPointIt) {
-      const DomainType x = quadPointIt->position();
+      const Dune::FieldVector< D, d > x = quadPointIt->position();
       // integration factors
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight = quadPointIt->weight();

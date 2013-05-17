@@ -29,8 +29,8 @@ public:
    */
   template< class L, class T, class A, class D, int d, class R, int rR, int rC >
   static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rR, rC >& localFunction,
-                       const BaseFunctionSetInterface< T >& testBase,
-                       const BaseFunctionSetInterface< A >& ansatzBase,
+                       const BaseFunctionSetInterface< T, D, d, R, rR, rC >& testBase,
+                       const BaseFunctionSetInterface< A, D, d, R, rR, rC >& ansatzBase,
                        const Dune::FieldVector< D, d >& localPoint,
                        Dune::DynamicMatrix< R >& ret)
   {
@@ -52,7 +52,7 @@ public:
    */
   template< class L, class T, class D, int d, class R, int rR, int rC >
   static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rR, rC >& localFunction,
-                       const BaseFunctionSetInterface< T >& testBase,
+                       const BaseFunctionSetInterface< T, D, d, R, rR, rC >& testBase,
                        const Dune::FieldVector< D, d >& localPoint,
                        Dune::DynamicVector< R >& ret)
   {

@@ -4,26 +4,42 @@
 #include <vector>
 
 #include <dune/common/bartonnackmanifcheck.hh>
+#include <dune/common/fvector.hh>
+#include <dune/common/fmatrix.hh>
 
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
 
 
-template< class Traits >
-class BaseFunctionSetInterface
+/**
+ *  \brief Interface for matrix valued basis functions.
+ *
+ *  \note   see specialization for rangeDimCols = 1 for vector and scalar valued and basis functions.
+ */
+template< class Traits, class DomainFieldImp, int domainDin, class RangeFieldImp, int rangeDimRows, int rangeDim = 1 >
+class BaseFunctionSetInterface;
+
+
+/**
+ *  \brief Interface for scalar valued basis functions.
+ */
+template< class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim >
+class BaseFunctionSetInterface< Traits, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
 {
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::BackendType  BackendType;
   typedef typename Traits::EntityType   EntityType;
-  typedef typename Traits::DomainFieldType  DomainFieldType;
-  static const unsigned int                 dimDomain = Traits::dimDomain;
-  typedef typename Traits::DomainType       DomainType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  typedef typename Traits::RangeType      RangeType;
-  typedef typename Traits::JacobianRangeType  JacobianRangeType;
+
+  typedef DomainFieldImp                                  DomainFieldType;
+  static const unsigned int                               dimDomain = domainDim;
+  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef RangeFieldImp                                 RangeFieldType;
+  static const unsigned int                             dimRange = rangeDim;
+  static const unsigned int                             dimRangeCols = 1;
+  typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
+  typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
 
   const EntityType& entity() const
   {
