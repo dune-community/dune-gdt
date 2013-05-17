@@ -172,13 +172,11 @@ int main(int argc, char** argv)
 
     // left hand side
     // * elliptic diffusion operator
-    typedef EvaluationElliptic< DomainFieldType, dimDomain, RangeFieldType, dimRange >    EllipticEvaluationType;
-    typedef LocalOperatorCodim0Integral< EllipticEvaluationType, ExpressionFunctionType > EllipticOperatorType;
+    typedef LocalOperatorCodim0Integral< Evaluation::Elliptic, ExpressionFunctionType > EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef EvaluationProduct< DomainFieldType, dimDomain, RangeFieldType, dimRange >       ProductEvaluationType;
-    typedef LocalFunctionalCodim0Integral< ProductEvaluationType, ExpressionFunctionType >  L2FunctionalType;
+    typedef LocalFunctionalCodim0Integral< Evaluation::Product, ExpressionFunctionType >  L2FunctionalType;
     const L2FunctionalType forceFunctional(*force);
     //   * L2 neumann functional
     const L2FunctionalType neumannFunctional(*neumann);
