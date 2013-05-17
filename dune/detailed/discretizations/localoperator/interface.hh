@@ -27,6 +27,12 @@ public:
     return asImp().inducingFunction();
   }
 
+  const BinaryEvaluationType& inducingEvaluation() const
+  {
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().inducingEvaluation());
+    return asImp().inducingEvaluation();
+  }
+
   size_t numTmpObjectsRequired() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().numTmpObjectsRequired());

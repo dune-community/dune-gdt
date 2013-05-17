@@ -51,14 +51,22 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  LocalFunctionalCodim0Integral(const LocalizableFunctionType& inducingFunction)
-    : inducingFunction_(inducingFunction)
+  LocalFunctionalCodim0Integral(
+      const LocalizableFunctionType& function,
+      const typename UnaryEvaluationType::derived_type evaluation = typename UnaryEvaluationType::derived_type())
+    : function_(function)
+    , evaluation_(evaluation)
   {
   }
 
   const LocalizableFunctionType& inducingFunction() const
   {
-    return inducingFunction_;
+    return function_;
+  }
+
+  const UnaryEvaluationType& inducingEvaluation() const
+  {
+    return evaluation_;
   }
 
   size_t numTmpObjectsRequired() const
@@ -77,7 +85,7 @@ public:
   {
     // local inducing function
     const auto& entity       = testBase.entity();
-    const auto localFunction = inducingFunction_.localFunction(entity);
+    const auto localFunction = function_.localFunction(entity);
     // quadrature
     typedef Dune::QuadratureRules<D, d> VolumeQuadratureRules;
     typedef Dune::QuadratureRule<D, d> VolumeQuadratureType;
@@ -98,7 +106,7 @@ public:
       // clear tmp vector
       Dune::Stuff::Common::clear(tmpLocalVectors[0]);
       // evaluate the local operation
-      UnaryEvaluationType::evaluate(localFunction, testBase, x, tmpLocalVectors[0]);
+      evaluation_.evaluate(localFunction, testBase, x, tmpLocalVectors[0]);
       // compute integral
       for (size_t ii = 0; ii < size; ++ii) {
         ret[ii] += tmpLocalVectors[0][ii] * integrationFactor * quadratureWeight;
@@ -107,7 +115,8 @@ public:
   } // ... apply(...)
 
 private:
-  const LocalizableFunctionType& inducingFunction_;
+  const LocalizableFunctionType& function_;
+  const typename UnaryEvaluationType::derived_type evaluation_;
 }; // class LocalFunctionalCodim0Integral
 
 

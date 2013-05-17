@@ -51,14 +51,22 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  LocalOperatorCodim0Integral(const LocalizableFunctionType& inducingFunction)
-    : inducingFunction_(inducingFunction)
+  LocalOperatorCodim0Integral(
+      const LocalizableFunctionType& function,
+      const typename BinaryEvaluationType::derived_type evaluation = typename BinaryEvaluationType::derived_type())
+    : function_(function)
+    , evaluation_(evaluation)
   {
   }
 
   const LocalizableFunctionType& inducingFunction() const
   {
-    return inducingFunction_;
+    return function_;
+  }
+
+  const BinaryEvaluationType& inducingEvaluation() const
+  {
+    return evaluation_;
   }
 
   size_t numTmpObjectsRequired() const
@@ -79,7 +87,7 @@ public:
   {
     // local inducing function
     const auto& entity       = ansatzBase.entity();
-    const auto localFunction = inducingFunction_.localFunction(entity);
+    const auto localFunction = function_.localFunction(entity);
     // quadrature
     typedef Dune::QuadratureRules<D, d> VolumeQuadratureRules;
     typedef Dune::QuadratureRule<D, d> VolumeQuadratureType;
@@ -103,7 +111,7 @@ public:
       // clear tmp matrix
       Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
       // evaluate the local operation
-      BinaryEvaluationType::evaluate(localFunction, ansatzBase, testBase, x, tmpLocalMatrices[0]);
+      evaluation_.evaluate(localFunction, ansatzBase, testBase, x, tmpLocalMatrices[0]);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& retRow       = ret[ii];
@@ -115,7 +123,8 @@ public:
   } // ... apply(...)
 
 private:
-  const LocalizableFunctionType& inducingFunction_;
+  const LocalizableFunctionType& function_;
+  const typename BinaryEvaluationType::derived_type evaluation_;
 }; // class LocalOperatorCodim0Integral
 
 

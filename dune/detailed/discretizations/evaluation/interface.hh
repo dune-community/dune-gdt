@@ -5,6 +5,7 @@
 
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/fvector.hh>
+#include <dune/common/bartonnackmanifcheck.hh>
 
 #include <dune/stuff/localfunction/interface.hh>
 
@@ -15,6 +16,10 @@ namespace Detailed {
 namespace Discretizations {
 
 
+/**
+ *  \brief  Interface for unary evaluations.
+ *  \note   All evaluations have to be copyable!
+ */
 template <class Traits>
 class UnaryEvaluationInterface
 {
@@ -32,15 +37,24 @@ public:
    *  \tparam rC{L,T} dimRangeRows of the {localfunction,testBase}
    */
   template <class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret)
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
+                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret)
   {
-    derived_type::evaluate(localFunction, testBase, localPoint, ret);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(localFunction, testBase, localPoint, ret));
+  }
+
+  const derived_type& asImp() const
+  {
+    return static_cast<const derived_type&>(*this);
   }
 }; // class UnaryEvaluationInterface
 
 
+/**
+ *  \brief  Interface for binary evaluations.
+ *  \note   All evaluations have to be copyable!
+ */
 template <class Traits>
 class BinaryEvaluationInterface
 {
@@ -59,12 +73,17 @@ public:
    *  \tparam rC{L,T,A} dimRangeRows of the {localfunction,testBase,ansatzBase}
    */
   template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                       const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
+                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+                const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
   {
-    derived_type::evaluate(localFunction, testBase, ansatzBase, localPoint, ret);
+    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(localFunction, testBase, ansatzBase, localPoint, ret));
+  }
+
+  const derived_type& asImp() const
+  {
+    return static_cast<const derived_type&>(*this);
   }
 }; // class BinaryEvaluationInterface
 
