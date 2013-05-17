@@ -1,8 +1,9 @@
 #include <dune/stuff/test/test_common.hh>
 
-#if HAVE_ALUGRID
-
+#include <memory>
 #include <vector>
+
+#include <dune/common/typetraits.hh>
 
 #include <dune/grid/alugrid.hh>
 
@@ -19,17 +20,15 @@
 namespace Stuff = Dune::Stuff;
 namespace DD = Dune::Detailed::Discretizations;
 
+typedef Stuff::GridProviderInterface<>            GridProviderType;
+typedef typename GridProviderType::GridType       GridType;
+typedef Dune::Stuff::GridProviders< GridType >    GridProviders;
+typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
+typedef double                                    RangeFieldType;
+static const unsigned int                         dimRange = 1;
 
-static const unsigned int                                 dimDomain = 2;
-typedef Dune::ALUGrid<  dimDomain, dimDomain,
-                        Dune::simplex, Dune::conforming > GridType;
-typedef typename GridType::ctype                          DomainFieldType;
-typedef double                                            RangeFieldType;
-static const unsigned int                                 dimRange = 1;
-typedef Dune::grid::Part::Leaf::Const< GridType >         GridPartType;
-
-typedef testing::Types< DD::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
-                      , DD::ContinuousLagrangeSpace::FemWrapper< GridPartType, 1, RangeFieldType, dimRange >
+typedef testing::Types< DD::ContinuousLagrangeSpace::FemWrapper< GridPartType, 1, RangeFieldType, dimRange >
+                      , DD::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
                       > SpaceTypes;
 
 template< class T >
@@ -48,7 +47,7 @@ struct SpaceCRTPtest
     typedef typename SpaceType::DomainFieldType     S_DomainFieldType;
     static const unsigned int DUNE_UNUSED(          s_dimDomain) = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType      S_RangeFieldType;
-    static const unsigned int DUNE_UNUSED(          s_dimRangeRows) = SpaceType::dimRangeRows;
+    static const unsigned int DUNE_UNUSED(          s_dimRange) = SpaceType::dimRange;
     static const unsigned int DUNE_UNUSED(          s_dimRangeCols) = SpaceType::dimRangeCols;
     static const int DUNE_UNUSED(                   s_polOrder) = SpaceType::polOrder;
     typedef typename SpaceType::BackendType         S_BackendType;
@@ -83,11 +82,13 @@ struct SpaceCRTPtest
     typedef typename BaseFunctionSetType::Traits  B_Traits;
     typedef typename B_Traits::BackendType        B_BackendType;
     typedef typename B_Traits::EntityType         B_EntityType;
-    typedef typename B_Traits::DomainType         B_DomainType;
-    typedef typename B_Traits::RangeType          B_RangeType;
-    typedef typename B_Traits::JacobianRangeType  B_JacobianRangeType;
+    typedef typename BaseFunctionSetType::DomainType         B_DomainType;
+    typedef typename BaseFunctionSetType::RangeType          B_RangeType;
+    typedef typename BaseFunctionSetType::JacobianRangeType  B_JacobianRangeType;
     // check the basefunctionset for functionality
-    typedef DD::BaseFunctionSetInterface< B_Traits > BaseFunctionSetInterfaceType;
+    typedef DD::BaseFunctionSetInterface< B_Traits,
+                                          S_DomainFieldType, s_dimDomain,
+                                          S_RangeFieldType, s_dimRange, s_dimRangeCols > BaseFunctionSetInterfaceType;
     const BaseFunctionSetInterfaceType& baseFunctionSetAsInterface
         = static_cast< const BaseFunctionSetInterfaceType& >(baseFunctionSet);
     const B_EntityType& DUNE_UNUSED(  b_entity)   = baseFunctionSetAsInterface.entity();
@@ -106,11 +107,9 @@ struct SpaceCRTPtest
 TYPED_TEST_CASE(SpaceCRTPtest, SpaceTypes);
 TYPED_TEST(SpaceCRTPtest, SpaceCRTP)
 {
-    const Stuff::GridProviderInterface< GridType >* gridProvider
-        = Dune::Stuff::GridProviders< GridType >::create("gridprovider.cube");
-    const Dune::grid::Part::Leaf::Const< GridType > gridPart(*(gridProvider->grid()));
+    const std::shared_ptr< const GridProviderType > gridProvider(GridProviders::create("gridprovider.cube"));
+    const GridPartType gridPart(*(gridProvider->grid()));
     this->check(gridPart);
-    delete gridProvider;
 }
 
 
@@ -119,11 +118,3 @@ int main(int argc, char** argv)
   test_init(argc, argv);
   return RUN_ALL_TESTS();
 }
-
-#else
-int main(int /*argc*/, char** /*argv*/)
-{
-  std::cerr << "'HAVE_ALUGRID' not set!";
-  return 1;
-}
-#endif // HAVE_ALUGRID
