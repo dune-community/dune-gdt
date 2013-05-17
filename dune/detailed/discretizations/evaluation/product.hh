@@ -18,66 +18,45 @@ namespace Evaluation {
 
 
 // forward, to be used in the traits
-//template< class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols = 1 >
 class Product;
 
 
-//template< class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols = 1 >
-class /*Evaluation*/ProductTraits
+/**
+ *  \brief Traits for the Product evaluation.
+ */
+class ProductTraits
 {
 public:
-  typedef /*Evaluation*/Product/*< DomainFieldImp, domainDim, RangeFieldImp, rangeDimRows, rangeDimCols >*/ derived_type;
-//  typedef DomainFieldImp                                  DomainFieldType;
-//  static const unsigned int                               dimDomain = domainDim;
-//  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
-//  typedef RangeFieldImp                                 RangeFieldType;
-//  static const unsigned int                             dimRangeRows = rangeDimRows;
-//  static const unsigned int                             dimRangeCols = rangeDimCols;
+  typedef Product derived_type;
 };
 
 
-///**
-// *  \brief Product evaluation for matrix valued inducing functions (not implemented).
-// *
-// *        See specialization for rangeDimCols = 1 for scalar and vector valued inducing functions.
-// */
-//template< class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols >
-//class EvaluationProduct
-//{
-//public:
-//  EvaluationProduct() = delete;
-//};
-
-
-//template< class DomainFieldImp, int domainDim, class RangeFieldImp >
-class /*Evaluation*/Product/*< DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >*/
-  : public UnaryEvaluationInterface< /*Evaluation*/ProductTraits/*< DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >*/ >
+/**
+ *  \brief  Computes a product evaluation.
+ */
+class Product
+  : public UnaryEvaluationInterface< ProductTraits >
 {
 public:
-  typedef /*Evaluation*/ProductTraits/*< DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >*/ Traits;
+  typedef ProductTraits Traits;
 
-//  typedef typename Traits::DomainFieldType  DomainFieldType;
-//  static const unsigned int                 dimDomain = Traits::dimDomain;
-//  typedef typename Traits::DomainType       DomainType;
-
-//  typedef typename Traits::RangeFieldType RangeFieldType;
-//  static const unsigned int               dimRangeRows = Traits::dimRangeRows;
-//  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
-
-  template< class L, class T, class A, class D, int d, class R, int r, int rC >
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, r, rC >& /*localFunction*/,
-                       const BaseFunctionSetInterface< T, D, d, R, r, rC >& /*testBase*/,
+  template< class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT >
+  static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rL, rCL >& /*localFunction*/,
+                       const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& /*testBase*/,
                        const Dune::FieldVector< D, d >& /*localPoint*/,
-                       Dune::DynamicMatrix< R >& /*ret*/)
+                       Dune::DynamicVector< R >& /*ret*/)
   {
     dune_static_assert((Dune::AlwaysFalse< R >::value),
-                       "ERROR: not implemented for this combination of dimensions d, r and rC!");
+                       "ERROR: not implemented for this combination of dimensions!");
   }
 
   /**
    *  \brief  Computes a product evaluation.
    *  \tparam T Traits of the test BaseFunctionSetInterface implementation
    *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
+   *  \tparam D DomainFieldType
+   *  \tparam d dimDomain
+   *  \tparam R RangeFieldType
    */
   template< class L, class T, class D, int d, class R >
   static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, 1, 1 >& localFunction,
