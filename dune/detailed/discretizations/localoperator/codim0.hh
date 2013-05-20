@@ -89,10 +89,8 @@ public:
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    assert(localFunction.order() >= 0 && "Not implemented for negative integration orders!");
-    const size_t quadratureOrder = std::max(int(localFunction.order()), 0)
-                                   + std::max(int(ansatzBase.order()) - 1, 0)
-                                   + std::max(int(testBase.order()) - 1, 0);
+    const int quadratureOrder = evaluation_.order(localFunction, ansatzBase, testBase);
+    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2*quadratureOrder + 1);
     // check matrix and tmp storage
     const size_t rows = testBase.size();
