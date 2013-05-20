@@ -14,7 +14,7 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace Evaluation {
+namespace LocalEvaluation {
 
 
 // forward, to be used in the traits
@@ -35,7 +35,7 @@ public:
  *  \brief  Computes a product evaluation.
  */
 class Product
-  : public UnaryEvaluationInterface< ProductTraits >
+  : public LocalEvaluation::UnaryInterface< ProductTraits >
 {
 public:
   typedef ProductTraits Traits;
@@ -94,7 +94,7 @@ public:
   } // ... evaluate(...)
 }; // class Product
 
-} // namespace Evaluation
+} // namespace LocalEvaluation
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune

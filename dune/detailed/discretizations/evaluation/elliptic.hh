@@ -15,7 +15,7 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
-namespace Evaluation {
+namespace LocalEvaluation {
 
 
 // forward, to be used in the traits
@@ -36,7 +36,7 @@ public:
  *  \brief  Computes an elliptic evaluation.
  */
 class Elliptic
-  : public BinaryEvaluationInterface< EllipticTraits >
+  : public LocalEvaluation::BinaryInterface< EllipticTraits >
 {
 public:
   typedef EllipticTraits Traits;
@@ -107,7 +107,7 @@ public:
       }
     }
   } // ... evaluate< ..., 1, 1 >(...)
-}; // class Elliptic
+}; // class LocalElliptic
 
 
 } // namespace Evaluation
