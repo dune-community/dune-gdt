@@ -11,10 +11,11 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace LocalFunctional {
 
 
 template <class Traits>
-class LocalFunctionalCodim0Interface
+class Codim0Interface
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -41,7 +42,12 @@ public:
 
   /**
    *  \brief      Applies the local functional.
-   *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
+   *  \tparam T   Traits of the test BaseFunctionSetInterface
+   *  \tparam D   DomainFieldType
+   *  \tparam d   dimDomain
+   *  \tparam R   RangeFieldType
+   *  \tparam r   dimRange
+   *  \tparam rC  dimRangeCols
    *  \attention  ret is assumed to be zero!
    */
   template <class T, class D, int d, class R, int r, int rC>
@@ -60,9 +66,10 @@ public:
   {
     return static_cast<const derived_type&>(*this);
   }
-}; // class LocalFunctionalCodim0Interface
+}; // class Codim0Interface
 
 
+} // namespace LocalFunctional
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune

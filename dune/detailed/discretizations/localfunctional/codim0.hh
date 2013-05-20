@@ -18,18 +18,19 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace LocalFunctional {
 
 
 // forward, to be used in the traits
 template <class UnaryEvaluationImp, class LocalizableFunctionImp>
-class LocalFunctionalCodim0Integral;
+class Codim0Integral;
 
 
 template <class UnaryEvaluationImp, class LocalizableFunctionImp>
-class LocalFunctionalCodim0IntegralTraits
+class Codim0IntegralTraits
 {
 public:
-  typedef LocalFunctionalCodim0Integral<UnaryEvaluationImp, LocalizableFunctionImp> derived_type;
+  typedef Codim0Integral<UnaryEvaluationImp, LocalizableFunctionImp> derived_type;
   typedef UnaryEvaluationInterface<typename UnaryEvaluationImp::Traits> UnaryEvaluationType;
   typedef LocalizableFunctionImp LocalizableFunctionType;
   dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
@@ -38,12 +39,11 @@ public:
 
 
 template <class UnaryEvaluationImp, class LocalizableFunctionImp>
-class LocalFunctionalCodim0Integral
-    : public LocalFunctionalCodim0Interface<LocalFunctionalCodim0IntegralTraits<UnaryEvaluationImp,
-                                                                                LocalizableFunctionImp>>
+class Codim0Integral
+    : public LocalFunctional::Codim0Interface<Codim0IntegralTraits<UnaryEvaluationImp, LocalizableFunctionImp>>
 {
 public:
-  typedef LocalFunctionalCodim0IntegralTraits<UnaryEvaluationImp, LocalizableFunctionImp> Traits;
+  typedef Codim0IntegralTraits<UnaryEvaluationImp, LocalizableFunctionImp> Traits;
   typedef typename Traits::UnaryEvaluationType UnaryEvaluationType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
 
@@ -51,9 +51,13 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  LocalFunctionalCodim0Integral(
-      const LocalizableFunctionType& function,
-      const typename UnaryEvaluationType::derived_type evaluation = typename UnaryEvaluationType::derived_type())
+  Codim0Integral(const LocalizableFunctionType& function)
+    : function_(function)
+    , evaluation_()
+  {
+  }
+
+  Codim0Integral(const LocalizableFunctionType& function, const UnaryEvaluationImp evaluation)
     : function_(function)
     , evaluation_(evaluation)
   {
@@ -117,9 +121,10 @@ public:
 private:
   const LocalizableFunctionType& function_;
   const typename UnaryEvaluationType::derived_type evaluation_;
-}; // class LocalFunctionalCodim0Integral
+}; // class Codim0Integral
 
 
+} // namespace LocalFunctional
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
