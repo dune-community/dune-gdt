@@ -9,37 +9,38 @@
 #include <dune/stuff/common/matrix.hh>
 #include <dune/stuff/la/container/interface.hh>
 
-#include <dune/detailed/discretizations/localoperator/codim0.hh>
-#include <dune/detailed/discretizations/localfunctional/codim0.hh>
+#include <dune/detailed/discretizations/localoperator/interface.hh>
+#include <dune/detailed/discretizations/localfunctional/interface.hh>
 #include <dune/detailed/discretizations/space/interface.hh>
 
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace LocalAssembler {
 
 
 // forward, to be used in the traits
 template <class LocalOperatorImp>
-class LocalAssemblerCodim0Matrix;
+class Codim0Matrix;
 
 
 template <class LocalOperatorImp>
-class LocalAssemblerCodim0MatrixTraits
+class Codim0MatrixTraits
 {
 public:
-  typedef LocalAssemblerCodim0Matrix<LocalOperatorImp> derived_type;
-  typedef LocalOperatorCodim0Interface<typename LocalOperatorImp::Traits> LocalOperatorType;
+  typedef Codim0Matrix<LocalOperatorImp> derived_type;
+  typedef LocalOperator::Codim0Interface<typename LocalOperatorImp::Traits> LocalOperatorType;
 }; // class LocalAssemblerCodim0MatrixTraits
 
 
 template <class LocalOperatorImp>
-class LocalAssemblerCodim0Matrix
+class Codim0Matrix
 {
 public:
-  typedef LocalAssemblerCodim0MatrixTraits<LocalOperatorImp> Traits;
+  typedef Codim0MatrixTraits<LocalOperatorImp> Traits;
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
-  LocalAssemblerCodim0Matrix(const LocalOperatorType& op)
+  Codim0Matrix(const LocalOperatorType& op)
     : localOperator_(op)
   {
   }
@@ -107,26 +108,26 @@ private:
 
 // forward, to be used in the traits
 template <class LocalOperatorImp>
-class LocalAssemblerCodim0Vector;
+class Codim0Vector;
 
 
 template <class LocalFunctionalImp>
-class LocalAssemblerCodim0VectorTraits
+class Codim0VectorTraits
 {
 public:
-  typedef LocalAssemblerCodim0Vector<LocalFunctionalImp> derived_type;
-  typedef LocalFunctionalCodim0Interface<typename LocalFunctionalImp::Traits> LocalFunctionalType;
+  typedef Codim0Vector<LocalFunctionalImp> derived_type;
+  typedef LocalFunctional::Codim0Interface<typename LocalFunctionalImp::Traits> LocalFunctionalType;
 }; // class LocalAssemblerCodim0MatrixTraits
 
 
 template <class LocalFunctionalImp>
-class LocalAssemblerCodim0Vector
+class Codim0Vector
 {
 public:
-  typedef LocalAssemblerCodim0VectorTraits<LocalFunctionalImp> Traits;
+  typedef Codim0VectorTraits<LocalFunctionalImp> Traits;
   typedef typename Traits::LocalFunctionalType LocalFunctionalType;
 
-  LocalAssemblerCodim0Vector(const LocalFunctionalType& func)
+  Codim0Vector(const LocalFunctionalType& func)
     : localFunctional_(func)
   {
   }
@@ -179,9 +180,10 @@ public:
 
 private:
   const LocalFunctionalType& localFunctional_;
-}; // class LocalAssemblerCodim0Vector
+}; // class Codim0Vector
 
 
+} // namespace LocalAssembler
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
