@@ -32,7 +32,7 @@ class Codim0IntegralTraits
 {
 public:
   typedef Codim0Integral<UnaryEvaluationImp, LocalizableFunctionImp> derived_type;
-  typedef UnaryEvaluationInterface<typename UnaryEvaluationImp::Traits> UnaryEvaluationType;
+  typedef LocalEvaluation::UnaryInterface<typename UnaryEvaluationImp::Traits> UnaryEvaluationType;
   typedef LocalizableFunctionImp LocalizableFunctionType;
   dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
                      "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
