@@ -29,7 +29,7 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/assembler/local/Makefile
   dune/detailed/discretizations/basefunctionset/Makefile
   dune/detailed/discretizations/discretefunction/Makefile
-  dune/detailed/discretizations/evaluation/Makefile
+  dune/detailed/discretizations/localevaluation/Makefile
   dune/detailed/discretizations/la/Makefile
   dune/detailed/discretizations/la/containerfactory/Makefile
   dune/detailed/discretizations/localfunctional/Makefile
