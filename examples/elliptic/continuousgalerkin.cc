@@ -34,8 +34,8 @@
 
 #include <dune/detailed/discretizations/space/continuouslagrange/fem.hh>
 #include <dune/detailed/discretizations/la/containerfactory/eigen.hh>
-#include <dune/detailed/discretizations/evaluation/elliptic.hh>
-#include <dune/detailed/discretizations/evaluation/product.hh>
+#include <dune/detailed/discretizations/localevaluation/elliptic.hh>
+#include <dune/detailed/discretizations/localevaluation/product.hh>
 #include <dune/detailed/discretizations/localoperator/codim0.hh>
 #include <dune/detailed/discretizations/localfunctional/codim0.hh>
 #include <dune/detailed/discretizations/assembler/local/codim0.hh>
@@ -165,25 +165,26 @@ int main(int argc, char** argv)
     const std::shared_ptr< const ExpressionFunctionType >
         neumann(ExpressionFunctionType::create(description.sub("neumann")));
 
-    // info << "initializing discrete function spaces... " << std::flush;
-    // timer.reset();
+    info << "initializing discrete function spaces... " << std::flush;
+    timer.reset();
     typedef ContinuousLagrangeSpace::FemWrapper< GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
     const SpaceType space(gridPart);
+    info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     // left hand side
     // * elliptic diffusion operator
-    typedef LocalOperator::Codim0Integral< Evaluation::Elliptic, ExpressionFunctionType > EllipticOperatorType;
+    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic, ExpressionFunctionType >  EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef LocalFunctional::Codim0Integral< Evaluation::Product, ExpressionFunctionType >  L2FunctionalType;
+    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product, ExpressionFunctionType > L2FunctionalType;
     const L2FunctionalType forceFunctional(*force);
     //   * L2 neumann functional
     const L2FunctionalType neumannFunctional(*neumann);
 
     info << "initializing matrix (of size " << space.mapper().size() << "x" << space.mapper().size()
          << ") and vectors... " << std::flush;
-    // timer.reset();
+    timer.reset();
     typedef ContainerFactoryEigen< RangeFieldType > ContainerFactory;
     typedef ContainerFactory::RowMajorSparseMatrixType MatrixType;
     typedef ContainerFactory::DenseVectorType VectorType;
