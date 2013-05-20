@@ -11,10 +11,11 @@
 namespace Dune {
 namespace Detailed {
 namespace Discretizations {
+namespace LocalOperator {
 
 
 template <class Traits>
-class LocalOperatorCodim0Interface
+class Codim0Interface
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -62,9 +63,10 @@ public:
   {
     return static_cast<const derived_type&>(*this);
   }
-}; // class LocalOperatorCodim0Interface
+}; // class Codim0Interface
 
 
+} // namespace LocalOperator
 } // namespace Discretizations
 } // namespace Detailed
 } // namespace Dune
