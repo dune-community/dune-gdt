@@ -2,6 +2,7 @@
 #define DUNE_DETAILED_DISCRETIZATIONS_LOCALFUNCTIONAL_CODIM0_HH
 
 #include <vector>
+#include <utility>
 
 #include <dune/common/static_assert.hh>
 #include <dune/common/typetraits.hh>
@@ -63,6 +64,13 @@ public:
   {
   }
 
+  template <class... Args>
+  Codim0Integral(const LocalizableFunctionType& function, Args&&... args)
+    : function_(function)
+    , evaluation_(std::forward<Args>(args)...)
+  {
+  }
+
   const LocalizableFunctionType& inducingFunction() const
   {
     return function_;
@@ -120,7 +128,7 @@ public:
 
 private:
   const LocalizableFunctionType& function_;
-  const typename UnaryEvaluationType::derived_type evaluation_;
+  const UnaryEvaluationImp evaluation_;
 }; // class Codim0Integral
 
 
