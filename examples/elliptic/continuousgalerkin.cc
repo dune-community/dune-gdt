@@ -172,11 +172,11 @@ int main(int argc, char** argv)
 
     // left hand side
     // * elliptic diffusion operator
-    typedef LocalOperatorCodim0Integral< Evaluation::Elliptic, ExpressionFunctionType > EllipticOperatorType;
+    typedef LocalOperator::Codim0Integral< Evaluation::Elliptic, ExpressionFunctionType > EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef LocalFunctionalCodim0Integral< Evaluation::Product, ExpressionFunctionType >  L2FunctionalType;
+    typedef LocalFunctional::Codim0Integral< Evaluation::Product, ExpressionFunctionType >  L2FunctionalType;
     const L2FunctionalType forceFunctional(*force);
     //   * L2 neumann functional
     const L2FunctionalType neumannFunctional(*neumann);
@@ -203,10 +203,10 @@ int main(int argc, char** argv)
     Dune::Stuff::DiscreteFunction::project(*boundaryInfo, *dirichlet, dirichletProjection);
 
     // * local matrix assembler
-    typedef LocalAssemblerCodim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
+    typedef LocalAssembler::Codim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
     const LocalEllipticOperatorMatrixAssemblerType diffusionMatrixAssembler(diffusionOperator);
     // * local vector assemblers
-    typedef LocalAssemblerCodim0Vector< L2FunctionalType > LocalL2FunctionalVectorAssemblerType;
+    typedef LocalAssembler::Codim0Vector< L2FunctionalType > LocalL2FunctionalVectorAssemblerType;
     //   * force vector
     const LocalL2FunctionalVectorAssemblerType forceVectorAssembler(forceFunctional);
     //   * neumann vector
