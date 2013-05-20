@@ -40,6 +40,20 @@ class Product
 public:
   typedef ProductTraits Traits;
 
+  /**
+   *  \todo add copydoc
+   *  \return localFunction.order() + testBase.order()
+   */
+  template< class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT >
+  int order(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rL, rCL >& localFunction,
+            const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase) const
+  {
+    if (localFunction.order() < 0)
+      return -1;
+    else
+      return localFunction.order() + testBase.order();
+  } // int order(...)
+
   template< class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT >
   static void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rL, rCL >& /*localFunction*/,
                        const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& /*testBase*/,
