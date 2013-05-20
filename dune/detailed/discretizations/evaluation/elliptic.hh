@@ -40,6 +40,21 @@ class Elliptic : public BinaryEvaluationInterface<EllipticTraits>
 public:
   typedef EllipticTraits Traits;
 
+  /**
+   *  \todo add copydoc
+   *  \return localFunction.order() + (testBase.order() - 1) + (ansatzBase.order() - 1)
+   */
+  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  int order(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
+            const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+            const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
+  {
+    if (localFunction.order() < 0)
+      return -1;
+    else
+      return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order() - 2), 0);
+  } // int order(...)
+
   template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
   static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
                        const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
