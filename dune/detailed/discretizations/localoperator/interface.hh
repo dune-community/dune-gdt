@@ -42,13 +42,18 @@ public:
 
   /**
    *  \brief      Applies the local operator.
-   *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
-   *  \tparam A   Traits of the BaseFunctionSetInterface implementation, representing the type of the ansatzBase
+   *  \tparam T       Traits of the test BaseFunctionSetInterface implementation
+   *  \tparam A       Traits of the ansatz BaseFunctionSetInterface implementation
+   *  \tparam D       DomainFieldType
+   *  \tparam d       dimDomain
+   *  \tparam R       RangeFieldType
+   *  \tparam r{T,A}  dimRange of the of the {testBase,ansatzBase}
+   *  \tparam rC{T,a} dimRangeCols of the {testBase,ansatzBase}
    *  \attention  ret is assumed to be zero!
    */
-  template< class T, class A, class D, int d, class R, int r, int rC >
-  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
-             const BaseFunctionSetInterface< A, D, d, R, r, rC >& ansatzBase,
+  template< class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  void apply(const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
+             const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
              Dune::DynamicMatrix< R >& ret,
              std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {

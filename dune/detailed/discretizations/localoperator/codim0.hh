@@ -77,15 +77,9 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  /**
-   *  \brief      Applies the local operator.
-   *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
-   *  \tparam A   Traits of the BaseFunctionSetInterface implementation, representing the type of the ansatzBase
-   *  \attention  ret is assumed to be zero!
-   */
-  template< class T, class A, class D, int d, class R, int r, int rC >
-  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
-             const BaseFunctionSetInterface< A, D, d, R, r, rC >& ansatzBase,
+  template< class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  void apply(const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
+             const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
              Dune::DynamicMatrix< R >& ret,
              std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {
