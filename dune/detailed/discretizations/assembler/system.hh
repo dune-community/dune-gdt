@@ -55,7 +55,7 @@ private:
     : public LocalCodim0MatrixAssemblerApplication
   {
   public:
-    LocalCodim0MatrixAssemblerWrapper(const LocalAssemblerCodim0Matrix< L >& localAssembler,
+    LocalCodim0MatrixAssemblerWrapper(const LocalAssembler::Codim0Matrix< L >& localAssembler,
                                       Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
       : localMatrixAssembler_(localAssembler)
       , matrix_(matrix)
@@ -76,7 +76,7 @@ private:
     }
 
   private:
-    const LocalAssemblerCodim0Matrix< L >& localMatrixAssembler_;
+    const LocalAssembler::Codim0Matrix< L >& localMatrixAssembler_;
     Dune::Stuff::LA::Container::MatrixInterface< M >& matrix_;
   }; // class LocalCodim0MatrixAssemblerWrapper
 
@@ -98,7 +98,7 @@ private:
     : public LocalCodim0VectorAssemblerApplication
   {
   public:
-    LocalCodim0VectorAssemblerWrapper(const LocalAssemblerCodim0Vector< L >& localAssembler,
+    LocalCodim0VectorAssemblerWrapper(const LocalAssembler::Codim0Vector< L >& localAssembler,
                                       Dune::Stuff::LA::Container::VectorInterface< V >& vector)
       : localVectorAssembler_(localAssembler)
       , vector_(vector)
@@ -118,7 +118,7 @@ private:
     }
 
   private:
-    const LocalAssemblerCodim0Vector< L >& localVectorAssembler_;
+    const LocalAssembler::Codim0Vector< L >& localVectorAssembler_;
     Dune::Stuff::LA::Container::VectorInterface< V >& vector_;
   }; // class LocalCodim0VectorAssemblerWrapper
 
@@ -152,7 +152,7 @@ public:
   }
 
   template< class L, class M >
-  void addLocalMatrixAssembler(const LocalAssemblerCodim0Matrix< L >& localAssembler,
+  void addLocalMatrixAssembler(const LocalAssembler::Codim0Matrix< L >& localAssembler,
                                Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
   {
     assert(matrix.rows() == testSpace_.mapper().size());
@@ -161,7 +161,7 @@ public:
   }
 
   template< class L, class V >
-  void addLocalVectorAssembler(const LocalAssemblerCodim0Vector< L >& localAssembler,
+  void addLocalVectorAssembler(const LocalAssembler::Codim0Vector< L >& localAssembler,
                                Dune::Stuff::LA::Container::VectorInterface< V >& vector)
   {
     assert(vector.size() == int(testSpace_.mapper().size()));
