@@ -34,7 +34,7 @@ public:
 /**
  *  \brief  Computes a product evaluation.
  */
-class Product : public LocalEvaluation::UnaryInterface<ProductTraits>
+class Product : public LocalEvaluation::Codim0Interface<ProductTraits, 1>
 {
 public:
   typedef ProductTraits Traits;

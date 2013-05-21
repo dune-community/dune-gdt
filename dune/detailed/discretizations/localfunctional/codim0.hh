@@ -13,7 +13,7 @@
 #include <dune/stuff/common/vector.hh>
 
 #include "../basefunctionset/interface.hh"
-#include "../evaluation/interface.hh"
+#include "../localevaluation/interface.hh"
 #include "interface.hh"
 
 namespace Dune {
@@ -32,7 +32,7 @@ class Codim0IntegralTraits
 {
 public:
   typedef Codim0Integral<UnaryEvaluationImp, LocalizableFunctionImp> derived_type;
-  typedef LocalEvaluation::UnaryInterface<typename UnaryEvaluationImp::Traits> UnaryEvaluationType;
+  typedef LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1> UnaryEvaluationType;
   typedef LocalizableFunctionImp LocalizableFunctionType;
   dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
                      "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
