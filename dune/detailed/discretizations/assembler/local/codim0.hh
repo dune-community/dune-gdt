@@ -79,25 +79,28 @@ public:
     assert(tmpLocalMatricesContainer[1].size() >= localOperator_.numTmpObjectsRequired());
     assert(tmpIndicesContainer.size() >= 2);
     // get and clear matrix
-    auto& localMatrix = tmpLocalMatricesContainer[0][0];
+    Dune::DynamicMatrix<R>& localMatrix = tmpLocalMatricesContainer[0][0];
     Dune::Stuff::Common::clear(localMatrix);
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // apply local operator (result is in localMatrix)
     localOperator_.apply(
         testSpace.baseFunctionSet(entity), ansatzSpace.baseFunctionSet(entity), localMatrix, tmpOperatorMatrices);
     // write local matrix to global
-    auto& globalRows  = tmpIndicesContainer[0];
-    auto& globalCols  = tmpIndicesContainer[1];
-    const size_t rows = testSpace.mapper().numDofs(entity);
+    Dune::DynamicVector<size_t>& globalRows = tmpIndicesContainer[0];
+    Dune::DynamicVector<size_t>& globalCols = tmpIndicesContainer[1];
+    const size_t rows                       = testSpace.mapper().numDofs(entity);
     const size_t cols = ansatzSpace.mapper().numDofs(entity);
     assert(globalRows.size() >= rows);
     assert(globalCols.size() >= cols);
     testSpace.mapper().globalIndices(entity, globalRows);
     ansatzSpace.mapper().globalIndices(entity, globalCols);
     for (size_t ii = 0; ii < rows; ++ii) {
-      const auto& localRow = localMatrix[ii];
-      for (size_t jj = 0; jj < cols; ++jj)
-        systemMatrix.add(globalRows[ii], globalCols[jj], localRow[jj]);
+      const auto& localRow  = localMatrix[ii];
+      const size_t globalII = globalRows[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        const size_t globalJJ = globalCols[jj];
+        systemMatrix.add(globalII, globalJJ, localRow[jj]);
+      }
     } // write local matrix to global
   } // ... assembleLocal(...)
 
