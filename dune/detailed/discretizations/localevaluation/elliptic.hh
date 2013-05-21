@@ -36,7 +36,7 @@ public:
  *  \brief  Computes an elliptic evaluation.
  */
 class Elliptic
-  : public LocalEvaluation::BinaryInterface< EllipticTraits >
+  : public LocalEvaluation::Codim0Interface< EllipticTraits, 2 >
 {
 public:
   typedef EllipticTraits Traits;
