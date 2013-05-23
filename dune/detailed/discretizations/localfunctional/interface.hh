@@ -19,20 +19,6 @@ class Codim0Interface
 {
 public:
   typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::UnaryEvaluationType      UnaryEvaluationType;
-  typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
-
-  const LocalizableFunctionType& inducingFunction() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().inducingFunction());
-    return asImp().inducingFunction();
-  }
-
-  const UnaryEvaluationType& inducingEvaluation() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().inducingEvaluation());
-    return asImp().inducingEvaluation();
-  }
 
   size_t numTmpObjectsRequired() const
   {
