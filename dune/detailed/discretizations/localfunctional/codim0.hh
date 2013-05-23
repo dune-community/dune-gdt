@@ -4,8 +4,6 @@
 #include <vector>
 #include <utility>
 
-#include <dune/common/static_assert.hh>
-#include <dune/common/typetraits.hh>
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/geometry/quadraturerules.hh>
@@ -23,62 +21,39 @@ namespace LocalFunctional {
 
 
 // forward, to be used in the traits
-template <class UnaryEvaluationImp, class LocalizableFunctionImp>
+template <class UnaryEvaluationImp>
 class Codim0Integral;
 
 
-template <class UnaryEvaluationImp, class LocalizableFunctionImp>
+template <class UnaryEvaluationImp>
 class Codim0IntegralTraits
 {
 public:
-  typedef Codim0Integral<UnaryEvaluationImp, LocalizableFunctionImp> derived_type;
+  typedef Codim0Integral<UnaryEvaluationImp> derived_type;
   typedef LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1> UnaryEvaluationType;
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
-                     "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
-}; // class LocalFunctionalCodim0IntegralTraits
+};
 
 
-template <class UnaryEvaluationImp, class LocalizableFunctionImp>
-class Codim0Integral
-    : public LocalFunctional::Codim0Interface<Codim0IntegralTraits<UnaryEvaluationImp, LocalizableFunctionImp>>
+template <class UnaryEvaluationImp>
+class Codim0Integral : public LocalFunctional::Codim0Interface<Codim0IntegralTraits<UnaryEvaluationImp>>
 {
 public:
-  typedef Codim0IntegralTraits<UnaryEvaluationImp, LocalizableFunctionImp> Traits;
+  typedef Codim0IntegralTraits<UnaryEvaluationImp> Traits;
   typedef typename Traits::UnaryEvaluationType UnaryEvaluationType;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim0Integral(const LocalizableFunctionType& function)
-    : function_(function)
-    , evaluation_()
-  {
-  }
-
-  Codim0Integral(const LocalizableFunctionType& function, const UnaryEvaluationImp evaluation)
-    : function_(function)
-    , evaluation_(evaluation)
+  Codim0Integral(const UnaryEvaluationImp evaluation)
+    : evaluation_(evaluation)
   {
   }
 
   template <class... Args>
-  Codim0Integral(const LocalizableFunctionType& function, Args&&... args)
-    : function_(function)
-    , evaluation_(std::forward<Args>(args)...)
+  Codim0Integral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
   {
-  }
-
-  const LocalizableFunctionType& inducingFunction() const
-  {
-    return function_;
-  }
-
-  const UnaryEvaluationType& inducingEvaluation() const
-  {
-    return evaluation_;
   }
 
   size_t numTmpObjectsRequired() const
@@ -96,12 +71,12 @@ public:
              std::vector<Dune::DynamicVector<R>>& tmpLocalVectors) const
   {
     // local inducing function
-    const auto& entity       = testBase.entity();
-    const auto localFunction = function_.localFunction(entity);
+    const auto& entity        = testBase.entity();
+    const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
     typedef Dune::QuadratureRules<D, d> VolumeQuadratureRules;
     typedef Dune::QuadratureRule<D, d> VolumeQuadratureType;
-    const int quadratureOrder = evaluation_.order(localFunction, testBase);
+    const int quadratureOrder = evaluation().order(localFunctions, testBase);
     assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2 * quadratureOrder + 1);
     // check vector and tmp storage
@@ -116,18 +91,23 @@ public:
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight  = quadPointIt->weight();
       // clear tmp vector
-      Dune::Stuff::Common::clear(tmpLocalVectors[0]);
+      Dune::DynamicVector<R>& localVector = tmpLocalVectors[0];
+      Dune::Stuff::Common::clear(localVector);
       // evaluate the local operation
-      evaluation_.evaluate(localFunction, testBase, x, tmpLocalVectors[0]);
+      evaluation().evaluate(localFunctions, testBase, x, localVector);
       // compute integral
       for (size_t ii = 0; ii < size; ++ii) {
-        ret[ii] += tmpLocalVectors[0][ii] * integrationFactor * quadratureWeight;
+        ret[ii] += localVector[ii] * integrationFactor * quadratureWeight;
       } // compute integral
     } // loop over all quadrature points
   } // ... apply(...)
 
 private:
-  const LocalizableFunctionType& function_;
+  const UnaryEvaluationType& evaluation() const
+  {
+    return static_cast<const UnaryEvaluationType&>(evaluation_);
+  }
+
   const UnaryEvaluationImp evaluation_;
 }; // class Codim0Integral
 
