@@ -1,6 +1,8 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_PRODUCT_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_PRODUCT_HH
 
+#include <tuple>
+
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
@@ -18,26 +20,55 @@ namespace LocalEvaluation {
 
 
 // forward, to be used in the traits
+template <class LocalizableFunctionImp>
 class Product;
 
 
 /**
  *  \brief Traits for the Product evaluation.
  */
+template <class LocalizableFunctionImp>
 class ProductTraits
 {
 public:
-  typedef Product derived_type;
+  typedef Product<LocalizableFunctionImp> derived_type;
+  typedef LocalizableFunctionImp LocalizableFunctionType;
+  dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
+                     "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
 };
 
 
 /**
  *  \brief  Computes a product evaluation.
  */
-class Product : public LocalEvaluation::Codim0Interface<ProductTraits, 1>
+template <class LocalizableFunctionImp>
+class Product : public LocalEvaluation::Codim0Interface<ProductTraits<LocalizableFunctionImp>, 1>
 {
 public:
-  typedef ProductTraits Traits;
+  typedef ProductTraits<LocalizableFunctionImp> Traits;
+  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+
+  Product(const LocalizableFunctionType& inducingFunction)
+    : inducingFunction_(inducingFunction)
+  {
+  }
+
+  template <class EntityType>
+  std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
+  localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(inducingFunction_.localFunction(entity));
+  }
+
+  /**
+   * \brief extracts the local functions and calls the correct order() method
+   */
+  template <class L, class T, class D, int d, class R, int rT, int rCT>
+  int order(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase) const
+  {
+    const auto& localFunction = std::get<0>(localFunctions);
+    return order(localFunction, testBase);
+  } // int order(...)
 
   /**
    *  \todo add copydoc
@@ -53,16 +84,27 @@ public:
       return localFunction.order() + testBase.order();
   } // int order(...)
 
+  /**
+   * \brief extracts the local functions and calls the correct evaluate() method
+   */
+  template <class L, class T, class D, int d, class R, int rT, int rCT>
+  void evaluate(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret) const
+  {
+    const auto& localFunction = std::get<0>(localFunctions);
+    evaluate(localFunction, testBase, localPoint, ret);
+  }
+
   template <class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
-                       const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicVector<R>& /*ret*/)
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
+                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
+                const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicVector<R>& /*ret*/) const
   {
     dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
   }
 
   /**
-   *  \brief  Computes a product evaluation.
+   *  \brief computes a scalar product evaluation.
    *  \tparam T Traits of the test BaseFunctionSetInterface implementation
    *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
    *  \tparam D DomainFieldType
@@ -70,14 +112,14 @@ public:
    *  \tparam R RangeFieldType
    */
   template <class L, class T, class D, int d, class R>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret)
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
+                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase, const Dune::FieldVector<D, d>& localPoint,
+                Dune::DynamicVector<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<R, 1> RangeType;
     // evaluate local function
-    RangeType functionValue = localFunction.evaluate(localPoint);
+    const RangeType functionValue = localFunction.evaluate(localPoint);
     // evaluate test base
     const size_t size = testBase.size();
     std::vector<RangeType> testValues(size, RangeType(0));
