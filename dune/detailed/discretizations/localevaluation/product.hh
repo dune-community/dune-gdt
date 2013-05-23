@@ -42,7 +42,8 @@ public:
  *  \brief  Computes a product evaluation.
  */
 template <class LocalizableFunctionImp>
-class Product : public LocalEvaluation::Codim0Interface<ProductTraits<LocalizableFunctionImp>, 1>
+class Product : public LocalEvaluation::Codim0Interface<ProductTraits<LocalizableFunctionImp>, 1>,
+                public LocalEvaluation::Codim1Interface<ProductTraits<LocalizableFunctionImp>, 1>
 {
 public:
   typedef ProductTraits<LocalizableFunctionImp> Traits;
@@ -130,6 +131,49 @@ public:
       ret[ii] = functionValue * testValues[ii];
     }
   } // ... evaluate(...)
+
+  template <class L, class T, class IntersectionType, class D, int d, class R, int r, int rC>
+  void evaluate(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                Dune::DynamicVector<R>& ret) const
+  {
+    const auto& localFunction = std::get<0>(localFunctions);
+    evaluate(localFunction, testBase, intersection, localPoint, ret);
+  }
+
+  template <class L, class T, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT, int rCT>
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
+                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
+                const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d>& /*localPoint*/,
+                Dune::DynamicVector<R>& /*ret*/) const
+  {
+    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
+  }
+
+  template <class L, class T, class IntersectionType, class D, int d, class R>
+  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
+                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase, const IntersectionType& intersection,
+                const Dune::FieldVector<D, d - 1>& localPoint, Dune::DynamicVector<R>& ret) const
+  {
+    // checks
+    typedef Dune::FieldVector<D, d> DomainType;
+    typedef Dune::FieldVector<R, 1> RangeType;
+    // evaluate local function
+    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
+    const RangeType functionValue     = localFunction.evaluate(localPointEntity);
+    // evaluate test base
+    const size_t size = testBase.size();
+    std::vector<RangeType> testValues(size, RangeType(0));
+    testBase.evaluate(localPointEntity, testValues);
+    // compute product
+    assert(ret.size() >= size);
+    for (size_t ii = 0; ii < size; ++ii) {
+      ret[ii] = functionValue * testValues[ii];
+    }
+  } // ... evaluate(...)
+
+private:
+  const LocalizableFunctionType& inducingFunction_;
 }; // class Product
 
 } // namespace LocalEvaluation
