@@ -38,7 +38,9 @@
 #include <dune/detailed/discretizations/localevaluation/product.hh>
 #include <dune/detailed/discretizations/localoperator/codim0.hh>
 #include <dune/detailed/discretizations/localfunctional/codim0.hh>
+#include <dune/detailed/discretizations/localfunctional/codim1.hh>
 #include <dune/detailed/discretizations/assembler/local/codim0.hh>
+#include <dune/detailed/discretizations/assembler/local/codim1.hh>
 #include <dune/detailed/discretizations/space/constraints.hh>
 #include <dune/detailed/discretizations/assembler/system.hh>
 #include <dune/detailed/discretizations/discretefunction/default.hh>
@@ -173,14 +175,15 @@ int main(int argc, char** argv)
 
     // left hand side
     // * elliptic diffusion operator
-    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic, ExpressionFunctionType >  EllipticOperatorType;
+    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< ExpressionFunctionType > >  EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product, ExpressionFunctionType > L2FunctionalType;
-    const L2FunctionalType forceFunctional(*force);
+    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< ExpressionFunctionType > > L2VolumeFunctionalType;
+    const L2VolumeFunctionalType forceFunctional(*force);
     //   * L2 neumann functional
-    const L2FunctionalType neumannFunctional(*neumann);
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< ExpressionFunctionType > > L2FaceFunctionalType;
+    const L2FaceFunctionalType neumannFunctional(*neumann);
 
     info << "initializing matrix (of size " << space.mapper().size() << "x" << space.mapper().size()
          << ") and vectors... " << std::flush;
@@ -207,17 +210,20 @@ int main(int argc, char** argv)
     typedef LocalAssembler::Codim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
     const LocalEllipticOperatorMatrixAssemblerType diffusionMatrixAssembler(diffusionOperator);
     // * local vector assemblers
-    typedef LocalAssembler::Codim0Vector< L2FunctionalType > LocalL2FunctionalVectorAssemblerType;
     //   * force vector
-    const LocalL2FunctionalVectorAssemblerType forceVectorAssembler(forceFunctional);
+    typedef LocalAssembler::Codim0Vector< L2VolumeFunctionalType > LocalL2VolumeFunctionalVectorAssemblerType;
+    const LocalL2VolumeFunctionalVectorAssemblerType forceVectorAssembler(forceFunctional);
     //   * neumann vector
-    const LocalL2FunctionalVectorAssemblerType neumannVectorAssembler(neumannFunctional);
+    typedef LocalAssembler::Codim1Vector< L2FaceFunctionalType > LocalL2FaceFunctionalVectorAssemblerType;
+    const LocalL2FaceFunctionalVectorAssemblerType neumannVectorAssembler(neumannFunctional);
     // * system assembler
     typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
     SystemAssemblerType systemAssembler(space);
-    systemAssembler.addLocalMatrixAssembler(diffusionMatrixAssembler, *systemMatrix);
-    systemAssembler.addLocalVectorAssembler(forceVectorAssembler, *forceVector);
-    systemAssembler.addLocalVectorAssembler(neumannVectorAssembler, *neumannVector);
+    systemAssembler.addLocalAssembler(diffusionMatrixAssembler, *systemMatrix);
+    systemAssembler.addLocalAssembler(forceVectorAssembler, *forceVector);
+    systemAssembler.addLocalAssembler(neumannVectorAssembler,
+                                      SystemAssemblerType::AssembleOnNeumann(*boundaryInfo),
+                                      *neumannVector);
     systemAssembler.assemble();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
