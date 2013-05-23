@@ -4,8 +4,6 @@
 #include <vector>
 #include <utility>
 
-#include <dune/common/static_assert.hh>
-#include <dune/common/typetraits.hh>
 #include <dune/common/densematrix.hh>
 
 #include <dune/geometry/quadraturerules.hh>
@@ -23,56 +21,39 @@ namespace LocalOperator {
 
 
 // forward, to be used in the traits
-template< class BinaryEvaluationImp, class LocalizableFunctionImp >
+template< class BinaryEvaluationImp >
 class Codim0Integral;
 
 
-template< class BinaryEvaluationImp, class LocalizableFunctionImp >
+template< class BinaryEvaluationImp >
 class Codim0IntegralTraits
 {
 public:
-  typedef Codim0Integral< BinaryEvaluationImp, LocalizableFunctionImp > derived_type;
+  typedef Codim0Integral< BinaryEvaluationImp > derived_type;
   typedef LocalEvaluation::Codim0Interface< typename BinaryEvaluationImp::Traits, 2 > BinaryEvaluationType;
-  typedef LocalizableFunctionImp                                                      LocalizableFunctionType;
-  dune_static_assert((Dune::IsBaseOf< Dune::Stuff::LocalizableFunction, LocalizableFunctionImp >::value),
-                     "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
-}; // class LocalOperatorCodim0IntegralTraits
+};
 
 
-template< class BinaryEvaluationImp, class LocalizableFunctionImp >
+template< class BinaryEvaluationImp >
 class Codim0Integral
-  : public LocalOperator::Codim0Interface< Codim0IntegralTraits< BinaryEvaluationImp, LocalizableFunctionImp > >
+  : public LocalOperator::Codim0Interface< Codim0IntegralTraits< BinaryEvaluationImp > >
 {
 public:
-  typedef Codim0IntegralTraits< BinaryEvaluationImp, LocalizableFunctionImp > Traits;
-  typedef typename Traits::BinaryEvaluationType     BinaryEvaluationType;
-  typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
+  typedef Codim0IntegralTraits< BinaryEvaluationImp > Traits;
+  typedef typename Traits::BinaryEvaluationType       BinaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim0Integral(const LocalizableFunctionType& function)
-    : function_(function)
-    , evaluation_()
-  {}
-
-  Codim0Integral(const LocalizableFunctionType& function,
-                 const BinaryEvaluationImp evaluation)
-    : function_(function)
-    , evaluation_(evaluation)
+  Codim0Integral(const BinaryEvaluationImp evaluation)
+    : evaluation_(evaluation)
   {}
 
   template< class... Args >
-  Codim0Integral(const LocalizableFunctionType& function, Args&& ...args)
-    : function_(function)
-    , evaluation_(std::forward< Args >(args)...)
+  Codim0Integral(Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
   {}
-
-  const LocalizableFunctionType& inducingFunction() const
-  {
-    return function_;
-  }
 
   const BinaryEvaluationType& inducingEvaluation() const
   {
@@ -90,13 +71,12 @@ public:
              Dune::DynamicMatrix< R >& ret,
              std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {
-    // local inducing function
     const auto& entity = ansatzBase.entity();
-    const auto localFunction = function_.localFunction(entity);
+    const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const int quadratureOrder = evaluation_.order(localFunction, ansatzBase, testBase);
+    const int quadratureOrder = evaluation().order(localFunctions, ansatzBase, testBase);
     assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2*quadratureOrder + 1);
     // check matrix and tmp storage
@@ -115,7 +95,7 @@ public:
       // clear tmp matrix
       Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
       // evaluate the local operation
-      evaluation_.evaluate(localFunction, ansatzBase, testBase, x, tmpLocalMatrices[0]);
+      evaluation().evaluate(localFunctions, ansatzBase, testBase, x, tmpLocalMatrices[0]);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& retRow = ret[ii];
@@ -127,7 +107,11 @@ public:
   } // ... apply(...)
 
 private:
-  const LocalizableFunctionType& function_;
+  const BinaryEvaluationType& evaluation() const
+  {
+    return static_cast< const BinaryEvaluationType& >(evaluation_);
+  }
+
   const BinaryEvaluationImp evaluation_;
 }; // class Codim0Integral
 
