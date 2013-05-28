@@ -114,7 +114,7 @@ public:
     testSpaceEntity.mapper().globalIndices(entity, globalRowsEn);
     ansatzSpaceEntity.mapper().globalIndices(entity, globalColsEn);
     testSpaceNeighbor.mapper().globalIndices(neighbor, globalRowsNe);
-    ansatzSpaceNeighbor.mapper().globalIndices(neighbor, globalColsEn);
+    ansatzSpaceNeighbor.mapper().globalIndices(neighbor, globalColsNe);
     assert(localEntityEntityMatrix.rows() >= rowsEn);
     assert(localEntityEntityMatrix.cols() >= colsEn);
     assert(localNeighborNeighborMatrix.rows() >= rowsNe);
