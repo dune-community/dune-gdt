@@ -453,6 +453,12 @@ public:
         numberOfTmpVectorsNeeded[0] = std::max(numberOfTmpVectorsNeeded[0], tmp[0]);
         numberOfTmpVectorsNeeded[1] = std::max(numberOfTmpVectorsNeeded[1], tmp[1]);
       }
+      for (auto& localCodim1VectorAssembler : localCodim1VectorAssemblers_) {
+        const auto tmp = localCodim1VectorAssembler->numTmpObjectsRequired();
+        assert(tmp.size() == 2);
+        numberOfTmpVectorsNeeded[0] = std::max(numberOfTmpVectorsNeeded[0], tmp[0]);
+        numberOfTmpVectorsNeeded[1] = std::max(numberOfTmpVectorsNeeded[1], tmp[1]);
+      }
       std::vector<LocalVectorType> tmpLocalAssemblerVectors(numberOfTmpVectorsNeeded[0],
                                                             LocalVectorType(maxLocalSize, RangeFieldType(0)));
       std::vector<LocalVectorType> tmpLocalFunctionalVectors(numberOfTmpVectorsNeeded[1],
