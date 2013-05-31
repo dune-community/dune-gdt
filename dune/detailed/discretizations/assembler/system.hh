@@ -71,6 +71,24 @@ public:
   \code
   intersection.neighbor() && !intersection.boundary()
   \endcode
+   *  is used.
+   */
+  class AssembleOnInner : public AssembleOnFunctorInterface
+  {
+  public:
+    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const
+    {
+      return intersection.neighbor() && !intersection.boundary();
+    }
+  }; // class AssembleOnInner
+
+  /**
+   *  \brief Selects each inner intersection only once.
+   *
+   *  To decide if this in an inner intersection,
+  \code
+  intersection.neighbor() && !intersection.boundary()
+  \endcode
    *  is used, and true is returned, if the index of the inside() entity is smaller than the index of the outside()
    *  entity.
    */
