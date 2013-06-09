@@ -236,12 +236,6 @@ int main(int argc, char** argv)
         neumannVectorAssembler, SystemAssemblerType::AssembleOnNeumann(*boundaryInfo), *rhsVector);
     systemAssembler.assemble();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
-    //    std::cout << "=== system matrix ===" << std::endl;
-    //    std::cout << systemMatrix->backend() << std::endl;
-    //    std::cout << "=== system matrix ===" << std::endl;
-    //    std::cout << "=== right hand side ===" << std::endl;
-    //    std::cout << rhsVector->backend() << std::endl;
-    //    std::cout << "=== right hand side ===" << std::endl;
 
     info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")"
          << std::endl;
