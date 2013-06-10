@@ -65,7 +65,7 @@ using namespace Dune::Detailed::Discretizations;
   \param[in]  filename
               (Relative) path to the file.
   **/
-void ensureParamFile(const std::string& filename)
+void ensureSettings(const std::string& filename)
 {
   // only write param file if there is none
   if (!boost::filesystem::exists(filename)) {
@@ -103,10 +103,12 @@ void ensureParamFile(const std::string& filename)
     file << "[solver]" << std::endl;
     file << "type = bicgstab.ilut"  << std::endl;
     file << "maxIter = 5000"  << std::endl;
-    file << "precision = 1e-12"  << std::endl;
+    file << "precision = 1.0e-8"  << std::endl;
+    file << "preconditioner.dropTol = 1e-4"  << std::endl;
+    file << "preconditioner.fillFactor = 10"  << std::endl;
     file.close();
   } // only write param file if there is none
-} // void ensureParamFile()
+} // void ensureSettings()
 
 
 int main(int argc, char** argv)
@@ -119,11 +121,11 @@ int main(int argc, char** argv)
     Dune::Fem::MPIManager::initialize(argc, argv);
 
     // parameter
-    const std::string paramFilename = id + ".description";
-    ensureParamFile(paramFilename);
-    Dune::Stuff::Common::ExtendedParameterTree description(argc, argv, paramFilename);
-    description.assertSub(id);
-    const double penaltyFactor = description.get< double >(id + ".penaltyFactor");
+    const std::string paramFilename = id + ".settings";
+    ensureSettings(paramFilename);
+    Dune::Stuff::Common::ExtendedParameterTree settings(argc, argv, paramFilename);
+    settings.assertSub(id);
+    const double penaltyFactor = settings.get< double >(id + ".penaltyFactor");
     assert(penaltyFactor > 0.0 && "It better be!");
 
     // logger
@@ -135,8 +137,8 @@ int main(int argc, char** argv)
     info << "setting up grid:" << std::endl;
     typedef Dune::Stuff::GridProviderInterface<> GridProviderType;
     const GridProviderType* gridProvider
-        = Dune::Stuff::GridProviders<>::create(description.get(id + ".grid", "gridprovider.cube"),
-                                               description);
+        = Dune::Stuff::GridProviders<>::create(settings.get(id + ".grid", "gridprovider.cube"),
+                                               settings);
     typedef GridProviderType::GridType GridType;
     const std::shared_ptr< const GridType > grid = gridProvider->grid();
     typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
@@ -145,14 +147,14 @@ int main(int argc, char** argv)
     typedef typename Dune::Stuff::GridboundaryInterface< typename GridPartType::GridViewType > BoundaryInfoType;
     const std::shared_ptr< const BoundaryInfoType > boundaryInfo(
           Dune::Stuff::Gridboundaries< typename GridPartType::GridViewType >::create(
-            description.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
-            description));
+            settings.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
+            settings));
     info << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
      info << "visualizing grid... " << std::flush;
      timer.reset();
-    gridProvider->visualize(description.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
-                            description,
-                            description.get(id + ".filename", id) + ".grid");
+    gridProvider->visualize(settings.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
+                            settings,
+                            settings.get(id + ".filename", id) + ".grid");
      info << " done (took " << timer.elapsed() << " sek)" << std::endl;
 
     const unsigned int DUNE_UNUSED(dimDomain) = GridProviderType::dim;
@@ -163,13 +165,13 @@ int main(int argc, char** argv)
     typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
         ExpressionFunctionType;
     const std::shared_ptr< const ExpressionFunctionType >
-        diffusion(ExpressionFunctionType::create(description.sub("diffusion")));
+        diffusion(ExpressionFunctionType::create(settings.sub("diffusion")));
     const std::shared_ptr< const ExpressionFunctionType >
-        force(ExpressionFunctionType::create(description.sub("force")));
+        force(ExpressionFunctionType::create(settings.sub("force")));
     const std::shared_ptr< const ExpressionFunctionType >
-        dirichlet(ExpressionFunctionType::create(description.sub("dirichlet")));
+        dirichlet(ExpressionFunctionType::create(settings.sub("dirichlet")));
     const std::shared_ptr< const ExpressionFunctionType >
-        neumann(ExpressionFunctionType::create(description.sub("neumann")));
+        neumann(ExpressionFunctionType::create(settings.sub("neumann")));
 
     info << "initializing space... " << std::flush;
     timer.reset();
@@ -244,18 +246,16 @@ int main(int argc, char** argv)
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")" << std::endl;
-    const std::string solverType = description.get("solver.type", "bicgstab");
-    const unsigned int solverMaxIter = description.get("solver.maxIter", 5000);
-    const double solverPrecision = description.get("solver.precision", 1e-12);
+    const Dune::Stuff::Common::ExtendedParameterTree linearSolverSettings = settings.sub("solver");
+    const std::string solverType = linearSolverSettings.get("type", "bicgstab.ilut");
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
     typedef typename Dune::Stuff::LA::SolverInterface< MatrixType, VectorType > SolverType;
     std::shared_ptr< SolverType > solver(Dune::Stuff::LA::createSolver< MatrixType, VectorType >(solverType));
-    const unsigned int failure = solver->apply(*systemMatrix,
-                                               *rhsVector,
-                                               *solutionVector,
-                                               solverMaxIter,
-                                               solverPrecision);
+    const size_t failure = solver->apply(*systemMatrix,
+                                         *rhsVector,
+                                         *solutionVector,
+                                         linearSolverSettings);
     if (failure)
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver '" << solverType << "' reported a problem!");
@@ -264,11 +264,8 @@ int main(int argc, char** argv)
                  "\nERROR: linear solver '" << solverType << "' produced a solution of wrong size (is "
                  << solutionVector->size() << ", should be " << space.mapper().size() << ")!");
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
-//    std::cout << "=== solution ===" << std::endl;
-//    std::cout << solutionVector->backend() << std::endl;
-//    std::cout << "=== solution ===" << std::endl;
 
-    const std::string solutionFilename = description.get(id + ".filename", id) + ".solution";
+    const std::string solutionFilename = settings.get(id + ".filename", id) + ".solution";
     const std::string solutionName = id + ".solution";
     info << "writing solution to '" << solutionFilename;
     if (dimDomain == 1)
