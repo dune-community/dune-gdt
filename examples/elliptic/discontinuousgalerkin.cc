@@ -244,8 +244,8 @@ int main(int argc, char** argv)
     const double solverPrecision     = description.get("solver.precision", 1e-12);
     info << "  using '" << solverType << "'... " << std::flush;
     timer.reset();
-    typedef typename Dune::Stuff::LA::Solver::Interface<MatrixType, VectorType> SolverType;
-    const std::shared_ptr<SolverType> solver(Dune::Stuff::LA::Solver::create<MatrixType, VectorType>(solverType));
+    typedef typename Dune::Stuff::LA::SolverInterface<MatrixType, VectorType> SolverType;
+    std::shared_ptr<SolverType> solver(Dune::Stuff::LA::createSolver<MatrixType, VectorType>(solverType));
     const unsigned int failure =
         solver->apply(*systemMatrix, *rhsVector, *solutionVector, solverMaxIter, solverPrecision);
     if (failure)

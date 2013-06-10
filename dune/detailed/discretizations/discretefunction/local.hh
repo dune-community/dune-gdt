@@ -21,7 +21,7 @@ template <class VectorImp>
 class LocalDoFVector
 {
 public:
-  typedef typename Dune::Stuff::LA::Container::VectorInterface<typename VectorImp::Traits>::derived_type VectorType;
+  typedef typename Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits>::derived_type VectorType;
   typedef typename VectorType::ElementType ElementType;
 
   template <class M, class EntityType>

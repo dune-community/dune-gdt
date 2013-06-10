@@ -32,7 +32,7 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef Dune::Stuff::LA::Container::SparsityPatternDefault PatternType;
+  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
   const GridPartType& gridPart() const
   {
