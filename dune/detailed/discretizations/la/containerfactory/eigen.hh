@@ -15,10 +15,10 @@ template< class ElementType >
 class ContainerFactoryEigen
 {
 public:
-  typedef Dune::Stuff::LA::Container::EigenRowMajorSparseMatrix< ElementType >  RowMajorSparseMatrixType;
-  typedef Dune::Stuff::LA::Container::EigenDenseMatrix< ElementType >           DenseMatrixType;
-  typedef Dune::Stuff::LA::Container::EigenDenseVector< ElementType >           DenseVectorType;
-  typedef Dune::Stuff::LA::Container::SparsityPatternDefault                    PatternType;
+  typedef Dune::Stuff::LA::EigenRowMajorSparseMatrix< ElementType >  RowMajorSparseMatrixType;
+  typedef Dune::Stuff::LA::EigenDenseMatrix< ElementType >           DenseMatrixType;
+  typedef Dune::Stuff::LA::EigenDenseVector< ElementType >           DenseVectorType;
+  typedef Dune::Stuff::LA::SparsityPatternDefault                    PatternType;
 
   template< class T, class A >
   static RowMajorSparseMatrixType* createRowMajorSparseMatrix(const SpaceInterface< T >& testSpace,

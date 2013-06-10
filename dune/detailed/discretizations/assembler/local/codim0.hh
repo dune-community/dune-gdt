@@ -69,7 +69,7 @@ public:
   void assembleLocal(const SpaceInterface< T >& testSpace,
                      const SpaceInterface< A >& ansatzSpace,
                      const EntityType& entity,
-                     Dune::Stuff::LA::Container::MatrixInterface< M >& systemMatrix,
+                     Dune::Stuff::LA::MatrixInterface< M >& systemMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
                      std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
@@ -159,7 +159,7 @@ public:
   template< class T, class EntityType, class V, class R >
   void assembleLocal(const SpaceInterface< T >& testSpace,
                      const EntityType& entity,
-                     Dune::Stuff::LA::Container::VectorInterface< V >& systemVector,
+                     Dune::Stuff::LA::VectorInterface< V >& systemVector,
                      std::vector< std::vector< Dune::DynamicVector< R > > >& tmpLocalVectorContainer,
                      Dune::DynamicVector< size_t >& tmpIndices) const
   {

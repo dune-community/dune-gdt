@@ -173,7 +173,7 @@ private:
   {
   public:
     LocalCodim0MatrixAssemblerWrapper(const LocalAssembler::Codim0Matrix< L >& localAssembler,
-                                      Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
+                                      Dune::Stuff::LA::MatrixInterface< M >& matrix)
       : localMatrixAssembler_(localAssembler)
       , matrix_(matrix)
     {}
@@ -194,7 +194,7 @@ private:
 
   private:
     const LocalAssembler::Codim0Matrix< L >& localMatrixAssembler_;
-    Dune::Stuff::LA::Container::MatrixInterface< M >& matrix_;
+    Dune::Stuff::LA::MatrixInterface< M >& matrix_;
   }; // class LocalCodim0MatrixAssemblerWrapper
 
   class LocalCodim1MatrixAssemblerApplication
@@ -218,7 +218,7 @@ private:
   public:
     LocalCodim1MatrixAssemblerWrapper(const LocalAssemblerType& localAssembler,
                                       const AssembleOnFunctorType functor,
-                                      Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
+                                      Dune::Stuff::LA::MatrixInterface< M >& matrix)
       : localMatrixAssembler_(localAssembler)
       , functor_(functor)
       , matrix_(matrix)
@@ -245,7 +245,7 @@ private:
   private:
     const LocalAssemblerType& localMatrixAssembler_;
     const AssembleOnFunctorType functor_;
-    Dune::Stuff::LA::Container::MatrixInterface< M >& matrix_;
+    Dune::Stuff::LA::MatrixInterface< M >& matrix_;
   }; // class LocalCodim1MatrixAssemblerWrapper
 
   class LocalCodim0VectorAssemblerApplication
@@ -267,7 +267,7 @@ private:
   {
   public:
     LocalCodim0VectorAssemblerWrapper(const LocalAssembler::Codim0Vector< L >& localAssembler,
-                                      Dune::Stuff::LA::Container::VectorInterface< V >& vector)
+                                      Dune::Stuff::LA::VectorInterface< V >& vector)
       : localVectorAssembler_(localAssembler)
       , vector_(vector)
     {}
@@ -287,7 +287,7 @@ private:
 
   private:
     const LocalAssembler::Codim0Vector< L >& localVectorAssembler_;
-    Dune::Stuff::LA::Container::VectorInterface< V >& vector_;
+    Dune::Stuff::LA::VectorInterface< V >& vector_;
   }; // class LocalCodim0VectorAssemblerWrapper
 
   class LocalCodim1VectorAssemblerApplication
@@ -310,7 +310,7 @@ private:
   public:
     LocalCodim1VectorAssemblerWrapper(const LocalAssemblerType& localAssembler,
                                       const AssembleOnFunctorType functor,
-                                      Dune::Stuff::LA::Container::VectorInterface< V >& vector)
+                                      Dune::Stuff::LA::VectorInterface< V >& vector)
       : localVectorAssembler_(localAssembler)
       , functor_(functor)
       , vector_(vector)
@@ -333,7 +333,7 @@ private:
   private:
     const LocalAssemblerType& localVectorAssembler_;
     const AssembleOnFunctorType functor_;
-    Dune::Stuff::LA::Container::VectorInterface< V >& vector_;
+    Dune::Stuff::LA::VectorInterface< V >& vector_;
   }; // class LocalCodim1VectorAssemblerWrapper
 
 public:
@@ -371,7 +371,7 @@ public:
 
   template< class L, class M >
   void addLocalAssembler(const LocalAssembler::Codim0Matrix< L >& localAssembler,
-                         Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
+                         Dune::Stuff::LA::MatrixInterface< M >& matrix)
   {
     assert(matrix.rows() == testSpace_.mapper().size());
     assert(matrix.cols() == ansatzSpace_.mapper().size());
@@ -381,7 +381,7 @@ public:
   template< class L, class AssembleOnFunctorType, class M >
   void addLocalAssembler(const LocalAssembler::Codim1CouplingMatrix< L >& localAssembler,
                          const AssembleOnFunctorType functor,
-                         Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
+                         Dune::Stuff::LA::MatrixInterface< M >& matrix)
   {
     dune_static_assert((Dune::IsBaseOf< AssembleOnFunctorInterface, AssembleOnFunctorType >::value),
                        "ERROR: AssembleOnFunctorType is not a AssembleOnFunctorInterface");
@@ -396,7 +396,7 @@ public:
   template< class L, class AssembleOnFunctorType, class M >
   void addLocalAssembler(const LocalAssembler::Codim1BoundaryMatrix< L >& localAssembler,
                          const AssembleOnFunctorType functor,
-                         Dune::Stuff::LA::Container::MatrixInterface< M >& matrix)
+                         Dune::Stuff::LA::MatrixInterface< M >& matrix)
   {
     dune_static_assert((Dune::IsBaseOf< AssembleOnFunctorInterface, AssembleOnFunctorType >::value),
                        "ERROR: AssembleOnFunctorType is not a AssembleOnFunctorInterface");
@@ -410,7 +410,7 @@ public:
 
   template< class L, class V >
   void addLocalAssembler(const LocalAssembler::Codim0Vector< L >& localAssembler,
-                         Dune::Stuff::LA::Container::VectorInterface< V >& vector)
+                         Dune::Stuff::LA::VectorInterface< V >& vector)
   {
     assert(vector.size() == int(testSpace_.mapper().size()));
     localCodim0VectorAssemblers_.push_back(new LocalCodim0VectorAssemblerWrapper< L, V >(localAssembler, vector));
@@ -419,7 +419,7 @@ public:
   template< class L, class AssembleOnFunctorType, class V >
   void addLocalAssembler(const LocalAssembler::Codim1Vector< L >& localAssembler,
                          const AssembleOnFunctorType functor,
-                         Dune::Stuff::LA::Container::VectorInterface< V >& vector)
+                         Dune::Stuff::LA::VectorInterface< V >& vector)
   {
     dune_static_assert((Dune::IsBaseOf< AssembleOnFunctorInterface, AssembleOnFunctorType >::value),
                        "ERROR: AssembleOnFunctorType is not a AssembleOnFunctorInterface");
@@ -533,8 +533,8 @@ public:
 
   template< class ConstraintsType, class M, class V >
   void applyConstraints(ConstraintsType& constraints,
-                        Dune::Stuff::LA::Container::MatrixInterface< M >& matrix,
-                        Dune::Stuff::LA::Container::VectorInterface< V >& vector) const
+                        Dune::Stuff::LA::MatrixInterface< M >& matrix,
+                        Dune::Stuff::LA::VectorInterface< V >& vector) const
   {
     // walk the grid
     const auto entityEndIt = testSpace_.gridPart().template end< 0 >();
@@ -549,7 +549,7 @@ public:
 private:
   template< class M >
   void applyLocalMatrixConstraints(const Constraints::LocalDefault< RangeFieldType >& localConstraints,
-                                   Dune::Stuff::LA::Container::MatrixInterface< M >& matrix) const
+                                   Dune::Stuff::LA::MatrixInterface< M >& matrix) const
   {
     for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
       const size_t row = localConstraints.globalRow(ii);
@@ -561,7 +561,7 @@ private:
 
   template< class V >
   void applyLocalVectorConstraints(const Constraints::LocalDefault< RangeFieldType >& localConstraints,
-                                   Dune::Stuff::LA::Container::VectorInterface< V >& vector ) const
+                                   Dune::Stuff::LA::VectorInterface< V >& vector ) const
   {
     for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
       vector.set(localConstraints.globalRow(ii), RangeFieldType(0));
