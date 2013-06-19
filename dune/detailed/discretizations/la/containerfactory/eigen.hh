@@ -39,8 +39,8 @@ public:
   } // static ... createRowMajorSparseMatrix(...)
 
   template< class T, class A >
-  static DenseMatrixType createDenseMatrix(const SpaceInterface< T >& testSpace,
-                                           const SpaceInterface< A >& ansatzSpace)
+  static DenseMatrixType *createDenseMatrix(const SpaceInterface< T >& testSpace,
+                                            const SpaceInterface< A >& ansatzSpace)
   {
     return new DenseMatrixType(testSpace.mapper().size(),
                                ansatzSpace.mapper().size());
