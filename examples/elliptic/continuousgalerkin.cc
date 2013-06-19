@@ -22,7 +22,6 @@
 #include <dune/grid/part/leaf.hh>
 
 #include <dune/fem/misc/mpimanager.hh>
-#include <dune/fem/space/common/functionspace.hh>
 
 #include <dune/stuff/common/parameter/tree.hh>
 #include <dune/stuff/common/logging.hh>
