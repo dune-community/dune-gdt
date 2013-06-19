@@ -216,7 +216,7 @@ public:
     return ConstLocalFunctionType(*this, entity);
   }
 
-  const std::shared_ptr< const VectorType > vector() const
+  std::shared_ptr< const VectorType > vector() const
   {
     return vector_;
   }
