@@ -112,7 +112,7 @@ private:
 }; // class LocalDefault
 
 
-template <class GridViewType, class RangeFieldImp = double>
+template <class GridViewType, class RangeFieldImp = double, bool setRow = true>
 class Dirichlet : public LocalDefault<RangeFieldImp>
 {
 public:
