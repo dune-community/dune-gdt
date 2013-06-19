@@ -23,7 +23,7 @@ namespace Detailed {
 namespace Discretizations {
 
 
-template< class TestSpaceImp, class AnsatzSpaceImp >
+template< class TestSpaceImp, class AnsatzSpaceImp = TestSpaceImp >
 class SystemAssembler
 {
 public:
@@ -349,14 +349,31 @@ public:
 
   ~SystemAssembler()
   {
-    for (auto& localCodim0MatrixAssembler: localCodim0MatrixAssemblers_)
-      delete localCodim0MatrixAssembler;
-    for (auto& localCodim0VectorAssembler: localCodim0VectorAssemblers_)
-      delete localCodim0VectorAssembler;
-    for (auto& localCodim1MatrixAssembler: localCodim1MatrixAssemblers_)
-      delete localCodim1MatrixAssembler;
-    for (auto& localCodim1VectorAssembler : localCodim1VectorAssemblers_)
-      delete localCodim1VectorAssembler;
+    clearAll();
+  }
+
+  void clearLocalAssemblers()
+  {
+    for (auto& element: localCodim0MatrixAssemblers_)
+      delete element;
+    for (auto& element: localCodim0VectorAssemblers_)
+      delete element;
+    for (auto& element: localCodim1MatrixAssemblers_)
+      delete element;
+    for (auto& element : localCodim1VectorAssemblers_)
+      delete element;
+  }
+
+  void clearLocalConstraints()
+  {
+    for (auto& element : localConstraints_)
+      delete element;
+  }
+
+  void clearAll()
+  {
+    clearLocalAssemblers();
+    clearLocalConstraints();
   }
 
   const TestSpaceType& testSpace()
@@ -531,49 +548,101 @@ public:
     } // only do something, if there are local assemblers
   } // void assemble() const
 
-  template< class ConstraintsType, class M, class V >
-  void applyConstraints(ConstraintsType& constraints,
-                        Dune::Stuff::LA::MatrixInterface< M >& matrix,
-                        Dune::Stuff::LA::VectorInterface< V >& vector) const
+private:
+  class LocalConstraintsApplication
+  {
+  public:
+    virtual void apply(const TestSpaceType& testSpace, const EntityType& entity) = 0;
+  };
+
+  template< class ConstraintsType, class M >
+  class LocalMatrixConstraintsApplicationWrapper
+    : public LocalConstraintsApplication
+  {
+  public:
+    LocalMatrixConstraintsApplicationWrapper(ConstraintsType& constraints,
+                                             Dune::Stuff::LA::MatrixInterface< M >& matrix)
+      : constraints_(constraints)
+      , matrix_(matrix)
+    {}
+
+    virtual void apply(const TestSpaceType& testSpace, const EntityType& entity)
+    {
+      testSpace.localConstraints(entity, constraints_);
+      for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
+        const size_t row = constraints_.globalRow(ii);
+        for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
+          matrix_.set(row, constraints_.globalCol(jj), constraints_.value(ii, jj));
+        }
+      }
+    }
+
+  private:
+    ConstraintsType& constraints_;
+    Dune::Stuff::LA::MatrixInterface< M >& matrix_;
+  }; // class LocalMatrixConstraintsApplicationWrapper
+
+  template< class ConstraintsType, class V >
+  class LocalVectorConstraintsApplicationWrapper
+    : public LocalConstraintsApplication
+  {
+  public:
+    LocalVectorConstraintsApplicationWrapper(ConstraintsType& constraints,
+                                             Dune::Stuff::LA::VectorInterface< V >& vector)
+      : constraints_(constraints)
+      , vector_(vector)
+    {}
+
+    virtual void apply(const TestSpaceType& testSpace, const EntityType& entity)
+    {
+      testSpace.localConstraints(entity, constraints_);
+      for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
+        vector_.set(constraints_.globalRow(ii), RangeFieldType(0));
+      }
+    }
+
+  private:
+    ConstraintsType& constraints_;
+    Dune::Stuff::LA::VectorInterface< V >& vector_;
+  }; // class LocalVectorConstraintsApplicationWrapper
+
+public:
+  template< class ConstraintsType, class M >
+  void addLocalConstraints(ConstraintsType& constraints,
+                           Dune::Stuff::LA::MatrixInterface< M >& matrix)
+  {
+    assert(matrix.rows() == testSpace_.mapper().size());
+    assert(matrix.cols() == ansatzSpace_.mapper().size());
+    localConstraints_.push_back(new LocalMatrixConstraintsApplicationWrapper< ConstraintsType, M >(constraints, matrix));
+  }
+
+  template< class ConstraintsType, class V >
+  void addLocalConstraints(ConstraintsType& constraints,
+                           Dune::Stuff::LA::VectorInterface< V >& vector)
+  {
+    assert(vector.size() == testSpace_.mapper().size());
+    localConstraints_.push_back(new LocalVectorConstraintsApplicationWrapper< ConstraintsType, V >(constraints, vector));
+  }
+
+  void applyConstraints() const
   {
     // walk the grid
     const auto entityEndIt = testSpace_.gridPart().template end< 0 >();
     for (auto entityIt = testSpace_.gridPart().template begin< 0 >(); entityIt != entityEndIt; ++entityIt) {
       const EntityType& entity = *entityIt;
-      testSpace_.localConstraints(entity, constraints);
-      applyLocalMatrixConstraints(constraints, matrix);
-      applyLocalVectorConstraints(constraints, vector);
-    } // walk the grid to apply constraints
-  } // void applyConstraints(...) const
+      for (auto& localConstraints : localConstraints_)
+        localConstraints->apply(testSpace_, entity);
+    } // walk the grid
+  } // ... applyConstraints()
 
 private:
-  template< class M >
-  void applyLocalMatrixConstraints(const Constraints::LocalDefault< RangeFieldType >& localConstraints,
-                                   Dune::Stuff::LA::MatrixInterface< M >& matrix) const
-  {
-    for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
-      const size_t row = localConstraints.globalRow(ii);
-      for (size_t jj = 0; jj < localConstraints.cols(); ++jj) {
-        matrix.set(row, localConstraints.globalCol(jj), localConstraints.value(ii, jj));
-      }
-    }
-  } // void applyLocalMatrixConstraints(...)
-
-  template< class V >
-  void applyLocalVectorConstraints(const Constraints::LocalDefault< RangeFieldType >& localConstraints,
-                                   Dune::Stuff::LA::VectorInterface< V >& vector ) const
-  {
-    for (size_t ii = 0; ii < localConstraints.rows(); ++ii) {
-      vector.set(localConstraints.globalRow(ii), RangeFieldType(0));
-    }
-  } // void applyLocalVectorConstraints(...)
-
   const TestSpaceType& testSpace_;
   const AnsatzSpaceType& ansatzSpace_;
   std::vector< LocalCodim0MatrixAssemblerApplication* > localCodim0MatrixAssemblers_;
   std::vector< LocalCodim0VectorAssemblerApplication* > localCodim0VectorAssemblers_;
   std::vector< LocalCodim1MatrixAssemblerApplication* > localCodim1MatrixAssemblers_;
   std::vector< LocalCodim1VectorAssemblerApplication* > localCodim1VectorAssemblers_;
+  std::vector< LocalConstraintsApplication* > localConstraints_;
 }; // class SystemAssembler
 
 
