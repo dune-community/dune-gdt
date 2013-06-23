@@ -29,14 +29,15 @@ AC_CONFIG_FILES([
   dune/detailed/discretizations/assembler/local/Makefile
   dune/detailed/discretizations/basefunctionset/Makefile
   dune/detailed/discretizations/discretefunction/Makefile
-  dune/detailed/discretizations/localevaluation/Makefile
   dune/detailed/discretizations/la/Makefile
   dune/detailed/discretizations/la/containerfactory/Makefile
+  dune/detailed/discretizations/localevaluation/Makefile
   dune/detailed/discretizations/localfunctional/Makefile
   dune/detailed/discretizations/localoperator/Makefile
   dune/detailed/discretizations/mapper/Makefile
   dune/detailed/discretizations/space/Makefile
   dune/detailed/discretizations/space/continuouslagrange/Makefile
+  dune/detailed/discretizations/space/discontinuouslagrange/Makefile
   examples/Makefile
   examples/elliptic/Makefile
   m4/Makefile

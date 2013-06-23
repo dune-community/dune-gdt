@@ -5,7 +5,7 @@ AM_CPPFLAGS = $(ALL_PKG_CPPFLAGS) $(DUNEMPICPPFLAGS)
 
 noinst_PROGRAMS = continuousgalerkin discontinuousgalerkin
 
-CUSTOM_CPPFLAGS = -DALUGRID_SIMPLEX -DGRIDDIM=2 -DWORLDDIM=2 -Wall -O0 -DDEBUG -g -fdiagnostics-show-option -std=c++0x
+CUSTOM_CPPFLAGS = -DSGRID -DGRIDDIM=2 -DWORLDDIM=2 -Wall -O0 -DDEBUG -g -fdiagnostics-show-option -std=c++0x
 
 continuousgalerkin_SOURCES = continuousgalerkin.cc 
 continuousgalerkin_CPPFLAGS = $(AM_CPPFLAGS) $(EIGEN_CFLAGS) $(CUSTOM_CPPFLAGS) $(BOOST_CPPFLAGS)
