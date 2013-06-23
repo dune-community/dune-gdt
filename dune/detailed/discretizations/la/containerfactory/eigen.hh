@@ -1,6 +1,13 @@
 #ifndef DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 #define DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
 
+// we need this for the HAVE_EIGEN define!
+#ifdef HAVE_CMAKE_CONFIG
+#include "cmake_config.h"
+#elif defined(HAVE_CONFIG_H)
+#include "config.h"
+#endif
+
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
