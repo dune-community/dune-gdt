@@ -236,7 +236,9 @@ int main(int argc, char** argv)
     rhsVector->backend() = forceVector->backend()
         + neumannVector->backend()
         - systemMatrix->backend()*dirichletVector->backend();
-    systemAssembler.applyConstraints(dirichletConstraints, *systemMatrix, *rhsVector);
+    systemAssembler.addLocalConstraints(dirichletConstraints, *systemMatrix);
+    systemAssembler.addLocalConstraints(dirichletConstraints, *rhsVector);
+    systemAssembler.applyConstraints();
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
     info << "solving linear system (of size " << systemMatrix->rows() << "x" << systemMatrix->cols() << ")" << std::endl;
