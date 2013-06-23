@@ -76,3 +76,5 @@ demos
 *.param
 *.vtu
 hctest.*
+examples/elliptic/discontinuousgalerkin
+examples/elliptic/discontinuousgalerkin-discontinuousgalerkin.o
