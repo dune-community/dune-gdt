@@ -17,5 +17,9 @@ discontinuousgalerkin_ip_CPPFLAGS = $(AM_CPPFLAGS) $(EIGEN_CFLAGS) $(CUSTOM_CPPF
 discontinuousgalerkin_ip_LDFLAGS = $(ALL_LDFLAGS) $(BOOST_LDFLAGS) -lboost_system -lboost_filesystem
 discontinuousgalerkin_ip_LDADD = $(LDADD) $(BOOST_LDADD)
 
+discontinuousgalerkin_swip_SOURCES = discontinuousgalerkin-swip.cc 
+discontinuousgalerkin_swip_CPPFLAGS = $(AM_CPPFLAGS) $(EIGEN_CFLAGS) $(CUSTOM_CPPFLAGS) $(BOOST_CPPFLAGS)
+discontinuousgalerkin_swip_LDFLAGS = $(ALL_LDFLAGS) $(BOOST_LDFLAGS) -lboost_system -lboost_filesystem
+discontinuousgalerkin_swip_LDADD = $(LDADD) $(BOOST_LDADD)
 
 include $(top_srcdir)/am/global-rules
