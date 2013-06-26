@@ -45,7 +45,7 @@
 #include <dune/detailed/discretizations/assembler/system.hh>
 #include <dune/detailed/discretizations/discretefunction/default.hh>
 
-const std::string id = "elliptic.discontinuousgalerkin";
+const std::string id = "elliptic.discontinuousgalerkin-ip";
 
 #ifndef POLORDER
   const int polOrder = 1;
