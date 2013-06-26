@@ -429,7 +429,7 @@ public:
   void addLocalAssembler(const LocalAssembler::Codim0Vector< L >& localAssembler,
                          Dune::Stuff::LA::VectorInterface< V >& vector)
   {
-    assert(vector.size() == int(testSpace_.mapper().size()));
+    assert(vector.size() == testSpace_.mapper().size());
     localCodim0VectorAssemblers_.push_back(new LocalCodim0VectorAssemblerWrapper< L, V >(localAssembler, vector));
   }
 
@@ -552,6 +552,7 @@ private:
   class LocalConstraintsApplication
   {
   public:
+    virtual ~LocalConstraintsApplication() {}
     virtual void apply(const TestSpaceType& testSpace, const EntityType& entity) = 0;
   };
 
