@@ -54,13 +54,6 @@ public:
   {
   }
 
-  //  template< class EntityType >
-  //  auto localFunctions(const EntityType& entity) const -> decltype(LocalizableFunctionType::template localFunction<
-  //  EntityType >(entity))
-  //  {
-  //    return inducingFunction_.localFunction(entity);
-  //  }
-
   template <class EntityType>
   std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
   localFunctions(const EntityType& entity) const
@@ -117,7 +110,7 @@ public:
   }
 
   /**
-   *  \brief  Computes an elliptic evaluationf for a scalar local function and scalar basefunctionsets.
+   *  \brief  Computes an elliptic evaluation for a scalar local function and scalar basefunctionsets.
    *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
    *  \tparam T Traits of the test BaseFunctionSetInterface implementation
    *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
@@ -154,6 +147,49 @@ public:
       }
     }
   } // ... evaluate< ..., 1, 1 >(...)
+
+
+  /**
+   *  \brief  Computes an elliptic evaluation for a matrix-valued local function and matrix-valued basefunctionsets.
+   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
+   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
+   *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
+   *  \tparam D DomainFieldType
+   *  \tparam d dimDomain
+   *  \tparam R RangeFieldType
+   */
+  template <class L, class T, class A, class D, int d, class R>
+  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, d, d>& localFunction,
+                       const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
+                       const BaseFunctionSetInterface<A, D, d, R, 1, 1>& ansatzBase,
+                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  {
+    typedef typename Dune::Stuff::LocalFunctionInterface<L, D, d, R, d, d>::RangeType DiffusionRangeType;
+    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::RangeType RangeType;
+
+    // evaluate local function
+    const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
+    // evaluate test gradient
+    const size_t rows = testBase.size();
+    std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
+    testBase.jacobian(localPoint, testGradients);
+    // evaluate ansatz gradient
+    const size_t cols = ansatzBase.size();
+    std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
+    ansatzBase.jacobian(localPoint, ansatzGradients);
+    // compute products
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    FieldVector<D, d> product(0.0);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      auto& retRow = ret[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        functionValue.mv(ansatzGradients[jj][0], product);
+        retRow[jj] = product * testGradients[ii][0];
+      }
+    }
+  } // ... evaluate< ..., d, d >(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
