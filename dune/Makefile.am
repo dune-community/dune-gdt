@@ -1,3 +1,3 @@
-SUBDIRS = detailed
+SUBDIRS = discretizations
 
 include $(top_srcdir)/am/global-rules
