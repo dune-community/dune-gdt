@@ -157,19 +157,16 @@ int main(int argc, char** argv)
     typedef typename GridType::ctype DomainFieldType;
     typedef double RangeFieldType;
 
-    typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
-        ScalarExpressionFunctionType;
-    typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain >
-        MatrixExpressionFunctionType;
+    typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
 
-    const std::shared_ptr< const MatrixExpressionFunctionType >
-        diffusion(MatrixExpressionFunctionType::create(settings.sub("diffusion")));
-    const std::shared_ptr< const ScalarExpressionFunctionType >
-        force(ScalarExpressionFunctionType::create(settings.sub("force")));
-    const std::shared_ptr< const ScalarExpressionFunctionType >
-        dirichlet(ScalarExpressionFunctionType::create(settings.sub("dirichlet")));
-    const std::shared_ptr< const ScalarExpressionFunctionType >
-        neumann(ScalarExpressionFunctionType::create(settings.sub("neumann")));
+    const std::shared_ptr< const FunctionType >
+        diffusion(FunctionType::create(settings.sub("diffusion")));
+    const std::shared_ptr< const FunctionType >
+        force(FunctionType::create(settings.sub("force")));
+    const std::shared_ptr< const FunctionType >
+        dirichlet(FunctionType::create(settings.sub("dirichlet")));
+    const std::shared_ptr< const FunctionType >
+        neumann(FunctionType::create(settings.sub("neumann")));
 
     info << "initializing discrete function spaces... " << std::flush;
     timer.reset();
@@ -179,14 +176,14 @@ int main(int argc, char** argv)
 
     // left hand side
     // * elliptic diffusion operator
-    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< MatrixExpressionFunctionType > >  EllipticOperatorType;
+    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > >  EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< ScalarExpressionFunctionType > > L2VolumeFunctionalType;
+    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > L2VolumeFunctionalType;
     const L2VolumeFunctionalType forceFunctional(*force);
     //   * L2 neumann functional
-    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< ScalarExpressionFunctionType > > L2FaceFunctionalType;
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
     const L2FaceFunctionalType neumannFunctional(*neumann);
 
     info << "initializing matrix (of size " << space.mapper().size() << "x" << space.mapper().size()
