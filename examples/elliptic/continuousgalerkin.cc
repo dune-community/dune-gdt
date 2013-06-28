@@ -145,8 +145,8 @@ int main(int argc, char** argv)
             settings.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
             settings));
     info << "  took " << timer.elapsed() << " sec, has " << grid->size(0) << " entities" << std::endl;
-     info << "visualizing grid... " << std::flush;
-     timer.reset();
+    info << "visualizing grid... " << std::flush;
+    timer.reset();
     gridProvider->visualize(settings.get(id + ".boundaryinfo", "boundaryinfo.alldirichlet"),
                             settings,
                             settings.get(id + ".filename", id) + ".grid");
@@ -158,15 +158,18 @@ int main(int argc, char** argv)
     typedef double RangeFieldType;
 
     typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange >
-        ExpressionFunctionType;
-    const std::shared_ptr< const ExpressionFunctionType >
-        diffusion(ExpressionFunctionType::create(settings.sub("diffusion")));
-    const std::shared_ptr< const ExpressionFunctionType >
-        force(ExpressionFunctionType::create(settings.sub("force")));
-    const std::shared_ptr< const ExpressionFunctionType >
-        dirichlet(ExpressionFunctionType::create(settings.sub("dirichlet")));
-    const std::shared_ptr< const ExpressionFunctionType >
-        neumann(ExpressionFunctionType::create(settings.sub("neumann")));
+        ScalarExpressionFunctionType;
+    typedef Dune::Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain >
+        MatrixExpressionFunctionType;
+
+    const std::shared_ptr< const MatrixExpressionFunctionType >
+        diffusion(MatrixExpressionFunctionType::create(settings.sub("diffusion")));
+    const std::shared_ptr< const ScalarExpressionFunctionType >
+        force(ScalarExpressionFunctionType::create(settings.sub("force")));
+    const std::shared_ptr< const ScalarExpressionFunctionType >
+        dirichlet(ScalarExpressionFunctionType::create(settings.sub("dirichlet")));
+    const std::shared_ptr< const ScalarExpressionFunctionType >
+        neumann(ScalarExpressionFunctionType::create(settings.sub("neumann")));
 
     info << "initializing discrete function spaces... " << std::flush;
     timer.reset();
@@ -176,14 +179,14 @@ int main(int argc, char** argv)
 
     // left hand side
     // * elliptic diffusion operator
-    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< ExpressionFunctionType > >  EllipticOperatorType;
+    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< MatrixExpressionFunctionType > >  EllipticOperatorType;
     const EllipticOperatorType diffusionOperator(*diffusion);
     // * right hand side
     //   * L2 force functional
-    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< ExpressionFunctionType > > L2VolumeFunctionalType;
+    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< ScalarExpressionFunctionType > > L2VolumeFunctionalType;
     const L2VolumeFunctionalType forceFunctional(*force);
     //   * L2 neumann functional
-    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< ExpressionFunctionType > > L2FaceFunctionalType;
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< ScalarExpressionFunctionType > > L2FaceFunctionalType;
     const L2FaceFunctionalType neumannFunctional(*neumann);
 
     info << "initializing matrix (of size " << space.mapper().size() << "x" << space.mapper().size()
@@ -200,7 +203,7 @@ int main(int argc, char** argv)
     std::shared_ptr< VectorType > solutionVector(ContainerFactory::createDenseVector(space));
     info << "done (took " << timer.elapsed() << " sec)" << std::endl;
 
-    info << "assembing system... " << std::flush;
+    info << "assembling system... " << std::flush;
     timer.reset();
     // * dirichlet boundary values
     typedef DiscreteFunctionDefault< SpaceType, VectorType > DiscreteFunctionType;
