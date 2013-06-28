@@ -17,7 +17,7 @@ namespace Discretizations {
  *
  *  \note   see specialization for rangeDimCols = 1 for vector and scalar valued and basis functions.
  */
-template< class Traits, class DomainFieldImp, int domainDin, class RangeFieldImp, int rangeDimRows, int rangeDim = 1 >
+template< class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDim = 1 >
 class BaseFunctionSetInterface;
 
 

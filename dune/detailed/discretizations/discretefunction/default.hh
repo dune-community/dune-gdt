@@ -172,7 +172,7 @@ namespace Discretizations {
 //  const DiscreteFunctionSpaceType& space_;
 //  std::shared_ptr< VectorType > vector_;
 //  const std::string name_;
-//}; // class Defaul
+//}; // class Default
 
 
 template< class SpaceImp, class VectorImp >
