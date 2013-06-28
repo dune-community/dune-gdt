@@ -1,1 +1,1 @@
-add_subdirectory(detailed)
+add_subdirectory(discretizations)
