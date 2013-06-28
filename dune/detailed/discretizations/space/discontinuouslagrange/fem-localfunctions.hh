@@ -8,7 +8,12 @@
 #endif
 
 #include <dune/common/static_assert.hh>
+#include <dune/common/typetraits.hh>
 #include <dune/common/exceptions.hh>
+
+#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
+#include <dune/grid/alugrid.hh>
 
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
@@ -153,7 +158,17 @@ public:
 private:
   static const GridPartType& assertGridPart(const GridPartType& gP)
   {
-    // check
+    // static grid check
+    typedef typename GridPartType::GridType GridType;
+#if HAVE_ALUGRID
+    dune_static_assert(!(Dune::is_same<GridType, Dune::ALUCubeGrid<dimDomain, dimDomain>>::value),
+                       "This space is only implemented for simplicial grids!");
+#endif
+    dune_static_assert(!(Dune::is_same<GridType, Dune::SGrid<dimDomain, dimDomain>>::value),
+                       "This space is only implemented for simplicial grids!");
+    dune_static_assert(!(Dune::is_same<GridType, Dune::YaspGrid<dimDomain>>::value),
+                       "This space is only implemented for simplicial grids!");
+    // dynamic gridpart check
     typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
         AllGeometryTypes;
     const AllGeometryTypes allGeometryTypes(gP.indexSet());
