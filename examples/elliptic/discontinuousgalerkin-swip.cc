@@ -35,7 +35,7 @@
 #include <dune/detailed/discretizations/la/containerfactory/eigen.hh>
 #include <dune/detailed/discretizations/localevaluation/elliptic.hh>
 #include <dune/detailed/discretizations/localoperator/codim0.hh>
-#include <dune/detailed/discretizations/localevaluation/ipdg-fluxes.hh>
+#include <dune/detailed/discretizations/localevaluation/swipdg-fluxes.hh>
 #include <dune/detailed/discretizations/localoperator/codim1.hh>
 #include <dune/detailed/discretizations/localevaluation/product.hh>
 #include <dune/detailed/discretizations/localfunctional/codim0.hh>
@@ -183,16 +183,16 @@ int main(int argc, char** argv)
     // left hand side
     typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< ExpressionFunctionType > > EllipticOperatorType;
     const EllipticOperatorType ellipticOperator(*diffusion);
-    typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::IPDGFluxes::CouplingPrimal< ExpressionFunctionType > >
+    typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SWIPDGFluxes::CouplingPrimal< ExpressionFunctionType > >
         CouplingOperatorType;
     const CouplingOperatorType ipdgCouplingOperator(*diffusion, penaltyFactor);
-    typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::IPDGFluxes::BoundaryDirichletLHS< ExpressionFunctionType > >
+    typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SWIPDGFluxes::BoundaryDirichletLHS< ExpressionFunctionType > >
         DirichletOperatorType;
     const DirichletOperatorType ipdgDirichletOperator(*diffusion, penaltyFactor);
     // right hand side
     typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< ExpressionFunctionType > > ForceFunctionalType;
     const ForceFunctionalType forceFunctional(*force);
-    typedef LocalFunctional::Codim1Integral< LocalEvaluation::IPDGFluxes::BoundaryDirichletRHS< ExpressionFunctionType, ExpressionFunctionType > >
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::SWIPDGFluxes::BoundaryDirichletRHS< ExpressionFunctionType, ExpressionFunctionType > >
         DirichletFunctionalType;
     const DirichletFunctionalType dirichletFunctional(*diffusion, *dirichlet, penaltyFactor);
     typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< ExpressionFunctionType > > NeumannFunctionalType;
