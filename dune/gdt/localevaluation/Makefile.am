@@ -3,7 +3,7 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-includedir = $(includedir)/dune/detailed/discretizations/evaluation/local
+includedir = $(includedir)/dune/gdt/evaluation/local
 include_HEADERS = elliptic.hh interface.hh ipdg-fluxes.hh swipdg-fluxes.hh
 
 include $(top_srcdir)/am/global-rules

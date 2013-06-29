@@ -3,7 +3,7 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-includedir = $(includedir)/dune/detailed/discretizations/space
+includedir = $(includedir)/dune/gdt/space
 include_HEADERS = constraints.hh interface.hh
 
 SUBDIRS = continuouslagrange discontinuouslagrange
