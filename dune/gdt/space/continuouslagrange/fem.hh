@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
+#ifndef DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
+#define DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
 
 #ifdef HAVE_CMAKE_CONFIG
   #include "cmake_config.h"
@@ -17,8 +17,7 @@
 #include "../constraints.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace ContinuousLagrangeSpace {
 
 
@@ -234,8 +233,7 @@ private:
 
 
 } // namespace ContinuousLagrangeSpace
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
+#endif // DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH

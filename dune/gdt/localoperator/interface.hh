@@ -1,16 +1,15 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTERFACE_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTERFACE_HH
+#ifndef DUNE_GDT_LOCALOPERATOR_INTERFACE_HH
+#define DUNE_GDT_LOCALOPERATOR_INTERFACE_HH
 
 #include <vector>
 
 #include <dune/common/bartonnackmanifcheck.hh>
 #include <dune/common/dynmatrix.hh>
 
-#include <dune/detailed/discretizations/basefunctionset/interface.hh>
+#include <dune/gdt/basefunctionset/interface.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalOperator {
 
 
@@ -165,8 +164,7 @@ public:
 
 
 } // namespace LocalOperator
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTERFACE_HH
+#endif // DUNE_GDT_LOCALOPERATOR_INTERFACE_HH

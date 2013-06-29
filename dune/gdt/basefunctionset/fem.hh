@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_HH
+#ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_HH
+#define DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 
 #ifdef HAVE_CMAKE_CONFIG
   #include "cmake_config.h"
@@ -16,8 +16,7 @@
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace BaseFunctionSet {
 
 
@@ -101,8 +100,7 @@ private:
 
 
 } // namespace BaseFunctionSet
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_HH
+#endif // DUNE_GDT_BASEFUNCTIONSET_FEM_HH

@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_INTERFACE_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_INTERFACE_HH
+#ifndef DUNE_GDT_SPACE_INTERFACE_HH
+#define DUNE_GDT_SPACE_INTERFACE_HH
 
 #include <dune/common/bartonnackmanifcheck.hh>
 #include <dune/common/dynvector.hh>
@@ -9,8 +9,7 @@
 #include "constraints.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 template< class Traits >
@@ -127,8 +126,7 @@ public:
 }; // class SpaceInterface
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_INTERFACE_HH
+#endif // DUNE_GDT_SPACE_INTERFACE_HH

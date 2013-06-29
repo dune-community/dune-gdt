@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_INTERFACE_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_INTERFACE_HH
+#ifndef DUNE_GDT_BASEFUNCTIONSET_INTERFACE_HH
+#define DUNE_GDT_BASEFUNCTIONSET_INTERFACE_HH
 
 #include <vector>
 
@@ -8,8 +8,7 @@
 #include <dune/common/fmatrix.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 /**
@@ -87,8 +86,7 @@ public:
 }; // class BaseFunctionSetInterface
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_INTERFACE_HH
+#endif // DUNE_GDT_BASEFUNCTIONSET_INTERFACE_HH

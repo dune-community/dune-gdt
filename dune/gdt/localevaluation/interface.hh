@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_INTERFACE_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_INTERFACE_HH
+#ifndef DUNE_GDT_EVALUATION_INTERFACE_HH
+#define DUNE_GDT_EVALUATION_INTERFACE_HH
 
 #include <memory>
 
@@ -9,11 +9,10 @@
 
 #include <dune/stuff/localfunction/interface.hh>
 
-#include <dune/detailed/discretizations/basefunctionset/interface.hh>
+#include <dune/gdt/basefunctionset/interface.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalEvaluation {
 
 
@@ -386,8 +385,7 @@ public:
 
 
 } // namespace LocalEvaluation
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_INTERFACE_HH
+#endif // DUNE_GDT_EVALUATION_INTERFACE_HH

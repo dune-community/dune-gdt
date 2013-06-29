@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_HH
+#ifndef DUNE_GDT_ASSEMLBER_LOCAL_CODIM1_HH
+#define DUNE_GDT_ASSEMLBER_LOCAL_CODIM1_HH
 
 #include <vector>
 
@@ -7,13 +7,12 @@
 #include <dune/stuff/la/container/interface.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 
-#include <dune/detailed/discretizations/localoperator/interface.hh>
-#include <dune/detailed/discretizations/localfunctional/interface.hh>
-#include <dune/detailed/discretizations/space/interface.hh>
+#include <dune/gdt/localoperator/interface.hh>
+#include <dune/gdt/localfunctional/interface.hh>
+#include <dune/gdt/space/interface.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalAssembler {
 
 
@@ -334,8 +333,7 @@ private:
 
 
 } // namespace LocalAssembler
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_ASSEMLBER_LOCAL_CODIM1_HH
+#endif // DUNE_GDT_ASSEMLBER_LOCAL_CODIM1_HH

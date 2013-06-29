@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_PRODUCT_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_PRODUCT_HH
+#ifndef DUNE_GDT_EVALUATION_PRODUCT_HH
+#define DUNE_GDT_EVALUATION_PRODUCT_HH
 
 #include <tuple>
 
@@ -9,13 +9,12 @@
 #include <dune/stuff/function/interface.hh>
 #include <dune/stuff/localfunction/interface.hh>
 
-#include <dune/detailed/discretizations/basefunctionset/interface.hh>
+#include <dune/gdt/basefunctionset/interface.hh>
 
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalEvaluation {
 
 
@@ -188,8 +187,7 @@ private:
 }; // class Product
 
 } // namespace LocalEvaluation
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_PRODUCT_HH
+#endif // DUNE_GDT_EVALUATION_PRODUCT_HH

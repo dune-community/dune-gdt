@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
+#ifndef DUNE_GDT_LA_CONTAINER_FACTORY_EIGEN_HH
+#define DUNE_GDT_LA_CONTAINER_FACTORY_EIGEN_HH
 
 // we need this for the HAVE_EIGEN define!
 #ifdef HAVE_CMAKE_CONFIG
@@ -11,11 +11,10 @@
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
-#include <dune/detailed/discretizations/space/interface.hh>
+#include <dune/gdt/space/interface.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 template< class ElementType >
@@ -61,8 +60,7 @@ public:
 }; // class ContainerFactoryEigen
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_LA_CONTAINER_FACTORY_EIGEN_HH
+#endif // DUNE_GDT_LA_CONTAINER_FACTORY_EIGEN_HH

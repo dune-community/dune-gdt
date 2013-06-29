@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_LOCALFUNCTIONAL_CODIM1_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_LOCALFUNCTIONAL_CODIM1_HH
+#ifndef DUNE_GDT_LOCALFUNCTIONAL_CODIM1_HH
+#define DUNE_GDT_LOCALFUNCTIONAL_CODIM1_HH
 
 #include <utility>
 #include <vector>
@@ -15,8 +15,7 @@
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalFunctional {
 
 
@@ -109,8 +108,7 @@ private:
 
 
 } // namespace LocalFunctional
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_LOCALFUNCTIONAL_CODIM1_HH
+#endif // DUNE_GDT_LOCALFUNCTIONAL_CODIM1_HH

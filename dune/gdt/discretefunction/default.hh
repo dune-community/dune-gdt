@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
+#ifndef DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
+#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
 
 #ifdef HAVE_CMAKE_CONFIG
   #include "cmake_config.h"
@@ -16,13 +16,12 @@
 
 #include <dune/stuff/la/container/interface.hh>
 
-#include <dune/detailed/discretizations/space/interface.hh>
+#include <dune/gdt/space/interface.hh>
 
 #include "local.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 //template< class DiscreteFunctionSpaceImp, class VectorImp >
@@ -303,8 +302,7 @@ private:
 }; // class DiscreteFunctionDefault
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_DEFAULT_HH
+#endif // DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH

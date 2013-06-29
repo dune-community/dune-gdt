@@ -1,13 +1,12 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
+#define DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
 
 #include <vector>
 
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace BaseFunctionSet {
 
 
@@ -98,8 +97,7 @@ private:
 
 
 } // namespace BaseFunctionSet
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH

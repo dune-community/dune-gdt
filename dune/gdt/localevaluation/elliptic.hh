@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_ELLIPTIC_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_ELLIPTIC_HH
+#ifndef DUNE_GDT_EVALUATION_ELLIPTIC_HH
+#define DUNE_GDT_EVALUATION_ELLIPTIC_HH
 
 #include <tuple>
 
@@ -10,13 +10,12 @@
 #include <dune/stuff/function/interface.hh>
 #include <dune/stuff/localfunction/interface.hh>
 
-#include <dune/detailed/discretizations/basefunctionset/interface.hh>
+#include <dune/gdt/basefunctionset/interface.hh>
 
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalEvaluation {
 
 
@@ -202,8 +201,7 @@ private:
 
 
 } // namespace Evaluation
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif //
+#endif // DUNE_GDT_EVALUATION_ELLIPTIC_HH

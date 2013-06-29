@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONSTRAINTS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONSTRAINTS_HH
+#ifndef DUNE_GDT_SPACE_CONSTRAINTS_HH
+#define DUNE_GDT_SPACE_CONSTRAINTS_HH
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/dynmatrix.hh>
@@ -7,8 +7,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 namespace Constraints {
@@ -136,8 +135,7 @@ private:
 
 
 } // namespace Constraints
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_CONSTRAINTS_HH
+#endif // DUNE_GDT_SPACE_CONSTRAINTS_HH

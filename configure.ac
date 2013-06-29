@@ -23,25 +23,24 @@ AC_CONFIG_FILES([
   doc/doxygen/Makefile
   doc/doxygen/Doxyfile
   dune/Makefile
-  dune/detailed/Makefile
-  dune/detailed/discretizations/Makefile
-  dune/detailed/discretizations/assembler/Makefile
-  dune/detailed/discretizations/assembler/local/Makefile
-  dune/detailed/discretizations/basefunctionset/Makefile
-  dune/detailed/discretizations/discretefunction/Makefile
-  dune/detailed/discretizations/la/Makefile
-  dune/detailed/discretizations/la/containerfactory/Makefile
-  dune/detailed/discretizations/localevaluation/Makefile
-  dune/detailed/discretizations/localfunctional/Makefile
-  dune/detailed/discretizations/localoperator/Makefile
-  dune/detailed/discretizations/mapper/Makefile
-  dune/detailed/discretizations/space/Makefile
-  dune/detailed/discretizations/space/continuouslagrange/Makefile
-  dune/detailed/discretizations/space/discontinuouslagrange/Makefile
+  dune/gdt/Makefile
+  dune/gdt/assembler/Makefile
+  dune/gdt/assembler/local/Makefile
+  dune/gdt/basefunctionset/Makefile
+  dune/gdt/discretefunction/Makefile
+  dune/gdt/la/Makefile
+  dune/gdt/la/containerfactory/Makefile
+  dune/gdt/localevaluation/Makefile
+  dune/gdt/localfunctional/Makefile
+  dune/gdt/localoperator/Makefile
+  dune/gdt/mapper/Makefile
+  dune/gdt/space/Makefile
+  dune/gdt/space/continuouslagrange/Makefile
+  dune/gdt/space/discontinuouslagrange/Makefile
   examples/Makefile
   examples/elliptic/Makefile
   m4/Makefile
-  dune-detailed-discretizations.pc
+  dune-gdt.pc
 ])
 AC_OUTPUT
 # finally print the summary information

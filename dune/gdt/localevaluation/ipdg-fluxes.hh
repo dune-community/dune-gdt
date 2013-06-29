@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_IPDG_FLUXES_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_IPDG_FLUXES_HH
+#ifndef DUNE_GDT_EVALUATION_IPDG_FLUXES_HH
+#define DUNE_GDT_EVALUATION_IPDG_FLUXES_HH
 
 #include <tuple>
 
@@ -12,8 +12,7 @@
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalEvaluation {
 namespace IPDGFluxes {
 
@@ -582,8 +581,7 @@ private:
 
 } // namespace IPDGFluxes
 } // namespace LocalEvaluation
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_EVALUATION_IPDG_FLUXES_HH
+#endif // DUNE_GDT_EVALUATION_IPDG_FLUXES_HH
