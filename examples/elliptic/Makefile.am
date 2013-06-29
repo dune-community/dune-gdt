@@ -7,7 +7,7 @@ AM_LDFLAGS = $(ALL_PKG_LDFLAGS) $(DUNEMPILDFLAGS)
 LDADD = $(ALL_PKG_LIBS) $(LOCAL_LIBS)
 AM_CPPFLAGS = $(ALL_PKG_CPPFLAGS) $(DUNEMPICPPFLAGS)
 
-noinst_PROGRAMS = continuousgalerkin discontinuousgalerkin
+noinst_PROGRAMS = continuousgalerkin discontinuousgalerkin_ip discontinuousgalerkin_swip
 
 CUSTOM_CPPFLAGS = -DALUGRID_SIMPLEX -DGRIDDIM=2 -DWORLDDIM=2 -Wall -O0 -DDEBUG -g -fdiagnostics-show-option -std=c++0x
 
