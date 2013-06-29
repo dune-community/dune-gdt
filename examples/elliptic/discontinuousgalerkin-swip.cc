@@ -4,8 +4,6 @@
 #include "config.h"
 #endif
 
-#define HAVE_DUNE_DETAILED_DISCRETIZATIONS 1
-
 #include <iostream>
 #include <sstream>
 #include <vector>
