@@ -3,7 +3,7 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-discretefunction_includedir = $(includedir)/dune/detailed/discretizations/discretefunction
+discretefunction_includedir = $(includedir)/dune/gdt/discretefunction
 discretefunction_include_HEADERS = default.hh local.hh
 
 include $(top_srcdir)/am/global-rules

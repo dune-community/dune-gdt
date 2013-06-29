@@ -3,7 +3,7 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-includedir = $(includedir)/dune/detailed/discretizations/space/continuouslagrange
+includedir = $(includedir)/dune/gdt/space/continuouslagrange
 include_HEADERS = fem.hh fem-localfunctions.hh
 
 include $(top_srcdir)/am/global-rules

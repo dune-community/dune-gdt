@@ -3,7 +3,7 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-assembler_includedir = $(includedir)/dune/detailed/discretizations/assembler
+assembler_includedir = $(includedir)/dune/gdt/assembler
 assembler_include_HEADERS = system.hh
 
 SUBDIRS = local
