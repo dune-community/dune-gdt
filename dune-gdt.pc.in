@@ -8,8 +8,8 @@ DEPENDENCIES=@REQUIRES@
 
 Name: @PACKAGE_NAME@
 Version: @VERSION@
-Description: dune-detailed-discretizations module
-URL: http://users.dune-project.org/
+Description: dune-gdt module
+URL: http://users.dune-project.org/projects/dune-gdt/
 Requires: dune-common dune-grid dune-fem dune-stuff dune-grid-multiscale dune-fem-localfunctions
 Libs: -L
 Cflags: -I

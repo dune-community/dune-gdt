@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTEGRAL_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTEGRAL_HH
+#ifndef DUNE_GDT_LOCALOPERATOR_INTEGRAL_HH
+#define DUNE_GDT_LOCALOPERATOR_INTEGRAL_HH
 
 #include <vector>
 #include <utility>
@@ -15,8 +15,7 @@
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace LocalOperator {
 
 
@@ -117,8 +116,7 @@ private:
 
 
 } // namespace LocalOperator
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_LOCALOPERATOR_INTEGRAL_HH
+#endif // DUNE_GDT_LOCALOPERATOR_INTEGRAL_HH

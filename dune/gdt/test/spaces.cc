@@ -11,25 +11,22 @@
 
 #include <dune/stuff/grid/provider.hh>
 
-#include <dune/detailed/discretizations/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/detailed/discretizations/space/continuouslagrange/fem.hh>
-#include <dune/detailed/discretizations/mapper/interface.hh>
-#include <dune/detailed/discretizations/basefunctionset/interface.hh>
+#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/mapper/interface.hh>
+#include <dune/gdt/basefunctionset/interface.hh>
 
 
-namespace Stuff = Dune::Stuff;
-namespace DD    = Dune::Detailed::Discretizations;
-
-typedef Stuff::GridProviderInterface<> GridProviderType;
+typedef Dune::Stuff::GridProviderInterface<> GridProviderType;
 typedef typename GridProviderType::GridType GridType;
 typedef Dune::Stuff::GridProviders<GridType> GridProviders;
 typedef Dune::grid::Part::Leaf::Const<GridType> GridPartType;
 typedef double RangeFieldType;
 static const unsigned int dimRange = 1;
 
-typedef testing::Types<DD::ContinuousLagrangeSpace::FemWrapper<GridPartType, 1, RangeFieldType, dimRange>,
-                       DD::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 1, RangeFieldType, dimRange>>
-    SpaceTypes;
+typedef testing::Types<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GridPartType, 1, RangeFieldType, dimRange>,
+                       Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 1, RangeFieldType,
+                                                                                    dimRange>> SpaceTypes;
 
 template <class T>
 struct SpaceCRTPtest : public ::testing::Test
@@ -56,7 +53,7 @@ struct SpaceCRTPtest : public ::testing::Test
     // check for functionality
     const auto entityIt      = gridPart.template begin<0>();
     const EntityType& entity = *entityIt;
-    typedef typename DD::SpaceInterface<Traits> SpaceInterfaceType;
+    typedef typename Dune::GDT::SpaceInterface<Traits> SpaceInterfaceType;
     const SpaceInterfaceType& spaceAsInterface = static_cast<const SpaceInterfaceType&>(space);
     const S_GridPartType& DUNE_UNUSED(s_gridPart) = spaceAsInterface.gridPart();
     const S_BackendType& DUNE_UNUSED(s_backend) = spaceAsInterface.backend();
@@ -68,7 +65,7 @@ struct SpaceCRTPtest : public ::testing::Test
     typedef typename MapperType::Traits M_Traits;
     typedef typename M_Traits::BackendType M_BackendType;
     // check the mapper for functionality
-    typedef DD::MapperInterface<M_Traits> MapperInterfaceType;
+    typedef Dune::GDT::MapperInterface<M_Traits> MapperInterfaceType;
     const MapperInterfaceType& mapperAsInterface = static_cast<const MapperInterfaceType&>(mapper);
     const M_BackendType& DUNE_UNUSED(m_backend) = mapperAsInterface.backend();
     const size_t m_maxNumDofs = mapperAsInterface.maxNumDofs();
@@ -85,7 +82,7 @@ struct SpaceCRTPtest : public ::testing::Test
     typedef typename BaseFunctionSetType::RangeType B_RangeType;
     typedef typename BaseFunctionSetType::JacobianRangeType B_JacobianRangeType;
     // check the basefunctionset for functionality
-    typedef DD::
+    typedef Dune::GDT::
         BaseFunctionSetInterface<B_Traits, S_DomainFieldType, s_dimDomain, S_RangeFieldType, s_dimRange, s_dimRangeCols>
             BaseFunctionSetInterfaceType;
     const BaseFunctionSetInterfaceType& baseFunctionSetAsInterface =

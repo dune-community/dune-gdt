@@ -1,4 +1,4 @@
-project( dune-detailed-discretizations )
+project( dune-gdt )
 
 # cmake specific
 cmake_minimum_required( VERSION 2.8 )
@@ -18,8 +18,8 @@ include(DuneUtils)
 include(GridUtils)
 
 # needs to come first to include correct config.h
-include_dir( ${dune-detailed-discretizations_SOURCE_DIR} )
-include_dir( ${dune-detailed-discretizations_BINARY_DIR} )
+include_dir( ${dune-gdt_SOURCE_DIR} )
+include_dir( ${dune-gdt_BINARY_DIR} )
 
 # user settings
 set( ENABLE_MPI
@@ -55,8 +55,8 @@ add_dune_modules(
 )
 
 # header
-file( GLOB_RECURSE detailed-discretizations "${CMAKE_CURRENT_SOURCE_DIR}/dune/*.hh" )
-set( COMMON_HEADER ${detailed-discretizations} ${DUNE_HEADERS} )
+file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/dune/*.hh" )
+set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
 set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 
 # libs

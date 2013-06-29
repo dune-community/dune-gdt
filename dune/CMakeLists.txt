@@ -1,1 +1,1 @@
-add_subdirectory(discretizations)
+add_subdirectory(gdt)

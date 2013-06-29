@@ -29,19 +29,19 @@
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/common/color.hh>
 
-#include <dune/detailed/discretizations/space/discontinuouslagrange/fem-localfunctions.hh>
-#include <dune/detailed/discretizations/la/containerfactory/eigen.hh>
-#include <dune/detailed/discretizations/localevaluation/elliptic.hh>
-#include <dune/detailed/discretizations/localoperator/codim0.hh>
-#include <dune/detailed/discretizations/localevaluation/swipdg-fluxes.hh>
-#include <dune/detailed/discretizations/localoperator/codim1.hh>
-#include <dune/detailed/discretizations/localevaluation/product.hh>
-#include <dune/detailed/discretizations/localfunctional/codim0.hh>
-#include <dune/detailed/discretizations/localfunctional/codim1.hh>
-#include <dune/detailed/discretizations/assembler/local/codim0.hh>
-#include <dune/detailed/discretizations/assembler/local/codim1.hh>
-#include <dune/detailed/discretizations/assembler/system.hh>
-#include <dune/detailed/discretizations/discretefunction/default.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/la/containerfactory/eigen.hh>
+#include <dune/gdt/localevaluation/elliptic.hh>
+#include <dune/gdt/localoperator/codim0.hh>
+#include <dune/gdt/localevaluation/swipdg-fluxes.hh>
+#include <dune/gdt/localoperator/codim1.hh>
+#include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/localfunctional/codim0.hh>
+#include <dune/gdt/localfunctional/codim1.hh>
+#include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/gdt/assembler/local/codim1.hh>
+#include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 const std::string id = "elliptic.discontinuousgalerkin-swip";
 
@@ -52,7 +52,7 @@ const int polOrder = POLORDER;
 #endif
 dune_static_assert((polOrder > 0), "ERROR: polOrder hast to be positive!");
 
-using namespace Dune::Detailed::Discretizations;
+using namespace Dune::GDT;
 
 
 /**

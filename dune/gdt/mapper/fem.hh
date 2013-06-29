@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_MAPPER_FEM_LOCALFUNCTIONS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_MAPPER_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH
+#define DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH
 
 #include <dune/common/dynvector.hh>
 
@@ -8,8 +8,7 @@
 #include "interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace Mapper {
 
 
@@ -107,12 +106,11 @@ public:
 
 private:
   const BackendType& backend_;
-}; // class FemDof
+}; // class FemDofWrapper
 
 
 } // namespace Mapper
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_MAPPER_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH

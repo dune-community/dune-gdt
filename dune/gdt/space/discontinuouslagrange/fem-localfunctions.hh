@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
 #ifdef HAVE_CMAKE_CONFIG
 #include "cmake_config.h"
@@ -33,8 +33,7 @@
 #include "../interface.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 namespace DiscontinuousLagrangeSpace {
 
 
@@ -188,8 +187,7 @@ private:
 
 
 } // namespace DiscontinuousLagrangeSpace
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH

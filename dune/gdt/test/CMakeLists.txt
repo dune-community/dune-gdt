@@ -1,7 +1,7 @@
 enable_testing()
 
-HEADERCHECK( ${detailed-discretizations} )
-#DEPENDENCYCHECK( ${detailed-discretizations} )
+HEADERCHECK( ${gdt} )
+#DEPENDENCYCHECK( ${gdt} )
 
 BEGIN_TESTCASES()
 

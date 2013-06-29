@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_LOCAL_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_LOCAL_HH
+#ifndef DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
+#define DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
 
 #include <vector>
 
@@ -10,11 +10,10 @@
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/common/matrix.hh>
 
-#include <dune/detailed/discretizations/mapper/interface.hh>
+#include <dune/gdt/mapper/interface.hh>
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 template <class VectorImp>
@@ -236,10 +235,9 @@ public:
 }; // class DiscreteFunctionLocal
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
 #include "default.hh"
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_DISCRETEFUNCTION_LOCAL_HH
+#endif // DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH

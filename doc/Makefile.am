@@ -6,7 +6,7 @@ BASEDIR = ..
 # add list of html files to generate from wml
 PAGES=
 
-docdir=$(datadir)/doc/dune-detailed-discretizations
+docdir=$(datadir)/doc/dune-gdt
 
 include $(top_srcdir)/am/webstuff
 include $(top_srcdir)/am/global-rules

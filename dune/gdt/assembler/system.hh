@@ -1,5 +1,5 @@
-#ifndef DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_HH
-#define DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_HH
+#ifndef DUNE_GDT_ASSEMBLER_SYSTEM_HH
+#define DUNE_GDT_ASSEMBLER_SYSTEM_HH
 
 #include <vector>
 #include <memory>
@@ -12,15 +12,14 @@
 #include <dune/stuff/la/container/interface.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
-#include <dune/detailed/discretizations/space/interface.hh>
-#include <dune/detailed/discretizations/space/constraints.hh>
+#include <dune/gdt/space/interface.hh>
+#include <dune/gdt/space/constraints.hh>
 
 #include "local/codim0.hh"
 #include "local/codim1.hh"
 
 namespace Dune {
-namespace Detailed {
-namespace Discretizations {
+namespace GDT {
 
 
 template <class TestSpaceImp, class AnsatzSpaceImp = TestSpaceImp>
@@ -620,8 +619,7 @@ private:
 }; // class SystemAssembler
 
 
-} // namespace Discretizations
-} // namespace Detailed
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_DETAILED_DISCRETIZATIONS_ASSEMBLER_SYSTEM_HH
+#endif // DUNE_GDT_ASSEMBLER_SYSTEM_HH
