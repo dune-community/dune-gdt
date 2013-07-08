@@ -37,7 +37,7 @@ class DiscreteFunctionDefaultConst
 {
 public:
   typedef typename SpaceInterface< typename SpaceImp::Traits >::derived_type SpaceType;
-  typedef typename Dune::Stuff::LA::VectorInterface< typename VectorImp::Traits >::derived_type VectorType;
+  typedef /*typename Dune::Stuff::LA::VectorInterface< typename*/ VectorImp/*::Traits >::derived_type*/ VectorType;
 
   typedef typename SpaceType::EntityType EntityType;
 
@@ -104,7 +104,7 @@ class DiscreteFunctionDefault
   typedef DiscreteFunctionDefaultConst< SpaceImp, VectorImp > BaseType;
 public:
   typedef typename SpaceInterface< typename SpaceImp::Traits >::derived_type SpaceType;
-  typedef typename Dune::Stuff::LA::VectorInterface< typename VectorImp::Traits >::derived_type VectorType;
+  typedef /*typename Dune::Stuff::LA::VectorInterface< typename*/ VectorImp/*::Traits >::derived_type*/ VectorType;
 
   typedef typename SpaceType::EntityType EntityType;
 
