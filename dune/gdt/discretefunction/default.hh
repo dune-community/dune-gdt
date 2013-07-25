@@ -118,11 +118,13 @@ public:
     , nonConstVector_(vec)
   {}
 
-  DiscreteFunctionDefault(const SpaceType& sp,
-                          const std::string nm = "discrete_function")
-    : BaseType(sp, std::make_shared< VectorType >(sp.mapper().size()), nm)
-    , nonConstVector_(std::make_shared< VectorType >(const_cast< VectorType& >(*(BaseType::vector())))) // <- I am not sure if this is safe to do. I would expect the BaseType to live long enough, but maybe someone else has a better Idea!
-  {}
+//  DiscreteFunctionDefault(const SpaceType& sp,
+//                          const std::string nm = "discrete_function")
+//    : BaseType(sp, std::make_shared< VectorType >(sp.mapper().size()), nm)
+//    , nonConstVector_(std::make_shared< VectorType >(const_cast< VectorType& >(*(BaseType::vector())))) // <- I am not sure if this is safe to do. I would expect the BaseType to live long enough, but maybe someone else has a better Idea!
+//  {
+//    DUNE_THROW(Dune::NotImplemented, "THIS DOES NOT WORK!");
+//  }
 
   LocalFunctionType localFunction(const EntityType& entity)
   {
