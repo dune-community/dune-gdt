@@ -11,8 +11,7 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/stuff/function/interface.hh>
-#include <dune/stuff/localfunction/interface.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/basefunctionset/interface.hh>
 
