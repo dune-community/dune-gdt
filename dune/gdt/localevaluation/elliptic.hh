@@ -14,8 +14,7 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/static_assert.hh>
 
-#include <dune/stuff/function/interface.hh>
-#include <dune/stuff/localfunction/interface.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/basefunctionset/interface.hh>
 

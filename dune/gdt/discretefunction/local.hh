@@ -10,7 +10,7 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/localfunction/interface.hh>
+#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interface.hh>
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/common/matrix.hh>
