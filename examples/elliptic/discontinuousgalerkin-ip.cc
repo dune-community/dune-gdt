@@ -30,7 +30,7 @@
 #include <dune/stuff/common/logging.hh>
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/function/expression.hh>
+#include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/common/color.hh>
 
