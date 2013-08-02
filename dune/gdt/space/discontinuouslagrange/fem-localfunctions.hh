@@ -70,12 +70,13 @@ public:
   static const unsigned int             dimRange = 1;
   static const unsigned int             dimRangeCols = 1;
   typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
+//  typedef FemLocalfunctionsWrapperTraits< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > ThisType;
+  typedef Dune::LagrangeLocalFiniteElement< Dune::EquidistantPointSet,
+                                            dimDomain,
+                                            DomainFieldType,
+                                            RangeFieldType > ContinuousFiniteElementType;
+  typedef Dune::DGLocalFiniteElement< ContinuousFiniteElementType > FiniteElementType;
 private:
-  typedef FemLocalfunctionsWrapperTraits< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > ThisType;
-  typedef Dune::DGLocalFiniteElement< Dune::LagrangeLocalFiniteElement< Dune::EquidistantPointSet,
-                                                                        dimDomain,
-                                                                        DomainFieldType,
-                                                                        RangeFieldType > > FiniteElementType;
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<  GridPartType,
                                                         FiniteElementType,
                                                         Dune::FemLocalFunctions::NoTransformation,
