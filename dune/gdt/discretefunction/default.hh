@@ -15,6 +15,7 @@
 #endif
 
 #include <memory>
+#include <type_traits>
 
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
@@ -35,9 +36,13 @@ class DiscreteFunctionDefaultConst
   : public Dune::VTKFunction< typename SpaceImp::GridPartType::GridViewType >
   , public Dune::Stuff::LocalizableFunction
 {
+  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
+                "SpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of< Stuff::LA::VectorInterface< typename VectorImp::Traits >, VectorImp >::value,
+                "VectorType has to be derived from Stuff::LA::VectorInterface!");
 public:
-  typedef typename SpaceInterface< typename SpaceImp::Traits >::derived_type SpaceType;
-  typedef /*typename Dune::Stuff::LA::VectorInterface< typename*/ VectorImp/*::Traits >::derived_type*/ VectorType;
+  typedef SpaceImp SpaceType;
+  typedef VectorImp VectorType;
 
   typedef typename SpaceType::EntityType EntityType;
 
