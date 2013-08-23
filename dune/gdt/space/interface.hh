@@ -6,12 +6,17 @@
 #ifndef DUNE_GDT_SPACE_INTERFACE_HH
 #define DUNE_GDT_SPACE_INTERFACE_HH
 
-#include <dune/common/bartonnackmanifcheck.hh>
 #include <dune/common/dynvector.hh>
+
+#include <dune/grid/io/file/vtk/vtkwriter.hh>
 
 #include <dune/stuff/la/container/pattern.hh>
 
 #include "constraints.hh"
+#include "../discretefunction/visualize.hh"
+
+// needs to be here, since one of the above includes the config.h
+#include <dune/common/bartonnackmanifcheck.hh>
 
 namespace Dune {
 namespace GDT {
@@ -117,6 +122,37 @@ public:
     } // walk the grid part
     return ret;
   } // ... computePattern(...)
+
+  template <class VectorType>
+  void visualize(const VectorType& vector, const std::string filename, const std::string name = "vector") const
+  {
+    typedef DiscreteFunction::VisualizationAdapter<derived_type, VectorType> DiscreteFunctionType;
+    const auto function = std::make_shared<const DiscreteFunctionType>(asImp(), vector, name);
+    typedef typename Dune::VTKWriter<typename GridPartType::GridViewType> VTKWriterType;
+    VTKWriterType vtk_writer(gridPart().gridView(), Dune::VTK::nonconforming);
+    vtk_writer.addVertexData(function);
+    vtk_writer.write(filename);
+  }
+
+  void visualize(const std::string filename_prefix = "") const
+  {
+    std::string filename = filename_prefix;
+    if (filename_prefix.empty()) {
+      filename = "raviartthomasspace.femlocalfunctions";
+      //                 + Stuff::Common::toString(dimDomain) + "_to_" + Stuff::Common::toString(dimRange);
+      if (dimRangeCols > 1)
+        filename += "x" + Stuff::Common::toString(dimRangeCols);
+    }
+    typedef typename Dune::VTKWriter<typename GridPartType::GridViewType> VTKWriterType;
+    VTKWriterType vtk_writer(gridPart().gridView(), Dune::VTK::nonconforming);
+    for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
+      typedef DiscreteFunction::BasisVisualization<typename Traits::derived_type> BasisFunctionType;
+      const auto iith_baseFunction =
+          std::make_shared<BasisFunctionType>(asImp(), ii, Stuff::Common::toString(ii) + "th basis");
+      vtk_writer.addVertexData(iith_baseFunction);
+    }
+    vtk_writer.write(filename);
+  }
 
   derived_type& asImp()
   {
