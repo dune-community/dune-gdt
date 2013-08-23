@@ -160,6 +160,13 @@ public:
     }
   } // ... evaluate(...)
 
+  RangeType evaluate(const DomainType& xx) const
+  {
+    RangeType ret;
+    evaluate(xx, ret);
+    return ret;
+  }
+
   void jacobian(const DomainType& x, JacobianRangeType& ret) const
   {
     Dune::Stuff::Common::clear(ret);
@@ -170,6 +177,13 @@ public:
       ret += tmpBaseJacobianValues_[ii];
     }
   } // ... jacobian(...)
+
+  JacobianRangeType jacobian(const DomainType& xx) const
+  {
+    JacobianRangeType ret;
+    jacobian(xx, ret);
+    return ret;
+  }
 
 private:
   const DiscreteFunctionType& function_;
