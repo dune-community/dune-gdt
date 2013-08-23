@@ -94,6 +94,11 @@ public:
   }
   /* @} */
 
+  void visualize(const std::string filename) const
+  {
+    space_.visualize(*vector_, filename, name_);
+  }
+
 private:
   const SpaceType& space_;
   const std::string name_;
