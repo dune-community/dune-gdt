@@ -130,7 +130,7 @@ public:
 
   bool continuous() const
   {
-    return true;
+    return false;
   }
 
   const MapperType& mapper() const
