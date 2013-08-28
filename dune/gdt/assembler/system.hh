@@ -16,7 +16,9 @@
 
 #include <dune/stuff/la/container/interface.hh>
 #include <dune/stuff/la/container/pattern.hh>
-
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+#include <dune/stuff/common/profiler.hh>
+#endif
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/space/constraints.hh>
 
@@ -497,14 +499,26 @@ public:
       const auto entityEndIt = testSpace_.gridPart().template end<0>();
       for (auto entityIt = testSpace_.gridPart().template begin<0>(); entityIt != entityEndIt; ++entityIt) {
         const EntityType& entity = *entityIt;
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+        DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim0_matrix_assemblers");
+#endif
         // call local matrix assemblers
         for (auto& localCodim0MatrixAssembler : localCodim0MatrixAssemblers_) {
           localCodim0MatrixAssembler->apply(testSpace_, ansatzSpace_, entity, tmpLocalMatricesContainer, tmpIndices);
         }
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+        DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim0_matrix_assemblers");
+#endif
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+        DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim0_vector_assemblers");
+#endif
         // call local vector assemblers
         for (auto& localCodim0VectorAssembler : localCodim0VectorAssemblers_) {
           localCodim0VectorAssembler->apply(testSpace_, entity, tmpLocalVectorsContainer, tmpIndices[0]);
         }
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+        DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim0_vector_assemblers");
+#endif
         // only walk the intersections, if there are local assemblers present
         if (codim1_assemblers_present) {
           // walk the intersections
@@ -512,15 +526,27 @@ public:
           for (auto intersectionIt = testSpace_.gridPart().ibegin(entity); intersectionIt != intersectionEndIt;
                ++intersectionIt) {
             const auto& intersection = *intersectionIt;
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+            DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim1_matrix_assemblers");
+#endif
             // call local matrix assemblers
             for (auto& localCodim1MatrixAssembler : localCodim1MatrixAssemblers_) {
               localCodim1MatrixAssembler->apply(
                   testSpace_, ansatzSpace_, intersection, tmpLocalMatricesContainer, tmpIndices);
             }
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+            DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim1_matrix_assemblers");
+#endif
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+            DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim1_vector_assemblers");
+#endif
             // call local vector assemblers
             for (auto& localCodim1VectorAssembler : localCodim1VectorAssemblers_) {
               localCodim1VectorAssembler->apply(testSpace_, intersection, tmpLocalVectorsContainer, tmpIndices[0]);
             }
+#ifdef DUNE_STUFF_PROFILER_ENABLED
+            DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim1_vector_assemblers");
+#endif
           } // walk the intersections
         } // only walk the intersections, if there are local assemblers present
       } // walk the grid
