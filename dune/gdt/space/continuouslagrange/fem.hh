@@ -68,6 +68,7 @@ template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
   : public SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
+  typedef SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
 public:
   typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
@@ -83,6 +84,8 @@ public:
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
   typedef typename Traits::EntityType           EntityType;
+
+  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
 public:
   FemWrapper(const GridPartType& gridP)
@@ -227,6 +230,15 @@ public:
       ret.setSize(0, 0);
     }
   } // ... localConstraints(..., Dirichlet< ..., false >)
+
+  using BaseType::computePattern;
+
+  template< class LocalGridPartType, class OtherSpaceType >
+  PatternType* computePattern(const LocalGridPartType& localGridPart,
+                              const OtherSpaceType& otherSpace) const
+  {
+    return BaseType::computeVolumePattern(localGridPart, otherSpace);
+  }
 
 private:
   const GridPartType& gridPart_;
