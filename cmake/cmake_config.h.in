@@ -1,25 +1,22 @@
 #ifndef DUNE_GDT_CONFIG_H
 #define DUNE_GDT_CONFIG_H
 
-#define @GRIDTYPE@
-#define GRIDDIM @GRIDDIM@
-#define POLORDER @POLORDER@
-
-#include "config.h"
-
-#undef HAVE_DUNE_ISTL
+#include "../dune-gdt/config.h"
 
 #if !HAVE_GRIDTYPE
+  #if !defined GRIDDIM
+    #define GRIDDIM 2
+  #endif
   #include <dune/grid/sgrid.hh>
-  namespace Dune
-  {
-    namespace GridSelector
-    {
-      const int dimgrid = GRIDDIM;
-      const int dimworld = GRIDDIM;
-      typedef Dune::SGrid< dimgrid, dimworld > GridType;
-    }
-  }
+  namespace Dune {
+  namespace GridSelector {
+    const int dimgrid = GRIDDIM;
+    const int dimworld = GRIDDIM;
+    typedef Dune::SGrid< dimgrid, dimworld > GridType;
+  } // namespace GridSelector
+  } // namespace Dune
 #endif
+
+#define HAVE_DUNE_GDT 1
 
 #endif // DUNE_GDT_CONFIG_H
