@@ -7,6 +7,7 @@
 #define DUNE_GDT_EXAMPLES_ELLIPTIC_DISCRETIZATIONS_HH
 
 #include <memory>
+#include <vector>
 #include <type_traits>
 
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -83,8 +84,8 @@ public:
   }
 
   template <class ReferenceSolutionType, class DiscreteSolutionType>
-  void compute_errors(const ReferenceSolutionType& referencec_solution,
-                      const DiscreteSolutionType& discrete_solution) const
+  std::vector<RangeFieldType> compute_errors(const ReferenceSolutionType& referencec_solution,
+                                             const DiscreteSolutionType& discrete_solution) const
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -97,6 +98,7 @@ public:
 
     ProductOperator::L2<GridPartType> l2_product_operator(grid_part_);
     const RangeFieldType l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
+    return {l2_error};
   }
 
 private:
