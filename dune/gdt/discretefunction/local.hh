@@ -94,6 +94,7 @@ class DiscreteFunctionLocalConst
                                                  SpaceImp::dimRangeCols>
 {
 public:
+  typedef DiscreteFunctionLocalConstTraits<SpaceImp, VectorImp> Traits;
   typedef DiscreteFunctionDefaultConst<SpaceImp, VectorImp> DiscreteFunctionType;
   typedef typename DiscreteFunctionType::SpaceType SpaceType;
   typedef LocalDoFVector<typename DiscreteFunctionType::VectorType> LocalDoFVectorType;
