@@ -91,16 +91,21 @@ public:
   {
     using namespace Dune;
     using namespace Dune::GDT;
+    // checks
     static_assert(std::is_base_of< Stuff::LocalizableFunction, ReferenceSolutionType >::value,
                   "ReferenceSolutionType has to be derived from Stuff::LocalizableFunction!");
     static_assert(std::is_base_of< Stuff::LocalizableFunction, DiscreteSolutionType >::value,
                   "ReferenceSolutionType has to be derived from Stuff::LocalizableFunction!");
+    // difference
     typedef DiscreteFunction::Difference< ReferenceSolutionType, DiscreteSolutionType > DifferenceType;
     const DifferenceType difference(referencec_solution, discrete_solution);
-
+    // L2 error
     ProductOperator::L2< GridPartType > l2_product_operator(grid_part_);
     const RangeFieldType l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
-    return { l2_error };
+    // H1 error
+    ProductOperator::H1< GridPartType > h1_product_operator(grid_part_);
+    const RangeFieldType h1_error = std::sqrt(h1_product_operator.apply2(difference, difference));
+    return { l2_error, h1_error };
   }
 
 private:
@@ -139,6 +144,11 @@ public:
     , space_(BaseType::grid_part())
   {}
 
+  const SpaceType& space() const
+  {
+    return space_;
+  }
+
   std::shared_ptr< DiscreteFunctionType > solve() const
   {
     using namespace Dune;
@@ -168,7 +178,7 @@ public:
     // * dirichlet boundary values
     DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
 
-    typedef Operator::DirichletProjection< FunctionType, DiscreteFunctionType > DirichletProjectionOperatorType;
+    typedef ProjectionOperator::Dirichlet< FunctionType, DiscreteFunctionType > DirichletProjectionOperatorType;
     const DirichletProjectionOperatorType dirichlet_projection_operator(BaseType::boundary_info());
     dirichlet_projection_operator.apply(BaseType::dirichlet(), dirichlet_projection);
 
