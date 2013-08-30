@@ -82,7 +82,8 @@ int main(int argc, char** argv)
                                                                    boundary_info,
                                                                    diffusion, force, dirichlet);
     auto cg_solution = cg_discretization.solve();
-//    cg_discretization
+    cg_discretization.visualize(*(cg_solution->vector()), static_id + ".cg_solution.1");
+    cg_discretization.compute_errors(exact_solution, *(cg_solution));
 
     // done
     return 0;
