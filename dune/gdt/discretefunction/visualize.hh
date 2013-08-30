@@ -129,7 +129,7 @@ public:
   {
     assert(component >= 0 && "Really?");
     RangeType value(0);
-    assert(component < value.size() && "Really?");
+    assert(component < int(value.size()) && "Really?");
     const auto baseFunctionSet = space_.baseFunctionSet(entity);
     space_.mapper().globalIndices(entity, indices_);
     baseFunctionSet.evaluate(x, basis_values_);
