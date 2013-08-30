@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <utility>
+#include <type_traits>
 
 #include <dune/common/dynmatrix.hh>
 
@@ -32,6 +33,10 @@ class Codim0Integral;
 template <class UnaryEvaluationImp>
 class Codim0IntegralTraits
 {
+  static_assert(std::is_base_of<LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1>,
+                                UnaryEvaluationImp>::value,
+                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
+
 public:
   typedef Codim0Integral<UnaryEvaluationImp> derived_type;
   typedef LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1> UnaryEvaluationType;

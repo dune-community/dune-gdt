@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 #include <dune/common/densevector.hh>
 
@@ -32,6 +33,10 @@ class Codim1Integral;
 template <class UnaryEvaluationImp>
 class Codim1IntegralTraits
 {
+  static_assert(std::is_base_of<LocalEvaluation::Codim1Interface<typename UnaryEvaluationImp::Traits, 1>,
+                                UnaryEvaluationImp>::value,
+                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 1 >!");
+
 public:
   typedef Codim1Integral<UnaryEvaluationImp> derived_type;
   typedef LocalEvaluation::Codim1Interface<typename UnaryEvaluationImp::Traits, 1> UnaryEvaluationType;
