@@ -214,6 +214,14 @@ public:
     solution->vector()->backend() += dirichlet_vector->backend();
     return solution;
   } // ... solve()
+
+  void visualize(const VectorType& vector, const std::string filename)
+  {
+    space_.visualize(vector, filename);
+  }
+
+private:
+  const SpaceType space_;
 };
 
 
