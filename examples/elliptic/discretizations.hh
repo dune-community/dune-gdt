@@ -129,13 +129,13 @@ public:
                    const FunctionType& force,
                    const FunctionType& dirichlet)
     : BaseType(grid_part, boundary_info, diffusion, force, dirichlet)
+    , space_(BaseType::grid_part())
   {}
 
-  std::shared_ptr< VectorType > solve() const
+  std::shared_ptr< DiscreteFunctionType > solve() const
   {
     using namespace Dune;
     using namespace Dune::GDT;
-    const SpaceType space(BaseType::grid_part());
 
     // left hand side
     // * elliptic diffusion operator
@@ -149,16 +149,17 @@ public:
   //  typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
   //  const L2FaceFunctionalType neumannFunctional(neumann);
 
-    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space.computePattern());
-    MatrixType system_matrix(space.mapper().size(), space.mapper().size(), *sparsity_pattern);
-    VectorType force_vector(space.mapper().size());
-    auto dirichlet_vector = std::make_shared< VectorType >(space.mapper().size());
-  //  VectorType neumann_nector(space.mapper().size());
-    VectorType rhs_vector(space.mapper().size());
-    auto solution_vector = std::make_shared< VectorType >(space.mapper().size());
+    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
+    MatrixType system_matrix(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+    VectorType force_vector(space_.mapper().size());
+    auto dirichlet_vector = std::make_shared< VectorType >(space_.mapper().size());
+  //  VectorType neumann_nector(space_.mapper().size());
+    VectorType rhs_vector(space_.mapper().size());
+    auto solution = std::make_shared< DiscreteFunctionType >(space_,
+                                                             std::make_shared< VectorType >(space_.mapper().size()));
 
     // * dirichlet boundary values
-    DiscreteFunctionType dirichlet_projection(space, dirichlet_vector, "dirichlet");
+    DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
 
     typedef Operator::DirichletProjection< FunctionType, DiscreteFunctionType > DirichletProjectionOperatorType;
     const DirichletProjectionOperatorType dirichlet_projection_operator(BaseType::boundary_info());
@@ -176,7 +177,7 @@ public:
   //  const LocalL2FaceFunctionalVectorAssemblerType neumannVectorAssembler(neumannFunctional);
     // * system assembler
     typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
-    SystemAssemblerType system_assembler(space);
+    SystemAssemblerType system_assembler(space_);
     system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix);
     system_assembler.addLocalAssembler(force_vector_assembler, force_vector);
   //  system_assembler.addLocalAssembler(neumannVectorAssembler,
@@ -186,8 +187,8 @@ public:
 
     Constraints::Dirichlet< typename GridPartType::GridViewType,
         RangeFieldType > dirichlet_constraints(BaseType::boundary_info(),
-                                                                   space.mapper().maxNumDofs(),
-                                                                   space.mapper().maxNumDofs());
+                                                                   space_.mapper().maxNumDofs(),
+                                                                   space_.mapper().maxNumDofs());
     rhs_vector.backend() = force_vector.backend()
   //      + neumannVector->backend()
         - system_matrix.backend()*dirichlet_vector->backend();
@@ -199,16 +200,19 @@ public:
     auto linear_solver_settings = LinearSolverType::defaultSettings();
     linear_solver_settings["precision"] = "1e-16";
     LinearSolverType linear_solver;
-    const size_t failure = linear_solver.apply(system_matrix, rhs_vector, *solution_vector, linear_solver_settings);
+    const size_t failure = linear_solver.apply(system_matrix,
+                                               rhs_vector,
+                                               *(solution->vector()),
+                                               linear_solver_settings);
     if (failure)
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver reported a problem!");
-    if (solution_vector->size() != space.mapper().size())
+    if (solution->vector()->size() != space_.mapper().size())
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver produced a solution of wrong size (is "
-                 << solution_vector->size() << ", should be " << space.mapper().size() << ")!");
-    solution_vector->backend() += dirichlet_vector->backend();
-    return solution_vector;
+                 << solution->vector()->size() << ", should be " << space_.mapper().size() << ")!");
+    solution->vector()->backend() += dirichlet_vector->backend();
+    return solution;
   } // ... solve()
 };
 
