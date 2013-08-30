@@ -47,6 +47,15 @@ public:
   typedef typename SpaceType::EntityType EntityType;
 
   typedef DiscreteFunctionLocalConst< SpaceType, VectorType > ConstLocalFunctionType;
+
+  template< class EntityImp >
+  class LocalFunction
+  {
+    static_assert(std::is_same< EntityImp, EntityType >::value, "EntitImp and EntityType do not match!");
+  public:
+    typedef ConstLocalFunctionType Type;
+  };
+
   typedef typename ConstLocalFunctionType::DomainType DomainType;
   typedef typename ConstLocalFunctionType::RangeType RangeType;
 
@@ -136,6 +145,8 @@ public:
 //    DUNE_THROW(Dune::NotImplemented, "THIS DOES NOT WORK!");
 //  }
 
+  using BaseType::localFunction;
+
   LocalFunctionType localFunction(const EntityType& entity)
   {
     return LocalFunctionType(*this, entity);
@@ -145,24 +156,6 @@ public:
   {
     return nonConstVector_;
   }
-
-//  virtual std::string name() const
-//  {
-//    return BaseType::name();
-//  }
-
-//  /** \defgroup vtk ´´Methods to comply with the Dune::VTKFunction interface.'' */
-//  /* @{ */
-//  virtual int ncomps() const
-//  {
-//    return BaseType::ncomps();
-//  }
-
-//  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
-//  {
-//    BaseType::evaluate(component, entity, x);
-//  }
-//  /* @} */
 
 private:
   std::shared_ptr< VectorType > nonConstVector_;
