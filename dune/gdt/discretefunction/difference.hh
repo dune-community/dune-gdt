@@ -70,9 +70,16 @@ class Difference
                              typename DifferenceTraits<EntityImp, MinuendType, SubtrahendType>::RangeFieldType,
                              DifferenceTraits<EntityImp, MinuendType, SubtrahendType>::dimRangeRows,
                              DifferenceTraits<EntityImp, MinuendType, SubtrahendType>::dimRangeCols> BaseType;
+  typedef Difference<EntityImp, MinuendType, SubtrahendType> ThisType;
 
 public:
   typedef DifferenceTraits<EntityImp, MinuendType, SubtrahendType> Traits;
+
+private:
+  typedef typename Traits::LocalMinuendType LocalMinuendType;
+  typedef typename Traits::LocalSubtrahendType LocalSubtrahendType;
+
+public:
   typedef typename Traits::EntityType EntityType;
 
   typedef typename BaseType::DomainType DomainType;
@@ -81,13 +88,36 @@ public:
 
   Difference(const EntityType& entity, const MinuendType& minuend, const SubtrahendType& subtrahend)
     : entity_(entity)
-    , minuend_(minuend.localFunction(entity))
-    , subtrahend_(subtrahend.localFunction(entity))
+    , minuend_(minuend)
+    , subtrahend_(subtrahend)
+    , local_minuend_(new LocalMinuendType(minuend_.localFunction(entity_)))
+    , local_subtrahend_(new LocalSubtrahendType(subtrahend_.localFunction(entity_)))
     , tmp_value_(0)
     , tmp_jacobian_value_(0)
   {
   }
 
+  Difference(const ThisType& other)
+    : entity_(other.entity_)
+    , minuend_(other.minuend_)
+    , subtrahend_(other.subtrahend_)
+    , local_minuend_(new LocalMinuendType(minuend_.localFunction(entity_)))
+    , local_subtrahend_(new LocalSubtrahendType(subtrahend_.localFunction(entity_)))
+    , tmp_value_(0)
+    , tmp_jacobian_value_(0)
+  {
+  }
+
+  ~Difference()
+  {
+    delete local_minuend_;
+    delete local_subtrahend_;
+  }
+
+private:
+  ThisType& operator=(const ThisType& other);
+
+public:
   const EntityType& entity() const
   {
     return entity_;
@@ -95,30 +125,32 @@ public:
 
   virtual int order() const
   {
-    if ((minuend_.order() < 0) || (subtrahend_.order() < 0))
+    if ((local_minuend_->order() < 0) || (local_subtrahend_->order() < 0))
       return -1;
     else
-      return std::max(minuend_.order(), subtrahend_.order());
+      return std::max(local_minuend_->order(), local_subtrahend_->order());
   }
 
   void evaluate(const DomainType& xx, RangeType& ret) const
   {
-    minuend_.evaluate(xx, ret);
-    subtrahend_.evaluate(xx, tmp_value_);
+    local_minuend_->evaluate(xx, ret);
+    local_subtrahend_->evaluate(xx, tmp_value_);
     ret -= tmp_value_;
   }
 
   void jacobian(const DomainType& xx, JacobianRangeType& ret) const
   {
-    minuend_.evaluate(xx, ret);
-    subtrahend_.evaluate(xx, tmp_jacobian_value_);
+    local_minuend_->evaluate(xx, ret);
+    local_subtrahend_->evaluate(xx, tmp_jacobian_value_);
     ret -= tmp_jacobian_value_;
   }
 
 private:
   const EntityType& entity_;
-  const typename Traits::LocalMinuendType& minuend_;
-  const typename Traits::LocalSubtrahendType& subtrahend_;
+  const MinuendType& minuend_;
+  const SubtrahendType& subtrahend_;
+  const LocalMinuendType* local_minuend_;
+  const LocalSubtrahendType* local_subtrahend_;
   mutable RangeType tmp_value_;
   mutable JacobianRangeType tmp_jacobian_value_;
 };
