@@ -26,6 +26,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/discretefunction/difference.hh>
 #include <dune/gdt/operator/projections.hh>
+#include <dune/gdt/operator/products.hh>
 
 namespace Example {
 
@@ -85,12 +86,17 @@ public:
   void compute_errors(const ReferenceSolutionType& referencec_solution,
                       const DiscreteSolutionType& discrete_solution) const
   {
-    static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, ReferenceSolutionType>::value,
+    using namespace Dune;
+    using namespace Dune::GDT;
+    static_assert(std::is_base_of<Stuff::LocalizableFunction, ReferenceSolutionType>::value,
                   "ReferenceSolutionType has to be derived from Stuff::LocalizableFunction!");
-    static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, DiscreteSolutionType>::value,
+    static_assert(std::is_base_of<Stuff::LocalizableFunction, DiscreteSolutionType>::value,
                   "ReferenceSolutionType has to be derived from Stuff::LocalizableFunction!");
-    typedef Dune::GDT::DiscreteFunction::Difference<ReferenceSolutionType, DiscreteSolutionType> DifferenceType;
-    DifferenceType difference(referencec_solution, discrete_solution);
+    typedef DiscreteFunction::Difference<ReferenceSolutionType, DiscreteSolutionType> DifferenceType;
+    const DifferenceType difference(referencec_solution, discrete_solution);
+
+    ProductOperator::L2<GridPartType> l2_product_operator(grid_part_);
+    const RangeFieldType l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
   }
 
 private:
