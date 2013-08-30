@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_EVALUATION_PRODUCT_HH
 #define DUNE_GDT_EVALUATION_PRODUCT_HH
 
-#include <tuple>
+#include <type_traits>
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
@@ -36,8 +36,8 @@ class ProductTraits
 public:
   typedef Product< LocalizableFunctionImp > derived_type;
   typedef LocalizableFunctionImp            LocalizableFunctionType;
-  dune_static_assert((Dune::IsBaseOf< Dune::Stuff::LocalizableFunction, LocalizableFunctionImp >::value),
-                     "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of< Dune::Stuff::LocalizableFunction, LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
 };
 
 

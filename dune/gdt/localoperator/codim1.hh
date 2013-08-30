@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 #include <dune/common/densematrix.hh>
 
@@ -32,6 +33,9 @@ class Codim1CouplingIntegral;
 template< class QuaternaryEvaluationImp >
 class Codim1CouplingIntegralTraits
 {
+  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationImp::Traits, 4 >,
+                                  QuaternaryEvaluationImp >::value,
+                "QuaternaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
 public:
   typedef Codim1CouplingIntegral< QuaternaryEvaluationImp > derived_type;
   typedef LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationImp::Traits, 4 > QuaternaryEvaluationType;
@@ -188,6 +192,9 @@ class Codim1BoundaryIntegral;
 template< class BinaryEvaluationImp >
 class Codim1BoundaryIntegralTraits
 {
+  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename BinaryEvaluationImp::Traits, 2 >,
+                                  BinaryEvaluationImp >::value,
+                "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
 public:
   typedef Codim1BoundaryIntegral< BinaryEvaluationImp > derived_type;
   typedef LocalEvaluation::Codim1Interface< typename BinaryEvaluationImp::Traits, 2 > BinaryEvaluationType;
