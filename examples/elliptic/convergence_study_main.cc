@@ -199,30 +199,25 @@ int main(int argc, char** argv)
 
       // compute reference
       const GridPartType reference_grid_part(grid, 2 * num_refinements + 3);
-      typedef Example::CGDiscretization<GridPartType, 1> CG_DiscretizationType;
-      CG_DiscretizationType reference_discretization(reference_grid_part, boundary_info, diffusion, force, dirichlet);
 
       // continuous galerkin discretization
-      ConvergenceStudy<Example::CGDiscretization<GridPartType, 1>>::run(
-          grid,
-          reference_discretization,
-          num_refinements,
-          exact_solution,
-          "continuous galerkin, polOrder = 1, error against exact solution");
-      info << std::endl << std::endl;
-      ConvergenceStudy<Example::CGDiscretization<GridPartType, 2>>::run(
-          grid,
-          reference_discretization,
-          num_refinements,
-          exact_solution,
-          "continuous galerkin, polOrder = 2, error against exact solution");
-      info << std::endl << std::endl;
-      ConvergenceStudy<Example::CGDiscretization<GridPartType, 3>>::run(
-          grid,
-          reference_discretization,
-          num_refinements,
-          exact_solution,
-          "continuous galerkin, polOrder = 3, error against exact solution");
+      typedef Example::CGDiscretization<GridPartType, 1> CG_1_DiscretizationType;
+      const CG_1_DiscretizationType cg_1_reference_discretization(
+          reference_grid_part, boundary_info, diffusion, force, dirichlet);
+      ConvergenceStudy<CG_1_DiscretizationType>::run(grid,
+                                                     cg_1_reference_discretization,
+                                                     num_refinements,
+                                                     exact_solution,
+                                                     "continuous galerkin, polOrder = 1, error against exact solution");
+      info << std::endl;
+      typedef Example::CGDiscretization<GridPartType, 2> CG_2_DiscretizationType;
+      const CG_2_DiscretizationType cg_2_reference_discretization(
+          reference_grid_part, boundary_info, diffusion, force, dirichlet);
+      ConvergenceStudy<CG_2_DiscretizationType>::run(grid,
+                                                     cg_2_reference_discretization,
+                                                     num_refinements,
+                                                     exact_solution,
+                                                     "continuous galerkin, polOrder = 2, error against exact solution");
     } // read or write settings file
 
     // done
