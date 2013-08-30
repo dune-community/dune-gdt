@@ -140,8 +140,8 @@ public:
 
   void jacobian(const DomainType& xx, JacobianRangeType& ret) const
   {
-    local_minuend_->evaluate(xx, ret);
-    local_subtrahend_->evaluate(xx, tmp_jacobian_value_);
+    local_minuend_->jacobian(xx, ret);
+    local_subtrahend_->jacobian(xx, tmp_jacobian_value_);
     ret -= tmp_jacobian_value_;
   }
 
