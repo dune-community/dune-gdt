@@ -18,17 +18,17 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operator {
+namespace ProjectionOperator {
 
 
 template< class SourceImp, class RangeImp>
-class DirichletProjection
+class Dirichlet
 {
   static_assert(std::is_base_of< Stuff::LocalizableFunction, SourceImp >::value,
                 "SourceImp has to be derived from Stuff::LocalizableFunction");
   static_assert(std::is_same< RangeImp,
                               DiscreteFunctionDefault<  ContinuousLagrangeSpace::FemWrapper<  typename RangeImp::SpaceType::GridPartType,
-                                                                                              1,
+                                                                                              RangeImp::SpaceType::polOrder,
                                                                                               typename RangeImp::SpaceType::RangeFieldType,
                                                                                               1 >,
                                                         typename RangeImp::VectorType > >::value,
@@ -39,7 +39,7 @@ public:
 
   typedef Stuff::GridboundaryInterface< typename RangeType::SpaceType::GridPartType::GridViewType > BoundaryInfoType;
 
-  DirichletProjection(const BoundaryInfoType& boundary_info)
+  Dirichlet(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
   {}
 
@@ -88,10 +88,10 @@ public:
 
 private:
   const BoundaryInfoType& boundary_info_;
-}; // class DirichletProjection
+}; // class Dirichlet
 
 
-} // namespace Operator
+} // namespace ProjectionOperator
 } // namespace GDT
 } // namespace Dune
 
