@@ -33,10 +33,107 @@ static_assert(false, "This study requires a serial alugrid!");
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
 
+#include <dune/gdt/operator/prolongations.hh>
+
 #include "discretizations.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
+
+
+template <class DiscretizationType>
+class ConvergenceStudy
+{
+public:
+  template <class GridType, class ReferenceDiscretizationType, class ReferenceSolutionType>
+  static void run(GridType& grid, const ReferenceDiscretizationType& reference_discretization,
+                  const size_t num_refinements, const ReferenceSolutionType& reference_solution,
+                  const std::string header)
+  {
+    typedef typename ReferenceDiscretizationType::DomainFieldType DomainFieldType;
+    typedef typename ReferenceDiscretizationType::RangeFieldType RangeFieldType;
+    typedef typename ReferenceDiscretizationType::SpaceType::GridPartType GridPartType;
+    // prepare the data structures
+    std::vector<size_t> num_grid_elements(num_refinements + 1);
+    std::vector<DomainFieldType> grid_width(num_refinements + 1);
+    std::vector<RangeFieldType> l2_errors(num_refinements + 1);
+    std::vector<RangeFieldType> h1_errors(num_refinements + 1);
+    // print table header
+    const std::string bar = "=================================================================";
+    auto& info            = DSC_LOG.info();
+    info << header << std::endl;
+    if (header.size() > bar.size())
+      info << Stuff::Common::whitespaceify(header, '=') << std::endl;
+    else
+      info << bar << std::endl;
+    info << "        grid         |    L2 (relative)    |    H1 (relative)    " << std::endl;
+    info << "---------------------+---------------------+---------------------" << std::endl;
+    info << "     size |    width |    error |      EOC |    error |      EOC " << std::endl;
+    info << "==========+==========+==========+==========+==========+==========" << std::endl;
+
+    // compute norm of reference solution
+    ProductOperator::L2<GridPartType> l2_product_operator(reference_discretization.grid_part());
+    const RangeFieldType reference_solution_l2_norm =
+        std::sqrt(l2_product_operator.apply2(reference_solution, reference_solution));
+    ProductOperator::H1<GridPartType> h1_product_operator(reference_discretization.grid_part());
+    const RangeFieldType reference_solution_h1_error =
+        std::sqrt(h1_product_operator.apply2(reference_solution, reference_solution));
+
+    // iterate
+    for (size_t ii = 0; ii <= num_refinements; ++ii) {
+      if (ii > 0)
+        info << "----------+----------+----------+----------+----------+----------" << std::endl;
+
+      const size_t level = 2 * ii + 1;
+      GridPartType level_grid_part(grid, level);
+      num_grid_elements[ii] = grid.size(level, 0);
+      grid_width[ii] = Fem::GridWidth::calcGridWidth(level_grid_part);
+      info << " " << std::setw(8) << num_grid_elements[ii] << " | " << std::setw(8) << std::setprecision(2)
+           << std::scientific << grid_width[ii] << " | " << std::flush;
+
+      // discretize
+      const DiscretizationType discretization(level_grid_part,
+                                              reference_discretization.boundary_info(),
+                                              reference_discretization.diffusion(),
+                                              reference_discretization.force(),
+                                              reference_discretization.dirichlet());
+      auto discrete_solution = discretization.solve();
+      typedef typename ReferenceDiscretizationType::DiscreteFunctionType DiscreteFunctionType;
+      typedef typename ReferenceDiscretizationType::VectorType VectorType;
+      auto discrete_solution_on_reference_grid = std::make_shared<DiscreteFunctionType>(
+          reference_discretization.space(),
+          std::make_shared<VectorType>(reference_discretization.space().mapper().size()),
+          "discrete_solution");
+      ProlongationOperator::Generic::apply(*discrete_solution, *discrete_solution_on_reference_grid);
+
+      // compute errors
+      const auto errors =
+          reference_discretization.compute_errors(reference_solution, *(discrete_solution_on_reference_grid));
+      // * L2
+      l2_errors[ii] = errors[0];
+      info << std::setw(8) << std::setprecision(2) << std::scientific << l2_errors[ii] / reference_solution_l2_norm
+           << " | " << std::flush;
+      if (ii == 0)
+        info << std::setw(11) << "---- | " << std::flush;
+      else
+        info << std::setw(8) << std::setprecision(2) << std::fixed
+             << std::log(l2_errors[ii] / l2_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1]) << " | "
+             << std::flush;
+      // * H1
+      h1_errors[ii] = errors[1];
+      info << std::setw(8) << std::setprecision(2) << std::scientific << h1_errors[ii] / reference_solution_h1_error
+           << " | " << std::flush;
+      if (ii == 0)
+        info << std::setw(8) << "----" << std::flush;
+      else
+        info << std::setw(8) << std::setprecision(2) << std::fixed
+             << std::log(h1_errors[ii] / h1_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1])
+             << std::flush;
+
+      info << std::endl;
+    } // iterate
+  }
+}; // class ConvergenceStudy
 
 
 int main(int argc, char** argv)
@@ -97,74 +194,35 @@ int main(int argc, char** argv)
                                                   {"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
                                                    "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"},
                                                   integration_order);
-
-      // compute exact solution norm
       typedef typename Fem::LevelGridPart<GridType> GridPartType;
-      const GridPartType finest_grid_part(grid, 2 * num_refinements + 3);
       const Stuff::GridboundaryAllDirichlet<typename GridPartType::GridViewType> boundary_info;
-      ProductOperator::L2<GridPartType> l2_product_operator(finest_grid_part);
-      const RangeFieldType exact_solution_l2_norm =
-          std::sqrt(l2_product_operator.apply2(exact_solution, exact_solution));
 
-      // prepare the data structures
-      std::vector<size_t> num_grid_elements(num_refinements + 1);
-      std::vector<double> grid_width(num_refinements + 1);
-      std::vector<RangeFieldType> cg_l2_absolute_errors(num_refinements + 1);
-      std::vector<RangeFieldType> cg_l2_relative_errors(num_refinements + 1);
-      // print table header
-      info << "continuous galerkin, polOrder = 1, error against exact solution" << std::endl;
-      info << "=================================================================" << std::endl;
-      info << "        grid         |   L2 (absolute)     |    L2 (relative)" << std::endl;
-      info << "---------------------+---------------------+---------------------" << std::endl;
-      info << "     size |    width |    error |      EOC |    error |      EOC" << std::endl;
-      info << "==========+==========+==========+==========+==========+==========" << std::endl;
+      // compute reference
+      const GridPartType reference_grid_part(grid, 2 * num_refinements + 3);
+      typedef Example::CGDiscretization<GridPartType, 1> CG_DiscretizationType;
+      CG_DiscretizationType reference_discretization(reference_grid_part, boundary_info, diffusion, force, dirichlet);
 
-      // iterate
-      for (size_t ii = 0; ii <= num_refinements; ++ii) {
-        if (ii > 0)
-          info << "----------+----------+----------+----------+----------+----------" << std::endl;
-
-        const size_t level = 2 * ii + 1;
-        GridPartType level_grid_part(grid, level);
-        num_grid_elements[ii] = grid.size(level, 0);
-        grid_width[ii] = Fem::GridWidth::calcGridWidth(level_grid_part);
-        info << " " << std::setw(8) << num_grid_elements[ii] << " | " << std::setw(8) << std::setprecision(2)
-             << std::scientific << grid_width[ii] << " | " << std::flush;
-
-        // discretize
-        Example::CGDiscretization<GridPartType, 1> cg_discretization(
-            level_grid_part, boundary_info, diffusion, force, dirichlet);
-        auto cg_solution = cg_discretization.solve();
-        cg_discretization.visualize(*(cg_solution->vector()),
-                                    static_id + ".cg_solution." + Stuff::Common::toString(ii));
-
-        // compute errors
-        auto cg_errors            = cg_discretization.compute_errors(exact_solution, *(cg_solution));
-        cg_l2_absolute_errors[ii] = cg_errors[0];
-        info << std::setw(8) << std::setprecision(2) << std::scientific << cg_l2_absolute_errors[ii] << " | "
-             << std::flush;
-        if (ii == 0)
-          info << std::setw(11) << "---- | " << std::flush;
-        else
-          info << std::setw(8) << std::setprecision(2) << std::fixed
-               << std::log(cg_l2_absolute_errors[ii] / cg_l2_absolute_errors[ii - 1])
-                      / std::log(grid_width[ii] / grid_width[ii - 1])
-               << " | " << std::flush;
-
-        cg_l2_relative_errors[ii] = cg_l2_absolute_errors[ii] / exact_solution_l2_norm;
-        info << std::setw(8) << std::setprecision(2) << std::scientific << cg_l2_relative_errors[ii] << " | "
-             << std::flush;
-        if (ii == 0)
-          info << std::setw(8) << "----" << std::flush;
-        else
-          info << std::setw(8) << std::setprecision(2) << std::fixed
-               << std::log(cg_l2_relative_errors[ii] / cg_l2_relative_errors[ii - 1])
-                      / std::log(grid_width[ii] / grid_width[ii - 1])
-               << std::flush;
-
-        info << std::endl;
-
-      } // iterate
+      // continuous galerkin discretization
+      ConvergenceStudy<Example::CGDiscretization<GridPartType, 1>>::run(
+          grid,
+          reference_discretization,
+          num_refinements,
+          exact_solution,
+          "continuous galerkin, polOrder = 1, error against exact solution");
+      info << std::endl << std::endl;
+      ConvergenceStudy<Example::CGDiscretization<GridPartType, 2>>::run(
+          grid,
+          reference_discretization,
+          num_refinements,
+          exact_solution,
+          "continuous galerkin, polOrder = 2, error against exact solution");
+      info << std::endl << std::endl;
+      ConvergenceStudy<Example::CGDiscretization<GridPartType, 3>>::run(
+          grid,
+          reference_discretization,
+          num_refinements,
+          exact_solution,
+          "continuous galerkin, polOrder = 3, error against exact solution");
     } // read or write settings file
 
     // done
