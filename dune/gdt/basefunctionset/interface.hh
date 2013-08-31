@@ -76,9 +76,23 @@ public:
     CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(x, ret));
   }
 
+  std::vector< RangeType > evaluate(const DomainType& xx) const
+  {
+    std::vector< RangeType > ret(size(), RangeType(0));
+    evaluate(xx, ret);
+    return ret;
+  }
+
   void jacobian(const DomainType& x, std::vector< JacobianRangeType >& ret) const
   {
     CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().jacobian(x, ret));
+  }
+
+  std::vector< JacobianRangeType > jacobian(const DomainType& xx) const
+  {
+    std::vector< JacobianRangeType > ret(size(), JacobianRangeType(0));
+    jacobian(xx, ret);
+    return ret;
   }
 
   derived_type& asImp()
