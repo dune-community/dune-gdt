@@ -34,6 +34,8 @@ public:
 template <class FemDofMapperImp>
 class FemDofWrapper : public MapperInterface<FemDofWrapperTraits<FemDofMapperImp>>
 {
+  typedef MapperInterface<FemDofWrapperTraits<FemDofMapperImp>> InterfaceType;
+
 public:
   typedef FemDofWrapperTraits<FemDofMapperImp> Traits;
   typedef typename Traits::BackendType BackendType;
@@ -95,6 +97,8 @@ public:
     Functor functor(ret);
     backend_.mapEachEntityDof(entity, functor);
   }
+
+  using InterfaceType::globalIndices;
 
   /**
    *  \attention  This method is implemented using globalIndices() and thus not optimal!
