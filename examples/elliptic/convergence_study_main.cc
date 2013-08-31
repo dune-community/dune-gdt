@@ -208,7 +208,11 @@ int main(int argc, char** argv)
 
       // continuous galerkin discretization
       typedef Example::CGDiscretization< GridPartType, 1 > CG_1_DiscretizationType;
-      const CG_1_DiscretizationType cg_1_reference_discretization(reference_grid_part, boundary_info, diffusion, force, dirichlet);
+      const CG_1_DiscretizationType cg_1_reference_discretization(reference_grid_part,
+                                                                  boundary_info,
+                                                                  diffusion,
+                                                                  force,
+                                                                  dirichlet);
       ConvergenceStudy< CG_1_DiscretizationType >::run(grid,
                                                        cg_1_reference_discretization,
                                                        num_refinements,
@@ -216,12 +220,31 @@ int main(int argc, char** argv)
                                                        "continuous galerkin, polOrder = 1, error against exact solution");
       info << std::endl;
       typedef Example::CGDiscretization< GridPartType, 2 > CG_2_DiscretizationType;
-      const CG_2_DiscretizationType cg_2_reference_discretization(reference_grid_part, boundary_info, diffusion, force, dirichlet);
+      const CG_2_DiscretizationType cg_2_reference_discretization(reference_grid_part,
+                                                                  boundary_info,
+                                                                  diffusion,
+                                                                  force,
+                                                                  dirichlet);
       ConvergenceStudy< CG_2_DiscretizationType >::run(grid,
                                                        cg_2_reference_discretization,
                                                        num_refinements,
                                                        exact_solution,
                                                        "continuous galerkin, polOrder = 2, error against exact solution");
+      info << std::endl;
+
+      // symmetric interior penalty discontinuous galerkin discretization
+      typedef Example::SIPDGDiscretization< GridPartType, 1 > SIPDG_1_DiscretizationType;
+      const SIPDG_1_DiscretizationType sipdg_1_reference_discretization(reference_grid_part,
+                                                                        boundary_info,
+                                                                        diffusion,
+                                                                        force,
+                                                                        dirichlet);
+      ConvergenceStudy< SIPDG_1_DiscretizationType >::run(grid,
+                                                          sipdg_1_reference_discretization,
+                                                          num_refinements,
+                                                          exact_solution,
+                                                          "symmetric interior penalty discontinuous galerkin, polOrder = 1, error against exact solution");
+      info << std::endl;
     } // read or write settings file
 
     // done
