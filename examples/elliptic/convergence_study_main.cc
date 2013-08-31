@@ -32,6 +32,8 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
+#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/stuff/functions/visualization.hh>
 
 #include <dune/gdt/operator/prolongations.hh>
 
@@ -50,7 +52,8 @@ public:
                   const ReferenceDiscretizationType& reference_discretization,
                   const size_t num_refinements,
                   const ReferenceSolutionType& reference_solution,
-                  const std::string header)
+                  const std::string header,
+                  const std::string plot_prefix)
   {
     typedef typename ReferenceDiscretizationType::DomainFieldType         DomainFieldType;
     typedef typename ReferenceDiscretizationType::RangeFieldType          RangeFieldType;
@@ -101,6 +104,8 @@ public:
                                               reference_discretization.force(),
                                               reference_discretization.dirichlet());
       auto discrete_solution = discretization.solve();
+      discretization.visualize(*(discrete_solution->vector()),
+                               plot_prefix + "." + discretization.id() + ".solution." + Stuff::Common::toString(ii));
       typedef typename ReferenceDiscretizationType::DiscreteFunctionType DiscreteFunctionType;
       typedef typename ReferenceDiscretizationType::VectorType VectorType;
       auto discrete_solution_on_reference_grid
@@ -159,91 +164,148 @@ int main(int argc, char** argv)
       file << "num_refinements   = 3" << std::endl;
       file.close();
     } else {
-      std::cout << "reading default settings from'" << static_id + ".settings'" << std::endl;
-      std::cout << std::endl;
+      std::cout << "reading default settings from'" << static_id + ".settings':" << std::endl;
       Stuff::Common::ExtendedParameterTree settings(argc, argv, static_id + ".settings");
       const size_t integration_order = settings.get("integration_order", 4);
       const size_t num_refinements   = settings.get("num_refinements",   3);
       DSC_LOG.create(Stuff::Common::LOG_INFO, "", "");
       auto& info = DSC_LOG.info();
-
-      info << "==================================================================================" << std::endl;
-      info << "  convergence study (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)"   << std::endl;
       info << "  dimDomain = " << dimDomain << ", dimRange = " << dimRange << std::endl;
       info << "  integration_order = " << integration_order << std::endl;
       info << "  num_refinements   = " << num_refinements << std::endl;
-      info << "==================================================================================" << std::endl;
+      info << std::endl;
 
-      // mpi
-      Dune::Fem::MPIManager::initialize(argc, argv);
-
-      // prepare the grid
-      typedef Dune::ALUConformGrid< dimDomain, dimDomain > GridType;
-      typedef typename GridType::ctype DomainFieldType;
-      typedef Stuff::GridProviderCube< GridType > GridProviderType;
-      GridProviderType grid_provider(-1, 1, 2);
-      GridType& grid = *(grid_provider.grid());
-      grid.globalRefine(1);
-      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
-        grid.globalRefine(GridType::refineStepsForHalf);
-
-      // prepare the analytical functions
+      // some preparations
+      typedef Dune::ALUConformGrid< dimDomain, dimDomain >      GridType;
+      typedef Stuff::GridProviderCube< GridType >               GridProviderType;
+      typedef typename Fem::LevelGridPart< GridType >           GridPartType;
+      typedef VTKWriter< typename GridPartType::GridViewType >  VTKWriterType;
+      typedef typename GridType::ctype                  DomainFieldType;
+      typedef FieldVector< DomainFieldType, dimDomain > DomainType;
       typedef Stuff::FunctionConstant< DomainFieldType, dimDomain, RangeFieldType, dimRange >   ConstantFunctionType;
       typedef Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange > ExpressionFunctionType;
-      const ConstantFunctionType    diffusion(1.0);
-      const ExpressionFunctionType  force("x",
-                                          "0.5 * pi * pi * cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
-                                          integration_order);
-      const ConstantFunctionType    dirichlet(0.0);
-      const ExpressionFunctionType  exact_solution("x",
-                                                   "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
-                                                   {"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
-                                                    "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"},
-                                                   integration_order);
-      typedef typename Fem::LevelGridPart< GridType > GridPartType;
-      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > boundary_info;
+      typedef Stuff::FunctionCheckerboard<  DomainFieldType, dimDomain,
+                                            RangeFieldType, dimRange > CheckerboardFunctionType;
+      typedef Stuff::FunctionVisualization< typename GridPartType::GridViewType,
+                                            DomainFieldType, dimDomain,
+                                            RangeFieldType, dimRange > VisualizationFunctionType;
+      typedef Example::CGDiscretization< GridPartType, 1 > CG_1_DiscretizationType;
+      typedef Example::SIPDGDiscretization< GridPartType, 1 > SIPDG_1_DiscretizationType;
+      Dune::Fem::MPIManager::initialize(argc, argv);
 
-      // compute reference
-      const GridPartType reference_grid_part(grid, 2*num_refinements + 3);
+      info << "============================================================================" << std::endl;
+      info << "  Testcase 1: smooth data, homogeneous dirichlet" << std::endl;
+      info << "              (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)"   << std::endl;
+      info << "  domain = [-1, 1] x [-1 , 1]" << std::endl;
+      info << "  diffusion = 1" << std::endl;
+      info << "  force     = 1/2 pi^2 cos(1/2 pi x) cos(1/2 pi y)" << std::endl;
+      info << "  dirichlet = 0" << std::endl;
+      info << "  exact solution = cos(1/2 pi x) cos(1/2 pi y)" << std::endl;
+      info << "============================================================================" << std::endl;
+      auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(-1, 1, 2));
+      auto grid = grid_provider->grid();
+      grid->globalRefine(1);
+      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+        grid->globalRefine(GridType::refineStepsForHalf);
+      auto reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
+      auto vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
+                                                                           VTK::nonconforming));
+
+      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_1_boundary_info;
+      const ConstantFunctionType    testcase_1_diffusion(1.0);
+      const ExpressionFunctionType  testcase_1_force("x",
+                                                     "0.5 * pi * pi * cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
+                                                     integration_order);
+      const ConstantFunctionType    testcase_1_dirichlet(0.0);
+      const ExpressionFunctionType  testcase_1_exact_solution("x",
+                                                              "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
+                                                              {"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
+                                                               "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"},
+                                                              integration_order);
+      vtk_writer->addCellData(std::make_shared< VisualizationFunctionType >(testcase_1_force));
+      vtk_writer->write("testcase_1.force");
+      vtk_writer->clear();
+      vtk_writer->addCellData(std::make_shared< VisualizationFunctionType >(testcase_1_exact_solution));
+      vtk_writer->write("testcase_1.exact_solution");
+      vtk_writer->clear();
 
       // continuous galerkin discretization
-      typedef Example::CGDiscretization< GridPartType, 1 > CG_1_DiscretizationType;
-      const CG_1_DiscretizationType cg_1_reference_discretization(reference_grid_part,
-                                                                  boundary_info,
-                                                                  diffusion,
-                                                                  force,
-                                                                  dirichlet);
-      ConvergenceStudy< CG_1_DiscretizationType >::run(grid,
-                                                       cg_1_reference_discretization,
+      const CG_1_DiscretizationType testcase_1_cg_1_reference_discretization(*reference_grid_part,
+                                                                             testcase_1_boundary_info,
+                                                                             testcase_1_diffusion,
+                                                                             testcase_1_force,
+                                                                             testcase_1_dirichlet);
+      ConvergenceStudy< CG_1_DiscretizationType >::run(*grid,
+                                                       testcase_1_cg_1_reference_discretization,
                                                        num_refinements,
-                                                       exact_solution,
-                                                       "continuous galerkin, polOrder = 1, error against exact solution");
+                                                       testcase_1_exact_solution,
+                                                       "continuous galerkin, polOrder 1",
+                                                       "testcase_1");
       info << std::endl;
-      typedef Example::CGDiscretization< GridPartType, 2 > CG_2_DiscretizationType;
-      const CG_2_DiscretizationType cg_2_reference_discretization(reference_grid_part,
-                                                                  boundary_info,
-                                                                  diffusion,
-                                                                  force,
-                                                                  dirichlet);
-      ConvergenceStudy< CG_2_DiscretizationType >::run(grid,
-                                                       cg_2_reference_discretization,
-                                                       num_refinements,
-                                                       exact_solution,
-                                                       "continuous galerkin, polOrder = 2, error against exact solution");
+      // symmetric interior penalty discontinuous galerkin discretization
+      const SIPDG_1_DiscretizationType testcase_1_sipdg_1_reference_discretization(*reference_grid_part,
+                                                                                   testcase_1_boundary_info,
+                                                                                   testcase_1_diffusion,
+                                                                                   testcase_1_force,
+                                                                                   testcase_1_dirichlet);
+      ConvergenceStudy< SIPDG_1_DiscretizationType >::run(*grid,
+                                                          testcase_1_sipdg_1_reference_discretization,
+                                                          num_refinements,
+                                                          testcase_1_exact_solution,
+                                                          "symmetric interior penalty discontinuous galerkin, polOrder 1",
+                                                          "testcase_1");
       info << std::endl;
 
-      // symmetric interior penalty discontinuous galerkin discretization
-      typedef Example::SIPDGDiscretization< GridPartType, 1 > SIPDG_1_DiscretizationType;
-      const SIPDG_1_DiscretizationType sipdg_1_reference_discretization(reference_grid_part,
-                                                                        boundary_info,
-                                                                        diffusion,
-                                                                        force,
-                                                                        dirichlet);
-      ConvergenceStudy< SIPDG_1_DiscretizationType >::run(grid,
-                                                          sipdg_1_reference_discretization,
-                                                          num_refinements,
-                                                          exact_solution,
-                                                          "symmetric interior penalty discontinuous galerkin, polOrder = 1, error against exact solution");
+      info << "=========================================================" << std::endl;
+      info << "  Testcase 2: smooth data, smooth dirichlet" << std::endl;
+      info << "              (see page 858 in Epshteyn, Riviere, 2007)" << std::endl;
+      info << "  domain = [0, 1] x [0 , 1]" << std::endl;
+      info << "  diffusion = 1" << std::endl;
+      info << "  force     = 64 pi^2 (cos(8  pi x) + cos(8 pi y))" << std::endl;
+      info << "  dirichlet = cos(8 pi x) + cos(8 pi y)" << std::endl;
+      info << "  exact solution = cos(8 pi x) + cos(8 pi y)" << std::endl;
+      info << "=========================================================" << std::endl;
+      grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 8));
+      grid = grid_provider->grid();
+      grid->globalRefine(1);
+      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+        grid->globalRefine(GridType::refineStepsForHalf);
+      reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
+      vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
+                                                                      VTK::nonconforming));
+
+      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_2_boundary_info;
+      const ConstantFunctionType    testcase_2_diffusion(1.0);
+      const ExpressionFunctionType  testcase_2_force("x",
+                                                     "64.0 * pi * pi * (cos(8.0 * pi * x[0]) + cos(8.0 * pi * x[1]))",
+                                                     integration_order);
+      const ExpressionFunctionType  testcase_2_dirichlet("x",
+                                                         "cos(8.0 * pi * x[0]) + cos(8.0 * pi * x[1])",
+                                                         integration_order);
+      const ExpressionFunctionType  testcase_2_exact_solution("x",
+                                                              "cos(8.0 * pi * x[0]) + cos(8.0 * pi * x[1])",
+                                                              {"-8.0 * pi * sin(8.0 * pi * x[0])",
+                                                               "-8.0 * pi * sin(8.0 * pi * x[1])"},
+                                                              integration_order);
+      vtk_writer->addCellData(std::make_shared< VisualizationFunctionType >(testcase_2_force));
+      vtk_writer->write("testcase_2.force");
+      vtk_writer->clear();
+      vtk_writer->addCellData(std::make_shared< VisualizationFunctionType >(testcase_2_exact_solution));
+      vtk_writer->write("testcase_2.exact_solution");
+      vtk_writer->clear();
+
+      // continuous galerkin discretization
+      const CG_1_DiscretizationType testcase_2_cg_1_reference_discretization(*reference_grid_part,
+                                                                             testcase_2_boundary_info,
+                                                                             testcase_2_diffusion,
+                                                                             testcase_2_force,
+                                                                             testcase_2_dirichlet);
+      ConvergenceStudy< CG_1_DiscretizationType >::run(*grid,
+                                                       testcase_2_cg_1_reference_discretization,
+                                                       num_refinements,
+                                                       testcase_2_exact_solution,
+                                                       "continuous galerkin, polOrder 1",
+                                                       "testcase_2");
       info << std::endl;
     } // read or write settings file
 
