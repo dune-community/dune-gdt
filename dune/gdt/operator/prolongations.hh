@@ -10,14 +10,19 @@
 #include <vector>
 #include <limits>
 
+#include <dune/common/dynmatrix.hh>
+
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
+
+#include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/grid/search.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -86,7 +91,94 @@ public:
           kk += dimRange;
       }
     } // walk the grid
-  }
+  } // ... apply(...)
+
+  template< class SGP, int sp, class R, int dimRange, class SV, class RGP, int rp, class RV >
+  static void apply(const DiscreteFunctionDefaultConst< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, dimRange >, SV >& source,
+                    DiscreteFunctionDefault< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, dimRange >, RV >& range)
+  {
+    //checks
+    static_assert(rp >= sp, "A prolongation from a higher to a lower polynomial order does not make sense!");
+    if (source.space().mapper().size() > range.space().mapper().size())
+      DUNE_THROW(RangeError, "A prolongation from a larger to a smaller space does not make sense!");
+
+    // create search in the source grid part
+    typedef DiscreteFunctionDefaultConst< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, dimRange >, SV > SourceType;
+    typedef DiscreteFunctionDefault< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, dimRange >, RV >      RangeType;
+
+    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
+    EntitySearch entity_search(source.space().gridPart().gridView());
+
+    // walk the grid
+    const auto entity_it_end = range.space().gridPart().template end< 0 >();
+    for (auto entity_it = range.space().gridPart().template begin< 0 >();
+         entity_it != entity_it_end;
+         ++entity_it) {
+      // prepare
+      const auto& entity = *entity_it;
+      const auto local_basis = range.space().baseFunctionSet(entity);
+      DynamicMatrix< R > local_matrix(local_basis.size(), local_basis.size(), R(0));
+      DynamicVector< R > local_vector(local_basis.size(), R(0));
+      std::vector< typename RangeType::SpaceType::BaseFunctionSetType::RangeType > basis_values(local_basis.size());
+
+      // create quadrature
+      const size_t quadrature_order = 2*rp;
+      typedef typename SourceGridViewType::ctype DomainFieldType;
+      const unsigned int DUNE_UNUSED(dimDomain) = SourceGridViewType::dimension;
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
+                                                                                   2*quadrature_order + 1);
+
+      // get global quadrature coordinates
+      typedef FieldVector< DomainFieldType, dimDomain > DomainType;
+      std::vector< DomainType > global_quadrature_points(quadrature.size());
+      size_t pp = 0;
+      for (const auto& quadrature_point : quadrature) {
+        global_quadrature_points[pp] = entity.geometry().global(quadrature_point.position());
+        ++pp;
+      }
+
+      // find source entities
+      const auto source_entities = entity_search(global_quadrature_points);
+      assert(source_entities.size() == global_quadrature_points.size());
+
+      // loop over all quadrature points
+      pp = 0;
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto global_point = global_quadrature_points[pp];
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto integration_element = entity.geometry().integrationElement(local_point);
+        const auto source_entity_ptr = source_entities[pp];
+        const auto& source_entity = *source_entity_ptr;
+        const auto local_source = source.localFunction(source_entity);
+        const auto local_point_source = source_entity.geometry().local(global_point);
+        // evaluate
+        local_basis.evaluate(local_point, basis_values);
+        const auto local_source_value = local_source.evaluate(local_point_source);
+        // compute integrals
+        for (size_t ii = 0; ii < local_basis.size(); ++ii) {
+          local_vector[ii] += integration_element * quadrature_weight * (local_source_value * basis_values[ii]);
+          for (size_t jj = 0; jj < local_basis.size(); ++jj) {
+            local_matrix[ii][jj] += integration_element * quadrature_weight
+                                    * (basis_values[ii] * basis_values[jj]);
+          }
+        }
+        ++pp;
+      } // loop over all quadrature points
+
+      // compute local DoFs
+      DynamicVector< R > local_DoFs(local_basis.size(), R(0));
+      local_matrix.solve(local_DoFs, local_vector);
+
+      // set local DoFs
+      auto local_range = range.localFunction(entity);
+      auto local_range_vector = local_range.vector();
+      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
+        local_range_vector.set(ii, local_DoFs[ii]);
+
+    } // walk the grid
+  } // ... apply(...)
 }; // class Generic
 
 
