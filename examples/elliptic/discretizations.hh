@@ -146,6 +146,11 @@ public:
     return space_;
   }
 
+  const std::string id() const
+  {
+    return "cg." + Dune::Stuff::Common::toString(polOrder);
+  }
+
   std::shared_ptr<DiscreteFunctionType> solve() const
   {
     using namespace Dune;
@@ -269,6 +274,11 @@ public:
   const SpaceType& space() const
   {
     return space_;
+  }
+
+  const std::string id() const
+  {
+    return "sipdg." + Dune::Stuff::Common::toString(polOrder);
   }
 
   std::shared_ptr<DiscreteFunctionType> solve() const
