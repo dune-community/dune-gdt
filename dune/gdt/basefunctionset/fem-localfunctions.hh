@@ -46,6 +46,10 @@ class FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
                                                                      RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
+  typedef BaseFunctionSetInterface<FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
+                                                                  RangeFieldImp, rangeDim, 1>,
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> InterfaceType;
+
 public:
   typedef FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       Traits;
@@ -94,11 +98,15 @@ public:
     backend_.evaluateAll(x, ret);
   }
 
+  using InterfaceType::evaluate;
+
   void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
   {
     assert(ret.size() >= size());
     backend_.jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
   }
+
+  using InterfaceType::jacobian;
 
 private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
