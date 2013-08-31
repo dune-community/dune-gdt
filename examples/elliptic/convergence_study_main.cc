@@ -218,6 +218,19 @@ int main(int argc, char** argv)
                                                      num_refinements,
                                                      exact_solution,
                                                      "continuous galerkin, polOrder = 2, error against exact solution");
+      info << std::endl;
+
+      // symmetric interior penalty discontinuous galerkin discretization
+      typedef Example::SIPDGDiscretization<GridPartType, 1> SIPDG_1_DiscretizationType;
+      const SIPDG_1_DiscretizationType sipdg_1_reference_discretization(
+          reference_grid_part, boundary_info, diffusion, force, dirichlet);
+      ConvergenceStudy<SIPDG_1_DiscretizationType>::run(
+          grid,
+          sipdg_1_reference_discretization,
+          num_refinements,
+          exact_solution,
+          "symmetric interior penalty discontinuous galerkin, polOrder = 1, error against exact solution");
+      info << std::endl;
     } // read or write settings file
 
     // done
