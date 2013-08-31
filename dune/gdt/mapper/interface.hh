@@ -53,6 +53,14 @@ public:
   }
 
   template< class EntityType >
+  Dune::DynamicVector< size_t > globalIndices(const EntityType& entity) const
+  {
+    Dune::DynamicVector< size_t > ret(numDofs(entity), 0);
+    globalIndices(entity, ret);
+    return ret;
+  }
+
+  template< class EntityType >
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().mapToGlobal(entity, localIndex));
