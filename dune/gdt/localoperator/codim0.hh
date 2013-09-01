@@ -54,8 +54,8 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim0Integral(const BinaryEvaluationImp evaluation)
-    : evaluation_(evaluation)
+  Codim0Integral(const BinaryEvaluationImp eval)
+    : evaluation_(eval)
   {
   }
 

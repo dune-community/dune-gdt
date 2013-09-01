@@ -70,10 +70,10 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  int order(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+  int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
             const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
   {
-    const auto& localFunction = std::get<0>(localFunctions);
+    const auto& localFunction = std::get<0>(localFuncs);
     return order(localFunction, testBase, ansatzBase);
   }
 

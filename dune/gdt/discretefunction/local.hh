@@ -113,9 +113,9 @@ public:
   typedef typename BaseFunctionSetType::RangeType RangeType;
   typedef typename BaseFunctionSetType::JacobianRangeType JacobianRangeType;
 
-  DiscreteFunctionLocalConst(const DiscreteFunctionType& discreteFunction, const EntityType& entity)
-    : function_(discreteFunction)
-    , entity_(entity)
+  DiscreteFunctionLocalConst(const DiscreteFunctionType& func, const EntityType& ent)
+    : function_(func)
+    , entity_(ent)
     , base_(function_.space().baseFunctionSet(entity_))
     , localVector_(function_.space().mapper(), entity_,
                    const_cast<typename DiscreteFunctionType::VectorType&>(*(function_.vector())))
@@ -123,6 +123,10 @@ public:
     , tmpBaseJacobianValues_(base_.size(), JacobianRangeType(0))
   {
     assert(localVector_.size() == base_.size());
+  }
+
+  virtual ~DiscreteFunctionLocalConst()
+  {
   }
 
   const DiscreteFunctionType& discreteFunction() const
@@ -243,8 +247,8 @@ public:
   typedef typename BaseFunctionSetType::RangeType RangeType;
   typedef typename BaseFunctionSetType::JacobianRangeType JacobianRangeType;
 
-  DiscreteFunctionLocal(const DiscreteFunctionType& discreteFunction, const EntityType& entity)
-    : BaseType(discreteFunction, entity)
+  DiscreteFunctionLocal(const DiscreteFunctionType& func, const EntityType& entity)
+    : BaseType(func, entity)
   {
   }
 

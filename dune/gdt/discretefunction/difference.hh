@@ -86,8 +86,8 @@ public:
   typedef typename BaseType::RangeType RangeType;
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
-  Difference(const EntityType& entity, const MinuendType& minuend, const SubtrahendType& subtrahend)
-    : entity_(entity)
+  Difference(const EntityType& ent, const MinuendType& minuend, const SubtrahendType& subtrahend)
+    : entity_(ent)
     , minuend_(minuend)
     , subtrahend_(subtrahend)
     , local_minuend_(new LocalMinuendType(minuend_.localFunction(entity_)))
@@ -108,7 +108,7 @@ public:
   {
   }
 
-  ~Difference()
+  virtual ~Difference()
   {
     delete local_minuend_;
     delete local_subtrahend_;

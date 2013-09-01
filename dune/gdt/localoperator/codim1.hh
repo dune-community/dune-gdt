@@ -55,8 +55,8 @@ private:
   static const size_t numTmpObjectsRequired_ = 4;
 
 public:
-  Codim1CouplingIntegral(const QuaternaryEvaluationImp evaluation)
-    : evaluation_(evaluation)
+  Codim1CouplingIntegral(const QuaternaryEvaluationImp eval)
+    : evaluation_(eval)
   {
   }
 
@@ -216,8 +216,8 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim1BoundaryIntegral(const BinaryEvaluationImp evaluation)
-    : evaluation_(evaluation)
+  Codim1BoundaryIntegral(const BinaryEvaluationImp eval)
+    : evaluation_(eval)
   {
   }
 

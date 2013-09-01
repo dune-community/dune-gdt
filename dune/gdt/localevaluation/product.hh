@@ -68,9 +68,9 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class L, class T, class D, int d, class R, int rT, int rCT>
-  int order(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase) const
+  int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase) const
   {
-    const auto& localFunction = std::get<0>(localFunctions);
+    const auto& localFunction = std::get<0>(localFuncs);
     return order(localFunction, testBase);
   } // int order(...)
 
@@ -92,10 +92,10 @@ public:
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class L, class T, class D, int d, class R, int rT, int rCT>
-  void evaluate(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFunctions);
+    const auto& localFunction = std::get<0>(localFuncs);
     evaluate(localFunction, testBase, localPoint, ret);
   }
 
@@ -136,11 +136,11 @@ public:
   } // ... evaluate(...)
 
   template <class L, class T, class IntersectionType, class D, int d, class R, int r, int rC>
-  void evaluate(const std::tuple<L>& localFunctions, const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase,
+  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicVector<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFunctions);
+    const auto& localFunction = std::get<0>(localFuncs);
     evaluate(localFunction, testBase, intersection, localPoint, ret);
   }
 

@@ -52,8 +52,8 @@ public:
   typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
   typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
 
-  LocalFunctionWrapper(const BackendType& backend)
-    : backend_(backend)
+  LocalFunctionWrapper(const BackendType& back)
+    : backend_(back)
   {
   }
 

@@ -64,7 +64,7 @@ public:
   class AssembleOnFunctorInterface
   {
   public:
-    ~AssembleOnFunctorInterface()
+    virtual ~AssembleOnFunctorInterface()
     {
     }
     virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& /*intersection*/) const = 0;
