@@ -9,14 +9,9 @@
   #include "config.h"
 #endif
 
-#ifdef HAVE_ALUGRID_SERIAL_H
-  #define ENABLE_ALUGRID 1
-  #undef HAVE_ALUGRID
-  #define HAVE_ALUGRID 1
-  #include <dune/grid/alugrid.hh>
-#else
-  static_assert(false, "This study requires a serial alugrid!");
-#endif // HAVE_ALUGRID_SERIAL_H
+#if !defined (HAVE_ALUGRID)
+  static_assert(false, "This study requires alugrid!");
+#endif
 
 #include <memory>
 
@@ -33,6 +28,7 @@
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
+#include <dune/stuff/functions/spe10.hh>
 
 #include <dune/gdt/operator/prolongations.hh>
 
@@ -103,44 +99,48 @@ public:
                                               reference_discretization.force(),
                                               reference_discretization.dirichlet(),
                                               reference_discretization.neumann());
-      auto discrete_solution = discretization.solve();
-      discretization.visualize(*(discrete_solution->vector()),
-                               plot_prefix + "." + discretization.id() + ".solution." + Stuff::Common::toString(ii));
-      typedef typename ReferenceDiscretizationType::DiscreteFunctionType DiscreteFunctionType;
-      typedef typename ReferenceDiscretizationType::VectorType VectorType;
-      auto discrete_solution_on_reference_grid
-          = std::make_shared< DiscreteFunctionType >(reference_discretization.space(),
-                                                     std::make_shared< VectorType >(reference_discretization.space().mapper().size()),
-                                                     "discrete_solution");
-      ProlongationOperator::Generic::apply(*discrete_solution, *discrete_solution_on_reference_grid);
+      try {
+        auto discrete_solution = discretization.solve();
+        discretization.visualize(*(discrete_solution->vector()),
+                                 plot_prefix + "." + discretization.id() + ".solution." + Stuff::Common::toString(ii));
+        typedef typename ReferenceDiscretizationType::DiscreteFunctionType DiscreteFunctionType;
+        typedef typename ReferenceDiscretizationType::VectorType VectorType;
+        auto discrete_solution_on_reference_grid
+            = std::make_shared< DiscreteFunctionType >(reference_discretization.space(),
+                                                       std::make_shared< VectorType >(reference_discretization.space().mapper().size()),
+                                                       "discrete_solution");
+        ProlongationOperator::Generic::apply(*discrete_solution, *discrete_solution_on_reference_grid);
 
-      // compute errors
-      const auto errors = reference_discretization.compute_errors(reference_solution,
-                                                                  *(discrete_solution_on_reference_grid));
-      // * L2
-      l2_errors[ii] = errors[0];
-      info << std::setw(8) << std::setprecision(2) << std::scientific << l2_errors[ii] / reference_solution_l2_norm
+        // compute errors
+        const auto errors = reference_discretization.compute_errors(reference_solution,
+                                                                    *(discrete_solution_on_reference_grid));
+        // * L2
+        l2_errors[ii] = errors[0];
+        info << std::setw(8) << std::setprecision(2) << std::scientific << l2_errors[ii] / reference_solution_l2_norm
+                << " | " << std::flush;
+        if (ii == 0)
+          info << std::setw(11) << "---- | " << std::flush;
+        else
+          info << std::setw(8) << std::setprecision(2) << std::fixed
+               << std::log(l2_errors[ii] / l2_errors[ii - 1])
+                  / std::log(grid_width[ii] / grid_width[ii - 1])
               << " | " << std::flush;
-      if (ii == 0)
-        info << std::setw(11) << "---- | " << std::flush;
-      else
-        info << std::setw(8) << std::setprecision(2) << std::fixed
-             << std::log(l2_errors[ii] / l2_errors[ii - 1])
-                / std::log(grid_width[ii] / grid_width[ii - 1])
-            << " | " << std::flush;
-      // * H1
-      h1_errors[ii] = errors[1];
-      info << std::setw(8) << std::setprecision(2) << std::scientific << h1_errors[ii] / reference_solution_h1_error
-              << " | " << std::flush;
-      if (ii == 0)
-        info << std::setw(8) << "----" << std::flush;
-      else
-        info << std::setw(8) << std::setprecision(2) << std::fixed
-             << std::log(h1_errors[ii] / h1_errors[ii - 1])
-                / std::log(grid_width[ii] / grid_width[ii - 1])
-            << std::flush;
+        // * H1
+        h1_errors[ii] = errors[1];
+        info << std::setw(8) << std::setprecision(2) << std::scientific << h1_errors[ii] / reference_solution_h1_error
+                << " | " << std::flush;
+        if (ii == 0)
+          info << std::setw(8) << "----" << std::flush;
+        else
+          info << std::setw(8) << std::setprecision(2) << std::fixed
+               << std::log(h1_errors[ii] / h1_errors[ii - 1])
+                  / std::log(grid_width[ii] / grid_width[ii - 1])
+              << std::flush;
 
-      info << std::endl;
+        info << std::endl;
+      } catch (Dune::MathError&) {
+        info << Stuff::Common::colorStringRed("ERROR:") << " linear solver failed!" << std::endl;
+      }
     } // iterate
   }
 }; // class ConvergenceStudy
@@ -162,17 +162,25 @@ int main(int argc, char** argv)
       file.open(static_id + ".settings");
       file << "integration_order = 4" << std::endl;
       file << "num_refinements   = 3" << std::endl;
+      file << "spe_10_model_1_datafile = perm_case1.dat" << std::endl;
       file.close();
     } else {
       std::cout << "reading default settings from '" << static_id + ".settings':" << std::endl;
       Stuff::Common::ExtendedParameterTree settings(argc, argv, static_id + ".settings");
       const size_t integration_order = settings.get("integration_order", 4);
       const size_t num_refinements   = settings.get("num_refinements",   3);
+      const std::string spe_10_model_1_datafile = settings.get("spe_10_model_1_datafile", "perm_case1.dat");
       DSC_LOG.create(Stuff::Common::LOG_INFO, "", "");
       auto& info = DSC_LOG.info();
       info << "  dimDomain = " << dimDomain << ", dimRange = " << dimRange << std::endl;
       info << "  integration_order = " << integration_order << std::endl;
       info << "  num_refinements   = " << num_refinements << std::endl;
+      const bool spe_10_model_1_datafile_found = boost::filesystem::exists(spe_10_model_1_datafile);
+      if (spe_10_model_1_datafile_found)
+        info << "  spe_10_model_1_datafile: " << spe_10_model_1_datafile << std::endl;
+      else
+        info << Stuff::Common::colorString("WARNING:")
+             << " spe_10_model_1_datafile '" << spe_10_model_1_datafile << "' " << "could not be found!" << std::endl;
       info << std::endl;
 
       // some preparations
@@ -186,6 +194,8 @@ int main(int argc, char** argv)
       typedef Stuff::FunctionExpression< DomainFieldType, dimDomain, RangeFieldType, dimRange > ExpressionFunctionType;
       typedef Stuff::FunctionCheckerboard<  DomainFieldType, dimDomain,
                                             RangeFieldType, dimRange > CheckerboardFunctionType;
+      typedef Stuff::FunctionSpe10Model1< DomainFieldType, dimDomain,
+                                          RangeFieldType, dimRange > SPE10Model1FunctionType;
       typedef Example::CGDiscretization< GridPartType, 1 > CG_1_DiscretizationType;
       typedef Example::SIPDGDiscretization< GridPartType, 1 > SIPDG_1_DiscretizationType;
       typedef Example::SWIPDGDiscretization< GridPartType, 1 > SWIPDG_1_DiscretizationType;
@@ -206,7 +216,7 @@ int main(int argc, char** argv)
       auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(-1, 1, 2));
       auto grid = grid_provider->grid();
       grid->globalRefine(1);
-      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+      for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
         grid->globalRefine(GridType::refineStepsForHalf);
       auto reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
       auto vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
@@ -283,7 +293,7 @@ int main(int argc, char** argv)
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 16));
       grid = grid_provider->grid();
       grid->globalRefine(1);
-      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+      for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
         grid->globalRefine(GridType::refineStepsForHalf);
       reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
       vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
@@ -332,6 +342,20 @@ int main(int argc, char** argv)
                                                           "SIP discontinuous galerkin discretization, polOrder 1",
                                                           "testcase_2");
       info << std::endl;
+      // symmetric weighted interior penalty discontinuous galerkin discretization
+      const SWIPDG_1_DiscretizationType testcase_2_swipdg_1_reference_discretization(*reference_grid_part,
+                                                                                     testcase_2_boundary_info,
+                                                                                     testcase_2_diffusion,
+                                                                                     testcase_2_force,
+                                                                                     testcase_2_dirichlet,
+                                                                                     testcase_2_neumann);
+      ConvergenceStudy< SWIPDG_1_DiscretizationType >::run(*grid,
+                                                           testcase_2_swipdg_1_reference_discretization,
+                                                           num_refinements,
+                                                           testcase_2_exact_solution,
+                                                           "SWIP discontinuous galerkin discretization, polOrder 1",
+                                                           "testcase_2");
+      info << std::endl;
 
       info << "+========================================================================+" << std::endl;
       info << "|+======================================================================+|" << std::endl;
@@ -348,7 +372,7 @@ int main(int argc, char** argv)
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 2));
       grid = grid_provider->grid();
       grid->globalRefine(1);
-      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+      for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
         grid->globalRefine(GridType::refineStepsForHalf);
       reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
       vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
@@ -393,6 +417,20 @@ int main(int argc, char** argv)
                                                           "SIP discontinuous galerkin discretization, polOrder 1",
                                                           "testcase_3");
       info << std::endl;
+      // symmetric weighted interior penalty discontinuous galerkin discretization
+      const SWIPDG_1_DiscretizationType testcase_3_swipdg_1_reference_discretization(*reference_grid_part,
+                                                                                     testcase_3_boundary_info,
+                                                                                     testcase_3_diffusion,
+                                                                                     testcase_3_force,
+                                                                                     testcase_3_dirichlet,
+                                                                                     testcase_3_neumann);
+      ConvergenceStudy< SWIPDG_1_DiscretizationType >::run(*grid,
+                                                           testcase_3_swipdg_1_reference_discretization,
+                                                           num_refinements,
+                                                           *testcase_3_reference_solution,
+                                                           "SWIP discontinuous galerkin discretization, polOrder 1",
+                                                           "testcase_3");
+      info << std::endl;
 
       info << "+====================================================+" << std::endl;
       info << "|+==================================================+|" << std::endl;
@@ -408,7 +446,7 @@ int main(int argc, char** argv)
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 4));
       grid = grid_provider->grid();
       grid->globalRefine(1);
-      for (size_t ii = 1; ii <= (num_refinements + 2); ++ii)
+      for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
         grid->globalRefine(GridType::refineStepsForHalf);
       reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
       vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
@@ -468,6 +506,85 @@ int main(int argc, char** argv)
                                                            "SWIP discontinuous galerkin discretization, polOrder 1",
                                                            "testcase_4");
       info << std::endl;
+
+      if (spe_10_model_1_datafile_found) {
+        info << "+=====================================================================+" << std::endl;
+        info << "|+===================================================================+|" << std::endl;
+        info << "||  Testcase 5: SPE10                                                ||" << std::endl;
+        info << "||              (see http://www.spe.org/web/csp/datasets/set01.htm)  ||" << std::endl;
+        info << "|+-------------------------------------------------------------------+|" << std::endl;
+        info << "||  domain = [0, 5] x [0 , 1]                                        ||" << std::endl;
+        info << "||  diffusion:  spe10 model 1                                        ||" << std::endl;
+        info << "||  force     = 1                                                    ||" << std::endl;
+        info << "||  dirichlet = 0                                                    ||" << std::endl;
+        info << "||  reference solution: CG solution on finest grid                   ||" << std::endl;
+        info << "|+===================================================================+|" << std::endl;
+        info << "+=====================================================================+" << std::endl;
+        DomainType upper_right(1.0);
+        upper_right[0] = 5.0;
+        grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(DomainType(0.0),
+                                                                                 upper_right,
+                                                                                 {100u, 20u}));
+        grid = grid_provider->grid();
+        grid->globalRefine(1);
+        for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
+          grid->globalRefine(GridType::refineStepsForHalf);
+        reference_grid_part = std::unique_ptr< GridPartType >(new GridPartType(*grid, grid->maxLevel()));
+        vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
+                                                                        VTK::nonconforming));
+
+        const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_5_boundary_info;
+        const SPE10Model1FunctionType   testcase_5_diffusion(spe_10_model_1_datafile,
+                                                             DomainType(0.0), upper_right);
+        const ExpressionFunctionType    testcase_5_force("x",
+                                                         "100.0*exp(-1.0*((((x[0]-0.95)*(x[0]-0.95))+((x[1]-0.65)*(x[1]-0.65)))/(2*0.05*0.05)))-100.0*exp(-1.0*((((x[0]-4.3)*(x[0]-4.3))+((x[1]-0.35)*(x[1]-0.35)))/(2*0.05*0.05)))",
+                                                         integration_order);
+        const ConstantFunctionType      testcase_5_dirichlet(0.0);
+        const ConstantFunctionType      testcase_5_neumann(0.0);
+        // continuous galerkin discretization
+        const CG_1_DiscretizationType testcase_5_cg_1_reference_discretization(*reference_grid_part,
+                                                                               testcase_5_boundary_info,
+                                                                               testcase_5_diffusion,
+                                                                               testcase_5_force,
+                                                                               testcase_5_dirichlet,
+                                                                               testcase_5_neumann);
+        const auto testcase_5_reference_solution = testcase_5_cg_1_reference_discretization.solve();
+        ConvergenceStudy< CG_1_DiscretizationType >::run(*grid,
+                                                         testcase_5_cg_1_reference_discretization,
+                                                         num_refinements,
+                                                         *testcase_5_reference_solution,
+                                                         "continuous galerkin discretization, polOrder 1",
+                                                         "testcase_5");
+        info << std::endl;
+        // symmetric interior penalty discontinuous galerkin discretization
+        const SIPDG_1_DiscretizationType testcase_5_sipdg_1_reference_discretization(*reference_grid_part,
+                                                                                     testcase_5_boundary_info,
+                                                                                     testcase_5_diffusion,
+                                                                                     testcase_5_force,
+                                                                                     testcase_5_dirichlet,
+                                                                                     testcase_5_neumann);
+        ConvergenceStudy< SIPDG_1_DiscretizationType >::run(*grid,
+                                                            testcase_5_sipdg_1_reference_discretization,
+                                                            num_refinements,
+                                                            *testcase_5_reference_solution,
+                                                            "SIP discontinuous galerkin discretization, polOrder 1",
+                                                            "testcase_5");
+        info << std::endl;
+        // symmetric weighted interior penalty discontinuous galerkin discretization
+        const SWIPDG_1_DiscretizationType testcase_5_swipdg_1_reference_discretization(*reference_grid_part,
+                                                                                       testcase_5_boundary_info,
+                                                                                       testcase_5_diffusion,
+                                                                                       testcase_5_force,
+                                                                                       testcase_5_dirichlet,
+                                                                                       testcase_5_neumann);
+        ConvergenceStudy< SWIPDG_1_DiscretizationType >::run(*grid,
+                                                             testcase_5_swipdg_1_reference_discretization,
+                                                             num_refinements,
+                                                             *testcase_5_reference_solution,
+                                                             "SWIP discontinuous galerkin discretization, polOrder 1",
+                                                             "testcase_5");
+        info << std::endl;
+      } // spe 10 testcase
     } // read or write settings file
 
     // done
