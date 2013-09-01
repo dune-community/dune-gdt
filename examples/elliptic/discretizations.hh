@@ -49,13 +49,14 @@ public:
   typedef Dune::Stuff::LA::EigenRowMajorSparseMatrix<RangeFieldType> MatrixType;
   typedef Dune::Stuff::LA::EigenDenseVector<RangeFieldType> VectorType;
 
-  DiscretizationBase(const GridPartType& grid_part, const BoundaryInfoType& boundary_info,
-                     const FunctionType& diffusion, const FunctionType& force, const FunctionType& dirichlet)
-    : grid_part_(grid_part)
-    , boundary_info_(boundary_info)
-    , diffusion_(diffusion)
-    , force_(force)
-    , dirichlet_(dirichlet)
+  DiscretizationBase(const GridPartType& gp, const BoundaryInfoType& info, const FunctionType& diff,
+                     const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
+    : grid_part_(gp)
+    , boundary_info_(info)
+    , diffusion_(diff)
+    , force_(forc)
+    , dirichlet_(dir)
+    , neumann_(neu)
   {
   }
 
@@ -82,6 +83,11 @@ public:
   const FunctionType& dirichlet() const
   {
     return dirichlet_;
+  }
+
+  const FunctionType& neumann() const
+  {
+    return neumann_;
   }
 
   template <class ReferenceSolutionType, class DiscreteSolutionType>
@@ -113,6 +119,7 @@ private:
   const FunctionType& diffusion_;
   const FunctionType& force_;
   const FunctionType& dirichlet_;
+  const FunctionType& neumann_;
 }; // class DiscretizationBase
 
 
@@ -134,9 +141,9 @@ public:
   typedef Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GridPartType, polOrder, RangeFieldType, dimRange> SpaceType;
   typedef Dune::GDT::DiscreteFunctionDefault<SpaceType, VectorType> DiscreteFunctionType;
 
-  CGDiscretization(const GridPartType& grid_part, const BoundaryInfoType& boundary_info, const FunctionType& diffusion,
-                   const FunctionType& force, const FunctionType& dirichlet)
-    : BaseType(grid_part, boundary_info, diffusion, force, dirichlet)
+  CGDiscretization(const GridPartType& gp, const BoundaryInfoType& info, const FunctionType& diff,
+                   const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
+    : BaseType(gp, info, diff, forc, dir, neu)
     , space_(BaseType::grid_part())
   {
   }
@@ -165,14 +172,14 @@ public:
     typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> L2VolumeFunctionalType;
     const L2VolumeFunctionalType force_functional(BaseType::force());
     //  //   * L2 neumann functional
-    //  typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
-    //  const L2FaceFunctionalType neumannFunctional(neumann);
+    typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> L2FaceFunctionalType;
+    const L2FaceFunctionalType neumann_functional(BaseType::neumann());
 
     const std::unique_ptr<Stuff::LA::SparsityPatternDefault> sparsity_pattern(space_.computePattern());
     MatrixType system_matrix(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
     VectorType force_vector(space_.mapper().size());
     auto dirichlet_vector = std::make_shared<VectorType>(space_.mapper().size());
-    //  VectorType neumann_nector(space_.mapper().size());
+    VectorType neumann_vector(space_.mapper().size());
     VectorType rhs_vector(space_.mapper().size());
     auto solution =
         std::make_shared<DiscreteFunctionType>(space_, std::make_shared<VectorType>(space_.mapper().size()));
@@ -191,24 +198,23 @@ public:
     //   * force vector
     typedef LocalAssembler::Codim0Vector<L2VolumeFunctionalType> LocalL2VolumeFunctionalVectorAssemblerType;
     const LocalL2VolumeFunctionalVectorAssemblerType force_vector_assembler(force_functional);
-    //  //   * neumann vector
-    //  typedef LocalAssembler::Codim1Vector< L2FaceFunctionalType > LocalL2FaceFunctionalVectorAssemblerType;
-    //  const LocalL2FaceFunctionalVectorAssemblerType neumannVectorAssembler(neumannFunctional);
+    //   * neumann vector
+    typedef LocalAssembler::Codim1Vector<L2FaceFunctionalType> LocalL2FaceFunctionalVectorAssemblerType;
+    const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
     // * system assembler
     typedef SystemAssembler<SpaceType, SpaceType> SystemAssemblerType;
     SystemAssemblerType system_assembler(space_);
     system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix);
     system_assembler.addLocalAssembler(force_vector_assembler, force_vector);
-    //  system_assembler.addLocalAssembler(neumannVectorAssembler,
-    //                                    SystemAssemblerType::AssembleOnNeumann(*boundaryInfo),
-    //                                    *neumannVector);
+    system_assembler.addLocalAssembler(neumann_vector_assembler,
+                                       typename SystemAssemblerType::AssembleOnNeumann(BaseType::boundary_info()),
+                                       neumann_vector);
     system_assembler.assemble();
 
     Constraints::Dirichlet<typename GridPartType::GridViewType, RangeFieldType> dirichlet_constraints(
         BaseType::boundary_info(), space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
-    rhs_vector.backend() = force_vector.backend()
-                           //      + neumannVector->backend()
-                           - system_matrix.backend() * dirichlet_vector->backend();
+    rhs_vector.backend() =
+        force_vector.backend() + neumann_vector.backend() - system_matrix.backend() * dirichlet_vector->backend();
     system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix);
     system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector);
     system_assembler.applyConstraints();
@@ -262,11 +268,11 @@ public:
                                                                           dimRange> SpaceType;
   typedef Dune::GDT::DiscreteFunctionDefault<SpaceType, VectorType> DiscreteFunctionType;
 
-  SIPDGDiscretization(const GridPartType& grid_part, const BoundaryInfoType& boundary_info,
-                      const FunctionType& diffusion, const FunctionType& force, const FunctionType& dirichlet)
-    : BaseType(grid_part, boundary_info, diffusion, force, dirichlet)
+  SIPDGDiscretization(const GridPartType& gp, const BoundaryInfoType& info, const FunctionType& diff,
+                      const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
+    : BaseType(gp, info, diff, forc, dir, neu)
     , space_(BaseType::grid_part())
-    , penalty_factor_(2.0)
+    , penalty_factor_(1.0)
     , integration_order_(4)
   {
   }
@@ -302,6 +308,8 @@ public:
       const auto ansatz_basis_entity          = space_.baseFunctionSet(entity);
       const auto local_diffusion_entity       = BaseType::diffusion().localFunction(entity);
       const auto local_force                  = BaseType::force().localFunction(entity);
+      const auto local_dirichlet              = BaseType::dirichlet().localFunction(entity);
+      const auto local_neumann                = BaseType::neumann().localFunction(entity);
       const auto global_test_indices_entity   = space_.mapper().globalIndices(entity);
       const auto global_ansatz_indices_entity = space_.mapper().globalIndices(entity);
 
@@ -531,52 +539,102 @@ public:
             const auto corner_difference = intersection.geometry().corner(0) - intersection.geometry().corner(1);
             local_face_weight = corner_difference.two_norm();
           }*/ intersection.geometry().volume();
-          // prepare local storage
-          DynamicMatrix<RangeFieldType> integrals(test_basis_entity.size(), test_basis_entity.size(), 0);
-          // do a face quadrature
-          const auto& face_quadrature =
-              QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), 2 * integration_order_ + 1);
-          for (const auto& quadrature_point : face_quadrature) {
-            // evaluate
-            const auto quadrature_weight        = quadrature_point.weight();
-            const auto local_point_intersection = quadrature_point.position();
-            const auto integration_element      = intersection.geometry().integrationElement(local_point_intersection);
-            const auto unit_outer_normal        = intersection.unitOuterNormal(local_point_intersection);
-            const auto local_point_entity       = intersection.geometryInInside().global(local_point_intersection);
-            const auto diffusion_value          = local_diffusion_entity.evaluate(local_point_entity);
-            const auto test_base_values         = test_basis_entity.evaluate(local_point_entity);
-            const auto test_base_gradients      = test_basis_entity.jacobian(local_point_entity);
-            const auto ansatz_base_values       = ansatz_basis_entity.evaluate(local_point_entity);
-            const auto ansatz_base_gradients    = ansatz_basis_entity.jacobian(local_point_entity);
-            // compute integrals
+
+          // handle dirichlet
+          if (BaseType::boundary_info().dirichlet(intersection)) {
+            // prepare local storage
+            DynamicMatrix<RangeFieldType> lhs_integrals(test_basis_entity.size(), test_basis_entity.size(), 0);
+            DynamicVector<RangeFieldType> rhs_face_integrals(test_basis_entity.size(), 0);
+            // do a face quadrature
+            const auto& face_quadrature =
+                QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), 2 * integration_order_ + 1);
+            for (const auto& quadrature_point : face_quadrature) {
+              // evaluate
+              const auto quadrature_weight        = quadrature_point.weight();
+              const auto local_point_intersection = quadrature_point.position();
+              const auto integration_element      = intersection.geometry().integrationElement(local_point_intersection);
+              const auto unit_outer_normal        = intersection.unitOuterNormal(local_point_intersection);
+              const auto local_point_entity       = intersection.geometryInInside().global(local_point_intersection);
+              const auto diffusion_value          = local_diffusion_entity.evaluate(local_point_entity);
+              const auto dirichlet_value          = local_dirichlet.evaluate(local_point_entity);
+              const auto test_base_values         = test_basis_entity.evaluate(local_point_entity);
+              const auto test_base_gradients      = test_basis_entity.jacobian(local_point_entity);
+              const auto ansatz_base_values       = ansatz_basis_entity.evaluate(local_point_entity);
+              const auto ansatz_base_gradients    = ansatz_basis_entity.jacobian(local_point_entity);
+              // compute integrals
+              // * lhs
+              for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
+                for (size_t jj = 0; jj < ansatz_basis_entity.size(); ++jj) {
+                  // consistency term
+                  lhs_integrals[ii][jj] +=
+                      quadrature_weight * integration_element
+                      * (-0.5 * diffusion_value * (ansatz_base_gradients[jj][0] * unit_outer_normal)
+                         * test_base_values[ii]);
+                  // symmetry term
+                  lhs_integrals[ii][jj] +=
+                      quadrature_weight * integration_element * (-0.5 * ansatz_base_values[jj] * diffusion_value
+                                                                 * (test_base_gradients[ii][0] * unit_outer_normal));
+                  // penalty term
+                  lhs_integrals[ii][jj] += quadrature_weight * integration_element
+                                           * (((14.0 * penalty_factor_) / local_face_weight) * ansatz_base_values[jj]
+                                              * test_base_values[ii]);
+                }
+              }
+              // * rhs
+              for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
+                // dirichlet symmetry term
+                rhs_face_integrals[ii] -=
+                    quadrature_weight * integration_element
+                    * (dirichlet_value * diffusion_value * (test_base_gradients[ii][0] * unit_outer_normal));
+                // dirichlet penalty term
+                rhs_face_integrals[ii] +=
+                    quadrature_weight * integration_element
+                    * (((14.0 * penalty_factor_) / local_face_weight) * dirichlet_value * test_base_values[ii]);
+              }
+            } // do a face quadrature
+
+            // map
+            // * lhs
             for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
               for (size_t jj = 0; jj < ansatz_basis_entity.size(); ++jj) {
-                // consistency term
-                integrals[ii][jj] += quadrature_weight * integration_element
-                                     * (-0.5 * diffusion_value * (ansatz_base_gradients[jj][0] * unit_outer_normal)
-                                        * test_base_values[ii]);
-                // symmetry term
-                integrals[ii][jj] +=
-                    quadrature_weight * integration_element * (-0.5 * ansatz_base_values[jj] * diffusion_value
-                                                               * (test_base_gradients[ii][0] * unit_outer_normal));
-                // penalty term
-                integrals[ii][jj] +=
-                    quadrature_weight * integration_element
-                    * (((14.0 * penalty_factor_) / local_face_weight) * ansatz_base_values[jj] * test_base_values[ii]);
+                const auto& global_ii = global_test_indices_entity[ii];
+                const auto& global_jj = global_ansatz_indices_entity[jj];
+                system_matrix.add(global_ii, global_jj, lhs_integrals[ii][jj]);
               }
             }
-          } // do a face quadrature
-
-          // map
-          // * lhs
-          for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
-            for (size_t jj = 0; jj < ansatz_basis_entity.size(); ++jj) {
+            // * rhs
+            for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
               const auto& global_ii = global_test_indices_entity[ii];
-              const auto& global_jj = global_ansatz_indices_entity[jj];
-              system_matrix.add(global_ii, global_jj, integrals[ii][jj]);
+              rhs_vector.add(global_ii, rhs_face_integrals[ii]);
             }
-          }
+          } else if (BaseType::boundary_info().neumann(intersection)) {
+            // handle neumann
+            // prepare local storage
+            DynamicVector<RangeFieldType> rhs_face_integrals(test_basis_entity.size(), 0);
+            // do a face quadrature
+            const auto& face_quadrature =
+                QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), 2 * integration_order_ + 1);
+            for (const auto& quadrature_point : face_quadrature) {
+              // evaluate
+              const auto quadrature_weight        = quadrature_point.weight();
+              const auto local_point_intersection = quadrature_point.position();
+              const auto integration_element      = intersection.geometry().integrationElement(local_point_intersection);
+              const auto local_point_entity       = intersection.geometryInInside().global(local_point_intersection);
+              const auto neumann_value            = local_neumann.evaluate(local_point_entity);
+              const auto test_base_values         = test_basis_entity.evaluate(local_point_entity);
+              // compute integrals
+              for (size_t ii = 0; ii < test_basis_entity.size(); ++ii)
+                rhs_face_integrals[ii] -=
+                    quadrature_weight * integration_element * (neumann_value * test_base_values[ii]);
+            } // do a face quadrature
 
+            // map
+            for (size_t ii = 0; ii < test_basis_entity.size(); ++ii) {
+              const auto& global_ii = global_test_indices_entity[ii];
+              rhs_vector.add(global_ii, rhs_face_integrals[ii]);
+            }
+          } else
+            DUNE_THROW(InvalidStateException, "Unknown type of boundary information encountered!");
         } else
           DUNE_THROW(InvalidStateException, "Unknown type of intersection encountered!");
       } // walk the intersections
