@@ -564,10 +564,10 @@ public:
                 for (size_t jj = 0; jj < ansatz_basis_entity.size(); ++jj) {
                   // consistency term
                   lhs_integrals[ii][jj] += quadrature_weight * integration_element
-                      * (-0.5 * diffusion_value * (ansatz_base_gradients[jj][0] * unit_outer_normal) * test_base_values[ii]);
+                      * (-1.0 * diffusion_value * (ansatz_base_gradients[jj][0] * unit_outer_normal) * test_base_values[ii]);
                   // symmetry term
                   lhs_integrals[ii][jj] += quadrature_weight * integration_element
-                      * (-0.5 * ansatz_base_values[jj] * diffusion_value * (test_base_gradients[ii][0] * unit_outer_normal));
+                      * (-1.0 * ansatz_base_values[jj] * diffusion_value * (test_base_gradients[ii][0] * unit_outer_normal));
                   // penalty term
                   lhs_integrals[ii][jj] += quadrature_weight * integration_element
                       * (((14.0 * penalty_factor_) / local_face_weight) * ansatz_base_values[jj] * test_base_values[ii]);
