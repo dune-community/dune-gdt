@@ -350,14 +350,14 @@ public:
    */
   template< class L, class T, class A, class IntersectionType,
             class D, int d, class R, int rT, int rCT, int rA, int rCA >
-  void evaluate(const std::tuple< L >& localFunctions,
+  void evaluate(const std::tuple< L >& localFuncs,
                 const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
                 const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< D, d - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const auto& localFunction = std::get< 0 >(localFunctions);
+    const auto& localFunction = std::get< 0 >(localFuncs);
     evaluate(localFunction, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
@@ -517,14 +517,14 @@ public:
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template< class LDF, class LDR, class T, class IntersectionType, class D, int d, class R, int r, int rC >
-  void evaluate(const std::tuple< LDF, LDR >& localFunctions,
+  void evaluate(const std::tuple< LDF, LDR >& localFuncs,
                 const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< D, d - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    const auto& localDiffusion = std::get< 0 >(localFunctions);
-    const auto& localDirichlet = std::get< 1 >(localFunctions);
+    const auto& localDiffusion = std::get< 0 >(localFuncs);
+    const auto& localDirichlet = std::get< 1 >(localFuncs);
     evaluate(localDiffusion, localDirichlet, testBase, intersection, localPoint, ret);
   }
 

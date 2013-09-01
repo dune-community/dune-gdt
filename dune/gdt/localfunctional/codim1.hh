@@ -54,8 +54,8 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim1Integral(const UnaryEvaluationImp evaluation)
-    : evaluation_(evaluation)
+  Codim1Integral(const UnaryEvaluationImp eval)
+    : evaluation_(eval)
   {}
 
   template< class... Args >
