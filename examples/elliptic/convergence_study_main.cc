@@ -432,18 +432,19 @@ int main(int argc, char** argv)
                                                            "testcase_3");
       info << std::endl;
 
-      info << "+====================================================+" << std::endl;
-      info << "|+==================================================+|" << std::endl;
-      info << "||  Testcase 4: mild discontinuous data             ||" << std::endl;
-      info << "|+--------------------------------------------------+|" << std::endl;
-      info << "||  domain = [0, 1] x [0 , 1]                       ||" << std::endl;
-      info << "||  diffusion:  4x4 checkeboard (values 0.1 and 1)  ||" << std::endl;
-      info << "||  force     = 1                                   ||" << std::endl;
-      info << "||  dirichlet = 0                                   ||" << std::endl;
-      info << "||  reference solution: CG solution on finest grid  ||" << std::endl;
-      info << "|+==================================================+|" << std::endl;
-      info << "+====================================================+" << std::endl;
-      grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 4));
+      info << "+==================================================================================+" << std::endl;
+      info << "|+================================================================================+|" << std::endl;
+      info << "||  Testcase 4: local thermal block problem                                       ||" << std::endl;
+      info << "||              (see http://wwwmath.uni-muenster.de/num/publications/2013/AO13/)  ||" << std::endl;
+      info << "|+--------------------------------------------------------------------------------+|" << std::endl;
+      info << "||  domain = [0, 1] x [0 , 1]                                                     ||" << std::endl;
+      info << "||  diffusion:  see page 3                                                        ||" << std::endl;
+      info << "||  force     = 1                                                                 ||" << std::endl;
+      info << "||  dirichlet = 0                                                                 ||" << std::endl;
+      info << "||  reference solution: CG solution on finest grid                                ||" << std::endl;
+      info << "|+================================================================================+|" << std::endl;
+      info << "+==================================================================================+" << std::endl;
+      grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 6));
       grid = grid_provider->grid();
       grid->globalRefine(1);
       for (size_t ii = 1; ii <= (num_refinements + 1); ++ii)
@@ -453,13 +454,18 @@ int main(int argc, char** argv)
                                                                       VTK::nonconforming));
 
       const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_4_boundary_info;
+      const RangeFieldType mu_zero = 0.1;
+      const RangeFieldType mu_one = 1.0;
+      const RangeFieldType mu_two = 0.01;
       const CheckerboardFunctionType  testcase_4_diffusion(DomainType(0.0),
                                                            DomainType(1.0),
-                                                           {4, 4},
-                                                           {0.1, 1, 0.1, 1,
-                                                            1, 0.1, 1, 0.1,
-                                                            0.1, 1, 0.1, 1,
-                                                            1, 0.1, 1, 0.1});
+                                                           {6, 6},
+                                                           {mu_one, mu_one, mu_one, mu_zero, mu_zero, mu_zero,
+                                                            mu_two, mu_one, mu_one, mu_zero, mu_zero, mu_zero,
+                                                            mu_one, mu_one, mu_one, mu_zero, mu_zero, mu_zero,
+                                                            mu_one, mu_one, mu_one, mu_zero, mu_zero, mu_zero,
+                                                            mu_one, mu_one, mu_one, mu_zero, mu_zero, mu_zero,
+                                                            mu_one, mu_one, mu_one, mu_zero, mu_zero, mu_zero});
       const ConstantFunctionType  testcase_4_force(1.0);
       const ConstantFunctionType  testcase_4_dirichlet(0.0);
       const ConstantFunctionType  testcase_4_neumann(0.0);
