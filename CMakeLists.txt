@@ -3,6 +3,11 @@
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+if( NOT CMAKE_BUILD_TYPE )
+  message( STATUS "No build type selected, setting default build type 'Debug'" )
+  set( CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "DEBUG/RELEASE")
+endif( NOT CMAKE_BUILD_TYPE )
+
 project( dune-gdt )
 
 # cmake specific
@@ -30,14 +35,6 @@ include_dir( ${dune-gdt_BINARY_DIR} )
 set( ENABLE_MPI
      "0" CACHE STRING
      "set to 1 to enable mpi")
-
-set( CUSTOM_FLAGS
-     "-Wall -Wextra -O0 -DDEBUG -g -ggdb -fdiagnostics-show-option" CACHE LIST
-     "CUSTOM_FLAGS" )
-
-set( POLORDER
-     "1" CACHE STRING
-     "POLORDER" )
 
 # we need eigen
 if( NOT EIGEN_FOUND )
