@@ -47,6 +47,7 @@ public:
 template< class LocalizableFunctionImp >
 class Product
   : public LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 1 >
+  , public LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 2 >
   , public LocalEvaluation::Codim1Interface< ProductTraits< LocalizableFunctionImp >, 1 >
 {
 public:
@@ -87,6 +88,28 @@ public:
     else
       return localFunction.order() + testBase.order();
   } // int order(...)
+
+  template< class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  int order(const std::tuple< L >& localFuncs,
+            const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
+            const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase) const
+  {
+    const auto& localFunction = std::get< 0 >(localFuncs);
+    return order(localFunction, testBase, ansatzBase);
+  }
+
+  template< class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  int order(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rL, rCL >& localFunction,
+            const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
+            const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase) const
+  {
+    if (localFunction.order() < 0)
+      return -1;
+    else
+      return localFunction.order() + testBase.order() + ansatzBase.order();
+  } // int order(...)
+
+  // Codim0< ..., 1 >
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
@@ -139,6 +162,72 @@ public:
       ret[ii] = functionValue * testValues[ii];
     }
   } // ... evaluate(...)
+
+  // Codim0< ..., 2 >
+
+  /**
+   * \brief extracts the local functions and calls the correct evaluate() method
+   */
+  template< class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  void evaluate(const std::tuple< L >& localFuncs,
+                const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
+                const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
+                const Dune::FieldVector< D, d >& localPoint,
+                Dune::DynamicMatrix< R >& ret) const
+  {
+    const auto& localFunction = std::get< 0 >(localFuncs);
+    evaluate(localFunction, testBase, ansatzBase, localPoint, ret);
+  }
+
+  template< class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, rL, rCL >& /*localFunction*/,
+                const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& /*testBase*/,
+                const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& /*ansatzBase*/,
+                const Dune::FieldVector< D, d >& /*localPoint*/,
+                Dune::DynamicMatrix< R >& /*ret*/) const
+  {
+    dune_static_assert((Dune::AlwaysFalse< R >::value),
+                       "ERROR: not implemented for this combination of dimensions!");
+  }
+
+  /**
+   *  \brief computes a scalar product evaluation.
+   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
+   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
+   *  \tparam D DomainFieldType
+   *  \tparam d dimDomain
+   *  \tparam R RangeFieldType
+   */
+  template< class L, class T, class A, class D, int d, class R >
+  void evaluate(const Dune::Stuff::LocalFunctionInterface< L, D, d, R, 1, 1 >& localFunction,
+                const BaseFunctionSetInterface< T, D, d, R, 1, 1 >& testBase,
+                const BaseFunctionSetInterface< A, D, d, R, 1, 1 >& ansatzBase,
+                const Dune::FieldVector< D, d >& localPoint,
+                Dune::DynamicMatrix< R >& ret) const
+  {
+    // checks
+    typedef Dune::FieldVector< R, 1 > RangeType;
+    // evaluate local function
+    const RangeType functionValue = localFunction.evaluate(localPoint);
+    // evaluate bases
+    const size_t rows = testBase.size();
+    const size_t cols = ansatzBase.size();
+    std::vector< RangeType > testValues(rows, RangeType(0));
+    std::vector< RangeType > ansatzValues(cols, RangeType(0));
+    testBase.evaluate(localPoint, testValues);
+    ansatzBase.evaluate(localPoint, ansatzValues);
+    // compute product
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      auto& retRow = ret[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        retRow[jj] = functionValue * (testValues[ii] * ansatzValues[jj]);
+      }
+    }
+  } // ... evaluate(...)
+
+  // Codim1< ..., 1 >
 
   template< class L, class T, class IntersectionType, class D, int d, class R, int r, int rC >
   void evaluate(const std::tuple< L >& localFuncs,
