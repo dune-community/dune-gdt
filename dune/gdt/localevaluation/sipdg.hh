@@ -27,8 +27,7 @@ namespace LocalEvaluation {
  *              For the choice of penalization and the role of the user input see Epshteyn, Riviere (2007):
  *              "Estimation of penalty parameters for symmetric interior penalty Galerkin methods"
  *
- *  \attention  Does not seem to work properly for nonhomogeneous neumann values!
- *  \attention  Does not seem to work properly discontinuous local inducing functions!
+ *  \attention  Does not work properly for discontinuous diffusion!
  */
 namespace SIPDG {
 
