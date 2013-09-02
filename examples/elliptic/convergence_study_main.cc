@@ -164,7 +164,7 @@ int main(int argc, char** argv)
       const size_t integration_order            = settings.get("integration_order", 4);
       const size_t num_refinements              = settings.get("num_refinements", 3);
       const std::string spe_10_model_1_datafile = settings.get("spe_10_model_1_datafile", "perm_case1.dat");
-      DSC_LOG.create(Stuff::Common::LOG_INFO, "", "");
+      DSC_LOG.create(Stuff::Common::LOG_INFO, "", "", "");
       auto& info = DSC_LOG.info();
       info << "  dimDomain = " << dimDomain << ", dimRange = " << dimRange << std::endl;
       info << "  integration_order = " << integration_order << std::endl;
