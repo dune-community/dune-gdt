@@ -17,7 +17,9 @@
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/localevaluation/sipdg.hh>
 #include <dune/gdt/localoperator/codim0.hh>
+#include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
@@ -177,7 +179,7 @@ public:
     //   * L2 force functional
     typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > L2VolumeFunctionalType;
     const L2VolumeFunctionalType force_functional(BaseType::force());
-  //  //   * L2 neumann functional
+    //   * L2 neumann functional
     typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
     const L2FaceFunctionalType neumann_functional(BaseType::neumann());
 
@@ -254,7 +256,7 @@ public:
 
 private:
   const SpaceType space_;
-};
+}; // class CGDiscretization
 
 
 template< class GridPartType, int polOrder >
@@ -661,6 +663,143 @@ private:
   const RangeFieldType penalty_factor_;
   const size_t integration_order_;
 }; // class SIPDGDiscretization
+
+
+template< class GridPartType, int polOrder >
+class NewSIPDGDiscretization
+  : public DiscretizationBase< GridPartType >
+{
+  typedef DiscretizationBase< GridPartType > BaseType;
+public:
+  typedef typename BaseType::RangeFieldType RangeFieldType;
+  static const unsigned int                 dimRange = BaseType::dimRange;
+  typedef typename BaseType::FunctionType   FunctionType;
+
+  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
+
+  typedef typename BaseType::MatrixType MatrixType;
+  typedef typename BaseType::VectorType VectorType;
+
+  typedef Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<  GridPartType,
+                                                                            polOrder,
+                                                                            RangeFieldType,
+                                                                            dimRange > SpaceType;
+  typedef Dune::GDT::DiscreteFunctionDefault< SpaceType, VectorType > DiscreteFunctionType;
+
+  NewSIPDGDiscretization(const GridPartType& gp,
+                         const BoundaryInfoType& info,
+                         const FunctionType& diff,
+                         const FunctionType& forc,
+                         const FunctionType& dir,
+                         const FunctionType& neu)
+    : BaseType(gp, info, diff, forc, dir, neu)
+    , space_(BaseType::grid_part())
+    , beta_(1.0)
+  {}
+
+  const SpaceType& space() const
+  {
+    return space_;
+  }
+
+  const std::string id() const
+  {
+    return "newsipdg." + Dune::Stuff::Common::toString(polOrder);
+  }
+
+  std::shared_ptr< DiscreteFunctionType > solve() const
+  {
+    using namespace Dune;
+    using namespace Dune::GDT;
+
+    // container
+    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
+    MatrixType system_matrix(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+    VectorType rhs_vector(space_.mapper().size());
+    auto solution = std::make_shared< DiscreteFunctionType >(space_,
+                                                             std::make_shared< VectorType >(space_.mapper().size()));
+
+    typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
+    SystemAssemblerType systemAssembler(space_);
+
+    // volume terms
+    // * lhs
+    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > > EllipticOperatorType;
+    const EllipticOperatorType                                  ellipticOperator(BaseType::diffusion());
+    const LocalAssembler::Codim0Matrix< EllipticOperatorType >  diffusionMatrixAssembler(ellipticOperator);
+    systemAssembler.addLocalAssembler(diffusionMatrixAssembler, system_matrix);
+    // * rhs
+    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > ForceFunctionalType;
+    const ForceFunctionalType                                 forceFunctional(BaseType::force());
+    const LocalAssembler::Codim0Vector< ForceFunctionalType > forceVectorAssembler(forceFunctional);
+    systemAssembler.addLocalAssembler(forceVectorAssembler, rhs_vector);
+    // inner face terms
+    typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SIPDG::Inner< FunctionType > > CouplingOperatorType;
+    const CouplingOperatorType                                          couplingOperator(BaseType::diffusion(), beta_);
+    const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
+    systemAssembler.addLocalAssembler(couplingMatrixAssembler,
+                                      typename SystemAssemblerType::AssembleOnInnerPrimally(),
+                                      system_matrix);
+    // dirichlet boundary face terms
+    // * lhs
+    typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SIPDG::BoundaryLHS< FunctionType > >
+        DirichletOperatorType;
+    const DirichletOperatorType                                         dirichletOperator(BaseType::diffusion(), beta_);
+    const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
+    systemAssembler.addLocalAssembler(dirichletMatrixAssembler,
+                                      typename SystemAssemblerType::AssembleOnDirichlet(BaseType::boundary_info()),
+                                      system_matrix);
+    // * rhs
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::SIPDG::BoundaryRHS< FunctionType, FunctionType > >
+        DirichletFunctionalType;
+    const DirichletFunctionalType                                 dirichletFunctional(BaseType::diffusion(),
+                                                                                      BaseType::dirichlet(),
+                                                                                      beta_);
+    const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
+    systemAssembler.addLocalAssembler(dirichletVectorAssembler,
+                                      typename SystemAssemblerType::AssembleOnDirichlet(BaseType::boundary_info()),
+                                      rhs_vector);
+    // neumann boundary face terms
+    // * rhs
+    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
+    const NeumannFunctionalType                                 neumannFunctional(BaseType::neumann());
+    const LocalAssembler::Codim1Vector< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
+    systemAssembler.addLocalAssembler(neumannVectorAssembler,
+                                      typename SystemAssemblerType::AssembleOnNeumann(BaseType::boundary_info()),
+                                      rhs_vector);
+
+    // do all the work
+    systemAssembler.assemble();
+
+    // solve
+    typedef typename Dune::Stuff::LA::BicgstabILUTSolver< MatrixType, VectorType > LinearSolverType;
+    auto linear_solver_settings = LinearSolverType::defaultSettings();
+    linear_solver_settings["precision"] = "1e-16";
+    LinearSolverType linear_solver;
+    const size_t failure = linear_solver.apply(system_matrix,
+                                               rhs_vector,
+                                               *(solution->vector()),
+                                               linear_solver_settings);
+    if (failure)
+      DUNE_THROW(Dune::MathError,
+                 "\nERROR: linear solver reported a problem!");
+    if (solution->vector()->size() != space_.mapper().size())
+      DUNE_THROW(Dune::MathError,
+                 "\nERROR: linear solver produced a solution of wrong size (is "
+                 << solution->vector()->size() << ", should be " << space_.mapper().size() << ")!");
+
+    return solution;
+  } // ... solve()
+
+  void visualize(const VectorType& vector, const std::string filename) const
+  {
+    space_.visualize(vector, filename);
+  }
+
+private:
+  const SpaceType space_;
+  const RangeFieldType beta_;
+}; // class NewSIPDGDiscretization
 
 
 template< class GridPartType, int polOrder >
