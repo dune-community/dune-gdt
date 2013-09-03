@@ -224,6 +224,55 @@ protected:
     } // walk the grid part
     return ret;
   } // ... computeVolumeAndCouplingPattern(...)
+
+public:
+  template <class LocalGridPartType, class O>
+  PatternType* computeCodim0Pattern(const LocalGridPartType& local_grid_part,
+                                    const SpaceInterface<O>& other_space) const
+  {
+    return computeVolumePattern(local_grid_part, other_space);
+  }
+
+  template <class LocalGridPartType, class O>
+  PatternType* computeCodim1Pattern(const LocalGridPartType& local_grid_part,
+                                    const SpaceInterface<O>& other_space) const
+  {
+    // prepare
+    PatternType* ret     = new PatternType(mapper().size());
+    PatternType& pattern = *ret;
+    Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
+    Dune::DynamicVector<size_t> global_cols(other_space.mapper().maxNumDofs(), 0);
+    // walk the grid part
+    const auto entity_it_end = local_grid_part.template end<0>();
+    for (auto entity_it = local_grid_part.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+      // get basefunctionsets
+      const auto test_base_entity = baseFunctionSet(entity);
+      mapper().globalIndices(entity, global_rows);
+      // walk the intersections
+      const auto intersection_it_end = local_grid_part.iend(entity);
+      for (auto intersection_it = local_grid_part.ibegin(entity); intersection_it != intersection_it_end;
+           ++intersection_it) {
+        const auto& intersection = *intersection_it;
+        // get the neighbour
+        if (intersection.neighbor() && !intersection.boundary()) {
+          const auto neighbour_ptr = intersection.outside();
+          const auto& neighbour    = *neighbour_ptr;
+          // get the basis
+          const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
+          other_space.mapper().globalIndices(neighbour, global_cols);
+          // compute entity/neighbour
+          for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
+            auto& columns = pattern.inner(global_rows[ii]);
+            for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
+              columns.insert(global_cols[jj]);
+            }
+          }
+        } // get the neighbour
+      } // walk the intersections
+    } // walk the grid part
+    return ret;
+  } // ... computeCodim1Pattern(...)
 }; // class SpaceInterface
 
 
