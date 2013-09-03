@@ -116,12 +116,12 @@ private:
 }; // class LocalDefault
 
 
-template <class GridViewType, class RangeFieldImp = double, bool setRow = true>
+template <class IntersectionType, class RangeFieldImp = double, bool setRow = true>
 class Dirichlet : public LocalDefault<RangeFieldImp>
 {
 public:
   typedef LocalDefault<RangeFieldImp> BaseType;
-  typedef Dune::Stuff::GridboundaryInterface<GridViewType> GridBoundaryType;
+  typedef Dune::Stuff::GridboundaryInterface<IntersectionType> GridBoundaryType;
 
   Dirichlet(const GridBoundaryType& gB, const size_t numRows, const size_t numCols)
     : BaseType(numRows, numCols)
