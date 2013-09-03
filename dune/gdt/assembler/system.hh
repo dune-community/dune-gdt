@@ -37,8 +37,8 @@ public:
   typedef GridPartImp GridPartType;
   typedef SpaceInterface<typename TestSpaceImp::Traits> TestSpaceType;
   typedef SpaceInterface<typename AnsatzSpaceImp::Traits> AnsatzSpaceType;
-  typedef Dune::Stuff::GridboundaryInterface<GridViewType> GridBoundaryType;
   typedef typename GridPartType::IntersectionType IntersectionType;
+  typedef Dune::Stuff::GridboundaryInterface<IntersectionType> GridBoundaryType;
 
 private:
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
