@@ -29,14 +29,15 @@ namespace Dune {
 namespace GDT {
 
 
-template< class TestSpaceImp, class AnsatzSpaceImp = TestSpaceImp >
+template< class TestSpaceImp,
+          class GridPartImp = typename TestSpaceImp::GridPartType,
+          class AnsatzSpaceImp = TestSpaceImp >
 class SystemAssembler
 {
 public:
+  typedef GridPartImp GridPartType;
   typedef SpaceInterface< typename TestSpaceImp::Traits >     TestSpaceType;
   typedef SpaceInterface< typename AnsatzSpaceImp::Traits >   AnsatzSpaceType;
-  typedef typename TestSpaceType::GridPartType                GridPartType;
-  typedef typename GridPartType::GridViewType                 GridViewType;
   typedef Dune::Stuff::GridboundaryInterface< GridViewType >  GridBoundaryType;
   typedef typename GridPartType::IntersectionType             IntersectionType;
 
@@ -208,7 +209,8 @@ private:
   public:
     virtual ~LocalCodim1MatrixAssemblerApplication(){}
 
-    virtual void apply(const TestSpaceType& /*_testSpace*/,
+    virtual void apply(const GridPartType& /*gridPart*/,
+                       const TestSpaceType& /*_testSpace*/,
                        const AnsatzSpaceType& /*_ansatzSpace*/,
                        const IntersectionType& /*_intersection*/,
                        LocalMatricesContainerType& /*_localMatricesContainer*/,
@@ -230,13 +232,14 @@ private:
       , matrix_(matrix)
     {}
 
-    virtual void apply(const TestSpaceType& testSpace,
+    virtual void apply(const GridPartType& gridPart,
+                       const TestSpaceType& testSpace,
                        const AnsatzSpaceType& ansatzSpace,
                        const IntersectionType& intersection,
                        LocalMatricesContainerType& localMatricesContainer,
                        IndicesContainer& indicesContainer) const
     {
-      if (functor_.assembleOn(testSpace.gridPart(), intersection))
+      if (functor_.assembleOn(gridPart, intersection))
         localMatrixAssembler_.assembleLocal(testSpace, ansatzSpace,
                                             intersection,
                                             matrix_,
@@ -301,7 +304,8 @@ private:
   public:
     virtual ~LocalCodim1VectorAssemblerApplication(){}
 
-    virtual void apply(const TestSpaceType& /*_testSpace*/,
+    virtual void apply(const GridPartType& /*gridPart*/,
+                       const TestSpaceType& /*_testSpace*/,
                        const IntersectionType& /*_intersection*/,
                        LocalVectorsContainerType& /*_localVectorsContainer*/,
                        Dune::DynamicVector< size_t >& /*_indices*/) const = 0;
@@ -322,12 +326,13 @@ private:
       , vector_(vector)
     {}
 
-    virtual void apply(const TestSpaceType& testSpace,
+    virtual void apply(const GridPartType& gridPart,
+                       const TestSpaceType& testSpace,
                        const IntersectionType& intersection,
                        LocalVectorsContainerType& localVectorsContainer,
                        Dune::DynamicVector< size_t >& indices) const
     {
-      if (functor_.assembleOn(testSpace.gridPart(), intersection))
+      if (functor_.assembleOn(gridPart, intersection))
         localVectorAssembler_.assembleLocal(testSpace, intersection, vector_, localVectorsContainer, indices);
     }
 
@@ -343,14 +348,28 @@ private:
   }; // class LocalCodim1VectorAssemblerWrapper
 
 public:
+  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridPartType& grid_part)
+    : testSpace_(test)
+    , ansatzSpace_(ansatz)
+    , grid_part_(grid_part)
+  {}
+
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz)
-    :  testSpace_(test)
-    ,  ansatzSpace_(ansatz)
+    : testSpace_(test)
+    , ansatzSpace_(ansatz)
+    , grid_part_(testSpace_.gridPart())
   {}
 
   SystemAssembler(const TestSpaceType& test)
-    :  testSpace_(test)
-    ,  ansatzSpace_(test)
+    : testSpace_(test)
+    , ansatzSpace_(testSpace_)
+    , grid_part_(testSpace_.gridPart())
+  {}
+
+  SystemAssembler(const TestSpaceType& test, const GridPartType& grid_part)
+    : testSpace_(test)
+    , ansatzSpace_(testSpace_)
+    , grid_part_(grid_part)
   {}
 
   ~SystemAssembler()
@@ -382,12 +401,17 @@ public:
     clearLocalConstraints();
   }
 
-  const TestSpaceType& testSpace()
+  const GridPartType& gridPart() const
+  {
+    return grid_part_;
+  }
+
+  const TestSpaceType& testSpace() const
   {
     return testSpace_;
   }
 
-  const AnsatzSpaceType& ansatzSpace()
+  const AnsatzSpaceType& ansatzSpace() const
   {
     return ansatzSpace_;
   }
@@ -519,8 +543,8 @@ public:
       };
 
       // walk the grid
-      const auto entityEndIt = testSpace_.gridPart().template end< 0 >();
-      for(auto entityIt = testSpace_.gridPart().template begin< 0 >(); entityIt != entityEndIt; ++entityIt ) {
+      const auto entityEndIt = grid_part_.template end< 0 >();
+      for(auto entityIt = grid_part_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt ) {
         const EntityType& entity = *entityIt;
 #ifdef DUNE_STUFF_PROFILER_ENABLED
       DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim0_matrix_assemblers");
@@ -545,8 +569,8 @@ public:
         // only walk the intersections, if there are local assemblers present
         if (codim1_assemblers_present) {
           // walk the intersections
-          const auto intersectionEndIt = testSpace_.gridPart().iend(entity);
-          for (auto intersectionIt = testSpace_.gridPart().ibegin(entity);
+          const auto intersectionEndIt = grid_part_.iend(entity);
+          for (auto intersectionIt = grid_part_.ibegin(entity);
                intersectionIt != intersectionEndIt;
                ++intersectionIt) {
             const auto& intersection = *intersectionIt;
@@ -555,7 +579,7 @@ public:
 #endif
             // call local matrix assemblers
             for (auto& localCodim1MatrixAssembler : localCodim1MatrixAssemblers_) {
-              localCodim1MatrixAssembler->apply(testSpace_, ansatzSpace_,
+              localCodim1MatrixAssembler->apply(grid_part_, testSpace_, ansatzSpace_,
                                                 intersection,
                                                 tmpLocalMatricesContainer, tmpIndices);
             }
@@ -567,7 +591,7 @@ public:
 #endif
             // call local vector assemblers
             for (auto& localCodim1VectorAssembler : localCodim1VectorAssemblers_) {
-              localCodim1VectorAssembler->apply(testSpace_, intersection, tmpLocalVectorsContainer, tmpIndices[0]);
+              localCodim1VectorAssembler->apply(grid_part_, testSpace_, intersection, tmpLocalVectorsContainer, tmpIndices[0]);
             }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
       DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim1_vector_assemblers");
@@ -658,8 +682,8 @@ public:
   void applyConstraints() const
   {
     // walk the grid
-    const auto entityEndIt = testSpace_.gridPart().template end< 0 >();
-    for (auto entityIt = testSpace_.gridPart().template begin< 0 >(); entityIt != entityEndIt; ++entityIt) {
+    const auto entityEndIt = grid_part_.template end< 0 >();
+    for (auto entityIt = grid_part_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt) {
       const EntityType& entity = *entityIt;
       for (auto& localConstraints : localConstraints_)
         localConstraints->apply(testSpace_, entity);
@@ -669,6 +693,7 @@ public:
 private:
   const TestSpaceType& testSpace_;
   const AnsatzSpaceType& ansatzSpace_;
+  const GridPartType& grid_part_;
   std::vector< LocalCodim0MatrixAssemblerApplication* > localCodim0MatrixAssemblers_;
   std::vector< LocalCodim0VectorAssemblerApplication* > localCodim0VectorAssemblers_;
   std::vector< LocalCodim1MatrixAssemblerApplication* > localCodim1MatrixAssemblers_;
