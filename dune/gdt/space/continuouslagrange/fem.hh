@@ -129,7 +129,7 @@ public:
   }
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::GridViewType, RangeFieldType, true >& ret) const
+                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
   {
     const auto& lagrangePointSet = backend_.lagrangePointSet(entity);
     std::set< size_t > localDirichletDofs;
@@ -182,7 +182,7 @@ public:
   } // ... localConstraints(..., Dirichlet< ..., true >)
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::GridViewType, RangeFieldType, false >& ret) const
+                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
   {
     const auto& lagrangePointSet = backend_.lagrangePointSet(entity);
     std::set< size_t > localDirichletDofs;
@@ -214,7 +214,6 @@ public:
       mapper_.globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
-      const RangeFieldType one(1);
       for (auto localDirichletDofIt = localDirichletDofs.begin();
            localDirichletDofIt != localDirichletDofs.end();
            ++localDirichletDofIt) {
