@@ -15,6 +15,9 @@
 #include <memory>
 #include <type_traits>
 
+#include <dune/common/fvector.hh>
+#include <dune/common/dynvector.hh>
+
 #include <dune/grid/io/file/vtk/function.hh>
 
 namespace Dune {
@@ -65,7 +68,8 @@ public:
   virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
   {
     const auto baseFunctionSet = space_.baseFunctionSet(entity);
-    assert(component >= 0 && "Really?");
+    if (component < 0)
+      DUNE_THROW(Dune::RangeError, "component must not be negative (is " << component << ")!");
     if (component < baseFunctionSet.size()) {
       baseFunctionSet.evaluate(x, values_);
       assert(component < values_.size() && "This should not happen!");
@@ -105,7 +109,11 @@ public:
     , indices_(space_.mapper().maxNumDofs(), 0)
     , basis_values_(space_.mapper().maxNumDofs(), RangeType(0))
   {
-    assert(vector_.size() == space_.mapper().size() && "Given vector has wrong size!");
+    if (vector_.size() != space_.mapper().size())
+      DUNE_PYMOR_THROW(Pymor::Exception::sizes_do_not_match,
+                       "The sice of vec (" << vec.size() << ") does not match the size of the space ("
+                                           << space_.mapper().size()
+                                           << ")!");
   }
 
   const SpaceType& space() const
@@ -125,14 +133,17 @@ public:
     return SpaceType::dimRange;
   }
 
-  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
+  virtual double evaluate(int component, const EntityType& entity, const DomainType& xx) const
   {
-    assert(component >= 0 && "Really?");
+    if (component < 0)
+      DUNE_THROW(Dune::RangeError, "component must not be negative (is " << component << ")!");
     RangeType value(0);
-    assert(component < int(value.size()) && "Really?");
+    if (component >= ncomps())
+      DUNE_THROW(Dune::RangeError,
+                 "component has to be smaller than ncomps() = " << ncomps() << " (is " << component << ")!");
     const auto baseFunctionSet = space_.baseFunctionSet(entity);
     space_.mapper().globalIndices(entity, indices_);
-    baseFunctionSet.evaluate(x, basis_values_);
+    baseFunctionSet.evaluate(xx, basis_values_);
     for (size_t ii = 0; ii < baseFunctionSet.size(); ++ii) {
       basis_values_[ii] *= vector_.get(indices_[ii]);
       value += basis_values_[ii];
