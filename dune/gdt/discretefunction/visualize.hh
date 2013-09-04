@@ -111,9 +111,9 @@ public:
     , basis_values_(space_.mapper().maxNumDofs(), RangeType(0))
   {
     if (vector_.size() != space_.mapper().size())
-      DUNE_PYMOR_THROW(Pymor::Exception::sizes_do_not_match,
-                       "The sice of vec (" << vec.size() << ") does not match the size of the space ("
-                       << space_.mapper().size() << ")!");
+      DUNE_THROW(Dune::RangeError,
+                 "The sice of vec (" << vec.size() << ") does not match the size of the space ("
+                 << space_.mapper().size() << ")!");
   }
 
   const SpaceType& space() const
