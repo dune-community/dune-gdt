@@ -253,6 +253,8 @@ public:
       } else {
         ret.setSize(0, 0);
       }
+    } else {
+      ret.setSize(0, 0);
     }
   } // ... localConstraints(...)
 
@@ -342,6 +344,8 @@ public:
       } else {
         ret.setSize(0, 0);
       }
+    } else {
+      ret.setSize(0, 0);
     }
   } // ... localConstraints(...)
 
