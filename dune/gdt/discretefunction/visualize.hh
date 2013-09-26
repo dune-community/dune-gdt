@@ -116,6 +116,8 @@ public:
                  << space_.mapper().size() << ")!");
   }
 
+  ~VisualizationAdapter() {}
+
   const SpaceType& space() const
   {
     return space_;

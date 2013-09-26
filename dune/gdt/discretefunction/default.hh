@@ -69,6 +69,8 @@ public:
     assert(vector_->size() == space_.mapper().size() && "Given vector has wrong size!");
   }
 
+  ~DiscreteFunctionDefaultConst() {}
+
   const SpaceType& space() const
   {
     return space_;
@@ -136,6 +138,8 @@ public:
     : BaseType(sp, vec, nm)
     , nonConstVector_(vec)
   {}
+
+  ~DiscreteFunctionDefault() {}
 
 //  DiscreteFunctionDefault(const SpaceType& sp,
 //                          const std::string nm = "discrete_function")

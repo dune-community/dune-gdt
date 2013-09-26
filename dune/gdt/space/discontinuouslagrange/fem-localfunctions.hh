@@ -129,6 +129,8 @@ public:
     , mapper_(backend_.mapper())
   {}
 
+  ~FemLocalfunctionsWrapper() {}
+
   const GridPartType& gridPart() const
   {
     return gridPart_;

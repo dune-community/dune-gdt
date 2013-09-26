@@ -96,6 +96,8 @@ public:
     , tmpMappedCols_(mapper_.maxNumDofs())
   {}
 
+  ~FemWrapper() {}
+
   const GridPartType& gridPart() const
   {
     return gridPart_;
