@@ -46,7 +46,7 @@ public:
 
   typedef Dune::Stuff::FunctionInterface< DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
 
-  typedef Dune::Stuff::GridboundaryInterface< typename GridPartType::GridViewType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryInterface< typename GridPartType::IntersectionType > BoundaryInfoType;
 
   typedef Dune::Stuff::LA::EigenRowMajorSparseMatrix< RangeFieldType >  MatrixType;
   typedef Dune::Stuff::LA::EigenDenseVector< RangeFieldType >           VectorType;
@@ -195,8 +195,9 @@ public:
     // * dirichlet boundary values
     DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
 
-    typedef ProjectionOperator::Dirichlet< FunctionType, DiscreteFunctionType > DirichletProjectionOperatorType;
-    const DirichletProjectionOperatorType dirichlet_projection_operator(BaseType::boundary_info());
+    typedef ProjectionOperator::Dirichlet< GridPartType > DirichletProjectionOperatorType;
+    const DirichletProjectionOperatorType dirichlet_projection_operator(BaseType::grid_part(),
+                                                                        BaseType::boundary_info());
     dirichlet_projection_operator.apply(BaseType::dirichlet(), dirichlet_projection);
 
     // * local matrix assembler
