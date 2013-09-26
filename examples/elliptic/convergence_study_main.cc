@@ -204,7 +204,7 @@ int main(int argc, char** argv)
       info << "+==============================================================================+" << std::endl;
       info << "|+============================================================================+|" << std::endl;
       info << "||  Testcase 1: smooth data, homogeneous dirichlet                            ||" << std::endl;
-      info << "||              (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)  ||"   << std::endl;
+      info << "||              (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)  ||" << std::endl;
       info << "|+----------------------------------------------------------------------------+|" << std::endl;
       info << "||  domain = [-1, 1] x [-1 , 1]                                               ||" << std::endl;
       info << "||  diffusion = 1                                                             ||" << std::endl;
@@ -213,6 +213,7 @@ int main(int argc, char** argv)
       info << "||  exact solution = cos(1/2 pi x) cos(1/2 pi y)                              ||" << std::endl;
       info << "|+============================================================================+|" << std::endl;
       info << "+==============================================================================+" << std::endl;
+      info << std::endl;
       auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(-1, 1, 2));
       auto grid = grid_provider->grid();
       grid->globalRefine(1);
@@ -222,7 +223,7 @@ int main(int argc, char** argv)
       auto vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
                                                                            VTK::nonconforming));
 
-      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_1_boundary_info;
+      const Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > testcase_1_boundary_info;
       const ConstantFunctionType    testcase_1_diffusion(1.0);
       const ExpressionFunctionType  testcase_1_force("x",
                                                      "0.5 * pi * pi * cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
@@ -319,6 +320,7 @@ int main(int argc, char** argv)
       info << "||  exact solution = cos(8 pi x) + cos(8 pi y)                ||" << std::endl;
       info << "|+============================================================+|" << std::endl;
       info << "+==============================================================+" << std::endl;
+      info << std::endl;
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 16));
       grid = grid_provider->grid();
       grid->globalRefine(1);
@@ -328,7 +330,7 @@ int main(int argc, char** argv)
       vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
                                                                       VTK::nonconforming));
 
-      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_2_boundary_info;
+      const Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > testcase_2_boundary_info;
       const ConstantFunctionType    testcase_2_diffusion(1.0);
       const ExpressionFunctionType  testcase_2_force("x",
                                                      "64.0 * pi * pi * (cos(8.0 * pi * x[0]) + cos(8.0 * pi * x[1]))",
@@ -399,6 +401,7 @@ int main(int argc, char** argv)
       info << "||  reference solution: CG solution on finest grid          ||" << std::endl;
       info << "|+==========================================================+|" << std::endl;
       info << "+============================================================+" << std::endl;
+      info << std::endl;
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 2));
       grid = grid_provider->grid();
       grid->globalRefine(1);
@@ -410,7 +413,7 @@ int main(int argc, char** argv)
 
       DomainType neumann_normal(0.0);
       neumann_normal[0] = 1.0;
-      const Stuff::GridboundaryNormalBased< typename GridPartType::GridViewType >
+      const Stuff::GridboundaryNormalBased< typename GridPartType::IntersectionType >
           testcase_3_boundary_info(true,
                                    {},
                                    {neumann_normal});
@@ -489,6 +492,7 @@ int main(int argc, char** argv)
       info << "||  reference solution: CG solution on finest grid                                ||" << std::endl;
       info << "|+================================================================================+|" << std::endl;
       info << "+==================================================================================+" << std::endl;
+      info << std::endl;
       grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 6));
       grid = grid_provider->grid();
       grid->globalRefine(1);
@@ -498,7 +502,7 @@ int main(int argc, char** argv)
       vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
                                                                       VTK::nonconforming));
 
-      const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_4_boundary_info;
+      const Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > testcase_4_boundary_info;
       const RangeFieldType mu_zero = 0.1;
       const RangeFieldType mu_one = 1.0;
       const RangeFieldType mu_two = 0.01;
@@ -599,7 +603,7 @@ int main(int argc, char** argv)
 //        vtk_writer = std::unique_ptr< VTKWriterType >(new VTKWriterType(reference_grid_part->gridView(),
 //                                                                        VTK::nonconforming));
 
-//        const Stuff::GridboundaryAllDirichlet< typename GridPartType::GridViewType > testcase_5_boundary_info;
+//        const Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > testcase_5_boundary_info;
 //        const SPE10Model1FunctionType   testcase_5_diffusion(spe_10_model_1_datafile,
 //                                                             DomainType(0.0), upper_right);
 //        const ExpressionFunctionType    testcase_5_force("x",
