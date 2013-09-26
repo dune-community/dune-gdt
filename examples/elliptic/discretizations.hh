@@ -211,7 +211,7 @@ public:
   typedef LocalAssembler::Codim1Vector< L2FaceFunctionalType > LocalL2FaceFunctionalVectorAssemblerType;
   const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
     // * system assembler
-    typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
+    typedef SystemAssembler< SpaceType > SystemAssemblerType;
     SystemAssemblerType system_assembler(space_);
     system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix);
     system_assembler.addLocalAssembler(force_vector_assembler, force_vector);
@@ -220,7 +220,7 @@ public:
                                       neumann_vector);
     system_assembler.assemble();
 
-    Constraints::Dirichlet< typename GridPartType::GridViewType,
+    Constraints::Dirichlet< typename GridPartType::IntersectionType,
         RangeFieldType > dirichlet_constraints(BaseType::boundary_info(),
                                                                    space_.mapper().maxNumDofs(),
                                                                    space_.mapper().maxNumDofs());
@@ -720,7 +720,7 @@ public:
     auto solution = std::make_shared< DiscreteFunctionType >(space_,
                                                              std::make_shared< VectorType >(space_.mapper().size()));
 
-    typedef SystemAssembler< SpaceType, SpaceType > SystemAssemblerType;
+    typedef SystemAssembler< SpaceType > SystemAssemblerType;
     SystemAssemblerType systemAssembler(space_);
 
     // volume terms
