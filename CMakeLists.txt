@@ -27,23 +27,21 @@ set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_
 include(DuneUtils)
 include(GridUtils)
 
+# adjust CXX_FLAGS
+set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
+set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g3 -ggdb" )
+
 # needs to come first to include correct config.h
 include_dir( ${dune-gdt_SOURCE_DIR} )
 include_dir( ${dune-gdt_BINARY_DIR} )
-
-# user settings
-set( ENABLE_MPI
-     "0" CACHE STRING
-     "set to 1 to enable mpi")
 
 # we need eigen
 if( NOT EIGEN_FOUND )
   message( FATAL_ERROR "eigen3 not found, set PKG_CONFIGK_PATH to include eigen3.pc!" )
 endif( NOT EIGEN_FOUND )
 
-add_definitions( ${CUSTOM_FLAGS} )
-
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h )
+add_definitions( -DHAVE_CMAKE_CONFIG )
 
 add_dune_modules(
   stuff
@@ -64,9 +62,10 @@ set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 # libs
 set( COMMON_LIBS
      ${DUNE_LIBS}
+     ${DUNE_DEFAULT_LIBS}
      ${PARALIBS}
      ${CCGNU_LIBRARIES}
-     "boost_system" "boost_filesystem"
+     ${BOOST_SYSTEM_LIBS}
      ${GRIDLIBS}
      ${FASPLIB}
 )
