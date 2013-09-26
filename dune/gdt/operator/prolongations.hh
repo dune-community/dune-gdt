@@ -125,7 +125,7 @@ public:
       // create quadrature
       const size_t quadrature_order = 2 * rp;
       typedef typename SourceGridViewType::ctype DomainFieldType;
-      const unsigned int DUNE_UNUSED(dimDomain) = SourceGridViewType::dimension;
+      const unsigned int dimDomain = SourceGridViewType::dimension;
       const auto& quadrature =
           QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), 2 * quadrature_order + 1);
 
