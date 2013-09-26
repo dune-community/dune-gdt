@@ -129,6 +129,10 @@ public:
   {
   }
 
+  ~Dirichlet()
+  {
+  }
+
   const GridBoundaryType& gridBoundary() const
   {
     return gridBoundary_;

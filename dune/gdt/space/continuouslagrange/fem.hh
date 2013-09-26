@@ -103,6 +103,10 @@ public:
   {
   }
 
+  ~FemWrapper()
+  {
+  }
+
   const GridPartType& gridPart() const
   {
     return gridPart_;

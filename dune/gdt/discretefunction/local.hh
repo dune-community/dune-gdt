@@ -36,6 +36,10 @@ public:
     mapper.globalIndices(entity, indices_);
   }
 
+  ~LocalDoFVector()
+  {
+  }
+
   size_t size() const
   {
     return indices_.size();
@@ -249,6 +253,10 @@ public:
 
   DiscreteFunctionLocal(const DiscreteFunctionType& func, const EntityType& entity)
     : BaseType(func, entity)
+  {
+  }
+
+  ~DiscreteFunctionLocal()
   {
   }
 

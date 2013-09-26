@@ -116,6 +116,10 @@ public:
                                      << ")!");
   }
 
+  ~VisualizationAdapter()
+  {
+  }
+
   const SpaceType& space() const
   {
     return space_;

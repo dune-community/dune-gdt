@@ -132,6 +132,10 @@ public:
   {
   }
 
+  ~FemLocalfunctionsWrapper()
+  {
+  }
+
   const GridPartType& gridPart() const
   {
     return gridPart_;
