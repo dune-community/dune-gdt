@@ -691,9 +691,12 @@ int main(int argc, char** argv)
     return 0;
   } catch (Dune::Exception& e) {
     std::cerr << "Dune reported error: " << e.what() << std::endl;
+    std::abort();
   } catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
+    std::abort();
   } catch (...) {
     std::cerr << "Unknown exception thrown!" << std::endl;
+    std::abort();
   } // try
 } // main
