@@ -3,8 +3,8 @@
 
 #include "../dune-gdt/config.h"
 
-#if !HAVE_GRIDTYPE
-  #if !defined GRIDDIM
+#ifndef HAVE_GRIDTYPE
+  #ifndef GRIDDIM
     #define GRIDDIM 2
   #endif
   #include <dune/grid/sgrid.hh>
