@@ -5,3 +5,5 @@
 
 ADD_EXECUTABLE( examples_elliptic_convergence_study "convergence_study_main.cc" ${COMMON_HEADER} )
 TARGET_LINK_LIBRARIES( examples_elliptic_convergence_study ${COMMON_LIBS} )
+
+add_analyze("convergence_study_main.cc")
