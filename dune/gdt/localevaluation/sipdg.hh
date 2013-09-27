@@ -151,8 +151,7 @@ public:
                 Dune::DynamicMatrix< R >& /*entityNeighborRet*/,
                 Dune::DynamicMatrix< R >& /*neighborEntityRet*/) const
   {
-    static_assert(Dune::AlwaysFalse< R >::value,
-                  "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse< R >::value, "ERROR: not implemented for this combination of dimensions!");
   }
 
   /**
@@ -205,10 +204,12 @@ public:
     else if (max_polorder <= 3)
       sigma *= 38.0;
     else {
+#ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundary):")
+      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
                 << " a polynomial order of " << max_polorder << " is untested!" << std::endl
                 << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+#endif
 #endif
       sigma *= 50.0;
     }
@@ -289,8 +290,7 @@ public:
         neighborEntityRetRow[jj]
             += -0.5 * ansatzValuesEn[jj] * functionValueNe * (testGradientsNe[ii][0] * unitOuterNormal);
         // penalty term
-        neighborEntityRetRow[jj]
-            += -1.0 * penalty * ansatzValuesEn[jj] * testValuesNe[ii];
+        neighborEntityRetRow[jj] += -1.0 * penalty * ansatzValuesEn[jj] * testValuesNe[ii];
       } // loop over all entity ansatz basis functions
       // loop over all neighbor ansatz basis functions
       for (size_t jj = 0; jj < colsNe; ++jj) {
@@ -425,10 +425,12 @@ public:
     else if (max_polorder <= 3)
       sigma *= 74.0;
     else {
+#ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundary):")
+      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundarylhs):")
                 << " a polynomial order of " << max_polorder << " is untested!" << std::endl
                 << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+#endif
 #endif
       sigma *= 100.0;
     }
@@ -597,10 +599,12 @@ public:
     else if (polorder <= 3)
       sigma *= 74.0;
     else {
+#ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundary):")
+      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundaryrhs):")
                 << " a polynomial order of " << polorder << " is untested!" << std::endl
                 << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+#endif
 #endif
       sigma *= 100.0;
     }
