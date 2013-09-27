@@ -332,7 +332,7 @@ int main(int argc, char** argv)
       info << "|+------------------------------------------------------------+|" << std::endl;
       info << "||  domain = [0, 1] x [0 , 1]                                 ||" << std::endl;
       info << "||  diffusion = 1                                             ||" << std::endl;
-      info << "||  force     = 64 pi^2 (cos(8  pi x) + cos(8 pi y))          ||" << std::endl;
+      info << "||  force     = 64 pi^2 (cos(8 pi x) + cos(8 pi y))           ||" << std::endl;
       info << "||  dirichlet = cos(8 pi x) + cos(8 pi y)                     ||" << std::endl;
       info << "||  exact solution = cos(8 pi x) + cos(8 pi y)                ||" << std::endl;
       info << "|+============================================================+|" << std::endl;
@@ -412,7 +412,7 @@ int main(int argc, char** argv)
       info << "||  diffusion = 1                                           ||" << std::endl;
       info << "||  force     = 1                                           ||" << std::endl;
       info << "||  neumann   = 0.1       on the right side                 ||" << std::endl;
-      info << "||  dirichlet = 1/4 * x*y everywhere else                   ||" << std::endl;
+      info << "||  dirichlet = 1/4 x y   everywhere else                   ||" << std::endl;
       info << "||  reference solution: CG solution on finest grid          ||" << std::endl;
       info << "|+==========================================================+|" << std::endl;
       info << "+============================================================+" << std::endl;
