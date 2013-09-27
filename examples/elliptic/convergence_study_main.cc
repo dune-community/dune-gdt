@@ -14,6 +14,7 @@ static_assert(false, "This study requires alugrid!");
 #endif
 
 #include <memory>
+#include <sstream>
 
 #include <boost/filesystem.hpp>
 
@@ -25,6 +26,7 @@ static_assert(false, "This study requires alugrid!");
 #include <dune/stuff/common/logging.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/common/string.hh>
+#include <dune/stuff/common/color.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
@@ -51,6 +53,7 @@ public:
     typedef typename ReferenceDiscretizationType::DomainFieldType DomainFieldType;
     typedef typename ReferenceDiscretizationType::RangeFieldType RangeFieldType;
     typedef typename ReferenceDiscretizationType::SpaceType::GridPartType GridPartType;
+    static const size_t polOrder = DiscretizationType::polOrder;
     // prepare the data structures
     std::vector<size_t> num_grid_elements(num_refinements + 1);
     std::vector<DomainFieldType> grid_width(num_refinements + 1);
@@ -117,21 +120,36 @@ public:
              << " | " << std::flush;
         if (ii == 0)
           info << std::setw(11) << "---- | " << std::flush;
-        else
-          info << std::setw(8) << std::setprecision(2) << std::fixed
-               << std::log(l2_errors[ii] / l2_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1]) << " | "
-               << std::flush;
+        else {
+          const double eoc_value =
+              std::log(l2_errors[ii] / l2_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1]);
+          std::stringstream eoc_string;
+          eoc_string << std::setw(8) << std::setprecision(2) << std::fixed << eoc_value;
+          if (eoc_value > (0.9 * (polOrder + 1)))
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::green) << " | " << std::flush;
+          else if (eoc_value > 0.0)
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::brown) << " | " << std::flush;
+          else
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::red) << " | " << std::flush;
+        }
         // * H1
         h1_errors[ii] = errors[1];
         info << std::setw(8) << std::setprecision(2) << std::scientific << h1_errors[ii] / reference_solution_h1_error
              << " | " << std::flush;
         if (ii == 0)
           info << std::setw(8) << "----" << std::flush;
-        else
-          info << std::setw(8) << std::setprecision(2) << std::fixed
-               << std::log(h1_errors[ii] / h1_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1])
-               << std::flush;
-
+        else {
+          const double eoc_value =
+              std::log(h1_errors[ii] / h1_errors[ii - 1]) / std::log(grid_width[ii] / grid_width[ii - 1]);
+          std::stringstream eoc_string;
+          eoc_string << std::setw(8) << std::setprecision(2) << std::fixed << eoc_value;
+          if (eoc_value > (0.9 * polOrder))
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::green) << std::flush;
+          else if (eoc_value > 0.0)
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::brown) << std::flush;
+          else
+            info << Stuff::Common::colorString(eoc_string.str(), Stuff::Common::Colors::red) << std::flush;
+        }
         info << std::endl;
       } catch (Dune::MathError&) {
         info << Stuff::Common::colorStringRed("ERROR:") << " linear solver failed!" << std::endl;
