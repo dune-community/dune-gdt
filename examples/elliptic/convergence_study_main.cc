@@ -104,7 +104,7 @@ public:
                                               reference_discretization.dirichlet(),
                                               reference_discretization.neumann());
       try {
-        auto discrete_solution = discretization.solve();
+        const auto discrete_solution = discretization.solve();
         discretization.visualize(*(discrete_solution->vector()),
                                  plot_prefix + "." + discretization.id() + ".solution." + Stuff::Common::toString(ii));
         typedef typename ReferenceDiscretizationType::DiscreteFunctionType DiscreteFunctionType;
