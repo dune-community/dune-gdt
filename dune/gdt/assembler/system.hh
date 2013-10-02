@@ -344,14 +344,14 @@ public:
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz)
     : testSpace_(test)
     , ansatzSpace_(ansatz)
-    , grid_part_(testSpace_.gridPart())
+    , grid_part_(*(testSpace_.gridPart()))
   {
   }
 
   SystemAssembler(const TestSpaceType& test)
     : testSpace_(test)
     , ansatzSpace_(testSpace_)
-    , grid_part_(testSpace_.gridPart())
+    , grid_part_(*(testSpace_.gridPart()))
   {
   }
 
