@@ -15,8 +15,8 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/matrix.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
-#include "../basefunctionset/interface.hh"
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
 
@@ -75,9 +75,9 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  void apply(const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-             const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase, Dune::DynamicMatrix<R>& ret,
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+             const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase, Dune::DynamicMatrix<R>& ret,
              std::vector<Dune::DynamicMatrix<R>>& tmpLocalMatrices) const
   {
     const auto& entity        = ansatzBase.entity();
@@ -85,8 +85,7 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d> VolumeQuadratureRules;
     typedef Dune::QuadratureRule<D, d> VolumeQuadratureType;
-    const int quadratureOrder = evaluation().order(localFunctions, ansatzBase, testBase);
-    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
+    const int quadratureOrder                    = int(evaluation().order(localFunctions, ansatzBase, testBase));
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2 * quadratureOrder + 1);
     // check matrix and tmp storage
     const size_t rows = testBase.size();
