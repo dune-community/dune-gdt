@@ -14,6 +14,8 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
+#include <dune/stuff/functions/interfaces.hh>
+
 namespace Dune {
 namespace GDT {
 
@@ -21,18 +23,22 @@ namespace GDT {
 /**
  *  \brief Interface for matrix valued basis functions.
  *
- *  \note   see specialization for rangeDimCols = 1 for vector and scalar valued and basis functions.
+ *  \note   see specialization for rangeDimCols = 1 for vector and scalar valued basis functions.
  */
-template< class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDim = 1 >
+template< class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows, int rangeDimCols = 1 >
 class BaseFunctionSetInterface;
 
 
 /**
- *  \brief Interface for scalar valued basis functions.
+ *  \brief Interface for scalar and vector valued basis functions.
  */
 template< class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim >
 class BaseFunctionSetInterface< Traits, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
+  : public Stuff::LocalfunctionSetInterface< typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >
 {
+  typedef Stuff::LocalfunctionSetInterface
+      < typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >
+    BaseType;
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::BackendType  BackendType;
@@ -43,56 +49,15 @@ public:
   typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
   typedef RangeFieldImp                                 RangeFieldType;
   static const unsigned int                             dimRange = rangeDim;
+  static const unsigned int                             dimRangeRows = rangeDim;
   static const unsigned int                             dimRangeCols = 1;
   typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
   typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
-
-  const EntityType& entity() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().entity());
-    return asImp().entity();
-  }
 
   const BackendType& backend() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().backend());
     return asImp().backend();
-  }
-
-  size_t size() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().size());
-    return asImp().size();
-  }
-
-  size_t order() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().order());
-    return asImp().order();
-  }
-
-  void evaluate(const DomainType& x, std::vector< RangeType >& ret) const
-  {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(x, ret));
-  }
-
-  std::vector< RangeType > evaluate(const DomainType& xx) const
-  {
-    std::vector< RangeType > ret(size(), RangeType(0));
-    evaluate(xx, ret);
-    return ret;
-  }
-
-  void jacobian(const DomainType& x, std::vector< JacobianRangeType >& ret) const
-  {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().jacobian(x, ret));
-  }
-
-  std::vector< JacobianRangeType > jacobian(const DomainType& xx) const
-  {
-    std::vector< JacobianRangeType > ret(size(), JacobianRangeType(0));
-    jacobian(xx, ret);
-    return ret;
   }
 
   derived_type& asImp()
