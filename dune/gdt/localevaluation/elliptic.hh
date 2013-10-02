@@ -9,14 +9,13 @@
 #define DUNE_GDT_EVALUATION_ELLIPTIC_HH
 
 #include <tuple>
+#include <type_traits>
 
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/static_assert.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
-
-#include <dune/gdt/basefunctionset/interface.hh>
 
 #include "interface.hh"
 
@@ -39,8 +38,8 @@ class EllipticTraits
 public:
   typedef Elliptic<LocalizableFunctionImp> derived_type;
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  dune_static_assert((Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value),
-                     "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
 };
 
 
@@ -60,77 +59,81 @@ public:
   }
 
   template <class EntityType>
-  std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
-  localFunctions(const EntityType& entity) const
+  class LocalfunctionTuple
   {
-    return std::make_tuple(inducingFunction_.localFunction(entity));
+    typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+
+  public:
+    typedef std::tuple<std::shared_ptr<LocalfunctionType>> Type;
+  };
+
+  template <class EntityType>
+  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-            const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    return order(localFunction, testBase, ansatzBase);
+    const auto localFunction = std::get<0>(localFuncs);
+    return order(*localFunction, testBase, ansatzBase);
   }
 
   /**
    *  \todo add copydoc
    *  \return localFunction.order() + (testBase.order() - 1) + (ansatzBase.order() - 1)
    */
-  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  int order(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-            const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-            const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& localFunction,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
-    if (localFunction.order() < 0)
-      return -1;
-    else
-      return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order() - 2), 0);
-  } // int order(...)
+    return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order() - 2), 0);
+  }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  static void evaluate(const std::tuple<L>& localFunctions,
-                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                       const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase,
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  static void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
                        const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
   {
-    const auto& localFunction = std::get<0>(localFunctions);
-    evaluate(localFunction, testBase, ansatzBase, localPoint, ret);
+    const auto localFunction = std::get<0>(localFuncs);
+    evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
   }
 
-  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                       const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
-                       const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& /*ansatzBase*/,
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBase*/,
                        const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/)
   {
-    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
   /**
    *  \brief  Computes an elliptic evaluation for a scalar local function and scalar basefunctionsets.
-   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
-   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
-   *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
+   *  \tparam E EntityType
    *  \tparam D DomainFieldType
    *  \tparam d dimDomain
    *  \tparam R RangeFieldType
    */
-  template <class L, class T, class A, class D, int d, class R>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
-                       const BaseFunctionSetInterface<A, D, d, R, 1, 1>& ansatzBase,
+  template <class E, class D, int d, class R>
+  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
                        const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
   {
-    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::RangeType RangeType;
-    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // evaluate local function
     const RangeType functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
@@ -156,22 +159,20 @@ public:
 
   /**
    *  \brief  Computes an elliptic evaluation for a matrix-valued local function and matrix-valued basefunctionsets.
-   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
-   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
-   *  \tparam A Traits of the ansatz BaseFunctionSetInterface implementation
+   *  \tparam E EntityType
    *  \tparam D DomainFieldType
    *  \tparam d dimDomain
    *  \tparam R RangeFieldType
    */
-  template <class L, class T, class A, class D, int d, class R>
-  static void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, d, d>& localFunction,
-                       const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
-                       const BaseFunctionSetInterface<A, D, d, R, 1, 1>& ansatzBase,
+  template <class E, class D, int d, class R>
+  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localFunction,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
                        const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
   {
-    typedef typename Dune::Stuff::LocalFunctionInterface<L, D, d, R, d, d>::RangeType DiffusionRangeType;
-    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
-    typedef typename BaseFunctionSetInterface<A, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionInterface<E, D, d, R, d, d>::RangeType DiffusionRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
 
     // evaluate local function
     const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
