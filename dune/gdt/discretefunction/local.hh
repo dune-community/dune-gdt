@@ -7,14 +7,13 @@
 #define DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
 
 #include <vector>
+#include <type_traits>
 
-#include <dune/common/dynvector.hh>
-
+#include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interface.hh>
-#include <dune/stuff/common/vector.hh>
-#include <dune/stuff/common/matrix.hh>
 
+#include <dune/gdt/space/interface.hh>
 #include <dune/gdt/mapper/interface.hh>
 
 namespace Dune {
@@ -22,21 +21,24 @@ namespace GDT {
 
 
 template <class VectorImp>
-class LocalDoFVector
+class ConstLocalDoFVector
 {
+  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
+                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+
 public:
-  typedef typename Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits>::derived_type VectorType;
+  typedef VectorImp VectorType;
   typedef typename VectorType::ElementType ElementType;
 
   template <class M, class EntityType>
-  LocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, VectorType& vector)
-    : indices_(mapper.numDofs(entity))
-    , vector_(vector)
+  ConstLocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, const VectorType& vector)
+    : vector_(vector)
+    , indices_(mapper.numDofs(entity))
   {
     mapper.globalIndices(entity, indices_);
   }
 
-  ~LocalDoFVector()
+  ~ConstLocalDoFVector()
   {
   }
 
@@ -49,6 +51,34 @@ public:
   {
     assert(ii < indices_.size());
     return vector_.get(indices_[ii]);
+  }
+
+private:
+  const VectorType& vector_;
+
+protected:
+  mutable Dune::DynamicVector<size_t> indices_;
+}; // class ConstLocalDoFVector
+
+
+template <class VectorImp>
+class LocalDoFVector : public ConstLocalDoFVector<VectorImp>
+{
+  typedef ConstLocalDoFVector<VectorImp> BaseType;
+
+public:
+  typedef typename BaseType::VectorType VectorType;
+  typedef typename BaseType::ElementType ElementType;
+
+  template <class M, class EntityType>
+  LocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, VectorType& vector)
+    : BaseType(mapper, entity, vector)
+    , vector_(vector)
+  {
+  }
+
+  ~LocalDoFVector()
+  {
   }
 
   void set(const size_t ii, const ElementType& val)
@@ -64,212 +94,191 @@ public:
   }
 
 private:
-  Dune::DynamicVector<size_t> indices_;
+  using BaseType::indices_;
   VectorType& vector_;
 }; // class LocalDoFVector
 
 
-// forward, includes are below
 template <class SpaceImp, class VectorImp>
-class DiscreteFunctionDefaultConst;
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionDefault;
-
-
-// forward, to be used in the traits
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocalConst;
-
-
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocalConstTraits
+class ConstLocalDiscreteFunction
+    : public Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                           SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
+                                           SpaceImp::dimRangeCols>
 {
-public:
-  typedef DiscreteFunctionLocalConst<SpaceImp, VectorImp> derived_type;
-  typedef typename DiscreteFunctionDefaultConst<SpaceImp, VectorImp>::EntityType EntityType;
-};
+  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits>, SpaceImp>::value,
+                "SpaceImp has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
+                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ElementType>::value,
+                "Types do not match!");
+  typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                        SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
+                                        SpaceImp::dimRangeCols> BaseType;
+  typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
-
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocalConst
-    : public Dune::Stuff::LocalFunctionInterface<DiscreteFunctionLocalConstTraits<SpaceImp, VectorImp>,
-                                                 typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                                 SpaceImp::dimRangeCols>
-{
 public:
-  typedef DiscreteFunctionLocalConstTraits<SpaceImp, VectorImp> Traits;
-  typedef DiscreteFunctionDefaultConst<SpaceImp, VectorImp> DiscreteFunctionType;
-  typedef typename DiscreteFunctionType::SpaceType SpaceType;
-  typedef LocalDoFVector<typename DiscreteFunctionType::VectorType> LocalDoFVectorType;
-  typedef typename DiscreteFunctionType::EntityType EntityType;
-  typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
-  typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange     = SpaceType::dimRange;
-  static const unsigned int dimRangeCols = SpaceType::dimRangeCols;
+  typedef SpaceImp SpaceType;
+  typedef VectorImp VectorType;
+  typedef typename BaseType::EntityType EntityType;
+
+  typedef typename BaseType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = BaseType::dimDomain;
+  typedef typename BaseType::DomainType DomainType;
+
+  typedef typename BaseType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRangeRows = BaseType::dimRangeCols;
+  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  typedef typename BaseType::RangeType RangeType;
+
+  typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
 private:
   typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
 public:
-  typedef typename BaseFunctionSetType::DomainType DomainType;
-  typedef typename BaseFunctionSetType::RangeType RangeType;
-  typedef typename BaseFunctionSetType::JacobianRangeType JacobianRangeType;
+  typedef ConstLocalDoFVector<VectorType> ConstLocalDoFVectorType;
 
-  DiscreteFunctionLocalConst(const DiscreteFunctionType& func, const EntityType& ent)
-    : function_(func)
+  ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& globalVector, const EntityType& ent)
+    : space_(space)
     , entity_(ent)
-    , base_(function_.space().baseFunctionSet(entity_))
-    , localVector_(function_.space().mapper(), entity_,
-                   const_cast<typename DiscreteFunctionType::VectorType&>(*(function_.vector())))
-    , tmpBaseValues_(base_.size(), RangeType(0))
-    , tmpBaseJacobianValues_(base_.size(), JacobianRangeType(0))
+    , base_(new BaseFunctionSetType(space_.baseFunctionSet(entity_)))
+    , localVector_(new ConstLocalDoFVectorType(space_.mapper(), entity_, globalVector))
+    , tmpBaseValues_(base_->size(), RangeType(0))
+    , tmpBaseJacobianValues_(base_->size(), JacobianRangeType(0))
   {
-    assert(localVector_.size() == base_.size());
+    assert(localVector_->size() == base_->size());
   }
 
-  virtual ~DiscreteFunctionLocalConst()
+  ConstLocalDiscreteFunction(ThisType&& source)
+    : space_(source.space_)
+    , entity_(source.entity_)
+    , base_(std::move(source.base_))
+    , localVector_(std::move(source.localVector_))
+    , tmpBaseValues_(std::move(source.tmpBaseValues_))
+    , tmpBaseJacobianValues_(std::move(source.tmpBaseJacobianValues_))
   {
   }
 
-  const DiscreteFunctionType& discreteFunction() const
+  ConstLocalDiscreteFunction(const ThisType& other) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  virtual ~ConstLocalDiscreteFunction()
   {
-    return function_;
   }
 
-  const EntityType& entity() const
+  virtual const EntityType& entity() const override
   {
     return entity_;
   }
 
-  const LocalDoFVectorType& vector() const
+  const ConstLocalDoFVectorType& vector() const
   {
-    return localVector_;
+    return *localVector_;
   }
 
-  int order() const
+  virtual size_t order() const override
   {
-    return base_.order();
+    return base_->order();
   }
 
-  size_t size() const
-  {
-    return base_.size();
-  }
-
-  void evaluate(const DomainType& x, RangeType& ret) const
+  virtual void evaluate(const DomainType& x, RangeType& ret) const override
   {
     Dune::Stuff::Common::clear(ret);
-    assert(localVector_.size() == tmpBaseValues_.size());
-    base_.evaluate(x, tmpBaseValues_);
-    for (size_t ii = 0; ii < localVector_.size(); ++ii) {
-      tmpBaseValues_[ii] *= localVector_.get(ii);
+    assert(localVector_->size() == tmpBaseValues_.size());
+    base_->evaluate(x, tmpBaseValues_);
+    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
+      tmpBaseValues_[ii] *= localVector_->get(ii);
       ret += tmpBaseValues_[ii];
     }
   } // ... evaluate(...)
 
-  RangeType evaluate(const DomainType& xx) const
-  {
-    RangeType ret;
-    evaluate(xx, ret);
-    return ret;
-  }
-
-  void jacobian(const DomainType& x, JacobianRangeType& ret) const
+  virtual void jacobian(const DomainType& x, JacobianRangeType& ret) const override
   {
     Dune::Stuff::Common::clear(ret);
-    assert(localVector_.size() == tmpBaseJacobianValues_.size());
-    base_.jacobian(x, tmpBaseJacobianValues_);
-    for (size_t ii = 0; ii < localVector_.size(); ++ii) {
-      tmpBaseJacobianValues_[ii] *= localVector_.get(ii);
+    assert(localVector_->size() == tmpBaseJacobianValues_.size());
+    base_->jacobian(x, tmpBaseJacobianValues_);
+    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
+      tmpBaseJacobianValues_[ii] *= localVector_->get(ii);
       ret += tmpBaseJacobianValues_[ii];
     }
   } // ... jacobian(...)
 
-  JacobianRangeType jacobian(const DomainType& xx) const
-  {
-    JacobianRangeType ret;
-    jacobian(xx, ret);
-    return ret;
-  }
-
-private:
-  const DiscreteFunctionType& function_;
-  const EntityType& entity_;
-  const BaseFunctionSetType base_;
-
 protected:
-  LocalDoFVectorType localVector_;
+  const SpaceType& space_;
+  const EntityType& entity_;
+  std::unique_ptr<const BaseFunctionSetType> base_;
+  std::unique_ptr<const ConstLocalDoFVectorType> localVector_;
 
 private:
   mutable std::vector<RangeType> tmpBaseValues_;
   mutable std::vector<JacobianRangeType> tmpBaseJacobianValues_;
-}; // class DiscreteFunctionLocalConst
-
-
-// forward, to be used in the traits
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocal;
+}; // class ConstLocalDiscreteFunction
 
 
 template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocalTraits
+class LocalDiscreteFunction : public ConstLocalDiscreteFunction<SpaceImp, VectorImp>
 {
-public:
-  typedef DiscreteFunctionLocal<SpaceImp, VectorImp> derived_type;
-  typedef typename DiscreteFunctionDefault<SpaceImp, VectorImp>::EntityType EntityType;
-};
-
-
-template <class SpaceImp, class VectorImp>
-class DiscreteFunctionLocal
-    : public DiscreteFunctionLocalConst<SpaceImp, VectorImp>,
-      public Dune::Stuff::LocalFunctionInterface<DiscreteFunctionLocalTraits<SpaceImp, VectorImp>,
-                                                 typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                                 SpaceImp::dimRangeCols>
-{
-  typedef DiscreteFunctionLocalConst<SpaceImp, VectorImp> BaseType;
+  typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> BaseType;
+  typedef LocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
-  typedef DiscreteFunctionDefault<SpaceImp, VectorImp> DiscreteFunctionType;
-  typedef typename DiscreteFunctionType::SpaceType SpaceType;
-  typedef LocalDoFVector<typename DiscreteFunctionType::VectorType> LocalDoFVectorType;
-  typedef typename DiscreteFunctionType::EntityType EntityType;
-  typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
-  typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange     = SpaceType::dimRange;
-  static const unsigned int dimRangeCols = SpaceType::dimRangeCols;
+  typedef typename BaseType::SpaceType SpaceType;
+  typedef typename BaseType::VectorType VectorType;
+  typedef typename BaseType::EntityType EntityType;
+
+  typedef typename BaseType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = BaseType::dimDomain;
+  typedef typename BaseType::DomainType DomainType;
+
+  typedef typename BaseType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRangeRows = BaseType::dimRangeCols;
+  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  typedef typename BaseType::RangeType RangeType;
+
+  typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
 private:
   typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
 public:
-  typedef typename BaseFunctionSetType::DomainType DomainType;
-  typedef typename BaseFunctionSetType::RangeType RangeType;
-  typedef typename BaseFunctionSetType::JacobianRangeType JacobianRangeType;
+  typedef LocalDoFVector<VectorType> LocalDoFVectorType;
 
-  DiscreteFunctionLocal(const DiscreteFunctionType& func, const EntityType& entity)
-    : BaseType(func, entity)
+  LocalDiscreteFunction(const SpaceType& space, VectorType& globalVector, const EntityType& ent)
+    : BaseType(space, globalVector, ent)
+    , localVector_(new LocalDoFVectorType(space_.mapper(), entity_, globalVector))
+  {
+    assert(localVector_->size() == base_->size());
+  }
+
+  LocalDiscreteFunction(ThisType&& source)
+    : BaseType(std::move(source))
+    , localVector_(std::move(source.localVector_)) // <- I am not sure if this is valid
   {
   }
 
-  ~DiscreteFunctionLocal()
+  LocalDiscreteFunction(const ThisType& other) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  virtual ~LocalDiscreteFunction()
   {
   }
 
   LocalDoFVectorType& vector()
   {
-    return BaseType::localVector_;
+    return *localVector_;
   }
-}; // class DiscreteFunctionLocal
+
+private:
+  using BaseType::space_;
+  using BaseType::entity_;
+  using BaseType::base_;
+  std::unique_ptr<LocalDoFVectorType> localVector_;
+}; // class LocalDiscreteFunction
 
 
 } // namespace GDT
 } // namespace Dune
-
-#include "default.hh"
 
 #endif // DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
