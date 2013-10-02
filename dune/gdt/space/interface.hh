@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACE_INTERFACE_HH
 #define DUNE_GDT_SPACE_INTERFACE_HH
 
+#include <memory>
+
 #include <dune/common/dynvector.hh>
 
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
@@ -43,7 +45,7 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  const GridPartType& gridPart() const
+  const std::shared_ptr< const GridPartType >& gridPart() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().gridPart());
     return asImp().gridPart();
@@ -88,7 +90,7 @@ public:
   template< class OtherSpaceType >
   PatternType* computePattern(const OtherSpaceType& other) const
   {
-    return computePattern(gridPart(), other);
+    return computePattern(*(gridPart()), other);
   }
 
   template< class LocalGridPartType, class OtherSpaceType >
