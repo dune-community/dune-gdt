@@ -15,8 +15,8 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/vector.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
-#include "../basefunctionset/interface.hh"
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
 
@@ -73,8 +73,8 @@ public:
    *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
    *  \attention  ret is assumed to be zero!
    */
-  template< class T, class D, int d, class R, int r, int rC >
-  void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
+  template< class E, class D, int d, class R, int r, int rC >
+  void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, r, rC >& testBase,
              Dune::DynamicVector< R >& ret,
              std::vector< Dune::DynamicVector< R > >& tmpLocalVectors) const
   {
@@ -84,8 +84,7 @@ public:
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const int quadratureOrder = evaluation().order(localFunctions, testBase);
-    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
+    const int quadratureOrder = int(evaluation().order(localFunctions, testBase));
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2*quadratureOrder + 1);
     // check vector and tmp storage
     const size_t size = testBase.size();
