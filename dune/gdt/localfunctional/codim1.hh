@@ -15,8 +15,8 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/matrix.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
-#include "../basefunctionset/interface.hh"
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
 
@@ -70,8 +70,8 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class T, class IntersectionType, class D, int d, class R, int r, int rC>
-  void apply(const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase, const IntersectionType& intersection,
+  template <class E, class IntersectionType, class D, int d, class R, int r, int rC>
+  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, const IntersectionType& intersection,
              Dune::DynamicVector<R>& ret, std::vector<Dune::DynamicVector<R>>& tmpLocalVectors) const
   {
     // local inducing function
@@ -80,8 +80,7 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const int quadratureOrder = evaluation().order(localFunctions, testBase);
-    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
+    const int quadratureOrder                = int(evaluation().order(localFunctions, testBase));
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
     // check vector and tmp storage
     const size_t size = testBase.size();
