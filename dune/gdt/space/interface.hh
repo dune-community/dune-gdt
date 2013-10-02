@@ -15,7 +15,6 @@
 #include <dune/stuff/la/container/pattern.hh>
 
 #include "constraints.hh"
-#include "../discretefunction/visualize.hh"
 
 // needs to be here, since one of the above includes the config.h
 #include <dune/common/bartonnackmanifcheck.hh>
@@ -101,37 +100,86 @@ public:
     return asImp().computePattern(localGridPart, otherSpace);
   }
 
-  template< class VectorType >
-  void visualize(const VectorType& vector, const std::string filename, const std::string name = "vector") const
+private:
+  class BasisVisualization
+    : public Dune::VTKFunction< typename GridPartType::GridViewType >
   {
-    typedef DiscreteFunction::VisualizationAdapter< derived_type, VectorType > DiscreteFunctionType;
-    const auto function = std::make_shared< const DiscreteFunctionType >(asImp(), vector, name);
-    typedef typename Dune::VTKWriter< typename GridPartType::GridViewType > VTKWriterType;
-    VTKWriterType vtk_writer(gridPart().gridView(), Dune::VTK::nonconforming);
-    vtk_writer.addVertexData(function);
-    vtk_writer.write(filename);
-  }
+    static_assert(dimRangeCols == 1, "Not implemented yet!");
+  public:
+    typedef typename BaseFunctionSetType::DomainType  DomainType;
+    typedef typename BaseFunctionSetType::RangeType   RangeType;
 
+    BasisVisualization(const derived_type& sp, const size_t ind, const std::string nm = "basis")
+      : space_(sp)
+      , index_(ind)
+      , values_(space_.mapper().maxNumDofs(), RangeType(0))
+      , name_(nm)
+    {
+      if (index_ >= space_.mapper().maxNumDofs())
+        DUNE_THROW(Dune::RangeError,
+                   "index has to be smaller than " << space_.mapper().maxNumDofs() << "(is " << index_ << ")!");
+    }
+
+    virtual std::string name() const
+    {
+      return name_;
+    }
+
+    /** \defgroup vtk ´´Methods to comply with the Dune::VTKFunction interface.'' */
+    /* @{ */
+    virtual int ncomps() const
+    {
+      return dimRange;
+    }
+
+    virtual double evaluate(int component, const EntityType& entity, const DomainType& xx) const
+    {
+      const auto baseFunctionSet = space_.baseFunctionSet(entity);
+      if (component < 0)
+        DUNE_THROW(Dune::RangeError, "component must not be negative (is " << component << ")!");
+      if (component < int(baseFunctionSet.size())) {
+        baseFunctionSet.evaluate(xx, values_);
+        assert(component < int(values_.size()) && "This should not happen!");
+        return values_[index_][component];
+      } else if (component < int(space_.mapper().maxNumDofs()))
+        return 0.0;
+      else
+        DUNE_THROW(Dune::RangeError,
+                   "component has to be smaller than " << space_.mapper().maxNumDofs() << "(is " << component << ")!");
+    }
+    /* @} */
+
+  private:
+    const derived_type& space_;
+    const size_t index_;
+    mutable std::vector< RangeType > values_;
+    const std::string name_;
+  }; // class BasisVisualization
+
+public:
   void visualize(const std::string filename_prefix = "") const
   {
     std::string filename = filename_prefix;
-    if (filename_prefix.empty()) {
-      filename = "raviartthomasspace.femlocalfunctions";
-//                 + Stuff::Common::toString(dimDomain) + "_to_" + Stuff::Common::toString(dimRange);
-      if (dimRangeCols > 1)
-        filename += "x" + Stuff::Common::toString(dimRangeCols);
+    if (filename.empty()) {
+      filename = "dune.gdt.space";
     }
     typedef typename Dune::VTKWriter< typename GridPartType::GridViewType > VTKWriterType;
-    VTKWriterType vtk_writer(gridPart().gridView(), Dune::VTK::nonconforming);
+    VTKWriterType vtk_writer(gridPart()->gridView(), Dune::VTK::nonconforming);
     for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
-      typedef DiscreteFunction::BasisVisualization< typename Traits::derived_type > BasisFunctionType;
-      const auto iith_baseFunction = std::make_shared< BasisFunctionType >(asImp(),
-                                                                           ii,
-                                                                           Stuff::Common::toString(ii) + "th basis");
+      std::string number = "";
+      if (ii == 1)
+        number = "1st";
+      else if (ii == 2)
+        number = "2nd";
+      else if (ii == 3)
+        number = "3rd";
+      else
+        number = Stuff::Common::toString(ii) + "th";
+      const auto iith_baseFunction = std::make_shared< BasisVisualization >(asImp(), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }
     vtk_writer.write(filename);
-  }
+  } // ... visualize(...)
 
   derived_type& asImp()
   {
