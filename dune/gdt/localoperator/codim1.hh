@@ -15,8 +15,8 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/matrix.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
-#include "../basefunctionset/interface.hh"
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
 
@@ -71,12 +71,11 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class TE, class AE, class TN, class AN, class IntersectionType, class D, int d, class R, int rT, int rCT,
-            int rA, int rCA>
-  void apply(const BaseFunctionSetInterface<TE, D, d, R, rT, rCT>& entityTestBase,
-             const BaseFunctionSetInterface<AE, D, d, R, rA, rCA>& entityAnsatzBase,
-             const BaseFunctionSetInterface<TN, D, d, R, rT, rCT>& neighborTestBase,
-             const BaseFunctionSetInterface<AN, D, d, R, rA, rCA>& neighborAnsatzBase,
+  template <class E, class N, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& entityTestBase,
+             const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& entityAnsatzBase,
+             const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& neighborTestBase,
+             const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& neighborAnsatzBase,
              const IntersectionType& intersection, Dune::DynamicMatrix<R>& entityEntityRet,
              Dune::DynamicMatrix<R>& neighborNeighborRet, Dune::DynamicMatrix<R>& entityNeighborRet,
              Dune::DynamicMatrix<R>& neighborEntityRet, std::vector<Dune::DynamicMatrix<R>>& tmpLocalMatrices) const
@@ -232,10 +231,11 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class T, class A, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  void apply(const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-             const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase, const IntersectionType& intersection,
-             Dune::DynamicMatrix<R>& ret, std::vector<Dune::DynamicMatrix<R>>& tmpLocalMatrices) const
+  template <class E, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+             const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
+             const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret,
+             std::vector<Dune::DynamicMatrix<R>>& tmpLocalMatrices) const
   {
     // local inducing function
     const auto& entity        = testBase.entity();
