@@ -8,21 +8,14 @@
 #ifndef DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
 
-#ifdef HAVE_CMAKE_CONFIG
-#include "cmake_config.h"
-#elif defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <memory>
 #include <type_traits>
 
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/grid/io/file/vtk/function.hh>
-
 #include <dune/stuff/la/container/interface.hh>
+
 #include <dune/gdt/space/interface.hh>
 
 #include "local.hh"
@@ -32,45 +25,67 @@ namespace GDT {
 
 
 template <class SpaceImp, class VectorImp>
-class DiscreteFunctionDefaultConst : public Dune::VTKFunction<typename SpaceImp::GridPartType::GridViewType>,
-                                     public Dune::Stuff::LocalizableFunction
+class ConstDiscreteFunction
+    : public Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                                 SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                 SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
   static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits>, SpaceImp>::value,
-                "SpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
-                "VectorType has to be derived from Stuff::LA::VectorInterface!");
+                "SpaceImp has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
+                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ElementType>::value,
+                "Types do not match!");
+  typedef Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                              SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                              SpaceImp::dimRange, SpaceImp::dimRangeCols> BaseType;
+  typedef ConstDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
   typedef SpaceImp SpaceType;
   typedef VectorImp VectorType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::LocalfunctionType LocalfunctionType;
 
-  typedef typename SpaceType::EntityType EntityType;
+  typedef ConstLocalDiscreteFunction<SpaceType, VectorType> ConstLocalDiscreteFunctionType;
 
-  typedef DiscreteFunctionLocalConst<SpaceType, VectorType> ConstLocalFunctionType;
-
-  template <class EntityImp>
-  class LocalFunction
-  {
-    static_assert(std::is_same<EntityImp, EntityType>::value, "EntitImp and EntityType do not match!");
-
-  public:
-    typedef ConstLocalFunctionType Type;
-  };
-
-  typedef typename ConstLocalFunctionType::DomainType DomainType;
-  typedef typename ConstLocalFunctionType::RangeType RangeType;
-
-  DiscreteFunctionDefaultConst(const SpaceType& sp, const std::shared_ptr<const VectorType> vec,
-                               const std::string nm = "discrete_function")
+  ConstDiscreteFunction(const SpaceType& sp, const VectorType& vec,
+                        const std::string nm = "dune.gdt.constdiscretefunction")
     : space_(sp)
-    , name_(nm)
     , vector_(vec)
+    , name_(nm)
   {
-    assert(vector_->size() == space_.mapper().size() && "Given vector has wrong size!");
+    assert(vector_.size() == space_.mapper().size() && "Given vector has wrong size!");
   }
 
-  ~DiscreteFunctionDefaultConst()
+  ConstDiscreteFunction(const ThisType& other)
+    : space_(other.space_)
+    , vector_(other.vector_)
+    , name_(other.name_)
   {
+  }
+
+  ConstDiscreteFunction(ThisType&& source)
+    : space_(source.space_)
+    , vector_(source.vector_)
+    , name_(std::move(source.name_))
+  {
+  }
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ~ConstDiscreteFunction()
+  {
+  }
+
+  virtual ThisType* copy() const override
+  {
+    return new ThisType(*this);
+  }
+
+  virtual std::string name() const override
+  {
+    return name_;
   }
 
   const SpaceType& space() const
@@ -78,98 +93,90 @@ public:
     return space_;
   }
 
-  virtual std::string name() const
-  {
-    return name_;
-  }
-
-  ConstLocalFunctionType localFunction(const EntityType& entity) const
-  {
-    return ConstLocalFunctionType(*this, entity);
-  }
-
-  std::shared_ptr<const VectorType> vector() const
+  const VectorType& vector() const
   {
     return vector_;
   }
 
-  /** \defgroup vtk ´´Methods to comply with the Dune::VTKFunction interface.'' */
-  /* @{ */
-  virtual int ncomps() const
+  ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
   {
-    return SpaceType::dimRange;
+    assert(space_.gridPart()->indexSet().contains(entity));
+    return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
-  virtual double evaluate(int component, const EntityType& entity, const DomainType& x) const
+  virtual std::shared_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
   {
-    RangeType ret(0);
-    localFunction(entity).evaluate(x, ret);
-    return ret[component];
+    return std::shared_ptr<ConstLocalDiscreteFunctionType>(
+        new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
-  /* @} */
 
-  void visualize(const std::string filename) const
-  {
-    space_.visualize(*vector_, filename, name_);
-  }
+protected:
+  const SpaceType& space_;
 
 private:
-  const SpaceType& space_;
+  const VectorType& vector_;
   const std::string name_;
-  const std::shared_ptr<const VectorType> vector_;
-}; // class DiscreteFunctionDefaultConst
+}; // class ConstDiscreteFunction
 
 
 template <class SpaceImp, class VectorImp>
-class DiscreteFunctionDefault : public DiscreteFunctionDefaultConst<SpaceImp, VectorImp>
+class DiscreteFunction : public ConstDiscreteFunction<SpaceImp, VectorImp>
 {
-  typedef DiscreteFunctionDefaultConst<SpaceImp, VectorImp> BaseType;
+  typedef ConstDiscreteFunction<SpaceImp, VectorImp> BaseType;
+  typedef DiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
-  typedef typename SpaceInterface<typename SpaceImp::Traits>::derived_type SpaceType;
-  typedef /*typename Dune::Stuff::LA::VectorInterface< typename*/ VectorImp /*::Traits >::derived_type*/ VectorType;
+  typedef typename BaseType::SpaceType SpaceType;
+  typedef typename BaseType::VectorType VectorType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::LocalfunctionType LocalfunctionType;
 
-  typedef typename SpaceType::EntityType EntityType;
+  typedef LocalDiscreteFunction<SpaceType, VectorType> LocalDiscreteFunctionType;
 
-  typedef DiscreteFunctionLocal<SpaceType, VectorType> LocalFunctionType;
-  typedef typename LocalFunctionType::DomainType DomainType;
-
-  DiscreteFunctionDefault(const SpaceType& sp, std::shared_ptr<VectorType> vec,
-                          const std::string nm = "discrete_function")
+  DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "dune.gdt.discretefunction")
     : BaseType(sp, vec, nm)
-    , nonConstVector_(vec)
+    , vector_(vec)
   {
   }
 
-  ~DiscreteFunctionDefault()
+  DiscreteFunction(const ThisType& other)
+    : BaseType(other)
+    , vector_(other.vector_)
   {
   }
 
-  //  DiscreteFunctionDefault(const SpaceType& sp,
-  //                          const std::string nm = "discrete_function")
-  //    : BaseType(sp, std::make_shared< VectorType >(sp.mapper().size()), nm)
-  //    , nonConstVector_(std::make_shared< VectorType >(const_cast< VectorType& >(*(BaseType::vector())))) // <- I am
-  //    not sure if this is safe to do. I would expect the BaseType to live long enough, but maybe someone else has a
-  //    better Idea!
-  //  {
-  //    DUNE_THROW(Dune::NotImplemented, "THIS DOES NOT WORK!");
-  //  }
-
-  using BaseType::localFunction;
-
-  LocalFunctionType localFunction(const EntityType& entity)
+  DiscreteFunction(ThisType&& source)
+    : BaseType(std::move(source))
+    , vector_(source.vector_)
   {
-    return LocalFunctionType(*this, entity);
   }
 
-  std::shared_ptr<VectorType> vector()
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ~DiscreteFunction()
   {
-    return nonConstVector_;
+  }
+
+  virtual ThisType* copy() const override
+  {
+    return new ThisType(*this);
+  }
+
+  VectorType& vector()
+  {
+    return vector_;
+  }
+
+  LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
+  {
+    assert(space_.gridPart()->indexSet().contains(entity));
+    return LocalDiscreteFunctionType(space_, vector_, entity);
   }
 
 private:
-  std::shared_ptr<VectorType> nonConstVector_;
-}; // class DiscreteFunctionDefault
+  using BaseType::space_;
+  VectorType& vector_;
+}; // class DiscreteFunction
 
 
 } // namespace GDT
