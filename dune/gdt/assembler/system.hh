@@ -379,20 +379,15 @@ public:
 
   void clearLocalAssemblers()
   {
-    for (auto& element: localCodim0MatrixAssemblers_)
-      delete element;
-    for (auto& element: localCodim0VectorAssemblers_)
-      delete element;
-    for (auto& element: localCodim1MatrixAssemblers_)
-      delete element;
-    for (auto& element : localCodim1VectorAssemblers_)
-      delete element;
+    for (auto& element : localCodim0MatrixAssemblers_)  delete element;
+    for (auto& element : localCodim0VectorAssemblers_)  delete element;
+    for (auto& element : localCodim1MatrixAssemblers_)  delete element;
+    for (auto& element : localCodim1VectorAssemblers_)  delete element;
   }
 
   void clearLocalConstraints()
   {
-    for (auto& element : localConstraints_)
-      delete element;
+    for (auto& element : localConstraints_) delete element;
   }
 
   void clearAll()
