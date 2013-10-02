@@ -147,7 +147,7 @@ protected:
    *          ansatz space (cols/inner)
    */
   template <class LocalGridPartType, class O>
-  PatternType* computeVolumePattern(const LocalGridPartType& localGridPart, const SpaceInterface<O>& otherSpace) const
+  PatternType* computeCodim0Pattern(const LocalGridPartType& localGridPart, const SpaceInterface<O>& otherSpace) const
   {
     PatternType* ret     = new PatternType(mapper().size());
     PatternType& pattern = *ret;
@@ -178,8 +178,8 @@ protected:
    *          ansatz space (cols/inner)
    */
   template <class LocalGridPartType, class O>
-  PatternType* computeVolumeAndCouplingPattern(const LocalGridPartType& local_grid_part,
-                                               const SpaceInterface<O>& other_space) const
+  PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part,
+                                             const SpaceInterface<O>& other_space) const
   {
     // prepare
     PatternType* ret     = new PatternType(mapper().size());
@@ -226,14 +226,6 @@ protected:
     } // walk the grid part
     return ret;
   } // ... computeVolumeAndCouplingPattern(...)
-
-public:
-  template <class LocalGridPartType, class O>
-  PatternType* computeCodim0Pattern(const LocalGridPartType& local_grid_part,
-                                    const SpaceInterface<O>& other_space) const
-  {
-    return computeVolumePattern(local_grid_part, other_space);
-  }
 
   template <class LocalGridPartType, class O>
   PatternType* computeCodim1Pattern(const LocalGridPartType& local_grid_part,
