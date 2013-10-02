@@ -12,6 +12,8 @@
 #include "config.h"
 #endif
 
+#include <memory>
+
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrangespace.hh>
 
@@ -74,6 +76,7 @@ class FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public SpaceInterface<FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>>
 {
   typedef SpaceInterface<FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>> BaseType;
+  typedef FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
   typedef FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
@@ -93,28 +96,46 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-public:
-  FemWrapper(const GridPartType& gridP)
+  FemWrapper(const std::shared_ptr<const GridPartType>& gridP)
     : gridPart_(gridP)
-    , backend_(const_cast<GridPartType&>(gridPart_))
-    , mapper_(backend_.mapper())
-    , tmpMappedRows_(mapper_.maxNumDofs())
-    , tmpMappedCols_(mapper_.maxNumDofs())
+    , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
+    , mapper_(std::make_shared<MapperType>(backend_->mapper()))
+    , tmpMappedRows_(mapper_->maxNumDofs())
+    , tmpMappedCols_(mapper_->maxNumDofs())
   {
+  }
+
+  FemWrapper(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , tmpMappedRows_(mapper_->maxNumDofs())
+    , tmpMappedCols_(mapper_->maxNumDofs())
+  {
+  }
+
+  ThisType& operator=(const ThisType& other)
+  {
+    if (this != &other) {
+      gridPart_ = other.gridPart_;
+      backend_  = other.backend_;
+      mapper_   = other.mapper_;
+    }
+    return *this;
   }
 
   ~FemWrapper()
   {
   }
 
-  const GridPartType& gridPart() const
+  const std::shared_ptr<const GridPartType>& gridPart() const
   {
     return gridPart_;
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   bool continuous() const
@@ -124,12 +145,12 @@ public:
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    return BaseFunctionSetType(backend_, entity);
+    return BaseFunctionSetType(*backend_, entity);
   }
 
   template <class R>
@@ -142,12 +163,12 @@ public:
   localConstraints(const EntityType& entity,
                    Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, true>& ret) const
   {
-    const auto& lagrangePointSet = backend_.lagrangePointSet(entity);
+    const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
     std::set<size_t> localDirichletDofs;
     // loop over all intersections
     const auto& gridBoundary     = ret.gridBoundary();
-    const auto intersectionEndIt = gridPart_.iend(entity);
-    for (auto intersectionIt = gridPart_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
+    const auto intersectionEndIt = gridPart_->iend(entity);
+    for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
       const auto& intersection = *intersectionIt;
       // only work on dirichlet intersections
       if (gridBoundary.dirichlet(intersection)) {
@@ -167,8 +188,8 @@ public:
     if (numRows > 0) {
       const size_t numCols = basis.size();
       ret.setSize(numRows, numCols);
-      mapper_.globalIndices(entity, tmpMappedRows_);
-      mapper_.globalIndices(entity, tmpMappedCols_);
+      mapper_->globalIndices(entity, tmpMappedRows_);
+      mapper_->globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
       const RangeFieldType one(1);
@@ -194,12 +215,12 @@ public:
   localConstraints(const EntityType& entity,
                    Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, false>& ret) const
   {
-    const auto& lagrangePointSet = backend_.lagrangePointSet(entity);
+    const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
     std::set<size_t> localDirichletDofs;
     // loop over all intersections
     const auto& gridBoundary     = ret.gridBoundary();
-    const auto intersectionEndIt = gridPart_.iend(entity);
-    for (auto intersectionIt = gridPart_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
+    const auto intersectionEndIt = gridPart_->iend(entity);
+    for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
       const auto& intersection = *intersectionIt;
       // only work on dirichlet intersections
       if (gridBoundary.dirichlet(intersection)) {
@@ -219,8 +240,8 @@ public:
     if (numRows > 0) {
       const size_t numCols = basis.size();
       ret.setSize(numRows, numCols);
-      mapper_.globalIndices(entity, tmpMappedRows_);
-      mapper_.globalIndices(entity, tmpMappedCols_);
+      mapper_->globalIndices(entity, tmpMappedRows_);
+      mapper_->globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
       for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
@@ -243,13 +264,13 @@ public:
   template <class LocalGridPartType, class OtherSpaceType>
   PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
   {
-    return BaseType::computeVolumePattern(localGridPart, otherSpace);
+    return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
   }
 
 private:
-  const GridPartType& gridPart_;
-  const BackendType backend_;
-  const MapperType mapper_;
+  std::shared_ptr<const GridPartType> gridPart_;
+  std::shared_ptr<const BackendType> backend_;
+  std::shared_ptr<const MapperType> mapper_;
   mutable Dune::DynamicVector<size_t> tmpMappedRows_;
   mutable Dune::DynamicVector<size_t> tmpMappedCols_;
 }; // class FemWrapper< ..., 1, 1 >
