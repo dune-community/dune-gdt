@@ -13,8 +13,6 @@
 
 #include <dune/stuff/functions/interfaces.hh>
 
-#include <dune/gdt/basefunctionset/interface.hh>
-
 #include "interface.hh"
 
 namespace Dune {
@@ -36,8 +34,8 @@ class ProductTraits
 public:
   typedef Product<LocalizableFunctionImp> derived_type;
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
 };
 
 
@@ -59,88 +57,86 @@ public:
   }
 
   template <class EntityType>
-  std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
-  localFunctions(const EntityType& entity) const
+  class LocalfunctionTuple
   {
-    return std::make_tuple(inducingFunction_.localFunction(entity));
+    typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+
+  public:
+    typedef std::tuple<std::shared_ptr<LocalfunctionType>> Type;
+  };
+
+  template <class EntityType>
+  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class L, class T, class D, int d, class R, int rT, int rCT>
-  int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase) const
+  template <class E, class D, int d, class R, int rT, int rCT>
+  size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    return order(localFunction, testBase);
-  } // int order(...)
+    const auto localFunction = std::get<0>(localFuncs);
+    return order(*localFunction, testBase);
+  }
 
   /**
    *  \todo add copydoc
    *  \return localFunction.order() + testBase.order()
    */
-  template <class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT>
-  int order(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-            const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase) const
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT>
+  size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& localFunction,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase) const
   {
-    if (localFunction.order() < 0)
-      return -1;
-    else
-      return localFunction.order() + testBase.order();
+    return localFunction.order() + testBase.order();
   } // int order(...)
 
-  template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-            const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    return order(localFunction, testBase, ansatzBase);
+    const auto localFunction = std::get<0>(localFuncs);
+    return order(*localFunction, testBase, ansatzBase);
   }
 
-  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  int order(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-            const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-            const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase) const
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& localFunction,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
-    if (localFunction.order() < 0)
-      return -1;
-    else
-      return localFunction.order() + testBase.order() + ansatzBase.order();
-  } // int order(...)
-
-  // Codim0< ..., 1 >
+    return localFunction.order() + testBase.order() + ansatzBase.order();
+  }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class L, class T, class D, int d, class R, int rT, int rCT>
-  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
+  template <class E, class D, int d, class R, int rT, int rCT>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    evaluate(localFunction, testBase, localPoint, ret);
+    const auto localFunction = std::get<0>(localFuncs);
+    evaluate(*localFunction, testBase, localPoint, ret);
   }
 
-  template <class L, class T, class D, int d, class R, int rL, int rCL, int rT, int rCT>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
                 const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicVector<R>& /*ret*/) const
   {
-    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
   /**
    *  \brief computes a scalar product evaluation.
-   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
-   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
-   *  \tparam D DomainFieldType
-   *  \tparam d dimDomain
-   *  \tparam R RangeFieldType
    */
-  template <class L, class T, class D, int d, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
-                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase, const Dune::FieldVector<D, d>& localPoint,
-                Dune::DynamicVector<R>& ret) const
+  template <class E, class D, int d, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<R, 1> RangeType;
@@ -157,42 +153,36 @@ public:
     }
   } // ... evaluate(...)
 
-  // Codim0< ..., 2 >
-
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase,
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    evaluate(localFunction, testBase, ansatzBase, localPoint, ret);
+    const auto localFunction = std::get<0>(localFuncs);
+    evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
   }
 
-  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
-                const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& /*ansatzBase*/,
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBase*/,
                 const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/) const
   {
-    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
   /**
    *  \brief computes a scalar product evaluation.
-   *  \tparam T Traits of the test BaseFunctionSetInterface implementation
-   *  \tparam L Traits of the Dune::Stuff::LocalFunctionInterface implementation
-   *  \tparam D DomainFieldType
-   *  \tparam d dimDomain
-   *  \tparam R RangeFieldType
    */
-  template <class L, class T, class A, class D, int d, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
-                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase,
-                const BaseFunctionSetInterface<A, D, d, R, 1, 1>& ansatzBase, const Dune::FieldVector<D, d>& localPoint,
-                Dune::DynamicMatrix<R>& ret) const
+  template <class E, class D, int d, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<R, 1> RangeType;
@@ -216,30 +206,30 @@ public:
     }
   } // ... evaluate(...)
 
-  // Codim1< ..., 1 >
-
-  template <class L, class T, class IntersectionType, class D, int d, class R, int r, int rC>
-  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase,
+  template <class E, class IntersectionType, class D, int d, class R, int r, int rC>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicVector<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    evaluate(localFunction, testBase, intersection, localPoint, ret);
+    const auto localFunction = std::get<0>(localFuncs);
+    evaluate(*localFunction, testBase, intersection, localPoint, ret);
   }
 
-  template <class L, class T, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT, int rCT>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
-                const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d>& /*localPoint*/,
+  template <class E, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT, int rCT>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
+                const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d - 1>& /*localPoint*/,
                 Dune::DynamicVector<R>& /*ret*/) const
   {
-    dune_static_assert((Dune::AlwaysFalse<R>::value), "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class L, class T, class IntersectionType, class D, int d, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, 1, 1>& localFunction,
-                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase, const IntersectionType& intersection,
-                const Dune::FieldVector<D, d - 1>& localPoint, Dune::DynamicVector<R>& ret) const
+  template <class E, class IntersectionType, class D, int d, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                Dune::DynamicVector<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<D, d> DomainType;
