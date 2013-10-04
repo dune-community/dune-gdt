@@ -110,8 +110,8 @@ public:
 
     // * dirichlet boundary values
     DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
-    typedef ProjectionOperator::Dirichlet<GridPartType> DirichletProjectionOperatorType;
-    const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
+    typedef ProjectionOperator::L2<GridPartType> DirichletProjectionOperatorType;
+    const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()) /*, boundary_info_*/);
     dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
 
     // * local matrix assembler
@@ -280,7 +280,7 @@ public:
       if (!reference_solution_computed_)
         compute_reference_solution();
       const auto reference_grid_part = test_.reference_grid_part();
-      const ProlongationOperator::Generic<GridPartType> prolongation_operator(*reference_grid_part);
+      const ProlongationOperator::L2<GridPartType> prolongation_operator(*reference_grid_part);
       assert(reference_discretization_);
       current_solution_vector_ =
           std::unique_ptr<VectorType>(new VectorType(reference_discretization_->create_vector()));
