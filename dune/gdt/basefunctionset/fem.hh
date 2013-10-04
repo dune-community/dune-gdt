@@ -85,6 +85,10 @@ public:
   {
   }
 
+  FemWrapper(const ThisType& /*other*/) = delete;
+
+  ThisType& operator=(const ThisType& /*other*/) = delete;
+
   virtual const EntityType& entity() const override
   {
     return entity_;
