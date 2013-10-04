@@ -13,6 +13,8 @@
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
 #include <dune/stuff/la/container/pattern.hh>
+#include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/common/float_cmp.hh>
 
 #include "constraints.hh"
 
@@ -41,6 +43,9 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
+
+  typedef typename GridPartType::IntersectionType IntersectionType;
+  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
@@ -180,6 +185,46 @@ public:
     vtk_writer.write(filename);
   } // ... visualize(...)
 
+  std::set<size_t> findLocalDirichletDoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  {
+    static_assert(dimRange == 1, "Not implemented for this dimension!");
+    static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
+    if (polOrder != 1)
+      DUNE_THROW(Dune::NotImplemented, "This does not seem to work for higher orders!");
+    // check
+    assert(gridPart()->indexSet().contains(entity));
+    // prepare
+    std::set<size_t> localDirichletDofs;
+    std::vector<typename BaseFunctionSetType::DomainType> dirichlet_vertices;
+    // get all dirichlet vertices of this entity, therefore
+    // * loop over all intersections
+    const auto intersection_it_end = gridPart()->iend(entity);
+    for (auto intersection_it = gridPart()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+      // only work on dirichlet ones
+      const auto& intersection = *intersection_it;
+      if (boundaryInfo.dirichlet(intersection)) {
+        // and get the vertices of the intersection
+        const auto geometry = intersection.geometry();
+        for (size_t cc = 0; cc < geometry.corners(); ++cc)
+          dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
+      } // only work on dirichlet ones
+    } // loop over all intersections
+
+    // find the corresponding basis functions
+    const auto basis = baseFunctionSet(entity);
+    if (tmp_basis_values_.size() < basis.size())
+      tmp_basis_values_.resize(basis.size());
+    for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
+      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values_);
+      for (size_t jj = 0; jj < basis.size(); ++jj)
+        if (Dune::Stuff::Common::FloatCmp::eq(tmp_basis_values_[jj][0], RangeFieldType(1)))
+          localDirichletDofs.insert(jj);
+    }
+
+    // finish
+    return localDirichletDofs;
+  } // ... findLocalDirichletDoFs(...)
+
   derived_type& asImp()
   {
     return static_cast<derived_type&>(*this);
@@ -316,6 +361,9 @@ protected:
     } // walk the grid part
     return ret;
   } // ... computeCodim1Pattern(...)
+
+private:
+  mutable std::vector<typename BaseFunctionSetType::RangeType> tmp_basis_values_;
 }; // class SpaceInterface
 
 
