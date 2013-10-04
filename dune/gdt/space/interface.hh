@@ -44,7 +44,7 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  const std::shared_ptr<const GridPartType>& gridPart() const
+  std::shared_ptr<const GridPartType> gridPart() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().gridPart());
     return asImp().gridPart();
