@@ -190,7 +190,7 @@ public:
   virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override
   {
     assert(this->is_a_valid_point(xx));
-    Dune::Stuff::Common::clear(ret);
+    ret *= RangeFieldType(0);
     assert(localVector_->size() == tmpBaseJacobianValues_.size());
     base_->jacobian(xx, tmpBaseJacobianValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
