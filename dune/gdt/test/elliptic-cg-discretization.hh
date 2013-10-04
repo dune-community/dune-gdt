@@ -334,9 +334,16 @@ public:
     if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUConformGrid<2, 2>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {2.20e-01, 6.45e-02, 1.64e-02, 3.50e-03};
+          return {1.97e-01, 4.86e-02, 1.22e-02, 3.03e-03};
         else if (type.compare("H1") == 0)
-          return {4.57e-01, 2.53e-01, 1.27e-01, 5.76e-02};
+          return {4.12e-01, 2.08e-01, 1.04e-01, 5.18e-02};
+        else
+          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+      } else if (polOrder == 2) {
+        if (type.compare("L2") == 0)
+          return {1.89e-02, 2.57e-03, 3.30e-04, 4.15e-05};
+        else if (type.compare("H1") == 0)
+          return {7.97e-02, 2.09e-02, 5.29e-03, 1.33e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
