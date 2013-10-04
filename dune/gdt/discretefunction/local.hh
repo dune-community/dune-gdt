@@ -175,22 +175,24 @@ public:
     return base_->order();
   }
 
-  virtual void evaluate(const DomainType& x, RangeType& ret) const override
+  virtual void evaluate(const DomainType& xx, RangeType& ret) const override
   {
+    assert(this->is_a_valid_point(xx));
     Dune::Stuff::Common::clear(ret);
     assert(localVector_->size() == tmpBaseValues_.size());
-    base_->evaluate(x, tmpBaseValues_);
+    base_->evaluate(xx, tmpBaseValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
       tmpBaseValues_[ii] *= localVector_->get(ii);
       ret += tmpBaseValues_[ii];
     }
   } // ... evaluate(...)
 
-  virtual void jacobian(const DomainType& x, JacobianRangeType& ret) const override
+  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override
   {
+    assert(this->is_a_valid_point(xx));
     Dune::Stuff::Common::clear(ret);
     assert(localVector_->size() == tmpBaseJacobianValues_.size());
-    base_->jacobian(x, tmpBaseJacobianValues_);
+    base_->jacobian(xx, tmpBaseJacobianValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
       tmpBaseJacobianValues_[ii] *= localVector_->get(ii);
       ret += tmpBaseJacobianValues_[ii];
