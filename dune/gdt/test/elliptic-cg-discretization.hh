@@ -197,6 +197,8 @@ class EocStudy
   typedef typename DiscretizationType::DiscreteFunctionType       DiscreteFunctionType;
   typedef typename DiscretizationType::ConstDiscreteFunctionType  ConstDiscreteFunctionType;
 
+  typedef typename TestCase::ExactSolutionType ExactSolutionType;
+
 public:
   EocStudy(const TestCase& test)
     : test_(test)
@@ -241,7 +243,7 @@ public:
   virtual double norm_reference_solution(const std::string type) override
   {
     if (test_.provides_exact_solution()) {
-      DUNE_THROW(Dune::NotImplemented, "Implement me!");
+      return compute_norm(*(test_.reference_grid_part()), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
@@ -316,7 +318,9 @@ public:
                                                      "current solution");
     // compute error
     if (test_.provides_exact_solution()) {
-      DUNE_THROW(Dune::NotImplemented, "Implement me!");
+      typedef Dune::Stuff::Function::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
+      const DifferenceType difference(test_.exact_solution(), current_solution);
+      return compute_norm(*(test_.reference_grid_part()), difference, type);
     } else {
       // get reference solution
       compute_reference_solution();
