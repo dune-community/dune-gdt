@@ -24,8 +24,8 @@ class errors_are_not_as_expected : public Dune::Exception
 typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
 
 // change this to toggle output
-// std::ostream& out = std::cout;
-std::ostream& out = DSC_LOG.devnull();
+std::ostream& out = std::cout;
+// std::ostream& out = DSC_LOG.devnull();
 
 typedef testing::Types<std::pair<EllipticTestCase::ESV07<AluConform2dGridType>, Int<1>>,
                        std::pair<EllipticTestCase::ESV07<AluConform2dGridType>, Int<2>>> AluConform2dTestCases;
