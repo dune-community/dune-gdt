@@ -5,12 +5,13 @@
 
 #include <dune/stuff/test/test_common.hh>
 
-#ifndef HAVE_ALUGRID
-static_assert(false, "This test requires alugrid!");
-#endif
+#include <utility>
 
 #include <dune/common/exceptions.hh>
 
+#ifndef HAVE_ALUGRID
+static_assert(false, "This test requires alugrid!");
+#endif
 #include <dune/grid/alugrid.hh>
 
 #include "elliptic-testcases.hh"
@@ -22,26 +23,30 @@ class errors_are_not_as_expected
 
 typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 
-typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
+// change this to toggle output
+//std::ostream& out = std::cout;
+std::ostream& out = DSC_LOG.devnull();
+
+typedef testing::Types< std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 1 > >
+                      , std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 2 > >
                         > AluConform2dTestCases;
 
-template< class TestType >
+template< class Pair >
 struct EllipticCGDiscretization
   : public ::testing::Test
 {
+  typedef typename Pair::first_type TestType;
+  static const unsigned int polOrder = Pair::second_type::value;
+
   void check() const
   {
-    // change this to toggle output
-//    std::ostream& out = std::cout;
-    std::ostream& out = DSC_LOG.devnull();
-
     const TestType test_case;
     test_case.print_header(out);
     out << std::endl;
-    EllipticCG::EocStudy< TestType, 1 > eoc_study_1(test_case);
-    auto errors_1 = eoc_study_1.run(out);
-    for (const auto& norm : eoc_study_1.provided_norms())
-      if (errors_1[norm] > eoc_study_1.expected_results(norm))
+    EllipticCG::EocStudy< TestType, polOrder > eoc_study(test_case);
+    auto errors = eoc_study.run(out);
+    for (const auto& norm : eoc_study.provided_norms())
+      if (errors[norm] > eoc_study.expected_results(norm))
         DUNE_THROW(errors_are_not_as_expected, "They really are (or you have to lower the expectations)!");
   }
 };
