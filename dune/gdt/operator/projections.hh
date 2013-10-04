@@ -7,6 +7,7 @@
 #define DUNE_GDT_OPERATOR_PROJECTIONS_HH
 
 #include <vector>
+#include <type_traits>
 
 #include <dune/common/fvector.hh>
 
@@ -16,11 +17,84 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
-//#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {
 namespace ProjectionOperator {
+
+
+template< class GridPartType >
+class L2
+{
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridPartType::dimension;
+
+public:
+  L2(const GridPartType& grid_part)
+    : grid_part_(grid_part)
+  {}
+
+  template< class R, int r, class SpaceType, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
+             DiscreteFunction< SpaceType, V >& range) const
+  {
+    // check
+    static_assert(std::is_same< R, typename SpaceType::RangeFieldType >::value, "Types do not match!");
+    static_assert(SpaceType::dimRange == r, "Dimensions do not match!");
+    static_assert(SpaceType::dimRangeCols == 1, "Not implemented yet!");
+    typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
+    // clear
+    range.vector().backend() *= R(0);
+    // walk the grid
+    RangeType source_value(0);
+    std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
+    const auto entity_it_end = grid_part_.template end< 0 >();
+    for (auto entity_it = grid_part_.template begin< 0 >();
+         entity_it != entity_it_end;
+         ++entity_it) {
+      // prepare
+      const auto& entity = *entity_it;
+      const auto local_basis = range.space().baseFunctionSet(entity);
+      const auto local_source = source.local_function(entity);
+      auto local_range = range.local_discrete_function(entity);
+      DynamicMatrix< R > local_matrix(local_basis.size(), local_basis.size(), R(0));
+      DynamicVector< R > local_vector(local_basis.size(), R(0));
+      // create quadrature
+      const size_t quadrature_order = std::max(local_source->order(), local_range.order());
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
+                                                                                   2*quadrature_order + 1);
+      // loop over all quadrature points
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto integration_element = entity.geometry().integrationElement(local_point);
+        // evaluate
+        local_basis.evaluate(local_point, basis_values);
+        local_source->evaluate(local_point, source_value);
+        // compute integrals
+        for (size_t ii = 0; ii < local_basis.size(); ++ii) {
+          local_vector[ii] += integration_element * quadrature_weight * (source_value * basis_values[ii]);
+          auto& local_matrix_row = local_matrix[ii];
+          for (size_t jj = 0; jj < local_basis.size(); ++jj) {
+            local_matrix_row[jj] += integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]);
+          }
+        }
+      } // loop over all quadrature points
+      // compute local DoFs
+      DynamicVector< R > local_DoFs(local_basis.size(), 0);
+      local_matrix.solve(local_DoFs, local_vector);
+      // set local DoFs
+      auto local_range_vector = local_range.vector();
+      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
+        local_range_vector.set(ii, local_DoFs[ii]);
+    } // walk the grid
+  } // ... apply(...)
+
+private:
+  const GridPartType& grid_part_;
+}; // class L2
 
 
 template< class GridPartImp >
@@ -88,19 +162,17 @@ public:
     } // walk the grid
   } // ... apply(...) const
 
-//  template< class SourceType, class RGPT, int rp, class RFT, class RVT >
-//  void apply(const SourceType& source,
-//             DiscreteFunctionDefault< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGPT, rp, RFT, 1 >, RVT >& range) const
+//  template< class R, class GP, int p, class V >
+//  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& source,
+//             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, 1, 1 >, V >& range) const
 //  {
-//    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGPT, rp, RFT, 1 > RangeSpaceType;
+//    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, 1, 1 > RangeSpaceType;
 //    // checks
-//    static_assert(std::is_base_of< Stuff::LocalizableFunction, SourceType >::value,
-//                  "SourceImp has to be derived from Stuff::LocalizableFunction");
 //    static_assert(dimDomain == 2, "This does not work for other dimensions!");
-//    static_assert(rp == 1, "Not tested for higher polynomial orders!");
-//    FieldVector< RFT, 1 > tmp_source_value(RFT(0));
+//    static_assert(p == 1, "Not tested for higher polynomial orders!");
+//    FieldVector< R, 1 > tmp_source_value(R(0));
 //    // clear range
-//    range.vector()->backend() *= 0.0;
+//    range.vector().backend() *= 0.0;
 //    // walk the grid
 //    const auto entity_it_end = grid_part_.template end< 0 >();
 //    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
@@ -108,8 +180,8 @@ public:
 //      // only work if we are at the boundary
 //      if (entity.hasBoundaryIntersections()) {
 //        // get the local quantities
-//        const auto local_source = source.localFunction(entity);
-//        auto local_range = range.localFunction(entity);
+//        const auto local_source = source.local_function(entity);
+//        auto local_range = range.local_discrete_function(entity);
 //        auto& local_range_DoF_vector = local_range.vector();
 //        // get local finite elements
 //        // * we are a CG space
@@ -117,7 +189,7 @@ public:
 //        const auto& cg_local_coefficients = cg_finite_element.localCoefficients();
 //        // * but we also need a local DG finite element
 //        typedef Dune::DGLocalFiniteElement< typename RangeSpaceType::Traits::FiniteElementType > DgFiniteElementType;
-//        const DgFiniteElementType dg_finite_element(entity.type(), rp);
+//        const DgFiniteElementType dg_finite_element(entity.type(), p);
 //        const auto& dg_local_coefficients = dg_finite_element.localCoefficients();
 //        assert(dg_local_coefficients.size() == cg_local_coefficients.size() && "Wrong finite element given!");
 
@@ -162,7 +234,7 @@ public:
 //                if (Stuff::Common::FloatCmp::eq(global_intersection_corner, global_vertices[local_vertex_id])) {
 //                  // this vertex is on the dirichlet boundary
 //                  // * so we evaluate the source
-//                  local_source.evaluate(global_intersection_corner, tmp_source_value);
+//                  local_source->evaluate(global_intersection_corner, tmp_source_value);
 //                  // * and set the corresponding local DoF
 //                  local_range_DoF_vector.set(local_DoF_ids[local_vertex_id], tmp_source_value[0]);
 //                }
