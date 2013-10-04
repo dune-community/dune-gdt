@@ -10,27 +10,25 @@
 
 #include <dune/common/typetraits.hh>
 
-#include <dune/grid/alugrid.hh>
-
 #include <dune/grid/part/leaf.hh>
 
-#include <dune/stuff/grid/provider.hh>
+#include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+//#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
 
-typedef Dune::Stuff::GridProviderInterface<>            GridProviderType;
+typedef Dune::Stuff::GridProviderCube< Dune::GridSelector::GridType > GridProviderType;
 typedef typename GridProviderType::GridType       GridType;
-typedef Dune::Stuff::GridProviders< GridType >    GridProviders;
 typedef Dune::grid::Part::Leaf::Const< GridType > GridPartType;
 typedef double                                    RangeFieldType;
 static const unsigned int                         dimRange = 1;
 
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< GridPartType, 1, RangeFieldType, dimRange >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< GridPartType, 2, RangeFieldType, dimRange >
+//                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
                       > SpaceTypes;
 
 template< class T >
@@ -39,7 +37,7 @@ struct SpaceCRTPtest
 {
   typedef T SpaceType;
 
-  void check(const GridPartType& gridPart) const
+  void check(const std::shared_ptr< const GridPartType > gridPart) const
   {
     // check the space
     const SpaceType space(gridPart);
@@ -57,11 +55,11 @@ struct SpaceCRTPtest
     typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
     typedef typename SpaceType::EntityType          EntityType;
     // check for functionality
-    const auto entityIt = gridPart.template begin< 0 >();
+    const auto entityIt = gridPart->template begin< 0 >();
     const EntityType& entity = *entityIt;
     typedef typename Dune::GDT::SpaceInterface< Traits > SpaceInterfaceType;
     const SpaceInterfaceType& spaceAsInterface = static_cast< const SpaceInterfaceType& >(space);
-    const S_GridPartType& DUNE_UNUSED(      s_gridPart)     = spaceAsInterface.gridPart();
+    const std::shared_ptr< const S_GridPartType > DUNE_UNUSED(s_gridPart) = spaceAsInterface.gridPart();
     const S_BackendType& DUNE_UNUSED(       s_backend)      = spaceAsInterface.backend();
     const bool DUNE_UNUSED(                 s_continuous)   = spaceAsInterface.continuous();
     const MapperType&                       mapper          = spaceAsInterface.mapper();
@@ -93,10 +91,10 @@ struct SpaceCRTPtest
                                           S_RangeFieldType, s_dimRange, s_dimRangeCols > BaseFunctionSetInterfaceType;
     const BaseFunctionSetInterfaceType& baseFunctionSetAsInterface
         = static_cast< const BaseFunctionSetInterfaceType& >(baseFunctionSet);
-    const B_EntityType& DUNE_UNUSED(  b_entity)   = baseFunctionSetAsInterface.entity();
-    const B_BackendType& DUNE_UNUSED( b_backend)  = baseFunctionSetAsInterface.backend();
-    const size_t                      b_size      = baseFunctionSetAsInterface.size();
-    const unsigned int DUNE_UNUSED(   b_order)    = baseFunctionSetAsInterface.order();
+    const B_EntityType& DUNE_UNUSED(  b_entity)  = baseFunctionSetAsInterface.entity();
+    const B_BackendType& DUNE_UNUSED( b_backend) = baseFunctionSetAsInterface.backend();
+    const size_t                      b_size     = baseFunctionSetAsInterface.size();
+    const unsigned int DUNE_UNUSED(   b_order)   = baseFunctionSetAsInterface.order();
     const B_DomainType x = entity.geometry().center();
     std::vector< B_RangeType > values(b_size, B_RangeType(0));
     std::vector< B_JacobianRangeType > jacobians(b_size, B_JacobianRangeType(0));
@@ -109,14 +107,25 @@ struct SpaceCRTPtest
 TYPED_TEST_CASE(SpaceCRTPtest, SpaceTypes);
 TYPED_TEST(SpaceCRTPtest, SpaceCRTP)
 {
-    const std::shared_ptr< const GridProviderType > gridProvider(GridProviders::create("gridprovider.cube"));
-    const GridPartType gridPart(*(gridProvider->grid()));
+    const GridProviderType gridProvider;
+    const std::shared_ptr< const GridPartType > gridPart(new GridPartType(*(gridProvider.grid())));
     this->check(gridPart);
 }
 
 
 int main(int argc, char** argv)
 {
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
+  try {
+    test_init(argc, argv);
+    return RUN_ALL_TESTS();
+  } catch (Dune::Exception& e) {
+    std::cerr << "Dune reported error: " << e.what() << std::endl;
+    std::abort();
+  } catch (std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    std::abort();
+  } catch (...) {
+    std::cerr << "Unknown exception thrown!" << std::endl;
+    std::abort();
+  } // try
 }
