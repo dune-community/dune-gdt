@@ -54,6 +54,9 @@ class FemWrapper<FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim,
 {
   typedef FemWrapper<FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
+  typedef BaseFunctionSetInterface<FemWrapperTraits<FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim,
+                                                    RangeFieldImp, rangeDim, 1>,
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
   typedef FemWrapperTraits<FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
@@ -115,11 +118,15 @@ public:
     backend_->evaluateAll(xx, ret);
   }
 
+  using BaseType::evaluate;
+
   virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const override
   {
     assert(ret.size() >= backend_->size());
     backend_->jacobianAll(xx, entity_.geometry().jacobianInverseTransposed(xx), ret);
   }
+
+  using BaseType::jacobian;
 
 private:
   const EntityType& entity_;
