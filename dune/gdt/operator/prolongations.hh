@@ -30,6 +30,99 @@ namespace ProlongationOperator {
 
 
 template< class GridPartType >
+class L2
+{
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridPartType::dimension;
+
+public:
+  L2(const GridPartType& grid_part)
+    : grid_part_(grid_part)
+  {}
+
+  template< class SourceSpaceType, class VS, class RangeSpaceType, class VR >
+  void apply(const ConstDiscreteFunction< SourceSpaceType, VS >& source,
+             DiscreteFunction< RangeSpaceType, VR >& range) const
+  {
+    // check
+    static_assert(std::is_same< typename SourceSpaceType::RangeFieldType,
+                                typename RangeSpaceType::RangeFieldType >::value, "Types do not match!");
+    static_assert(SourceSpaceType::dimRange == RangeSpaceType::dimRange, "Dimensions do not match!");
+    static_assert(SourceSpaceType::dimRangeCols == RangeSpaceType::dimRangeCols, "Dimensions do not match!");
+    static_assert(SourceSpaceType::dimRangeCols == 1, "Not implemented yet!");
+    typedef typename RangeSpaceType::BaseFunctionSetType::DomainType DomainType;
+    typedef typename RangeSpaceType::BaseFunctionSetType::RangeType RangeType;
+    typedef typename RangeSpaceType::BaseFunctionSetType::RangeFieldType RangeFieldType;
+    // clear
+    range.vector().backend() *= RangeFieldType(0);
+    // create search in the source grid part
+    typedef typename SourceSpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
+    EntitySearch entity_search(source.space().gridPart()->gridView());
+    // walk the grid
+    RangeType source_value(0);
+    std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
+    const auto entity_it_end = grid_part_.template end< 0 >();
+    for (auto entity_it = grid_part_.template begin< 0 >();
+         entity_it != entity_it_end;
+         ++entity_it) {
+      // prepare
+      const auto& entity = *entity_it;
+      const auto local_basis = range.space().baseFunctionSet(entity);
+      auto local_range = range.local_discrete_function(entity);
+      DynamicMatrix< RangeFieldType > local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
+      DynamicVector< RangeFieldType > local_vector(local_basis.size(), RangeFieldType(0));
+      // create quadrature
+      const size_t quadrature_order = local_range.order();
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
+                                                                                   2*quadrature_order + 1);
+      // get global quadrature points
+      std::vector< DomainType > quadrature_points;
+      for (const auto& quadrature_point : quadrature)
+        quadrature_points.emplace_back(entity.geometry().global(quadrature_point.position()));
+      // get source entities
+      const auto source_entities = entity_search(quadrature_points);
+      assert(source_entities.size() == quadrature_points.size());
+      // loop over all quadrature points
+      size_t pp = 0;
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto integration_element = entity.geometry().integrationElement(local_point);
+        // evaluate source
+        const auto source_entity_ptr = source_entities[pp];
+        const auto& source_entity = *source_entity_ptr;
+        const auto local_source = source.local_function(source_entity);
+        local_source->evaluate(source_entity.geometry().local(entity.geometry().global(local_point)), source_value);
+        // evaluate
+        local_basis.evaluate(local_point, basis_values);
+        // compute integrals
+        for (size_t ii = 0; ii < local_basis.size(); ++ii) {
+          local_vector[ii] += integration_element * quadrature_weight * (source_value * basis_values[ii]);
+          auto& local_matrix_row = local_matrix[ii];
+          for (size_t jj = 0; jj < local_basis.size(); ++jj) {
+            local_matrix_row[jj] += integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]);
+          }
+        }
+        ++pp;
+      } // loop over all quadrature points
+      // compute local DoFs
+      DynamicVector< RangeFieldType > local_DoFs(local_basis.size(), 0);
+      local_matrix.solve(local_DoFs, local_vector);
+      // set local DoFs
+      auto local_range_vector = local_range.vector();
+      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
+        local_range_vector.set(ii, local_DoFs[ii]);
+    } // walk the grid
+  } // ... apply(...)
+
+private:
+  const GridPartType& grid_part_;
+}; // class L2
+
+
+template< class GridPartType >
 class Generic
 {
 public:
