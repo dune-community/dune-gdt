@@ -4,7 +4,12 @@
 #include "../dune-gdt/config.h"
 
 #ifndef HAVE_GRIDTYPE
+  #warning HAVE_GRIDTYPE undefined, it is likely that you did something wrong!
+  #warning Defaulting to SGRID. Define one of the following to get rid of this warning:
+  #warning YASPGRID, SGRID, ONEDGRID, ALBERTAGRID, UGGRID, ALUGRID_CONFORM, ALUGRID_CUBE, ALUGRID_SIMPLEX
   #ifndef GRIDDIM
+    #warning GRIDDIM undefined, it is likely that you did something wrong!
+    #warning Defaulting to 2. Define GRIDDIM to get rid of this warning!
     #define GRIDDIM 2
   #endif
   #include <dune/grid/sgrid.hh>
