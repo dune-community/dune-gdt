@@ -153,31 +153,34 @@ public:
   void localConstraints(const EntityType& entity,
                         Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
   {
-    const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
     std::set< size_t > localDirichletDofs;
-    // loop over all intersections
     const auto& gridBoundary = ret.gridBoundary();
-    const auto intersectionEndIt = gridPart_->iend(entity);
-    for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt) {
-      const auto& intersection = *intersectionIt;
-      // only work on dirichlet intersections
-      if (gridBoundary.dirichlet(intersection)) {
-        // get local face number of boundary intersection
-        const int intersectionIndex = intersection.indexInInside();
-        // iterate over face dofs and set unit row
-        const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
-        for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
-             faceDofIt != faceDofEndIt;
-             ++faceDofIt) {
-          const size_t localDofIndex = *faceDofIt;
-          localDirichletDofs.insert(localDofIndex);
-        } // iterate over face dofs and set unit row
-      } // only work on dirichlet intersections
-    } // loop over all intersections
-    const BaseFunctionSetType basis = baseFunctionSet(entity);
+    if (polOrder == 1) {
+      localDirichletDofs = this->findLocalDirichletDoFs(entity, gridBoundary);
+    } else {
+      const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
+      // loop over all intersections
+      const auto intersectionEndIt = gridPart_->iend(entity);
+      for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt) {
+        const auto& intersection = *intersectionIt;
+        // only work on dirichlet intersections
+        if (gridBoundary.dirichlet(intersection)) {
+          // get local face number of boundary intersection
+          const int intersectionIndex = intersection.indexInInside();
+          // iterate over face dofs and set unit row
+          const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
+          for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
+               faceDofIt != faceDofEndIt;
+               ++faceDofIt) {
+            const size_t localDofIndex = *faceDofIt;
+            localDirichletDofs.insert(localDofIndex);
+          } // iterate over face dofs and set unit row
+        } // only work on dirichlet intersections
+      } // loop over all intersections
+    }
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
-      const size_t numCols = basis.size();
+      const size_t numCols = mapper_->numDofs(entity);
       ret.setSize(numRows, numCols);
       mapper_->globalIndices(entity, tmpMappedRows_);
       mapper_->globalIndices(entity, tmpMappedCols_);
@@ -206,31 +209,34 @@ public:
   void localConstraints(const EntityType& entity,
                         Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
   {
-    const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
     std::set< size_t > localDirichletDofs;
-    // loop over all intersections
     const auto& gridBoundary = ret.gridBoundary();
-    const auto intersectionEndIt = gridPart_->iend(entity);
-    for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt) {
-      const auto& intersection = *intersectionIt;
-      // only work on dirichlet intersections
-      if (gridBoundary.dirichlet(intersection)) {
-        // get local face number of boundary intersection
-        const int intersectionIndex = intersection.indexInInside();
-        // iterate over face dofs and set unit row
-        const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
-        for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
-             faceDofIt != faceDofEndIt;
-             ++faceDofIt) {
-          const size_t localDofIndex = *faceDofIt;
-          localDirichletDofs.insert(localDofIndex);
-        } // iterate over face dofs and set unit row
-      } // only work on dirichlet intersections
-    } // loop over all intersections
-    const BaseFunctionSetType basis = baseFunctionSet(entity);
+    if (polOrder == 1) {
+      localDirichletDofs = this->findLocalDirichletDoFs(entity, gridBoundary);
+    } else {
+      const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
+      // loop over all intersections
+      const auto intersectionEndIt = gridPart_->iend(entity);
+      for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt) {
+        const auto& intersection = *intersectionIt;
+        // only work on dirichlet intersections
+        if (gridBoundary.dirichlet(intersection)) {
+          // get local face number of boundary intersection
+          const int intersectionIndex = intersection.indexInInside();
+          // iterate over face dofs and set unit row
+          const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
+          for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
+               faceDofIt != faceDofEndIt;
+               ++faceDofIt) {
+            const size_t localDofIndex = *faceDofIt;
+            localDirichletDofs.insert(localDofIndex);
+          } // iterate over face dofs and set unit row
+        } // only work on dirichlet intersections
+      } // loop over all intersections
+    }
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
-      const size_t numCols = basis.size();
+      const size_t numCols = mapper_->numDofs(entity, gridBoundary);
       ret.setSize(numRows, numCols);
       mapper_->globalIndices(entity, tmpMappedRows_);
       mapper_->globalIndices(entity, tmpMappedCols_);
