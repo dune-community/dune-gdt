@@ -59,6 +59,17 @@ TYPED_TEST(EllipticCGDiscretization, ProducesCorrectResults) {
 
 int main(int argc, char** argv)
 {
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
+  try {
+    test_init(argc, argv);
+    return RUN_ALL_TESTS();
+  } catch (Dune::Exception& e) {
+    std::cerr << "Dune reported error: " << e.what() << std::endl;
+    std::abort();
+  } catch (std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    std::abort();
+  } catch (...) {
+    std::cerr << "Unknown exception thrown!" << std::endl;
+    std::abort();
+  } // try
 }
