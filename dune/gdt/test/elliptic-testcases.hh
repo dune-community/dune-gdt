@@ -14,6 +14,7 @@
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>
+#include <dune/stuff/functions/expression.hh>
 
 namespace EllipticTestCase {
 
@@ -82,36 +83,42 @@ public:
   typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridPartType::IntersectionType> BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
-      FunctionType;
-  typedef FunctionType DiffusionType;
-  typedef FunctionType ForceType;
-  typedef FunctionType DirichletType;
-  typedef FunctionType NeumannType;
+      ConstantFunctionType;
+  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      ExpressionFunctionType;
+  typedef ConstantFunctionType DiffusionType;
+  typedef ExpressionFunctionType ForceType;
+  typedef ConstantFunctionType DirichletType;
+  typedef ConstantFunctionType NeumannType;
+  typedef ExpressionFunctionType ExactSolutionType;
 
   ESV07(const size_t num_refinements = 3)
     : BaseType(create_initial_grid(), num_refinements)
     , boundary_info_()
     , diffusion_(1)
-    , force_(1)
+    , force_("x", "0.5 * pi * pi * cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])", 3)
     , dirichlet_(0)
     , neumann_(0)
+    , exact_solution_("x", "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])", 3, "exact solution",
+                      {{"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
+                        "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"}})
   {
   }
 
   void print_header(std::ostream& out = std::cout) const
   {
-    out << "+==================================================================================+" << std::endl;
-    out << "|+================================================================================+|" << std::endl;
-    out << "||  Testcase ESV07: smooth data, homogeneous dirichlet                            ||" << std::endl;
-    out << "||                  (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)  ||" << std::endl;
-    out << "|+--------------------------------------------------------------------------------+|" << std::endl;
-    out << "||  domain = [-1, 1] x [-1 , 1]                                                   ||" << std::endl;
-    out << "||  diffusion = 1                                                                 ||" << std::endl;
-    out << "||  force     = 1/2 pi^2 cos(1/2 pi x) cos(1/2 pi y)                              ||" << std::endl;
-    out << "||  dirichlet = 0                                                                 ||" << std::endl;
-    out << "||  exact solution = cos(1/2 pi x) cos(1/2 pi y)                                  ||" << std::endl;
-    out << "|+================================================================================+|" << std::endl;
-    out << "+==================================================================================+" << std::endl;
+    out << "+==================================================================+\n"
+        << "|+================================================================+|\n"
+        << "||  Testcase ESV07: smooth data, homogeneous dirichlet            ||\n"
+        << "||  (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)  ||\n"
+        << "|+----------------------------------------------------------------+|\n"
+        << "||  domain = [-1, 1] x [-1 , 1]                                   ||\n"
+        << "||  diffusion = 1                                                 ||\n"
+        << "||  force     = 1/2 pi^2 cos(1/2 pi x) cos(1/2 pi y)              ||\n"
+        << "||  dirichlet = 0                                                 ||\n"
+        << "||  exact solution = cos(1/2 pi x) cos(1/2 pi y)                  ||\n"
+        << "|+================================================================+|\n"
+        << "+==================================================================+" << std::endl;
   } // ... print_header(...)
 
   const BoundaryInfoType& boundary_info() const
@@ -144,6 +151,11 @@ public:
     return false;
   }
 
+  const ExactSolutionType& exact_solution() const
+  {
+    return exact_solution_;
+  }
+
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
@@ -159,6 +171,7 @@ private:
   const ForceType force_;
   const DirichletType dirichlet_;
   const NeumannType neumann_;
+  const ExactSolutionType exact_solution_;
 }; // class ESV07
 
 
