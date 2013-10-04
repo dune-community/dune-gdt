@@ -14,8 +14,9 @@
 
 #include <dune/stuff/grid/provider/cube.hh>
 
-//#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
@@ -28,7 +29,10 @@ static const unsigned int                         dimRange = 1;
 
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< GridPartType, 1, RangeFieldType, dimRange >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< GridPartType, 2, RangeFieldType, dimRange >
-//                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 2, RangeFieldType, dimRange >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 1, RangeFieldType, dimRange >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GridPartType, 2, RangeFieldType, dimRange >
                       > SpaceTypes;
 
 template< class T >
@@ -45,15 +49,16 @@ struct SpaceCRTPtest
     typedef typename SpaceType::Traits              Traits;
     typedef typename SpaceType::GridPartType        S_GridPartType;
     typedef typename SpaceType::DomainFieldType     S_DomainFieldType;
-    static const unsigned int DUNE_UNUSED(          s_dimDomain) = SpaceType::dimDomain;
+    static const unsigned int                       s_dimDomain = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType      S_RangeFieldType;
-    static const unsigned int DUNE_UNUSED(          s_dimRange) = SpaceType::dimRange;
-    static const unsigned int DUNE_UNUSED(          s_dimRangeCols) = SpaceType::dimRangeCols;
+    static const unsigned int                       s_dimRange = SpaceType::dimRange;
+    static const unsigned int                       s_dimRangeCols = SpaceType::dimRangeCols;
     static const int DUNE_UNUSED(                   s_polOrder) = SpaceType::polOrder;
     typedef typename SpaceType::BackendType         S_BackendType;
     typedef typename SpaceType::MapperType          MapperType;
     typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
     typedef typename SpaceType::EntityType          EntityType;
+    typedef typename SpaceType::PatternType         PatternType;
     // check for functionality
     const auto entityIt = gridPart->template begin< 0 >();
     const EntityType& entity = *entityIt;
@@ -64,6 +69,7 @@ struct SpaceCRTPtest
     const bool DUNE_UNUSED(                 s_continuous)   = spaceAsInterface.continuous();
     const MapperType&                       mapper          = spaceAsInterface.mapper();
     const BaseFunctionSetType               baseFunctionSet = spaceAsInterface.baseFunctionSet(entity);
+    const std::unique_ptr< const PatternType > pattern(spaceAsInterface.computePattern());
 
     // check the mapper for static information
     typedef typename MapperType::Traits M_Traits;
@@ -94,7 +100,7 @@ struct SpaceCRTPtest
     const B_EntityType& DUNE_UNUSED(  b_entity)  = baseFunctionSetAsInterface.entity();
     const B_BackendType& DUNE_UNUSED( b_backend) = baseFunctionSetAsInterface.backend();
     const size_t                      b_size     = baseFunctionSetAsInterface.size();
-    const unsigned int DUNE_UNUSED(   b_order)   = baseFunctionSetAsInterface.order();
+    const size_t       DUNE_UNUSED(   b_order)   = baseFunctionSetAsInterface.order();
     const B_DomainType x = entity.geometry().center();
     std::vector< B_RangeType > values(b_size, B_RangeType(0));
     std::vector< B_JacobianRangeType > jacobians(b_size, B_JacobianRangeType(0));
