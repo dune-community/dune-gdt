@@ -28,6 +28,7 @@ std::ostream& out = std::cout;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
+                      , EllipticTestCase::ER07< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 template< class TestCase >
