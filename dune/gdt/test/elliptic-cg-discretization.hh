@@ -20,7 +20,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localevaluation/product.hh>
@@ -60,7 +60,8 @@ public:
   typedef Dune::Stuff::LA::EigenRowMajorSparseMatrix<RangeFieldType> MatrixType;
   typedef Dune::Stuff::LA::EigenDenseVector<RangeFieldType> VectorType;
 
-  typedef Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GridPartType, polOrder, RangeFieldType, dimRange> SpaceType;
+  typedef Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRange>
+      SpaceType;
 
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
