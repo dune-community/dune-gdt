@@ -42,8 +42,8 @@ class InnerTraits
 public:
   typedef Inner<LocalizableFunctionImp> derived_type;
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value,
-                "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
 };
 
 
@@ -64,68 +64,72 @@ public:
   }
 
   template <class EntityType>
-  std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
-  localFunctions(const EntityType& entity) const
+  class LocalfunctionTuple
   {
-    return std::make_tuple(inducingFunction_.localFunction(entity));
+    typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+
+  public:
+    typedef std::tuple<std::shared_ptr<LocalfunctionType>> Type;
+  };
+
+  template <class EntityType>
+  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class LE, class LN, class TE, class AE, class TN, class AN, class D, int d, class R, int rT, int rCT,
-            int rA, int rCA>
-  static int order(const std::tuple<LE>& localFunctionsEntity, const std::tuple<LN>& localFunctionsNeighbor,
-                   const BaseFunctionSetInterface<TE, D, d, R, rT, rCT>& testBaseEntity,
-                   const BaseFunctionSetInterface<AE, D, d, R, rA, rCA>& ansatzBaseEntity,
-                   const BaseFunctionSetInterface<TN, D, d, R, rT, rCT>& testBaseNeighbor,
-                   const BaseFunctionSetInterface<AN, D, d, R, rA, rCA>& ansatzBaseNeighbor)
+  template <class E, class N, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  static size_t order(const typename LocalfunctionTuple<E>::Type& localFunctionsEntity,
+                      const typename LocalfunctionTuple<N>::Type& localFunctionsNeighbor,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseEntity,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseEntity,
+                      const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& testBaseNeighbor,
+                      const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatzBaseNeighbor)
   {
-    const auto& localFunctionEntity   = std::get<0>(localFunctionsEntity);
-    const auto& localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
-    return order(localFunctionEntity,
-                 localFunctionNeighbor,
+    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
+    const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
+    return order(*localFunctionEntity,
+                 *localFunctionNeighbor,
                  testBaseEntity,
                  ansatzBaseEntity,
                  testBaseNeighbor,
                  ansatzBaseNeighbor);
   }
 
-  template <class LE, class LN, class TE, class AE, class TN, class AN, class D, int d, class R, int rL, int rCL,
-            int rT, int rCT, int rA, int rCA>
-  static int order(const Dune::Stuff::LocalFunctionInterface<LE, D, d, R, rL, rCL>& localFunctionEntity,
-                   const Dune::Stuff::LocalFunctionInterface<LN, D, d, R, rL, rCL>& localFunctionNeighbor,
-                   const BaseFunctionSetInterface<TE, D, d, R, rT, rCT>& testBaseEntity,
-                   const BaseFunctionSetInterface<AE, D, d, R, rA, rCA>& ansatzBaseEntity,
-                   const BaseFunctionSetInterface<TN, D, d, R, rT, rCT>& testBaseNeighbor,
-                   const BaseFunctionSetInterface<AN, D, d, R, rA, rCA>& ansatzBaseNeighbor)
+  template <class E, class N, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  static size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& localFunctionEntity,
+                      const Stuff::LocalfunctionInterface<N, D, d, R, rL, rCL>& localFunctionNeighbor,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseEntity,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseEntity,
+                      const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& testBaseNeighbor,
+                      const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatzBaseNeighbor)
   {
-    if (localFunctionEntity.order() < 0 || localFunctionNeighbor.order() < 0)
-      return -1;
-    else
-      return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
-             + std::max(testBaseEntity.order(), testBaseNeighbor.order())
-             + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
+    return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
+           + std::max(testBaseEntity.order(), testBaseNeighbor.order())
+           + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class LE, class LN, class TE, class AE, class TN, class AN, class IntersectionType, class D, int d, class R,
-            int rT, int rCT, int rA, int rCA>
-  void evaluate(const std::tuple<LE>& localFunctionsEntity, const std::tuple<LN>& localFunctionsNeighbor,
-                const BaseFunctionSetInterface<TE, D, d, R, rT, rCT>& testBaseEntity,
-                const BaseFunctionSetInterface<AE, D, d, R, rA, rCA>& ansatzBaseEntity,
-                const BaseFunctionSetInterface<TN, D, d, R, rT, rCT>& testBaseNeighbor,
-                const BaseFunctionSetInterface<AN, D, d, R, rA, rCA>& ansatzBaseNeighbor,
+  template <class E, class N, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFunctionsEntity,
+                const typename LocalfunctionTuple<N>::Type& localFunctionsNeighbor,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseEntity,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& testBaseNeighbor,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatzBaseNeighbor,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
-    const auto& localFunctionEntity   = std::get<0>(localFunctionsEntity);
-    const auto& localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
-    evaluate(localFunctionEntity,
-             localFunctionNeighbor,
+    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
+    const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
+    evaluate(*localFunctionEntity,
+             *localFunctionNeighbor,
              testBaseEntity,
              ansatzBaseEntity,
              testBaseNeighbor,
@@ -138,19 +142,19 @@ public:
              neighborEntityRet);
   }
 
-  template <class LE, class LN, class TE, class AE, class TN, class AN, class IntersectionType, class D, int d, class R,
-            int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<LE, D, d, R, rL, rCL>& /*localFunctionEntity*/,
-                const Dune::Stuff::LocalFunctionInterface<LN, D, d, R, rL, rCL>& /*localFunctionNeighbor*/,
-                const BaseFunctionSetInterface<TE, D, d, R, rT, rCT>& /*testBaseEntity*/,
-                const BaseFunctionSetInterface<AE, D, d, R, rA, rCA>& /*ansatzBaseEntity*/,
-                const BaseFunctionSetInterface<TN, D, d, R, rT, rCT>& /*testBaseNeighbor*/,
-                const BaseFunctionSetInterface<AN, D, d, R, rA, rCA>& /*ansatzBaseNeighbor*/,
+  template <class E, class N, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA,
+            int rCA>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunctionEntity*/,
+                const Stuff::LocalfunctionInterface<N, D, d, R, rL, rCL>& /*localFunctionNeighbor*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& /*testBaseNeighbor*/,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& /*ansatzBaseNeighbor*/,
                 const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d - 1>& /*localPoint*/,
                 Dune::DynamicMatrix<R>& /*entityEntityRet*/, Dune::DynamicMatrix<R>& /*neighborNeighborRet*/,
                 Dune::DynamicMatrix<R>& /*entityNeighborRet*/, Dune::DynamicMatrix<R>& /*neighborEntityRet*/) const
   {
-    static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
   /**
@@ -166,20 +170,20 @@ public:
    *  \tparam d         dimDomain
    *  \tparam R         RangeFieldType
    */
-  template <class LE, class LN, class TE, class AE, class TN, class AN, class IntersectionType, class D, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<LE, D, 2, R, 1, 1>& localFunctionEntity,
-                const Dune::Stuff::LocalFunctionInterface<LN, D, 2, R, 1, 1>& localFunctionNeighbor,
-                const BaseFunctionSetInterface<TE, D, 2, R, 1, 1>& testBaseEntity,
-                const BaseFunctionSetInterface<AE, D, 2, R, 1, 1>& ansatzBaseEntity,
-                const BaseFunctionSetInterface<TN, D, 2, R, 1, 1>& testBaseNeighbor,
-                const BaseFunctionSetInterface<AN, D, 2, R, 1, 1>& ansatzBaseNeighbor,
+  template <class E, class N, class IntersectionType, class D, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localFunctionEntity,
+                const Stuff::LocalfunctionInterface<N, D, 2, R, 1, 1>& localFunctionNeighbor,
+                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& testBaseEntity,
+                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface<N, D, 2, R, 1, 1>& testBaseNeighbor,
+                const Stuff::LocalfunctionSetInterface<N, D, 2, R, 1, 1>& ansatzBaseNeighbor,
                 const IntersectionType& intersection, const Dune::FieldVector<D, 1>& localPoint,
                 Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
-    typedef Dune::FieldVector<D, 2> DomainType;
-    typedef typename BaseFunctionSetInterface<TE, D, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename BaseFunctionSetInterface<TE, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
     const DomainType localPointEn    = intersection.geometryInInside().global(localPoint);
     const DomainType localPointNe    = intersection.geometryInOutside().global(localPoint);
@@ -317,8 +321,8 @@ class BoundaryLHSTraits
 public:
   typedef BoundaryLHS<LocalizableFunctionImp> derived_type;
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, LocalizableFunctionImp>::value,
-                "ERROR: LocalizableFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
 };
 
 
@@ -336,67 +340,74 @@ public:
   }
 
   template <class EntityType>
-  std::tuple<typename LocalizableFunctionType::template LocalFunction<EntityType>::Type>
-  localFunctions(const EntityType& entity) const
+  class LocalfunctionTuple
   {
-    return std::make_tuple(inducingFunction_.localFunction(entity));
+    typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+
+  public:
+    typedef std::tuple<std::shared_ptr<LocalfunctionType>> Type;
+  };
+
+  template <class EntityType>
+  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class L, class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  static int order(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                   const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase)
+  template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  static size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase)
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    return order(localFunction, testBase, ansatzBase);
+    const auto localFunction = std::get<0>(localFuncs);
+    return order(*localFunction, testBase, ansatzBase);
   }
 
-  template <class L, class T, class A, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  static int order(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& localFunction,
-                   const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                   const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase)
+  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  static size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& localFunction,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase)
   {
-    if (localFunction.order() < 0)
-      return -1;
-    else
-      return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order()), 0);
+    return localFunction.order() + testBase.order() + ansatzBase.order();
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class L, class T, class A, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA,
-            int rCA>
-  void evaluate(const std::tuple<L>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase,
-                const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& ansatzBase, const IntersectionType& intersection,
-                const Dune::FieldVector<D, d - 1>& localPoint, Dune::DynamicMatrix<R>& ret) const
+  template <class E, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                Dune::DynamicMatrix<R>& ret) const
   {
-    const auto& localFunction = std::get<0>(localFuncs);
-    evaluate(localFunction, testBase, ansatzBase, intersection, localPoint, ret);
+    const auto localFunction = std::get<0>(localFuncs);
+    evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-  template <class L, class T, class A, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT,
-            int rCT, int rA, int rCA>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, d, R, rL, rCL>& /*localFunction*/,
-                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
-                const BaseFunctionSetInterface<A, D, d, R, rA, rCA>& /*ansatzBase*/,
+  template <class E, class IntersectionType, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBase*/,
                 const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d - 1>& /*localPoint*/,
                 Dune::DynamicMatrix<R>& /*ret*/) const
   {
-    dune_static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class L, class T, class A, class IntersectionType, class D, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<L, D, 2, R, 1, 1>& localFunction,
-                const BaseFunctionSetInterface<T, D, 2, R, 1, 1>& testBase,
-                const BaseFunctionSetInterface<A, D, 2, R, 1, 1>& ansatzBase, const IntersectionType& intersection,
-                const Dune::FieldVector<D, 1>& localPoint, Dune::DynamicMatrix<R>& ret) const
+  template <class E, class IntersectionType, class D, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& ansatzBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, 1>& localPoint,
+                Dune::DynamicMatrix<R>& ret) const
   {
-    typedef Dune::FieldVector<D, 2> DomainType;
-    typedef typename BaseFunctionSetInterface<T, D, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename BaseFunctionSetInterface<T, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
@@ -470,10 +481,10 @@ public:
   typedef BoundaryRHS<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp> derived_type;
   typedef LocalizableDiffusionFunctionImp LocalizableDiffusionFunctionType;
   typedef LocalizableDirichletFunctionImp LocalizableDirichletFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::LocalizableFunction, LocalizableDiffusionFunctionImp>::value,
-                "ERROR: LocalizableDiffusionFunctionImp is not a Dune::Stuff::LocalizableFunction.");
-  static_assert(Dune::IsBaseOf<Dune::Stuff::LocalizableFunction, LocalizableDirichletFunctionImp>::value,
-                "ERROR: LocalizableDirichletFunctionImp is not a Dune::Stuff::LocalizableFunction.");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableDiffusionFunctionImp>::value,
+                "LocalizableDiffusionFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableDirichletFunctionImp>::value,
+                "LocalizableDirichletFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
 };
 
 
@@ -496,75 +507,80 @@ public:
   }
 
   template <class EntityType>
-  std::tuple<typename LocalizableDiffusionFunctionType::template LocalFunction<EntityType>::Type,
-             typename LocalizableDirichletFunctionType::template LocalFunction<EntityType>::Type>
-  localFunctions(const EntityType& entity) const
+  class LocalfunctionTuple
   {
-    return std::make_tuple(diffusion_.localFunction(entity), dirichlet_.localFunction(entity));
+    typedef typename LocalizableDiffusionFunctionType::LocalfunctionType LocalDiffusionFunctionType;
+    typedef typename LocalizableDirichletFunctionType::LocalfunctionType LocalDirichletunctionType;
+
+  public:
+    typedef std::tuple<std::shared_ptr<LocalDiffusionFunctionType>, std::shared_ptr<LocalDirichletunctionType>> Type;
+  };
+
+  template <class EntityType>
+  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(diffusion_.local_function(entity), dirichlet_.local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class LDF, class LDR, class T, class D, int d, class R, int r, int rC>
-  static int order(const std::tuple<LDF, LDR>& localFunctions,
-                   const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase)
+  template <class E, class D, int d, class R, int r, int rC>
+  static size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase)
   {
-    const auto& localDiffusion = std::get<0>(localFunctions);
-    const auto& localDirichlet = std::get<1>(localFunctions);
-    return order(localDiffusion, localDirichlet, testBase);
+    const auto localDiffusion = std::get<0>(localFuncs);
+    const auto localDirichlet = std::get<1>(localFuncs);
+    return order(*localDiffusion, *localDirichlet, testBase);
   }
 
-  template <class LF, class LR, class T, class D, int d, class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT>
-  static int order(const Dune::Stuff::LocalFunctionInterface<LF, D, d, R, rLF, rCLF>& localDiffusion,
-                   const Dune::Stuff::LocalFunctionInterface<LR, D, d, R, rLR, rCLR>& localDirichlet,
-                   const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& testBase)
+  template <class E, class D, int d, class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT>
+  static size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rLF, rCLF>& localDiffusion,
+                      const Stuff::LocalfunctionInterface<E, D, d, R, rLR, rCLR>& localDirichlet,
+                      const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase)
   {
-    if (localDiffusion.order() < 0 || localDirichlet.order() < 0)
-      return -1;
-    else {
-      // all order()s are at least 0
-      const size_t testOrder         = testBase.order();
-      const size_t testGradientOrder = std::max(int(testOrder - 1), 0);
-      const size_t diffusionOrder    = localDiffusion.order();
-      const size_t dirichletOrder = localDirichlet.order();
-      return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-    }
+    const size_t testOrder         = testBase.order();
+    const size_t testGradientOrder = std::max(int(testOrder - 1), 0);
+    const size_t diffusionOrder    = localDiffusion.order();
+    const size_t dirichletOrder = localDirichlet.order();
+    return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
   } // static int order(...)
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class LDF, class LDR, class T, class IntersectionType, class D, int d, class R, int r, int rC>
-  void evaluate(const std::tuple<LDF, LDR>& localFuncs, const BaseFunctionSetInterface<T, D, d, R, r, rC>& testBase,
+  template <class E, class IntersectionType, class D, int d, class R, int r, int rC>
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicVector<R>& ret) const
   {
-    const auto& localDiffusion = std::get<0>(localFuncs);
-    const auto& localDirichlet = std::get<1>(localFuncs);
-    evaluate(localDiffusion, localDirichlet, testBase, intersection, localPoint, ret);
+    const auto localDiffusion = std::get<0>(localFuncs);
+    const auto localDirichlet = std::get<1>(localFuncs);
+    evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
   }
 
-  template <class LDF, class LDR, class T, class IntersectionType, class D, int d, class R, int rLDF, int rCLDF,
-            int rLDR, int rCLDR, int rT, int rCT>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<LDF, D, d, R, rLDF, rCLDF>& /*localDiffusion*/,
-                const Dune::Stuff::LocalFunctionInterface<LDR, D, d, R, rLDR, rCLDR>& /*localDirichlet*/,
-                const BaseFunctionSetInterface<T, D, d, R, rT, rCT>& /*testBase*/,
+  template <class E, class IntersectionType, class D, int d, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT,
+            int rCT>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rLDF, rCLDF>& /*localDiffusion*/,
+                const Stuff::LocalfunctionInterface<E, D, d, R, rLDR, rCLDR>& /*localDirichlet*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
                 const IntersectionType& /*intersection*/, const Dune::FieldVector<D, d - 1>& /*localPoint*/,
                 Dune::DynamicVector<R>& /*ret*/) const
   {
-    static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for this combination of dimensions!");
+    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class LDF, class LDR, class T, class IntersectionType, class D, int d, class R>
-  void evaluate(const Dune::Stuff::LocalFunctionInterface<LDF, D, d, R, 1, 1>& localDiffusion,
-                const Dune::Stuff::LocalFunctionInterface<LDR, D, d, R, 1, 1>& localDirichlet,
-                const BaseFunctionSetInterface<T, D, d, R, 1, 1>& testBase, const IntersectionType& intersection,
-                const Dune::FieldVector<D, d - 1>& localPoint, Dune::DynamicVector<R>& ret) const
+  template <class E, class IntersectionType, class D, int d, class R>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDiffusion,
+                const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDirichlet,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                Dune::DynamicVector<R>& ret) const
   {
-    typedef Dune::FieldVector<D, d> DomainType;
-    typedef typename BaseFunctionSetInterface<T, D, d, R, 1, 1>::RangeType RangeType;
-    typedef typename BaseFunctionSetInterface<T, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
