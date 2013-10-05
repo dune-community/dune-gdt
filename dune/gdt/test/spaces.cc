@@ -113,9 +113,9 @@ struct SpaceCRTPtest
 TYPED_TEST_CASE(SpaceCRTPtest, SpaceTypes);
 TYPED_TEST(SpaceCRTPtest, SpaceCRTP)
 {
-    const GridProviderType gridProvider;
-    const std::shared_ptr< const GridPartType > gridPart(new GridPartType(*(gridProvider.grid())));
-    this->check(gridPart);
+  const GridProviderType gridProvider(-2.0, -1.0);
+  const std::shared_ptr< const GridPartType > gridPart(new GridPartType(*(gridProvider.grid())));
+  this->check(gridPart);
 }
 
 
