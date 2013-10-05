@@ -5,8 +5,6 @@
 
 #include <dune/stuff/test/test_common.hh>
 
-#include <utility>
-
 #include <dune/common/exceptions.hh>
 
 #ifndef HAVE_ALUGRID
@@ -28,27 +26,20 @@ typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 std::ostream& out = std::cout;
 //std::ostream& out = DSC_LOG.devnull();
 
-typedef testing::Types< std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 1 > >
-                      > AluConform2dTestCases_Order1;
+typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
+                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
+                      > AluConform2dTestCases;
 
-typedef testing::Types< std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 1 > >
-                      , std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 2 > >
-                      , std::pair< EllipticTestCase::ESV07< AluConform2dGridType >, Int< 3 > >
-                      > AluConform2dTestCases_HigherOrders;
-
-template< class Pair >
+template< class TestCase >
 struct EllipticCGDiscretization
   : public ::testing::Test
 {
-  typedef typename Pair::first_type TestType;
-  static const unsigned int polOrder = Pair::second_type::value;
-
   void check() const
   {
-    const TestType test_case;
+    const TestCase test_case;
     test_case.print_header(out);
     out << std::endl;
-    EllipticCG::EocStudy< TestType, polOrder > eoc_study(test_case);
+    EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
     auto errors = eoc_study.run(out);
     for (const auto& norm : eoc_study.provided_norms())
       if (errors[norm] > eoc_study.expected_results(norm))
@@ -56,33 +47,39 @@ struct EllipticCGDiscretization
   }
 };
 
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases_Order1);
+TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
   this->check();
 }
 
 
-template< class Pair >
+template< class TestCase >
 struct EllipticSIPDGDiscretization
   : public ::testing::Test
 {
-  typedef typename Pair::first_type TestType;
-  static const unsigned int polOrder = Pair::second_type::value;
-
   void check() const
   {
-    const TestType test_case;
+    const TestCase test_case;
     test_case.print_header(out);
     out << std::endl;
-    EllipticSIPDG::EocStudy< TestType, polOrder > eoc_study(test_case);
-    auto errors = eoc_study.run(out);
-    for (const auto& norm : eoc_study.provided_norms())
-      if (errors[norm] > eoc_study.expected_results(norm))
-        DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
+    size_t failure = 0;
+    EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
+    auto errors = eoc_study_1.run(out);
+    for (const auto& norm : eoc_study_1.provided_norms())
+      if (errors[norm] > eoc_study_1.expected_results(norm))
+        ++failure;
+    out << std::endl;
+    EllipticSIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
+    errors = eoc_study_2.run(out);
+    for (const auto& norm : eoc_study_2.provided_norms())
+      if (errors[norm] > eoc_study_2.expected_results(norm))
+        ++failure;
+    if (failure)
+      DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
   }
 };
 
-TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases_HigherOrders);
+TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
   this->check();
 }
