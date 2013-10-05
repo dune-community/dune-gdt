@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_EXAMPLES_ELLIPTIC_DISCRETIZATION_CG_HH
-#define DUNE_GDT_EXAMPLES_ELLIPTIC_DISCRETIZATION_CG_HH
+#ifndef DUNE_GDT_TEST_ELLIPTIC_CG_DISCRETIZATION_HH
+#define DUNE_GDT_TEST_ELLIPTIC_CG_DISCRETIZATION_HH
 
 #include <memory>
 #include <vector>
@@ -408,4 +408,4 @@ private:
 
 } // namespace EllipticCG
 
-#endif // DUNE_GDT_EXAMPLES_ELLIPTIC_DISCRETIZATION_CG_HH
+#endif // DUNE_GDT_TEST_ELLIPTIC_CG_DISCRETIZATION_HH
