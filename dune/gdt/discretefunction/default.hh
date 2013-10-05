@@ -104,9 +104,9 @@ public:
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
-  virtual std::shared_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
+  virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
   {
-    return std::shared_ptr<ConstLocalDiscreteFunctionType>(
+    return std::unique_ptr<ConstLocalDiscreteFunctionType>(
         new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
 
