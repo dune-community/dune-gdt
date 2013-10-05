@@ -421,6 +421,119 @@ private:
 }; // class LocalThermalBlock
 
 
+template <class GridType>
+class MixedBoundaryTypes : public Base<GridType>
+{
+  typedef Base<GridType> BaseType;
+
+public:
+  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = BaseType::dimDomain;
+  typedef double RangeFieldType;
+  static const unsigned int dimRange = 1;
+  typedef Dune::Stuff::GridboundaryNormalBased<typename GridPartType::IntersectionType> BoundaryInfoType;
+
+  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      ConstantFunctionType;
+  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      ExpressionFunctionType;
+  typedef ConstantFunctionType DiffusionType;
+  typedef ConstantFunctionType ForceType;
+  typedef ExpressionFunctionType DirichletType;
+  typedef ConstantFunctionType NeumannType;
+  typedef ConstantFunctionType ExactSolutionType;
+
+  MixedBoundaryTypes(const size_t num_refinements = 3)
+    : BaseType(create_initial_grid(), num_refinements)
+    , boundary_info_(create_boundary_info())
+    , diffusion_(1)
+    , force_(1)
+    , dirichlet_("x", "0.25 * x[0] * x[1]", 2)
+    , neumann_(0.1)
+    , exact_solution_(0)
+  {
+  }
+
+  void print_header(std::ostream& out = std::cout) const
+  {
+    out << "+==========================================================+\n"
+        << "|+========================================================+|\n"
+        << "||  Testcase mixed boundary types                         ||\n"
+        << "|+--------------------------------------------------------+|\n"
+        << "||  domain = [0, 1] x [0 , 1]                             ||\n"
+        << "||  diffusion = 1                                         ||\n"
+        << "||  force     = 1                                         ||\n"
+        << "||  neumann   = 0.1       on the right side               ||\n"
+        << "||  dirichlet = 1/4 x y   everywhere else                 ||\n"
+        << "||  reference solution: discrete solution on finest grid  ||\n"
+        << "|+========================================================+|\n"
+        << "+==========================================================+" << std::endl;
+  } // ... print_header(...)
+
+  const BoundaryInfoType& boundary_info() const
+  {
+    return boundary_info_;
+  }
+
+  const DiffusionType& diffusion() const
+  {
+    return diffusion_;
+  }
+
+  const ForceType& force() const
+  {
+    return force_;
+  }
+
+  const DirichletType& dirichlet() const
+  {
+    return dirichlet_;
+  }
+
+  const NeumannType& neumann() const
+  {
+    return neumann_;
+  }
+
+  bool provides_exact_solution() const
+  {
+    return false;
+  }
+
+  const ExactSolutionType& exact_solution() const
+  {
+    DUNE_THROW(Dune::InvalidStateException, "provides_exact_solution() == false");
+    return neumann_;
+  }
+
+private:
+  static std::shared_ptr<GridType> create_initial_grid()
+  {
+    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 2));
+    auto grid = grid_provider->grid();
+    grid->globalRefine(1);
+    return grid;
+  } // ... create_initial_grid(...)
+
+  static BoundaryInfoType create_boundary_info()
+  {
+    typename ConstantFunctionType::DomainType neumann_normal(0.0);
+    neumann_normal[0] = 1.0;
+    return BoundaryInfoType(true, {}, {neumann_normal});
+  }
+
+  const BoundaryInfoType boundary_info_;
+  const DiffusionType diffusion_;
+  const ForceType force_;
+  const DirichletType dirichlet_;
+  const NeumannType neumann_;
+  const ExactSolutionType exact_solution_;
+}; // class MixedBoundaryTypes
+
+
 } // namespace EllipticTestCase
 
 #endif // DUNE_GDT_TEST_ELLIPTIC_HH

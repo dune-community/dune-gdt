@@ -405,6 +405,23 @@ public:
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same<TestCase, EllipticTestCase::MixedBoundaryTypes<Dune::ALUConformGrid<2, 2>>>::value) {
+      if (polOrder == 1) {
+        if (type.compare("L2") == 0)
+          return {6.20e-02, 1.75e-02, 4.51e-03, 1.01e-03};
+        else if (type.compare("H1") == 0)
+          return {2.80e-01, 1.46e-01, 7.21e-02, 3.24e-02};
+        else
+          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+      } else if (polOrder == 2) {
+        if (type.compare("L2") == 0)
+          return {5.06e-03, 8.63e-04, 1.62e-04, 3.44e-05};
+        else if (type.compare("H1") == 0)
+          return {4.63e-02, 1.59e-02, 5.91e-03, 2.29e-03};
+        else
+          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+      } else
+        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   }
