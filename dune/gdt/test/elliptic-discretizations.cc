@@ -29,6 +29,7 @@ std::ostream& out = std::cout;
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
                       , EllipticTestCase::ER07< AluConform2dGridType >
+                      , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 template< class TestCase >
@@ -65,15 +66,15 @@ struct EllipticSIPDGDiscretization
     out << std::endl;
     size_t failure = 0;
     EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-    auto errors = eoc_study_1.run(out);
-    for (const auto& norm : eoc_study_1.provided_norms())
-      if (errors[norm] > eoc_study_1.expected_results(norm))
-        ++failure;
+    auto errors_1 = eoc_study_1.run(out);
     out << std::endl;
     EllipticSIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
-    errors = eoc_study_2.run(out);
+    auto errors_2 = eoc_study_2.run(out);
+    for (const auto& norm : eoc_study_1.provided_norms())
+      if (errors_1[norm] > eoc_study_1.expected_results(norm))
+        ++failure;
     for (const auto& norm : eoc_study_2.provided_norms())
-      if (errors[norm] > eoc_study_2.expected_results(norm))
+      if (errors_2[norm] > eoc_study_2.expected_results(norm))
         ++failure;
     if (failure)
       DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
