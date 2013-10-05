@@ -30,13 +30,6 @@ public:
                                    rangeDimCols> derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType BackendType;
   typedef typename BackendType::EntityType EntityType;
-  //  typedef typename BackendType::DomainFieldType   DomainFieldType;
-  //  static const unsigned int                       dimDomain = BackendType::dimDomain;
-  //  typedef typename BackendType::DomainType        DomainType;
-  //  typedef typename BackendType::RangeFieldType    RangeFieldType;
-  //  static const unsigned int                       dimRange = BackendType::dimRange;
-  //  typedef typename BackendType::RangeType         RangeType;
-  //  typedef typename BackendType::JacobianRangeType JacobianRangeType;
 };
 
 
@@ -49,6 +42,8 @@ class FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
   typedef BaseFunctionSetInterface<FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
                                                                   RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> InterfaceType;
+  typedef FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      ThisType;
 
 public:
   typedef FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
@@ -68,9 +63,20 @@ public:
   FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
     : baseFunctionSetMap_(baseFunctionSetMap)
     , entity_(en)
-    , backend_(baseFunctionSetMap_.find(entity_))
+    , backend_(new BackendType(baseFunctionSetMap_.find(entity_)))
   {
   }
+
+  FemLocalfunctionsWrapper(ThisType&& source)
+    : baseFunctionSetMap_(source.baseFunctionSetMap_)
+    , entity_(source.entity_)
+    , backend_(std::move(source.backend_))
+  {
+  }
+
+  FemLocalfunctionsWrapper(const ThisType& /*other*/) = delete;
+
+  ThisType& operator=(const ThisType& /*other*/) = delete;
 
   const EntityType& entity() const
   {
@@ -79,12 +85,12 @@ public:
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   size_t size() const
   {
-    return backend_.size();
+    return backend_->size();
   }
 
   size_t order() const
@@ -95,7 +101,7 @@ public:
   void evaluate(const DomainType& x, std::vector<RangeType>& ret) const
   {
     assert(ret.size() >= size());
-    backend_.evaluateAll(x, ret);
+    backend_->evaluateAll(x, ret);
   }
 
   using InterfaceType::evaluate;
@@ -103,7 +109,7 @@ public:
   void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
   {
     assert(ret.size() >= size());
-    backend_.jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
+    backend_->jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
   }
 
   using InterfaceType::jacobian;
@@ -111,7 +117,7 @@ public:
 private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
   const EntityType& entity_;
-  const BackendType backend_;
+  std::unique_ptr<const BackendType> backend_;
 }; // class FemLocalfunctionsWrapper
 
 
