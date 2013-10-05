@@ -12,6 +12,8 @@
   #include "config.h"
 #endif
 
+#include <memory>
+
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 
@@ -96,7 +98,9 @@ template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
   : public SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
-  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
+  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+    BaseType;
+  typedef FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
 public:
   typedef FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
@@ -119,22 +123,41 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsWrapper(const GridPartType& gridP)
+  FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > gridP)
     : gridPart_(assertGridPart(gridP))
-    , baseFunctionSetMap_(gridPart_)
-    , backend_(const_cast< GridPartType& >(gridPart_), baseFunctionSetMap_)
-    , mapper_(backend_.mapper())
-    , tmp_global_indices_(mapper_.maxNumDofs())
+    , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
+    , backend_(new BackendType(const_cast< GridPartType& >(*gridPart_), *baseFunctionSetMap_))
+    , mapper_(new MapperType(backend_->mapper()))
+    , tmp_global_indices_(mapper_->maxNumDofs())
   {}
 
-  const GridPartType& gridPart() const
+  FemLocalfunctionsWrapper(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , baseFunctionSetMap_(other.baseFunctionSetMap_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , tmp_global_indices_(mapper_->maxNumDofs())
+  {}
+
+  ThisType& operator=(const ThisType& other)
+  {
+    if (this != &other) {
+      gridPart_ = other.gridPart_;
+      baseFunctionSetMap_ = other.baseFunctionSetMap_;
+      backend_ = other.backend_;
+      mapper_ = other.mapper_;
+    }
+    return *this;
+  }
+
+  std::shared_ptr< const GridPartType > gridPart() const
   {
     return gridPart_;
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   bool continuous() const
@@ -144,12 +167,12 @@ public:
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    return BaseFunctionSetType(baseFunctionSetMap_, entity);
+    return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
   template< class R >
@@ -168,7 +191,7 @@ public:
     if (entity.hasBoundaryIntersections()) {
       // get local finite elements
       // * we are a CG space
-      const auto cg_finite_element = backend_.finiteElement(entity);
+      const auto cg_finite_element = backend_->finiteElement(entity);
       const auto& cg_local_coefficients = cg_finite_element.localCoefficients();
       // * but we also need a local DG finite element
       typedef Dune::DGLocalFiniteElement< typename Traits::FiniteElementType > DgFiniteElementType;
@@ -202,8 +225,8 @@ public:
 
       // then we walk the intersections
       std::set< size_t > local_dirichlet_DoF_ids;
-      const auto intersection_it_end = gridPart_.iend(entity);
-      for (auto intersection_it = gridPart_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+      const auto intersection_it_end = gridPart_->iend(entity);
+      for (auto intersection_it = gridPart_->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (ret.gridBoundary().dirichlet(intersection)) {
           const auto& intersection_geometry = intersection.geometry();
@@ -229,7 +252,7 @@ public:
       const size_t num_rows = local_dirichlet_DoF_ids.size();
       if (num_rows > 0) {
         const size_t num_cols = baseFunctionSet(entity).size();
-        mapper_.globalIndices(entity, tmp_global_indices_);
+        mapper_->globalIndices(entity, tmp_global_indices_);
         ret.setSize(num_rows, num_cols);
         size_t local_row = 0;
         const RangeFieldType zero(0);
@@ -262,7 +285,7 @@ public:
     if (entity.hasBoundaryIntersections()) {
       // get local finite elements
       // * we are a CG space
-      const auto cg_finite_element = backend_.finiteElement(entity);
+      const auto cg_finite_element = backend_->finiteElement(entity);
       const auto& cg_local_coefficients = cg_finite_element.localCoefficients();
       // * but we also need a local DG finite element
       typedef Dune::DGLocalFiniteElement< typename Traits::FiniteElementType > DgFiniteElementType;
@@ -296,8 +319,8 @@ public:
 
       // then we walk the intersections
       std::set< size_t > local_dirichlet_DoF_ids;
-      const auto intersection_it_end = gridPart_.iend(entity);
-      for (auto intersection_it = gridPart_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+      const auto intersection_it_end = gridPart_->iend(entity);
+      for (auto intersection_it = gridPart_->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (ret.gridBoundary().dirichlet(intersection)) {
           const auto& intersection_geometry = intersection.geometry();
@@ -323,7 +346,7 @@ public:
       const size_t num_rows = local_dirichlet_DoF_ids.size();
       if (num_rows > 0) {
         const size_t num_cols = baseFunctionSet(entity).size();
-        mapper_.globalIndices(entity, tmp_global_indices_);
+        mapper_->globalIndices(entity, tmp_global_indices_);
         ret.setSize(num_rows, num_cols);
         size_t local_row = 0;
         const RangeFieldType zero(0);
@@ -349,16 +372,16 @@ public:
   PatternType* computePattern(const LocalGridPartType& localGridPart,
                               const OtherSpaceType& otherSpace) const
   {
-    return BaseType::computeVolumePattern(localGridPart, otherSpace);
+    return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
   }
 
 private:
-  static const GridPartType& assertGridPart(const GridPartType& gP)
+  static std::shared_ptr< const GridPartType > assertGridPart(const std::shared_ptr< const GridPartType > gP)
   {
     // check
     typedef typename Dune::Fem::AllGeomTypes< typename GridPartType::IndexSetType,
                                               typename GridPartType::GridType > AllGeometryTypes;
-    const AllGeometryTypes allGeometryTypes(gP.indexSet());
+    const AllGeometryTypes allGeometryTypes(gP->indexSet());
     const std::vector< Dune::GeometryType >& geometryTypes = allGeometryTypes.geomTypes(0);
     if (!(geometryTypes.size() == 1 && geometryTypes[0].isSimplex()))
       DUNE_THROW(Dune::NotImplemented,
@@ -367,10 +390,10 @@ private:
     return gP;
   } // ... assertGridPart(...)
 
-  const GridPartType& gridPart_;
-  BaseFunctionSetMapType baseFunctionSetMap_;
-  const BackendType backend_;
-  const MapperType mapper_;
+  std::shared_ptr< const GridPartType > gridPart_;
+  std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
+  std::shared_ptr< const BackendType > backend_;
+  std::shared_ptr< const MapperType > mapper_;
   mutable Dune::DynamicVector< size_t > tmp_global_indices_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
