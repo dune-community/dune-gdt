@@ -70,7 +70,6 @@ public:
   static const unsigned int             dimRange = 1;
   static const unsigned int             dimRangeCols = 1;
   typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
-//  typedef FemLocalfunctionsWrapperTraits< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > ThisType;
   typedef Dune::LagrangeLocalFiniteElement< Dune::EquidistantPointSet,
                                             dimDomain,
                                             DomainFieldType,
@@ -99,7 +98,9 @@ template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
   : public SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
-  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
+  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+    BaseType;
+  typedef FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
 public:
   typedef FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
@@ -122,38 +123,56 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsWrapper(const GridPartType& gridP)
+  FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > gridP)
     : gridPart_(assertGridPart(gridP))
-    , baseFunctionSetMap_(gridPart_)
-    , backend_(const_cast< GridPartType& >(gridPart_), baseFunctionSetMap_)
-    , mapper_(backend_.mapper())
+    , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
+    , backend_(new BackendType(const_cast< GridPartType& >(*gridPart_), *baseFunctionSetMap_))
+    , mapper_(new MapperType(backend_->mapper()))
   {}
+
+  FemLocalfunctionsWrapper(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , baseFunctionSetMap_(other.baseFunctionSetMap_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+  {}
+
+  ThisType& operator=(const ThisType& other)
+  {
+    if (this != &other) {
+      gridPart_ = other.gridPart_;
+      baseFunctionSetMap_ = other.baseFunctionSetMap_;
+      backend_ = other.backend_;
+      mapper_ = other.mapper_;
+    }
+    return *this;
+  }
 
   ~FemLocalfunctionsWrapper() {}
 
-  const GridPartType& gridPart() const
+  std::shared_ptr< const GridPartType > gridPart() const
   {
     return gridPart_;
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   bool continuous() const
   {
-    return true;
+    return false;
   }
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    return BaseFunctionSetType(baseFunctionSetMap_, entity);
+    return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
   template< class R >
@@ -169,11 +188,11 @@ public:
   PatternType* computePattern(const LocalGridPartType& localGridPart,
                               const OtherSpaceType& otherSpace) const
   {
-    return BaseType::computeVolumeAndCouplingPattern(localGridPart, otherSpace);
+    return BaseType::computeCodim0AndCodim1Pattern(localGridPart, otherSpace);
   }
 
 private:
-  static const GridPartType& assertGridPart(const GridPartType& gP)
+  static std::shared_ptr< const GridPartType > assertGridPart(const std::shared_ptr< const GridPartType > gP)
   {
     // static grid check
     typedef typename GridPartType::GridType GridType;
@@ -188,7 +207,7 @@ private:
     // dynamic gridpart check
     typedef typename Dune::Fem::AllGeomTypes< typename GridPartType::IndexSetType,
                                               typename GridPartType::GridType > AllGeometryTypes;
-    const AllGeometryTypes allGeometryTypes(gP.indexSet());
+    const AllGeometryTypes allGeometryTypes(gP->indexSet());
     const std::vector< Dune::GeometryType >& geometryTypes = allGeometryTypes.geomTypes(0);
     if (!(geometryTypes.size() == 1 && geometryTypes[0].isSimplex()))
       DUNE_THROW(Dune::NotImplemented,
@@ -197,10 +216,10 @@ private:
     return gP;
   } // ... assertGridPart(...)
 
-  const GridPartType& gridPart_;
-  BaseFunctionSetMapType baseFunctionSetMap_;
-  const BackendType backend_;
-  const MapperType mapper_;
+  std::shared_ptr< const GridPartType > gridPart_;
+  std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
+  std::shared_ptr< const BackendType > backend_;
+  std::shared_ptr< const MapperType > mapper_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
 
