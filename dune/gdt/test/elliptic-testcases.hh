@@ -556,8 +556,8 @@ public:
   typedef Dune::Stuff::Function::Spe10Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       Spe10Model1FunctionType;
   typedef Spe10Model1FunctionType DiffusionType;
-  typedef ExpressionFunctionType ForceType;
-  typedef ConstantFunctionType DirichletType;
+  typedef ConstantFunctionType ForceType;
+  typedef ExpressionFunctionType DirichletType;
   typedef ConstantFunctionType NeumannType;
   typedef ConstantFunctionType ExactSolutionType;
 
@@ -565,10 +565,8 @@ public:
     : BaseType(create_initial_grid(), num_refinements)
     , boundary_info_()
     , diffusion_("perm_case1.dat", {0.0, 0.0}, {5.0, 1.0})
-    , force_("x", "100.0*(exp(-1.0*((((x[0]-0.95)*(x[0]-0.95))+((x[1]-0.65)*(x[1]-0.65)))/"
-                  "(2*0.05*0.05)))-exp(-1.0*((((x[0]-4.3)*(x[0]-4.3))+((x[1]-0.35)*(x[1]-0.35)))/(2*0.05*0.05))))",
-             3)
-    , dirichlet_(0)
+    , force_(0)
+    , dirichlet_("x", "x[0]", 1)
     , neumann_(0)
   {
   }
