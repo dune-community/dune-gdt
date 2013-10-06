@@ -16,6 +16,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container/eigen.hh>
 #include <dune/stuff/la/solver/eigen.hh>
+#include <dune/stuff/la/solver/fasp.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
@@ -152,14 +153,26 @@ public:
     // do all the work
     systemAssembler.assemble();
     // solve
+    std::unique_ptr< typename Dune::Stuff::LA::SolverInterface< MatrixType, VectorType > > linear_solver(nullptr);
+    Dune::ParameterTree linear_solver_settings;
+#ifdef HAVE_FASP
+    typedef typename Dune::Stuff::LA::AmgSolver< MatrixType, VectorType > LinearSolverType;
+    linear_solver_settings = LinearSolverType::defaultSettings();
+    linear_solver_settings["precision"] = "1e-10";
+    linear_solver_settings["maxIter"] = Dune::Stuff::Common::toString(space_.mapper().size());
+    linear_solver = std::unique_ptr< LinearSolverType >(new LinearSolverType());
+#else
     typedef typename Dune::Stuff::LA::BicgstabILUTSolver< MatrixType, VectorType > LinearSolverType;
-    auto linear_solver_settings = LinearSolverType::defaultSettings();
-    linear_solver_settings["precision"] = "1e-16";
-    LinearSolverType linear_solver;
-    const size_t failure = linear_solver.apply(system_matrix,
-                                               rhs_vector,
-                                               solution,
-                                               linear_solver_settings);
+    linear_solver_settings = LinearSolverType::defaultSettings();
+    linear_solver_settings["precision"] = "1e-10";
+    linear_solver_settings["maxIter"] = Dune::Stuff::Common::toString(space_.mapper().size());
+    linear_solver = std::unique_ptr< LinearSolverType >(new LinearSolverType());
+#endif
+    assert(linear_solver);
+    const size_t failure = linear_solver->apply(system_matrix,
+                                                rhs_vector,
+                                                solution,
+                                                linear_solver_settings);
     if (failure)
       DUNE_THROW(Dune::MathError,
                  "\nERROR: linear solver reported a problem!");
