@@ -30,6 +30,7 @@ typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
                       , EllipticTestCase::ER07< AluConform2dGridType >
                       , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
+                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 template< class TestCase >
