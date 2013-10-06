@@ -561,7 +561,7 @@ public:
   typedef ConstantFunctionType NeumannType;
   typedef ConstantFunctionType ExactSolutionType;
 
-  Spe10Model1(const size_t num_refinements = 2)
+  Spe10Model1(const size_t num_refinements = 1)
     : BaseType(create_initial_grid(), num_refinements)
     , boundary_info_()
     , diffusion_("perm_case1.dat", {0.0, 0.0}, {5.0, 1.0})
@@ -580,8 +580,8 @@ public:
         << "|+--------------------------------------------------------+|\n"
         << "||  domain = [0, 5] x [0 , 1]                             ||\n"
         << "||  diffusion: spe10 model 1                              ||\n"
-        << "||  force     = 1                                         ||\n"
-        << "||  dirichlet = 0                                         ||\n"
+        << "||  force     = 0                                         ||\n"
+        << "||  dirichlet = x                                         ||\n"
         << "||  reference solution: discrete solution on finest grid  ||\n"
         << "|+========================================================+|\n"
         << "+==========================================================+" << std::endl;
