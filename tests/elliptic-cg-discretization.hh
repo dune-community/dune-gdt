@@ -10,6 +10,8 @@
 #include <vector>
 #include <type_traits>
 
+#include <dune/common/timer.hh>
+
 #include <dune/fem/misc/gridwidth.hh>
 
 #include <dune/stuff/common/memory.hh>
@@ -284,10 +286,11 @@ public:
     return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
   } // ... current_grid_width(...)
 
-  virtual void compute_on_current_refinement() override
+  virtual double compute_on_current_refinement() override
   {
     using namespace Dune;
     using namespace Dune::GDT;
+    Timer timer;
     if (current_level_ != last_computed_level_) {
       assert(current_level_ < test_.num_levels());
       // compute solution
@@ -313,6 +316,7 @@ public:
       prolongation_operator.apply(current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
+    return timer.elapsed();
   } // ... compute_on_current_refinement(...)
 
   virtual double current_error_norm(const std::string type) override
