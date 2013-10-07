@@ -41,7 +41,7 @@ if( NOT EIGEN_FOUND )
 endif( NOT EIGEN_FOUND )
 
 # we would like to have fasp
-include(FindFASP)
+#include(FindFASP)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h )
 add_definitions( -DHAVE_CMAKE_CONFIG )
