@@ -75,5 +75,4 @@ set( COMMON_LIBS
 
 add_subdirectory(doc)
 add_subdirectory(dune)
-add_subdirectory(examples)
 
