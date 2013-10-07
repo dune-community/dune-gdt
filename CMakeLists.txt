@@ -76,3 +76,5 @@ set( COMMON_LIBS
 add_subdirectory(doc)
 add_subdirectory(dune)
 
+ADD_EXECUTABLE( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable "say_hello.cc" ${COMMON_HEADER} )
+TARGET_LINK_LIBRARIES( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable ${COMMON_LIBS} )
