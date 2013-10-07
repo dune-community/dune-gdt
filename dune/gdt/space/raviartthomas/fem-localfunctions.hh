@@ -12,7 +12,9 @@
 #include "config.h"
 #endif
 
-#include <dune/common/static_assert.hh>
+#include <type_traits>
+#include <memory>
+
 #include <dune/common/exceptions.hh>
 
 #include <dune/localfunctions/raviartthomas.hh>
@@ -47,10 +49,10 @@ class FemLocalfunctionsWrapperTraits;
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>
+class FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2>
 {
-  dune_static_assert((GridPartImp::dimension == 2), "ERROR: only implemented for dimDomain = 2!");
-  dune_static_assert((polynomialOrder >= 0), "ERROR: wrong polOrder given!");
+  static_assert(GridPartImp::dimension == 2, "Only implemented for dimDomain 2!");
+  static_assert(polynomialOrder >= 0, "Wrong polOrder given!");
 
 public:
   typedef GridPartImp GridPartType;
@@ -67,7 +69,7 @@ public:
   typedef FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols> derived_type;
 
 private:
-  typedef Dune::RaviartThomasLocalFiniteElement<dimDomain, DomainFieldType, RangeFieldType> FiniteElementType;
+  typedef Dune::RaviartThomasSimplexLocalFiniteElement<dimDomain, DomainFieldType, RangeFieldType> FiniteElementType;
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType, FiniteElementType,
                                                       Dune::FemLocalFunctions::PiolaTransformation,
                                                       Dune::FemLocalFunctions::SimpleStorage, polOrder, polOrder,
@@ -83,15 +85,18 @@ public:
 private:
   template <class G, int p, class R, int r, int rC>
   friend class FemLocalfunctionsWrapper;
-}; // class FemLocalfunctionsWrapperTraits< ..., 1, 1 >
+}; // class FemLocalfunctionsWrapperTraits< ..., 2, 1 >
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>
-    : public SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>>
+class FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 2>
+    : public SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2>>
 {
+  typedef FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 2> ThisType;
+  typedef SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2>> BaseType;
+
 public:
-  typedef FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1> Traits;
+  typedef FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename GridPartType::ctype DomainFieldType;
@@ -106,26 +111,47 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
 
+  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+
 private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsWrapper(const GridPartType& gridP)
+  FemLocalfunctionsWrapper(const std::shared_ptr<const GridPartType>& gridP)
     : gridPart_(assertGridPart(gridP))
-    , baseFunctionSetMap_(gridPart_)
-    , backend_(const_cast<GridPartType&>(gridPart_), baseFunctionSetMap_)
-    , mapper_(backend_.mapper())
+    , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
+    , backend_(new BackendType(const_cast<GridPartType&>(*gridPart_), *baseFunctionSetMap_))
+    , mapper_(new MapperType(backend_->mapper()))
   {
   }
 
-  const GridPartType& gridPart() const
+  FemLocalfunctionsWrapper(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , baseFunctionSetMap_(other.baseFunctionSetMap_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+  {
+  }
+
+  ThisType& operator=(const ThisType& other)
+  {
+    if (this != &other) {
+      gridPart_           = other.gridPart_;
+      baseFunctionSetMap_ = other.baseFunctionSetMap_;
+      backend_            = other.backend_;
+      mapper_             = other.mapper_;
+    }
+    return *this;
+  }
+
+  std::shared_ptr<const GridPartType> gridPart() const
   {
     return gridPart_;
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   bool continuous() const
@@ -135,27 +161,35 @@ public:
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    return BaseFunctionSetType(baseFunctionSetMap_, entity);
+    return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
   template <class R>
   void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault<R>& /*ret*/) const
   {
-    dune_static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for arbitrary constraints!");
+    static_assert(Dune::AlwaysFalse<R>::value, "ERROR: not implemented for arbitrary constraints!");
+  }
+
+  using BaseType::computePattern;
+
+  template <class LocalGridPartType, class OtherSpaceType>
+  PatternType* computePattern(const LocalGridPartType& /*localGridPart*/, const OtherSpaceType& /*otherSpace*/) const
+  {
+    static_assert(Dune::AlwaysFalse<LocalGridPartType>::value, "Not implemented!");
   }
 
 private:
-  static const GridPartType& assertGridPart(const GridPartType& gP)
+  static std::shared_ptr<const GridPartType> assertGridPart(const std::shared_ptr<const GridPartType> gP)
   {
     // check
     typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
         AllGeometryTypes;
-    const AllGeometryTypes allGeometryTypes(gP.indexSet());
+    const AllGeometryTypes allGeometryTypes(gP->indexSet());
     const std::vector<Dune::GeometryType>& geometryTypes = allGeometryTypes.geomTypes(0);
     if (!(geometryTypes.size() == 1 && geometryTypes[0].isSimplex()))
       DUNE_THROW(Dune::NotImplemented,
@@ -164,10 +198,10 @@ private:
     return gP;
   } // ... assertGridPart(...)
 
-  const GridPartType& gridPart_;
-  BaseFunctionSetMapType baseFunctionSetMap_;
-  const BackendType backend_;
-  const MapperType mapper_;
+  std::shared_ptr<const GridPartType> gridPart_;
+  std::shared_ptr<BaseFunctionSetMapType> baseFunctionSetMap_;
+  std::shared_ptr<const BackendType> backend_;
+  std::shared_ptr<const MapperType> mapper_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
 
