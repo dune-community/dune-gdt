@@ -339,7 +339,7 @@ public:
   typedef BoundaryLHSTraits<LocalizableFunctionImp> Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
 
-  BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta)
+  BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta = 1.0)
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {
@@ -507,7 +507,7 @@ public:
   typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
-              const double beta)
+              const double beta = 1.0)
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
