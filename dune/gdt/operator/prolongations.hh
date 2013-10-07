@@ -134,7 +134,7 @@ public:
 
   template< class SGP, int sp, class R, int r, class SV, class RGP, int rp, class RV >
   void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< SGP, sp, R, r >, SV >& source,
-             DiscreteFunction < ContinuousLagrangeSpace::FemWrapper< RGP, rp, R, r >, RV >& range) const
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< RGP, rp, R, r >, RV >& range) const
   {
     // create search in the source grid part
     typedef ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< SGP, sp, R, r >, SV > SourceType;
