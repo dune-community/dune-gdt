@@ -58,7 +58,7 @@ add_dune_modules(
 )
 
 # header
-file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/dune/*.hh" )
+file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/*.hh" )
 set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
 set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 
@@ -74,7 +74,7 @@ set( COMMON_LIBS
 )
 
 add_subdirectory(doc)
-add_subdirectory(dune)
+add_subdirectory(tests)
 
 ADD_EXECUTABLE( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable "say_hello.cc" ${COMMON_HEADER} )
 TARGET_LINK_LIBRARIES( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable ${COMMON_LIBS} )
