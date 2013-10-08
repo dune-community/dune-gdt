@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <type_traits>
+#include <limits>
 
 #include <dune/common/densematrix.hh>
 
@@ -86,12 +87,10 @@ public:
     const auto& neighbor        = neighborTestBase.entity();
     const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
     // quadrature
-    typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
-    typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const int quadratureOrder = evaluation().order(
+    const size_t quadratureOrder = evaluation().order(
         localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase);
-    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
+    assert((2 * quadratureOrder + 1) < std::numeric_limits<int>::max());
+    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(2 * quadratureOrder + 1));
     // check matrix and tmp storage
     const size_t rowsEn = entityTestBase.size();
     const size_t colsEn = entityAnsatzBase.size();
@@ -243,9 +242,10 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const int quadratureOrder = evaluation().order(localFunctions, testBase, ansatzBase);
-    assert(quadratureOrder >= 0 && "Not implemented for negative integration orders!");
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
+    const size_t quadratureOrder = evaluation().order(localFunctions, testBase, ansatzBase);
+    assert((2 * quadratureOrder + 1) < std::numeric_limits<int>::max());
+    const FaceQuadratureType& faceQuadrature =
+        FaceQuadratureRules::rule(intersection.type(), int(2 * quadratureOrder + 1));
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
