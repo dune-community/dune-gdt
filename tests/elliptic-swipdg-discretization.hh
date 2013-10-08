@@ -297,6 +297,7 @@ public:
     using namespace Dune;
     using namespace Dune::GDT;
     Timer timer;
+    double elapsed = 0;
     if (current_level_ != last_computed_level_) {
       assert(current_level_ < test_.num_levels());
       // compute solution
@@ -309,8 +310,10 @@ public:
                                                              current_level_solution_vector,
                                                              "solution on current level");
       // prolong to reference grid part
+      elapsed += timer.elapsed();
       if (!reference_solution_computed_)
         compute_reference_solution();
+      timer.reset();
       const auto reference_grid_part = test_.reference_grid_part();
       const ProlongationOperator::L2< GridPartType > prolongation_operator(*reference_grid_part);
       assert(reference_discretization_);
@@ -322,7 +325,7 @@ public:
       prolongation_operator.apply(current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
-    return timer.elapsed();
+    return timer.elapsed() + elapsed;
   } // ... compute_on_current_refinement(...)
 
   virtual double current_error_norm(const std::string type) override
