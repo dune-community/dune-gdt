@@ -121,6 +121,7 @@ public:
             const auto& rtn_basis_value = rtn_basis_values[intersection_DoF_index];
             // compute integrals
             lhs_integral += integration_factor * quadrature_weight * (rtn_basis_value * unit_outer_normal);
+            tmp_result *= R(0);
             boundary_evaluation.evaluate(
                 *local_diffusion, *local_constant_one, local_source, intersection, point_intersection, tmp_result);
             assert(tmp_result.rows() == 1);
@@ -152,6 +153,9 @@ public:
               const auto& rtn_basis_value = rtn_basis_values[intersection_DoF_index];
               // compute integrals
               lhs_integral += integration_factor * quadrature_weight * (rtn_basis_value * unit_outer_normal);
+              tmp_result *= R(0);
+              tmp_result_en_en *= R(0);
+              tmp_result_en_ne *= R(0);
               inner_evaluation.evaluate(*local_diffusion,
                                         *local_diffusion_neighbour,
                                         *local_constant_one,
