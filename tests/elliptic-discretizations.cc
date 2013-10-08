@@ -12,6 +12,8 @@ static_assert(false, "This test requires alugrid!");
 #endif
 #include <dune/grid/alugrid.hh>
 
+#include <dune/stuff/common/color.hh>
+
 #undef HAVE_FASP
 
 #include "elliptic-testcases.hh"
@@ -64,8 +66,10 @@ struct EllipticSIPDGDiscretization : public ::testing::Test
   void check() const
   {
     if (std::is_same<TestCase, EllipticTestCase::Spe10Model1<Dune::ALUConformGrid<2, 2>>>::value) {
-      std::cerr << "EllipticSIPDGDiscretization does not work for EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< "
-                   "2, 2 > >!";
+      std::cerr << Dune::Stuff::Common::colorStringRed(
+                       "EllipticSIPDGDiscretization does not work for "
+                       + "EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > >!")
+                << std::end;
     } else {
       const TestCase test_case;
       test_case.print_header(out);
