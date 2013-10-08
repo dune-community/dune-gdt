@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <type_traits>
+#include <limits>
 
 #include <dune/common/fvector.hh>
 
@@ -62,8 +63,9 @@ public:
       DynamicVector<R> local_vector(local_basis.size(), R(0));
       // create quadrature
       const size_t quadrature_order = std::max(local_source->order(), local_range.order());
+      assert((2 * quadrature_order + 1) < std::numeric_limits<int>::max());
       const auto& quadrature =
-          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), 2 * quadrature_order + 1);
+          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(2 * quadrature_order + 1));
       // loop over all quadrature points
       for (const auto& quadrature_point : quadrature) {
         const auto local_point         = quadrature_point.position();
