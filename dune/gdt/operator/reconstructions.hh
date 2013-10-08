@@ -14,7 +14,6 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/swipdg.hh>
@@ -41,13 +40,12 @@ public:
     , diffusion_(diffusion)
   {}
 
-  template< class SGP, class R, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, 1, R, 1 >, SV >&
-              source,
+  template< class R, class RGP, class RV >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1 >& source,
              DiscreteFunction< RaviartThomasSpace::FemLocalfunctionsWrapper< RGP, 0, R, dimDomain >, RV >& range) const
   {
-    typedef ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, 1, R, 1 >, SV >  SourceType;
-    typedef DiscreteFunction< RaviartThomasSpace::FemLocalfunctionsWrapper< RGP, 0, R, dimDomain >, RV >    RangeType;
+    typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1 > SourceType;
+    typedef DiscreteFunction< RaviartThomasSpace::FemLocalfunctionsWrapper< RGP, 0, R, dimDomain >, RV > RangeType;
     static_assert(dimDomain == 2, "Only implemented for dimDomain 2!");
     // prepare tmp storage
     std::vector< size_t > intersection_id_to_local_DoF_id_map(3, 0); // <- there should be 3 intersections on a simplex in 2d!
@@ -68,7 +66,7 @@ public:
     for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get the local functions
-      const auto local_source = source.local_discrete_function(entity);
+      const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
       auto local_range_vector = local_range.vector();
       const auto local_diffusion = diffusion_.local_function(entity);
@@ -95,12 +93,12 @@ public:
         const size_t quadrature_order = std::max(rtn_basis.order(),
                                                  std::max(inner_evaluation.order(*local_diffusion,
                                                                                  *local_diffusion,
-                                                                                 local_source,
+                                                                                 *local_source,
                                                                                  *local_constant_one,
-                                                                                 local_source,
+                                                                                 *local_source,
                                                                                  *local_constant_one),
                                                           boundary_evaluation.order(*local_diffusion,
-                                                                                    local_source,
+                                                                                    *local_source,
                                                                                     *local_constant_one)));
         assert((2*quadrature_order + 1) < std::numeric_limits< int >::max());
         const auto& face_quadrature
@@ -125,7 +123,7 @@ public:
             tmp_result *= R(0);
             boundary_evaluation.evaluate(*local_diffusion,
                                          *local_constant_one,
-                                         local_source,
+                                         *local_source,
                                          intersection,
                                          point_intersection,
                                          tmp_result);
@@ -143,7 +141,7 @@ public:
           // work only once on each intersection
           if (grid_part_.indexSet().index(entity) < grid_part_.indexSet().index(neighbour)) {
             // get the neighbours local functions
-            const auto local_source_neighbour = source.local_discrete_function(neighbour);
+            const auto local_source_neighbour = source.local_function(neighbour);
             const auto local_diffusion_neighbour = diffusion_.local_function(neighbour);
             const auto local_constant_one_neighbour = constant_one.local_function(neighbour);
             // loop over all quadrature points
@@ -164,9 +162,9 @@ public:
               inner_evaluation.evaluate(*local_diffusion,
                                         *local_diffusion_neighbour,
                                         *local_constant_one,
-                                        local_source,
+                                        *local_source,
                                         *local_constant_one_neighbour,
-                                        local_source_neighbour,
+                                        *local_source_neighbour,
                                         intersection,
                                         point_intersection,
                                         tmp_result_en_en, // <- we are interested in this one
