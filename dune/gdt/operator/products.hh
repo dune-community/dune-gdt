@@ -78,14 +78,14 @@ private:
 
 
 template< class GridPartType >
-class H1
+class H1Semi
 {
 public:
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
 
-  H1(const GridPartType& grid_part)
+  H1Semi(const GridPartType& grid_part)
     : grid_part_(grid_part)
   {}
 
@@ -131,7 +131,7 @@ public:
 
 private:
   const GridPartType& grid_part_;
-}; // class H1
+}; // class H1Semi
 
 
 } // namespace ProductOperator
