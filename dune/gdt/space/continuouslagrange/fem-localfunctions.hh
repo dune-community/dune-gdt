@@ -13,6 +13,7 @@
 #endif
 
 #include <memory>
+#include <limits>
 
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
@@ -203,18 +204,20 @@ public:
       typedef FieldVector< DomainFieldType, dimDomain > DomainType;
       std::vector< DomainType > global_vertices(entity.template count< dimDomain >(), DomainType(0));
       std::vector< size_t > local_DoF_ids(global_vertices.size(), 0);
+      assert(global_vertices.size() < std::numeric_limits< int >::max());
       for (size_t local_vertex_id = 0; local_vertex_id < global_vertices.size(); ++local_vertex_id) {
         // get the vertex
-        const auto vertexPtr = entity.template subEntity< dimDomain >(local_vertex_id);
+        const auto vertexPtr = entity.template subEntity< dimDomain >(int(local_vertex_id));
         const auto& vertex = *vertexPtr;
         global_vertices[local_vertex_id] = vertex.geometry().center();
         // find the global DoF id to this vertex, therefore
         // loop over all local DoFs
+        assert(dg_local_coefficients.size() < std::numeric_limits< int >::max());
         for (size_t ii = 0; ii < dg_local_coefficients.size(); ++ii) {
-          const auto& entity_cg_local_key = cg_local_coefficients.localKey(ii);
+          const auto& entity_cg_local_key = cg_local_coefficients.localKey(int(ii));
           if (entity_cg_local_key.subEntity() == local_vertex_id) {
             // get the local DoF to this vertex
-            const auto& entity_dg_local_key = dg_local_coefficients.localKey(ii);
+            const auto& entity_dg_local_key = dg_local_coefficients.localKey(int(ii));
             assert(entity_cg_local_key.codim() == dimDomain && "Wrong finite element given!");
             local_DoF_ids[local_vertex_id] = entity_dg_local_key.index();
             // there must be one and only one for a polorder 1 lagrange basis
@@ -231,8 +234,8 @@ public:
         if (ret.gridBoundary().dirichlet(intersection)) {
           const auto& intersection_geometry = intersection.geometry();
           // and walk its corners (i.e. the vertices in 2d)
-          for (size_t local_intersection_corner_id = 0;
-               int(local_intersection_corner_id) < intersection_geometry.corners();
+          for (int local_intersection_corner_id = 0;
+               local_intersection_corner_id < intersection_geometry.corners();
                ++local_intersection_corner_id) {
             const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
             // to check which vertex this corner is

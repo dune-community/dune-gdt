@@ -7,6 +7,7 @@
 #define DUNE_GDT_OPERATOR_RECONSTRUCTIONS_HH
 
 #include <type_traits>
+#include <limits>
 
 #include <dune/geometry/quadraturerules.hh>
 
@@ -77,8 +78,9 @@ public:
       const auto rtn_finite_element = rtn_space.backend().finiteElement(entity);
       const auto& rtn_local_coefficients = rtn_finite_element.localCoefficients();
       assert(intersection_id_to_local_DoF_id_map.size() >= rtn_local_coefficients.size());
+      assert(rtn_local_coefficients.size() < std::numeric_limits< int >::max());
       for (size_t ii = 0; ii < rtn_local_coefficients.size(); ++ii)
-        intersection_id_to_local_DoF_id_map[rtn_local_coefficients.localKey(ii).subEntity()] = ii;
+        intersection_id_to_local_DoF_id_map[rtn_local_coefficients.localKey(int(ii)).subEntity()] = ii;
       // loop over all intersections
       const auto intersection_end_it = grid_part_.iend(entity);
       for (auto intersection_it = grid_part_.ibegin(entity);
@@ -100,8 +102,9 @@ public:
                                                           boundary_evaluation.order(*local_diffusion,
                                                                                     local_source,
                                                                                     *local_constant_one)));
-        const auto& face_quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(),
-                                                                                              2*quadrature_order + 1);
+        assert((2*quadrature_order + 1) < std::numeric_limits< int >::max());
+        const auto& face_quadrature
+            = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(), int(2*quadrature_order + 1));
         R lhs_integral = 0;
         R rhs_integral = 0;
         if (intersection.boundary() && !intersection.neighbor()) {
