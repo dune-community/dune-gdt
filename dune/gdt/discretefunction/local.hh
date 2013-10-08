@@ -206,6 +206,9 @@ public:
     }
   } // ... jacobian(...)
 
+  using BaseType::evaluate;
+  using BaseType::jacobian;
+
 protected:
   const SpaceType& space_;
   const EntityType& entity_;
@@ -254,8 +257,8 @@ public:
   }
 
   LocalDiscreteFunction(ThisType&& source)
-    : BaseType(std::move(source))
-    , localVector_(std::move(source.localVector_)) // <- I am not sure if this is valid
+    : BaseType(std::move(source)) // <- because of this
+    , localVector_(std::move(source.localVector_)) // <- I am not sure if this is valid -+^
   {
   }
 
