@@ -238,14 +238,14 @@ public:
 
   virtual std::vector<std::string> provided_norms() const override
   {
-    return {"L2", "H1"};
+    return {"L2", "H1_semi"};
   }
 
   virtual size_t expected_rate(const std::string type) const
   {
     if (type.compare("L2") == 0)
       return polOrder + 1;
-    else if (type.compare("H1") == 0)
+    else if (type.compare("H1_semi") == 0)
       return polOrder;
     else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -358,14 +358,14 @@ public:
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {3.79e-01, 1.90e-01, 9.38e-02, 4.67e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {1.25e-02, 1.42e-03, 1.69e-04, 2.08e-05};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {7.84e-02, 2.01e-02, 5.02e-03, 1.26e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -375,14 +375,14 @@ public:
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {5.85e-02, 2.12e-02, 5.89e-03, 1.38e-03};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {4.49e-01, 3.06e-01, 1.58e-01, 6.83e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {1.27e-02, 2.26e-03, 4.15e-04, 8.21e-05};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {1.78e-01, 6.26e-02, 2.05e-02, 6.35e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -392,14 +392,14 @@ public:
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {6.10e-02, 1.66e-02, 4.23e-03};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {2.99e-01, 1.47e-01, 7.24e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {6.43e-03, 8.24e-04, 1.05e-04};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {5.41e-02, 1.42e-02, 3.56e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -409,14 +409,14 @@ public:
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {5.21e-02, 1.45e-02, 3.65e-03, 8.15e-04};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {2.76e-01, 1.42e-01, 6.92e-02, 3.09e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {4.64e-03, 7.69e-04, 1.38e-04, 2.84e-05};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {4.56e-02, 1.57e-02, 5.78e-03, 2.20e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -426,14 +426,14 @@ public:
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.17e-03, 3.69e-04};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {1.66e-01, 8.26e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {4.05e-04, 1.46e-04};
-        else if (type.compare("H1") == 0)
+        else if (type.compare("H1_semi") == 0)
           return {7.80e-02, 3.67e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -469,8 +469,8 @@ private:
     if (type.compare("L2") == 0) {
       ProductOperator::L2<GridPartType> l2_product_operator(grid_part);
       return std::sqrt(l2_product_operator.apply2(function, function));
-    } else if (type.compare("H1") == 0) {
-      ProductOperator::H1<GridPartType> h1_product_operator(grid_part);
+    } else if (type.compare("H1_semi") == 0) {
+      ProductOperator::H1Semi<GridPartType> h1_product_operator(grid_part);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
