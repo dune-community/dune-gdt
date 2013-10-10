@@ -42,8 +42,6 @@ AC_CONFIG_FILES([
   dune/gdt/space/Makefile
   dune/gdt/space/continuouslagrange/Makefile
   dune/gdt/space/discontinuouslagrange/Makefile
-  examples/Makefile
-  examples/elliptic/Makefile
   m4/Makefile
   dune-gdt.pc
 ])
