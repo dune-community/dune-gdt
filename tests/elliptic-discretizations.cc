@@ -70,8 +70,8 @@ struct EllipticSIPDGDiscretization
     if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
       std::cerr
           << Dune::Stuff::Common::colorStringRed("EllipticSIPDGDiscretization does not work for "
-                                                 + "EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > >!")
-          << std::end;
+                                                 "EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > >!")
+          << std::endl;
     } else {
       const TestCase test_case;
       test_case.print_header(out);
