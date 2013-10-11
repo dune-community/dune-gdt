@@ -78,14 +78,14 @@ public:
   typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
 
   template< class S >
-  FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface< S >& femSpace, const EntityType& en)
-    : entity_(en)
+  FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface< S >& femSpace, const EntityType& ent)
+    : BaseType(ent)
     , order_(femSpace.order())
-    , backend_(new BackendType(femSpace.baseFunctionSet(entity_)))
+    , backend_(new BackendType(femSpace.baseFunctionSet(this->entity())))
   {}
 
   FemWrapper(ThisType&& source)
-    : entity_(source.entity_)
+    : BaseType(source.entity())
     , order_(std::move(source.order_))
     , backend_(std::move(source.backend_))
   {}
@@ -93,11 +93,6 @@ public:
   FemWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
-
-  virtual const EntityType& entity() const override
-  {
-    return entity_;
-  }
 
   const BackendType& backend() const
   {
@@ -125,13 +120,12 @@ public:
   virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const override
   {
     assert(ret.size() >= backend_->size());
-    backend_->jacobianAll(xx, entity_.geometry().jacobianInverseTransposed(xx), ret);
+    backend_->jacobianAll(xx, this->entity().geometry().jacobianInverseTransposed(xx), ret);
   }
 
   using BaseType::jacobian;
 
 private:
-  const EntityType& entity_;
   const size_t order_;
   std::unique_ptr< const BackendType > backend_;
 }; // class FemWrapper

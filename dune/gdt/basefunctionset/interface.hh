@@ -54,6 +54,10 @@ public:
   typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
   typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
 
+  BaseFunctionSetInterface(const EntityType& ent)
+    : BaseType(ent)
+  {}
+
   const BackendType& backend() const
   {
     CHECK_INTERFACE_IMPLEMENTATION(asImp().backend());
