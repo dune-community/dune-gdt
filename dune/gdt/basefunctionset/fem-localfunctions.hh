@@ -60,16 +60,16 @@ public:
   typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
   typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
 
-  FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& en)
-    : baseFunctionSetMap_(baseFunctionSetMap)
-    , entity_(en)
-    , backend_(new BackendType(baseFunctionSetMap_.find(entity_)))
+  FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& ent)
+    : InterfaceType(ent)
+    , baseFunctionSetMap_(baseFunctionSetMap)
+    , backend_(new BackendType(baseFunctionSetMap_.find(this->entity())))
   {
   }
 
   FemLocalfunctionsWrapper(ThisType&& source)
-    : baseFunctionSetMap_(source.baseFunctionSetMap_)
-    , entity_(source.entity_)
+    : InterfaceType(source.entity())
+    , baseFunctionSetMap_(source.baseFunctionSetMap_)
     , backend_(std::move(source.backend_))
   {
   }
@@ -78,27 +78,22 @@ public:
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
-  const EntityType& entity() const
-  {
-    return entity_;
-  }
-
   const BackendType& backend() const
   {
     return *backend_;
   }
 
-  size_t size() const
+  virtual size_t size() const override
   {
     return backend_->size();
   }
 
-  size_t order() const
+  virtual size_t order() const override
   {
-    return baseFunctionSetMap_.getOrder(entity_);
+    return baseFunctionSetMap_.getOrder(this->entity());
   }
 
-  void evaluate(const DomainType& x, std::vector<RangeType>& ret) const
+  virtual void evaluate(const DomainType& x, std::vector<RangeType>& ret) const override
   {
     assert(ret.size() >= size());
     backend_->evaluateAll(x, ret);
@@ -106,17 +101,16 @@ public:
 
   using InterfaceType::evaluate;
 
-  void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const
+  virtual void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const override
   {
     assert(ret.size() >= size());
-    backend_->jacobianAll(x, entity_.geometry().jacobianInverseTransposed(x), ret);
+    backend_->jacobianAll(x, this->entity().geometry().jacobianInverseTransposed(x), ret);
   }
 
   using InterfaceType::jacobian;
 
 private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
-  const EntityType& entity_;
   std::unique_ptr<const BackendType> backend_;
 }; // class FemLocalfunctionsWrapper
 
