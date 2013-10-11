@@ -139,10 +139,10 @@ public:
   typedef ConstLocalDoFVector<VectorType> ConstLocalDoFVectorType;
 
   ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& globalVector, const EntityType& ent)
-    : space_(space)
-    , entity_(ent)
-    , base_(new BaseFunctionSetType(space_.baseFunctionSet(entity_)))
-    , localVector_(new ConstLocalDoFVectorType(space_.mapper(), entity_, globalVector))
+    : BaseType(ent)
+    , space_(space)
+    , base_(new BaseFunctionSetType(space_.baseFunctionSet(this->entity())))
+    , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
     , tmpBaseValues_(base_->size(), RangeType(0))
     , tmpBaseJacobianValues_(base_->size(), JacobianRangeType(0))
   {
@@ -150,8 +150,8 @@ public:
   }
 
   ConstLocalDiscreteFunction(ThisType&& source)
-    : space_(source.space_)
-    , entity_(source.entity_)
+    : BaseType(source.entity())
+    , space_(source.space_)
     , base_(std::move(source.base_))
     , localVector_(std::move(source.localVector_))
     , tmpBaseValues_(std::move(source.tmpBaseValues_))
@@ -167,9 +167,9 @@ public:
   {
   }
 
-  virtual const EntityType& entity() const override
+  const BaseFunctionSetType& base() const
   {
-    return entity_;
+    return *base_;
   }
 
   const ConstLocalDoFVectorType& vector() const
@@ -211,7 +211,6 @@ public:
 
 protected:
   const SpaceType& space_;
-  const EntityType& entity_;
   std::unique_ptr<const BaseFunctionSetType> base_;
   std::unique_ptr<const ConstLocalDoFVectorType> localVector_;
 
