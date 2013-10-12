@@ -32,8 +32,8 @@ set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
 set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g3 -ggdb" )
 
 # needs to come first to include correct config.h
-include_dir( ${dune-gdt_SOURCE_DIR} )
-include_dir( ${dune-gdt_BINARY_DIR} )
+include_directories( ${dune-gdt_SOURCE_DIR} )
+include_directories( ${dune-gdt_BINARY_DIR} )
 
 # we need eigen
 if( NOT EIGEN_FOUND )
