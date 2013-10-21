@@ -120,6 +120,17 @@ public:
         new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
 
+  void visualize(const std::string filename) const
+  {
+    typedef typename SpaceType::GridPartType::GridViewType GridViewType;
+    if (filename.empty())
+      DUNE_THROW(RangeError, "Empty filename given!");
+    auto adapter = std::make_shared<Stuff::Function::VisualizationAdapter<GridViewType, dimRange>>(*this);
+    VTKWriter<GridViewType> vtk_writer(space_.gridPart()->gridView(), VTK::nonconforming);
+    vtk_writer.addVertexData(adapter);
+    vtk_writer.write(filename);
+  } // ... visualize(...)
+
 protected:
   const SpaceType& space_;
 
