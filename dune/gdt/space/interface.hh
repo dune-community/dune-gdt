@@ -79,6 +79,45 @@ public:
     return asImp().baseFunctionSet(entity);
   }
 
+  std::set< size_t > findLocalDirichletDoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  {
+    static_assert(dimRange == 1, "Not implemented for this dimension!");
+    static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
+    if (polOrder != 1) DUNE_THROW(Dune::NotImplemented, "This does not seem to work for higher orders!");
+    // check
+    assert(gridPart()->indexSet().contains(entity));
+    // prepare
+    std::set< size_t > localDirichletDofs;
+    std::vector< typename BaseFunctionSetType::DomainType > dirichlet_vertices;
+    // get all dirichlet vertices of this entity, therefore
+    // * loop over all intersections
+    const auto intersection_it_end = gridPart()->iend(entity);
+    for (auto intersection_it = gridPart()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+      // only work on dirichlet ones
+      const auto& intersection = *intersection_it;
+      if (boundaryInfo.dirichlet(intersection)) {
+        // and get the vertices of the intersection
+        const auto geometry = intersection.geometry();
+        for (size_t cc = 0; cc < geometry.corners(); ++cc)
+          dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
+      } // only work on dirichlet ones
+    } // loop over all intersections
+
+    // find the corresponding basis functions
+    const auto basis = baseFunctionSet(entity);
+    if (tmp_basis_values_.size() < basis.size())
+      tmp_basis_values_.resize(basis.size());
+    for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
+      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values_);
+      for (size_t jj = 0; jj < basis.size(); ++jj)
+        if (Dune::Stuff::Common::FloatCmp::eq(tmp_basis_values_[jj][0], RangeFieldType(1)))
+          localDirichletDofs.insert(jj);
+    }
+
+    // finish
+    return localDirichletDofs;
+  } // ... findLocalDirichletDoFs(...)
+
   template< class ConstraintsType >
   void localConstraints(const EntityType& entity, ConstraintsType& ret) const
   {
@@ -104,6 +143,135 @@ public:
     CHECK_INTERFACE_IMPLEMENTATION(asImp().computePattern(localGridPart, otherSpace));
     return asImp().computePattern(localGridPart, otherSpace);
   }
+
+  /**
+   *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
+   *          ansatz space (cols/inner)
+   */
+  template< class LocalGridPartType, class O >
+  PatternType* computeCodim0Pattern(const LocalGridPartType& localGridPart,
+                                    const SpaceInterface< O >& otherSpace) const
+  {
+    PatternType* ret = new PatternType(mapper().size());
+    PatternType& pattern = *ret;
+    // walk the grid part
+    for (typename LocalGridPartType::template Codim< 0 >::IteratorType entityIt = localGridPart.template begin< 0 >();
+         entityIt != localGridPart.template end< 0 >();
+         ++entityIt) {
+      const typename LocalGridPartType::template Codim< 0 >::EntityType& entity = *entityIt;
+      // get basefunctionsets
+      const auto testBase = baseFunctionSet(entity);
+      const auto ansatzBase = otherSpace.baseFunctionSet(entity);
+      Dune::DynamicVector< size_t > globalRows(testBase.size(), 0);
+      mapper().globalIndices(entity, globalRows);
+      Dune::DynamicVector< size_t > globalCols(ansatzBase.size(), 0);
+      otherSpace.mapper().globalIndices(entity, globalCols);
+      for (size_t ii = 0; ii < testBase.size(); ++ii) {
+        auto& columns = pattern.inner(globalRows[ii]);
+        for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
+          columns.insert(globalCols[jj]);
+        }
+      }
+    } // walk the grid part
+    return ret;
+  } // ... computeVolumePattern(...)
+
+  /**
+   *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
+   *          ansatz space (cols/inner)
+   */
+  template< class LocalGridPartType, class O >
+  PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part,
+                                             const SpaceInterface< O >& other_space) const
+  {
+    // prepare
+    PatternType* ret = new PatternType(mapper().size());
+    PatternType& pattern = *ret;
+    Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
+    Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
+    // walk the grid part
+    const auto entity_it_end = local_grid_part.template end< 0 >();
+    for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+      // get basefunctionsets
+      const auto test_base_entity = baseFunctionSet(entity);
+      const auto ansatz_base_entity = other_space.baseFunctionSet(entity);
+      mapper().globalIndices(entity, global_rows);
+      other_space.mapper().globalIndices(entity, global_cols);
+      // compute entity/entity
+      for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
+        auto& columns = pattern.inner(global_rows[ii]);
+        for (size_t jj = 0; jj < ansatz_base_entity.size(); ++jj) {
+          columns.insert(global_cols[jj]);
+        }
+      }
+      // walk the intersections
+      const auto intersection_it_end = local_grid_part.iend(entity);
+      for (auto intersection_it = local_grid_part.ibegin(entity);
+           intersection_it != intersection_it_end;
+           ++intersection_it) {
+        const auto& intersection = *intersection_it;
+        // get the neighbour
+        if (intersection.neighbor() && !intersection.boundary()) {
+          const auto neighbour_ptr = intersection.outside();
+          const auto& neighbour = *neighbour_ptr;
+          // get the basis
+          const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
+          other_space.mapper().globalIndices(neighbour, global_cols);
+          // compute entity/neighbour
+          for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
+            auto& columns = pattern.inner(global_rows[ii]);
+            for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
+              columns.insert(global_cols[jj]);
+            }
+          }
+        } // get the neighbour
+      } // walk the intersections
+    } // walk the grid part
+    return ret;
+  } // ... computeVolumeAndCouplingPattern(...)
+
+  template< class LocalGridPartType, class O >
+  PatternType* computeCodim1Pattern(const LocalGridPartType& local_grid_part,
+                                    const SpaceInterface< O >& other_space) const
+  {
+    // prepare
+    PatternType* ret = new PatternType(mapper().size());
+    PatternType& pattern = *ret;
+    Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
+    Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
+    // walk the grid part
+    const auto entity_it_end = local_grid_part.template end< 0 >();
+    for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+      // get basefunctionsets
+      const auto test_base_entity = baseFunctionSet(entity);
+      mapper().globalIndices(entity, global_rows);
+      // walk the intersections
+      const auto intersection_it_end = local_grid_part.iend(entity);
+      for (auto intersection_it = local_grid_part.ibegin(entity);
+           intersection_it != intersection_it_end;
+           ++intersection_it) {
+        const auto& intersection = *intersection_it;
+        // get the neighbour
+        if (intersection.neighbor() && !intersection.boundary()) {
+          const auto neighbour_ptr = intersection.outside();
+          const auto& neighbour = *neighbour_ptr;
+          // get the basis
+          const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
+          other_space.mapper().globalIndices(neighbour, global_cols);
+          // compute entity/neighbour
+          for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
+            auto& columns = pattern.inner(global_rows[ii]);
+            for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
+              columns.insert(global_cols[jj]);
+            }
+          }
+        } // get the neighbour
+      } // walk the intersections
+    } // walk the grid part
+    return ret;
+  } // ... computeCodim1Pattern(...)
 
 private:
   class BasisVisualization
@@ -186,45 +354,6 @@ public:
     vtk_writer.write(filename);
   } // ... visualize(...)
 
-  std::set< size_t > findLocalDirichletDoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
-  {
-    static_assert(dimRange == 1, "Not implemented for this dimension!");
-    static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
-    if (polOrder != 1) DUNE_THROW(Dune::NotImplemented, "This does not seem to work for higher orders!");
-    // check
-    assert(gridPart()->indexSet().contains(entity));
-    // prepare
-    std::set< size_t > localDirichletDofs;
-    std::vector< typename BaseFunctionSetType::DomainType > dirichlet_vertices;
-    // get all dirichlet vertices of this entity, therefore
-    // * loop over all intersections
-    const auto intersection_it_end = gridPart()->iend(entity);
-    for (auto intersection_it = gridPart()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
-      // only work on dirichlet ones
-      const auto& intersection = *intersection_it;
-      if (boundaryInfo.dirichlet(intersection)) {
-        // and get the vertices of the intersection
-        const auto geometry = intersection.geometry();
-        for (size_t cc = 0; cc < geometry.corners(); ++cc)
-          dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
-      } // only work on dirichlet ones
-    } // loop over all intersections
-
-    // find the corresponding basis functions
-    const auto basis = baseFunctionSet(entity);
-    if (tmp_basis_values_.size() < basis.size())
-      tmp_basis_values_.resize(basis.size());
-    for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
-      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values_);
-      for (size_t jj = 0; jj < basis.size(); ++jj)
-        if (Dune::Stuff::Common::FloatCmp::eq(tmp_basis_values_[jj][0], RangeFieldType(1)))
-          localDirichletDofs.insert(jj);
-    }
-
-    // finish
-    return localDirichletDofs;
-  } // ... findLocalDirichletDoFs(...)
-
   derived_type& asImp()
   {
     return static_cast< derived_type& >(*this);
@@ -234,136 +363,6 @@ public:
   {
     return static_cast< const derived_type& >(*this);
   }
-
-protected:
-    /**
-     *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
-     *          ansatz space (cols/inner)
-     */
-    template< class LocalGridPartType, class O >
-    PatternType* computeCodim0Pattern(const LocalGridPartType& localGridPart,
-                                      const SpaceInterface< O >& otherSpace) const
-    {
-      PatternType* ret = new PatternType(mapper().size());
-      PatternType& pattern = *ret;
-      // walk the grid part
-      for (typename LocalGridPartType::template Codim< 0 >::IteratorType entityIt = localGridPart.template begin< 0 >();
-           entityIt != localGridPart.template end< 0 >();
-           ++entityIt) {
-        const typename LocalGridPartType::template Codim< 0 >::EntityType& entity = *entityIt;
-        // get basefunctionsets
-        const auto testBase = baseFunctionSet(entity);
-        const auto ansatzBase = otherSpace.baseFunctionSet(entity);
-        Dune::DynamicVector< size_t > globalRows(testBase.size(), 0);
-        mapper().globalIndices(entity, globalRows);
-        Dune::DynamicVector< size_t > globalCols(ansatzBase.size(), 0);
-        otherSpace.mapper().globalIndices(entity, globalCols);
-        for (size_t ii = 0; ii < testBase.size(); ++ii) {
-          auto& columns = pattern.inner(globalRows[ii]);
-          for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
-            columns.insert(globalCols[jj]);
-          }
-        }
-      } // walk the grid part
-      return ret;
-    } // ... computeVolumePattern(...)
-
-    /**
-     *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
-     *          ansatz space (cols/inner)
-     */
-    template< class LocalGridPartType, class O >
-    PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part,
-                                               const SpaceInterface< O >& other_space) const
-    {
-      // prepare
-      PatternType* ret = new PatternType(mapper().size());
-      PatternType& pattern = *ret;
-      Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
-      Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
-      // walk the grid part
-      const auto entity_it_end = local_grid_part.template end< 0 >();
-      for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-        const auto& entity = *entity_it;
-        // get basefunctionsets
-        const auto test_base_entity = baseFunctionSet(entity);
-        const auto ansatz_base_entity = other_space.baseFunctionSet(entity);
-        mapper().globalIndices(entity, global_rows);
-        other_space.mapper().globalIndices(entity, global_cols);
-        // compute entity/entity
-        for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-          auto& columns = pattern.inner(global_rows[ii]);
-          for (size_t jj = 0; jj < ansatz_base_entity.size(); ++jj) {
-            columns.insert(global_cols[jj]);
-          }
-        }
-        // walk the intersections
-        const auto intersection_it_end = local_grid_part.iend(entity);
-        for (auto intersection_it = local_grid_part.ibegin(entity);
-             intersection_it != intersection_it_end;
-             ++intersection_it) {
-          const auto& intersection = *intersection_it;
-          // get the neighbour
-          if (intersection.neighbor() && !intersection.boundary()) {
-            const auto neighbour_ptr = intersection.outside();
-            const auto& neighbour = *neighbour_ptr;
-            // get the basis
-            const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
-            other_space.mapper().globalIndices(neighbour, global_cols);
-            // compute entity/neighbour
-            for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-              auto& columns = pattern.inner(global_rows[ii]);
-              for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-                columns.insert(global_cols[jj]);
-              }
-            }
-          } // get the neighbour
-        } // walk the intersections
-      } // walk the grid part
-      return ret;
-    } // ... computeVolumeAndCouplingPattern(...)
-
-    template< class LocalGridPartType, class O >
-    PatternType* computeCodim1Pattern(const LocalGridPartType& local_grid_part,
-                                      const SpaceInterface< O >& other_space) const
-    {
-      // prepare
-      PatternType* ret = new PatternType(mapper().size());
-      PatternType& pattern = *ret;
-      Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
-      Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
-      // walk the grid part
-      const auto entity_it_end = local_grid_part.template end< 0 >();
-      for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-        const auto& entity = *entity_it;
-        // get basefunctionsets
-        const auto test_base_entity = baseFunctionSet(entity);
-        mapper().globalIndices(entity, global_rows);
-        // walk the intersections
-        const auto intersection_it_end = local_grid_part.iend(entity);
-        for (auto intersection_it = local_grid_part.ibegin(entity);
-             intersection_it != intersection_it_end;
-             ++intersection_it) {
-          const auto& intersection = *intersection_it;
-          // get the neighbour
-          if (intersection.neighbor() && !intersection.boundary()) {
-            const auto neighbour_ptr = intersection.outside();
-            const auto& neighbour = *neighbour_ptr;
-            // get the basis
-            const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
-            other_space.mapper().globalIndices(neighbour, global_cols);
-            // compute entity/neighbour
-            for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-              auto& columns = pattern.inner(global_rows[ii]);
-              for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-                columns.insert(global_cols[jj]);
-              }
-            }
-          } // get the neighbour
-        } // walk the intersections
-      } // walk the grid part
-      return ret;
-    } // ... computeCodim1Pattern(...)
 
 private:
   mutable std::vector< typename BaseFunctionSetType::RangeType > tmp_basis_values_;
