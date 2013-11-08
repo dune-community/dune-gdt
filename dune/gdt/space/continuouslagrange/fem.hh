@@ -236,7 +236,7 @@ public:
     }
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
-      const size_t numCols = mapper_->numDofs(entity, gridBoundary);
+      const size_t numCols = mapper_->numDofs(entity);
       ret.setSize(numRows, numCols);
       mapper_->globalIndices(entity, tmpMappedRows_);
       mapper_->globalIndices(entity, tmpMappedCols_);
