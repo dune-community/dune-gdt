@@ -6,17 +6,14 @@
 #ifndef DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#ifdef HAVE_CMAKE_CONFIG
-#include "cmake_config.h"
-#elif defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <memory>
 #include <limits>
 
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
+
+#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
@@ -387,7 +384,13 @@ public:
 private:
   static std::shared_ptr<const GridPartType> assertGridPart(const std::shared_ptr<const GridPartType> gP)
   {
-    // check
+    // static checks
+    typedef typename GridPartType::GridType GridType;
+    static_assert(!std::is_same<GridType, SGrid<dimDomain, dimDomain>>::value,
+                  "This space is only implemented for simplicial grids!");
+    static_assert(!std::is_same<GridType, YaspGrid<dimDomain>>::value,
+                  "This space is only implemented for simplicial grids!");
+    // dynamic checks
     typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
         AllGeometryTypes;
     const AllGeometryTypes allGeometryTypes(gP->indexSet());
