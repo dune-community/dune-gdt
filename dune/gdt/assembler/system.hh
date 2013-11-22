@@ -82,7 +82,7 @@ public:
   class AssembleOnInner : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const override
+    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return intersection.neighbor() && !intersection.boundary();
     }
@@ -101,7 +101,7 @@ public:
   class AssembleOnInnerPrimally : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& gridPart, const IntersectionType& intersection) const override
+    virtual bool assembleOn(const GridPartType& gridPart, const IntersectionType& intersection) const DS_OVERRIDE
     {
       if (intersection.neighbor() && !intersection.boundary()) {
         const auto insideEntityPtr    = intersection.inside();
@@ -117,7 +117,7 @@ public:
   class AssembleOnBoundary : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const override
+    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return intersection.boundary();
     }
@@ -131,7 +131,7 @@ public:
     {
     }
 
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const override
+    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return boundaryInfo_.dirichlet(intersection);
     }
@@ -148,7 +148,7 @@ public:
     {
     }
 
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const override
+    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return boundaryInfo_.neumann(intersection);
     }
@@ -185,13 +185,13 @@ private:
 
     virtual void apply(const TestSpaceType& testSpace, const AnsatzSpaceType& ansatzSpace, const EntityType& entity,
                        LocalMatricesContainerType& localMatricesContainer,
-                       IndicesContainer& indicesContainer) const override
+                       IndicesContainer& indicesContainer) const DS_OVERRIDE
     {
       localMatrixAssembler_.assembleLocal(
           testSpace, ansatzSpace, entity, matrix_, localMatricesContainer, indicesContainer);
     }
 
-    virtual std::vector<size_t> numTmpObjectsRequired() const override
+    virtual std::vector<size_t> numTmpObjectsRequired() const DS_OVERRIDE
     {
       return localMatrixAssembler_.numTmpObjectsRequired();
     }
@@ -230,14 +230,14 @@ private:
 
     virtual void apply(const GridPartType& gridPart, const TestSpaceType& testSpace, const AnsatzSpaceType& ansatzSpace,
                        const IntersectionType& intersection, LocalMatricesContainerType& localMatricesContainer,
-                       IndicesContainer& indicesContainer) const override
+                       IndicesContainer& indicesContainer) const DS_OVERRIDE
     {
       if (functor_.assembleOn(gridPart, intersection))
         localMatrixAssembler_.assembleLocal(
             testSpace, ansatzSpace, intersection, matrix_, localMatricesContainer, indicesContainer);
     }
 
-    virtual std::vector<size_t> numTmpObjectsRequired() const override
+    virtual std::vector<size_t> numTmpObjectsRequired() const DS_OVERRIDE
     {
       return localMatrixAssembler_.numTmpObjectsRequired();
     }
@@ -275,12 +275,12 @@ private:
 
     virtual void apply(const TestSpaceType& testSpace, const EntityType& entity,
                        LocalVectorsContainerType& localVectorsContainer,
-                       Dune::DynamicVector<size_t>& indices) const override
+                       Dune::DynamicVector<size_t>& indices) const DS_OVERRIDE
     {
       localVectorAssembler_.assembleLocal(testSpace, entity, vector_, localVectorsContainer, indices);
     }
 
-    virtual std::vector<size_t> numTmpObjectsRequired() const override
+    virtual std::vector<size_t> numTmpObjectsRequired() const DS_OVERRIDE
     {
       return localVectorAssembler_.numTmpObjectsRequired();
     }
@@ -318,13 +318,13 @@ private:
 
     virtual void apply(const GridPartType& gridPart, const TestSpaceType& testSpace,
                        const IntersectionType& intersection, LocalVectorsContainerType& localVectorsContainer,
-                       Dune::DynamicVector<size_t>& indices) const override
+                       Dune::DynamicVector<size_t>& indices) const DS_OVERRIDE
     {
       if (functor_.assembleOn(gridPart, intersection))
         localVectorAssembler_.assembleLocal(testSpace, intersection, vector_, localVectorsContainer, indices);
     }
 
-    virtual std::vector<size_t> numTmpObjectsRequired() const override
+    virtual std::vector<size_t> numTmpObjectsRequired() const DS_OVERRIDE
     {
       return localVectorAssembler_.numTmpObjectsRequired();
     }

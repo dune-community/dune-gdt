@@ -177,12 +177,12 @@ public:
     return *localVector_;
   }
 
-  virtual size_t order() const override
+  virtual size_t order() const DS_OVERRIDE
   {
     return base_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, RangeType& ret) const override
+  virtual void evaluate(const DomainType& xx, RangeType& ret) const DS_OVERRIDE
   {
     assert(this->is_a_valid_point(xx));
     Dune::Stuff::Common::clear(ret);
@@ -194,7 +194,7 @@ public:
     }
   } // ... evaluate(...)
 
-  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override
+  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const DS_OVERRIDE
   {
     assert(this->is_a_valid_point(xx));
     ret *= RangeFieldType(0);

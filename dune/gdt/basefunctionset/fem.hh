@@ -6,12 +6,6 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 
-#ifdef HAVE_CMAKE_CONFIG
-#include "cmake_config.h"
-#elif defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
@@ -97,17 +91,17 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const override
+  virtual size_t size() const DS_OVERRIDE
   {
     return backend_->size();
   }
 
-  virtual size_t order() const override
+  virtual size_t order() const DS_OVERRIDE
   {
     return order_;
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const override
+  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const DS_OVERRIDE
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateAll(xx, ret);
@@ -115,7 +109,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const override
+  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const DS_OVERRIDE
   {
     assert(ret.size() >= backend_->size());
     backend_->jacobianAll(xx, this->entity().geometry().jacobianInverseTransposed(xx), ret);
