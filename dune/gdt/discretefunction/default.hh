@@ -85,12 +85,12 @@ public:
 
   ~ConstDiscreteFunction() {}
 
-  virtual ThisType* copy() const override
+  virtual ThisType* copy() const DS_OVERRIDE
   {
     return new ThisType(*this);
   }
 
-  virtual std::string name() const override
+  virtual std::string name() const DS_OVERRIDE
   {
     return name_;
   }
@@ -111,7 +111,7 @@ public:
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
-  virtual std::unique_ptr< LocalfunctionType > local_function(const EntityType& entity) const override
+  virtual std::unique_ptr< LocalfunctionType > local_function(const EntityType& entity) const DS_OVERRIDE
   {
     return std::unique_ptr< ConstLocalDiscreteFunctionType >
         (new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
@@ -170,7 +170,7 @@ public:
 
   ~DiscreteFunction() {}
 
-  virtual ThisType* copy() const override
+  virtual ThisType* copy() const DS_OVERRIDE
   {
     return new ThisType(*this);
   }

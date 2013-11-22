@@ -233,12 +233,12 @@ public:
 
   virtual ~EocStudy() {}
 
-  virtual std::string identifier() const override
+  virtual std::string identifier() const DS_OVERRIDE
   {
     return "SIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::toString(polOrder);
   }
 
-  virtual size_t num_refinements() const override
+  virtual size_t num_refinements() const DS_OVERRIDE
   {
     if (test_.num_levels() == 0)
       return test_.num_levels();
@@ -246,7 +246,7 @@ public:
       return test_.num_levels() - 1;
   }
 
-  virtual std::vector< std::string > provided_norms() const override
+  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE
   {
     return {"L2", "H1_semi"};
   }
@@ -261,7 +261,7 @@ public:
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
   } // ... expected_rate(...)
 
-  virtual double norm_reference_solution(const std::string type) override
+  virtual double norm_reference_solution(const std::string type) DS_OVERRIDE
   {
     if (test_.provides_exact_solution()) {
       return compute_norm(*(test_.reference_grid_part()), test_.exact_solution(), type);
@@ -277,21 +277,21 @@ public:
     }
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_grid_size() const override
+  virtual size_t current_grid_size() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
     const auto grid_part = test_.level_grid_part(current_level_);
     return grid_part->grid().size(grid_part->level(), 0);
   } // ... current_grid_size(...)
 
-  virtual double current_grid_width() const override
+  virtual double current_grid_width() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
     const auto grid_part = test_.level_grid_part(current_level_);
     return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
   } // ... current_grid_width(...)
 
-  virtual double compute_on_current_refinement() override
+  virtual double compute_on_current_refinement() DS_OVERRIDE
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -327,7 +327,7 @@ public:
     return timer.elapsed() + elapsed;
   } // ... compute_on_current_refinement(...)
 
-  virtual double current_error_norm(const std::string type) override
+  virtual double current_error_norm(const std::string type) DS_OVERRIDE
   {
     // get current solution
     assert(current_level_ < test_.num_levels());
@@ -361,7 +361,7 @@ public:
     }
   } // ... current_error_norm(...)
 
-  virtual void refine() override
+  virtual void refine() DS_OVERRIDE
   {
     if (current_level_ < test_.num_levels())
       ++current_level_;
