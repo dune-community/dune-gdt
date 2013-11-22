@@ -9,6 +9,7 @@
 #include <memory>
 
 #include <dune/common/dynvector.hh>
+#include <dune/common/fvector.hh>
 
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
@@ -35,6 +36,7 @@ public:
   static const int polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
+  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
