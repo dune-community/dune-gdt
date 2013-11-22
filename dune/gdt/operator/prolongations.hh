@@ -145,7 +145,7 @@ public:
     typedef ConstDiscreteFunction<ContinuousLagrangeSpace::FemWrapper<SGP, sp, R, r>, SV> SourceType;
     typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<RGP, rp, R, r>, RV> TargetType;
     typedef typename SourceType::RangeFieldType RangeFieldType;
-    static const unsigned int dimRange = SourceType::dimRangeRows;
+    static const unsigned int dimRange = SourceType::dimRange;
 
     typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
