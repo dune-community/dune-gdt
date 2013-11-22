@@ -22,6 +22,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -168,6 +169,64 @@ public:
       std::vector< DomainType > lagrange_points(lagrange_point_set.nop());
       for (size_t ii = 0; ii < lagrange_point_set.nop(); ++ii)
         lagrange_points[ii] = entity.geometry().global(lagrange_point_set.point(ii));
+
+      // get source entities
+      const auto source_entities = entity_search(lagrange_points);
+      assert(source_entities.size() == lagrange_points.size());
+
+      auto local_range = range.local_discrete_function(entity);
+      auto local_range_vector = local_range.vector();
+
+      size_t kk = 0;
+      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
+        if (std::isinf(local_range_vector.get(kk))) {
+          const auto& global_point = lagrange_points[ii];
+          // evaluate source function
+          const auto source_entity_ptr = source_entities[ii];
+          const auto& source_entity = *source_entity_ptr;
+          const auto local_source_point = source_entity.geometry().local(global_point);
+          const auto local_source = source.local_function(source_entity);
+          const auto source_value = local_source->evaluate(local_source_point);
+          for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
+            local_range_vector.set(kk, source_value[jj]);
+        }
+        else
+          kk += dimRange;
+      }
+    } // walk the grid
+  } // ... apply(...)
+
+  template< class SGP, int sp, class R, int r, class SV, class RGP, int rp, class RV >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, r >, SV >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, r >, RV >& range) const
+  {
+    // create search in the source grid part
+    typedef ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, r >, SV > SourceType;
+    typedef DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, r >, RV >      TargetType;
+    typedef typename SourceType::RangeFieldType RangeFieldType;
+    static const unsigned int dimRange = SourceType::dimRange;
+
+    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
+    EntitySearch entity_search(source.space().gridPart()->gridView());
+
+    // set all dofs to infinity
+    const auto infinity = std::numeric_limits< RangeFieldType >::infinity();
+    for (size_t ii = 0; ii < range.vector().size(); ++ii)
+      range.vector().set(ii, infinity);
+
+    // walk the grid
+    const auto entity_it_end = grid_part_.template end< 0 >();
+    for (auto entity_it = grid_part_.template begin< 0 >();
+         entity_it != entity_it_end;
+         ++entity_it) {
+      const auto& entity = *entity_it;
+
+      // get global lagrange point coordinates
+      typedef FieldVector< typename SourceGridViewType::ctype, SourceGridViewType::dimension > DomainType;
+      std::vector< DomainType > lagrange_points = range.space().lagrange_points(entity);
+      for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
+        lagrange_points[ii] = entity.geometry().global(lagrange_points[ii]);
 
       // get source entities
       const auto source_entities = entity_search(lagrange_points);
