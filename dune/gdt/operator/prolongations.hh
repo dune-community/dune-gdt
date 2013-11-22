@@ -40,6 +40,9 @@ public:
     : grid_part_(grid_part)
   {}
 
+  /**
+   *  \todo This is only correct for DG functions. For CG/in general we need a global solve here!
+   */
   template< class SourceSpaceType, class VS, class RangeSpaceType, class VR >
   void apply(const ConstDiscreteFunction< SourceSpaceType, VS >& source,
              DiscreteFunction< RangeSpaceType, VR >& range) const
