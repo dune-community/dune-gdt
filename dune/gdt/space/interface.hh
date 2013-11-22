@@ -363,7 +363,7 @@ public:
     return static_cast<const derived_type&>(*this);
   }
 
-private:
+protected:
   mutable std::vector<typename BaseFunctionSetType::RangeType> tmp_basis_values_;
 }; // class SpaceInterface
 
