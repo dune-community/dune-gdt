@@ -391,14 +391,15 @@ public:
     // get the basis and reference element
     const auto basis              = baseFunctionSet(entity);
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
-    const size_t num_vertices = reference_element.size(dimDomain);
-    assert(num_vertices == basis.size() && "This should not happen with polOrder 1!");
+    const int num_vertices = reference_element.size(dimDomain);
+    assert(num_vertices >= 0);
+    assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
     std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
     if (this->tmp_basis_values_.size() < basis.size())
       this->tmp_basis_values_.resize(basis.size());
     // loop over all vertices
-    for (size_t ii = 0; ii < num_vertices; ++ii) {
+    for (int ii = 0; ii < num_vertices; ++ii) {
       // get the local coordinate of the iith vertex
       const auto local_vertex = reference_element.position(ii, dimDomain);
       // evaluate the basefunctionset
