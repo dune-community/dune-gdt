@@ -6,12 +6,6 @@
 #ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#ifdef HAVE_CMAKE_CONFIG
-  #include "cmake_config.h"
-#elif defined (HAVE_CONFIG_H)
-  #include "config.h"
-#endif
-
 #include <dune/common/static_assert.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/exceptions.hh>
