@@ -592,7 +592,7 @@ public:
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
 
-  std::vector< double > expected_results(const std::string type) const
+  std::vector< double > expected_results(const std::string /*type*/) const
   {
     return {0.0};
 //    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
