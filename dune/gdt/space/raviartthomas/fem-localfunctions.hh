@@ -6,12 +6,6 @@
 #ifndef DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
 
-#ifdef HAVE_CMAKE_CONFIG
-#include "cmake_config.h"
-#elif defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <type_traits>
 #include <memory>
 
