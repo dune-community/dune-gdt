@@ -91,7 +91,11 @@ public:
         localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase);
     assert((2 * quadratureOrder + 1) < std::numeric_limits<int>::max());
     const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(2 * quadratureOrder + 1));
-    // check matrix and tmp storage
+    // check matrices
+    Dune::Stuff::Common::clear(entityEntityRet);
+    Dune::Stuff::Common::clear(neighborNeighborRet);
+    Dune::Stuff::Common::clear(entityNeighborRet);
+    Dune::Stuff::Common::clear(neighborEntityRet);
     const size_t rowsEn = entityTestBase.size();
     const size_t colsEn = entityAnsatzBase.size();
     const size_t rowsNe = neighborTestBase.size();
@@ -114,11 +118,6 @@ public:
       const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
       const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
       const R quadratureWeight                     = quadPoint->weight();
-      // clear target matrices
-      Dune::Stuff::Common::clear(entityEntityVals);
-      Dune::Stuff::Common::clear(neighborNeighborVals);
-      Dune::Stuff::Common::clear(entityNeighborVals);
-      Dune::Stuff::Common::clear(neighborEntityVals);
       // evaluate local
       evaluation().evaluate(localFunctionsEn,
                             localFunctionsNe,
@@ -247,6 +246,7 @@ public:
     const FaceQuadratureType& faceQuadrature =
         FaceQuadratureRules::rule(intersection.type(), int(2 * quadratureOrder + 1));
     // check matrix and tmp storage
+    Dune::Stuff::Common::clear(ret);
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
     assert(ret.rows() >= rows);
@@ -258,8 +258,6 @@ public:
       const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
       const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
       const R quadratureWeight                     = quadPoint->weight();
-      // clear target matrices
-      Dune::Stuff::Common::clear(localMatrix);
       // evaluate local
       evaluation().evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, localMatrix);
       // compute integral

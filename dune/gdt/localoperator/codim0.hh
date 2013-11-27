@@ -90,9 +90,11 @@ public:
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
+    Dune::Stuff::Common::clear(ret);
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
+    auto& evaluationResult = tmpLocalMatrices[0];
     // loop over all quadrature points
     const auto quadPointEndIt = volumeQuadrature.end();
     for (auto quadPointIt = volumeQuadrature.begin(); quadPointIt != quadPointEndIt; ++quadPointIt) {
@@ -100,16 +102,14 @@ public:
       // integration factors
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight  = quadPointIt->weight();
-      // clear tmp matrix
-      Dune::Stuff::Common::clear(tmpLocalMatrices[0]);
       // evaluate the local operation
-      evaluation().evaluate(localFunctions, ansatzBase, testBase, x, tmpLocalMatrices[0]);
+      evaluation().evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
-        auto& retRow       = ret[ii];
-        const auto& tmpRow = tmpLocalMatrices[0][ii];
+        auto& retRow                    = ret[ii];
+        const auto& evaluationResultRow = evaluationResult[ii];
         for (size_t jj = 0; jj < cols; ++jj)
-          retRow[jj] += tmpRow[jj] * integrationFactor * quadratureWeight;
+          retRow[jj] += evaluationResultRow[jj] * integrationFactor * quadratureWeight;
       } // compute integral
     } // loop over all quadrature points
   } // ... apply(...)
