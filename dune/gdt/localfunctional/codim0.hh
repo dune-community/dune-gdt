@@ -87,9 +87,11 @@ public:
     const int quadratureOrder = int(evaluation().order(localFunctions, testBase));
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2*quadratureOrder + 1);
     // check vector and tmp storage
+    Dune::Stuff::Common::clear(ret);
     const size_t size = testBase.size();
     assert(ret.size() >= size);
     assert(tmpLocalVectors.size() >= numTmpObjectsRequired_);
+    Dune::DynamicVector< R >& localVector = tmpLocalVectors[0];
     // loop over all quadrature points
     const auto quadPointEndIt = volumeQuadrature.end();
     for (auto quadPointIt = volumeQuadrature.begin(); quadPointIt != quadPointEndIt; ++quadPointIt) {
@@ -97,9 +99,6 @@ public:
       // integration factors
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight = quadPointIt->weight();
-      // clear tmp vector
-      Dune::DynamicVector< R >& localVector = tmpLocalVectors[0];
-      Dune::Stuff::Common::clear(localVector);
       // evaluate the local operation
       evaluation().evaluate(localFunctions, testBase, x, localVector);
       // compute integral

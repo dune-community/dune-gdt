@@ -38,7 +38,6 @@ public:
    *  \tparam R   RangeFieldType
    *  \tparam r   dimRange
    *  \tparam rC  dimRangeCols
-   *  \attention  ret is assumed to be zero!
    */
   template< class T, class D, int d, class R, int r, int rC >
   void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
@@ -80,7 +79,6 @@ public:
    *  \tparam R                 RangeFieldType
    *  \tparam r                 dimRange of the of the testBase
    *  \tparam rC                dimRangeCols of the testBase
-   *  \attention ret is assumed to be zero!
    */
   template< class T, class IntersectionType, class D, int d, class R, int r, int rC >
   void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,

@@ -83,6 +83,7 @@ public:
     const int quadratureOrder = int(evaluation().order(localFunctions, testBase));
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2*quadratureOrder + 1);
     // check vector and tmp storage
+    Dune::Stuff::Common::clear(ret);
     const size_t size = testBase.size();
     assert(ret.size() >= size);
     assert(tmpLocalVectors.size() >= numTmpObjectsRequired_);
@@ -92,8 +93,6 @@ public:
       const Dune::FieldVector< D, d - 1 > localPoint = quadPoint->position();
       const R integrationFactor = intersection.geometry().integrationElement(localPoint);
       const R quadratureWeight = quadPoint->weight();
-      // clear target vector
-      Dune::Stuff::Common::clear(localVector);
       // evaluate local
       evaluation().evaluate(localFunctions, testBase, intersection, localPoint, localVector);
       // compute integral
