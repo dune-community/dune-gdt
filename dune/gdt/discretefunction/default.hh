@@ -14,6 +14,8 @@
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
 
+#include <dune/grid/io/file/vtk.hh>
+
 #include <dune/stuff/la/container/interface.hh>
 
 #include <dune/gdt/space/interface.hh>
@@ -122,7 +124,7 @@ public:
     typedef typename SpaceType::GridPartType::GridViewType GridViewType;
     if (filename.empty()) DUNE_THROW(RangeError, "Empty filename given!");
     auto adapter = std::make_shared< Stuff::Function::VisualizationAdapter< GridViewType, dimRange > >(*this);
-    VTKWriter< GridViewType > vtk_writer(space_.gridPart()->gridView(), VTK::nonconforming);
+    SubsamplingVTKWriter< GridViewType > vtk_writer(space_.gridPart()->gridView(), VTK::nonconforming);
     vtk_writer.addVertexData(adapter);
     vtk_writer.write(filename);
   } // ... visualize(...)
