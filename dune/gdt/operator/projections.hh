@@ -15,19 +15,25 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
+#include <dune/stuff/common/vector.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {
 namespace ProjectionOperator {
 
 
-template <class GridPartType>
+/**
+ *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc
+ */
+template <class GridPartImp>
 class L2
 {
+  typedef GridPartImp GridPartType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
@@ -38,17 +44,77 @@ public:
   {
   }
 
-  template <class R, int r, class SpaceType, class V>
+  /**
+   *  \brief  Does an L2 projection by using the lagrange points.
+   */
+  template <class GP, int p, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<SpaceType, V>& range) const
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, R, r, 1>, V>& range) const
   {
-    // check
-    static_assert(std::is_same<R, typename SpaceType::RangeFieldType>::value, "Types do not match!");
-    static_assert(SpaceType::dimRange == r, "Dimensions do not match!");
-    static_assert(SpaceType::dimRangeCols == 1, "Not implemented yet!");
+    // clear range
+    Stuff::Common::clear(range.vector());
+    typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, R, r, 1>, V> RangeFunctionType;
+    typedef typename RangeFunctionType::RangeType RangeType;
+    RangeType local_source_value(0);
+    // walk the grid
+    const auto entity_it_end = grid_part_.template end<0>();
+    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity           = *entity_it;
+      const auto local_source      = source.local_function(entity);
+      auto local_range             = range.local_discrete_function(entity);
+      auto& local_range_DoF_vector = local_range.vector();
+      const auto lagrange_points = range.space().backend().lagrangePointSet(entity);
+      assert(lagrange_points.nop() == local_range_DoF_vector.size());
+      // and do the work
+      for (size_t ii = 0; ii < lagrange_points.nop(); ++ii) {
+        const auto& lagrange_point = lagrange_points.point(ii);
+        local_source->evaluate(lagrange_point, local_source_value);
+        local_range_DoF_vector.set(ii, local_source_value);
+      }
+    } // walk the grid
+  } // ... apply(... ContinuousLagrangeSpace::FemWrapper ...)
+
+  /**
+   *  \brief  Does an L2 projection by using the lagrange points.
+   */
+  template <class GP, int p, class R, int r, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
+             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V>& range) const
+  {
+    // clear range
+    Stuff::Common::clear(range.vector());
+    typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V> RangeFunctionType;
+    typedef typename RangeFunctionType::RangeType RangeType;
+    RangeType local_source_value(0);
+    // walk the grid
+    const auto entity_it_end = grid_part_.template end<0>();
+    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity           = *entity_it;
+      const auto local_source      = source.local_function(entity);
+      auto local_range             = range.local_discrete_function(entity);
+      auto& local_range_DoF_vector = local_range.vector();
+      const auto lagrange_points = range.space().lagrange_points(entity);
+      assert(lagrange_points.size() == local_range_DoF_vector.size());
+      // and do the work
+      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
+        const auto& lagrange_point = lagrange_points[ii];
+        local_source->evaluate(lagrange_point, local_source_value);
+        local_range_DoF_vector.set(ii, local_source_value);
+      }
+    } // walk the grid
+  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper ...)
+
+  /**
+   *  \brief  Does an L2 projection by solving the local problems.
+   */
+  template <class GP, int p, class R, int r, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
+             DiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V>& range) const
+  {
+    typedef DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1> SpaceType;
     typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
     // clear
-    range.vector().backend() *= R(0);
+    Stuff::Common::clear(range.vector());
     // walk the grid
     RangeType source_value(0);
     std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs());
@@ -91,7 +157,7 @@ public:
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
-  } // ... apply(...)
+  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper ...)
 
 private:
   const GridPartType& grid_part_;
