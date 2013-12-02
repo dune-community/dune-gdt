@@ -40,7 +40,6 @@
 # include <dune/common/float_cmp.hh>
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-// enable alugrid
 # define GRIDDIM 2
 # define ENABLE_ALUGRID 1
 # include <dune/grid/alugrid.hh>
@@ -51,8 +50,9 @@
 #include <dune/grid/part/leaf.hh>
 
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/functions/expression.hh>
+#include <dune/stuff/functions/combined.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
 #include <dune/gdt/space/continuouslagrange/fem.hh>
@@ -82,30 +82,30 @@ typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
 typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
 typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
 
+#if HAVE_ALUGRID
 typedef Dune::ALUConformGrid< 2, 2 >                                  AluConform2dGridType;
 typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType >         AluConform2dGridPartType;
+typedef Dune::ALUSimplexGrid< 2, 2 >                                  AluSimplex2dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType >         AluSimplex2dGridPartType;
+typedef Dune::ALUSimplexGrid< 3, 3 >                                  AluSimplex3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType >         AluSimplex3dGridPartType;
+typedef Dune::ALUCubeGrid< 3, 3 >                                     AluCube3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >            AluCube3dGridPartType;
+#endif
 
 
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 2, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 2, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 2, double, 1 >
 
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 2, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 2, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 2, double, 1 >
 #if HAVE_ALUGRID
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
 #endif
                       > L2ProductOperatorSpaceTypes;
 
@@ -124,7 +124,7 @@ struct L2ProductOperator
   typedef Dune::Stuff::Function::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
 
-  void check() const
+  void produces_correct_results() const
   {
     // prepare
     const GridProviderType grid_provider(0.0, 1.0, 4u);
@@ -147,11 +147,11 @@ struct L2ProductOperator
     if (Dune::FloatCmp::ne(l2_product, RangeFieldType(1.0/5.0)))
       DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
   }
-};
+}; // L2ProductOperator
 
 TYPED_TEST_CASE(L2ProductOperator, L2ProductOperatorSpaceTypes);
 TYPED_TEST(L2ProductOperator, produces_correct_results) {
-  this->check();
+  this->produces_correct_results();
 }
 
 
@@ -170,7 +170,7 @@ struct H1SemiProductOperator
   typedef Dune::Stuff::Function::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
 
-  void check() const
+  void produces_correct_results() const
   {
     // prepare
     const GridProviderType grid_provider(0.0, 1.0, 4u);
@@ -195,11 +195,93 @@ struct H1SemiProductOperator
     if (Dune::FloatCmp::ne(h1semi_product, dimDomain * RangeFieldType(1.0/5.0)))
       DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
   }
-};
+}; // H1SemiProductOperator
 
 TYPED_TEST_CASE(H1SemiProductOperator, L2ProductOperatorSpaceTypes);
 TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
-  this->check();
+  this->produces_correct_results();
+}
+
+
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 2, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 2, double, 1 >
+#if HAVE_ALUGRID
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 2, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 2, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 2, double, 1 >
+#endif
+                      > L2ProjectionOperatorSpaceTypes;
+
+template< class SpaceType >
+struct L2ProjectionOperator
+  : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType          GridPartType;
+  typedef typename GridPartType::GridType           GridType;
+  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType  RangeFieldType;
+  static const unsigned int                   dimRange = SpaceType::dimRange;
+  static const unsigned int polOrder = SpaceType::polOrder;
+  typedef Dune::Stuff::Function::Expression
+      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid = grid_provider.grid();
+    const auto grid_part = std::make_shared< const GridPartType >(*grid);
+    const SpaceType space(grid_part);
+    const FunctionType function("x", "x[0]", polOrder, "function");
+    VectorType vector(space.mapper().size());
+    typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
+    DiscreteFunctionType discrete_function(space, vector, "discrete function");
+    // project
+    const Dune::GDT::ProjectionOperator::L2< GridPartType > l2_projection_operator(*grid_part);
+    l2_projection_operator.apply(function, discrete_function);
+    // measure error
+    const Dune::Stuff::Function::Difference< FunctionType, DiscreteFunctionType > difference(function,
+                                                                                             discrete_function);
+    const Dune::GDT::ProductOperator::L2< GridPartType > l2_product_operator(*grid_part);
+    const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
+    if (l2_error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+  }
+}; // L2ProjectionOperator
+
+TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
+TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
+  this->produces_correct_results();
 }
 
 
