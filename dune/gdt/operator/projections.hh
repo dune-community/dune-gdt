@@ -206,6 +206,71 @@ private:
 
 
 /**
+ *  \brief  Does a projection by selecting the appropriate Lagrange or L2 operator at compile time.
+ *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
+ *          tests/operators.cc!
+ */
+template< class GridPartImp >
+class Generic
+{
+  typedef GridPartImp GridPartType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridPartType::dimension;
+
+public:
+  Generic(const GridPartType& grid_part)
+    : grid_part_(grid_part)
+    , lagrange_operator_(grid_part_)
+    , l2_operator_(grid_part_)
+  {}
+
+  template< class SourceType, class RangeType >
+  void apply(const SourceType& source, RangeType& range) const
+  {
+    redirect_to_appropriate_operator(source, range);
+  }
+
+private:
+  template< class E, class D, int d, class R, int r, int rC, class T, class V >
+  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
+                                        DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< E >::value),
+                  "Could not find an appropriate operator for this combination of source and range!");
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
+                                        DiscreteFunction< ContinuousLagrangeSpace::FemWrapper
+                                          < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    lagrange_operator_.apply(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
+                                        DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                          < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    lagrange_operator_.apply(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
+                                        DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                          < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  const GridPartType& grid_part_;
+  const Lagrange< GridPartType > lagrange_operator_;
+  const L2< GridPartType > l2_operator_;
+}; // Generic
+
+
+/**
  *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
  *          those vertices of the entity which lie on the dirichlet boundary.
  *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
