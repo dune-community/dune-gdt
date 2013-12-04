@@ -6,9 +6,9 @@
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
-# include <memory>
+#include <memory>
 
-# include <dune/common/exceptions.hh>
+#include <dune/common/exceptions.hh>
 # include <dune/common/float_cmp.hh>
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
@@ -54,14 +54,14 @@ typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
 typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
 
 #if HAVE_ALUGRID
-typedef Dune::ALUConformGrid< 2, 2 >                                  AluConform2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType >         AluConform2dGridPartType;
-typedef Dune::ALUSimplexGrid< 2, 2 >                                  AluSimplex2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType >         AluSimplex2dGridPartType;
-typedef Dune::ALUSimplexGrid< 3, 3 >                                  AluSimplex3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType >         AluSimplex3dGridPartType;
-typedef Dune::ALUCubeGrid< 3, 3 >                                     AluCube3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >            AluCube3dGridPartType;
+typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dGridPartType;
+typedef Dune::ALUSimplexGrid< 2, 2 >                          AluSimplex2dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dGridPartType;
+typedef Dune::ALUSimplexGrid< 3, 3 >                          AluSimplex3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dGridPartType;
+typedef Dune::ALUCubeGrid< 3, 3 >                             AluCube3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartType;
 #endif
 
 
