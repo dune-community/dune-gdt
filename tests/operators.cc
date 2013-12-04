@@ -285,6 +285,79 @@ TYPED_TEST(L2ProjectionOperator, produces_correct_results)
 }
 
 
+typedef testing::
+    Types<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S3dGridPartType, 1, double, 1>
+
+          ,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dGridPartType, 1, double, 1>
+#if HAVE_ALUGRID
+          ,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 1>
+
+          ,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 1, double, 1>
+#endif
+          > DirichletProjectionOperatorSpaceTypes;
+
+template <class SpaceType>
+struct DirichletProjectionOperator : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType GridPartType;
+  typedef typename GridPartType::GridType GridType;
+  typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = SpaceType::dimDomain;
+  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
+  typedef typename SpaceType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRange = SpaceType::dimRange;
+  static const unsigned int polOrder = SpaceType::polOrder;
+  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      FunctionType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 1u); // this has to be 1, otherwise the projection does not equal
+    const auto grid      = grid_provider.grid(); // x[0] any more!
+    const auto grid_part = std::make_shared<const GridPartType>(*grid);
+    DomainType dirichlet_normal(0);
+    dirichlet_normal[0] = DomainFieldType(1);
+    const Dune::Stuff::GridboundaryNormalBased<typename GridPartType::IntersectionType> boundary_info(
+        false, {dirichlet_normal});
+    const SpaceType space(grid_part);
+    const FunctionType function("x", "x[0]", 1, "function");
+    VectorType vector(space.mapper().size());
+    typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
+    DiscreteFunctionType discrete_function(space, vector, "discrete function");
+    // project
+    const Dune::GDT::ProjectionOperator::Dirichlet<GridPartType> l2_projection_operator(*grid_part, boundary_info);
+    l2_projection_operator.apply(function, discrete_function);
+    // measure error
+    const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
+    const Dune::GDT::ProductOperator::L2<GridPartType> l2_product_operator(*grid_part);
+    const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
+    if (l2_error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected, "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+  }
+}; // DirichletProjectionOperator
+
+TYPED_TEST_CASE(DirichletProjectionOperator, DirichletProjectionOperatorSpaceTypes);
+TYPED_TEST(DirichletProjectionOperator, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+
+
 int main(int argc, char** argv)
 {
   try {
