@@ -38,6 +38,9 @@ class errors_are_not_as_expected
 
 typedef Dune::Stuff::LA::EigenDenseVector< double > VectorType;
 
+// +------------------------------------------------+
+// | Definition of all possible Grids and GridParts |
+// +------------------------------------------------+
 typedef Dune::SGrid< 1, 1 >                           S1dGridType;
 typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
 typedef Dune::SGrid< 2, 2 >                           S2dGridType;
@@ -64,6 +67,9 @@ typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartT
 #endif
 
 
+// +---------------------+
+// | L2 product operator |
+// +---------------------+
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
@@ -135,6 +141,9 @@ TYPED_TEST(L2ProductOperator, produces_correct_results) {
 }
 
 
+// +--------------------------+
+// | Semi H1 product operator |
+// +--------------------------+
 template< class SpaceType >
 struct H1SemiProductOperator
   : public ::testing::Test
@@ -192,6 +201,9 @@ TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
 }
 
 
+// +------------------------------+
+// | Lagrange projection operator |
+// +------------------------------+
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
@@ -250,7 +262,7 @@ struct LagrangeProjectionOperator
       DUNE_THROW(errors_are_not_as_expected,
                  "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
   }
-}; // L2ProjectionOperator
+}; // LagrangeProjectionOperator
 
 TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
 TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
@@ -258,6 +270,9 @@ TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
 }
 
 
+// +------------------------+
+// | L2 projection operator |
+// +------------------------+
 typedef testing::Types<
 #if HAVE_ALUGRID
                         Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
@@ -316,6 +331,9 @@ TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
 }
 
 
+// +-----------------------------+
+// | Generic projection operator |
+// +-----------------------------+
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
@@ -389,6 +407,9 @@ TYPED_TEST(GenericProjectionOperator, produces_correct_results) {
 }
 
 
+// +-------------------------------+
+// | Dirichlet projection operator |
+// +-------------------------------+
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
