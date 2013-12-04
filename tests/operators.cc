@@ -332,6 +332,79 @@ typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridP
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 2, double, 1 >
+#endif
+                      > GenericProjectionOperatorSpaceTypes;
+
+template< class SpaceType >
+struct GenericProjectionOperator
+  : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType          GridPartType;
+  typedef typename GridPartType::GridType           GridType;
+  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType  RangeFieldType;
+  static const unsigned int                   dimRange = SpaceType::dimRange;
+  static const unsigned int polOrder = SpaceType::polOrder;
+  typedef Dune::Stuff::Function::Expression
+      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid = grid_provider.grid();
+    const auto grid_part = std::make_shared< const GridPartType >(*grid);
+    const SpaceType space(grid_part);
+    const FunctionType function("x", "x[0]", 1, "function");
+    VectorType vector(space.mapper().size());
+    typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
+    DiscreteFunctionType discrete_function(space, vector, "discrete function");
+    // project
+    const Dune::GDT::ProjectionOperator::Generic< GridPartType > generic_projection_operator(*grid_part);
+    generic_projection_operator.apply(function, discrete_function);
+    // measure error
+    const Dune::Stuff::Function::Difference< FunctionType, DiscreteFunctionType > difference(function,
+                                                                                             discrete_function);
+    const Dune::GDT::ProductOperator::L2< GridPartType > l2_product_operator(*grid_part);
+    const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
+    if (l2_error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+  }
+}; // GenericProjectionOperator
+
+TYPED_TEST_CASE(GenericProjectionOperator, GenericProjectionOperatorSpaceTypes);
+TYPED_TEST(GenericProjectionOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
+
+
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+#if HAVE_ALUGRID
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
 #endif
                       > DirichletProjectionOperatorSpaceTypes;
 
