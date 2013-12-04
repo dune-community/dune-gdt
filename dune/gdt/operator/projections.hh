@@ -28,10 +28,13 @@ namespace ProjectionOperator {
 
 
 /**
- *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc!
+ *  \brief  Does a projection using the lagrange points.
+ *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
+ *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
+ *          tests/operators.cc!
  */
 template< class GridPartImp >
-class L2
+class Lagrange
 {
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
@@ -39,21 +42,17 @@ class L2
   static const unsigned int dimDomain = GridPartType::dimension;
 
 public:
-  L2(const GridPartType& grid_part)
+  Lagrange(const GridPartType& grid_part)
     : grid_part_(grid_part)
   {}
 
-  template< class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rS, rCS >&,
-             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, p, RR, rR, rCR >, V >&) const
+  template< class E, class D, int d, class R, int r, int rC, class T, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
+             DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< RS >::value), "Not implemented for this combination!");
+    static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range");
   }
 
-  /**
-   *  \brief  Does an L2 projection using the lagrange points.
-   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
-   */
   template< class GP, class R, int r, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
              DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, 1, R, r, 1 >, V >& range) const
@@ -84,17 +83,6 @@ public:
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, r, 1 > ...)
 
-  template< class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rS, rCS >&,
-             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, RR, rR, rCR >, V >&) const
-  {
-    static_assert((Dune::AlwaysFalse< RS >::value), "Not implemented for this combination!");
-  }
-
-  /**
-   *  \brief  Does an L2 projection by using the lagrange points.
-   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
-   */
   template< class GP, class R, int r, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
              DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 >, V >& range) const
@@ -126,16 +114,36 @@ public:
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 > ...)
 
-  template< class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rS, rCS >&,
-             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, RR, rR, rCR >, V >&) const
+private:
+  const GridPartType& grid_part_;
+}; // class Lagrange
+
+
+/**
+ *  \brief  Does an L2 projection by solving local or global problems.
+ *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
+ *          tests/operators.cc!
+ */
+template< class GridPartImp >
+class L2
+{
+  typedef GridPartImp GridPartType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridPartType::dimension;
+
+public:
+  L2(const GridPartType& grid_part)
+    : grid_part_(grid_part)
+  {}
+
+  template< class E, class D, int d, class R, int r, int rC, class T, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
+             DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< RS >::value), "Not implemented for this combination!");
+    static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range");
   }
 
-  /**
-   *  \brief  Does an L2 projection by solving the local problems.
-   */
   template< class GP, int p, class R, int r, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
              DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, r, 1 >, V >& range) const
@@ -198,7 +206,11 @@ private:
 
 
 /**
- *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc!
+ *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
+ *          those vertices of the entity which lie on the dirichlet boundary.
+ *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
+ *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
+ *          tests/operators.cc!
  */
 template< class GridPartImp >
 class Dirichlet
@@ -219,18 +231,13 @@ public:
     , boundary_info_(boundary_info)
   {}
 
-  template< class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rS, rCS >&,
-             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, p, RR, rR, rCR >, V >&) const
+  template< class E, class D, int d, class R, int r, int rC, class T, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
+             DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< RS >::value), "Not implemented for this combination!");
+    static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range");
   }
 
-  /**
-   *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
-   *          those vertices of the entity which lie on the dirichlet boundary.
-   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
-   */
   template< class R, class GP, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& source,
              DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 >, V >& range) const
@@ -256,13 +263,6 @@ public:
         apply_local(entity, points, local_source, local_range_DoF_vector);
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 > ...) const
-
-  template< class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rS, rCS >&,
-             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, RR, rR, rCR >, V >&) const
-  {
-    static_assert((Dune::AlwaysFalse< RS >::value), "Not implemented for this combination!");
-  }
 
   /**
    *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
