@@ -9,7 +9,6 @@
 #include <memory>
 
 #include <dune/common/exceptions.hh>
-# include <dune/common/float_cmp.hh>
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
@@ -104,19 +103,29 @@ struct L2ProductOperator
     const Dune::GDT::ProductOperator::L2< GridPartType > l2_product_operator(*grid_part);
     // test 1 (constant)
     const FunctionType function_1("x", "1.0", 0);
+    function_1.visualize(grid_part->gridView(), "function1");
     auto l2_product = l2_product_operator.apply2(function_1, function_1);
-    if (Dune::FloatCmp::ne(l2_product, RangeFieldType(1)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    RangeFieldType error = l2_product - RangeFieldType(1.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0)
+                 << " (difference: " << std::scientific << error << ")");
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     l2_product = l2_product_operator.apply2(function_2, function_2);
-    if (Dune::FloatCmp::ne(l2_product, RangeFieldType(1.0/3.0)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    error = l2_product - RangeFieldType(1.0/3.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
+                 << " (difference: " << std::scientific << error << ")");
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     l2_product = l2_product_operator.apply2(function_3, function_3);
-    if (Dune::FloatCmp::ne(l2_product, RangeFieldType(1.0/5.0)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    error = l2_product - RangeFieldType(1.0/5.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
+                 << " (difference: " << std::scientific << error << ")");
   }
 }; // L2ProductOperator
 
@@ -151,20 +160,29 @@ struct H1SemiProductOperator
     // test 1 (constant)
     const FunctionType function_1("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}});
     auto h1semi_product = h1semi_product_operator.apply2(function_1, function_1);
-    if (Dune::FloatCmp::ne(h1semi_product, dimDomain * RangeFieldType(1.0)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    RangeFieldType error = h1semi_product - dimDomain * RangeFieldType(1.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain *RangeFieldType(1.0)
+                 << " (difference: " << std::scientific << error << ")");
     // test 2 (linear)
     const FunctionType function_2("x", "fake_value", 2, "affine gradient",
                                   {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}});
     h1semi_product = h1semi_product_operator.apply2(function_2, function_2);
-    if (Dune::FloatCmp::ne(h1semi_product, dimDomain * RangeFieldType(1.0/3.0)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    error = h1semi_product - dimDomain * RangeFieldType(1.0/3.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain * RangeFieldType(1.0/3.0)
+                 << " (difference: " << std::scientific << error << ")");
     // test 3 (quadratic)
     const FunctionType function_3("x", "fake_value", 3, ", quadratic gradient",
                                   {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}});
     h1semi_product = h1semi_product_operator.apply2(function_3, function_3);
-    if (Dune::FloatCmp::ne(h1semi_product, dimDomain * RangeFieldType(1.0/5.0)))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+    error = h1semi_product - dimDomain * RangeFieldType(1.0/5.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain * RangeFieldType(1.0/5.0)
+                 << " (difference: " << std::scientific << error << ")");
   }
 }; // H1SemiProductOperator
 
@@ -177,25 +195,15 @@ TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
 typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 2, double, 1 >
 
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 2, double, 1 >
 #if HAVE_ALUGRID
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 2, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 2, double, 1 >
 
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
@@ -233,7 +241,7 @@ struct L2ProjectionOperator
     const auto grid = grid_provider.grid();
     const auto grid_part = std::make_shared< const GridPartType >(*grid);
     const SpaceType space(grid_part);
-    const FunctionType function("x", "x[0]", polOrder, "function");
+    const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
     DiscreteFunctionType discrete_function(space, vector, "discrete function");
@@ -246,7 +254,8 @@ struct L2ProjectionOperator
     const Dune::GDT::ProductOperator::L2< GridPartType > l2_product_operator(*grid_part);
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!");
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // L2ProjectionOperator
 
