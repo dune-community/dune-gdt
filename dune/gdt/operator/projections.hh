@@ -51,7 +51,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range");
+    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
   }
 
   template <class GP, class R, int r, class V>
@@ -142,7 +142,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range");
+    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
   }
 
   template <class GP, int p, class R, int r, class V>
@@ -236,7 +236,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range");
+    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
   }
 
   template <class R, class GP, class V>
@@ -265,11 +265,6 @@ public:
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 > ...) const
 
-  /**
-   *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
-   *          those vertices of the entity which lie on the dirichlet boundary.
-   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
-   */
   template <class R, class GP, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& source,
              DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, 1, 1>, V>& range) const
