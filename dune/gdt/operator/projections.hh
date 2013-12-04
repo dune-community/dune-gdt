@@ -28,7 +28,7 @@ namespace ProjectionOperator {
 
 
 /**
- *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc
+ *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc!
  */
 template <class GridPartImp>
 class L2
@@ -44,16 +44,27 @@ public:
   {
   }
 
-  /**
-   *  \brief  Does an L2 projection by using the lagrange points.
-   */
-  template <class GP, int p, class R, int r, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, R, r, 1>, V>& range) const
+  template <class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rS, rCS>&,
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, RR, rR, rCR>, V>&) const
   {
+    static_assert((Dune::AlwaysFalse<RS>::value), "Not implemented for this combination!");
+  }
+
+  /**
+   *  \brief  Does an L2 projection using the lagrange points.
+   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
+   */
+  template <class GP, class R, int r, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1>, V>& range) const
+  {
+    // checks
+    typedef ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // clear range
     Stuff::Common::clear(range.vector());
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, R, r, 1>, V> RangeFunctionType;
+    typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
     typedef typename RangeFunctionType::RangeType RangeType;
     RangeType local_source_value(0);
     // walk the grid
@@ -72,18 +83,29 @@ public:
         local_range_DoF_vector.set(ii, local_source_value);
       }
     } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemWrapper ...)
+  } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, r, 1 > ...)
+
+  template <class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rS, rCS>&,
+             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, RR, rR, rCR>, V>&) const
+  {
+    static_assert((Dune::AlwaysFalse<RS>::value), "Not implemented for this combination!");
+  }
 
   /**
    *  \brief  Does an L2 projection by using the lagrange points.
+   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
    */
-  template <class GP, int p, class R, int r, class V>
+  template <class GP, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V>& range) const
+             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V>& range) const
   {
+    // checks
+    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // clear range
     Stuff::Common::clear(range.vector());
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V> RangeFunctionType;
+    typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
     typedef typename RangeFunctionType::RangeType RangeType;
     RangeType local_source_value(0);
     // walk the grid
@@ -102,7 +124,14 @@ public:
         local_range_DoF_vector.set(ii, local_source_value);
       }
     } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper ...)
+  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 > ...)
+
+  template <class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rS, rCS>&,
+             DiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, RR, rR, rCR>, V>&) const
+  {
+    static_assert((Dune::AlwaysFalse<RS>::value), "Not implemented for this combination!");
+  }
 
   /**
    *  \brief  Does an L2 projection by solving the local problems.
@@ -111,7 +140,9 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
              DiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V>& range) const
   {
+    // checks
     typedef DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
     // clear
     Stuff::Common::clear(range.vector());
@@ -157,7 +188,7 @@ public:
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
-  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper ...)
+  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, r, 1 > ...)
 
 private:
   const GridPartType& grid_part_;
@@ -165,7 +196,7 @@ private:
 
 
 /**
- *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc
+ *  \note If you add other dimension/polorder/space combinations, do not forget to add a testcase in tests/operators.cc!
  */
 template <class GridPartImp>
 class Dirichlet
@@ -188,15 +219,25 @@ public:
   {
   }
 
+  template <class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rS, rCS>&,
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, RR, rR, rCR>, V>&) const
+  {
+    static_assert((Dune::AlwaysFalse<RS>::value), "Not implemented for this combination!");
+  }
+
   /**
    *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
-   *          those vertices of the entity, which lie on the dirichlet boundary.
+   *          those vertices of the entity which lie on the dirichlet boundary.
+   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
    */
-  template <class R, class GP, int p, class V>
+  template <class R, class GP, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, R, 1, 1>, V>& range) const
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, 1, R, 1, 1>, V>& range) const
   {
-    static_assert(p == 1, "This is untested for other polynomial orders! If this works just remove this assert!");
+    // checks
+    typedef ContinuousLagrangeSpace::FemWrapper<GP, 1, R, 1, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // clear range
     Stuff::Common::clear(range.vector());
     // walk the grid
@@ -206,6 +247,7 @@ public:
       const auto local_source      = source.local_function(entity);
       auto local_range             = range.local_discrete_function(entity);
       auto& local_range_DoF_vector = local_range.vector();
+      // get the lagrange points
       const auto lagrange_points = range.space().backend().lagrangePointSet(entity);
       std::vector<DomainType> points(lagrange_points.nop(), DomainType(0));
       for (size_t ii = 0; ii < lagrange_points.nop(); ++ii)
@@ -213,11 +255,19 @@ public:
       // and do the work (see below)
       apply_local(entity, points, local_source, local_range_DoF_vector);
     } // walk the grid
-  } // ... apply(...) const
+  } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 > ...) const
+
+  template <class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rS, rCS>&,
+             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, RR, rR, rCR>, V>&) const
+  {
+    static_assert((Dune::AlwaysFalse<RS>::value), "Not implemented for this combination!");
+  }
 
   /**
    *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
-   *          those vertices of the entity, which lie on the dirichlet boundary.
+   *          those vertices of the entity which lie on the dirichlet boundary.
+   *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
    */
   template <class R, class GP, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& source,
@@ -226,7 +276,6 @@ public:
     // checks
     typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, 1, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    static_assert(dimDomain == 2, "This is untested for other dimensions! If this works just remove this assert!");
     // clear range
     Stuff::Common::clear(range.vector());
     // walk the grid
@@ -240,13 +289,14 @@ public:
       // and do the work (see below)
       apply_local(entity, lagrange_points, local_source, local_range_DoF_vector);
     } // walk the grid
-  } // ... apply(...) const
+  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > ...) const
 
 private:
   template <class LagrangePointsType, class LocalSourceType, class LocalRangeVectorType>
   void apply_local(const EntityType& entity, const LagrangePointsType& lagrange_points,
                    const LocalSourceType& local_source, LocalRangeVectorType& local_range_DoF_vector) const
   {
+    assert(lagrange_points.size() == local_range_DoF_vector.size());
     // walk the intersections
     const auto intersection_it_end = grid_part_.iend(entity);
     for (auto intersection_it = grid_part_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
