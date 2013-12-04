@@ -3,35 +3,7 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-// disable all grids before we include config.h
-#ifdef GRIDDIM
-#undef GRIDDIM
-#endif
-#ifdef YASPGRID
-#undef YASPGRID
-#endif
-#ifdef ALBERTAGRID
-#undef ALBERTAGRID
-#endif
-#ifdef UGGRID
-#undef UGGRID
-#endif
-#ifdef ALUGRID_CONFORM
-#undef ALUGRID_CONFORM
-#endif
-#ifdef ALUGRID_CUBE
-#undef ALUGRID_CUBE
-#endif
-#ifdef ALUGRID_SIMPLEX
-#undef ALUGRID_SIMPLEX
-#endif
-#ifdef ONEDGRID
-#undef ONEDGRID
-#endif
-#ifdef SGRID
-#undef SGRID
-#endif
-
+// This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
 #include <memory>
@@ -40,7 +12,6 @@
 #include <dune/common/float_cmp.hh>
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define GRIDDIM 2
 #define ENABLE_ALUGRID 1
 #include <dune/grid/alugrid.hh>
 #endif
