@@ -119,6 +119,10 @@ public:
         (new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
 
+  /**
+   * \note  We use the SubsamplingVTKWriter (which is better for higher orders). This means that the grid you see
+   *        in the visualization is a refinement of the real grid!
+   */
   void visualize(const std::string filename) const
   {
     typedef typename SpaceType::GridPartType::GridViewType GridViewType;
