@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include <dune/common/typetraits.hh>
+
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrangespace.hh>
 
@@ -27,47 +29,77 @@ template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int range
 class FemWrapper;
 
 
-// forward, to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemWrapperTraits;
-
-
 /**
- *  \brief Traits class for ContinuousLagrangeSpace for dimRangeCols = 1.
+ *  \brief Traits class for ContinuousLagrangeSpace::FemWrapper.
  */
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class FemWrapperTraits
 {
 public:
-  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > derived_type;
+  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   typedef GridPartImp                   GridPartType;
   static const int                      polOrder = polynomialOrder;
-  dune_static_assert((polOrder >= 1), "ERROR: wrong polOrder given!");
+  static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
   static const unsigned int             dimDomain = GridPartType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = 1;
-  static const unsigned int             dimRangeCols = 1;
+  static const unsigned int             dimRange = rangeDim;
+  static const unsigned int             dimRangeCols = rangeDimCols;
 private:
   typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
   typedef Mapper::FemDofWrapper< typename BackendType::MapperType > MapperType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef BaseFunctionSet::FemWrapper< typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
-}; // class SpaceWrappedFemContinuousLagrangeTraits< ..., 1, 1 >
+  typedef BaseFunctionSet::FemWrapper
+      < typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain,
+        RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
+}; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+
+// unspecialized version, to give better compile errors
+template< class GP, int p, class R, int r, int rC >
+class FemWrapper
+  : public SpaceInterface< FemWrapperTraits< GP, p, R, r, rC > >
 {
-  typedef SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
-  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >                         ThisType;
 public:
-  typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
+  typedef FemWrapperTraits< GP, p, R, r, rC > Traits;
+
+  typedef typename Traits::GridPartType GridPartType;
+  static const int                      polOrder = Traits::polOrder;
+  typedef typename GridPartType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridPartType::dimension;
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const unsigned int               dimRange = Traits::dimRange;
+  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
+
+  typedef typename Traits::BackendType          BackendType;
+  typedef typename Traits::MapperType           MapperType;
+  typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
+  typedef typename Traits::EntityType           EntityType;
+
+  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+
+  FemWrapper(const std::shared_ptr< const GridPartType >& /*grid_prt*/)
+  {
+    static_assert((Dune::AlwaysFalse< GP >::value),
+                  "Not yet implemented for this combination of dimensions! One of the specializations below should "
+                  "work, they are just untested for other dimensions!");
+  }
+}; // FemWrapper
+
+
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int r >
+class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 >
+  : public SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > >
+{
+  typedef SpaceInterface< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > > BaseType;
+  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 >                         ThisType;
+public:
+  typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   static const int                      polOrder = Traits::polOrder;
@@ -138,14 +170,14 @@ public:
   }
 
   template< class R >
-  void localConstraints(const EntityType& /*entity*/,
-                        Constraints::LocalDefault< R >& /*ret*/) const
+  void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
   {
-    dune_static_assert(Dune::AlwaysFalse< R >::value, "ERROR: not implemented for arbitrary constraints!");
+    static_assert((Dune::AlwaysFalse< R >::value), "Not implemented for arbitrary constraints!");
   }
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
+                        Constraints::Dirichlet
+                          < typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
   {
     std::set< size_t > localDirichletDofs;
     const auto& gridBoundary = ret.gridBoundary();
@@ -201,7 +233,8 @@ public:
   } // ... localConstraints(..., Dirichlet< ..., true >)
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
+                        Constraints::Dirichlet
+                          < typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
   {
     std::set< size_t > localDirichletDofs;
     const auto& gridBoundary = ret.gridBoundary();
@@ -255,8 +288,7 @@ public:
   using BaseType::computePattern;
 
   template< class LocalGridPartType, class OtherSpaceType >
-  PatternType* computePattern(const LocalGridPartType& localGridPart,
-                              const OtherSpaceType& otherSpace) const
+  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
   {
     return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
   }
@@ -267,7 +299,7 @@ private:
   std::shared_ptr< const MapperType > mapper_;
   mutable Dune::DynamicVector< size_t > tmpMappedRows_;
   mutable Dune::DynamicVector< size_t > tmpMappedCols_;
-}; // class FemWrapper< ..., 1, 1 >
+}; // class FemWrapper< ..., 1 >
 
 
 } // namespace ContinuousLagrangeSpace

@@ -45,28 +45,23 @@ template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int range
 class FemLocalfunctionsWrapper;
 
 
-// forward, to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemLocalfunctionsWrapperTraits;
-
-
 /**
- *  \brief Traits class for ContinuousLagrangeSpace for dimRange 1x1.
+ *  \brief Traits class for ContinuousLagrangeSpace::FemLocalfunctionsWrapper.
  */
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class FemLocalfunctionsWrapperTraits
 {
 public:
   typedef GridPartImp                   GridPartType;
   static const int                      polOrder = polynomialOrder;
-  dune_static_assert((polOrder >= 1), "ERROR: wrong polOrder given!");
+  static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
   static const unsigned int             dimDomain = GridPartType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = 1;
-  static const unsigned int             dimRangeCols = 1;
+  static const unsigned int             dimRange = rangeDim;
+  static const unsigned int             dimRangeCols = rangeDimCols;
   typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
 private:
   typedef FemLocalfunctionsWrapperTraits< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > ThisType;
@@ -91,7 +86,44 @@ public:
 private:
   template< class G, int p, class R, int r, int rC >
   friend class FemLocalfunctionsWrapper;
-}; // class FemLocalfunctionsWrapperTraits< ..., 1, 1 >
+}; // class FemLocalfunctionsWrapperTraits
+
+
+// unspecialized version, to give better compile errors
+template< class GP, int p, class R, int r, int rC >
+class FemLocalfunctionsWrapper
+  : public SpaceInterface< FemLocalfunctionsWrapperTraits< GP, p, R, r, rC > >
+{
+public:
+  typedef FemLocalfunctionsWrapperTraits< GP, p, R, r, rC > Traits;
+
+  typedef typename Traits::GridPartType   GridPartType;
+  static const int                        polOrder = Traits::polOrder;
+  typedef typename GridPartType::ctype              DomainFieldType;
+  static const unsigned int                         dimDomain = GridPartType::dimension;
+  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const unsigned int               dimRange = Traits::dimRange;
+  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
+
+  typedef typename Traits::BackendType          BackendType;
+  typedef typename Traits::MapperType           MapperType;
+  typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
+  typedef typename Traits::EntityType           EntityType;
+
+  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+
+private:
+  typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
+
+public:
+  FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > /*grid_prt*/)
+  {
+    static_assert((Dune::AlwaysFalse< GP >::value),
+                  "Not yet implemented for this combination of dimensions! One of the specializations below should "
+                  "work, they are just untested for other dimensions!");
+  }
+}; // FemLocalfunctionsWrapper
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
@@ -177,14 +209,14 @@ public:
   }
 
   template< class R >
-  void localConstraints(const EntityType& /*entity*/,
-                        Constraints::LocalDefault< R >& /*ret*/) const
+  void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
   {
-    dune_static_assert(Dune::AlwaysFalse< R >::value, "ERROR: not implemented for arbitrary constraints!");
+    static_assert((Dune::AlwaysFalse< R >::value), "Not implemented for arbitrary constraints!");
   }
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
+                        Constraints::Dirichlet
+                          < typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
   {
     static_assert(dimDomain == 2, "This does not work for other dimensions!");
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -229,7 +261,9 @@ public:
       // then we walk the intersections
       std::set< size_t > local_dirichlet_DoF_ids;
       const auto intersection_it_end = gridPart_->iend(entity);
-      for (auto intersection_it = gridPart_->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+      for (auto intersection_it = gridPart_->ibegin(entity);
+           intersection_it != intersection_it_end;
+           ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (ret.gridBoundary().dirichlet(intersection)) {
           const auto& intersection_geometry = intersection.geometry();
@@ -280,7 +314,8 @@ public:
   } // ... localConstraints(...)
 
   void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet< typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
+                        Constraints::Dirichlet
+                          < typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
   {
     static_assert(dimDomain == 2, "This does not work for other dimensions!");
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -415,10 +450,12 @@ private:
   {
     // static checks
     typedef typename GridPartType::GridType GridType;
+#if (dimDomain > 1)
     static_assert(!std::is_same< GridType, SGrid< dimDomain, dimDomain > >::value,
                   "This space is only implemented for simplicial grids!");
     static_assert(!std::is_same< GridType, YaspGrid< dimDomain > >::value,
                   "This space is only implemented for simplicial grids!");
+#endif
     // dynamic checks
     typedef typename Dune::Fem::AllGeomTypes< typename GridPartType::IndexSetType,
                                               typename GridPartType::GridType > AllGeometryTypes;
