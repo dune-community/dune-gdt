@@ -191,6 +191,7 @@ private:
 template <class TestCase, int polOrder>
 class EocStudy : public Dune::Stuff::Common::ConvergenceStudy
 {
+  typedef Dune::Stuff::Common::ConvergenceStudy BaseType;
   typedef typename TestCase::GridPartType GridPartType;
   typedef typename TestCase::EntityType EntityType;
 
@@ -444,6 +445,11 @@ public:
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
+  }
+
+  virtual std::map<std::string, std::vector<double>> run(std::ostream& out = std::cout)
+  {
+    return BaseType::run(true, out);
   }
 
 private:
