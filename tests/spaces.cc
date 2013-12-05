@@ -3,12 +3,20 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+// This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
 #include <memory>
 #include <vector>
 
 #include <dune/common/typetraits.hh>
+
+#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
+#define ENABLE_ALUGRID 1
+#include <dune/grid/alugrid.hh>
+#endif
+#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include <dune/grid/part/leaf.hh>
 
@@ -21,30 +29,99 @@
 #include <dune/gdt/basefunctionset/interface.hh>
 
 
-typedef Dune::Stuff::GridProviderCube<Dune::GridSelector::GridType> GridProviderType;
-typedef typename GridProviderType::GridType GridType;
-typedef Dune::grid::Part::Leaf::Const<GridType> GridPartType;
-typedef double RangeFieldType;
-static const unsigned int dimRange = 1;
+// +------------------------------------------------+
+// | Definition of all possible Grids and GridParts |
+// +------------------------------------------------+
+typedef Dune::SGrid<1, 1> S1dGridType;
+typedef Dune::grid::Part::Leaf::Const<S1dGridType> S1dGridPartType;
+typedef Dune::SGrid<2, 2> S2dGridType;
+typedef Dune::grid::Part::Leaf::Const<S2dGridType> S2dGridPartType;
+typedef Dune::SGrid<3, 3> S3dGridType;
+typedef Dune::grid::Part::Leaf::Const<S3dGridType> S3dGridPartType;
+
+typedef Dune::YaspGrid<1> Yasp1dGridType;
+typedef Dune::grid::Part::Leaf::Const<Yasp1dGridType> Yasp1dGridPartType;
+typedef Dune::YaspGrid<2> Yasp2dGridType;
+typedef Dune::grid::Part::Leaf::Const<Yasp2dGridType> Yasp2dGridPartType;
+typedef Dune::YaspGrid<3> Yasp3dGridType;
+typedef Dune::grid::Part::Leaf::Const<Yasp3dGridType> Yasp3dGridPartType;
+
+#if HAVE_ALUGRID
+typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
+typedef Dune::grid::Part::Leaf::Const<AluConform2dGridType> AluConform2dGridPartType;
+typedef Dune::ALUSimplexGrid<2, 2> AluSimplex2dGridType;
+typedef Dune::grid::Part::Leaf::Const<AluSimplex2dGridType> AluSimplex2dGridPartType;
+typedef Dune::ALUSimplexGrid<3, 3> AluSimplex3dGridType;
+typedef Dune::grid::Part::Leaf::Const<AluSimplex3dGridType> AluSimplex3dGridPartType;
+typedef Dune::ALUCubeGrid<3, 3> AluCube3dGridType;
+typedef Dune::grid::Part::Leaf::Const<AluCube3dGridType> AluCube3dGridPartType;
+#endif
 
 typedef testing::
-    Types<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GridPartType, 1, RangeFieldType, dimRange>,
-          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GridPartType, 2, RangeFieldType, dimRange>,
-          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 1, RangeFieldType, dimRange>,
-          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 2, RangeFieldType, dimRange>,
-          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 1, RangeFieldType, dimRange>,
-          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, 2, RangeFieldType, dimRange>>
-        SpaceTypes;
+    Types<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S2dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S2dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S3dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S3dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S3dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dGridPartType, 1, double, 3>
+#if HAVE_ALUGRID
+          ,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dGridPartType, 1, double, 3>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 2>,
+          Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 3>
 
-template <class T>
-struct SpaceCRTPtest : public ::testing::Test
+          ,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 1, double, 1>,
+          Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 1, double, 1>
+
+          ,
+          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dGridPartType, 1, double, 1>,
+          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dGridPartType, 1, double, 1>,
+          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dGridPartType, 1, double, 1>,
+          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 1, double, 1>,
+          Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 1, double, 1>
+#endif
+          > SpaceTypes;
+
+template <class SpaceType>
+struct Spaces : public ::testing::Test
 {
-  typedef T SpaceType;
+  typedef typename SpaceType::GridPartType GridPartType;
+  typedef typename GridPartType::GridType GridType;
+  typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
 
-  void check(const std::shared_ptr<const GridPartType> gridPart) const
+  void static_crtp_check() const
   {
+    // grid
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid_ptr  = grid_provider.grid();
+    const auto grid_part = std::make_shared<const GridPartType>(*grid_ptr);
     // check the space
-    const SpaceType space(gridPart);
+    const SpaceType space(grid_part);
     // check for static information
     typedef typename SpaceType::Traits Traits;
     typedef typename SpaceType::GridPartType S_GridPartType;
@@ -60,7 +137,7 @@ struct SpaceCRTPtest : public ::testing::Test
     typedef typename SpaceType::EntityType EntityType;
     typedef typename SpaceType::PatternType PatternType;
     // check for functionality
-    const auto entityIt      = gridPart->template begin<0>();
+    const auto entityIt      = grid_part->template begin<0>();
     const EntityType& entity = *entityIt;
     typedef typename Dune::GDT::SpaceInterface<Traits> SpaceInterfaceType;
     const SpaceInterfaceType& spaceAsInterface = static_cast<const SpaceInterfaceType&>(space);
@@ -107,15 +184,13 @@ struct SpaceCRTPtest : public ::testing::Test
     baseFunctionSetAsInterface.evaluate(x, values);
     baseFunctionSetAsInterface.jacobian(x, jacobians);
   } // ... check()
-}; // struct SpaceCRTPtest
+}; // struct Spaces
 
 
-TYPED_TEST_CASE(SpaceCRTPtest, SpaceTypes);
-TYPED_TEST(SpaceCRTPtest, SpaceCRTP)
+TYPED_TEST_CASE(Spaces, SpaceTypes);
+TYPED_TEST(Spaces, static_crtp)
 {
-  const GridProviderType gridProvider(-2.0, -1.0);
-  const std::shared_ptr<const GridPartType> gridPart(new GridPartType(*(gridProvider.grid())));
-  this->check(gridPart);
+  this->static_crtp_check();
 }
 
 
