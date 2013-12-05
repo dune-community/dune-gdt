@@ -13,6 +13,8 @@
 
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/matrix.hh>
+#include <dune/stuff/common/vector.hh>
 
 #include "interface.hh"
 
@@ -182,6 +184,11 @@ public:
                 Dune::DynamicMatrix< R >& entityNeighborRet,
                 Dune::DynamicMatrix< R >& neighborEntityRet) const
   {
+    // clear ret
+    Stuff::Common::clear(entityEntityRet);
+    Stuff::Common::clear(neighborNeighborRet);
+    Stuff::Common::clear(entityNeighborRet);
+    Stuff::Common::clear(neighborEntityRet);
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::DomainType         DomainType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::RangeType          RangeType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
@@ -416,6 +423,8 @@ public:
                 const Dune::FieldVector< D, 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
+    // clear ret
+    Stuff::Common::clear(ret);
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::DomainType         DomainType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::RangeType          RangeType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, 2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
@@ -593,6 +602,8 @@ public:
                 const Dune::FieldVector< D, d - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
+    // clear ret
+    Stuff::Common::clear(ret);
     typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::DomainType         DomainType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::RangeType          RangeType;
     typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
