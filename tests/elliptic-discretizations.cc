@@ -3,16 +3,20 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+// This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
 #include <dune/common/exceptions.hh>
 
-#ifndef HAVE_ALUGRID
-static_assert(false, "This test requires alugrid!");
+#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
+# define ENABLE_ALUGRID 1
+# include <dune/grid/alugrid.hh>
+# else
+static_assert(false, "This test requires ALUGrid!");
 #endif
-#include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/common/color.hh>
+#include <dune/stuff/common/print.hh>
 
 #undef HAVE_FASP
 
@@ -35,14 +39,14 @@ typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
                       , EllipticTestCase::ER07< AluConform2dGridType >
                       , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
-                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
+//                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 template< class TestCase >
 struct EllipticCGDiscretization
   : public ::testing::Test
 {
-  void check() const
+  void produces_correct_results() const
   {
     const TestCase test_case;
     test_case.print_header(out);
@@ -50,22 +54,27 @@ struct EllipticCGDiscretization
     EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
     auto errors = eoc_study.run(out);
     for (const auto& norm : eoc_study.provided_norms())
-      if (errors[norm] > eoc_study.expected_results(norm))
-        DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
+      if (errors[norm] > eoc_study.expected_results(norm)) {
+        std::stringstream ss;
+        ss << "\n";
+        Dune::Stuff::Common::print(errors[norm], "errors (" + norm + ")", ss);
+        Dune::Stuff::Common::print(eoc_study.expected_results(norm), "expected results (" + norm + ")", ss);
+        DUNE_THROW(errors_are_not_as_expected, ss.str());
+      }
   }
-};
+}; // EllipticCGDiscretization
 
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
-  this->check();
-}
+//TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
+//TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
+//  this->produces_correct_results();
+//}
 
 
 template< class TestCase >
 struct EllipticSIPDGDiscretization
   : public ::testing::Test
 {
-  void check() const
+  void produces_correct_results() const
   {
     if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
       std::cerr
@@ -77,26 +86,34 @@ struct EllipticSIPDGDiscretization
       test_case.print_header(out);
       out << std::endl;
       size_t failure = 0;
+      std::stringstream ss;
+      ss << "\n";
       EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
       auto errors_1 = eoc_study_1.run(out);
       out << std::endl;
       EllipticSIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
       auto errors_2 = eoc_study_2.run(out);
       for (const auto& norm : eoc_study_1.provided_norms())
-        if (errors_1[norm] > eoc_study_1.expected_results(norm))
+        if (errors_1[norm] > eoc_study_1.expected_results(norm)) {
           ++failure;
+          Dune::Stuff::Common::print(errors_1[norm], "errors 1 (" + norm + ")", ss);
+          Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "expected results 1 (" + norm + ")", ss);
+        }
       for (const auto& norm : eoc_study_2.provided_norms())
-        if (errors_2[norm] > eoc_study_2.expected_results(norm))
+        if (errors_2[norm] > eoc_study_2.expected_results(norm)) {
           ++failure;
+          Dune::Stuff::Common::print(errors_2[norm], "errors 2 (" + norm + ")", ss);
+          Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "expected results 2 (" + norm + ")", ss);
+        }
       if (failure)
-        DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
+        DUNE_THROW(errors_are_not_as_expected, ss.str());
     }
   }
 };
 
 TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
-  this->check();
+  this->produces_correct_results();
 }
 
 
@@ -104,7 +121,7 @@ template< class TestCase >
 struct EllipticSWIPDGDiscretization
   : public ::testing::Test
 {
-  void check() const
+  void produces_correct_results() const
   {
     const TestCase test_case;
     test_case.print_header(out);
@@ -128,7 +145,7 @@ struct EllipticSWIPDGDiscretization
 
 TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-  this->check();
+  this->produces_correct_results();
 }
 
 
