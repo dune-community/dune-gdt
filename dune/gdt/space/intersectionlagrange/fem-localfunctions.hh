@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_SPACE_INTERSECTION_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_INTERSECTION_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 
+#if 0
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 
@@ -170,4 +171,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif
 #endif // DUNE_GDT_SPACE_INTERSECTION_LAGRANGE_FEM_LOCALFUNCTIONS_HH
