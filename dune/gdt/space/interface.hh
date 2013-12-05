@@ -85,8 +85,7 @@ public:
   {
     static_assert(dimRange == 1, "Not implemented for this dimension!");
     static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
-    if (polOrder != 1)
-      DUNE_THROW(Dune::NotImplemented, "This does not seem to work for higher orders!");
+    static_assert(polOrder == 1, "This does not seem to work for higher orders!");
     // check
     assert(gridPart()->indexSet().contains(entity));
     // prepare
