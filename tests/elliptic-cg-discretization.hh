@@ -103,11 +103,11 @@ public:
     // * elliptic diffusion operator
     typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > >  EllipticOperatorType;
     const EllipticOperatorType diffusion_operator(diffusion_);
-    // * right hand side
-    //   * L2 force functional
+    // right hand side
+    // * L2 force functional
     typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > L2VolumeFunctionalType;
     const L2VolumeFunctionalType force_functional(force_);
-    //   * L2 neumann functional
+    // * L2 neumann functional
     typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
     const L2FaceFunctionalType neumann_functional(neumann_);
 
@@ -116,23 +116,23 @@ public:
     VectorType dirichlet_vector(space_.mapper().size());
     VectorType rhs_vector(space_.mapper().size());
 
-    // * dirichlet boundary values
+    // dirichlet boundary values
     DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
-    typedef ProjectionOperator::L2< GridPartType > DirichletProjectionOperatorType;
-    const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart())/*, boundary_info_*/);
+    typedef ProjectionOperator::Dirichlet< GridPartType > DirichletProjectionOperatorType;
+    const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
     dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
 
-    // * local matrix assembler
+    // local matrix assembler
     typedef LocalAssembler::Codim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
     const LocalEllipticOperatorMatrixAssemblerType diffusion_matrix_assembler(diffusion_operator);
-    // * local vector assemblers
-    //   * force vector
+    // local vector assemblers
+    // * force vector
     typedef LocalAssembler::Codim0Vector< L2VolumeFunctionalType > LocalL2VolumeFunctionalVectorAssemblerType;
     const LocalL2VolumeFunctionalVectorAssemblerType force_vector_assembler(force_functional);
-    //   * neumann vector
+    // * neumann vector
     typedef LocalAssembler::Codim1Vector< L2FaceFunctionalType > LocalL2FaceFunctionalVectorAssemblerType;
     const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
-    // * system assembler
+    // system assembler
     typedef SystemAssembler< SpaceType > SystemAssemblerType;
     SystemAssemblerType system_assembler(space_);
     system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix);
@@ -200,6 +200,8 @@ template< class TestCase, int polOrder >
 class EocStudy
   : public Dune::Stuff::Common::ConvergenceStudy
 {
+  typedef Dune::Stuff::Common::ConvergenceStudy BaseType;
+protected:
   typedef typename TestCase::GridPartType GridPartType;
   typedef typename TestCase::EntityType   EntityType;
 
@@ -416,6 +418,11 @@ public:
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
+  } // ... expected_results(...)
+
+  virtual std::map< std::string, std::vector< double > > run(std::ostream& out = std::cout)
+  {
+    return BaseType::run(true, out);
   }
 
 private:
