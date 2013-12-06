@@ -19,6 +19,8 @@
 
 #include <dune/grid/part/leaf.hh>
 
+#include <dune/fem/gridpart/levelgridpart.hh>
+
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/expression.hh>
@@ -31,6 +33,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operator/projections.hh>
 #include <dune/gdt/operator/products.hh>
+#include <dune/gdt/operator/prolongations.hh>
 
 class errors_are_not_as_expected
   : public Dune::Exception
@@ -38,50 +41,60 @@ class errors_are_not_as_expected
 
 typedef Dune::Stuff::LA::EigenDenseVector< double > VectorType;
 
-// +------------------------------------------------+
-// | Definition of all possible Grids and GridParts |
-// +------------------------------------------------+
+// +---------------------------------------------------------+
+// | Definition of all Grids and GridParts of interest to us |
+// +---------------------------------------------------------+
 typedef Dune::SGrid< 1, 1 >                           S1dGridType;
-typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< S1dGridType >       S1dLevelGridPartType;
 typedef Dune::SGrid< 2, 2 >                           S2dGridType;
-typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< S2dGridType >       S2dLevelGridPartType;
 typedef Dune::SGrid< 3, 3 >                           S3dGridType;
-typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< S3dGridType >       S3dLevelGridPartType;
 
 typedef Dune::YaspGrid< 1 >                             Yasp1dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< Yasp1dGridType >      Yasp1dLevelGridPartType;
 typedef Dune::YaspGrid< 2 >                             Yasp2dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< Yasp2dGridType >      Yasp2dLevelGridPartType;
 typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< Yasp3dGridType >      Yasp3dLevelGridPartType;
 
 #if HAVE_ALUGRID
 typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< AluConform2dGridType >      AluConform2dLevelGridPartType;
 typedef Dune::ALUSimplexGrid< 2, 2 >                          AluSimplex2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< AluSimplex2dGridType >      AluSimplex2dLevelGridPartType;
 typedef Dune::ALUSimplexGrid< 3, 3 >                          AluSimplex3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< AluSimplex3dGridType >      AluSimplex3dLevelGridPartType;
 typedef Dune::ALUCubeGrid< 3, 3 >                             AluCube3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartType;
+typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dLeafGridPartType;
+typedef Dune::Fem::LevelGridPart< AluCube3dGridType >         AluCube3dLevelGridPartType;
 #endif
 
 
 // +---------------------+
 // | L2 product operator |
 // +---------------------+
-typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dLeafGridPartType, 1, double, 1 >
 #if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLeafGridPartType, 1, double, 1 >
 #endif
                       > L2ProductOperatorSpaceTypes;
 
@@ -204,22 +217,22 @@ TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
 // +------------------------------+
 // | Lagrange projection operator |
 // +------------------------------+
-typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dLeafGridPartType, 1, double, 1 >
 #if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
 #endif
                       > LagrangeProjectionOperatorSpaceTypes;
 
@@ -275,12 +288,12 @@ TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
 // +------------------------+
 typedef testing::Types<
 #if HAVE_ALUGRID
-                        Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 2, double, 1 >
+                        Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 2, double, 1 >
 #endif
                       > L2ProjectionOperatorSpaceTypes;
 
@@ -334,29 +347,29 @@ TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
 // +-----------------------------+
 // | Generic projection operator |
 // +-----------------------------+
-typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dLeafGridPartType, 1, double, 1 >
 #if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 2, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 2, double, 1 >
+                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 2, double, 1 >
 #endif
                       > GenericProjectionOperatorSpaceTypes;
 
@@ -410,22 +423,22 @@ TYPED_TEST(GenericProjectionOperator, produces_correct_results) {
 // +-------------------------------+
 // | Dirichlet projection operator |
 // +-------------------------------+
-typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dLeafGridPartType, 1, double, 1 >
 #if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLeafGridPartType, 1, double, 1 >
 
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >
 #endif
                       > DirichletProjectionOperatorSpaceTypes;
 
@@ -462,8 +475,8 @@ struct DirichletProjectionOperator
     typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
     DiscreteFunctionType discrete_function(space, vector, "discrete function");
     // project
-    const Dune::GDT::ProjectionOperator::Dirichlet< GridPartType > l2_projection_operator(*grid_part, boundary_info);
-    l2_projection_operator.apply(function, discrete_function);
+    const Dune::GDT::ProjectionOperator::Dirichlet< GridPartType > projection_operator(*grid_part, boundary_info);
+    projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference< FunctionType, DiscreteFunctionType > difference(function,
                                                                                              discrete_function);
@@ -477,6 +490,95 @@ struct DirichletProjectionOperator
 
 TYPED_TEST_CASE(DirichletProjectionOperator, DirichletProjectionOperatorSpaceTypes);
 TYPED_TEST(DirichletProjectionOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
+
+
+// +-----------------------+
+// | Prolongation operator |
+// +-----------------------+
+typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dLevelGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dLevelGridPartType, 1, double, 1 >
+#if HAVE_ALUGRID
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLevelGridPartType, 1, double, 1 >
+
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLevelGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >
+#endif
+                      > LagrangeProlongationOperatorSpaceTypes;
+
+template< class SpaceType >
+struct LagrangeProlongationOperator
+  : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType          GridPartType;
+  typedef typename GridPartType::GridType           GridType;
+  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef typename SpaceType::RangeFieldType  RangeFieldType;
+  static const unsigned int                   dimRange = SpaceType::dimRange;
+  static const unsigned int polOrder = SpaceType::polOrder;
+  typedef Dune::Stuff::Function::Expression
+      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    GridProviderType grid_provider(0.0, 1.0, 2u);
+    auto grid = grid_provider.grid();
+    grid->globalRefine(1);
+    const auto coarse_grid_part = std::make_shared< const GridPartType >(*grid, 0);
+    assert(maxLevel() > 0);
+    const auto fine_grid_part = std::make_shared< const GridPartType >(*grid, grid->maxLevel());
+    assert(fine_grid_part.size() > coarse_grid_part.size());
+    // first, project an anlytical function onto the coarse grid
+    const FunctionType function("x", "x[0]", 1, "function");
+    const SpaceType coarse_space(coarse_grid_part);
+    VectorType coarse_vector(coarse_space.mapper().size());
+    typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
+    DiscreteFunctionType coarse_discrete_function(coarse_space, coarse_vector, "coarse discrete function");
+    const Dune::GDT::ProjectionOperator::Generic< GridPartType > coarse_projection_operator(*coarse_grid_part);
+    coarse_projection_operator.apply(function, coarse_discrete_function);
+    // since the projection operator was tested above we are confident this worked
+    // but we check anyway (the L2 product operator was also tested above)
+    const Dune::GDT::ProductOperator::L2< GridPartType > coarse_l2_product_operator(*coarse_grid_part);
+    const Dune::Stuff::Function::Difference< FunctionType, DiscreteFunctionType >
+        coarse_difference(function, coarse_discrete_function);
+    const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
+    if (coarse_l2_error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "This should not happen, those operators were tested above!\n"
+                 << coarse_l2_error << " vs. " << RangeFieldType(1e-15));
+    // now we prolong the discrete function from the coarse to the fine grid part
+    const SpaceType fine_space(fine_grid_part);
+    VectorType fine_vector(fine_space.mapper().size());
+    DiscreteFunctionType fine_discrete_function(fine_space, fine_vector, "fine discrete function");
+    const Dune::GDT::ProlongationOperator::Lagrange< GridPartType > prolongation_operator(*fine_grid_part);
+    prolongation_operator.apply(coarse_discrete_function, fine_discrete_function);
+    // and measure the error
+    const Dune::GDT::ProductOperator::L2< GridPartType > fine_l2_product_operator(*fine_grid_part);
+    const Dune::Stuff::Function::Difference< FunctionType, DiscreteFunctionType >
+        fine_difference(function, fine_discrete_function);
+    const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
+    if (fine_l2_error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
+  }
+}; // LagrangeProlongationOperator
+
+TYPED_TEST_CASE(LagrangeProlongationOperator, LagrangeProlongationOperatorSpaceTypes);
+TYPED_TEST(LagrangeProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
 
