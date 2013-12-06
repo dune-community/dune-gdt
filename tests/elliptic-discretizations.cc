@@ -12,7 +12,7 @@
 #define ENABLE_ALUGRID 1
 #include <dune/grid/alugrid.hh>
 #else
-static_assert(false, "This test requires ALUGrid!");
+#error This test requires ALUGrid!
 #endif
 
 #include <dune/stuff/common/color.hh>
