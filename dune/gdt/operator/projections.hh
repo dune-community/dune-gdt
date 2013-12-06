@@ -239,7 +239,7 @@ public:
   {}
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range) const
+  inline void apply(const SourceType& source, RangeType& range) const
   {
     redirect_to_appropriate_operator(source, range);
   }
@@ -254,25 +254,28 @@ private:
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
-                                        DiscreteFunction< ContinuousLagrangeSpace::FemWrapper
-                                          < GP, p, RR, rR, rCR >, V >& range) const
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< ContinuousLagrangeSpace::FemWrapper
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
   {
     lagrange_operator_.apply(source, range);
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
-                                        DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper
-                                          < GP, p, RR, rR, rCR >, V >& range) const
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
   {
     lagrange_operator_.apply(source, range);
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
-                                        DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
-                                          < GP, p, RR, rR, rCR >, V >& range) const
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
   {
     l2_operator_.apply(source, range);
   }
