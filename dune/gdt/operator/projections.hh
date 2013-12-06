@@ -40,6 +40,7 @@ class Lagrange
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
+  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
 public:
   Lagrange(const GridPartType& grid_part)
@@ -61,11 +62,10 @@ public:
     // checks
     typedef ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    // clear range
-    Stuff::Common::clear(range.vector());
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
-    typedef typename RangeFunctionType::RangeType RangeType;
-    RangeType local_source_value(0);
+    // set all dofs to infinity
+    const auto infinity = std::numeric_limits<R>::infinity();
+    for (size_t ii = 0; ii < range.vector().size(); ++ii)
+      range.vector().set(ii, infinity);
     // walk the grid
     const auto entity_it_end = grid_part_.template end<0>();
     for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -74,13 +74,11 @@ public:
       auto local_range             = range.local_discrete_function(entity);
       auto& local_range_DoF_vector = local_range.vector();
       const auto lagrange_points = range.space().backend().lagrangePointSet(entity);
-      assert(lagrange_points.nop() == local_range_DoF_vector.size());
-      // and do the work
-      for (size_t ii = 0; ii < lagrange_points.nop(); ++ii) {
-        const auto& lagrange_point = lagrange_points.point(ii);
-        local_source->evaluate(lagrange_point, local_source_value);
-        local_range_DoF_vector.set(ii, local_source_value);
-      }
+      std::vector<DomainType> points(lagrange_points.nop(), DomainType(0));
+      for (size_t ii = 0; ii < lagrange_points.nop(); ++ii)
+        points[ii] = lagrange_points.point(ii);
+      // and do the work (see below)
+      apply_local(points, *local_source, local_range_DoF_vector);
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, r, 1 > ...)
 
@@ -91,11 +89,11 @@ public:
     // checks
     typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    // clear range
-    Stuff::Common::clear(range.vector());
+    // set all dofs to infinity
+    const auto infinity = std::numeric_limits<R>::infinity();
+    for (size_t ii = 0; ii < range.vector().size(); ++ii)
+      range.vector().set(ii, infinity);
     typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
-    typedef typename RangeFunctionType::RangeType RangeType;
-    RangeType local_source_value(0);
     // walk the grid
     const auto entity_it_end = grid_part_.template end<0>();
     for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -103,18 +101,32 @@ public:
       const auto local_source      = source.local_function(entity);
       auto local_range             = range.local_discrete_function(entity);
       auto& local_range_DoF_vector = local_range.vector();
-      const auto lagrange_points = range.space().lagrange_points(entity);
-      assert(lagrange_points.size() == local_range_DoF_vector.size());
-      // and do the work
-      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        const auto& lagrange_point = lagrange_points[ii];
-        local_source->evaluate(lagrange_point, local_source_value);
-        local_range_DoF_vector.set(ii, local_source_value);
-      }
+      const auto lagrange_points   = range.space().lagrange_points(entity);
+      // and do the work (see below)
+      apply_local(lagrange_points, *local_source, local_range_DoF_vector);
     } // walk the grid
   } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 > ...)
 
 private:
+  template <class LagrangePointsType, class LocalSourceType, class LocalRangeVectorType>
+  void apply_local(const LagrangePointsType& lagrange_points, const LocalSourceType& local_source,
+                   LocalRangeVectorType& local_range_DoF_vector) const
+  {
+    static const unsigned int dimRange = LocalSourceType::dimRange;
+    assert(lagrange_points.size() == local_range_DoF_vector.size());
+    size_t kk = 0;
+    for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
+      if (std::isinf(local_range_DoF_vector.get(kk))) {
+        const auto& lagrange_point = lagrange_points[ii];
+        // evaluate source function
+        const auto source_value = local_source.evaluate(lagrange_point);
+        for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
+          local_range_DoF_vector.set(kk, source_value[jj]);
+      } else
+        kk += dimRange;
+    }
+  } // ... apply_local(...)
+
   const GridPartType& grid_part_;
 }; // class Lagrange
 
