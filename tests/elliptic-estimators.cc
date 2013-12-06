@@ -5,14 +5,16 @@
 
 #include <dune/stuff/test/test_common.hh>
 
+#undef HAVE_FASP
+
 #include <dune/common/exceptions.hh>
 
-#ifndef HAVE_ALUGRID
-static_assert(false, "This test requires alugrid!");
+#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
+# define ENABLE_ALUGRID 1
+# include <dune/grid/alugrid.hh>
+#else
+# error This test requires ALUGrid!
 #endif
-#include <dune/grid/alugrid.hh>
-
-#undef HAVE_FASP
 
 #include "elliptic-testcases.hh"
 //#include "elliptic-cg-discretization.hh"
@@ -109,10 +111,10 @@ struct EllipticSWIPDGDiscretization
   }
 };
 
-TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-  this->check();
-}
+//TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
+//TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
+//  this->check();
+//}
 
 
 int main(int argc, char** argv)
