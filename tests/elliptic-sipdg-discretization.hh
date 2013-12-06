@@ -373,37 +373,16 @@ public:
     if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {1.24e-01, 3.39e-02, 8.43e-03, 1.83e-03};
+          return {1.24e-01, 3.43e-02, 8.83e-03, 2.24e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.72e-01, 1.89e-01, 9.25e-02, 4.15e-02};
+          return {3.73e-01, 1.91e-01, 9.55e-02, 4.79e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {1.38e-02, 1.75e-03, 2.19e-04, 2.74e-05};
         else if (type.compare("H1_semi") == 0)
-          return {7.43e-02, 1.92e-02, 4.82e-03, 1.18e-03};
-        else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-      } else if (polOrder == 3) {
-        if (type.compare("L2") == 0)
-          return {1.41e-03, 8.99e-05, 5.66e-06, 3.59e-07};
-        else if (type.compare("H1_semi") == 0)
-          return {9.64e-03, 1.23e-03, 1.54e-04, 1.90e-05};
-        else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-      } else if (polOrder == 4) {
-        if (type.compare("L2") == 0)
-          return {1.05e-04, 3.27e-06, 1.03e-07, 3.21e-09};
-        else if (type.compare("H1_semi") == 0)
-          return {9.47e-04, 6.06e-05, 3.82e-06, 2.37e-07};
-        else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-      } else if (polOrder == 5) {
-        if (type.compare("L2") == 0)
-          return {6.60e-06, 1.08e-07, 1.70e-09, 2.71e-11};
-        else if (type.compare("H1_semi") == 0)
-          return {7.42e-05, 2.33e-06, 7.26e-08, 2.27e-09};
+          return {7.43e-02, 1.92e-02, 4.84e-03, 1.22e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -411,16 +390,16 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {6.88e-02, 4.09e-02, 1.17e-02, 2.61e-03};
+          return {6.80e-02, 3.87e-02, 1.11e-02, 2.47e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.56e-01, 3.12e-01, 1.69e-01, 7.79e-02};
+          return {3.48e-01, 3.00e-01, 1.63e-01, 7.47e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {2.65e-02, 3.97e-03, 6.68e-04, 1.29e-04};
+          return {2.48e-02, 3.72e-03, 6.29e-04, 1.22e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.19e-01, 7.28e-02, 2.31e-02, 7.25e-03};
+          return {2.09e-01, 6.94e-02, 2.21e-02, 6.91e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -445,16 +424,16 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {6.20e-02, 1.75e-02, 4.51e-03, 1.01e-03};
+          return {4.76e-02, 1.36e-02, 3.50e-03, 7.77e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.80e-01, 1.46e-01, 7.21e-02, 3.24e-02};
+          return {2.74e-01, 1.45e-01, 7.16e-02, 3.23e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {5.06e-03, 8.63e-04, 1.62e-04, 3.44e-05};
+          return {3.96e-03, 7.11e-04, 1.44e-04, 3.24e-05};
         else if (type.compare("H1_semi") == 0)
-          return {4.63e-02, 1.59e-02, 5.91e-03, 2.29e-03};
+          return {4.90e-02, 1.83e-02, 7.39e-03, 2.97e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
