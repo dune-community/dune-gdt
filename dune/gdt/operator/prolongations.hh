@@ -31,6 +31,17 @@ namespace GDT {
 namespace ProlongationOperator {
 
 
+/**
+ *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
+template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
+void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
+           DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& range) const
+{
+  static_assert((Dune::AlwaysFalse< T >::value), "Not implemented for this combination of source and range!");
+}\endcode
+ *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
+ *        is why we need all combinations of spaces below which are just compile time checks and forwards.
+ */
 template< class GridPartType >
 class L2
 {
@@ -43,7 +54,47 @@ public:
     : grid_part_(grid_part)
   {}
 
-  template< class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
+  // Source: ContinuousLagrangeSpace::FemWrapper
+  // Range:  DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
+
+  template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, R, r, rC >, VS >& source,
+             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, rC >, VR >& range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+  // Source: ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
+
+  template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, rC >, VS >& source,
+             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, rC >, VR >& range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+  // Source: DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
   void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
@@ -52,16 +103,22 @@ public:
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
   void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, rC >, VS >& source,
-             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, rC >, VS >& range) const
+             DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, rC >, VR >& range) const
   {
-    typedef DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, rC > RangeSpaceType;
-    typedef typename RangeSpaceType::BaseFunctionSetType::DomainType DomainType;
-    typedef typename RangeSpaceType::BaseFunctionSetType::RangeType RangeType;
-    typedef typename RangeSpaceType::BaseFunctionSetType::RangeFieldType RangeFieldType;
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+private:
+  template< class SourceFunctionType, class RangeFunctionType >
+  void prolong_onto_dg_fem_localfunctions_wrapper(const SourceFunctionType& source, RangeFunctionType& range) const
+  {
+    typedef typename RangeFunctionType::DomainType DomainType;
+    typedef typename RangeFunctionType::RangeType RangeType;
+    typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
     // clear
     Stuff::Common::clear(range.vector());
     // create search in the source grid part
-    typedef typename GPS::GridViewType SourceGridViewType;
+    typedef typename SourceFunctionType::SpaceType::GridPartType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
     EntitySearch entity_search(source.space().gridPart()->gridView());
     // walk the grid
@@ -121,13 +178,23 @@ public:
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
-  } // ... apply(...)
+  } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
 
-private:
   const GridPartType& grid_part_;
 }; // class L2
 
 
+/**
+ *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
+template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
+void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
+           DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, RR, rR, rCR >, VR >& range) const
+{
+  static_assert((Dune::AlwaysFalse< T >::value), "Not implemented for this combination of source and range!");
+}\endcode
+ *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
+ *        is why we need all combinations of spaces below which are just compile time checks and forwards.
+ */
 template< class GridPartType >
 class Lagrange
 {
@@ -139,138 +206,207 @@ public:
     : grid_part_(grid_part)
   {}
 
-  template< class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
+  // Source: ContinuousLagrangeSpace::FemWrapper
+  // Range:  ContinuousLagrangeSpace::FemWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
   void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
   }
 
-  template< class SGP, int sp, class R, int r, class SV, class RGP, int rp, class RV >
-  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< SGP, sp, R, r >, SV >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< RGP, rp, R, r >, RV >& range) const
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, R, r, 1 >, VR >& range) const
   {
-    // create search in the source grid part
-    typedef ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< SGP, sp, R, r >, SV > SourceType;
-    typedef DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< RGP, rp, R, r >, RV >      TargetType;
-    typedef typename SourceType::RangeFieldType RangeFieldType;
-    static const unsigned int dimRange = SourceType::dimRange;
+    prolong_onto_cg_fem_wrapper(source, range);
+  }
 
-    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
-    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
-    EntitySearch entity_search(source.space().gridPart()->gridView());
+  // Source: ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  ContinuousLagrangeSpace::FemWrapper
 
-    // set all dofs to infinity
-    const auto infinity = std::numeric_limits< RangeFieldType >::infinity();
-    for (size_t ii = 0; ii < range.vector().size(); ++ii)
-      range.vector().set(ii, infinity);
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
 
-    // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >();
-         entity_it != entity_it_end;
-         ++entity_it) {
-      const auto& entity = *entity_it;
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, R, r, 1 >, VR >& range) const
+  {
+    prolong_onto_cg_fem_wrapper(source, range);
+  }
 
-      // get global lagrange point coordinates
-      const auto lagrange_point_set = range.space().backend().lagrangePointSet(entity);
-      typedef FieldVector< typename SourceGridViewType::ctype, SourceGridViewType::dimension > DomainType;
-      std::vector< DomainType > lagrange_points(lagrange_point_set.nop());
-      for (size_t ii = 0; ii < lagrange_point_set.nop(); ++ii)
-        lagrange_points[ii] = entity.geometry().global(lagrange_point_set.point(ii));
+  // Source: DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  ContinuousLagrangeSpace::FemWrapper
 
-      // get source entities
-      const auto source_entities = entity_search(lagrange_points);
-      assert(source_entities.size() == lagrange_points.size());
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
 
-      auto local_range = range.local_discrete_function(entity);
-      auto local_range_vector = local_range.vector();
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPR, pR, R, r, 1 >, VR >& range) const
+  {
+    prolong_onto_cg_fem_wrapper(source, range);
+  }
 
-      size_t kk = 0;
-      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        if (std::isinf(local_range_vector.get(kk))) {
-          const auto& global_point = lagrange_points[ii];
-          // evaluate source function
-          const auto source_entity_ptr = source_entities[ii];
-          const auto& source_entity = *source_entity_ptr;
-          const auto local_source_point = source_entity.geometry().local(global_point);
-          const auto local_source = source.local_function(source_entity);
-          const auto source_value = local_source->evaluate(local_source_point);
-          for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-            local_range_vector.set(kk, source_value[jj]);
-        }
-        else
-          kk += dimRange;
-      }
-    } // walk the grid
-  } // ... apply(...)
+  // Source: ContinuousLagrangeSpace::FemWrapper
+  // Range:  ContinuousLagrangeSpace::FemLocalfunctionsWrapper
 
-  template< class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
+
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, 1 >, VR >& range) const
+  {
+    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+  }
+
+  // Source: ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
   void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
   }
 
-  template< class SGP, int sp, class R, int r, class SV, class RGP, int rp, class RV >
-  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, r >, SV >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, r >, RV >& range) const
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, 1 >, VR >& range) const
+  {
+    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+  }
+
+  // Source: DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+  // Range:  ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+  }
+
+  template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
+  void apply(const ConstDiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GPS, pS, R, r, 1 >, VS >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GPR, pR, R, r, 1 >, VR >& range) const
+  {
+    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+  }
+
+private:
+  template< class SourceType, class RangeType >
+  void prolong_onto_cg_fem_wrapper(const SourceType& source, RangeType& range) const
   {
     // create search in the source grid part
-    typedef ConstDiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< SGP, sp, R, r >, SV > SourceType;
-    typedef DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< RGP, rp, R, r >, RV >      TargetType;
-    typedef typename SourceType::RangeFieldType RangeFieldType;
-    static const unsigned int dimRange = SourceType::dimRange;
-
     typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
     EntitySearch entity_search(source.space().gridPart()->gridView());
-
-    // set all dofs to infinity
-    const auto infinity = std::numeric_limits< RangeFieldType >::infinity();
+    // set all range dofs to infinity
+    const auto infinity = std::numeric_limits< typename RangeType::RangeFieldType >::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set(ii, infinity);
-
     // walk the grid
     const auto entity_it_end = grid_part_.template end< 0 >();
     for (auto entity_it = grid_part_.template begin< 0 >();
          entity_it != entity_it_end;
          ++entity_it) {
       const auto& entity = *entity_it;
-
       // get global lagrange point coordinates
+      const auto lagrange_point_set = range.space().backend().lagrangePointSet(entity);
       typedef FieldVector< typename SourceGridViewType::ctype, SourceGridViewType::dimension > DomainType;
-      std::vector< DomainType > lagrange_points = range.space().lagrange_points(entity);
-      for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
-        lagrange_points[ii] = entity.geometry().global(lagrange_points[ii]);
-
+      std::vector< DomainType > lagrange_points(lagrange_point_set.nop());
+      for (size_t ii = 0; ii < lagrange_point_set.nop(); ++ii)
+        lagrange_points[ii] = entity.geometry().global(lagrange_point_set.point(ii));
       // get source entities
-      const auto source_entities = entity_search(lagrange_points);
-      assert(source_entities.size() == lagrange_points.size());
-
+      const auto source_entity_ptrs = entity_search(lagrange_points);
+      assert(source_entity_ptrs.size() == lagrange_points.size());
+      // get range
       auto local_range = range.local_discrete_function(entity);
-      auto local_range_vector = local_range.vector();
-
-      size_t kk = 0;
-      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        if (std::isinf(local_range_vector.get(kk))) {
-          const auto& global_point = lagrange_points[ii];
-          // evaluate source function
-          const auto source_entity_ptr = source_entities[ii];
-          const auto& source_entity = *source_entity_ptr;
-          const auto local_source_point = source_entity.geometry().local(global_point);
-          const auto local_source = source.local_function(source_entity);
-          const auto source_value = local_source->evaluate(local_source_point);
-          for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-            local_range_vector.set(kk, source_value[jj]);
-        }
-        else
-          kk += dimRange;
-      }
+      auto local_range_DoF_vector = local_range.vector();
+      // do the actual work (see below)
+      apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
     } // walk the grid
-  } // ... apply(...)
+  } // ... prolong_onto_cg_fem_wrapper(...)
 
-private:
+  template< class SourceType, class RangeType >
+  void prolong_onto_cg_fem_localfunctions_wrapper(const SourceType& source, RangeType& range) const
+  {
+    // create search in the source grid part
+    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
+    EntitySearch entity_search(source.space().gridPart()->gridView());
+    // set all range dofs to infinity
+    const auto infinity = std::numeric_limits< typename RangeType::RangeFieldType >::infinity();
+    for (size_t ii = 0; ii < range.vector().size(); ++ii)
+      range.vector().set(ii, infinity);
+    // walk the grid
+    const auto entity_it_end = grid_part_.template end< 0 >();
+    for (auto entity_it = grid_part_.template begin< 0 >();
+         entity_it != entity_it_end;
+         ++entity_it) {
+      const auto& entity = *entity_it;
+      // get global lagrange point coordinates
+      const auto lagrange_point_set = range.space().lagrange_points(entity);
+      typedef FieldVector< typename SourceGridViewType::ctype, SourceGridViewType::dimension > DomainType;
+      std::vector< DomainType > lagrange_points(lagrange_point_set.size());
+      for (size_t ii = 0; ii < lagrange_point_set.size(); ++ii)
+        lagrange_points[ii] = entity.geometry().global(lagrange_point_set[ii]);
+      // get source entities
+      const auto source_entity_ptrs = entity_search(lagrange_points);
+      assert(source_entity_ptrs.size() == lagrange_points.size());
+      // get range
+      auto local_range = range.local_discrete_function(entity);
+      auto local_range_DoF_vector = local_range.vector();
+      // do the actual work (see below)
+      apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
+    } // walk the grid
+  } // ... prolong_onto_cg_fem_localfunctions_wrapper(...)
+
+  template< class SourceType, class LagrangePointsType, class EntityPointers, class LocalDoFVectorType >
+  void apply_local(const SourceType& source,
+                   const LagrangePointsType& lagrange_points,
+                   const EntityPointers& source_entity_ptrs,
+                   LocalDoFVectorType& range_DoF_vector) const
+  {
+    static const unsigned int dimRange = SourceType::dimRange;
+    size_t kk = 0;
+    for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
+      if (std::isinf(range_DoF_vector.get(kk))) {
+        const auto& global_point = lagrange_points[ii];
+        // evaluate source function
+        const auto& source_entity = *(source_entity_ptrs[ii]);
+        const auto local_source_point = source_entity.geometry().local(global_point);
+        const auto local_source = source.local_function(source_entity);
+        const auto source_value = local_source->evaluate(local_source_point);
+        for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
+          range_DoF_vector.set(kk, source_value[jj]);
+      }
+      else
+        kk += dimRange;
+    }
+  } // ... apply_local(...)
+
   const GridPartType& grid_part_;
 }; // class Lagrange
 
