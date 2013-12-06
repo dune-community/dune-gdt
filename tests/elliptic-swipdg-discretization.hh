@@ -383,16 +383,16 @@ public:
     } else if (std::is_same<TestCase, EllipticTestCase::LocalThermalBlock<Dune::ALUConformGrid<2, 2>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {5.85e-02, 2.12e-02, 5.89e-03, 1.38e-03};
+          return {5.85e-02, 2.00e-02, 5.55e-03, 1.30e-03};
         else if (type.compare("H1_semi") == 0)
-          return {4.49e-01, 3.06e-01, 1.58e-01, 6.83e-02};
+          return {4.33e-01, 2.94e-01, 1.51e-01, 6.55e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {1.27e-02, 2.26e-03, 4.15e-04, 8.21e-05};
+          return {1.19e-02, 2.12e-03, 3.90e-04, 7.77e-05};
         else if (type.compare("H1_semi") == 0)
-          return {1.78e-01, 6.26e-02, 2.05e-02, 6.35e-03};
+          return {1.70e-01, 5.97e-02, 1.95e-02, 6.05e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -402,7 +402,7 @@ public:
         if (type.compare("L2") == 0)
           return {6.10e-02, 1.66e-02, 4.23e-03};
         else if (type.compare("H1_semi") == 0)
-          return {2.99e-01, 1.47e-01, 7.24e-02};
+          return {2.99e-01, 1.47e-01, 7.26e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
@@ -417,16 +417,16 @@ public:
     } else if (std::is_same<TestCase, EllipticTestCase::MixedBoundaryTypes<Dune::ALUConformGrid<2, 2>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {5.21e-02, 1.45e-02, 3.65e-03, 8.15e-04};
+          return {4.03e-02, 1.13e-02, 2.84e-03, 6.34e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.76e-01, 1.42e-01, 6.92e-02, 3.09e-02};
+          return {2.70e-01, 1.40e-01, 6.88e-02, 3.09e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {4.64e-03, 7.69e-04, 1.38e-04, 2.84e-05};
+          return {3.59e-03, 6.26e-04, 1.22e-04, 2.69e-05};
         else if (type.compare("H1_semi") == 0)
-          return {4.56e-02, 1.57e-02, 5.78e-03, 2.20e-03};
+          return {4.82e-02, 1.80e-02, 7.20e-03, 2.86e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
