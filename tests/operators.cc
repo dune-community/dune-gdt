@@ -72,7 +72,6 @@ struct L2ProductOperator : public ::testing::Test
     const Dune::GDT::ProductOperator::L2<GridPartType> l2_product_operator(*grid_part);
     // test 1 (constant)
     const FunctionType function_1("x", "1.0", 0);
-    function_1.visualize(grid_part->gridView(), "function1");
     auto l2_product      = l2_product_operator.apply2(function_1, function_1);
     RangeFieldType error = l2_product - RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
