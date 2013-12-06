@@ -411,6 +411,136 @@ private:
 }; // class Lagrange
 
 
+template< class GridPartType >
+class Generic
+{
+public:
+  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridPartType::dimension;
+
+  Generic(const GridPartType& grid_part)
+    : l2_prolongation_operator_(grid_part)
+    , lagrange_prolongation_operator_(grid_part)
+  {}
+
+  template< class SourceType, class RangeType >
+  void apply(const SourceType& source, RangeType& range) const
+  {
+    redirect_to_appropriate_operator(source, range);
+  }
+
+private:
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction< ContinuousLagrangeSpace::FemWrapper
+                                          < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                          < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < ContinuousLagrangeSpace::FemWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                        < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < ContinuousLagrangeSpace::FemWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                          < DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+                                            < GPS, pS, RS, rS, rCS >, VS >& source,
+                                        DiscreteFunction
+                                          < ContinuousLagrangeSpace::FemWrapper
+                                            < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  const L2< GridPartType > l2_prolongation_operator_;
+  const Lagrange< GridPartType > lagrange_prolongation_operator_;
+}; // class Generic
+
+
 } // namespace ProlongationOperator
 } // namespace GDT
 } // namespace Dune
