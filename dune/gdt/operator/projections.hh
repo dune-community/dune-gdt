@@ -234,9 +234,8 @@ class Generic
 
 public:
   Generic(const GridPartType& grid_part)
-    : grid_part_(grid_part)
-    , lagrange_operator_(grid_part_)
-    , l2_operator_(grid_part_)
+    : lagrange_operator_(grid_part)
+    , l2_operator_(grid_part)
   {}
 
   template< class SourceType, class RangeType >
@@ -278,7 +277,6 @@ private:
     l2_operator_.apply(source, range);
   }
 
-  const GridPartType& grid_part_;
   const Lagrange< GridPartType > lagrange_operator_;
   const L2< GridPartType > l2_operator_;
 }; // Generic
