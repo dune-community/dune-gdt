@@ -622,7 +622,7 @@ private:
       for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
         const size_t row = constraints_.globalRow(ii);
         for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
-          matrix_.set(row, constraints_.globalCol(jj), constraints_.value(ii, jj));
+          matrix_.set_entry(row, constraints_.globalCol(jj), constraints_.value(ii, jj));
         }
       }
     }
@@ -647,7 +647,7 @@ private:
     {
       testSpace.localConstraints(entity, constraints_);
       for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
-        vector_.set(constraints_.globalRow(ii), RangeFieldType(0));
+        vector_.set_entry(constraints_.globalRow(ii), RangeFieldType(0));
       }
     }
 

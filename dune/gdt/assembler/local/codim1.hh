@@ -160,11 +160,11 @@ public:
       const size_t globalII = globalRowsEn[ii];
       for (size_t jj = 0; jj < colsEn; ++jj) {
         const size_t globalJJ = globalColsEn[jj];
-        entityEntityMatrix.add(globalII, globalJJ, localEntityEntityMatrixRow[jj]);
+        entityEntityMatrix.add_to_entry(globalII, globalJJ, localEntityEntityMatrixRow[jj]);
       }
       for (size_t jj = 0; jj < colsNe; ++jj) {
         const size_t globalJJ = globalColsNe[jj];
-        entityNeighborMatrix.add(globalII, globalJJ, localEntityNeighborMatrixRow[jj]);
+        entityNeighborMatrix.add_to_entry(globalII, globalJJ, localEntityNeighborMatrixRow[jj]);
       }
     }
     for (size_t ii = 0; ii < rowsNe; ++ii) {
@@ -173,11 +173,11 @@ public:
       const size_t globalII = globalRowsNe[ii];
       for (size_t jj = 0; jj < colsEn; ++jj) {
         const size_t globalJJ = globalColsEn[jj];
-        neighborEntityMatrix.add(globalII, globalJJ, localNeighborEntityMatrixRow[jj]);
+        neighborEntityMatrix.add_to_entry(globalII, globalJJ, localNeighborEntityMatrixRow[jj]);
       }
       for (size_t jj = 0; jj < colsNe; ++jj) {
         const size_t globalJJ = globalColsNe[jj];
-        neighborNeighborMatrix.add(globalII, globalJJ, localNeighborNeighborMatrixRow[jj]);
+        neighborNeighborMatrix.add_to_entry(globalII, globalJJ, localNeighborNeighborMatrixRow[jj]);
       }
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
@@ -289,7 +289,7 @@ public:
       const size_t globalII = globalRows[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t globalJJ = globalCols[jj];
-        systemMatrix.add(globalII, globalJJ, localMatrixRow[jj]);
+        systemMatrix.add_to_entry(globalII, globalJJ, localMatrixRow[jj]);
       }
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
@@ -370,7 +370,7 @@ public:
     testSpace.mapper().globalIndices(entity, tmpIndicesContainer);
     for (size_t ii = 0; ii < size; ++ii) {
       const size_t globalII = tmpIndicesContainer[ii];
-      systemVector.add(globalII, localVector[ii]);
+      systemVector.add_to_entry(globalII, localVector[ii]);
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
       DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1Vector.assembleLocal");

@@ -36,7 +36,7 @@ class ConstDiscreteFunction
                 "SpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of< Dune::Stuff::LA::VectorInterface< typename VectorImp::Traits >, VectorImp >::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
-  static_assert(std::is_same< typename SpaceImp::RangeFieldType, typename VectorImp::ElementType >::value,
+  static_assert(std::is_same< typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType >::value,
                 "Types do not match!");
   typedef Stuff::LocalizableFunctionInterface
       < typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
