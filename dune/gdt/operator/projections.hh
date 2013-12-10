@@ -65,7 +65,7 @@ public:
     // set all dofs to infinity
     const auto infinity = std::numeric_limits<R>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
-      range.vector().set(ii, infinity);
+      range.vector().set_entry(ii, infinity);
     // walk the grid
     const auto entity_it_end = grid_part_.template end<0>();
     for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -92,7 +92,7 @@ public:
     // set all dofs to infinity
     const auto infinity = std::numeric_limits<R>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
-      range.vector().set(ii, infinity);
+      range.vector().set_entry(ii, infinity);
     typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
     // walk the grid
     const auto entity_it_end = grid_part_.template end<0>();

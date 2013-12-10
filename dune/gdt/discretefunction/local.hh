@@ -28,7 +28,7 @@ class ConstLocalDoFVector
 
 public:
   typedef VectorImp VectorType;
-  typedef typename VectorType::ElementType ElementType;
+  typedef typename VectorType::ScalarType ScalarType;
 
   template <class M, class EntityType>
   ConstLocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, const VectorType& vector)
@@ -47,10 +47,10 @@ public:
     return indices_.size();
   }
 
-  ElementType get(const size_t ii) const
+  ScalarType get(const size_t ii) const
   {
     assert(ii < indices_.size());
-    return vector_.get(indices_[ii]);
+    return vector_.get_entry(indices_[ii]);
   }
 
 private:
@@ -68,7 +68,7 @@ class LocalDoFVector : public ConstLocalDoFVector<VectorImp>
 
 public:
   typedef typename BaseType::VectorType VectorType;
-  typedef typename BaseType::ElementType ElementType;
+  typedef typename BaseType::ScalarType ScalarType;
 
   template <class M, class EntityType>
   LocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, VectorType& vector)
@@ -81,13 +81,13 @@ public:
   {
   }
 
-  void set(const size_t ii, const ElementType& val)
+  void set(const size_t ii, const ScalarType& val)
   {
     assert(ii < indices_.size());
-    vector_.set(indices_[ii], val);
+    vector_.set_entry(indices_[ii], val);
   }
 
-  void add(const size_t ii, const ElementType& val)
+  void add(const size_t ii, const ScalarType& val)
   {
     assert(ii < indices_.size());
     vector_.add(indices_[ii], val);
@@ -109,7 +109,7 @@ class ConstLocalDiscreteFunction
                 "SpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
-  static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ElementType>::value,
+  static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
   typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                         SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,

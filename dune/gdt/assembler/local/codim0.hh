@@ -103,7 +103,7 @@ public:
       const size_t globalII = globalRows[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t globalJJ = globalCols[jj];
-        systemMatrix.add(globalII, globalJJ, localRow[jj]);
+        systemMatrix.add_to_entry(globalII, globalJJ, localRow[jj]);
       }
     } // write local matrix to global
   } // ... assembleLocal(...)
@@ -181,7 +181,7 @@ public:
     assert(tmpIndices.size() >= size);
     testSpace.mapper().globalIndices(entity, tmpIndices);
     for (size_t ii = 0; ii < size; ++ii) {
-      systemVector.add(tmpIndices[ii], localVector[ii]);
+      systemVector.add_to_entry(tmpIndices[ii], localVector[ii]);
     } // write local matrix to global
   } // ... assembleLocal(...)
 
