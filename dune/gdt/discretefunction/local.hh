@@ -11,7 +11,7 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container/interface.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/mapper/interface.hh>

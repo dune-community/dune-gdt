@@ -14,10 +14,10 @@
 #include <dune/common/static_assert.hh>
 #include <dune/common/typetraits.hh>
 
-#include <dune/stuff/la/container/interface.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/la/container/pattern.hh>
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-#include <dune/stuff/common/profiler.hh>
+# include <dune/stuff/common/profiler.hh>
 #endif
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/space/constraints.hh>
