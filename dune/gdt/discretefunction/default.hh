@@ -16,7 +16,7 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
-#include <dune/stuff/la/container/interface.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/space/interface.hh>
 

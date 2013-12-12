@@ -12,7 +12,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/stuff/common/matrix.hh>
-#include <dune/stuff/la/container/interface.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
