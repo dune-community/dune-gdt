@@ -48,6 +48,7 @@ add_dune_modules(
   common
   fem
   fem-localfunctions
+  istl
   geometry
   grid
   grid-multiscale
