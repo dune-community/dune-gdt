@@ -28,8 +28,8 @@ include(DuneUtils)
 include(GridUtils)
 
 # adjust CXX_FLAGS
-set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
-set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g3 -ggdb" )
+#set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
+#set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g3 -ggdb" )
 
 # needs to come first to include correct config.h
 include_directories( ${dune-gdt_SOURCE_DIR} )
