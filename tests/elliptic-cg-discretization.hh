@@ -175,7 +175,7 @@ public:
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
   {
     ConstDiscreteFunctionType function(space_, vector, name);
-    function.visualize(space_.gridPart()->gridView(), filename);
+    function.visualize(filename);
   }
 
 private:
