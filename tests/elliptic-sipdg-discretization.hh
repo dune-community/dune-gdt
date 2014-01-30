@@ -145,30 +145,10 @@ public:
     // do all the work
     systemAssembler.assemble();
     // solve
-    std::unique_ptr<typename Dune::Stuff::LA::SolverInterface<MatrixType, VectorType>> linear_solver(nullptr);
-    Dune::ParameterTree linear_solver_settings;
-#ifdef HAVE_FASP
-    typedef typename Dune::Stuff::LA::AmgSolver<MatrixType, VectorType> LinearSolverType;
-    linear_solver_settings              = LinearSolverType::defaultSettings();
-    linear_solver_settings["precision"] = "1e-10";
-    linear_solver_settings["maxIter"]   = Dune::Stuff::Common::toString(space_.mapper().size());
-    linear_solver                       = std::unique_ptr<LinearSolverType>(new LinearSolverType());
-#else
-    typedef typename Dune::Stuff::LA::BicgstabILUTSolver<MatrixType, VectorType> LinearSolverType;
-    linear_solver_settings              = LinearSolverType::defaultSettings();
-    linear_solver_settings["precision"] = "1e-10";
-    linear_solver_settings["maxIter"]   = Dune::Stuff::Common::toString(space_.mapper().size());
-    linear_solver                       = std::unique_ptr<LinearSolverType>(new LinearSolverType());
-#endif
-    assert(linear_solver);
-    const size_t failure = linear_solver->apply(system_matrix, rhs_vector, solution, linear_solver_settings);
+    const size_t failure = Dune::Stuff::LA::Solver<MatrixType>(system_matrix).apply(rhs_vector, solution);
     if (failure)
-      DUNE_THROW(Dune::MathError, "\nERROR: linear solver reported a problem!");
-    if (solution.size() != space_.mapper().size())
-      DUNE_THROW(Dune::MathError,
-                 "\nERROR: linear solver produced a solution of wrong size (is " << solution.size() << ", should be "
-                                                                                 << space_.mapper().size()
-                                                                                 << ")!");
+      DUNE_THROW_COLORFULLY(Dune::MathError,
+                            "linear solver failed with error code " << failure << " (see dune/stuff/solver.hh)!");
   } // ... solve()
 
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
