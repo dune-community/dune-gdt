@@ -152,8 +152,8 @@ private:
       for (const auto& quadrature_point : quadrature)
         quadrature_points.emplace_back(entity.geometry().global(quadrature_point.position()));
       // get source entities
-      const auto source_entities = entity_search(quadrature_points);
-      assert(source_entities.size() == quadrature_points.size());
+      const auto source_entity_ptr_unique_ptrs = entity_search(quadrature_points);
+      assert(source_entity_ptr_unique_ptrs.size() >= quadrature_points.size());
       // loop over all quadrature points
       size_t pp = 0;
       for (const auto& quadrature_point : quadrature) {
@@ -161,10 +161,14 @@ private:
         const auto quadrature_weight   = quadrature_point.weight();
         const auto integration_element = entity.geometry().integrationElement(local_point);
         // evaluate source
-        const auto source_entity_ptr = source_entities[pp];
-        const auto& source_entity    = *source_entity_ptr;
-        const auto local_source = source.local_function(source_entity);
-        local_source->evaluate(source_entity.geometry().local(entity.geometry().global(local_point)), source_value);
+        const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[pp];
+        if (source_entity_ptr_unique_ptr) {
+          const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
+          const auto& source_entity    = *source_entity_ptr;
+          const auto local_source = source.local_function(source_entity);
+          local_source->evaluate(source_entity.geometry().local(entity.geometry().global(local_point)), source_value);
+        } else
+          source_value *= 0.0;
         // evaluate
         local_basis.evaluate(local_point, basis_values);
         // compute integrals
@@ -402,20 +406,27 @@ private:
 
   template <class SourceType, class LagrangePointsType, class EntityPointers, class LocalDoFVectorType>
   void apply_local(const SourceType& source, const LagrangePointsType& lagrange_points,
-                   const EntityPointers& source_entity_ptrs, LocalDoFVectorType& range_DoF_vector) const
+                   const EntityPointers& source_entity_ptr_unique_ptrs, LocalDoFVectorType& range_DoF_vector) const
   {
     static const unsigned int dimRange = SourceType::dimRange;
     size_t kk = 0;
+    assert(source_entity_ptr_unique_ptrs.size() >= lagrange_points.size());
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
       if (std::isinf(range_DoF_vector.get(kk))) {
         const auto& global_point = lagrange_points[ii];
         // evaluate source function
-        const auto& source_entity     = *(source_entity_ptrs[ii]);
-        const auto local_source_point = source_entity.geometry().local(global_point);
-        const auto local_source       = source.local_function(source_entity);
-        const auto source_value = local_source->evaluate(local_source_point);
-        for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-          range_DoF_vector.set(kk, source_value[jj]);
+        const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[ii];
+        if (source_entity_ptr_unique_ptr) {
+          const auto source_entity_ptr  = *source_entity_ptr_unique_ptr;
+          const auto& source_entity     = *source_entity_ptr;
+          const auto local_source_point = source_entity.geometry().local(global_point);
+          const auto local_source       = source.local_function(source_entity);
+          const auto source_value = local_source->evaluate(local_source_point);
+          for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
+            range_DoF_vector.set(kk, source_value[jj]);
+        } else
+          for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
+            range_DoF_vector.set(kk, 0.0);
       } else
         kk += dimRange;
     }
