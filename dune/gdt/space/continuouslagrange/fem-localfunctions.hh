@@ -450,12 +450,10 @@ private:
   {
     // static checks
     typedef typename GridPartType::GridType GridType;
-#if (dimDomain > 1)
-    static_assert(!std::is_same< GridType, SGrid< dimDomain, dimDomain > >::value,
+    static_assert((dimDomain == 1 ) || !std::is_same< GridType, SGrid< dimDomain, dimDomain > >::value,
                   "This space is only implemented for simplicial grids!");
-    static_assert(!std::is_same< GridType, YaspGrid< dimDomain > >::value,
+    static_assert((dimDomain == 1 ) || !std::is_same< GridType, YaspGrid< dimDomain > >::value,
                   "This space is only implemented for simplicial grids!");
-#endif
     // dynamic checks
     typedef typename Dune::Fem::AllGeomTypes< typename GridPartType::IndexSetType,
                                               typename GridPartType::GridType > AllGeometryTypes;
