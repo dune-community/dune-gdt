@@ -171,6 +171,7 @@ public:
   PatternType* computePattern(const LocalGridPartType& /*localGridPart*/, const OtherSpaceType& /*otherSpace*/) const
   {
     static_assert(Dune::AlwaysFalse< LocalGridPartType >::value, "Not implemented!");
+    return nullptr;
   }
 
 private:
