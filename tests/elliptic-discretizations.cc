@@ -6,7 +6,9 @@
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
-#undef HAVE_FASP
+#ifdef HAVE_FASP
+# undef HAVE_FASP
+#endif
 
 #include <dune/common/exceptions.hh>
 
@@ -33,8 +35,8 @@ class errors_are_not_as_expected
 typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 
 // change this to toggle output
-std::ostream& out = std::cout;
-//std::ostream& out = DSC_LOG.devnull();
+std::ostream& test_out = std::cout;
+//std::ostream& test_out = DSC_LOG.devnull();
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
@@ -50,17 +52,16 @@ struct EllipticCGDiscretization
   void produces_correct_results() const
   {
     const TestCase test_case;
-    test_case.print_header(out);
-    out << std::endl;
+    test_case.print_header(test_out);
+    test_out << std::endl;
     EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
-    auto errors = eoc_study.run(out);
+    auto errors = eoc_study.run(test_out);
     for (const auto& norm : eoc_study.provided_norms())
       if (!Dune::Stuff::Common::FloatCmp::lt(errors[norm],  eoc_study.expected_results(norm))) {
         std::stringstream ss;
-        ss << "\n";
         Dune::Stuff::Common::print(errors[norm],                     "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study.expected_results(norm), "expected results (" + norm + ")", ss);
-        DUNE_THROW(errors_are_not_as_expected, ss.str());
+        Dune::Stuff::Common::print(eoc_study.expected_results(norm), "   expected results (" + norm + ")", ss);
+        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
   }
 }; // EllipticCGDiscretization
@@ -84,29 +85,27 @@ struct EllipticSIPDGDiscretization
           << std::endl;
     } else {
       const TestCase test_case;
-      test_case.print_header(out);
-      out << std::endl;
+      test_case.print_header(test_out);
+      test_out << std::endl;
       EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-      auto errors_1 = eoc_study_1.run(out);
+      auto errors_1 = eoc_study_1.run(test_out);
       for (const auto& norm : eoc_study_1.provided_norms()) {
         if (!Dune::Stuff::Common::FloatCmp::lt(errors_1[norm], eoc_study_1.expected_results(norm))) {
           std::stringstream ss;
-          ss << "\n";
           Dune::Stuff::Common::print(errors_1[norm],                     "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "expected results (" + norm + ")", ss);
-          DUNE_THROW(errors_are_not_as_expected, ss.str());
+          Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
+          DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
         }
       }
-      out << std::endl;
+      test_out << std::endl;
       EllipticSIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
-      auto errors_2 = eoc_study_2.run(out);
+      auto errors_2 = eoc_study_2.run(test_out);
       for (const auto& norm : eoc_study_2.provided_norms())
         if (!Dune::Stuff::Common::FloatCmp::lt(errors_2[norm], eoc_study_2.expected_results(norm))) {
           std::stringstream ss;
-          ss << "\n";
           Dune::Stuff::Common::print(errors_2[norm],                     "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "expected results (" + norm + ")", ss);
-          DUNE_THROW(errors_are_not_as_expected, ss.str());
+          Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
+          DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
         }
     }
   }
@@ -125,29 +124,27 @@ struct EllipticSWIPDGDiscretization
   void produces_correct_results() const
   {
     const TestCase test_case;
-    test_case.print_header(out);
-    out << std::endl;
+    test_case.print_header(test_out);
+    test_out << std::endl;
     EllipticSWIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-    auto errors_1 = eoc_study_1.run(out);
+    auto errors_1 = eoc_study_1.run(test_out);
     for (const auto& norm : eoc_study_1.provided_norms()) {
       if (!Dune::Stuff::Common::FloatCmp::lt(errors_1[norm], eoc_study_1.expected_results(norm))) {
         std::stringstream ss;
-        ss << "\n";
         Dune::Stuff::Common::print(errors_1[norm],                     "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "expected results (" + norm + ")", ss);
-        DUNE_THROW(errors_are_not_as_expected, ss.str());
+        Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
+        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
     }
-    out << std::endl;
+    test_out << std::endl;
     EllipticSWIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
-    auto errors_2 = eoc_study_2.run(out);
+    auto errors_2 = eoc_study_2.run(test_out);
     for (const auto& norm : eoc_study_2.provided_norms())
       if (!Dune::Stuff::Common::FloatCmp::lt(errors_2[norm], eoc_study_2.expected_results(norm))) {
         std::stringstream ss;
-        ss << "\n";
         Dune::Stuff::Common::print(errors_2[norm],                     "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "expected results (" + norm + ")", ss);
-        DUNE_THROW(errors_are_not_as_expected, ss.str());
+        Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
+        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
   }
 };
@@ -164,10 +161,10 @@ int main(int argc, char** argv)
     test_init(argc, argv);
     return RUN_ALL_TESTS();
   } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error: " << e.what() << std::endl;
+    std::cerr << "\nDune reported error: " << e.what() << std::endl;
     std::abort();
   } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "\n" << e.what() << std::endl;
     std::abort();
   } catch (...) {
     std::cerr << "Unknown exception thrown!" << std::endl;
