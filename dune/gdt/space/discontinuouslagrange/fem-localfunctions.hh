@@ -227,12 +227,10 @@ private:
     dune_static_assert(!(Dune::is_same<GridType, Dune::ALUCubeGrid<dimDomain, dimDomain>>::value),
                        "This space is only implemented for simplicial grids!");
 #endif
-#if (dimDomain > 1)
-    static_assert(!(Dune::is_same<GridType, Dune::SGrid<dimDomain, dimDomain>>::value),
+    static_assert((dimDomain == 1) || !(Dune::is_same<GridType, Dune::SGrid<dimDomain, dimDomain>>::value),
                   "This space is only implemented for simplicial grids!");
-    static_assert(!(Dune::is_same<GridType, Dune::YaspGrid<dimDomain>>::value),
+    static_assert((dimDomain == 1) || !(Dune::is_same<GridType, Dune::YaspGrid<dimDomain>>::value),
                   "This space is only implemented for simplicial grids!");
-#endif
     // dynamic checks
     typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
         AllGeometryTypes;
