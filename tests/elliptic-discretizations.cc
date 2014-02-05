@@ -38,10 +38,10 @@ typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
 
-typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
+typedef testing::Types< /*EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
                       , EllipticTestCase::ER07< AluConform2dGridType >
-                      , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
+                      ,*/ EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
 //                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
@@ -111,10 +111,10 @@ struct EllipticSIPDGDiscretization
   }
 }; // EllipticSIPDGDiscretization
 
-TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
-}
+//TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
+//TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
+//  this->produces_correct_results();
+//}
 
 
 template< class TestCase >
@@ -149,10 +149,10 @@ struct EllipticSWIPDGDiscretization
   }
 };
 
-TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
-}
+//TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
+//TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
+//  this->produces_correct_results();
+//}
 
 
 int main(int argc, char** argv)
