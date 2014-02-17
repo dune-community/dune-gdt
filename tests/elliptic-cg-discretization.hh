@@ -43,7 +43,10 @@
 namespace EllipticCG {
 
 
-template< class GridPartType, int polynomialOrder >
+template< class GridPartType,
+          int polynomialOrder,
+          class MatrixImp = Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >,
+          class VectorImp = Dune::Stuff::LA::EigenDenseVector< double > >
 class Discretization
 {
 public:
@@ -60,8 +63,8 @@ public:
       < typename GridPartType::template Codim< 0 >::EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
     FunctionType;
 
-  typedef Dune::Stuff::LA::EigenRowMajorSparseMatrix< RangeFieldType >  MatrixType;
-  typedef Dune::Stuff::LA::EigenDenseVector< RangeFieldType >           VectorType;
+  typedef MatrixImp MatrixType;
+  typedef VectorImp VectorType;
 
   typedef Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper
       < GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
@@ -81,6 +84,10 @@ public:
     , force_(forc)
     , dirichlet_(dir)
     , neumann_(neu)
+    , is_assembled_(false)
+    , system_matrix_(0, 0)
+    , rhs_vector_(0)
+    , dirichlet_shift_vector_(0)
   {}
 
   const SpaceType& space() const
@@ -93,10 +100,15 @@ public:
     return VectorType(space_.mapper().size());
   }
 
-  void solve(VectorType& solution) const
+  void assemble() const
   {
     using namespace Dune;
     using namespace Dune::GDT;
+
+    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
+    system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+    rhs_vector_ = VectorType (space_.mapper().size());
+    dirichlet_shift_vector_ = VectorType(space_.mapper().size());
 
     // left hand side
     // * elliptic diffusion operator
@@ -110,13 +122,8 @@ public:
     typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
     const L2FaceFunctionalType neumann_functional(neumann_);
 
-    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
-    MatrixType system_matrix(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
-    VectorType dirichlet_vector(space_.mapper().size());
-    VectorType rhs_vector(space_.mapper().size());
-
     // dirichlet boundary values
-    DiscreteFunctionType dirichlet_projection(space_, dirichlet_vector, "dirichlet");
+    DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_, "dirichlet");
     typedef ProjectionOperator::Dirichlet< GridPartType > DirichletProjectionOperatorType;
     const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
     dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
@@ -134,27 +141,55 @@ public:
     // system assembler
     typedef SystemAssembler< SpaceType > SystemAssemblerType;
     SystemAssemblerType system_assembler(space_);
-    system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix);
-    system_assembler.addLocalAssembler(force_vector_assembler, rhs_vector);
+    system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix_);
+    system_assembler.addLocalAssembler(force_vector_assembler, rhs_vector_);
     system_assembler.addLocalAssembler(neumann_vector_assembler,
                                       typename SystemAssemblerType::AssembleOnNeumann(boundary_info_),
-                                      rhs_vector);
+                                      rhs_vector_);
     system_assembler.assemble();
 
     Constraints::Dirichlet < typename GridPartType::IntersectionType, RangeFieldType >
       dirichlet_constraints(boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
-    rhs_vector.backend() -= system_matrix.backend()*dirichlet_vector.backend();
-    system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix);
-    system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector);
+    rhs_vector_.backend() -= system_matrix_.backend()*dirichlet_shift_vector_.backend();
+    system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix_);
+    system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector_);
     system_assembler.applyConstraints();
 
+    is_assembled_ = true;
+  } // ... assemble()
+
+  bool assembled() const
+  {
+    return is_assembled_;
+  }
+
+  const MatrixType& system_matrix() const
+  {
+    return system_matrix_;
+  }
+
+  const VectorType& rhs_vector() const
+  {
+    return rhs_vector_;
+  }
+
+  const VectorType& dirichlet_shift_vector() const
+  {
+    return dirichlet_shift_vector_;
+  }
+
+  void solve(VectorType& solution) const
+  {
+    if (!is_assembled_)
+      assemble();
+
     // solve
-    Dune::Stuff::LA::Solver< MatrixType > linear_solver(system_matrix);
-    const size_t failure = linear_solver.apply(rhs_vector, solution);
+    Dune::Stuff::LA::Solver< MatrixType > linear_solver(system_matrix_);
+    const size_t failure = linear_solver.apply(rhs_vector_, solution);
     if (failure)
       DUNE_THROW_COLORFULLY(Dune::MathError,
                             "linear solver failed with error code " << failure << " (see dune/stuff/solver.hh)!");
-    solution.backend() += dirichlet_vector.backend();
+    solution.backend() += dirichlet_shift_vector_.backend();
   } // ... solve()
 
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
@@ -170,6 +205,10 @@ private:
   const FunctionType& force_;
   const FunctionType& dirichlet_;
   const FunctionType& neumann_;
+  mutable bool is_assembled_;
+  mutable MatrixType system_matrix_;
+  mutable VectorType rhs_vector_;
+  mutable VectorType dirichlet_shift_vector_;
 }; // class Discretization
 
 
