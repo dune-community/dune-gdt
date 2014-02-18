@@ -177,11 +177,7 @@ public:
       assemble();
 
     // solve
-    Dune::Stuff::LA::Solver<MatrixType> linear_solver(system_matrix_);
-    const size_t failure = linear_solver.apply(rhs_vector_, solution);
-    if (failure)
-      DUNE_THROW_COLORFULLY(Dune::MathError,
-                            "linear solver failed with error code " << failure << " (see dune/stuff/solver.hh)!");
+    Dune::Stuff::LA::Solver<MatrixType>(system_matrix_).apply(rhs_vector_, solution);
     solution.backend() += dirichlet_shift_vector_.backend();
   } // ... solve()
 

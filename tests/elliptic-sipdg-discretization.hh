@@ -145,10 +145,7 @@ public:
     // do all the work
     systemAssembler.assemble();
     // solve
-    const size_t failure = Dune::Stuff::LA::Solver<MatrixType>(system_matrix).apply(rhs_vector, solution);
-    if (failure)
-      DUNE_THROW_COLORFULLY(Dune::MathError,
-                            "linear solver failed with error code " << failure << " (see dune/stuff/solver.hh)!");
+    Dune::Stuff::LA::Solver<MatrixType>(system_matrix).apply(rhs_vector, solution);
   } // ... solve()
 
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
