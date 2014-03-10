@@ -28,8 +28,8 @@
 
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
-//#include "elliptic-sipdg-discretization.hh"
-//#include "elliptic-swipdg-discretization.hh"
+#include "elliptic-sipdg-discretization.hh"
+#include "elliptic-swipdg-discretization.hh"
 
 class errors_are_not_as_expected
   : public Dune::Exception
@@ -59,35 +59,66 @@ typedef testing::Types< std::tuple< EllipticTestCase::ESV07< AluConform2dGridTyp
                       > AluConform2dTestCases;
 
 template< class TestTuple >
-struct EllipticCGDiscretization
+struct EllipticDiscretizations
   : public ::testing::Test
 {
   typedef typename std::tuple_element< 0, TestTuple >::type TestCase;
   typedef typename std::tuple_element< 1, TestTuple >::type MatrixType;
   typedef typename std::tuple_element< 2, TestTuple >::type VectorType;
 
-  typedef EllipticCG::Discretization< typename TestCase::GridPartType, 1, MatrixType, VectorType > DiscretizationType;
+  typedef typename TestCase::GridPartType GridPartType;
 
   void produces_correct_results() const
   {
     using namespace Dune;
-    using namespace Dune::GDT;
+
+    std::cout << " test case:   " << Stuff::Common::Typename< TestCase >::value() << std::endl;
+    std::cout << " matrix type: " << Stuff::Common::Typename< MatrixType >::value() << std::endl;
+    std::cout << " vector type: " << Stuff::Common::Typename< VectorType >::value() << std::endl;
 
     const TestCase test_case;
     const auto grid_part = test_case.reference_grid_part();
 
-    DiscretizationType discretization(grid_part,
-                                      test_case.boundary_info(),
-                                      test_case.diffusion(),
-                                      test_case.force(),
-                                      test_case.dirichlet(),
-                                      test_case.neumann());
+    run(EllipticCG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
+                                                                              test_case.boundary_info(),
+                                                                              test_case.diffusion(),
+                                                                              test_case.force(),
+                                                                              test_case.dirichlet(),
+                                                                              test_case.neumann()),
+        "EllipticCG");
+
+    run(EllipticSIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
+                                                                                 test_case.boundary_info(),
+                                                                                 test_case.diffusion(),
+                                                                                 test_case.force(),
+                                                                                 test_case.dirichlet(),
+                                                                                 test_case.neumann()),
+        "EllipticSIPDG");
+
+    run(EllipticSWIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
+                                                                                  test_case.boundary_info(),
+                                                                                  test_case.diffusion(),
+                                                                                  test_case.force(),
+                                                                                  test_case.dirichlet(),
+                                                                                  test_case.neumann()),
+        "EllipticSWIPDG");
+
+    run(EllipticSWIPDG::Discretization< GridPartType, 2, MatrixType, VectorType >(grid_part,
+                                                                                  test_case.boundary_info(),
+                                                                                  test_case.diffusion(),
+                                                                                  test_case.force(),
+                                                                                  test_case.dirichlet(),
+                                                                                  test_case.neumann()),
+        "EllipticSWIPDG");
+  }
+
+  template< class DiscretizationType >
+  void run(const DiscretizationType& discretization, const std::string discretization_id) const
+  {
+    using namespace Dune;
+    using namespace Dune::GDT;
+
     discretization.assemble();
-    std::cout << " test case:   " << Stuff::Common::Typename< TestCase >::value() << std::endl;
-    std::cout << " matrix type: " << Stuff::Common::Typename< MatrixType >::value() << std::endl;
-    std::cout << " vector type: " << Stuff::Common::Typename< VectorType >::value() << std::endl;
-    std::cout << " system size: " << discretization.system_matrix().rows() << "x"
-              << discretization.system_matrix().cols() << std::endl;
 
     auto solution_vector = discretization.create_vector();
     auto tmp_vector = discretization.create_vector();
@@ -108,7 +139,12 @@ struct EllipticCGDiscretization
     }
     header    << "| time (s) | L^oo error (abs|rel) | thrown exception (see dune/stuff/solver.hh) ";
     delimiter << "+----------+----------------------+---------------------------------------------";
+
     std::cout << Stuff::Common::whitespaceify(header.str(), '=') << std::endl;
+    std::cout << " discretization: " << discretization_id << ", polorder " << discretization.polOrder
+              << ", system size " << discretization.system_matrix().rows() << "x"
+              << discretization.system_matrix().cols() << std::endl;
+    std::cout << delimiter.str() << std::endl;
     std::cout << header.str() << std::endl;
     std::cout << delimiter.str() << std::endl;
 
@@ -176,96 +212,13 @@ struct EllipticCGDiscretization
       }
     } // loop over all available options
   }
-}; // EllipticCGDiscretization
+}; // EllipticDiscretizations
 
 
-#if 0
-template< class TestCase >
-struct EllipticSIPDGDiscretization
-  : public ::testing::Test
-{
-  void produces_correct_results() const
-  {
-    if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
-      std::cerr
-          << Dune::Stuff::Common::colorStringRed("EllipticSIPDGDiscretization does not work for "
-                                                 "EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > >!")
-          << std::endl;
-    } else {
-      const TestCase test_case;
-      test_case.print_header(test_out);
-      test_out << std::endl;
-      EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-      auto errors_1 = eoc_study_1.run(test_out);
-      for (const auto& norm : eoc_study_1.provided_norms()) {
-        if (!Dune::Stuff::Common::FloatCmp::lt(errors_1[norm], eoc_study_1.expected_results(norm))) {
-          std::stringstream ss;
-          Dune::Stuff::Common::print(errors_1[norm],                     "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
-          DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
-        }
-      }
-      test_out << std::endl;
-      EllipticSIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
-      auto errors_2 = eoc_study_2.run(test_out);
-      for (const auto& norm : eoc_study_2.provided_norms())
-        if (!Dune::Stuff::Common::FloatCmp::lt(errors_2[norm], eoc_study_2.expected_results(norm))) {
-          std::stringstream ss;
-          Dune::Stuff::Common::print(errors_2[norm],                     "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
-          DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
-        }
-    }
-  }
-}; // EllipticSIPDGDiscretization
-
-template< class TestCase >
-struct EllipticSWIPDGDiscretization
-  : public ::testing::Test
-{
-  void produces_correct_results() const
-  {
-    const TestCase test_case;
-    test_case.print_header(test_out);
-    test_out << std::endl;
-    EllipticSWIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-    auto errors_1 = eoc_study_1.run(test_out);
-    for (const auto& norm : eoc_study_1.provided_norms()) {
-      if (!Dune::Stuff::Common::FloatCmp::lt(errors_1[norm], eoc_study_1.expected_results(norm))) {
-        std::stringstream ss;
-        Dune::Stuff::Common::print(errors_1[norm],                     "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
-      }
-    }
-    test_out << std::endl;
-    EllipticSWIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
-    auto errors_2 = eoc_study_2.run(test_out);
-    for (const auto& norm : eoc_study_2.provided_norms())
-      if (!Dune::Stuff::Common::FloatCmp::lt(errors_2[norm], eoc_study_2.expected_results(norm))) {
-        std::stringstream ss;
-        Dune::Stuff::Common::print(errors_2[norm],                     "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
-      }
-  }
-};
-#endif
-
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
+TYPED_TEST_CASE(EllipticDiscretizations, AluConform2dTestCases);
+TYPED_TEST(EllipticDiscretizations, produces_correct_results) {
   this->produces_correct_results();
 }
-
-//TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
-//TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
-//  this->produces_correct_results();
-//}
-
-//TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
-//TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-//  this->produces_correct_results();
-//}
 
 
 int main(int argc, char** argv)
