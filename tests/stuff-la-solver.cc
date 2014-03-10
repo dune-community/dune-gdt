@@ -40,6 +40,8 @@ typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 // change this to toggle output
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
+// change this to test all solvers
+const bool test_all_solvers = false;
 
 typedef testing::Types< std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >,
                                     Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >,
@@ -72,9 +74,9 @@ struct EllipticDiscretizations
   {
     using namespace Dune;
 
-    std::cout << " test case:   " << Stuff::Common::Typename< TestCase >::value() << std::endl;
-    std::cout << " matrix type: " << Stuff::Common::Typename< MatrixType >::value() << std::endl;
-    std::cout << " vector type: " << Stuff::Common::Typename< VectorType >::value() << std::endl;
+    test_out << " test case:   " << Stuff::Common::Typename< TestCase >::value() << std::endl;
+    test_out << " matrix type: " << Stuff::Common::Typename< MatrixType >::value() << std::endl;
+    test_out << " vector type: " << Stuff::Common::Typename< VectorType >::value() << std::endl;
 
     const TestCase test_case;
     const auto grid_part = test_case.reference_grid_part();
@@ -85,7 +87,7 @@ struct EllipticDiscretizations
                                                                               test_case.force(),
                                                                               test_case.dirichlet(),
                                                                               test_case.neumann()),
-        "EllipticCG");
+        "continuous Galerkin");
 
     run(EllipticSIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
                                                                                  test_case.boundary_info(),
@@ -93,7 +95,7 @@ struct EllipticDiscretizations
                                                                                  test_case.force(),
                                                                                  test_case.dirichlet(),
                                                                                  test_case.neumann()),
-        "EllipticSIPDG");
+        "SIP discontinuous Galerkin");
 
     run(EllipticSWIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
                                                                                   test_case.boundary_info(),
@@ -101,7 +103,7 @@ struct EllipticDiscretizations
                                                                                   test_case.force(),
                                                                                   test_case.dirichlet(),
                                                                                   test_case.neumann()),
-        "EllipticSWIPDG");
+        "SWIP discontinuous Galerkin");
 
     run(EllipticSWIPDG::Discretization< GridPartType, 2, MatrixType, VectorType >(grid_part,
                                                                                   test_case.boundary_info(),
@@ -109,7 +111,7 @@ struct EllipticDiscretizations
                                                                                   test_case.force(),
                                                                                   test_case.dirichlet(),
                                                                                   test_case.neumann()),
-        "EllipticSWIPDG");
+        "SWIP discontinuous Galerkin");
   }
 
   template< class DiscretizationType >
@@ -117,8 +119,6 @@ struct EllipticDiscretizations
   {
     using namespace Dune;
     using namespace Dune::GDT;
-
-    discretization.assemble();
 
     auto solution_vector = discretization.create_vector();
     auto tmp_vector = discretization.create_vector();
@@ -140,38 +140,41 @@ struct EllipticDiscretizations
     header    << "| time (s) | L^oo error (abs|rel) | thrown exception (see dune/stuff/solver.hh) ";
     delimiter << "+----------+----------------------+---------------------------------------------";
 
-    std::cout << Stuff::Common::whitespaceify(header.str(), '=') << std::endl;
-    std::cout << " discretization: " << discretization_id << ", polorder " << discretization.polOrder
-              << ", system size " << discretization.system_matrix().rows() << "x"
-              << discretization.system_matrix().cols() << std::endl;
-    std::cout << delimiter.str() << std::endl;
-    std::cout << header.str() << std::endl;
-    std::cout << delimiter.str() << std::endl;
+    Dune::Timer timer;
+    discretization.assemble();
+
+    test_out << Stuff::Common::whitespaceify(header.str(), '=') << std::endl;
+    test_out << discretization_id << ", polorder " << discretization.polOrder << ", system size "
+             << discretization.system_matrix().rows() << "x" << discretization.system_matrix().cols()
+             << ", assembly took " << std::setprecision(2) << std::fixed << timer.elapsed() << "s" << std::endl;
+    test_out << Stuff::Common::whitespaceify(header.str(), '-') << std::endl;
+    test_out << header.str() << std::endl;
+    test_out << delimiter.str() << std::endl;
 
     // loop over all available options
     size_t printed_rows = 0;
     for (auto option : linear_solver.options()) {
-      if (option != "qr.sparse" && option.substr(0, 3) != "cg.") {
+      // exclude some solvers that take too long to test
+      if (test_all_solvers || !(option == "qr.sparse" || option == "bicgstab.identity" || option == "bicgstab.diagonal"
+                                || option.substr(0, 3) == "cg.")) {
         const Stuff::Common::ConfigTree config = linear_solver.options(option);
         // print delimiter after every 3rd row
         if (printed_rows == 3) {
-          std::cout << delimiter.str() << std::endl;
+          test_out << delimiter.str() << std::endl;
           printed_rows = 0;
         }
         // print
-        std::cout << " " << option;
+        test_out << " " << option << std::flush;
         for (size_t ii = 0; ii < first_column_width - option.size(); ++ii)
-          std::cout << " ";
+          test_out << " ";
         // solve the system
-        Dune::Timer timer;
+        timer.reset();
         std::stringstream error_msg;
         bool success = true;
         try {
           linear_solver.apply(discretization.rhs_vector(), solution_vector, option);
         } catch (Stuff::Exceptions::linear_solver_failed_bc_matrix_did_not_fulfill_requirements&) {
           error_msg << Stuff::Common::colorStringRed("matrix_did_not_fulfill_requirements");
-          if (option.substr(0, 3) == "cg.")
-            error_msg << " (OK for this discretization)";
           success = false;
         } catch (Stuff::Exceptions::linear_solver_failed_bc_it_did_not_converge&) {
           error_msg << Stuff::Common::colorStringRed("did_not_converge");
@@ -184,8 +187,8 @@ struct EllipticDiscretizations
           error_msg << Stuff::Common::colorStringRed("linear_solver_failed");
           success = false;
         }
-        std::cout << " | " << std::setw(8) << std::setprecision(2) << std::fixed << timer.elapsed();
-        std::cout << " | ";
+        test_out << " | " << std::setw(8) << std::setprecision(2) << std::fixed << timer.elapsed();
+        test_out << " | ";
         // test solution
         if (success) {
           discretization.system_matrix().mv(solution_vector, tmp_vector);
@@ -196,18 +199,18 @@ struct EllipticDiscretizations
           std::stringstream absolute_error;
           absolute_error << std::setw(9) << std::setprecision(2) << std::scientific << tmp_vector.sup_norm();
           if (tmp_vector.sup_norm() < threshhold)
-            std::cout << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
+            test_out << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
                                                     Stuff::Common::Colors::green);
           else if (tmp_vector.sup_norm() < std::exp(0.5 * std::log(threshhold)))
-            std::cout << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
+            test_out << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
                                                     Stuff::Common::Colors::brown);
           else
-            std::cout << Stuff::Common::colorStringRed(Stuff::Common::toString(absolute_error.str()));
-          std::cout << " | " << std::setw(8) << std::setprecision(2) << std::scientific
-                    << tmp_vector.sup_norm()/discretization.rhs_vector().sup_norm();
+            test_out << Stuff::Common::colorStringRed(Stuff::Common::toString(absolute_error.str()));
+          test_out << " | " << std::setw(8) << std::setprecision(2) << std::scientific
+                   << tmp_vector.sup_norm()/discretization.rhs_vector().sup_norm();
         } else
-          std::cout << "                    ";
-        std::cout << " | " << error_msg.str() << std::endl;
+          test_out << "                    ";
+        test_out << " | " << error_msg.str() << std::endl;
         ++printed_rows;
       }
     } // loop over all available options
