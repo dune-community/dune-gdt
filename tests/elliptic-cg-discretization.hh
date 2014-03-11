@@ -143,7 +143,9 @@ public:
 
     Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType> dirichlet_constraints(
         boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
-    rhs_vector_.backend() -= system_matrix_.backend() * dirichlet_shift_vector_.backend();
+    auto tmp = rhs_vector_.copy();
+    system_matrix_.mv(dirichlet_shift_vector_, tmp);
+    rhs_vector_ -= tmp;
     system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix_);
     system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector_);
     system_assembler.applyConstraints();
