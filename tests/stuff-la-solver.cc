@@ -106,8 +106,8 @@ struct EllipticDiscretizations
       size_t printed_rows = 0;
       for (auto option : linear_solver.options()) {
         // exclude some solvers that take too long to test
-        if (test_all_solvers || !(option == "qr.sparse" || option == "bicgstab.identity" || option == "bicgstab.diagonal"
-                                  || option.substr(0, 3) == "cg.")) {
+        if (test_all_solvers || !(option == "qr.sparse" || option == "bicgstab.identity"
+                                  || option == "bicgstab.diagonal" || option.substr(0, 3) == "cg.")) {
           const Stuff::Common::ConfigTree config = linear_solver.options(option);
           // print delimiter after every 3rd row
           if (printed_rows == 3) {
@@ -309,13 +309,68 @@ struct LargeEllipticSystems
                 Dune::Stuff::LA::CommonDenseMatrix< double >, \
                 Dune::Stuff::LA::CommonDenseVector< double > >*/
 
+#define ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES \
+    std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::LocalThermalBlock< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::ER07< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > >
+
+#define ISTL_EIGEN_COMPARISON \
+    std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >, \
+                Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::EigenDenseVector< double > > \
+  , std::tuple< EllipticTestCase::LocalThermalBlock< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::LocalThermalBlock< AluConform2dGridType >, \
+                Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::EigenDenseVector< double > > \
+  , std::tuple< EllipticTestCase::ER07< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::ER07< AluConform2dGridType >, \
+                Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::EigenDenseVector< double > > \
+  , std::tuple< EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >, \
+                Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::EigenDenseVector< double > > \
+  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+                Dune::Stuff::LA::IstlRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::IstlDenseVector< double > > \
+  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+                Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >, \
+                Dune::Stuff::LA::EigenDenseVector< double > >
+
+
 typedef testing::Types< ALU_CONFORM_2D_COMMONDENSE_TEST_CASES
                       , ALU_CONFORM_2D_EIGENDENSE_TEST_CASES
                       , ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+                      , ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
                       > Small_TestCases;
 
 typedef testing::Types< ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+                      , ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
                       > Large_TestCases;
+
+//typedef testing::Types< ISTL_EIGEN_COMPARISON
+//                      > Large_TestCases;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine the test structs with their appropriate arguments to create the tests |
