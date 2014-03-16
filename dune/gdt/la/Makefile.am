@@ -5,4 +5,7 @@
 
 SUBDIRS = containerfactory
 
+la_includedir = $(includedir)/dune/gdt/la
+la_include_HEADERS = containerfactory.hh
+
 include $(top_srcdir)/am/global-rules
