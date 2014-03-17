@@ -22,9 +22,25 @@
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 
+#include "interfaces.hh"
+
 namespace Dune {
 namespace GDT {
 namespace ProjectionOperator {
+
+
+template <class GridPartImp, class FieldImp = double>
+class Lagrange;
+
+
+template <class GridPartImp, class FieldImp = double>
+class LagrangeTraits
+{
+public:
+  typedef Lagrange<GridPartImp, FieldImp> derived_type;
+  typedef GridPartImp GridPartType;
+  typedef FieldImp FieldType;
+}; // class LagrangeTraits
 
 
 /**
@@ -33,10 +49,15 @@ namespace ProjectionOperator {
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template <class GridPartImp>
+template <class GridPartImp, class FieldImp>
 class Lagrange
 {
-  typedef GridPartImp GridPartType;
+public:
+  typedef LagrangeTraits<GridPartImp, FieldImp> Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::FieldType FieldType;
+
+private:
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
@@ -131,15 +152,34 @@ private:
 }; // class Lagrange
 
 
+template <class GridPartImp, class FieldImp = double>
+class L2;
+
+
+template <class GridPartImp, class FieldImp = double>
+class L2Traits
+{
+public:
+  typedef L2<GridPartImp, FieldImp> derived_type;
+  typedef GridPartImp GridPartType;
+  typedef FieldImp FieldType;
+}; // class L2Traits
+
+
 /**
  *  \brief  Does an L2 projection by solving local or global problems.
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template <class GridPartImp>
+template <class GridPartImp, class FieldImp>
 class L2
 {
-  typedef GridPartImp GridPartType;
+public:
+  typedef L2Traits<GridPartImp, FieldImp> Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::FieldType FieldType;
+
+private:
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
@@ -216,15 +256,34 @@ private:
 }; // class L2
 
 
+template <class GridPartImp, class FieldImp = double>
+class Generic;
+
+
+template <class GridPartImp, class FieldImp = double>
+class GenericTraits
+{
+public:
+  typedef Generic<GridPartImp, FieldImp> derived_type;
+  typedef GridPartImp GridPartType;
+  typedef FieldImp FieldType;
+}; // class GenericTraits
+
+
 /**
  *  \brief  Does a projection by selecting the appropriate Lagrange or L2 operator at compile time.
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template <class GridPartImp>
+template <class GridPartImp, class FieldImp>
 class Generic
 {
-  typedef GridPartImp GridPartType;
+public:
+  typedef GenericTraits<GridPartImp, FieldImp> Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::FieldType FieldType;
+
+private:
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
@@ -280,6 +339,20 @@ private:
 }; // Generic
 
 
+template <class GridPartImp, class FieldImp = double>
+class Dirichlet;
+
+
+template <class GridPartImp, class FieldImp = double>
+class DirichletTraits
+{
+public:
+  typedef Dirichlet<GridPartImp, FieldImp> derived_type;
+  typedef GridPartImp GridPartType;
+  typedef FieldImp FieldType;
+}; // class DirichletTraits
+
+
 /**
  *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
  *          those vertices of the entity which lie on the dirichlet boundary.
@@ -287,11 +360,13 @@ private:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template <class GridPartImp>
+template <class GridPartImp, class FieldImp>
 class Dirichlet
 {
 public:
-  typedef GridPartImp GridPartType;
+  typedef DirichletTraits<GridPartImp, FieldImp> Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::FieldType FieldType;
   typedef Stuff::GridboundaryInterface<typename GridPartType::IntersectionType> BoundaryInfoType;
 
 private:
