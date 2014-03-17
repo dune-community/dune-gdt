@@ -42,7 +42,7 @@ public:
   typedef GridPartImp GridPartType;
 
 protected:
-  typedef Stuff::Function::Constant<typename GridPartType::EntityType, typename GridPartType::ctype,
+  typedef Stuff::Function::Constant<typename GridPartType::template Codim<0>::EntityType, typename GridPartType::ctype,
                                     GridPartType::dimension, FieldImp, 1> FunctionType;
 
 public:
@@ -174,11 +174,10 @@ public:
 
 
 template <class GridPartImp, class FieldImp>
-class L2Generic
+class L2Generic : public ProductInterface<L2GenericTraits<GridPartImp, FieldImp>>
 {
-  typedef L2GenericTraits<GridPartImp, FieldImp> Traits;
-
 public:
+  typedef L2GenericTraits<GridPartImp, FieldImp> Traits;
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::FieldType FieldType;
 
@@ -189,6 +188,11 @@ public:
   L2Generic(const GridPartType& grid_part)
     : grid_part_(grid_part)
   {
+  }
+
+  const GridPartType& grid_part() const
+  {
+    return grid_part_;
   }
 
   template <class RR, int rRR, int rCR, class RS, int rRS, int rCS>
