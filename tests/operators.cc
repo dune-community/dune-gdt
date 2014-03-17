@@ -50,6 +50,57 @@ typedef Dune::Stuff::LA::EigenDenseVector< double > VectorType;
 // |  * to test the products |
 // +-------------------------+
 
+
+template< class SpaceType, class ProductType >
+struct GenericProduct
+{
+  typedef typename SpaceType::GridPartType          GridPartType;
+  typedef typename GridPartType::GridType           GridType;
+  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType  RangeFieldType;
+  static const unsigned int                   dimRange = SpaceType::dimRange;
+  typedef Dune::Stuff::Function::Expression
+      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+  typedef typename Dune::GDT::ProductInterface< typename ProductType::Traits > InterfaceType;
+
+  static void fulfills_interface()
+  {
+    // static tests
+    // * of the derived type
+    typedef typename ProductType::Traits        Traits;
+    typedef typename ProductType::GridPartType  D_GridPartType;
+    typedef typename ProductType::FieldType     D_FieldType;
+    // * of the derived type as the interface
+    typedef typename InterfaceType::derived_type  derived_type;
+    typedef typename InterfaceType::GridPartType  I_GridPartType;
+    typedef typename InterfaceType::FieldType     I_FieldType;
+    static_assert(std::is_same< ProductType, derived_type >::value, "");
+    static_assert(std::is_same< D_GridPartType, I_GridPartType >::value, "");
+    static_assert(std::is_same< D_FieldType, D_FieldType >::value, "");
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid = grid_provider.grid();
+    const auto grid_part = std::make_shared< const GridPartType >(*grid);
+    const FunctionType function("x", "1.0", 0);
+    ProductType product(*grid_part);
+    // dynamic tests
+    // * of the derived type
+    const D_GridPartType& d_gp = product.grid_part();
+    if (&d_gp != &(*grid_part)) DUNE_THROW(Dune::Exception, "");
+    D_FieldType d_a = product.apply2(function, function);
+    // * of the derived type as the interface
+    InterfaceType& i_product = static_cast< InterfaceType& >(product);
+    const I_GridPartType& i_gp = i_product.grid_part();
+    if (&i_gp != &d_gp) DUNE_THROW(Dune::Exception, "");
+    I_FieldType i_a = i_product.apply2(function, function);
+    if (i_a != d_a) DUNE_THROW(Dune::Exception, "");
+  }
+}; // struct GenericProduct
+
+
 template< class SpaceType, class ProductType >
 struct LocalizableProduct
 {
@@ -197,6 +248,7 @@ struct GenericL2ProductOperator
   static const unsigned int                   dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+  typedef Dune::GDT::ProductOperator::L2Generic< GridPartType > ProductType;
 
   void produces_correct_results() const
   {
@@ -204,7 +256,7 @@ struct GenericL2ProductOperator
     const GridProviderType grid_provider(0.0, 1.0, 4u);
     const auto grid = grid_provider.grid();
     const auto grid_part = std::make_shared< const GridPartType >(*grid);
-    const Dune::GDT::ProductOperator::L2Generic< GridPartType > l2_product_operator(*grid_part);
+    const ProductType l2_product_operator(*grid_part);
     // test 1 (constant)
     const FunctionType function_1("x", "1.0", 0);
     auto l2_product = l2_product_operator.apply2(function_1, function_1);
@@ -230,7 +282,13 @@ struct GenericL2ProductOperator
                  "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
                  << " (difference: " << std::scientific << error << ")");
   }
+
+  void fulfills_interface() const
+  {
+    GenericProduct< SpaceType, ProductType >::fulfills_interface();
+  }
 }; // GenericL2ProductOperator
+
 
 template< class SpaceType >
 struct L2LocalizableProduct
@@ -289,6 +347,7 @@ struct L2LocalizableProduct
   }
 }; // L2LocalizableProduct
 
+
 template< class SpaceType >
 struct L2AssemblableProduct
   : public ::testing::Test
@@ -298,47 +357,56 @@ struct L2AssemblableProduct
   typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
   typedef typename Dune::Stuff::LA::CommonDenseVector< double > VectorType;
   typedef typename Dune::Stuff::LA::CommonDenseMatrix< double > MatrixType;
-//  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-//  typedef typename SpaceType::DomainFieldType DomainFieldType;
-//  static const unsigned int                   dimDomain = SpaceType::dimDomain;
-//  typedef typename SpaceType::RangeFieldType  RangeFieldType;
-//  static const unsigned int                   dimRange = SpaceType::dimRange;
-
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType  RangeFieldType;
+  static const unsigned int                   dimRange = SpaceType::dimRange;
+  typedef Dune::Stuff::Function::Expression
+      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
+  typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
+  typedef Dune::GDT::ProjectionOperator::Generic< GridPartType > ProjectionOperatorType;
   typedef Dune::GDT::ProductOperator::L2Assemblable< GridPartType, SpaceType, SpaceType, MatrixType > ProductType;
 
   void produces_correct_results() const
   {
-//    // prepare
-//    const GridProviderType grid_provider(0.0, 1.0, 4u);
-//    const auto grid = grid_provider.grid();
-//    const auto grid_part = std::make_shared< const GridPartType >(*grid);
-//    // test 1 (constant)
-//    const FunctionType function_1("x", "1.0", 0);
-//    ProductType l2_product_operator_1(*grid_part, function_1, function_1);
-//    auto l2_product = l2_product_operator_1.apply2();
-//    RangeFieldType error = l2_product - RangeFieldType(1.0);
-//    if (error > RangeFieldType(1e-15))
-//      DUNE_THROW(errors_are_not_as_expected,
-//                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0)
-//                 << " (difference: " << std::scientific << error << ")");
-//    // test 2 (linear)
-//    const FunctionType function_2("x", "x[0] - 1.0", 1);
-//    ProductType l2_product_operator_2(*grid_part, function_2, function_2);
-//    l2_product = l2_product_operator_2.apply2();
-//    error = l2_product - RangeFieldType(1.0/3.0);
-//    if (error > RangeFieldType(1e-15))
-//      DUNE_THROW(errors_are_not_as_expected,
-//                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
-//                 << " (difference: " << std::scientific << error << ")");
-//    // test 3 (quadratic)
-//    const FunctionType function_3("x", "x[0]*x[0]", 2);
-//    ProductType l2_product_operator_3(*grid_part, function_3, function_3);
-//    l2_product = l2_product_operator_3.apply2();
-//    error = l2_product - RangeFieldType(1.0/5.0);
-//    if (error > RangeFieldType(1e-15))
-//      DUNE_THROW(errors_are_not_as_expected,
-//                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
-//                 << " (difference: " << std::scientific << error << ")");
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid = grid_provider.grid();
+    const auto grid_part_ptr = std::make_shared< const GridPartType >(*grid);
+    const ProjectionOperatorType projection_operator(*grid_part_ptr);
+    const SpaceType space(grid_part_ptr);
+    VectorType vector(space.mapper().size());
+    DiscreteFunctionType discrete_function(space, vector);
+    ProductType product(*grid_part_ptr, space, space);
+    product.assemble();
+    // test 1 (constant)
+    const FunctionType function_1("x", "1.0", 0);
+    projection_operator.apply(function_1, discrete_function);
+    auto l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    RangeFieldType error = l2_product - RangeFieldType(1.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0)
+                 << " (difference: " << std::scientific << error << ")");
+    // test 2 (linear)
+    const FunctionType function_2("x", "x[0] - 1.0", 1);
+    projection_operator.apply(function_2, discrete_function);
+    l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    error = l2_product - RangeFieldType(1.0/3.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
+                 << " (difference: " << std::scientific << error << ")");
+    // test 3 (quadratic)
+    const FunctionType function_3("x", "x[0]*x[0]", 2);
+    projection_operator.apply(function_3, discrete_function);
+    l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    error = l2_product - RangeFieldType(1.0/5.0);
+    if (error > RangeFieldType(1e-2)) // <- since the space can be linear only we make quite some projection mistake
+      DUNE_THROW(errors_are_not_as_expected,
+                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
+                 << " (difference: " << std::scientific << error << ")");
   } // ... produces_correct_results()
 
   void fulfills_interface() const
@@ -346,6 +414,7 @@ struct L2AssemblableProduct
     AssemblableProduct< SpaceType, ProductType, VectorType >::fulfills_interface();
   }
 }; // L2AssemblableProduct
+
 
 template< class SpaceType >
 struct H1SemiProductOperator
@@ -839,9 +908,47 @@ typedef testing::Types<
 // | (comment out the following lines if you do not want a test to be run)                |
 // +--------------------------------------------------------------------------------------+
 
-// +-------------------------------+
-// |  * the product operator tests |
-// +-------------------------------+
+// +--------------------------------------------------+
+// | * those have to come first for error measurement |
+// +--------------------------------------------------+
+
+TYPED_TEST_CASE(GenericL2ProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(GenericL2ProductOperator, fulfills_interface) {
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(GenericL2ProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(GenericL2ProductOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
+
+// +-----------------------------------------------------------------------+
+// | * we need the projection operator tests next for reliable projections |
+// +-----------------------------------------------------------------------+
+
+TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
+TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
+ this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
+TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
+ this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(GenericProjectionOperator, GenericProjectionOperatorSpaceTypes);
+TYPED_TEST(GenericProjectionOperator, produces_correct_results) {
+ this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(DirichletProjectionOperator, DirichletProjectionOperatorSpaceTypes);
+TYPED_TEST(DirichletProjectionOperator, produces_correct_results) {
+ this->produces_correct_results();
+}
+
+// +----------------------------------------------------------+
+// | * now we can continue with the rest of the product tests |
+// +----------------------------------------------------------+
 
 TYPED_TEST_CASE(L2LocalizableProduct, ProductOperatorSpaceTypes);
 TYPED_TEST(L2LocalizableProduct, fulfills_interface) {
@@ -863,37 +970,8 @@ TYPED_TEST(L2AssemblableProduct, produces_correct_results) {
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(GenericL2ProductOperator, ProductOperatorSpaceTypes);
-TYPED_TEST(GenericL2ProductOperator, produces_correct_results) {
-  this->produces_correct_results();
-}
-
 //TYPED_TEST_CASE(H1SemiProductOperator, ProductOperatorSpaceTypes);
 //TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
-
-// +----------------------------------+
-// |  * the projection operator tests |
-// +----------------------------------+
-
-//TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
-//TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
-
-//TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
-//TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
-
-//TYPED_TEST_CASE(GenericProjectionOperator, GenericProjectionOperatorSpaceTypes);
-//TYPED_TEST(GenericProjectionOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
-
-//TYPED_TEST_CASE(DirichletProjectionOperator, DirichletProjectionOperatorSpaceTypes);
-//TYPED_TEST(DirichletProjectionOperator, produces_correct_results) {
 //  this->produces_correct_results();
 //}
 
@@ -901,20 +979,20 @@ TYPED_TEST(GenericL2ProductOperator, produces_correct_results) {
 // |  * the prolongation operator tests |
 // +------------------------------------+
 
-//TYPED_TEST_CASE(L2ProlongationOperator, L2ProlongationOperatorSpaceTypes);
-//TYPED_TEST(L2ProlongationOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+TYPED_TEST_CASE(L2ProlongationOperator, L2ProlongationOperatorSpaceTypes);
+TYPED_TEST(L2ProlongationOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
 
-//TYPED_TEST_CASE(LagrangeProlongationOperator, LagrangeProlongationOperatorSpaceTypes);
-//TYPED_TEST(LagrangeProlongationOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+TYPED_TEST_CASE(LagrangeProlongationOperator, LagrangeProlongationOperatorSpaceTypes);
+TYPED_TEST(LagrangeProlongationOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
 
-//TYPED_TEST_CASE(GenericProlongationOperator, GenericProlongationOperatorSpaceTypes);
-//TYPED_TEST(GenericProlongationOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+TYPED_TEST_CASE(GenericProlongationOperator, GenericProlongationOperatorSpaceTypes);
+TYPED_TEST(GenericProlongationOperator, produces_correct_results) {
+  this->produces_correct_results();
+}
 
 // +--------------------------------------------------------------------------------------+
 // | 4th we run all the tests                                                             |
