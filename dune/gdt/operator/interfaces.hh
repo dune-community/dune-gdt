@@ -433,6 +433,33 @@ private:
 }; // class AssemblableProductBase
 
 
+template <class Traits>
+class OperatorInterface : public ProductInterface<Traits>
+{
+  typedef ProductInterface<Traits> BaseType;
+
+public:
+  typedef typename BaseType::FieldType FieldType;
+  using BaseType::derived_type;
+  using BaseType::GridPartType;
+
+  template <class SourceType, class RangeType>
+  void apply(const SourceType& source, const RangeType& range) const
+  {
+    CHECK_CRTP(this->as_imp(*this).apply(source, range));
+    return this->as_imp(*this).apply(source, range);
+  }
+
+  template <class RangeType, class SourceType>
+  FieldType apply2(const RangeType& range, const SourceType& source) const
+  {
+    auto tmp = range.copy();
+    apply(source, tmp);
+    return range * tmp;
+  } // ... apply(...)
+}; // class OperatorInterface
+
+
 } // namespace GDT
 } // namespace Dune
 
