@@ -211,61 +211,192 @@ private:
 }; // class L2Generic
 
 
-template< class GridPartType >
-class H1Semi
+// forward, to be used in the traits
+template< class GridPartImp, class FieldImp >
+class H1SemiBase;
+
+template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+class H1SemiLocalizable;
+
+template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+class H1SemiAssemblable;
+
+
+template< class GridPartImp, class FieldImp = double >
+class H1SemiTraits
 {
 public:
+  typedef GridPartImp GridPartType;
+protected:
+  typedef Stuff::Function::Constant<  typename GridPartType::template Codim< 0 >::EntityType,
+                                      typename GridPartType::ctype,
+                                      GridPartType::dimension, FieldImp, 1 >  FunctionType;
+public:
+  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > > LocalOperatorType;
+private:
+  friend class H1SemiBase< GridPartImp, FieldImp >;
+};
+
+template< class GridPartImp, class FieldImp >
+class H1SemiBase
+{
+  typedef typename H1SemiTraits< GridPartImp, FieldImp >::FunctionType       FunctionType;
+  typedef typename H1SemiTraits< GridPartImp, FieldImp >::LocalOperatorType  LocalOperatorType;
+
+public:
+  H1SemiBase()
+    : function_(1)
+    , local_operator_(function_)
+  {}
+
+private:
+  const FunctionType function_;
+protected:
+  const LocalOperatorType local_operator_;
+}; // class H1SemiBase
+
+
+template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+class H1SemiLocalizableTraits
+  : public H1SemiTraits< GridPartImp, FieldImp >
+{
+public:
+  typedef H1SemiLocalizable< GridPartImp, RangeImp, SourceImp, FieldImp > derived_type;
+  typedef RangeImp    RangeType;
+  typedef SourceImp   SourceType;
+  typedef FieldImp    FieldType;
+private:
+  friend class H1SemiLocalizable< GridPartImp, RangeImp, SourceImp, FieldImp >;
+};
+
+
+template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp >
+class H1SemiLocalizable
+  : public LocalizableProductBase< H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > >
+  , public H1SemiBase< GridPartImp, FieldImp >
+{
+  typedef LocalizableProductBase< H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > > BaseType;
+public:
+  typedef H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::RangeType    RangeType;
+  typedef typename Traits::SourceType   SourceType;
+private:
+  typedef typename Traits::LocalOperatorType LocalOperatorType;
+
+public:
+  H1SemiLocalizable(const GridPartType& grid_part, const RangeType& range, const SourceType& source)
+    : BaseType(grid_part, range, source)
+  {}
+
+  virtual const LocalOperatorType& local_operator() const DS_FINAL
+  {
+    return this->local_operator_;
+  }
+}; // class H1SemiLocalizable
+
+
+template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+class H1SemiAssemblableTraits
+  : public H1SemiTraits< GridPartImp, typename MatrixImp::ScalarType >
+{
+public:
+  typedef H1SemiAssemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > derived_type;
+  typedef RangeSpaceImp   RangeSpaceType;
+  typedef SourceSpaceImp  SourceSpaceType;
+  typedef MatrixImp       MatrixType;
+private:
+  friend class H1SemiAssemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp >;
+};
+
+
+template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+class H1SemiAssemblable
+  : public AssemblableProductBase< H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+  , public H1SemiBase< GridPartImp, typename MatrixImp::ScalarType >
+{
+  typedef AssemblableProductBase< H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+    BaseType;
+public:
+  typedef H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > Traits;
+  typedef typename Traits::GridPartType     GridPartType;
+  typedef typename Traits::RangeSpaceType   RangeSpaceType;
+  typedef typename Traits::SourceSpaceType  SourceSpaceType;
+  typedef typename Traits::MatrixType       MatrixType;
+private:
+  typedef typename Traits::LocalOperatorType LocalOperatorType;
+
+public:
+  H1SemiAssemblable(const GridPartType& grid_part, const RangeSpaceType& range_space, const SourceSpaceType& source_space)
+    : BaseType(grid_part, range_space, source_space)
+  {}
+
+  virtual const LocalOperatorType& local_operator() const DS_FINAL
+  {
+    return this->local_operator_;
+  }
+}; // class H1SemiAssemblable
+
+
+template< class GridPartImp, class FieldImp = double >
+class H1SemiGeneric;
+
+
+template< class GridPartImp, class FieldImp = double >
+class H1SemiGenericTraits
+{
+public:
+  typedef H1SemiGeneric< GridPartImp > derived_type;
+  typedef GridPartImp GridPartType;
+  typedef FieldImp FieldType;
+};
+
+
+template< class GridPartImp, class FieldImp >
+class H1SemiGeneric
+  : public ProductInterface< H1SemiGenericTraits< GridPartImp, FieldImp > >
+{
+public:
+  typedef H1SemiGenericTraits< GridPartImp, FieldImp > Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::FieldType    FieldType;
+
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
 
-  H1Semi(const GridPartType& grid_part)
+  H1SemiGeneric(const GridPartType& grid_part)
     : grid_part_(grid_part)
   {}
 
+  const GridPartType& grid_part() const
+  {
+    return grid_part_;
+  }
+
   template< class RR, int rRR, int rCR, class RS, int rRS, int rCS >
-  void apply2(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RR, rRR, rCR >& /*range*/,
-              const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rRS, rCS >& /*source*/) const
+  FieldType apply2(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RR, rRR, rCR >& /*range*/,
+                   const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, RS, rRS, rCS >& /*source*/) const
   {
     static_assert((Dune::AlwaysFalse< RR >::value), "Not implemented for this combination!");
   }
 
-  template< class RangeFieldType, int dimRangeRows, int dimRangeCols >
-  RangeFieldType apply2(const Stuff::LocalizableFunctionInterface
-                            < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRangeRows, dimRangeCols >&
-                          range,
-                        const Stuff::LocalizableFunctionInterface
-                            < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRangeRows, dimRangeCols >&
-                          source) const
+  template< int dimRangeRows, int dimRangeCols >
+  FieldType apply2(const Stuff::LocalizableFunctionInterface
+                      < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols >& range,
+                   const Stuff::LocalizableFunctionInterface
+                      < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols >& source) const
   {
-    // some preparations
-    typedef Stuff::Function::Constant< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > ConstantFunctionType;
-    const ConstantFunctionType one(1);
-    const LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< ConstantFunctionType > > local_operator(one);
-    RangeFieldType ret = 0;
-    DynamicMatrix< RangeFieldType > local_operator_result(1, 1, 0);
-    std::vector< DynamicMatrix< RangeFieldType > > tmp_matrices(local_operator.numTmpObjectsRequired(),
-                                                                DynamicMatrix< RangeFieldType >(1, 1, 0));
-
-    // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // get the local functions
-      const auto source_local_function = source.local_function(entity);
-      const auto range_local_function = range.local_function(entity);
-      // apply local operator
-      local_operator.apply(*source_local_function, *range_local_function, local_operator_result, tmp_matrices);
-      assert(local_operator_result.rows() == 1);
-      assert(local_operator_result.cols() == 1);
-      ret += local_operator_result[0][0];
-    } // walk the grid
-    return ret;
+    typedef Stuff::LocalizableFunctionInterface
+        < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > FunctionType;
+    H1SemiLocalizable< GridPartType, FunctionType, FunctionType, FieldType >
+        product_operator(grid_part_, range, source);
+    return product_operator.apply2();
   } // ... apply2(...)
 
 private:
   const GridPartType& grid_part_;
-}; // class H1Semi
+}; // class H1SemiGeneric
 
 
 } // namespace ProductOperator
