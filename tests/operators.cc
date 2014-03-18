@@ -50,6 +50,7 @@ typedef Dune::Stuff::LA::EigenDenseVector<double> VectorType;
 // |  * to test the products |
 // +-------------------------+
 
+//      - first the interfaces
 
 template <class SpaceType, class ProductType>
 struct GenericProduct
@@ -84,25 +85,24 @@ struct GenericProduct
     const GridProviderType grid_provider(0.0, 1.0, 4u);
     const auto grid      = grid_provider.grid();
     const auto grid_part = std::make_shared<const GridPartType>(*grid);
-    const FunctionType function("x", "1.0", 0);
+    const FunctionType function("x", "1.0", 0, "function", {{"1.0", "1.0", "1.0"}});
     ProductType product(*grid_part);
     // dynamic tests
     // * of the derived type
     const D_GridPartType& d_gp = product.grid_part();
     if (&d_gp != &(*grid_part))
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     D_FieldType d_a = product.apply2(function, function);
     // * of the derived type as the interface
     InterfaceType& i_product   = static_cast<InterfaceType&>(product);
     const I_GridPartType& i_gp = i_product.grid_part();
     if (&i_gp != &d_gp)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     I_FieldType i_a = i_product.apply2(function, function);
     if (i_a != d_a)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
   }
 }; // struct GenericProduct
-
 
 template <class SpaceType, class ProductType>
 struct LocalizableProduct
@@ -143,37 +143,36 @@ struct LocalizableProduct
     const GridProviderType grid_provider(0.0, 1.0, 4u);
     const auto grid      = grid_provider.grid();
     const auto grid_part = std::make_shared<const GridPartType>(*grid);
-    const FunctionType function("x", "1.0", 0);
+    const FunctionType function("x", "1.0", 0, "function", {{"1.0", "1.0", "1.0"}});
     ProductType product(*grid_part, function, function);
     // dynamic tests
     // * of the derived type
     const D_GridPartType& d_gp = product.grid_part();
     if (&d_gp != &(*grid_part))
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const D_RangeType& d_r = product.range();
     if (&d_r != &function)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const D_SourceType& d_s = product.source();
     if (&d_s != &function)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     D_FieldType d_a = product.apply2();
     // * of the derived type as the interface
     InterfaceType& i_product   = static_cast<InterfaceType&>(product);
     const I_GridPartType& i_gp = i_product.grid_part();
     if (&i_gp != &d_gp)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const I_RangeType& i_r = i_product.range();
     if (&i_r != &d_r)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const I_SourceType& i_s = i_product.source();
     if (&i_s != &d_s)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     I_FieldType i_a = i_product.apply2();
     if (i_a != d_a)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
   }
 }; // struct LocalizableProduct
-
 
 template <class SpaceType, class ProductType, class VectorType>
 struct AssemblableProduct
@@ -222,35 +221,36 @@ struct AssemblableProduct
     // * of the derived type
     const D_GridPartType& d_gp = product.grid_part();
     if (&d_gp != &(*grid_part))
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const D_RangeSpaceType& d_r = product.range_space();
     if (&d_r != &space)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const D_SourceSpaceType& d_s = product.source_space();
     if (&d_s != &space)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     D_MatrixType& d_m = product.matrix();
     D_FieldType d_a   = product.apply2(vector, vector);
     // * of the derived type as the interface
     InterfaceType& i_product   = static_cast<InterfaceType&>(product);
     const I_GridPartType& i_gp = i_product.grid_part();
     if (&i_gp != &d_gp)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const I_RangeSpaceType& i_r = i_product.range_space();
     if (&i_r != &d_r)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     const I_SourceSpaceType& i_s = i_product.source_space();
     if (&i_s != &d_s)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     I_MatrixType& i_m = i_product.matrix();
     if (&i_m != &d_m)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
     I_FieldType i_a = i_product.apply2(vector, vector);
     if (i_a != d_a)
-      DUNE_THROW(Dune::Exception, "");
+      DUNE_THROW_COLORFULLY(Dune::Exception, "");
   }
 }; // struct AssemblableProduct
 
+//      - then the L2 products
 
 template <class SpaceType>
 struct GenericL2ProductOperator : public ::testing::Test
@@ -279,31 +279,33 @@ struct GenericL2ProductOperator : public ::testing::Test
     auto l2_product      = l2_product_operator.apply2(function_1, function_1);
     RangeFieldType error = l2_product - RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     l2_product = l2_product_operator.apply2(function_2, function_2);
     error = l2_product - RangeFieldType(1.0 / 3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     l2_product = l2_product_operator.apply2(function_3, function_3);
     error = l2_product - RangeFieldType(1.0 / 5.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
   }
 
   void fulfills_interface() const
@@ -311,7 +313,6 @@ struct GenericL2ProductOperator : public ::testing::Test
     GenericProduct<SpaceType, ProductType>::fulfills_interface();
   }
 }; // GenericL2ProductOperator
-
 
 template <class SpaceType>
 struct L2LocalizableProduct : public ::testing::Test
@@ -340,33 +341,35 @@ struct L2LocalizableProduct : public ::testing::Test
     auto l2_product      = l2_product_operator_1.apply2();
     RangeFieldType error = l2_product - RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     ProductType l2_product_operator_2(*grid_part, function_2, function_2);
     l2_product = l2_product_operator_2.apply2();
     error = l2_product - RangeFieldType(1.0 / 3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     ProductType l2_product_operator_3(*grid_part, function_3, function_3);
     l2_product = l2_product_operator_3.apply2();
     error = l2_product - RangeFieldType(1.0 / 5.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
   } // ... produces_correct_results()
 
   void fulfills_interface() const
@@ -374,7 +377,6 @@ struct L2LocalizableProduct : public ::testing::Test
     LocalizableProduct<SpaceType, ProductType>::fulfills_interface();
   }
 }; // L2LocalizableProduct
-
 
 template <class SpaceType>
 struct L2AssemblableProduct : public ::testing::Test
@@ -413,33 +415,35 @@ struct L2AssemblableProduct : public ::testing::Test
     auto l2_product      = product.apply2(discrete_function.vector(), discrete_function.vector());
     RangeFieldType error = l2_product - RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     projection_operator.apply(function_2, discrete_function);
     l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = l2_product - RangeFieldType(1.0 / 3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     projection_operator.apply(function_3, discrete_function);
     l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = l2_product - RangeFieldType(1.0 / 5.0);
-    if (error > RangeFieldType(1e-2)) // <- since the space can be linear only we make quite some projection mistake
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    if (error > RangeFieldType(1e-2)) // <- since the space can be linear only we make quite some projection error
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
   } // ... produces_correct_results()
 
   void fulfills_interface() const
@@ -448,9 +452,10 @@ struct L2AssemblableProduct : public ::testing::Test
   }
 }; // L2AssemblableProduct
 
+//      - then the H1 semi products
 
 template <class SpaceType>
-struct H1SemiProductOperator : public ::testing::Test
+struct GenericH1SemiProductOperator : public ::testing::Test
 {
   typedef typename SpaceType::GridPartType GridPartType;
   typedef typename GridPartType::GridType GridType;
@@ -462,6 +467,7 @@ struct H1SemiProductOperator : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
+  typedef Dune::GDT::ProductOperator::H1SemiGeneric<GridPartType> ProductType;
 
   void produces_correct_results() const
   {
@@ -469,44 +475,204 @@ struct H1SemiProductOperator : public ::testing::Test
     const GridProviderType grid_provider(0.0, 1.0, 4u);
     const auto grid      = grid_provider.grid();
     const auto grid_part = std::make_shared<const GridPartType>(*grid);
-    const Dune::GDT::ProductOperator::H1Semi<GridPartType> h1semi_product_operator(*grid_part);
+    const ProductType h1_semi_product_operator(*grid_part);
     // test 1 (constant)
     const FunctionType function_1("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}});
-    auto h1semi_product  = h1semi_product_operator.apply2(function_1, function_1);
-    RangeFieldType error = h1semi_product - dimDomain * RangeFieldType(1.0);
+    auto h1_semi_product = h1_semi_product_operator.apply2(function_1, function_1);
+    RangeFieldType error = h1_semi_product - dimDomain * RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
-                                        << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 2 (linear)
     const FunctionType function_2(
         "x", "fake_value", 2, "affine gradient", {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}});
-    h1semi_product = h1semi_product_operator.apply2(function_2, function_2);
-    error = h1semi_product - dimDomain * RangeFieldType(1.0 / 3.0);
+    h1_semi_product = h1_semi_product_operator.apply2(function_2, function_2);
+    error = h1_semi_product - dimDomain * RangeFieldType(1.0 / 3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain * RangeFieldType(1.0 / 3.0)
-                                        << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. "
+                                                   << dimDomain * RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
     // test 3 (quadratic)
     const FunctionType function_3(
         "x", "fake_value", 3, ", quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}});
-    h1semi_product = h1semi_product_operator.apply2(function_3, function_3);
-    error = h1semi_product - dimDomain * RangeFieldType(1.0 / 5.0);
+    h1_semi_product = h1_semi_product_operator.apply2(function_3, function_3);
+    error = h1_semi_product - dimDomain * RangeFieldType(1.0 / 5.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1semi_product << " vs. " << dimDomain * RangeFieldType(1.0 / 5.0)
-                                        << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. "
+                                                   << dimDomain * RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
   }
-}; // H1SemiProductOperator
+
+  void fulfills_interface() const
+  {
+    GenericProduct<SpaceType, ProductType>::fulfills_interface();
+  }
+}; // GenericH1SemiProductOperator
+
+template <class SpaceType>
+struct H1SemiLocalizableProduct : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType GridPartType;
+  typedef typename GridPartType::GridType GridType;
+  typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRange = SpaceType::dimRange;
+  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      FunctionType;
+  typedef Dune::GDT::ProductOperator::H1SemiLocalizable<GridPartType, FunctionType, FunctionType> ProductType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid      = grid_provider.grid();
+    const auto grid_part = std::make_shared<const GridPartType>(*grid);
+    // test 1 (constant)
+    const FunctionType function_1("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}});
+    ProductType h1_semi_product_operator_1(*grid_part, function_1, function_1);
+    auto h1_semi_product = h1_semi_product_operator_1.apply2();
+    RangeFieldType error = h1_semi_product - dimDomain * RangeFieldType(1.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+    // test 2 (linear)
+    const FunctionType function_2(
+        "x", "fake_value", 2, "affine gradient", {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}});
+    ProductType h1_semi_product_operator_2(*grid_part, function_2, function_2);
+    h1_semi_product = h1_semi_product_operator_2.apply2();
+    error = h1_semi_product - dimDomain * RangeFieldType(1.0 / 3.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. "
+                                                   << dimDomain * RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+    // test 3 (quadratic)
+    const FunctionType function_3(
+        "x", "fake_value", 3, ", quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}});
+    ProductType h1_semi_product_operator_3(*grid_part, function_3, function_3);
+    h1_semi_product = h1_semi_product_operator_3.apply2();
+    error = h1_semi_product - dimDomain * RangeFieldType(1.0 / 5.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. "
+                                                   << dimDomain * RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+  } // ... produces_correct_results()
+
+  void fulfills_interface() const
+  {
+    LocalizableProduct<SpaceType, ProductType>::fulfills_interface();
+  }
+}; // H1SemiLocalizableProduct
+
+template <class SpaceType>
+struct H1SemiAssemblableProduct : public ::testing::Test
+{
+  typedef typename SpaceType::GridPartType GridPartType;
+  typedef typename GridPartType::GridType GridType;
+  typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+  typedef typename Dune::Stuff::LA::CommonDenseVector<double> VectorType;
+  typedef typename Dune::Stuff::LA::CommonDenseMatrix<double> MatrixType;
+  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+  typedef typename SpaceType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = SpaceType::dimDomain;
+  typedef typename SpaceType::RangeFieldType RangeFieldType;
+  static const unsigned int dimRange = SpaceType::dimRange;
+  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      FunctionType;
+  typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
+  typedef Dune::GDT::ProjectionOperator::Generic<GridPartType> ProjectionOperatorType;
+  typedef Dune::GDT::ProductOperator::H1SemiAssemblable<GridPartType, SpaceType, SpaceType, MatrixType> ProductType;
+
+  void produces_correct_results() const
+  {
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid          = grid_provider.grid();
+    const auto grid_part_ptr = std::make_shared<const GridPartType>(*grid);
+    const ProjectionOperatorType projection_operator(*grid_part_ptr);
+    const SpaceType space(grid_part_ptr);
+    VectorType vector(space.mapper().size());
+    DiscreteFunctionType discrete_function(space, vector);
+    ProductType product(*grid_part_ptr, space, space);
+    product.assemble();
+    // test 1 (constant)
+    const FunctionType function_1("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}}); // <- this is not as
+    // above (b.c. of the
+    // projection)
+    projection_operator.apply(function_1, discrete_function);
+    auto h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    RangeFieldType error = h1_semi_product - RangeFieldType(1.0);
+    if (error > RangeFieldType(1e-14)) // <- this is not as above (b.c. of the projection)
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+    // test 2 (linear)
+    const FunctionType function_2(
+        "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}}); // <- this is not as
+    // above (b.c. of the
+    // projection)
+    projection_operator.apply(function_2, discrete_function);
+    h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    error = h1_semi_product - RangeFieldType(1.0 / 3.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0 / 3.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+    // test 3 (quadratic)
+    const FunctionType function_3("x",
+                                  "(1.0/3.0) * x[0] * x[0] * x[0]",
+                                  3,
+                                  ", quadratic gradient",
+                                  {{"x[0]*x[0]", "0.0", "0.0"}}); // <- this is not as above (b.c. of the projection)
+    projection_operator.apply(function_3, discrete_function);
+    h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
+    error = h1_semi_product - RangeFieldType(1.0 / 5.0);
+    if (error > RangeFieldType(1e-15))
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0 / 5.0)
+                                                   << " (difference: "
+                                                   << std::scientific
+                                                   << error
+                                                   << ")");
+  } // ... produces_correct_results()
+
+  void fulfills_interface() const
+  {
+    AssemblableProduct<SpaceType, ProductType, VectorType>::fulfills_interface();
+  }
+}; // H1SemiAssemblableProduct
 
 // +-------------------------------------+
 // |  * to test the projection operators |
@@ -546,7 +712,8 @@ struct ProjectionOperatorBase
     const Dune::GDT::ProductOperator::L2Generic<GridPartType> l2_product_operator(*grid_part);
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // ProjectionOperatorType
 
@@ -612,7 +779,8 @@ struct DirichletProjectionOperator : public ::testing::Test
     const Dune::GDT::ProductOperator::L2Generic<GridPartType> l2_product_operator(*grid_part);
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected, "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+                            "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // DirichletProjectionOperator
 
@@ -644,7 +812,7 @@ struct ProlongationOperatorBase
     const auto coarse_grid_part = std::make_shared<const GridPartType>(*grid, 0);
     assert(grid->maxLevel() > 0);
     const auto fine_grid_part = std::make_shared<const GridPartType>(*grid, grid->maxLevel());
-    assert(fine_grid_part.size() > coarse_grid_part.size());
+    assert(fine_grid_part->indexSet().size(0) > coarse_grid_part->indexSet().size(0));
     // first, project an anlytical function onto the coarse grid
     const FunctionType function("x", "x[0]", 1, "function");
     const CoarseSpaceType coarse_space(coarse_grid_part);
@@ -660,9 +828,9 @@ struct ProlongationOperatorBase
         function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
     if (coarse_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "This should not happen, those operators were tested above!\n" << coarse_l2_error << " vs. "
-                                                                                << RangeFieldType(1e-15));
+      DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error,
+                            "This should not happen, those operators were tested above!\n" << coarse_l2_error << " vs. "
+                                                                                           << RangeFieldType(1e-15));
     // now we prolong the discrete function from the coarse to the fine grid part
     const FineSpaceType fine_space(fine_grid_part);
     VectorType fine_vector(fine_space.mapper().size());
@@ -676,7 +844,7 @@ struct ProlongationOperatorBase
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
     if (fine_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // ProlongationOperatorBase
 
@@ -1005,6 +1173,18 @@ TYPED_TEST(GenericL2ProductOperator, produces_correct_results)
   this->produces_correct_results();
 }
 
+TYPED_TEST_CASE(GenericH1SemiProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(GenericH1SemiProductOperator, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(GenericH1SemiProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(GenericH1SemiProductOperator, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+
 // +-----------------------------------------------------------------------+
 // | * we need the projection operator tests next for reliable projections |
 // +-----------------------------------------------------------------------+
@@ -1061,10 +1241,29 @@ TYPED_TEST(L2AssemblableProduct, produces_correct_results)
   this->produces_correct_results();
 }
 
-// TYPED_TEST_CASE(H1SemiProductOperator, ProductOperatorSpaceTypes);
-// TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+TYPED_TEST_CASE(H1SemiLocalizableProduct, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiLocalizableProduct, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(H1SemiLocalizableProduct, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiLocalizableProduct, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(H1SemiAssemblableProduct, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiAssemblableProduct, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(H1SemiAssemblableProduct, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiAssemblableProduct, produces_correct_results)
+{
+  this->produces_correct_results();
+}
 
 // +------------------------------------+
 // |  * the prolongation operator tests |
