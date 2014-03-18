@@ -190,7 +190,7 @@ public:
     const auto local_source_ptr = this->source().local_function(entity);
     const auto local_range_ptr = this->range().local_function(entity);
     // apply local operator
-    local_operator().apply(*local_source_ptr, *local_range_ptr, tmp_local_operator_result_, tmp_matrices_);
+    local_operator().apply(*local_range_ptr, *local_source_ptr, tmp_local_operator_result_, tmp_matrices_);
     assert(tmp_local_operator_result_.rows() == 1);
     assert(tmp_local_operator_result_.cols() == 1);
     result_ += tmp_local_operator_result_[0][0];
