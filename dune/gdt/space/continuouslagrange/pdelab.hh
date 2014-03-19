@@ -10,6 +10,11 @@
 
 #include <dune/common/typetraits.hh>
 
+#include <dune/geometry/genericgeometry/topologytypes.hh>
+
+#include <dune/grid/common/capabilities.hh>
+
+#include <dune/pdelab/finiteelementmap/pkfem.hh>
 #include <dune/pdelab/finiteelementmap/qkfem.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 
@@ -51,8 +56,30 @@ public:
   static const unsigned int dimRangeCols = rangeDimCols;
 
 private:
-  typedef PDELab::QkLocalFiniteElementMap<typename GridPartType::GridViewType, DomainFieldType, RangeFieldType,
-                                          polOrder> FEMapType;
+  template <class G, bool single_geom, bool is_simplex, bool is_cube>
+  struct Choose
+  {
+    static_assert(Dune::AlwaysFalse<G>::value,
+                  "This space is only implemented for either fully simplicial or fully cubic grids!");
+  };
+  template <class G>
+  struct Choose<G, true, true, false>
+  {
+    typedef PDELab::PkLocalFiniteElementMap<typename GridPartType::GridViewType, DomainFieldType, RangeFieldType,
+                                            polOrder> FEMapType;
+  };
+  template <class G>
+  struct Choose<G, true, false, true>
+  {
+    typedef PDELab::QkLocalFiniteElementMap<typename GridPartType::GridViewType, DomainFieldType, RangeFieldType,
+                                            polOrder> FEMapType;
+  };
+  typedef typename GridPartType::GridType GridType;
+  typedef typename Choose<GridType, Dune::Capabilities::hasSingleGeometryType<GridType>::v,
+                          Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+                              == GenericGeometry::SimplexTopology<dimDomain>::type::id,
+                          Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+                              == GenericGeometry::CubeTopology<dimDomain>::type::id>::FEMapType FEMapType;
 
 public:
   typedef PDELab::GridFunctionSpace<typename GridPartType::GridViewType, FEMapType> BackendType;
@@ -90,22 +117,20 @@ public:
 
   PdelabWrapper(const std::shared_ptr<const GridPartType>& /*grid_prt*/)
   {
-    static_assert((Dune::AlwaysFalse<GP>::value),
-                  "Not yet implemented for this combination of dimensions! One of the specializations below should "
-                  "work, they are just untested for other dimensions!");
+    static_assert((Dune::AlwaysFalse<GP>::value), "Not yet implemented for this combination of dimensions!");
   }
 }; // PdelabWrapper
 
 
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int r>
-class PdelabWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>
-//  : public SpaceInterface< PdelabWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > >
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
+class PdelabWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public SpaceInterface<PdelabWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>>
 {
-  typedef SpaceInterface<PdelabWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>> BaseType;
-  typedef PdelabWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> ThisType;
+  typedef SpaceInterface<PdelabWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>> BaseType;
+  typedef PdelabWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
-  typedef PdelabWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> Traits;
+  typedef PdelabWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   static const int polOrder = Traits::polOrder;
@@ -306,13 +331,13 @@ public:
     //    }
   } // ... localConstraints(..., Dirichlet< ..., false >)
 
-  //  using BaseType::computePattern;
+  using BaseType::computePattern;
 
-  //  template< class LocalGridPartType, class OtherSpaceType >
-  //  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
-  //  {
-  //    return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
-  //  }
+  template <class LocalGridPartType, class OtherSpaceType>
+  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
+  {
+    return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
+  }
 
 private:
   std::shared_ptr<const GridPartType> gridPart_;
