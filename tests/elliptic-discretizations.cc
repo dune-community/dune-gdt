@@ -66,12 +66,6 @@ struct EllipticCGDiscretization
   }
 }; // EllipticCGDiscretization
 
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
-}
-
-
 template< class TestCase >
 struct EllipticSIPDGDiscretization
   : public ::testing::Test
@@ -111,11 +105,6 @@ struct EllipticSIPDGDiscretization
   }
 }; // EllipticSIPDGDiscretization
 
-TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
-}
-
 
 template< class TestCase >
 struct EllipticSWIPDGDiscretization
@@ -148,6 +137,17 @@ struct EllipticSWIPDGDiscretization
       }
   }
 };
+
+
+TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
+TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
+  this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
+TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
+  this->produces_correct_results();
+}
 
 TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
