@@ -23,6 +23,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 
@@ -339,6 +340,24 @@ public:
     prolong_onto_cg_fem_localfunctions_wrapper(source, range);
   }
 
+  // Source: ContinuousLagrangeSpace::PdelabWrapper
+  // Range:  ContinuousLagrangeSpace::PdelabWrapper
+
+  template <class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR,
+            class VR>
+  void apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPS, pS, RS, rS, rCS>, VS>& /*source*/,
+             DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPR, pR, RR, rR, rCR>, VR>& /*range*/) const
+  {
+    static_assert((Dune::AlwaysFalse<GPS>::value), "Not implemented for this combination of source and range!");
+  }
+
+  template <class GPS, int pS, class R, int r, int rC, class VS, class GPR, class VR>
+  inline void apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPS, pS, R, r, rC>, VS>& source,
+                    DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPR, 1, R, r, rC>, VR>& range) const
+  {
+    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+  }
+
 private:
   template <class SourceType, class RangeType>
   void prolong_onto_cg_fem_wrapper(const SourceType& source, RangeType& range) const
@@ -536,6 +555,15 @@ private:
       const ConstDiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GPS, pS, RS, rS, rCS>, VS>&
           source,
       DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPR, pR, RR, rR, rCR>, VR>& range) const
+  {
+    lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template <class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR,
+            class VR>
+  inline void redirect_to_appropriate_operator(
+      const ConstDiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPS, pS, RS, rS, rCS>, VS>& source,
+      DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPR, pR, RR, rR, rCR>, VR>& range) const
   {
     lagrange_prolongation_operator_.apply(source, range);
   }
