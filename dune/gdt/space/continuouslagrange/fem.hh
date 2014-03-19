@@ -138,6 +138,8 @@ public:
       gridPart_ = other.gridPart_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
+      tmpMappedRows_.resize(mapper_->maxNumDofs());
+      tmpMappedCols_.resize(mapper_->maxNumDofs());
     }
     return *this;
   }

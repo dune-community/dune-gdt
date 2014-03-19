@@ -179,6 +179,7 @@ public:
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
+      tmp_global_indices_.resize(mapper_->maxNumDofs());
     }
     return *this;
   }
