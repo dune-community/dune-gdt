@@ -178,6 +178,17 @@ public:
     return ret;
   } // ... computeVolumePattern(...)
 
+  PatternType* computeCodim0AndCodim1Pattern() const
+  {
+    return computeCodim0AndCodim1Pattern(*(gridPart()), *this);
+  }
+
+  template< class LocalGridPartType >
+  PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part) const
+  {
+    return computeCodim0AndCodim1Pattern(local_grid_part, *this);
+  }
+
   /**
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
