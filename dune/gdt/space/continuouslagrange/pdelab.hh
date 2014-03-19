@@ -9,6 +9,7 @@
 #include <memory>
 
 #include <dune/common/typetraits.hh>
+#include <dune/common/fvector.hh>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
@@ -136,6 +137,7 @@ public:
   static const int polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridPartType::dimension;
+  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
@@ -338,6 +340,38 @@ public:
   {
     return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
   }
+
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  {
+    // check
+    static_assert(polOrder == 1, "Not yet implemented for other polynomial orders!");
+    // get the basis and reference element
+    const auto basis              = baseFunctionSet(entity);
+    const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
+    const int num_vertices = reference_element.size(dimDomain);
+    assert(num_vertices >= 0);
+    assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
+    // prepare return vector
+    std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
+    if (this->tmp_basis_values_.size() < basis.size())
+      this->tmp_basis_values_.resize(basis.size());
+    // loop over all vertices
+    for (int ii = 0; ii < num_vertices; ++ii) {
+      // get the local coordinate of the iith vertex
+      const auto local_vertex = reference_element.position(ii, dimDomain);
+      // evaluate the basefunctionset
+      basis.evaluate(local_vertex, this->tmp_basis_values_);
+      // find the basis function that evaluates to one here (has to be only one!)
+      size_t found = 0;
+      for (size_t jj = 0; jj < basis.size(); ++jj)
+        if (Dune::Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
+          ++found;
+          local_vertices[jj] = local_vertex;
+        }
+      assert(found == 1 && "This must not happen for polOrder 1!");
+    }
+    return local_vertices;
+  } // ... lagrange_points(...)
 
 private:
   std::shared_ptr<const GridPartType> gridPart_;
