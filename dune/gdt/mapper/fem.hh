@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH
-#define DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_MAPPER_FEM_HH
+#define DUNE_GDT_MAPPER_FEM_HH
 
 #include <dune/common/dynvector.hh>
 
@@ -122,4 +122,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_MAPPER_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_MAPPER_FEM_HH
