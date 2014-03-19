@@ -23,15 +23,16 @@
 #include <dune/stuff/grid/provider/cube.hh>
 
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
 
-// +------------------------------------------------+
-// | Definition of all possible Grids and GridParts |
-// +------------------------------------------------+
+// +---------------------------------------------------+
+// | Definition of all Grids and GridParts of interest |
+// +---------------------------------------------------+
 typedef Dune::SGrid< 1, 1 >                           S1dGridType;
 typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
 typedef Dune::SGrid< 2, 2 >                           S2dGridType;
@@ -88,15 +89,29 @@ typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridP
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 2 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 3 >
-
+#endif
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp3dGridPartType, 1, double, 1 >
+#if HAVE_ALUGRID
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluConform2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluCube3dGridPartType, 1, double, 1 >
+#endif
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 >
+#ifdef HAVE_ALUGRID
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
                       , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-
+#endif
                       , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
                       , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 >
+#ifdef HAVE_ALUGRID
                       , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
                       , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
                       , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
@@ -111,7 +126,7 @@ struct Spaces
   typedef typename GridPartType::GridType           GridType;
   typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
 
-  void static_crtp_check() const
+  void crtp_check() const
   {
     // grid
     const GridProviderType grid_provider(0.0, 1.0, 4u);
@@ -180,14 +195,14 @@ struct Spaces
     std::vector< B_JacobianRangeType > jacobians(b_size, B_JacobianRangeType(0));
     baseFunctionSetAsInterface.evaluate(x, values);
     baseFunctionSetAsInterface.jacobian(x, jacobians);
-  } // ... check()
+  } // ... crtp_check()
 }; // struct Spaces
 
 
 TYPED_TEST_CASE(Spaces, SpaceTypes);
-TYPED_TEST(Spaces, static_crtp)
+TYPED_TEST(Spaces, crtp_check)
 {
-  this->static_crtp_check();
+  this->crtp_check();
 }
 
 
