@@ -50,6 +50,8 @@ endif( NOT EIGEN_FOUND )
 add_dune_modules(
   stuff
   common
+  pdelab
+  typetree
   fem
   fem-localfunctions
   istl
