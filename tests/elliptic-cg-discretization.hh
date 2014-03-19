@@ -463,10 +463,10 @@ private:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      ProductOperator::L2< GridPartType > l2_product_operator(grid_part);
+      ProductOperator::L2Generic< GridPartType > l2_product_operator(grid_part);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      ProductOperator::H1Semi< GridPartType > h1_product_operator(grid_part);
+      ProductOperator::H1SemiGeneric< GridPartType > h1_product_operator(grid_part);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
