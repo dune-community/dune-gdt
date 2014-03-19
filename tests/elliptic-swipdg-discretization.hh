@@ -113,7 +113,7 @@ public:
     using namespace Dune;
     using namespace Dune::GDT;
 
-    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
+    const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computeCodim0AndCodim1Pattern());
     system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
     rhs_vector_ = VectorType (space_.mapper().size());
     typedef SystemAssembler< SpaceType > SystemAssemblerType;
