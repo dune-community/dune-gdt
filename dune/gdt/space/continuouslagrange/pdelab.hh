@@ -212,7 +212,7 @@ public:
 
   BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*backend_, entity);
+    return BaseFunctionSetType(*backend_, entity, polOrder);
   }
 
   template <class R>
@@ -222,115 +222,67 @@ public:
   }
 
   void
-  localConstraints(const EntityType& /*entity*/,
-                   Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, true>& /*ret*/) const
+  localConstraints(const EntityType& entity,
+                   Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, true>& ret) const
   {
-    //    std::set< size_t > localDirichletDofs;
-    //    const auto& gridBoundary = ret.gridBoundary();
-    //    if (polOrder == 1) {
-    //      localDirichletDofs = this->findLocalDirichletDoFs(entity, gridBoundary);
-    //    } else {
-    //      const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
-    //      // loop over all intersections
-    //      const auto intersectionEndIt = gridPart_->iend(entity);
-    //      for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt)
-    //      {
-    //        const auto& intersection = *intersectionIt;
-    //        // only work on dirichlet intersections
-    //        if (gridBoundary.dirichlet(intersection)) {
-    //          // get local face number of boundary intersection
-    //          const int intersectionIndex = intersection.indexInInside();
-    //          // iterate over face dofs and set unit row
-    //          const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
-    //          for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
-    //               faceDofIt != faceDofEndIt;
-    //               ++faceDofIt) {
-    //            const size_t localDofIndex = *faceDofIt;
-    //            localDirichletDofs.insert(localDofIndex);
-    //          } // iterate over face dofs and set unit row
-    //        } // only work on dirichlet intersections
-    //      } // loop over all intersections
-    //    }
-    //    const size_t numRows = localDirichletDofs.size();
-    //    if (numRows > 0) {
-    //      const size_t numCols = mapper_->numDofs(entity);
-    //      ret.setSize(numRows, numCols);
-    //      mapper_->globalIndices(entity, tmpMappedRows_);
-    //      mapper_->globalIndices(entity, tmpMappedCols_);
-    //      size_t localRow = 0;
-    //      const RangeFieldType zero(0);
-    //      const RangeFieldType one(1);
-    //      for (auto localDirichletDofIt = localDirichletDofs.begin();
-    //           localDirichletDofIt != localDirichletDofs.end();
-    //           ++localDirichletDofIt) {
-    //        const size_t& localDirichletDofIndex = * localDirichletDofIt;
-    //        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
-    //        for (size_t jj = 0; jj < ret.cols(); ++jj) {
-    //          ret.globalCol(jj) = tmpMappedCols_[jj];
-    //          if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
-    //            ret.value(localRow, jj) = one;
-    //          else
-    //            ret.value(localRow, jj) = zero;
-    //        }
-    //        ++localRow;
-    //      }
-    //    } else {
-    //      ret.setSize(0, 0);
-    //    }
+    static_assert(dimDomain == 2, "Not tested for other dimensions!");
+    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    const std::set<size_t> localDirichletDofs = this->findLocalDirichletDoFs(entity, ret.gridBoundary());
+    const size_t numRows = localDirichletDofs.size();
+    if (numRows > 0) {
+      const size_t numCols = mapper_->numDofs(entity);
+      ret.setSize(numRows, numCols);
+      mapper_->globalIndices(entity, tmpMappedRows_);
+      mapper_->globalIndices(entity, tmpMappedCols_);
+      size_t localRow = 0;
+      const RangeFieldType zero(0);
+      const RangeFieldType one(1);
+      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
+           ++localDirichletDofIt) {
+        const size_t& localDirichletDofIndex = *localDirichletDofIt;
+        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
+        for (size_t jj = 0; jj < ret.cols(); ++jj) {
+          ret.globalCol(jj) = tmpMappedCols_[jj];
+          if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
+            ret.value(localRow, jj) = one;
+          else
+            ret.value(localRow, jj) = zero;
+        }
+        ++localRow;
+      }
+    } else {
+      ret.setSize(0, 0);
+    }
   } // ... localConstraints(..., Dirichlet< ..., true >)
 
-  void localConstraints(
-      const EntityType& /*entity*/,
-      Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, false>& /*ret*/) const
+  void
+  localConstraints(const EntityType& entity,
+                   Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType, false>& ret) const
   {
-    //    std::set< size_t > localDirichletDofs;
-    //    const auto& gridBoundary = ret.gridBoundary();
-    //    if (polOrder == 1) {
-    //      localDirichletDofs = this->findLocalDirichletDoFs(entity, gridBoundary);
-    //    } else {
-    //      const auto& lagrangePointSet = backend_->lagrangePointSet(entity);
-    //      // loop over all intersections
-    //      const auto intersectionEndIt = gridPart_->iend(entity);
-    //      for (auto intersectionIt = gridPart_->ibegin(entity); intersectionIt !=intersectionEndIt; ++intersectionIt)
-    //      {
-    //        const auto& intersection = *intersectionIt;
-    //        // only work on dirichlet intersections
-    //        if (gridBoundary.dirichlet(intersection)) {
-    //          // get local face number of boundary intersection
-    //          const int intersectionIndex = intersection.indexInInside();
-    //          // iterate over face dofs and set unit row
-    //          const auto faceDofEndIt = lagrangePointSet.template endSubEntity< 1 >(intersectionIndex);
-    //          for (auto faceDofIt = lagrangePointSet.template beginSubEntity< 1 >(intersectionIndex);
-    //               faceDofIt != faceDofEndIt;
-    //               ++faceDofIt) {
-    //            const size_t localDofIndex = *faceDofIt;
-    //            localDirichletDofs.insert(localDofIndex);
-    //          } // iterate over face dofs and set unit row
-    //        } // only work on dirichlet intersections
-    //      } // loop over all intersections
-    //    }
-    //    const size_t numRows = localDirichletDofs.size();
-    //    if (numRows > 0) {
-    //      const size_t numCols = mapper_->numDofs(entity);
-    //      ret.setSize(numRows, numCols);
-    //      mapper_->globalIndices(entity, tmpMappedRows_);
-    //      mapper_->globalIndices(entity, tmpMappedCols_);
-    //      size_t localRow = 0;
-    //      const RangeFieldType zero(0);
-    //      for (auto localDirichletDofIt = localDirichletDofs.begin();
-    //           localDirichletDofIt != localDirichletDofs.end();
-    //           ++localDirichletDofIt) {
-    //        const size_t& localDirichletDofIndex = * localDirichletDofIt;
-    //        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
-    //        for (size_t jj = 0; jj < ret.cols(); ++jj) {
-    //          ret.globalCol(jj) = tmpMappedCols_[jj];
-    //          ret.value(localRow, jj) = zero;
-    //        }
-    //        ++localRow;
-    //      }
-    //    } else {
-    //      ret.setSize(0, 0);
-    //    }
+    static_assert(dimDomain == 2, "Not tested for other dimensions!");
+    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    const std::set<size_t> localDirichletDofs = this->findLocalDirichletDoFs(entity, ret.gridBoundary());
+    const size_t numRows = localDirichletDofs.size();
+    if (numRows > 0) {
+      const size_t numCols = mapper_->numDofs(entity);
+      ret.setSize(numRows, numCols);
+      mapper_->globalIndices(entity, tmpMappedRows_);
+      mapper_->globalIndices(entity, tmpMappedCols_);
+      size_t localRow = 0;
+      const RangeFieldType zero(0);
+      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
+           ++localDirichletDofIt) {
+        const size_t& localDirichletDofIndex = *localDirichletDofIt;
+        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
+        for (size_t jj = 0; jj < ret.cols(); ++jj) {
+          ret.globalCol(jj) = tmpMappedCols_[jj];
+          ret.value(localRow, jj) = zero;
+        }
+        ++localRow;
+      }
+    } else {
+      ret.setSize(0, 0);
+    }
   } // ... localConstraints(..., Dirichlet< ..., false >)
 
   using BaseType::computePattern;
