@@ -132,11 +132,11 @@ public:
     backend_->evaluateJacobian(xx, ret);
     DomainType tmp(0.0);
     const auto jocobian_inverse_transposed = this->entity().geometry().jacobianInverseTransposed(xx);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
+    for (size_t ii = 0; ii < ret.size(); ++ii) {
       jocobian_inverse_transposed.mv(ret[ii][0], tmp);
       ret[ii][0] = tmp;
     }
-  }
+  } // ... jacobian(...)
 
   using BaseType::jacobian;
 
