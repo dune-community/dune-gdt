@@ -85,7 +85,7 @@ public:
       ret[ii] = mapToGlobal(entity, ii);
   } // ... globalIndices(...)
 
-  //  using InterfaceType::globalIndices;
+  using InterfaceType::globalIndices;
 
   template <class EntityType>
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
