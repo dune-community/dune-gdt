@@ -20,6 +20,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 
 #include "interfaces.hh"
@@ -419,6 +420,28 @@ public:
   template <class R, class GP, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& source,
              DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, 1, 1>, V>& range) const
+  {
+    // checks
+    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, 1, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
+    // clear range
+    Stuff::Common::clear(range.vector());
+    // walk the grid
+    const auto entity_it_end = grid_part_.template end<0>();
+    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity           = *entity_it;
+      const auto local_source      = source.local_function(entity);
+      auto local_range             = range.local_discrete_function(entity);
+      auto& local_range_DoF_vector = local_range.vector();
+      const auto lagrange_points   = range.space().lagrange_points(entity);
+      // and do the work (see below)
+      apply_local(entity, lagrange_points, local_source, local_range_DoF_vector);
+    } // walk the grid
+  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > ...) const
+
+  template <class R, class GP, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& source,
+             DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GP, 1, R, 1, 1>, V>& range) const
   {
     // checks
     typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, 1, 1> SpaceType;
