@@ -12,8 +12,6 @@
 
 #include <dune/common/timer.hh>
 
-#include <dune/fem/misc/gridwidth.hh>
-
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container/eigen.hh>
@@ -300,8 +298,19 @@ public:
   virtual double current_grid_width() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
+    const auto grid_view = test_.level_grid_view(current_level_);
+    double h = 0.0;
+    const auto entity_ptr = grid_view->template begin< 0 >();
+    const auto& entity = *entity_ptr;
+    for (int cc = 0; cc < entity.template count< dimDomain >(); ++cc) {
+      const auto vertex = entity.template subEntity< dimDomain >(cc)->geometry().center();
+      for (int dd = cc + 1; dd < entity.template count< dimDomain >(); ++dd) {
+        const auto other_vertex = entity.template subEntity< dimDomain >(dd)->geometry().center();
+        const auto diff = vertex - other_vertex;
+        h = std::max(h, diff.two_norm());
+      }
+    }
+    return h;
   } // ... current_grid_width(...)
 
   virtual double compute_on_current_refinement() DS_OVERRIDE
