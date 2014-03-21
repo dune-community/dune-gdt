@@ -30,13 +30,13 @@ class ProductInterface : protected Stuff::CRTPInterface<ProductInterface<Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
 
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_part());
-    return this->as_imp(*this).grid_part();
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
   }
 
   template <class RangeType, class SourceType>
@@ -53,14 +53,14 @@ class LocalizableProductInterface : protected Stuff::CRTPInterface<LocalizablePr
 {
 public:
   typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::SourceType SourceType;
   typedef typename Traits::FieldType FieldType;
 
-  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
 private:
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, SourceType>::value,
@@ -68,21 +68,21 @@ private:
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, RangeType>::value,
                 "RangeType has to be derived from Stuff::IsLocalizableFunction!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
-                "The EntityType of SourceType and GridPartType have to match!");
+                "The EntityType of SourceType and GridViewType have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
-                "The EntityType of RangeType and GridPartType have to match!");
+                "The EntityType of RangeType and GridViewType have to match!");
   static_assert(std::is_same<typename SourceType::DomainFieldType, DomainFieldType>::value,
-                "The DomainFieldType of SourceType and GridPartType have to match!");
+                "The DomainFieldType of SourceType and GridViewType have to match!");
   static_assert(std::is_same<typename RangeType::DomainFieldType, DomainFieldType>::value,
-                "The DomainFieldType of RangeType and GridPartType have to match!");
-  static_assert(SourceType::dimDomain == dimDomain, "The dimDomain of SourceType and GridPartType have to match!");
-  static_assert(RangeType::dimDomain == dimDomain, "The dimDomain of RangeType and GridPartType have to match!");
+                "The DomainFieldType of RangeType and GridViewType have to match!");
+  static_assert(SourceType::dimDomain == dimDomain, "The dimDomain of SourceType and GridViewType have to match!");
+  static_assert(RangeType::dimDomain == dimDomain, "The dimDomain of RangeType and GridViewType have to match!");
 
 public:
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_part());
-    return this->as_imp(*this).grid_part();
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
   }
 
   const RangeType& range() const
@@ -114,7 +114,7 @@ class LocalizableProductBaseTraits
 {
 public:
   typedef typename ImpTraits::derived_type derived_type;
-  typedef typename ImpTraits::GridPartType GridPartType;
+  typedef typename ImpTraits::GridViewType GridViewType;
   typedef typename ImpTraits::RangeType RangeType;
   typedef typename ImpTraits::SourceType SourceType;
   typedef typename ImpTraits::FieldType FieldType;
@@ -124,13 +124,13 @@ public:
 template <class ImpTraits>
 class LocalizableProductBase : public LocalizableProductInterface<LocalizableProductBaseTraits<ImpTraits>>,
                                public LocalizableProductInterface<ImpTraits>,
-                               public Functor::Codim0<typename ImpTraits::GridPartType>
+                               public Functor::Codim0<typename ImpTraits::GridViewType>
 {
   typedef LocalizableProductInterface<LocalizableProductBaseTraits<ImpTraits>> InterfaceType;
   typedef LocalizableProductBaseTraits<ImpTraits> Traits;
 
 public:
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::SourceType SourceType;
   typedef typename Traits::FieldType FieldType;
@@ -142,8 +142,8 @@ public:
   using typename InterfaceType::EntityType;
 
 public:
-  LocalizableProductBase(const GridPartType& grid_part, const RangeType& range, const SourceType& source)
-    : grid_part_(grid_part)
+  LocalizableProductBase(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
+    : grid_view_(grid_view)
     , range_(range)
     , source_(source)
     , prepared_(false)
@@ -157,9 +157,9 @@ public:
   {
   }
 
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    return grid_part_;
+    return grid_view_;
   }
 
   const RangeType& range() const
@@ -201,14 +201,14 @@ public:
   FieldType apply2()
   {
     result_ *= FieldType(0);
-    GridWalker<GridPartType> grid_walker(grid_part_);
+    GridWalker<GridViewType> grid_walker(grid_view_);
     grid_walker.add(*this);
     grid_walker.walk();
     return result_;
   }
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
   const RangeType& range_;
   const SourceType& source_;
   bool prepared_;
@@ -223,33 +223,33 @@ class AssemblableProductInterface : protected Stuff::CRTPInterface<AssemblablePr
 {
 public:
   typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeSpaceType RangeSpaceType;
   typedef typename Traits::SourceSpaceType SourceSpaceType;
   typedef typename Traits::MatrixType MatrixType;
 
   typedef typename MatrixType::ScalarType FieldType;
-  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim<0>::EntityType EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
 private:
   static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceType::Traits>, RangeSpaceType>::value,
                 "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceType::Traits>, SourceSpaceType>::value,
                 "SourceSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_same<typename RangeSpaceType::GridPartType, GridPartType>::value,
-                "The GridPartType of RangeSpaceType and GridPartType have to match!");
-  static_assert(std::is_same<typename SourceSpaceType::GridPartType, GridPartType>::value,
-                "The GridPartType of SourceSpaceType and GridPartType have to match!");
+  static_assert(std::is_same<typename RangeSpaceType::GridViewType, GridViewType>::value,
+                "The GridViewType of RangeSpaceType and GridViewType have to match!");
+  static_assert(std::is_same<typename SourceSpaceType::GridViewType, GridViewType>::value,
+                "The GridViewType of SourceSpaceType and GridViewType have to match!");
   static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits>, MatrixType>::value,
                 "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
 
 public:
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_part());
-    return this->as_imp(*this).grid_part();
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
   }
 
   const RangeSpaceType& range_space() const
@@ -307,7 +307,7 @@ class AssemblableProductBaseTraits
 {
 public:
   typedef typename ImpTraits::derived_type derived_type;
-  typedef typename ImpTraits::GridPartType GridPartType;
+  typedef typename ImpTraits::GridViewType GridViewType;
   typedef typename ImpTraits::RangeSpaceType RangeSpaceType;
   typedef typename ImpTraits::SourceSpaceType SourceSpaceType;
   typedef typename ImpTraits::MatrixType MatrixType;
@@ -317,13 +317,13 @@ public:
 template <class ImpTraits>
 class AssemblableProductBase : public AssemblableProductInterface<AssemblableProductBaseTraits<ImpTraits>>,
                                public AssemblableProductInterface<ImpTraits>,
-                               public Functor::Codim0<typename ImpTraits::GridPartType>
+                               public Functor::Codim0<typename ImpTraits::GridViewType>
 {
   typedef AssemblableProductInterface<AssemblableProductBaseTraits<ImpTraits>> InterfaceType;
   typedef AssemblableProductBaseTraits<ImpTraits> Traits;
 
 public:
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeSpaceType RangeSpaceType;
   typedef typename Traits::SourceSpaceType SourceSpaceType;
   typedef typename Traits::MatrixType MatrixType;
@@ -337,9 +337,9 @@ private:
 public:
   using typename InterfaceType::EntityType;
 
-  AssemblableProductBase(const GridPartType& grid_part, const RangeSpaceType& range_space,
+  AssemblableProductBase(const GridViewType& grid_view, const RangeSpaceType& range_space,
                          const SourceSpaceType& source_space)
-    : grid_part_(grid_part)
+    : grid_view_(grid_view)
     , range_space_(range_space)
     , source_space_(source_space)
     , matrix_(LA::ContainerFactory<MatrixType>::create(range_space, source_space))
@@ -349,9 +349,9 @@ public:
   {
   }
 
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    return grid_part_;
+    return grid_view_;
   }
 
   const RangeSpaceType& range_space() const
@@ -404,7 +404,7 @@ public:
   void assemble()
   {
     if (!assembled_) {
-      GridWalker<GridPartType> grid_walker(grid_part_);
+      GridWalker<GridViewType> grid_walker(grid_view_);
       grid_walker.add(*this);
       grid_walker.walk();
       assembled_ = true;
@@ -421,7 +421,7 @@ public:
   } // ... apply2(...)
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
   const RangeSpaceType& range_space_;
   const SourceSpaceType& source_space_;
   MatrixType matrix_;
@@ -441,7 +441,7 @@ class OperatorInterface : public ProductInterface<Traits>
 public:
   typedef typename BaseType::FieldType FieldType;
   using BaseType::derived_type;
-  using BaseType::GridPartType;
+  using BaseType::GridViewType;
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, const RangeType& range) const

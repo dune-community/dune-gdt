@@ -44,16 +44,16 @@ const
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
  */
-template <class GridPartType>
+template <class GridViewType>
 class L2
 {
-  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  L2(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  L2(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {
   }
 
@@ -129,14 +129,14 @@ private:
     // clear
     Stuff::Common::clear(range.vector());
     // create search in the source grid part
-    typedef typename SourceFunctionType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef typename SourceFunctionType::SpaceType::GridViewType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
     EntitySearch entity_search(source.space().gridPart()->gridView());
     // walk the grid
     RangeType source_value(0);
     std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs());
-    const auto entity_it_end = grid_part_.template end<0>();
-    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end<0>();
+    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       // prepare
       const auto& entity     = *entity_it;
       const auto local_basis = range.space().baseFunctionSet(entity);
@@ -193,7 +193,7 @@ private:
     } // walk the grid
   } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
 
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class L2
 
 
@@ -208,15 +208,15 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
  */
-template <class GridPartType>
+template <class GridViewType>
 class Lagrange
 {
 public:
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
-  Lagrange(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  Lagrange(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {
   }
 
@@ -363,7 +363,7 @@ private:
   void prolong_onto_cg_fem_wrapper(const SourceType& source, RangeType& range) const
   {
     // create search in the source grid part
-    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef typename SourceType::SpaceType::GridViewType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
     EntitySearch entity_search(source.space().gridPart()->gridView());
     // set all range dofs to infinity
@@ -371,8 +371,8 @@ private:
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set_entry(ii, infinity);
     // walk the grid
-    const auto entity_it_end = grid_part_.template end<0>();
-    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end<0>();
+    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get global lagrange point coordinates
       const auto lagrange_point_set = range.space().backend().lagrangePointSet(entity);
@@ -395,16 +395,16 @@ private:
   void prolong_onto_cg_fem_localfunctions_wrapper(const SourceType& source, RangeType& range) const
   {
     // create search in the source grid part
-    typedef typename SourceType::SpaceType::GridPartType::GridViewType SourceGridViewType;
+    typedef typename SourceType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
-    EntitySearch entity_search(source.space().gridPart()->gridView());
+    EntitySearch entity_search(*(source.space().gridView()));
     // set all range dofs to infinity
     const auto infinity = std::numeric_limits<typename RangeType::RangeFieldType>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set_entry(ii, infinity);
     // walk the grid
-    const auto entity_it_end = grid_part_.template end<0>();
-    for (auto entity_it = grid_part_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end<0>();
+    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get global lagrange point coordinates
       const auto lagrange_point_set = range.space().lagrange_points(entity);
@@ -451,20 +451,20 @@ private:
     }
   } // ... apply_local(...)
 
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class Lagrange
 
 
-template <class GridPartType>
+template <class GridViewType>
 class Generic
 {
 public:
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
-  Generic(const GridPartType& grid_part)
-    : l2_prolongation_operator_(grid_part)
-    , lagrange_prolongation_operator_(grid_part)
+  Generic(const GridViewType& grid_view)
+    : l2_prolongation_operator_(grid_view)
+    , lagrange_prolongation_operator_(grid_view)
   {
   }
 
@@ -568,8 +568,8 @@ private:
     lagrange_prolongation_operator_.apply(source, range);
   }
 
-  const L2<GridPartType> l2_prolongation_operator_;
-  const Lagrange<GridPartType> lagrange_prolongation_operator_;
+  const L2<GridViewType> l2_prolongation_operator_;
+  const Lagrange<GridViewType> lagrange_prolongation_operator_;
 }; // class Generic
 
 

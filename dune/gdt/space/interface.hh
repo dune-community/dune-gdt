@@ -32,10 +32,10 @@ class SpaceInterface
 public:
   typedef typename Traits::derived_type derived_type;
 
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   static const int polOrder = Traits::polOrder;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
@@ -46,15 +46,15 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef typename GridPartType::IntersectionType IntersectionType;
+  typedef typename GridViewType::Intersection IntersectionType;
   typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  std::shared_ptr<const GridPartType> gridPart() const
+  std::shared_ptr<const GridViewType> gridView() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().gridPart());
-    return asImp().gridPart();
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().gridView());
+    return asImp().gridView();
   }
 
   const BackendType& backend() const
@@ -87,20 +87,20 @@ public:
     static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
     static_assert(polOrder == 1, "This does not seem to work for higher orders!");
     // check
-    assert(gridPart()->indexSet().contains(entity));
+    assert(gridView()->indexSet().contains(entity));
     // prepare
     std::set<size_t> localDirichletDofs;
     std::vector<typename BaseFunctionSetType::DomainType> dirichlet_vertices;
     // get all dirichlet vertices of this entity, therefore
     // * loop over all intersections
-    const auto intersection_it_end = gridPart()->iend(entity);
-    for (auto intersection_it = gridPart()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+    const auto intersection_it_end = gridView()->iend(entity);
+    for (auto intersection_it = gridView()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
       // only work on dirichlet ones
       const auto& intersection = *intersection_it;
       if (boundaryInfo.dirichlet(intersection)) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (size_t cc = 0; cc < geometry.corners(); ++cc)
+        for (int cc = 0; cc < geometry.corners(); ++cc)
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
       } // only work on dirichlet ones
     } // loop over all intersections
@@ -135,30 +135,29 @@ public:
   template <class OtherSpaceType>
   PatternType* computePattern(const OtherSpaceType& other) const
   {
-    return computePattern(*(gridPart()), other);
+    return computePattern(*(gridView()), other);
   }
 
-  template <class LocalGridPartType, class OtherSpaceType>
-  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
+  template <class LocalGridViewType, class OtherSpaceType>
+  PatternType* computePattern(const LocalGridViewType& localGridView, const OtherSpaceType& otherSpace) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().computePattern(localGridPart, otherSpace));
-    return asImp().computePattern(localGridPart, otherSpace);
+    CHECK_INTERFACE_IMPLEMENTATION(asImp().computePattern(localGridView, otherSpace));
+    return asImp().computePattern(localGridView, otherSpace);
   }
 
   /**
    *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class LocalGridPartType, class O>
-  PatternType* computeCodim0Pattern(const LocalGridPartType& localGridPart, const SpaceInterface<O>& otherSpace) const
+  template <class LocalGridViewType, class O>
+  PatternType* computeCodim0Pattern(const LocalGridViewType& localGridView, const SpaceInterface<O>& otherSpace) const
   {
     PatternType* ret     = new PatternType(mapper().size());
     PatternType& pattern = *ret;
     // walk the grid part
-    for (typename LocalGridPartType::template Codim<0>::IteratorType entityIt = localGridPart.template begin<0>();
-         entityIt != localGridPart.template end<0>();
-         ++entityIt) {
-      const typename LocalGridPartType::template Codim<0>::EntityType& entity = *entityIt;
+    const auto entityItEnd = localGridView.template end<0>();
+    for (auto entityIt = localGridView.template begin<0>(); entityIt != entityItEnd; ++entityIt) {
+      const auto& entity = *entityIt;
       // get basefunctionsets
       const auto testBase   = baseFunctionSet(entity);
       const auto ansatzBase = otherSpace.baseFunctionSet(entity);
@@ -178,11 +177,11 @@ public:
 
   PatternType* computeCodim0AndCodim1Pattern() const
   {
-    return computeCodim0AndCodim1Pattern(*(gridPart()), *this);
+    return computeCodim0AndCodim1Pattern(*(gridView()), *this);
   }
 
-  template <class LocalGridPartType>
-  PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part) const
+  template <class LocalGridViewType>
+  PatternType* computeCodim0AndCodim1Pattern(const LocalGridViewType& local_grid_part) const
   {
     return computeCodim0AndCodim1Pattern(local_grid_part, *this);
   }
@@ -191,8 +190,8 @@ public:
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class LocalGridPartType, class O>
-  PatternType* computeCodim0AndCodim1Pattern(const LocalGridPartType& local_grid_part,
+  template <class LocalGridViewType, class O>
+  PatternType* computeCodim0AndCodim1Pattern(const LocalGridViewType& local_grid_part,
                                              const SpaceInterface<O>& other_space) const
   {
     // prepare
@@ -241,8 +240,8 @@ public:
     return ret;
   } // ... computeVolumeAndCouplingPattern(...)
 
-  template <class LocalGridPartType, class O>
-  PatternType* computeCodim1Pattern(const LocalGridPartType& local_grid_part,
+  template <class LocalGridViewType, class O>
+  PatternType* computeCodim1Pattern(const LocalGridViewType& local_grid_part,
                                     const SpaceInterface<O>& other_space) const
   {
     // prepare
@@ -283,7 +282,7 @@ public:
   } // ... computeCodim1Pattern(...)
 
 private:
-  class BasisVisualization : public Dune::VTKFunction<typename GridPartType::GridViewType>
+  class BasisVisualization : public Dune::VTKFunction<typename GridViewType::GridViewType>
   {
     static_assert(dimRangeCols == 1, "Not implemented yet!");
 
@@ -345,8 +344,8 @@ public:
     if (filename.empty()) {
       filename = "dune.gdt.space";
     }
-    typedef typename Dune::VTKWriter<typename GridPartType::GridViewType> VTKWriterType;
-    VTKWriterType vtk_writer(gridPart()->gridView(), Dune::VTK::nonconforming);
+    typedef typename Dune::VTKWriter<typename GridViewType::GridViewType> VTKWriterType;
+    VTKWriterType vtk_writer(gridView()->gridView(), Dune::VTK::nonconforming);
     for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
       std::string number = "";
       if (ii == 1)

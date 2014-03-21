@@ -112,7 +112,7 @@ public:
 
   ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.gridPart()->indexSet().contains(entity));
+    assert(space_.gridView()->indexSet().contains(entity));
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
@@ -128,11 +128,11 @@ public:
    */
   void visualize(const std::string filename) const
   {
-    typedef typename SpaceType::GridPartType::GridViewType GridViewType;
+    typedef typename SpaceType::gridViewType::GridViewType GridViewType;
     if (filename.empty())
       DUNE_THROW(RangeError, "Empty filename given!");
     auto adapter = std::make_shared<Stuff::Function::VisualizationAdapter<GridViewType, dimRange>>(*this);
-    SubsamplingVTKWriter<GridViewType> vtk_writer(space_.gridPart()->gridView(), VTK::nonconforming);
+    SubsamplingVTKWriter<GridViewType> vtk_writer(space_.gridView()->gridView(), VTK::nonconforming);
     vtk_writer.addVertexData(adapter);
     vtk_writer.write(filename);
   } // ... visualize(...)
@@ -196,7 +196,7 @@ public:
 
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
-    assert(space_.gridPart()->indexSet().contains(entity));
+    assert(space_.gridView()->indexSet().contains(entity));
     return LocalDiscreteFunctionType(space_, vector_, entity);
   }
 
