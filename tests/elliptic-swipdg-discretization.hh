@@ -104,56 +104,59 @@ public:
 
   void assemble() const
   {
-    using namespace Dune;
-    using namespace Dune::GDT;
+    if (!is_assembled_) {
+      using namespace Dune;
+      using namespace Dune::GDT;
 
-    const std::unique_ptr<Stuff::LA::SparsityPatternDefault> sparsity_pattern(space_.computeCodim0AndCodim1Pattern());
-    system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
-    rhs_vector_    = VectorType(space_.mapper().size());
-    typedef SystemAssembler<SpaceType> SystemAssemblerType;
-    SystemAssemblerType systemAssembler(space_);
+      const std::unique_ptr<Stuff::LA::SparsityPatternDefault> sparsity_pattern(space_.computeCodim0AndCodim1Pattern());
+      system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+      rhs_vector_    = VectorType(space_.mapper().size());
+      typedef SystemAssembler<SpaceType> SystemAssemblerType;
+      SystemAssemblerType systemAssembler(space_);
 
-    // volume terms
-    // * lhs
-    typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<FunctionType>> EllipticOperatorType;
-    const EllipticOperatorType ellipticOperator(diffusion_);
-    const LocalAssembler::Codim0Matrix<EllipticOperatorType> diffusionMatrixAssembler(ellipticOperator);
-    systemAssembler.addLocalAssembler(diffusionMatrixAssembler, system_matrix_);
-    // * rhs
-    typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> ForceFunctionalType;
-    const ForceFunctionalType forceFunctional(force_);
-    const LocalAssembler::Codim0Vector<ForceFunctionalType> forceVectorAssembler(forceFunctional);
-    systemAssembler.addLocalAssembler(forceVectorAssembler, rhs_vector_);
-    // inner face terms
-    typedef LocalOperator::Codim1CouplingIntegral<LocalEvaluation::SWIPDG::Inner<FunctionType>> CouplingOperatorType;
-    const CouplingOperatorType couplingOperator(diffusion_, beta_);
-    const LocalAssembler::Codim1CouplingMatrix<CouplingOperatorType> couplingMatrixAssembler(couplingOperator);
-    systemAssembler.addLocalAssembler(
-        couplingMatrixAssembler, typename SystemAssemblerType::AssembleOnInnerPrimally(), system_matrix_);
-    // dirichlet boundary face terms
-    // * lhs
-    typedef LocalOperator::Codim1BoundaryIntegral<LocalEvaluation::SWIPDG::BoundaryLHS<FunctionType>>
-        DirichletOperatorType;
-    const DirichletOperatorType dirichletOperator(diffusion_, beta_);
-    const LocalAssembler::Codim1BoundaryMatrix<DirichletOperatorType> dirichletMatrixAssembler(dirichletOperator);
-    systemAssembler.addLocalAssembler(
-        dirichletMatrixAssembler, typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_), system_matrix_);
-    // * rhs
-    typedef LocalFunctional::Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<FunctionType, FunctionType>>
-        DirichletFunctionalType;
-    const DirichletFunctionalType dirichletFunctional(diffusion_, dirichlet_, beta_);
-    const LocalAssembler::Codim1Vector<DirichletFunctionalType> dirichletVectorAssembler(dirichletFunctional);
-    systemAssembler.addLocalAssembler(
-        dirichletVectorAssembler, typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_), rhs_vector_);
-    // neumann boundary face terms
-    // * rhs
-    typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> NeumannFunctionalType;
-    const NeumannFunctionalType neumannFunctional(neumann_);
-    const LocalAssembler::Codim1Vector<NeumannFunctionalType> neumannVectorAssembler(neumannFunctional);
-    systemAssembler.addLocalAssembler(
-        neumannVectorAssembler, typename SystemAssemblerType::AssembleOnNeumann(boundary_info_), rhs_vector_);
-    // do all the work
-    systemAssembler.assemble();
+      // volume terms
+      // * lhs
+      typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<FunctionType>> EllipticOperatorType;
+      const EllipticOperatorType ellipticOperator(diffusion_);
+      const LocalAssembler::Codim0Matrix<EllipticOperatorType> diffusionMatrixAssembler(ellipticOperator);
+      systemAssembler.addLocalAssembler(diffusionMatrixAssembler, system_matrix_);
+      // * rhs
+      typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> ForceFunctionalType;
+      const ForceFunctionalType forceFunctional(force_);
+      const LocalAssembler::Codim0Vector<ForceFunctionalType> forceVectorAssembler(forceFunctional);
+      systemAssembler.addLocalAssembler(forceVectorAssembler, rhs_vector_);
+      // inner face terms
+      typedef LocalOperator::Codim1CouplingIntegral<LocalEvaluation::SWIPDG::Inner<FunctionType>> CouplingOperatorType;
+      const CouplingOperatorType couplingOperator(diffusion_, beta_);
+      const LocalAssembler::Codim1CouplingMatrix<CouplingOperatorType> couplingMatrixAssembler(couplingOperator);
+      systemAssembler.addLocalAssembler(
+          couplingMatrixAssembler, typename SystemAssemblerType::AssembleOnInnerPrimally(), system_matrix_);
+      // dirichlet boundary face terms
+      // * lhs
+      typedef LocalOperator::Codim1BoundaryIntegral<LocalEvaluation::SWIPDG::BoundaryLHS<FunctionType>>
+          DirichletOperatorType;
+      const DirichletOperatorType dirichletOperator(diffusion_, beta_);
+      const LocalAssembler::Codim1BoundaryMatrix<DirichletOperatorType> dirichletMatrixAssembler(dirichletOperator);
+      systemAssembler.addLocalAssembler(
+          dirichletMatrixAssembler, typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_), system_matrix_);
+      // * rhs
+      typedef LocalFunctional::Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<FunctionType, FunctionType>>
+          DirichletFunctionalType;
+      const DirichletFunctionalType dirichletFunctional(diffusion_, dirichlet_, beta_);
+      const LocalAssembler::Codim1Vector<DirichletFunctionalType> dirichletVectorAssembler(dirichletFunctional);
+      systemAssembler.addLocalAssembler(
+          dirichletVectorAssembler, typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_), rhs_vector_);
+      // neumann boundary face terms
+      // * rhs
+      typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> NeumannFunctionalType;
+      const NeumannFunctionalType neumannFunctional(neumann_);
+      const LocalAssembler::Codim1Vector<NeumannFunctionalType> neumannVectorAssembler(neumannFunctional);
+      systemAssembler.addLocalAssembler(
+          neumannVectorAssembler, typename SystemAssemblerType::AssembleOnNeumann(boundary_info_), rhs_vector_);
+      // do all the work
+      systemAssembler.assemble();
+      is_assembled_ = true;
+    }
   } // ... solve()
 
   bool assembled() const

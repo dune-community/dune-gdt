@@ -96,61 +96,63 @@ public:
 
   void assemble() const
   {
-    using namespace Dune;
-    using namespace Dune::GDT;
+    if (!is_assembled_) {
+      using namespace Dune;
+      using namespace Dune::GDT;
 
-    const std::unique_ptr<Stuff::LA::SparsityPatternDefault> sparsity_pattern(space_.computePattern());
-    system_matrix_          = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
-    rhs_vector_             = VectorType(space_.mapper().size());
-    dirichlet_shift_vector_ = VectorType(space_.mapper().size());
+      const std::unique_ptr<Stuff::LA::SparsityPatternDefault> sparsity_pattern(space_.computePattern());
+      system_matrix_          = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+      rhs_vector_             = VectorType(space_.mapper().size());
+      dirichlet_shift_vector_ = VectorType(space_.mapper().size());
 
-    // left hand side
-    // * elliptic diffusion operator
-    typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<FunctionType>> EllipticOperatorType;
-    const EllipticOperatorType diffusion_operator(diffusion_);
-    // right hand side
-    // * L2 force functional
-    typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> L2VolumeFunctionalType;
-    const L2VolumeFunctionalType force_functional(force_);
-    // * L2 neumann functional
-    typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> L2FaceFunctionalType;
-    const L2FaceFunctionalType neumann_functional(neumann_);
+      // left hand side
+      // * elliptic diffusion operator
+      typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<FunctionType>> EllipticOperatorType;
+      const EllipticOperatorType diffusion_operator(diffusion_);
+      // right hand side
+      // * L2 force functional
+      typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> L2VolumeFunctionalType;
+      const L2VolumeFunctionalType force_functional(force_);
+      // * L2 neumann functional
+      typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> L2FaceFunctionalType;
+      const L2FaceFunctionalType neumann_functional(neumann_);
 
-    // dirichlet boundary values
-    DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_, "dirichlet");
-    typedef ProjectionOperator::Dirichlet<GridPartType> DirichletProjectionOperatorType;
-    const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
-    dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
+      // dirichlet boundary values
+      DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_, "dirichlet");
+      typedef ProjectionOperator::Dirichlet<GridPartType> DirichletProjectionOperatorType;
+      const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
+      dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
 
-    // local matrix assembler
-    typedef LocalAssembler::Codim0Matrix<EllipticOperatorType> LocalEllipticOperatorMatrixAssemblerType;
-    const LocalEllipticOperatorMatrixAssemblerType diffusion_matrix_assembler(diffusion_operator);
-    // local vector assemblers
-    // * force vector
-    typedef LocalAssembler::Codim0Vector<L2VolumeFunctionalType> LocalL2VolumeFunctionalVectorAssemblerType;
-    const LocalL2VolumeFunctionalVectorAssemblerType force_vector_assembler(force_functional);
-    // * neumann vector
-    typedef LocalAssembler::Codim1Vector<L2FaceFunctionalType> LocalL2FaceFunctionalVectorAssemblerType;
-    const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
-    // system assembler
-    typedef SystemAssembler<SpaceType> SystemAssemblerType;
-    SystemAssemblerType system_assembler(space_);
-    system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix_);
-    system_assembler.addLocalAssembler(force_vector_assembler, rhs_vector_);
-    system_assembler.addLocalAssembler(
-        neumann_vector_assembler, typename SystemAssemblerType::AssembleOnNeumann(boundary_info_), rhs_vector_);
-    system_assembler.assemble();
+      // local matrix assembler
+      typedef LocalAssembler::Codim0Matrix<EllipticOperatorType> LocalEllipticOperatorMatrixAssemblerType;
+      const LocalEllipticOperatorMatrixAssemblerType diffusion_matrix_assembler(diffusion_operator);
+      // local vector assemblers
+      // * force vector
+      typedef LocalAssembler::Codim0Vector<L2VolumeFunctionalType> LocalL2VolumeFunctionalVectorAssemblerType;
+      const LocalL2VolumeFunctionalVectorAssemblerType force_vector_assembler(force_functional);
+      // * neumann vector
+      typedef LocalAssembler::Codim1Vector<L2FaceFunctionalType> LocalL2FaceFunctionalVectorAssemblerType;
+      const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
+      // system assembler
+      typedef SystemAssembler<SpaceType> SystemAssemblerType;
+      SystemAssemblerType system_assembler(space_);
+      system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix_);
+      system_assembler.addLocalAssembler(force_vector_assembler, rhs_vector_);
+      system_assembler.addLocalAssembler(
+          neumann_vector_assembler, typename SystemAssemblerType::AssembleOnNeumann(boundary_info_), rhs_vector_);
+      system_assembler.assemble();
 
-    Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType> dirichlet_constraints(
-        boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
-    auto tmp = rhs_vector_.copy();
-    system_matrix_.mv(dirichlet_shift_vector_, tmp);
-    rhs_vector_ -= tmp;
-    system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix_);
-    system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector_);
-    system_assembler.applyConstraints();
+      Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType> dirichlet_constraints(
+          boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
+      auto tmp = rhs_vector_.copy();
+      system_matrix_.mv(dirichlet_shift_vector_, tmp);
+      rhs_vector_ -= tmp;
+      system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix_);
+      system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector_);
+      system_assembler.applyConstraints();
 
-    is_assembled_ = true;
+      is_assembled_ = true;
+    }
   } // ... assemble()
 
   bool assembled() const
