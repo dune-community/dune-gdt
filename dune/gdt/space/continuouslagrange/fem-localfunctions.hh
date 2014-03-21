@@ -8,7 +8,9 @@
 
 #include <memory>
 #include <limits>
+#include <type_traits>
 
+#include <dune/common/typetraits.hh>
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 
@@ -20,12 +22,16 @@
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
 
-#include <dune/fem/space/common/allgeomtypes.hh>
+#ifdef HAVE_DUNE_FEM
+# include <dune/fem/space/common/allgeomtypes.hh>
+#endif
 
-#include <dune/fem_localfunctions/localfunctions/transformations.hh>
-#include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
-#include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
-#include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
+#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+# include <dune/fem_localfunctions/localfunctions/transformations.hh>
+# include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
+# include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
+# include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
+#endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/common/float_cmp.hh>
@@ -39,10 +45,15 @@ namespace Dune {
 namespace GDT {
 namespace ContinuousLagrangeSpace {
 
+#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+
 
 // forward, to be used in the traits and to allow for specialization
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemLocalfunctionsWrapper;
+class FemLocalfunctionsWrapper
+{
+  static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
+};
 
 
 /**
@@ -474,6 +485,18 @@ private:
   mutable Dune::DynamicVector< size_t > tmp_global_indices_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
+
+#else // HAVE_DUNE_FEM_LOCALFUNCTIONS
+
+
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class FemLocalfunctionsWrapper
+{
+  static_assert(Dune::AlwaysFalse< GridPartImp >::value, "You are missing dune-fem-localfunctions!");
+};
+
+
+#endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 } // namespace ContinuousLagrangeSpace
 } // namespace GDT
