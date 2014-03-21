@@ -7,11 +7,14 @@
 #define DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
 
 #include <memory>
+#include <type_traits>
 
 #include <dune/common/typetraits.hh>
 
+#ifdef HAVE_DUNE_FEM
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrangespace.hh>
+#endif // HAVE_DUNE_FEM
 
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem.hh"
@@ -23,10 +26,15 @@ namespace Dune {
 namespace GDT {
 namespace ContinuousLagrangeSpace {
 
+#ifdef HAVE_DUNE_FEM
+
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class FemWrapper;
+class FemWrapper
+{
+  static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
+};
 
 
 /**
@@ -307,6 +315,18 @@ private:
   mutable Dune::DynamicVector<size_t> tmpMappedCols_;
 }; // class FemWrapper< ..., 1 >
 
+
+#else // HAVE_DUNE_FEM
+
+
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+class FemWrapper
+{
+  static_assert(Dune::AlwaysFalse<GridPartImp>::value, "You are missing dune-fem!");
+};
+
+
+#endif // HAVE_DUNE_FEM
 
 } // namespace ContinuousLagrangeSpace
 } // namespace GDT
