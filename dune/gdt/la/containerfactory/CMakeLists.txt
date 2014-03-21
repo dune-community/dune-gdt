@@ -2,11 +2,8 @@
 #   http://users.dune-project.org/projects/dune-gdt
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-set(BASEDIR ../..)
-set(CURDIR doc/doxygen)
-# include not needed for CMake
-# include $(top_srcdir)/am/doxygen
+set(la_containerfactory_includedir  ${CMAKE_INSTALL_INCLUDEDIR}/dune/gdt/la/containerfactory)
+set(la_containerfactory_include_HEADERS  common.hh)
 # include not needed for CMake
 # include $(top_srcdir)/am/global-rules
-# Create Doxyfile.in and Doxyfile, and doxygen documentation
-add_doxygen_target()
+install(FILES ${la_containerfactory_include_HEADERS} DESTINATION ${la_containerfactory_includedir})

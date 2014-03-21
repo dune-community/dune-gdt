@@ -2,11 +2,13 @@
 #   http://users.dune-project.org/projects/dune-gdt
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-set(BASEDIR ../..)
-set(CURDIR doc/doxygen)
-# include not needed for CMake
-# include $(top_srcdir)/am/doxygen
+set(SUBDIRS  gdt)
 # include not needed for CMake
 # include $(top_srcdir)/am/global-rules
-# Create Doxyfile.in and Doxyfile, and doxygen documentation
-add_doxygen_target()
+foreach(i ${SUBDIRS})
+  if(${i} STREQUAL "test")
+    set(opt EXCLUDE_FROM_ALL)
+  endif(${i} STREQUAL "test")
+  add_subdirectory(${i} ${opt})
+  unset(opt)
+endforeach(i ${SUBDIRS})
