@@ -6,9 +6,14 @@
 #ifndef DUNE_GDT_MAPPER_FEM_HH
 #define DUNE_GDT_MAPPER_FEM_HH
 
-#include <dune/common/dynvector.hh>
+#include <type_traits>
 
+#include <dune/common/dynvector.hh>
+#include <dune/common/typetraits.hh>
+
+#ifdef HAVE_DUNE_FEM
 #include <dune/fem/space/mapper/dofmapper.hh>
+#endif
 
 #include "interface.hh"
 
@@ -16,8 +21,10 @@ namespace Dune {
 namespace GDT {
 namespace Mapper {
 
+#ifdef HAVE_DUNE_FEM
 
-//// forward, to be used in the traits and to allow for specialization
+
+// forward, to be used in the traits and to allow for specialization
 template <class FemDofMapperImp>
 class FemDofWrapper;
 
@@ -117,6 +124,18 @@ private:
   const BackendType& backend_;
 }; // class FemDofWrapper
 
+
+#else // HAVE_DUNE_FEM
+
+
+template <class FemDofMapperImp>
+class FemDofWrapper
+{
+  static_assert(Dune::AlwaysFalse<FemDofMapperImp>::value, "You are missing dune-fem!");
+};
+
+
+#endif // HAVE_DUNE_FEM
 
 } // namespace Mapper
 } // namespace GDT
