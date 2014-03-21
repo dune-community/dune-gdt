@@ -15,9 +15,11 @@
 
 #include <dune/grid/common/capabilities.hh>
 
-#include <dune/pdelab/finiteelementmap/pkfem.hh>
-#include <dune/pdelab/finiteelementmap/qkfem.hh>
-#include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+#ifdef HAVE_DUNE_PDELAB
+# include <dune/pdelab/finiteelementmap/pkfem.hh>
+# include <dune/pdelab/finiteelementmap/qkfem.hh>
+# include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+#endif // HAVE_DUNE_PDELAB
 
 #include "../../mapper/pdelab.hh"
 #include "../../basefunctionset/pdelab.hh"
@@ -29,10 +31,15 @@ namespace Dune {
 namespace GDT {
 namespace ContinuousLagrangeSpace {
 
+#ifdef HAVE_DUNE_PDELAB
+
 
 // forward, to be used in the traits and to allow for specialization
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class PdelabWrapper;
+class PdelabWrapper
+{
+  static_assert((Dune::AlwaysFalse< GridPartImp >::value), "Untested for this combination of dimensions!");
+};
 
 
 /**
@@ -55,31 +62,33 @@ public:
   static const unsigned int             dimRangeCols = rangeDimCols;
 private:
   template< class G, bool single_geom, bool is_simplex, bool is_cube >
-  struct Choose
+  struct FeMap
   {
     static_assert(Dune::AlwaysFalse< G >::value,
                   "This space is only implemented for either fully simplicial or fully cubic grids!");
   };
   template< class G >
-  struct Choose< G, true, true, false >
+  struct FeMap< G, true, true, false >
   {
     typedef PDELab::PkLocalFiniteElementMap
-      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> FEMapType;
+      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
   template< class G >
-  struct Choose< G, true, false, true >
+  struct FeMap< G, true, false, true >
   {
     typedef PDELab::QkLocalFiniteElementMap
-      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> FEMapType;
+      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
   typedef typename GridPartType::GridType GridType;
-  typedef typename Choose< GridType, Dune::Capabilities::hasSingleGeometryType< GridType >::v
-                         , Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId == GenericGeometry::SimplexTopology< dimDomain >::type::id
-                         , Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId == GenericGeometry::CubeTopology< dimDomain >::type::id >::FEMapType
-    FEMapType;
+  static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType< GridType >::v;
+  static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId
+                                   == GenericGeometry::SimplexTopology< dimDomain >::type::id);
+  static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId
+                              == GenericGeometry::CubeTopology< dimDomain >::type::id);
+  typedef typename FeMap< GridType, single_geom_, simplicial_, cubic_ >::Type FEMapType;
 public:
   typedef PDELab::GridFunctionSpace< typename GridPartType::GridViewType, FEMapType > BackendType;
-  typedef Mapper::PdelabWrapper< BackendType > MapperType;
+  typedef Mapper::PdelabPkQk< BackendType > MapperType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef BaseFunctionSet::PdelabWrapper
       < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >
@@ -87,38 +96,6 @@ public:
 private:
   friend class PdelabWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
-
-
-
-// unspecialized version, to give better compile errors
-template< class GP, int p, class R, int r, int rC >
-class PdelabWrapper
-  : public SpaceInterface< PdelabWrapperTraits< GP, p, R, r, rC > >
-{
-public:
-  typedef PdelabWrapperTraits< GP, p, R, r, rC > Traits;
-
-  typedef typename Traits::GridPartType GridPartType;
-  static const int                      polOrder = Traits::polOrder;
-  typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridPartType::dimension;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
-
-  typedef typename Traits::BackendType          BackendType;
-  typedef typename Traits::MapperType           MapperType;
-  typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
-  typedef typename Traits::EntityType           EntityType;
-
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
-
-  PdelabWrapper(const std::shared_ptr< const GridPartType >& /*grid_prt*/)
-  {
-    static_assert((Dune::AlwaysFalse< GP >::value),
-                  "Not yet implemented for this combination of dimensions!");
-  }
-}; // PdelabWrapper
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
@@ -330,6 +307,18 @@ private:
   mutable Dune::DynamicVector< size_t > tmpMappedCols_;
 }; // class PdelabWrapper< ..., 1 >
 
+
+#else // HAVE_DUNE_PDELAB
+
+
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class PdelabWrapper
+{
+  static_assert((Dune::AlwaysFalse< GridPartImp >::value), "You are missing dune-pdelab!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB
 
 } // namespace ContinuousLagrangeSpace
 } // namespace GDT
