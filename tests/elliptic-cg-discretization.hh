@@ -20,7 +20,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localevaluation/product.hh>
@@ -41,33 +41,32 @@
 namespace EllipticCG {
 
 
-template <class GridPartType, int polynomialOrder, class MatrixImp = Dune::Stuff::LA::EigenRowMajorSparseMatrix<double>,
+template <class GridViewType, int polynomialOrder, class MatrixImp = Dune::Stuff::LA::EigenRowMajorSparseMatrix<double>,
           class VectorImp                                          = Dune::Stuff::LA::EigenDenseVector<double>>
 class Discretization
 {
 public:
-  static const unsigned int dimDomain = GridPartType::dimension;
-  typedef typename GridPartType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::ctype DomainFieldType;
 
   static const unsigned int dimRange = 1;
   typedef double RangeFieldType;
 
   static const unsigned int polOrder = polynomialOrder;
 
-  typedef Dune::Stuff::GridboundaryInterface<typename GridPartType::IntersectionType> BoundaryInfoType;
-  typedef Dune::Stuff::LocalizableFunctionInterface<typename GridPartType::template Codim<0>::EntityType,
-                                                    DomainFieldType, dimDomain, RangeFieldType, dimRange> FunctionType;
+  typedef Dune::Stuff::GridboundaryInterface<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::LocalizableFunctionInterface<typename GridViewType::template Codim<0>::Entity, DomainFieldType,
+                                                    dimDomain, RangeFieldType, dimRange> FunctionType;
 
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
 
-  typedef Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRange>
-      SpaceType;
+  typedef Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<GridViewType, polOrder, RangeFieldType, dimRange> SpaceType;
 
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
 
-  Discretization(const std::shared_ptr<const GridPartType>& gp, const BoundaryInfoType& info, const FunctionType& diff,
+  Discretization(const std::shared_ptr<const GridViewType>& gp, const BoundaryInfoType& info, const FunctionType& diff,
                  const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
     : space_(gp)
     , boundary_info_(info)
@@ -117,8 +116,8 @@ public:
 
       // dirichlet boundary values
       DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_, "dirichlet");
-      typedef ProjectionOperator::Dirichlet<GridPartType> DirichletProjectionOperatorType;
-      const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridPart()), boundary_info_);
+      typedef ProjectionOperator::Dirichlet<GridViewType> DirichletProjectionOperatorType;
+      const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridView()), boundary_info_);
       dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
 
       // local matrix assembler
@@ -140,7 +139,7 @@ public:
           neumann_vector_assembler, typename SystemAssemblerType::AssembleOnNeumann(boundary_info_), rhs_vector_);
       system_assembler.assemble();
 
-      Constraints::Dirichlet<typename GridPartType::IntersectionType, RangeFieldType> dirichlet_constraints(
+      Constraints::Dirichlet<typename GridViewType::Intersection, RangeFieldType> dirichlet_constraints(
           boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
       auto tmp = rhs_vector_.copy();
       system_matrix_.mv(dirichlet_shift_vector_, tmp);
@@ -209,7 +208,7 @@ class EocStudy : public Dune::Stuff::Common::ConvergenceStudy
   typedef Dune::Stuff::Common::ConvergenceStudy BaseType;
 
 protected:
-  typedef typename TestCase::GridPartType GridPartType;
+  typedef typename TestCase::GridViewType GridViewType;
   typedef typename TestCase::EntityType EntityType;
 
   typedef typename TestCase::DomainFieldType DomainFieldType;
@@ -217,7 +216,7 @@ protected:
   typedef typename TestCase::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = TestCase::dimRange;
 
-  typedef Discretization<GridPartType, polOrder> DiscretizationType;
+  typedef Discretization<GridViewType, polOrder> DiscretizationType;
   typedef typename DiscretizationType::VectorType VectorType;
   typedef typename DiscretizationType::DiscreteFunctionType DiscreteFunctionType;
   typedef typename DiscretizationType::ConstDiscreteFunctionType ConstDiscreteFunctionType;
@@ -271,7 +270,7 @@ public:
   virtual double norm_reference_solution(const std::string type) DS_OVERRIDE
   {
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_part()), test_.exact_solution(), type);
+      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
@@ -279,15 +278,15 @@ public:
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->space(), *reference_solution_vector_, "CG reference solution");
       // compute norm
-      return compute_norm(*(test_.reference_grid_part()), reference_solution, type);
+      return compute_norm(*(test_.reference_grid_view()), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
   virtual size_t current_grid_size() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return grid_part->grid().size(grid_part->level(), 0);
+    const auto grid_view = test_.level_grid_view(current_level_);
+    return grid_view->size(0);
   } // ... current_grid_size(...)
 
   virtual double current_grid_width() const DS_OVERRIDE
@@ -317,9 +316,9 @@ public:
     if (current_level_ != last_computed_level_) {
       assert(current_level_ < test_.num_levels());
       // compute solution
-      const auto grid_part = test_.level_grid_part(current_level_);
+      const auto grid_view = test_.level_grid_view(current_level_);
       const DiscretizationType discretization(
-          grid_part, test_.boundary_info(), test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
+          grid_view, test_.boundary_info(), test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
       auto current_level_solution_vector = discretization.create_vector();
       discretization.solve(current_level_solution_vector);
       const ConstDiscreteFunctionType current_level_solution(
@@ -329,8 +328,8 @@ public:
       if (!reference_solution_computed_)
         compute_reference_solution();
       timer.reset();
-      const auto reference_grid_part = test_.reference_grid_part();
-      const ProlongationOperator::Generic<GridPartType> prolongation_operator(*reference_grid_part);
+      const auto reference_grid_view = test_.reference_grid_view();
+      const ProlongationOperator::Generic<GridViewType> prolongation_operator(*reference_grid_view);
       assert(reference_discretization_);
       current_solution_vector_ =
           std::unique_ptr<VectorType>(new VectorType(reference_discretization_->create_vector()));
@@ -360,7 +359,7 @@ public:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Function::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      return compute_norm(*(test_.reference_grid_part()), difference, type);
+      return compute_norm(*(test_.reference_grid_view()), difference, type);
     } else {
       // get reference solution
       compute_reference_solution();
@@ -370,7 +369,7 @@ public:
           reference_discretization_->space(), *reference_solution_vector_, "CG reference solution");
       typedef Dune::Stuff::Function::Difference<ConstDiscreteFunctionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
-      return compute_norm(*(test_.reference_grid_part()), difference, type);
+      return compute_norm(*(test_.reference_grid_view()), difference, type);
     }
   } // ... current_error_norm(...)
 
@@ -446,7 +445,7 @@ private:
   {
     if (!reference_solution_computed_) {
       reference_discretization_ =
-          std::unique_ptr<DiscretizationType>(new DiscretizationType(test_.reference_grid_part(),
+          std::unique_ptr<DiscretizationType>(new DiscretizationType(test_.reference_grid_view(),
                                                                      test_.boundary_info(),
                                                                      test_.diffusion(),
                                                                      test_.force(),
@@ -459,16 +458,16 @@ private:
     }
   } // ... compute_reference_solution()
 
-  template <class GridPartType, class FunctionType>
-  double compute_norm(const GridPartType& grid_part, const FunctionType& function, const std::string type)
+  template <class GridViewType, class FunctionType>
+  double compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type)
   {
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      ProductOperator::L2Generic<GridPartType> l2_product_operator(grid_part);
+      ProductOperator::L2Generic<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      ProductOperator::H1SemiGeneric<GridPartType> h1_product_operator(grid_part);
+      ProductOperator::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
