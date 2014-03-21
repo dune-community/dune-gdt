@@ -330,7 +330,7 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_part = test_.reference_grid_part();
-      const ProlongationOperator::L2< GridPartType > prolongation_operator(*reference_grid_part);
+      const ProlongationOperator::Generic< GridPartType > prolongation_operator(*reference_grid_part);
       assert(reference_discretization_);
       current_solution_vector_
           = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));
