@@ -30,19 +30,19 @@ namespace GDT {
 
 
 template< class TestSpaceImp,
-          class GridPartImp = typename TestSpaceImp::GridPartType,
+          class GridViewImp = typename TestSpaceImp::GridViewType,
           class AnsatzSpaceImp = TestSpaceImp >
 class SystemAssembler
 {
 public:
-  typedef GridPartImp GridPartType;
+  typedef GridViewImp GridViewType;
   typedef SpaceInterface< typename TestSpaceImp::Traits >     TestSpaceType;
   typedef SpaceInterface< typename AnsatzSpaceImp::Traits >   AnsatzSpaceType;
-  typedef typename GridPartType::IntersectionType             IntersectionType;
+  typedef typename GridViewType::Intersection                 IntersectionType;
   typedef Dune::Stuff::GridboundaryInterface< IntersectionType > GridBoundaryType;
 
 private:
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename TestSpaceType::RangeFieldType RangeFieldType;
   typedef Dune::DynamicMatrix< RangeFieldType > LocalMatrixType;
   typedef Dune::DynamicVector< RangeFieldType > LocalVectorType;
@@ -56,7 +56,7 @@ public:
    *
    *  The derived class has to provide a method with the following signature:
    *  \code
-  bool assembleOn(const GridPartType& gridPart, const IntersectionType& intersection) const
+  bool assembleOn(const GridViewType& gridView, const IntersectionType& intersection) const
   {
     ...
   }
@@ -66,7 +66,7 @@ public:
   {
   public:
     virtual ~ AssembleOnFunctorInterface() {}
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& /*intersection*/) const = 0;
+    virtual bool assembleOn(const GridViewType& /*gridView*/, const IntersectionType& /*intersection*/) const = 0;
   };
 
   /**
@@ -82,7 +82,7 @@ public:
     : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
+    virtual bool assembleOn(const GridViewType& /*gridView*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return intersection.neighbor() && !intersection.boundary();
     }
@@ -102,14 +102,14 @@ public:
     : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& gridPart, const IntersectionType& intersection) const DS_OVERRIDE
+    virtual bool assembleOn(const GridViewType& gridView, const IntersectionType& intersection) const DS_OVERRIDE
     {
       if (intersection.neighbor() && !intersection.boundary()) {
         const auto insideEntityPtr = intersection.inside();
         const auto& insideEntity = *insideEntityPtr;
         const auto outsideNeighborPtr = intersection.outside();
         const auto& outsideNeighbor = *outsideNeighborPtr;
-        return gridPart.indexSet().index(insideEntity) < gridPart.indexSet().index(outsideNeighbor);
+        return gridView.indexSet().index(insideEntity) < gridView.indexSet().index(outsideNeighbor);
       } else
         return false;
     }
@@ -119,7 +119,7 @@ public:
     : public AssembleOnFunctorInterface
   {
   public:
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
+    virtual bool assembleOn(const GridViewType& /*gridView*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return intersection.boundary();
     }
@@ -133,7 +133,7 @@ public:
       : boundaryInfo_(boundaryInfo)
     {}
 
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
+    virtual bool assembleOn(const GridViewType& /*gridView*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return boundaryInfo_.dirichlet(intersection);
     }
@@ -150,7 +150,7 @@ public:
       : boundaryInfo_(boundaryInfo)
     {}
 
-    virtual bool assembleOn(const GridPartType& /*gridPart*/, const IntersectionType& intersection) const DS_OVERRIDE
+    virtual bool assembleOn(const GridViewType& /*gridView*/, const IntersectionType& intersection) const DS_OVERRIDE
     {
       return boundaryInfo_.neumann(intersection);
     }
@@ -209,7 +209,7 @@ private:
   public:
     virtual ~LocalCodim1MatrixAssemblerApplication(){}
 
-    virtual void apply(const GridPartType& /*gridPart*/,
+    virtual void apply(const GridViewType& /*gridView*/,
                        const TestSpaceType& /*_testSpace*/,
                        const AnsatzSpaceType& /*_ansatzSpace*/,
                        const IntersectionType& /*_intersection*/,
@@ -232,14 +232,14 @@ private:
       , matrix_(matrix)
     {}
 
-    virtual void apply(const GridPartType& gridPart,
+    virtual void apply(const GridViewType& gridView,
                        const TestSpaceType& testSpace,
                        const AnsatzSpaceType& ansatzSpace,
                        const IntersectionType& intersection,
                        LocalMatricesContainerType& localMatricesContainer,
                        IndicesContainer& indicesContainer) const DS_OVERRIDE
     {
-      if (functor_.assembleOn(gridPart, intersection))
+      if (functor_.assembleOn(gridView, intersection))
         localMatrixAssembler_.assembleLocal(testSpace, ansatzSpace,
                                             intersection,
                                             matrix_,
@@ -304,7 +304,7 @@ private:
   public:
     virtual ~LocalCodim1VectorAssemblerApplication(){}
 
-    virtual void apply(const GridPartType& /*gridPart*/,
+    virtual void apply(const GridViewType& /*gridView*/,
                        const TestSpaceType& /*_testSpace*/,
                        const IntersectionType& /*_intersection*/,
                        LocalVectorsContainerType& /*_localVectorsContainer*/,
@@ -326,13 +326,13 @@ private:
       , vector_(vector)
     {}
 
-    virtual void apply(const GridPartType& gridPart,
+    virtual void apply(const GridViewType& gridView,
                        const TestSpaceType& testSpace,
                        const IntersectionType& intersection,
                        LocalVectorsContainerType& localVectorsContainer,
                        Dune::DynamicVector< size_t >& indices) const DS_OVERRIDE
     {
-      if (functor_.assembleOn(gridPart, intersection))
+      if (functor_.assembleOn(gridView, intersection))
         localVectorAssembler_.assembleLocal(testSpace, intersection, vector_, localVectorsContainer, indices);
     }
 
@@ -348,28 +348,28 @@ private:
   }; // class LocalCodim1VectorAssemblerWrapper
 
 public:
-  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridPartType& grid_part)
+  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridViewType& grid_view)
     : testSpace_(test)
     , ansatzSpace_(ansatz)
-    , grid_part_(grid_part)
+    , grid_view_(grid_view)
   {}
 
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz)
     : testSpace_(test)
     , ansatzSpace_(ansatz)
-    , grid_part_(*(testSpace_.gridPart()))
+    , grid_view_(*(testSpace_.gridView()))
   {}
 
   SystemAssembler(const TestSpaceType& test)
     : testSpace_(test)
     , ansatzSpace_(testSpace_)
-    , grid_part_(*(testSpace_.gridPart()))
+    , grid_view_(*(testSpace_.gridView()))
   {}
 
-  SystemAssembler(const TestSpaceType& test, const GridPartType& grid_part)
+  SystemAssembler(const TestSpaceType& test, const GridViewType& grid_view)
     : testSpace_(test)
     , ansatzSpace_(testSpace_)
-    , grid_part_(grid_part)
+    , grid_view_(grid_view)
   {}
 
   ~SystemAssembler()
@@ -396,9 +396,9 @@ public:
     clearLocalConstraints();
   }
 
-  const GridPartType& gridPart() const
+  const GridViewType& gridView() const
   {
-    return grid_part_;
+    return grid_view_;
   }
 
   const TestSpaceType& testSpace() const
@@ -538,8 +538,8 @@ public:
       };
 
       // walk the grid
-      const auto entityEndIt = grid_part_.template end< 0 >();
-      for(auto entityIt = grid_part_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt ) {
+      const auto entityEndIt = grid_view_.template end< 0 >();
+      for(auto entityIt = grid_view_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt ) {
         const EntityType& entity = *entityIt;
 #ifdef DUNE_STUFF_PROFILER_ENABLED
       DSC_PROFILER.startTiming("GDT.SystemAssembler.assemble.local_codim0_matrix_assemblers");
@@ -564,8 +564,8 @@ public:
         // only walk the intersections, if there are local assemblers present
         if (codim1_assemblers_present) {
           // walk the intersections
-          const auto intersectionEndIt = grid_part_.iend(entity);
-          for (auto intersectionIt = grid_part_.ibegin(entity);
+          const auto intersectionEndIt = grid_view_.iend(entity);
+          for (auto intersectionIt = grid_view_.ibegin(entity);
                intersectionIt != intersectionEndIt;
                ++intersectionIt) {
             const auto& intersection = *intersectionIt;
@@ -574,7 +574,7 @@ public:
 #endif
             // call local matrix assemblers
             for (auto& localCodim1MatrixAssembler : localCodim1MatrixAssemblers_) {
-              localCodim1MatrixAssembler->apply(grid_part_, testSpace_, ansatzSpace_,
+              localCodim1MatrixAssembler->apply(grid_view_, testSpace_, ansatzSpace_,
                                                 intersection,
                                                 tmpLocalMatricesContainer, tmpIndices);
             }
@@ -586,7 +586,7 @@ public:
 #endif
             // call local vector assemblers
             for (auto& localCodim1VectorAssembler : localCodim1VectorAssemblers_) {
-              localCodim1VectorAssembler->apply(grid_part_, testSpace_, intersection, tmpLocalVectorsContainer, tmpIndices[0]);
+              localCodim1VectorAssembler->apply(grid_view_, testSpace_, intersection, tmpLocalVectorsContainer, tmpIndices[0]);
             }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
       DSC_PROFILER.stopTiming("GDT.SystemAssembler.assemble.local_codim1_vector_assemblers");
@@ -677,8 +677,8 @@ public:
   void applyConstraints() const
   {
     // walk the grid
-    const auto entityEndIt = grid_part_.template end< 0 >();
-    for (auto entityIt = grid_part_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt) {
+    const auto entityEndIt = grid_view_.template end< 0 >();
+    for (auto entityIt = grid_view_.template begin< 0 >(); entityIt != entityEndIt; ++entityIt) {
       const EntityType& entity = *entityIt;
       for (auto& localConstraints : localConstraints_)
         localConstraints->apply(testSpace_, entity);
@@ -688,7 +688,7 @@ public:
 private:
   const TestSpaceType& testSpace_;
   const AnsatzSpaceType& ansatzSpace_;
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
   std::vector< LocalCodim0MatrixAssemblerApplication* > localCodim0MatrixAssemblers_;
   std::vector< LocalCodim0VectorAssemblerApplication* > localCodim0VectorAssemblers_;
   std::vector< LocalCodim1MatrixAssemblerApplication* > localCodim1MatrixAssemblers_;

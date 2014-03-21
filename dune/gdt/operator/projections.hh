@@ -30,16 +30,16 @@ namespace GDT {
 namespace ProjectionOperator {
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class Lagrange;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class LagrangeTraits
 {
 public:
-  typedef Lagrange< GridPartImp, FieldImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef Lagrange< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 }; // class LagrangeTraits
 
@@ -50,23 +50,23 @@ public:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class Lagrange
 {
 public:
-  typedef LagrangeTraits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef LagrangeTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 
 private:
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
 
 public:
-  Lagrange(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  Lagrange(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {}
 
   template< class E, class D, int d, class R, int r, int rC, class T, class V >
@@ -88,8 +88,8 @@ public:
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set_entry(ii, infinity);
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
@@ -117,8 +117,8 @@ public:
     typedef DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 >, V >
         RangeFunctionType;
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
@@ -151,20 +151,20 @@ private:
     }
   } // ... apply_local(...)
 
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class Lagrange
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class L2;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class L2Traits
 {
 public:
-  typedef L2< GridPartImp, FieldImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef L2< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 }; // class L2Traits
 
@@ -174,21 +174,21 @@ public:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class L2
 {
 public:
-  typedef L2Traits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef L2Traits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 private:
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  L2(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  L2(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {}
 
   template< class E, class D, int d, class R, int r, int rC, class T, class V >
@@ -211,8 +211,8 @@ public:
     // walk the grid
     RangeType source_value(0);
     std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >();
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >();
          entity_it != entity_it_end;
          ++entity_it) {
       // prepare
@@ -255,20 +255,20 @@ public:
   } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, r, 1 > ...)
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class L2
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class Generic;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class GenericTraits
 {
 public:
-  typedef Generic< GridPartImp, FieldImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef Generic< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 }; // class GenericTraits
 
@@ -278,22 +278,22 @@ public:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class Generic
 {
 public:
-  typedef GenericTraits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef GenericTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 private:
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  Generic(const GridPartType& grid_part)
-    : lagrange_operator_(grid_part)
-    , l2_operator_(grid_part)
+  Generic(const GridViewType& grid_view)
+    : lagrange_operator_(grid_view)
+    , l2_operator_(grid_view)
   {}
 
   template< class SourceType, class RangeType >
@@ -338,21 +338,21 @@ private:
     l2_operator_.apply(source, range);
   }
 
-  const Lagrange< GridPartType > lagrange_operator_;
-  const L2< GridPartType > l2_operator_;
+  const Lagrange< GridViewType > lagrange_operator_;
+  const L2< GridViewType > l2_operator_;
 }; // Generic
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class Dirichlet;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class DirichletTraits
 {
 public:
-  typedef Dirichlet< GridPartImp, FieldImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef Dirichlet< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 }; // class DirichletTraits
 
@@ -364,24 +364,24 @@ public:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class Dirichlet
 {
 public:
-  typedef DirichletTraits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef DirichletTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
-  typedef Stuff::GridboundaryInterface< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Stuff::GridboundaryInterface< typename GridViewType::Intersection > BoundaryInfoType;
 private:
-  typedef typename GridPartType::ctype              DomainFieldType;
-  static const unsigned int                         dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype              DomainFieldType;
+  static const unsigned int                         dimDomain = GridViewType::dimension;
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
 
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 
 public:
-  Dirichlet(const GridPartType& grid_part, const BoundaryInfoType& boundary_info)
-    : grid_part_(grid_part)
+  Dirichlet(const GridViewType& grid_view, const BoundaryInfoType& boundary_info)
+    : grid_view_(grid_view)
     , boundary_info_(boundary_info)
   {}
 
@@ -402,8 +402,8 @@ public:
     // clear range
     Stuff::Common::clear(range.vector());
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
         const auto local_source = source.local_function(entity);
         auto local_range = range.local_discrete_function(entity);
@@ -428,8 +428,8 @@ public:
     // clear range
     Stuff::Common::clear(range.vector());
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
         const auto local_source = source.local_function(entity);
         auto local_range = range.local_discrete_function(entity);
@@ -445,13 +445,13 @@ public:
              DiscreteFunction< ContinuousLagrangeSpace::PdelabWrapper< GP, 1, R, 1, 1 >, V >& range) const
   {
     // checks
-    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > SpaceType;
+    typedef ContinuousLagrangeSpace::PdelabWrapper< GP, 1, R, 1, 1 > SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // clear range
     Stuff::Common::clear(range.vector());
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
         const auto local_source = source.local_function(entity);
         auto local_range = range.local_discrete_function(entity);
@@ -471,8 +471,8 @@ private:
   {
     assert(lagrange_points.size() == local_range_DoF_vector.size());
     // walk the intersections
-    const auto intersection_it_end = grid_part_.iend(entity);
-    for (auto intersection_it = grid_part_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+    const auto intersection_it_end = grid_view_.iend(entity);
+    for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
       const auto& intersection = *intersection_it;
       // only work on boundary intersections
       if (boundary_info_.dirichlet(intersection)) {
@@ -498,7 +498,7 @@ private:
     } // walk the intersections
   } // ... apply_local(...)
 
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
   const BoundaryInfoType& boundary_info_;
 }; // class Dirichlet
 

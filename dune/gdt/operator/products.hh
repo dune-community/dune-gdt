@@ -25,36 +25,36 @@ namespace ProductOperator {
 
 
 // forward, to be used in the traits
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class L2Base;
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
 class L2Localizable;
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class L2Assemblable;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class L2Traits
 {
 public:
-  typedef GridPartImp GridPartType;
+  typedef GridViewImp GridViewType;
 protected:
-  typedef Stuff::Function::Constant<  typename GridPartType::template Codim< 0 >::EntityType,
-                                      typename GridPartType::ctype,
-                                      GridPartType::dimension, FieldImp, 1 >  FunctionType;
+  typedef Stuff::Function::Constant<  typename GridViewType::template Codim< 0 >::Entity,
+                                      typename GridViewType::ctype,
+                                      GridViewType::dimension, FieldImp, 1 >  FunctionType;
 public:
   typedef LocalOperator::Codim0Integral< LocalEvaluation::Product< FunctionType > > LocalOperatorType;
 private:
-  friend class L2Base< GridPartImp, FieldImp >;
+  friend class L2Base< GridViewImp, FieldImp >;
 };
 
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class L2Base
 {
-  typedef typename L2Traits< GridPartImp, FieldImp >::FunctionType       FunctionType;
-  typedef typename L2Traits< GridPartImp, FieldImp >::LocalOperatorType  LocalOperatorType;
+  typedef typename L2Traits< GridViewImp, FieldImp >::FunctionType       FunctionType;
+  typedef typename L2Traits< GridViewImp, FieldImp >::LocalOperatorType  LocalOperatorType;
 
 public:
   L2Base()
@@ -69,37 +69,37 @@ protected:
 }; // class L2Base
 
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
 class L2LocalizableTraits
-  : public L2Traits< GridPartImp, FieldImp >
+  : public L2Traits< GridViewImp, FieldImp >
 {
 public:
-  typedef L2Localizable< GridPartImp, RangeImp, SourceImp, FieldImp > derived_type;
+  typedef L2Localizable< GridViewImp, RangeImp, SourceImp, FieldImp > derived_type;
   typedef RangeImp    RangeType;
   typedef SourceImp   SourceType;
   typedef FieldImp    FieldType;
 private:
-  friend class L2Localizable< GridPartImp, RangeImp, SourceImp, FieldImp >;
+  friend class L2Localizable< GridViewImp, RangeImp, SourceImp, FieldImp >;
 };
 
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
 class L2Localizable
-  : public LocalizableProductBase< L2LocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > >
-  , public L2Base< GridPartImp, FieldImp >
+  : public LocalizableProductBase< L2LocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > >
+  , public L2Base< GridViewImp, FieldImp >
 {
-  typedef LocalizableProductBase< L2LocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > > BaseType;
+  typedef LocalizableProductBase< L2LocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > > BaseType;
 public:
-  typedef L2LocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef L2LocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType    RangeType;
   typedef typename Traits::SourceType   SourceType;
 private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  L2Localizable(const GridPartType& grid_part, const RangeType& range, const SourceType& source)
-    : BaseType(grid_part, range, source)
+  L2Localizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
+    : BaseType(grid_view, range, source)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
@@ -109,30 +109,30 @@ public:
 }; // class L2Localizable
 
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class L2AssemblableTraits
-  : public L2Traits< GridPartImp, typename MatrixImp::ScalarType >
+  : public L2Traits< GridViewImp, typename MatrixImp::ScalarType >
 {
 public:
-  typedef L2Assemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > derived_type;
+  typedef L2Assemblable< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > derived_type;
   typedef RangeSpaceImp   RangeSpaceType;
   typedef SourceSpaceImp  SourceSpaceType;
   typedef MatrixImp       MatrixType;
 private:
-  friend class L2Assemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp >;
+  friend class L2Assemblable< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp >;
 };
 
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class L2Assemblable
-  : public AssemblableProductBase< L2AssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
-  , public L2Base< GridPartImp, typename MatrixImp::ScalarType >
+  : public AssemblableProductBase< L2AssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+  , public L2Base< GridViewImp, typename MatrixImp::ScalarType >
 {
-  typedef AssemblableProductBase< L2AssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+  typedef AssemblableProductBase< L2AssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
     BaseType;
 public:
-  typedef L2AssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > Traits;
-  typedef typename Traits::GridPartType     GridPartType;
+  typedef L2AssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > Traits;
+  typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
   typedef typename Traits::MatrixType       MatrixType;
@@ -140,8 +140,8 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  L2Assemblable(const GridPartType& grid_part, const RangeSpaceType& range_space, const SourceSpaceType& source_space)
-    : BaseType(grid_part, range_space, source_space)
+  L2Assemblable(const GridViewType& grid_view, const RangeSpaceType& range_space, const SourceSpaceType& source_space)
+    : BaseType(grid_view, range_space, source_space)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
@@ -151,40 +151,40 @@ public:
 }; // class L2Assemblable
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class L2Generic;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class L2GenericTraits
 {
 public:
-  typedef L2Generic< GridPartImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef L2Generic< GridViewImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 };
 
 
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class L2Generic
-  : public ProductInterface< L2GenericTraits< GridPartImp, FieldImp > >
+  : public ProductInterface< L2GenericTraits< GridViewImp, FieldImp > >
 {
 public:
-  typedef L2GenericTraits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef L2GenericTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
-  L2Generic(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  L2Generic(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {}
 
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    return grid_part_;
+    return grid_view_;
   }
 
   template< class RR, int rRR, int rCR, class RS, int rRS, int rCS >
@@ -202,46 +202,46 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > FunctionType;
-    L2Localizable< GridPartType, FunctionType, FunctionType, FieldType > product_operator(grid_part_, range, source);
+    L2Localizable< GridViewType, FunctionType, FunctionType, FieldType > product_operator(grid_view_, range, source);
     return product_operator.apply2();
   } // ... apply2(...)
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class L2Generic
 
 
 // forward, to be used in the traits
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class H1SemiBase;
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
 class H1SemiLocalizable;
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class H1SemiAssemblable;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class H1SemiTraits
 {
 public:
-  typedef GridPartImp GridPartType;
+  typedef GridViewImp GridViewType;
 protected:
-  typedef Stuff::Function::Constant<  typename GridPartType::template Codim< 0 >::EntityType,
-                                      typename GridPartType::ctype,
-                                      GridPartType::dimension, FieldImp, 1 >  FunctionType;
+  typedef Stuff::Function::Constant<  typename GridViewType::template Codim< 0 >::Entity,
+                                      typename GridViewType::ctype,
+                                      GridViewType::dimension, FieldImp, 1 >  FunctionType;
 public:
   typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > > LocalOperatorType;
 private:
-  friend class H1SemiBase< GridPartImp, FieldImp >;
+  friend class H1SemiBase< GridViewImp, FieldImp >;
 };
 
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class H1SemiBase
 {
-  typedef typename H1SemiTraits< GridPartImp, FieldImp >::FunctionType       FunctionType;
-  typedef typename H1SemiTraits< GridPartImp, FieldImp >::LocalOperatorType  LocalOperatorType;
+  typedef typename H1SemiTraits< GridViewImp, FieldImp >::FunctionType       FunctionType;
+  typedef typename H1SemiTraits< GridViewImp, FieldImp >::LocalOperatorType  LocalOperatorType;
 
 public:
   H1SemiBase()
@@ -256,37 +256,37 @@ protected:
 }; // class H1SemiBase
 
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
 class H1SemiLocalizableTraits
-  : public H1SemiTraits< GridPartImp, FieldImp >
+  : public H1SemiTraits< GridViewImp, FieldImp >
 {
 public:
-  typedef H1SemiLocalizable< GridPartImp, RangeImp, SourceImp, FieldImp > derived_type;
+  typedef H1SemiLocalizable< GridViewImp, RangeImp, SourceImp, FieldImp > derived_type;
   typedef RangeImp    RangeType;
   typedef SourceImp   SourceType;
   typedef FieldImp    FieldType;
 private:
-  friend class H1SemiLocalizable< GridPartImp, RangeImp, SourceImp, FieldImp >;
+  friend class H1SemiLocalizable< GridViewImp, RangeImp, SourceImp, FieldImp >;
 };
 
 
-template< class GridPartImp, class RangeImp, class SourceImp, class FieldImp >
+template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
 class H1SemiLocalizable
-  : public LocalizableProductBase< H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > >
-  , public H1SemiBase< GridPartImp, FieldImp >
+  : public LocalizableProductBase< H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > >
+  , public H1SemiBase< GridViewImp, FieldImp >
 {
-  typedef LocalizableProductBase< H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > > BaseType;
+  typedef LocalizableProductBase< H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > > BaseType;
 public:
-  typedef H1SemiLocalizableTraits< GridPartImp, RangeImp, SourceImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType    RangeType;
   typedef typename Traits::SourceType   SourceType;
 private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  H1SemiLocalizable(const GridPartType& grid_part, const RangeType& range, const SourceType& source)
-    : BaseType(grid_part, range, source)
+  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
+    : BaseType(grid_view, range, source)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
@@ -296,30 +296,30 @@ public:
 }; // class H1SemiLocalizable
 
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class H1SemiAssemblableTraits
-  : public H1SemiTraits< GridPartImp, typename MatrixImp::ScalarType >
+  : public H1SemiTraits< GridViewImp, typename MatrixImp::ScalarType >
 {
 public:
-  typedef H1SemiAssemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > derived_type;
+  typedef H1SemiAssemblable< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > derived_type;
   typedef RangeSpaceImp   RangeSpaceType;
   typedef SourceSpaceImp  SourceSpaceType;
   typedef MatrixImp       MatrixType;
 private:
-  friend class H1SemiAssemblable< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp >;
+  friend class H1SemiAssemblable< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp >;
 };
 
 
-template< class GridPartImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
+template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
 class H1SemiAssemblable
-  : public AssemblableProductBase< H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
-  , public H1SemiBase< GridPartImp, typename MatrixImp::ScalarType >
+  : public AssemblableProductBase< H1SemiAssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+  , public H1SemiBase< GridViewImp, typename MatrixImp::ScalarType >
 {
-  typedef AssemblableProductBase< H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
+  typedef AssemblableProductBase< H1SemiAssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > >
     BaseType;
 public:
-  typedef H1SemiAssemblableTraits< GridPartImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > Traits;
-  typedef typename Traits::GridPartType     GridPartType;
+  typedef H1SemiAssemblableTraits< GridViewImp, RangeSpaceImp, SourceSpaceImp, MatrixImp > Traits;
+  typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
   typedef typename Traits::MatrixType       MatrixType;
@@ -327,8 +327,8 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  H1SemiAssemblable(const GridPartType& grid_part, const RangeSpaceType& range_space, const SourceSpaceType& source_space)
-    : BaseType(grid_part, range_space, source_space)
+  H1SemiAssemblable(const GridViewType& grid_view, const RangeSpaceType& range_space, const SourceSpaceType& source_space)
+    : BaseType(grid_view, range_space, source_space)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
@@ -338,40 +338,40 @@ public:
 }; // class H1SemiAssemblable
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class H1SemiGeneric;
 
 
-template< class GridPartImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp = double >
 class H1SemiGenericTraits
 {
 public:
-  typedef H1SemiGeneric< GridPartImp > derived_type;
-  typedef GridPartImp GridPartType;
+  typedef H1SemiGeneric< GridViewImp > derived_type;
+  typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 };
 
 
-template< class GridPartImp, class FieldImp >
+template< class GridViewImp, class FieldImp >
 class H1SemiGeneric
-  : public ProductInterface< H1SemiGenericTraits< GridPartImp, FieldImp > >
+  : public ProductInterface< H1SemiGenericTraits< GridViewImp, FieldImp > >
 {
 public:
-  typedef H1SemiGenericTraits< GridPartImp, FieldImp > Traits;
-  typedef typename Traits::GridPartType GridPartType;
+  typedef H1SemiGenericTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
-  H1SemiGeneric(const GridPartType& grid_part)
-    : grid_part_(grid_part)
+  H1SemiGeneric(const GridViewType& grid_view)
+    : grid_view_(grid_view)
   {}
 
-  const GridPartType& grid_part() const
+  const GridViewType& grid_view() const
   {
-    return grid_part_;
+    return grid_view_;
   }
 
   template< class RR, int rRR, int rCR, class RS, int rRS, int rCS >
@@ -389,13 +389,13 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > FunctionType;
-    H1SemiLocalizable< GridPartType, FunctionType, FunctionType, FieldType >
-        product_operator(grid_part_, range, source);
+    H1SemiLocalizable< GridViewType, FunctionType, FunctionType, FieldType >
+        product_operator(grid_view_, range, source);
     return product_operator.apply2();
   } // ... apply2(...)
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
 }; // class H1SemiGeneric
 
 

@@ -35,27 +35,27 @@ namespace ContinuousLagrangeSpace {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class PdelabWrapper
 {
-  static_assert((Dune::AlwaysFalse< GridPartImp >::value), "Untested for this combination of dimensions!");
+  static_assert((Dune::AlwaysFalse< GridViewImp >::value), "Untested for this combination of dimensions!");
 };
 
 
 /**
  *  \brief Traits class for ContinuousLagrangeSpace::PdelabWrapper.
  */
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class PdelabWrapperTraits
 {
 public:
-  typedef PdelabWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
-  typedef GridPartImp                   GridPartType;
+  typedef PdelabWrapper< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
+  typedef GridViewImp                   GridViewType;
   static const int                      polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
-  typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridViewType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
   static const unsigned int             dimRange = rangeDim;
@@ -70,16 +70,14 @@ private:
   template< class G >
   struct FeMap< G, true, true, false >
   {
-    typedef PDELab::PkLocalFiniteElementMap
-      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::PkLocalFiniteElementMap < GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
   template< class G >
   struct FeMap< G, true, false, true >
   {
-    typedef PDELab::QkLocalFiniteElementMap
-      < typename GridPartType::GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::QkLocalFiniteElementMap < GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
-  typedef typename GridPartType::GridType GridType;
+  typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType< GridType >::v;
   static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId
                                    == GenericGeometry::SimplexTopology< dimDomain >::type::id);
@@ -87,30 +85,30 @@ private:
                               == GenericGeometry::CubeTopology< dimDomain >::type::id);
   typedef typename FeMap< GridType, single_geom_, simplicial_, cubic_ >::Type FEMapType;
 public:
-  typedef PDELab::GridFunctionSpace< typename GridPartType::GridViewType, FEMapType > BackendType;
+  typedef PDELab::GridFunctionSpace< GridViewType, FEMapType > BackendType;
   typedef Mapper::PdelabPkQk< BackendType > MapperType;
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef BaseFunctionSet::PdelabWrapper
       < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >
     BaseFunctionSetType;
 private:
-  friend class PdelabWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
+  friend class PdelabWrapper< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class PdelabWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< PdelabWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp >
+class PdelabWrapper< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >
+  : public SpaceInterface< PdelabWrapperTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
-  typedef SpaceInterface< PdelabWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
-  typedef PdelabWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >                         ThisType;
+  typedef SpaceInterface< PdelabWrapperTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
+  typedef PdelabWrapper< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >                         ThisType;
 public:
-  typedef PdelabWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
+  typedef PdelabWrapperTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
-  typedef typename Traits::GridPartType GridPartType;
+  typedef typename Traits::GridViewType GridViewType;
   static const int                      polOrder = Traits::polOrder;
-  typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridViewType::dimension;
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int               dimRange = Traits::dimRange;
@@ -127,18 +125,17 @@ private:
 public:
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  PdelabWrapper(const std::shared_ptr< const GridPartType >& gridP)
-    : gridPart_(gridP)
-    , fe_map_(std::make_shared< FEMapType >(gridPart_->gridView()))
-    , backend_(std::make_shared< BackendType >(const_cast< GridPartType& >(*gridPart_).gridView(),
-                                               *fe_map_))
+  PdelabWrapper(const std::shared_ptr< const GridViewType >& gV)
+    : gridView_(gV)
+    , fe_map_(std::make_shared< FEMapType >(*(gridView_)))
+    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*gridView_), *fe_map_))
     , mapper_(std::make_shared< MapperType >(*backend_))
     , tmpMappedRows_(mapper_->maxNumDofs())
     , tmpMappedCols_(mapper_->maxNumDofs())
   {}
 
   PdelabWrapper(const ThisType& other)
-    : gridPart_(other.gridPart_)
+    : gridView_(other.gridView_)
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
@@ -149,7 +146,7 @@ public:
   ThisType& operator=(const ThisType& other)
   {
     if (this != &other) {
-      gridPart_ = other.gridPart_;
+      gridView_ = other.gridView_;
       fe_map_ = other.fe_map_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
@@ -161,9 +158,9 @@ public:
 
   ~PdelabWrapper() {}
 
-  const std::shared_ptr< const GridPartType >& gridPart() const
+  const std::shared_ptr< const GridViewType >& gridView() const
   {
-    return gridPart_;
+    return gridView_;
   }
 
   const BackendType& backend() const
@@ -194,7 +191,7 @@ public:
 
   void localConstraints(const EntityType& entity,
                         Constraints::Dirichlet
-                          < typename GridPartType::IntersectionType, RangeFieldType, true >& ret) const
+                          < typename GridViewType::Intersection, RangeFieldType, true >& ret) const
   {
     static_assert(dimDomain == 2, "Not tested for other dimensions!");
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -229,7 +226,7 @@ public:
 
   void localConstraints(const EntityType& entity,
                         Constraints::Dirichlet
-                          < typename GridPartType::IntersectionType, RangeFieldType, false >& ret) const
+                          < typename GridViewType::Intersection, RangeFieldType, false >& ret) const
   {
     static_assert(dimDomain == 2, "Not tested for other dimensions!");
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -260,10 +257,10 @@ public:
 
   using BaseType::computePattern;
 
-  template< class LocalGridPartType, class OtherSpaceType >
-  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
+  template< class LocalGridViewType, class OtherSpaceType >
+  PatternType* computePattern(const LocalGridViewType& localgridView, const OtherSpaceType& otherSpace) const
   {
-    return BaseType::computeCodim0Pattern(localGridPart, otherSpace);
+    return BaseType::computeCodim0Pattern(localgridView, otherSpace);
   }
 
   std::vector< DomainType > lagrange_points(const EntityType& entity) const
@@ -299,7 +296,7 @@ public:
   } // ... lagrange_points(...)
 
 private:
-  std::shared_ptr< const GridPartType > gridPart_;
+  std::shared_ptr< const GridViewType > gridView_;
   std::shared_ptr< const FEMapType > fe_map_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
@@ -311,10 +308,10 @@ private:
 #else // HAVE_DUNE_PDELAB
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class PdelabWrapper
 {
-  static_assert((Dune::AlwaysFalse< GridPartImp >::value), "You are missing dune-pdelab!");
+  static_assert((Dune::AlwaysFalse< GridViewImp >::value), "You are missing dune-pdelab!");
 };
 
 
