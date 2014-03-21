@@ -6,9 +6,14 @@
 #ifndef DUNE_GDT_MAPPER_PDELAB_HH
 #define DUNE_GDT_MAPPER_PDELAB_HH
 
-#include <dune/common/dynvector.hh>
+#include <type_traits>
 
-#include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+#include <dune/common/dynvector.hh>
+#include <dune/common/typetraits.hh>
+
+#ifdef HAVE_DUNE_PDELAB
+# include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+#endif
 
 #include "interface.hh"
 
@@ -16,35 +21,40 @@ namespace Dune {
 namespace GDT {
 namespace Mapper {
 
-
-//// forward, to be used in the traits and to allow for specialization
-template< class PdelabSpaceImp >
-class PdelabWrapper;
+#ifdef HAVE_DUNE_PDELAB
 
 
-template< class PdelabSpaceImp >
-class PdelabWrapperTraits
+// forward, to be used in the traits and to allow for specialization
+template< class PdelabSpaceImp, int p = 1, int r = 1, int rR = 1 >
+class PdelabPkQk
+{
+  static_assert(Dune::AlwaysFalse< PdelabSpaceImp >::value, "Not (yet) implemented for these dimensions!");
+};
+
+
+template< class PdelabSpaceImp, int p = 1, int r = 1, int rR = 1 >
+class PdelabPkQkTraits
 {
 public:
-  typedef PdelabWrapper< PdelabSpaceImp > derived_type;
+  typedef PdelabPkQk< PdelabSpaceImp > derived_type;
   typedef PdelabSpaceImp BackendType;
 };
 
 
-template< class PdelabSpaceType >
-class PdelabWrapper
-  : public MapperInterface< PdelabWrapperTraits< PdelabSpaceType > >
+template< class PdelabSpaceImp >
+class PdelabPkQk< PdelabSpaceImp, 1, 1, 1 >
+  : public MapperInterface< PdelabPkQkTraits< PdelabSpaceImp, 1, 1, 1 > >
 {
-  typedef MapperInterface< PdelabWrapperTraits< PdelabSpaceType > > InterfaceType;
+  typedef MapperInterface< PdelabPkQkTraits< PdelabSpaceImp, 1, 1, 1 > > InterfaceType;
 public:
-  typedef PdelabWrapperTraits< PdelabSpaceType > Traits;
-  typedef typename Traits::BackendType           BackendType;
+  typedef PdelabPkQkTraits< PdelabSpaceImp, 1, 1, 1 > Traits;
+  typedef typename Traits::BackendType                BackendType;
 private:
   typedef PDELab::LocalFunctionSpace< BackendType, PDELab::TrialSpaceTag > PdeLabLFSType;
 
 public:
-  PdelabWrapper(const BackendType& space)
-    : backend_(space)
+  PdelabPkQk(const BackendType& pdelab_space)
+    : backend_(pdelab_space)
     , lfs_(backend_)
   {}
 
@@ -63,7 +73,7 @@ public:
   {
     lfs_.bind(entity);
     return lfs_.size();
-  }
+  } // ... numDofs(...)
 
   size_t maxNumDofs() const
   {
@@ -97,8 +107,20 @@ public:
 private:
   const BackendType& backend_;
   mutable PdeLabLFSType lfs_;
-}; // class PdelabWrapper
+}; // class PdelabPkQk
 
+
+#else // HAVE_DUNE_PDELAB
+
+
+template< class PdelabSpaceImp, int p = 1, int r = 1, int rR = 1 >
+class PdelabPkQk
+{
+  static_assert(Dune::AlwaysFalse< PdelabSpaceImp >::value, "You are missing dune-pdelab!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB
 
 } // namespace Mapper
 } // namespace GDT
