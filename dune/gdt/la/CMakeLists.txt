@@ -2,16 +2,12 @@
 #   http://users.dune-project.org/projects/dune-gdt
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-set(SUBDIRS  doxygen)
-set(CURDIR  doc)
-set(BASEDIR  ..)
-# add list of html files to generate from wml
-set(PAGES )
-set(docdir ${CMAKE_INSTALL_DOCDIR}/dune-gdt)
-# include not needed for CMake
-# include $(top_srcdir)/am/webstuff
+set(SUBDIRS  containerfactory)
+set(la_includedir  ${CMAKE_INSTALL_INCLUDEDIR}/dune/gdt/la)
+set(la_include_HEADERS  containerfactory.hh)
 # include not needed for CMake
 # include $(top_srcdir)/am/global-rules
+install(FILES ${la_include_HEADERS} DESTINATION ${la_includedir})
 foreach(i ${SUBDIRS})
   if(${i} STREQUAL "test")
     set(opt EXCLUDE_FROM_ALL)

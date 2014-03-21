@@ -5,7 +5,7 @@
 
 enable_testing()
 
-HEADERCHECK( ${gdt} )
+#HEADERCHECK( ${gdt} )
 #DEPENDENCYCHECK( ${gdt} )
 
 BEGIN_TESTCASES()

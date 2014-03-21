@@ -2,11 +2,10 @@
 #   http://users.dune-project.org/projects/dune-gdt
 # Copyright holders: Felix Albrecht
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-set(BASEDIR ../..)
-set(CURDIR doc/doxygen)
-# include not needed for CMake
-# include $(top_srcdir)/am/doxygen
+set(M4FILES  dune-gdt.m4)
+set(aclocaldir  ${CMAKE_INSTALL_DATADIR}/aclocal)
+set(aclocal_DATA  ${M4FILES})
+set(EXTRA_DIST  ${M4FILES})
 # include not needed for CMake
 # include $(top_srcdir)/am/global-rules
-# Create Doxyfile.in and Doxyfile, and doxygen documentation
-add_doxygen_target()
+install(FILES ${aclocal_DATA} DESTINATION ${aclocaldir})
