@@ -6,11 +6,16 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 
+#include <type_traits>
+
+#include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
-#include <dune/fem/space/basefunctions/basefunctionsetinterface.hh>
-#include <dune/fem/space/common/discretefunctionspace.hh>
+#ifdef HAVE_DUNE_FEM
+# include <dune/fem/space/basefunctions/basefunctionsetinterface.hh>
+# include <dune/fem/space/common/discretefunctionspace.hh>
+#endif // HAVE_DUNE_FEM
 
 #include <dune/stuff/common/memory.hh>
 
@@ -20,12 +25,17 @@ namespace Dune {
 namespace GDT {
 namespace BaseFunctionSet {
 
+#ifdef HAVE_DUNE_FEM
+
 
 // forward, to be used in the traits and to allow for specialization
 template< class FemBaseFunctionSetTraits, class EntityImp,
           class DomainFieldImp, int domainDim,
           class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemWrapper;
+class FemWrapper
+{
+  static_assert(Dune::AlwaysFalse< FemBaseFunctionSetTraits >::value, "Untested for these dimensions!");
+};
 
 
 template< class FemBaseFunctionSetTraits, class EntityImp,
@@ -124,6 +134,20 @@ private:
   std::unique_ptr< const BackendType > backend_;
 }; // class FemWrapper
 
+
+#else // HAVE_DUNE_FEM
+
+
+template< class FemBaseFunctionSetTraits, class EntityImp,
+          class DomainFieldImp, int domainDim,
+          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class FemWrapper
+{
+  static_assert(Dune::AlwaysFalse< FemBaseFunctionSetTraits >::value, "You are missing dune-fem!");
+};
+
+
+#endif // HAVE_DUNE_FEM
 
 } // namespace BaseFunctionSet
 } // namespace GDT
