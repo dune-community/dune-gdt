@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -8,8 +8,10 @@
 
 #include <memory>
 #include <vector>
+#include <sstream>
 
 #include <dune/common/typetraits.hh>
+#include <dune/common/fvector.hh>
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
@@ -21,6 +23,7 @@
 #include <dune/grid/part/leaf.hh>
 
 #include <dune/stuff/grid/provider/cube.hh>
+#include <dune/stuff/common/print.hh>
 
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
@@ -30,106 +33,18 @@
 #include <dune/gdt/basefunctionset/interface.hh>
 
 
-// +---------------------------------------------------+
-// | Definition of all Grids and GridParts of interest |
-// +---------------------------------------------------+
-typedef Dune::SGrid< 1, 1 >                           S1dGridType;
-typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
-typedef Dune::SGrid< 2, 2 >                           S2dGridType;
-typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dGridPartType;
-typedef Dune::SGrid< 3, 3 >                           S3dGridType;
-typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dGridPartType;
-
-typedef Dune::YaspGrid< 1 >                             Yasp1dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dGridPartType;
-typedef Dune::YaspGrid< 2 >                             Yasp2dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
-typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
-
-#if HAVE_ALUGRID
-typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dGridPartType;
-typedef Dune::ALUSimplexGrid< 2, 2 >                          AluSimplex2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dGridPartType;
-typedef Dune::ALUSimplexGrid< 3, 3 >                          AluSimplex3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dGridPartType;
-typedef Dune::ALUCubeGrid< 3, 3 >                             AluCube3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartType;
-#endif
-
-typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 3 >
-#if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 3 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 2 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 3 >
-#endif
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp3dGridPartType, 1, double, 1 >
-#if HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluCube3dGridPartType, 1, double, 1 >
-#endif
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 >
-#ifdef HAVE_ALUGRID
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-#endif
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 >
-#ifdef HAVE_ALUGRID
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
-                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
-#endif
-                      > SpaceTypes;
-
 template< class SpaceType >
-struct Spaces
+struct Any_Space
   : public ::testing::Test
 {
   typedef typename SpaceType::GridPartType          GridPartType;
   typedef typename GridPartType::GridType           GridType;
   typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
 
-  void crtp_check() const
+  void fulfills_interface() const
   {
     // grid
-    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const GridProviderType grid_provider(0.0, 1.0, 2u);
     const auto grid_ptr = grid_provider.grid();
     const auto grid_part = std::make_shared< const GridPartType >(*grid_ptr);
     // check the space
@@ -195,14 +110,249 @@ struct Spaces
     std::vector< B_JacobianRangeType > jacobians(b_size, B_JacobianRangeType(0));
     baseFunctionSetAsInterface.evaluate(x, values);
     baseFunctionSetAsInterface.jacobian(x, jacobians);
-  } // ... crtp_check()
-}; // struct Spaces
+  } // ... fulfills_interface()
+}; // struct Any_Space
 
 
-TYPED_TEST_CASE(Spaces, SpaceTypes);
-TYPED_TEST(Spaces, crtp_check)
+template< class SpaceType >
+struct P1Q1_Continuous_Lagrange
+  : public ::testing::Test
 {
-  this->crtp_check();
+  typedef typename SpaceType::GridPartType          GridPartType;
+  typedef typename GridPartType::GridType           GridType;
+  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  static const unsigned int dimDomain = GridType::dimension;
+  typedef typename GridType::ctype DomainFieldType;
+  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
+
+  static std::vector< DomainFieldType > convert_vector(const DomainType& source)
+  {
+    std::vector< DomainFieldType > ret(dimDomain, DomainFieldType(0));
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      ret[ii] = source[ii];
+    return ret;
+  }
+
+  void maps_correctly()
+  {
+    using namespace Dune;
+    using namespace Dune::Stuff;
+    using namespace Dune::GDT;
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    grid_provider.visualize("grid");
+    const auto grid_ptr = grid_provider.grid();
+    const auto grid_part = std::make_shared< const GridPartType >(*grid_ptr);
+    const SpaceType space(grid_part);
+    // walk the grid to create a map of all vertices
+    std::map< std::vector< DomainFieldType >, std::set< size_t > > vertex_to_indices_map;
+    const auto entity_end_it = grid_part->template end< 0 >();
+    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+      const auto& entity = *entity_it;
+      for (int cc = 0; cc < entity.template count< dimDomain >(); ++cc) {
+        const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
+        const DomainType vertex = vertex_ptr->geometry().center();
+        vertex_to_indices_map[convert_vector(vertex)] = std::set< size_t >();
+      }
+    }
+    // walk the grid again to find all DoF ids
+    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+      const auto& entity = *entity_it;
+      const int num_vertices = entity.template count< dimDomain >();
+      const auto basis = space.baseFunctionSet(entity);
+      if (basis.size() != num_vertices)
+        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis.size() = " << basis.size());
+      for (int cc = 0; cc < num_vertices; ++cc) {
+        const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
+        const DomainType vertex = vertex_ptr->geometry().center();
+        // find the local basis function which corresponds to this vertex
+        const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
+        if (basis_values.size() != num_vertices)
+          DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+        size_t matches = 0;
+        size_t misses = 0;
+        size_t local_DoF_index = 0;
+        for (size_t ii = 0; ii < num_vertices; ++ii) {
+          if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
+            local_DoF_index = ii;
+            ++matches;
+          } else
+            ++misses;
+        }
+        if (matches != 1 || misses != (num_vertices - 1)) {
+          std::stringstream ss;
+          ss << "matches = " << matches << ", misses = " << misses << ", num_vertices = "
+             << num_vertices << ", entity " << grid_part->indexSet().index(entity)
+             << ", vertex " << cc << ": [ " << vertex << "], ";
+          Common::print(basis_values, "basis_values", ss);
+          DUNE_THROW_COLORFULLY(Exceptions::internal_error, ss.str());
+        }
+        // now we know that the local DoF index of this vertex is ii
+        const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
+        vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
+      }
+    }
+    // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive
+    std::set< size_t > global_DoF_indices;
+    for (const auto& entry : vertex_to_indices_map) {
+      const auto vertex_ids = entry.second;
+      if (vertex_ids.size() != 1)
+        DUNE_THROW_COLORFULLY(Exceptions::internal_error, vertex_ids.size());
+      global_DoF_indices.insert(*(vertex_ids.begin()));
+    }
+    if (vertex_to_indices_map.size() != global_DoF_indices.size())
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error,
+                            "vertex_to_indices_map.size() = " << vertex_to_indices_map.size()
+                            << ", global_DoF_indices.size() = " << global_DoF_indices.size());
+    size_t count = 0;
+    for (const auto& global_DoF_id : global_DoF_indices) {
+      if (global_DoF_id != count)
+        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
+      ++count;
+    }
+  } // ... maps_correctly()
+}; // struct P1Q1_Continuous_Lagrange
+
+
+typedef Dune::SGrid< 1, 1 >                           S1dGridType;
+typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
+typedef Dune::SGrid< 2, 2 >                           S2dGridType;
+typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dGridPartType;
+typedef Dune::SGrid< 3, 3 >                           S3dGridType;
+typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dGridPartType;
+
+typedef Dune::YaspGrid< 1 >                             Yasp1dGridType;
+typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dGridPartType;
+typedef Dune::YaspGrid< 2 >                             Yasp2dGridType;
+typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
+typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
+typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
+
+#if HAVE_ALUGRID
+typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dGridPartType;
+typedef Dune::ALUSimplexGrid< 2, 2 >                          AluSimplex2dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dGridPartType;
+typedef Dune::ALUSimplexGrid< 3, 3 >                          AluSimplex3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dGridPartType;
+typedef Dune::ALUCubeGrid< 3, 3 >                             AluCube3dGridType;
+typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartType;
+#endif
+
+#define P1_CONTINUOUS_LAGRANGE_SPACES \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridPartType, 1, double, 1 >
+
+#ifdef HAVE_ALUGRID
+# define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluConform2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+#endif // HAVE_ALUGRID
+
+#define P2_CONTINUOUS_LAGRANGE_SPACES \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 2 >
+
+#ifdef HAVE_ALUGRID
+# define P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 2 >
+#endif // HAVE_ALUGRID
+
+#define Q1_CONTINUOUS_LAGRANGE_SPACES \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp3dGridPartType, 1, double, 1 >
+
+#ifdef HAVE_ALUGRID
+# define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluCube3dGridPartType, 1, double, 1 >
+#endif // HAVE_ALUGRID
+
+#define Q2_CONTINUOUS_LAGRANGE_SPACES \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S3dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp3dGridPartType, 1, double, 2 >
+
+#ifdef HAVE_ALUGRID
+# define Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dGridPartType, 1, double, 2 >
+#endif // HAVE_ALUGRID
+
+typedef testing::Types< P1_CONTINUOUS_LAGRANGE_SPACES
+#ifdef HAVE_ALUGRID
+                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      , Q1_CONTINUOUS_LAGRANGE_SPACES
+#ifdef P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      > P1Q1_Continuous_Lagrange_Spaces;
+
+typedef testing::Types< P1_CONTINUOUS_LAGRANGE_SPACES
+#ifdef HAVE_ALUGRID
+                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      , P2_CONTINUOUS_LAGRANGE_SPACES
+#ifdef HAVE_ALUGRID
+                      , P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      , Q1_CONTINUOUS_LAGRANGE_SPACES
+#ifdef HAVE_ALUGRID
+                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      , Q2_CONTINUOUS_LAGRANGE_SPACES
+#ifdef HAVE_ALUGRID
+                      , Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#endif
+                      > All_Spaces;
+
+//                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
+//                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 >
+//#ifdef HAVE_ALUGRID
+//                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 >
+//                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 >
+//                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 >
+//#endif
+
+
+TYPED_TEST_CASE(Any_Space, All_Spaces);
+TYPED_TEST(Any_Space, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
+TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
+{
+  this->maps_correctly();
 }
 
 
@@ -221,4 +371,4 @@ int main(int argc, char** argv)
     std::cerr << "Unknown exception thrown!" << std::endl;
     std::abort();
   } // try
-}
+} // ... main(...)
