@@ -48,6 +48,6 @@ foreach(i ${SUBDIRS})
 endforeach(i ${SUBDIRS})
 
 add_subdirectory(cmake/modules)
-add_subdirectory(tests)
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 # finalize the dune project, e.g., generate config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
