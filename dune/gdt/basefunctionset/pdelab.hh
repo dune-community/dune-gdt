@@ -13,7 +13,9 @@
 
 #include <dune/common/typetraits.hh>
 
+#ifdef HAVE_DUNE_PDELAB
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+#endif
 
 #include <dune/stuff/common/memory.hh>
 
@@ -23,6 +25,7 @@ namespace Dune {
 namespace GDT {
 namespace BaseFunctionSet {
 
+#ifdef HAVE_DUNE_PDELAB
 
 // forward, to be used in the traits and to allow for specialization
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
@@ -36,10 +39,7 @@ class PdelabWrapper
 // forward, to allow for specialization
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
           int rangeDimCols = 1>
-class PdelabWrapperTraits
-{
-  static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for arbitrary dimension!");
-};
+class PdelabWrapperTraits;
 
 
 //! Specialization for dimRange = 1, dimRangeRows = 1
@@ -161,6 +161,19 @@ private:
   std::unique_ptr<const BackendType> backend_;
 }; // class PdelabWrapper
 
+
+#else // HAVE_DUNE_PDELAB
+
+
+template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
+          int rangeDimCols = 1>
+class PdelabWrapper
+{
+  static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB
 
 } // namespace BaseFunctionSet
 } // namespace GDT
