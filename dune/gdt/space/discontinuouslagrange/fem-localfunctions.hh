@@ -6,7 +6,8 @@
 #ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#include <dune/common/static_assert.hh>
+#include <type_traits>
+
 #include <dune/common/typetraits.hh>
 #include <dune/common/exceptions.hh>
 
@@ -17,12 +18,16 @@
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
 
-#include <dune/fem/space/common/allgeomtypes.hh>
+#ifdef HAVE_DUNE_FEM
+# include <dune/fem/space/common/allgeomtypes.hh>
+#endif
 
-#include <dune/fem_localfunctions/localfunctions/transformations.hh>
-#include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
-#include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
-#include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
+#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+# include <dune/fem_localfunctions/localfunctions/transformations.hh>
+# include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
+# include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
+# include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
+#endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 #include <dune/stuff/common/color.hh>
 
@@ -35,10 +40,16 @@ namespace Dune {
 namespace GDT {
 namespace DiscontinuousLagrangeSpace {
 
+#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+
 
 // forward, to be used in the traits and to allow for specialization
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemLocalfunctionsWrapper;
+class FemLocalfunctionsWrapper
+{
+  static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
+};
+
 
 
 /**
@@ -220,8 +231,8 @@ private:
     // static checks
     typedef typename GridPartType::GridType GridType;
 #if HAVE_ALUGRID
-    dune_static_assert(!(Dune::is_same< GridType, Dune::ALUCubeGrid< dimDomain, dimDomain > >::value),
-                       "This space is only implemented for simplicial grids!");
+    static_assert(!(Dune::is_same< GridType, Dune::ALUCubeGrid< dimDomain, dimDomain > >::value),
+                  "This space is only implemented for simplicial grids!");
 #endif
     static_assert((dimDomain == 1 ) || !(Dune::is_same< GridType, Dune::SGrid< dimDomain, dimDomain > >::value),
                   "This space is only implemented for simplicial grids!");
@@ -245,6 +256,18 @@ private:
   std::shared_ptr< const MapperType > mapper_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
+
+#else // HAVE_DUNE_FEM_LOCALFUNCTIONS
+
+
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class FemLocalfunctionsWrapper
+{
+  static_assert(Dune::AlwaysFalse< GridPartImp >::value, "You are missing dune-fem-localfunctions!");
+};
+
+
+#endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 } // namespace DiscontinuousLagrangeSpace
 } // namespace GDT
