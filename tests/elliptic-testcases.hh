@@ -9,8 +9,6 @@
 #include <iostream>
 #include <memory>
 
-#include <dune/fem/gridpart/levelgridpart.hh>
-
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>
@@ -25,23 +23,23 @@ template< class GridType >
 class Base
 {
 public:
-  typedef typename Dune::Fem::LevelGridPart< GridType > GridPartType;
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridType::LevelGridView GridViewType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
 
   Base(std::shared_ptr< GridType > grd, size_t num_refinements)
     : grid_(grd)
   {
     levels_.push_back(grid_->maxLevel());
-    level_grid_parts_.emplace_back(new GridPartType(*grid_, grid_->maxLevel()));
+    level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
     for (size_t rr = 0; rr < num_refinements; ++rr) {
       grid_->globalRefine(GridType::refineStepsForHalf);
       levels_.push_back(grid_->maxLevel());
-      level_grid_parts_.emplace_back(new GridPartType(*grid_, grid_->maxLevel()));
+      level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
     }
     grid_->globalRefine(GridType::refineStepsForHalf);
-    reference_grid_part_ = std::shared_ptr< GridPartType >(new GridPartType(*grid_, grid_->maxLevel()));
+    reference_grid_view_ = std::shared_ptr< GridViewType >(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
   }
 
   size_t num_levels() const
@@ -49,24 +47,24 @@ public:
     return levels_.size();
   }
 
-  std::shared_ptr< const GridPartType > level_grid_part(const size_t level) const
+  std::shared_ptr< const GridViewType > level_grid_view(const size_t level) const
   {
     assert(level < levels_.size());
-    assert(level < level_grid_parts_.size());
+    assert(level < level_grid_views_.size());
     assert(ssize_t(levels_[level]) < grid_->maxLevel());
-    return level_grid_parts_[level];
+    return level_grid_views_[level];
   }
 
-  std::shared_ptr< const GridPartType > reference_grid_part() const
+  std::shared_ptr< const GridViewType > reference_grid_view() const
   {
-    return reference_grid_part_;
+    return reference_grid_view_;
   }
 
 private:
   std::shared_ptr< GridType > grid_;
   std::vector< size_t > levels_;
-  std::vector< std::shared_ptr< GridPartType > > level_grid_parts_;
-  std::shared_ptr< GridPartType > reference_grid_part_;
+  std::vector< std::shared_ptr< GridViewType > > level_grid_views_;
+  std::shared_ptr< GridViewType > reference_grid_view_;
 }; // class Base
 
 
@@ -76,13 +74,13 @@ class ER07
 {
   typedef Base< GridType > BaseType;
 public:
-  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
   typedef typename BaseType::DomainFieldType  DomainFieldType;
   static const unsigned int                   dimDomain = BaseType::dimDomain;
   typedef double            RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridViewType::Intersection > BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
@@ -187,13 +185,13 @@ class ESV07
 {
   typedef Base< GridType > BaseType;
 public:
-  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
   typedef typename BaseType::DomainFieldType  DomainFieldType;
   static const unsigned int                   dimDomain = BaseType::dimDomain;
   typedef double            RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridViewType::Intersection > BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
@@ -298,13 +296,13 @@ class LocalThermalBlock
 {
   typedef Base< GridType > BaseType;
 public:
-  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
   typedef typename BaseType::DomainFieldType  DomainFieldType;
   static const unsigned int                   dimDomain = BaseType::dimDomain;
   typedef double            RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridViewType::Intersection > BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
@@ -411,13 +409,13 @@ class MixedBoundaryTypes
 {
   typedef Base< GridType > BaseType;
 public:
-  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
   typedef typename BaseType::DomainFieldType  DomainFieldType;
   static const unsigned int                   dimDomain = BaseType::dimDomain;
   typedef double            RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryNormalBased< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryNormalBased< typename GridViewType::Intersection > BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
@@ -525,13 +523,13 @@ class Spe10Model1
 {
   typedef Base< GridType > BaseType;
 public:
-  typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
   typedef typename BaseType::DomainFieldType  DomainFieldType;
   static const unsigned int                   dimDomain = BaseType::dimDomain;
   typedef double            RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridPartType::IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::GridboundaryAllDirichlet< typename GridViewType::Intersection > BoundaryInfoType;
 
   typedef Dune::Stuff::Function::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >
