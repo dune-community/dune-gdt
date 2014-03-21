@@ -30,3 +30,4 @@ demos
 *.param
 *.vtu
 *.pc
+build-cmake
