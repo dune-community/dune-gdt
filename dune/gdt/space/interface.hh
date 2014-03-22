@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+// This file is view of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -7,20 +7,19 @@
 #define DUNE_GDT_SPACE_INTERFACE_HH
 
 #include <memory>
+#include <type_traits>
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
+#include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/common/float_cmp.hh>
 
 #include "constraints.hh"
-
-// needs to be here, since one of the above includes the config.h
-#include <dune/common/bartonnackmanifcheck.hh>
 
 namespace Dune {
 namespace GDT {
@@ -28,188 +27,165 @@ namespace GDT {
 
 template< class Traits >
 class SpaceInterface
+  : protected Stuff::CRTPInterface< SpaceInterface< Traits >, Traits >
 {
 public:
-  typedef typename Traits::derived_type derived_type;
-
-  typedef typename Traits::GridViewType   GridViewType;
-  static const int                        polOrder = Traits::polOrder;
-  typedef typename GridViewType::ctype              DomainFieldType;
-  static const unsigned int                         dimDomain = GridViewType::dimension;
-  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
-
+  typedef typename Traits::derived_type         derived_type;
+  static const int                              polOrder = Traits::polOrder;
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
+  typedef typename Traits::GridViewType         GridViewType;
   typedef typename Traits::EntityType           EntityType;
+  typedef typename Traits::RangeFieldType       RangeFieldType;
+  static const unsigned int                     dimRange = Traits::dimRange;
+  static const unsigned int                     dimRangeCols = Traits::dimRangeCols;
+
+  typedef typename GridViewType::ctype              DomainFieldType;
+  static const unsigned int                         dimDomain = GridViewType::dimension;
+  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
 
   typedef typename GridViewType::Intersection               IntersectionType;
   typedef Stuff::GridboundaryInterface< IntersectionType >  BoundaryInfoType;
+  typedef Dune::Stuff::LA::SparsityPatternDefault           PatternType;
 
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+public:
+  /**
+   * \defgroup interface ´´These methods have to be implemented!''
+   * @{
+   **/
 
-  std::shared_ptr< const GridViewType > gridView() const
+  std::shared_ptr< const GridViewType > grid_view() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().gridView());
-    return asImp().gridView();
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
   }
 
   const BackendType& backend() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().backend());
-    return asImp().backend();
-  }
-
-  bool continuous() const
-  {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().continuous());
-    return asImp().continuous();
+    CHECK_CRTP(this->as_imp(*this).backend());
+    return this->as_imp(*this).backend();
   }
 
   const MapperType& mapper() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().mapper());
-    return asImp().mapper();
+    CHECK_CRTP(this->as_imp(*this).mapper());
+    return this->as_imp(*this).mapper();
   }
 
-  BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().baseFunctionSet(entity));
-    return asImp().baseFunctionSet(entity);
+    CHECK_CRTP(this->as_imp(*this).base_function_set(entity));
+    return this->as_imp(*this).base_function_set(entity);
   }
-
-  std::set< size_t > findLocalDirichletDoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
-  {
-    static_assert(dimRange == 1, "Not implemented for this dimension!");
-    static_assert(dimRangeCols == 1, "Not implemented for this dimension!");
-    static_assert(polOrder == 1, "This does not seem to work for higher orders!");
-    // check
-    assert(gridView()->indexSet().contains(entity));
-    // prepare
-    std::set< size_t > localDirichletDofs;
-    std::vector< typename BaseFunctionSetType::DomainType > dirichlet_vertices;
-    // get all dirichlet vertices of this entity, therefore
-    // * loop over all intersections
-    const auto intersection_it_end = gridView()->iend(entity);
-    for (auto intersection_it = gridView()->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
-      // only work on dirichlet ones
-      const auto& intersection = *intersection_it;
-      if (boundaryInfo.dirichlet(intersection)) {
-        // and get the vertices of the intersection
-        const auto geometry = intersection.geometry();
-        for (int cc = 0; cc < geometry.corners(); ++cc)
-          dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
-      } // only work on dirichlet ones
-    } // loop over all intersections
-
-    // find the corresponding basis functions
-    const auto basis = baseFunctionSet(entity);
-    if (tmp_basis_values_.size() < basis.size())
-      tmp_basis_values_.resize(basis.size());
-    for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
-      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values_);
-      for (size_t jj = 0; jj < basis.size(); ++jj)
-        if (Dune::Stuff::Common::FloatCmp::eq(tmp_basis_values_[jj][0], RangeFieldType(1)))
-          localDirichletDofs.insert(jj);
-    }
-
-    // finish
-    return localDirichletDofs;
-  } // ... findLocalDirichletDoFs(...)
 
   template< class ConstraintsType >
-  void localConstraints(const EntityType& entity, ConstraintsType& ret) const
+  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
   {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().localConstraints(entity, ret));
-    asImp().localConstraints(entity, ret);
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(entity, ret));
+    this->as_imp(*this).local_constraints(entity, ret);
   }
 
-  PatternType* computePattern() const
+  /**
+   *  \brief  Computes the appropriate sparsity pattern.
+   *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this class, namely compute_colume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
+   */
+  template< class LocalGridViewType, class T >
+  PatternType compute_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface< T >& other) const
   {
-    return computePattern(*this);
+    CHECK_CRTP(this->as_imp(*this).compute_pattern(local_grid_view, other));
+    return this->as_imp(*this).compute_pattern(local_grid_view, other);
+  }
+  /* @} */
+
+  /**
+   * \defgroup provided ´´These methods are provided by the interface for convenience.''
+   * @{
+   **/
+
+  PatternType compute_pattern() const
+  {
+    return compute_pattern(*this);
   }
 
-  template< class OtherSpaceType >
-  PatternType* computePattern(const OtherSpaceType& other) const
+  template< class T >
+  PatternType compute_pattern(const SpaceInterface< T >& other) const
   {
-    return computePattern(*(gridView()), other);
+    return compute_pattern(*(grid_view()), other);
   }
 
-  template< class LocalGridViewType, class OtherSpaceType >
-  PatternType* computePattern(const LocalGridViewType& localGridView,
-                              const OtherSpaceType& otherSpace) const
+  PatternType compute_volume_pattern() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().computePattern(localGridView, otherSpace));
-    return asImp().computePattern(localGridView, otherSpace);
+    return compute_volume_pattern(*this);
+  }
+
+  template< class T >
+  PatternType compute_volume_pattern(const SpaceInterface< T >& other) const
+  {
+    return compute_volume_pattern(*(grid_view()), other);
   }
 
   /**
    *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template< class LocalGridViewType, class O >
-  PatternType* computeCodim0Pattern(const LocalGridViewType& localGridView,
-                                    const SpaceInterface< O >& otherSpace) const
+  template< class LocalGridViewType, class T >
+  PatternType compute_volume_pattern(const LocalGridViewType& localGridView, const SpaceInterface< T >& other) const
   {
-    PatternType* ret = new PatternType(mapper().size());
-    PatternType& pattern = *ret;
-    // walk the grid part
+    PatternType pattern(mapper().size());
+    // walk the grid view
     const auto entityItEnd = localGridView.template end< 0 >();
     for (auto entityIt = localGridView.template begin< 0 >(); entityIt != entityItEnd; ++entityIt) {
       const auto& entity = *entityIt;
       // get basefunctionsets
-      const auto testBase = baseFunctionSet(entity);
-      const auto ansatzBase = otherSpace.baseFunctionSet(entity);
+      const auto testBase = base_function_set(entity);
+      const auto ansatzBase = other.base_function_set(entity);
       Dune::DynamicVector< size_t > globalRows(testBase.size(), 0);
       mapper().globalIndices(entity, globalRows);
       Dune::DynamicVector< size_t > globalCols(ansatzBase.size(), 0);
-      otherSpace.mapper().globalIndices(entity, globalCols);
+      other.mapper().globalIndices(entity, globalCols);
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
         auto& columns = pattern.inner(globalRows[ii]);
         for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
           columns.insert(globalCols[jj]);
         }
       }
-    } // walk the grid part
-    return ret;
-  } // ... computeVolumePattern(...)
+    } // walk the grid view
+    return pattern;
+  } // ... compute_volume_pattern(...)
 
-  PatternType* computeCodim0AndCodim1Pattern() const
+  PatternType compute_face_and_volume_pattern() const
   {
-    return computeCodim0AndCodim1Pattern(*(gridView()), *this);
+    return compute_face_and_volume_pattern(*(grid_view()), *this);
   }
 
   template< class LocalGridViewType >
-  PatternType* computeCodim0AndCodim1Pattern(const LocalGridViewType& local_grid_part) const
+  PatternType compute_face_and_volume_pattern(const LocalGridViewType& local_grid_view) const
   {
-    return computeCodim0AndCodim1Pattern(local_grid_part, *this);
+    return compute_face_and_volume_pattern(local_grid_view, *this);
   }
 
   /**
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template< class LocalGridViewType, class O >
-  PatternType* computeCodim0AndCodim1Pattern(const LocalGridViewType& local_grid_part,
-                                             const SpaceInterface< O >& other_space) const
+  template< class LocalGridViewType, class T >
+  PatternType compute_face_and_volume_pattern(const LocalGridViewType& local_grid_view,
+                                              const SpaceInterface< T >& other) const
   {
     // prepare
-    PatternType* ret = new PatternType(mapper().size());
-    PatternType& pattern = *ret;
+    PatternType pattern(mapper().size());
     Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
-    Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
-    // walk the grid part
-    const auto entity_it_end = local_grid_part.template end< 0 >();
-    for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    Dune::DynamicVector< size_t > global_cols(other.mapper().maxNumDofs(), 0);
+    // walk the grid view
+    const auto entity_it_end = local_grid_view.template end< 0 >();
+    for (auto entity_it = local_grid_view.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get basefunctionsets
-      const auto test_base_entity = baseFunctionSet(entity);
-      const auto ansatz_base_entity = other_space.baseFunctionSet(entity);
+      const auto test_base_entity = base_function_set(entity);
+      const auto ansatz_base_entity = other.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
-      other_space.mapper().globalIndices(entity, global_cols);
+      other.mapper().globalIndices(entity, global_cols);
       // compute entity/entity
       for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
         auto& columns = pattern.inner(global_rows[ii]);
@@ -218,8 +194,8 @@ public:
         }
       }
       // walk the intersections
-      const auto intersection_it_end = local_grid_part.iend(entity);
-      for (auto intersection_it = local_grid_part.ibegin(entity);
+      const auto intersection_it_end = local_grid_view.iend(entity);
+      for (auto intersection_it = local_grid_view.ibegin(entity);
            intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
@@ -228,8 +204,8 @@ public:
           const auto neighbour_ptr = intersection.outside();
           const auto& neighbour = *neighbour_ptr;
           // get the basis
-          const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
-          other_space.mapper().globalIndices(neighbour, global_cols);
+          const auto ansatz_base_neighbour = other.base_function_set(neighbour);
+          other.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
@@ -239,29 +215,38 @@ public:
           }
         } // get the neighbour
       } // walk the intersections
-    } // walk the grid part
-    return ret;
-  } // ... computeVolumeAndCouplingPattern(...)
+    } // walk the grid view
+    return pattern;
+  } // ... compute_face_and_volume_pattern(...)
 
-  template< class LocalGridViewType, class O >
-  PatternType* computeCodim1Pattern(const LocalGridViewType& local_grid_part,
-                                    const SpaceInterface< O >& other_space) const
+  PatternType compute_face_pattern() const
+  {
+    return compute_face_pattern(*(grid_view()), *this);
+  }
+
+  template< class LocalGridViewType >
+  PatternType compute_face_pattern(const LocalGridViewType& local_grid_view) const
+  {
+    return compute_face_pattern(local_grid_view, *this);
+  }
+
+  template< class LocalGridViewType, class T >
+  PatternType compute_face_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface< T >& other) const
   {
     // prepare
-    PatternType* ret = new PatternType(mapper().size());
-    PatternType& pattern = *ret;
+    PatternType pattern(mapper().size());
     Dune::DynamicVector< size_t > global_rows(mapper().maxNumDofs(), 0);
-    Dune::DynamicVector< size_t > global_cols(other_space.mapper().maxNumDofs(), 0);
-    // walk the grid part
-    const auto entity_it_end = local_grid_part.template end< 0 >();
-    for (auto entity_it = local_grid_part.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    Dune::DynamicVector< size_t > global_cols(other.mapper().maxNumDofs(), 0);
+    // walk the grid view
+    const auto entity_it_end = local_grid_view.template end< 0 >();
+    for (auto entity_it = local_grid_view.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get basefunctionsets
-      const auto test_base_entity = baseFunctionSet(entity);
+      const auto test_base_entity = base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       // walk the intersections
-      const auto intersection_it_end = local_grid_part.iend(entity);
-      for (auto intersection_it = local_grid_part.ibegin(entity);
+      const auto intersection_it_end = local_grid_view.iend(entity);
+      for (auto intersection_it = local_grid_view.ibegin(entity);
            intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
@@ -270,8 +255,8 @@ public:
           const auto neighbour_ptr = intersection.outside();
           const auto& neighbour = *neighbour_ptr;
           // get the basis
-          const auto ansatz_base_neighbour = other_space.baseFunctionSet(neighbour);
-          other_space.mapper().globalIndices(neighbour, global_cols);
+          const auto ansatz_base_neighbour = other.base_function_set(neighbour);
+          other.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
@@ -281,15 +266,15 @@ public:
           }
         } // get the neighbour
       } // walk the intersections
-    } // walk the grid part
-    return ret;
-  } // ... computeCodim1Pattern(...)
+    } // walk the grid view
+    return pattern;
+  } // ... compute_face_pattern(...)
 
 private:
   class BasisVisualization
-    : public Dune::VTKFunction< typename GridViewType::GridViewType >
+    : public Dune::VTKFunction< GridViewType >
   {
-    static_assert(dimRangeCols == 1, "Not implemented yet!");
+    static_assert(dimRangeCols == 1, "Not implemented for matrixvalued spaces yet!");
   public:
     typedef typename BaseFunctionSetType::DomainType  DomainType;
     typedef typename BaseFunctionSetType::RangeType   RangeType;
@@ -319,7 +304,7 @@ private:
 
     virtual double evaluate(int component, const EntityType& entity, const DomainType& xx) const
     {
-      const auto baseFunctionSet = space_.baseFunctionSet(entity);
+      const auto baseFunctionSet = space_.base_function_set(entity);
       if (component < 0)
         DUNE_THROW(Dune::RangeError, "component must not be negative (is " << component << ")!");
       if (component < int(baseFunctionSet.size())) {
@@ -348,8 +333,7 @@ public:
     if (filename.empty()) {
       filename = "dune.gdt.space";
     }
-    typedef typename Dune::VTKWriter< typename GridViewType::GridViewType > VTKWriterType;
-    VTKWriterType vtk_writer(gridView()->gridView(), Dune::VTK::nonconforming);
+    VTKWriter< GridViewType >  vtk_writer(*(grid_view()), Dune::VTK::nonconforming);
     for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
       std::string number = "";
       if (ii == 1)
@@ -360,21 +344,13 @@ public:
         number = "3rd";
       else
         number = Stuff::Common::toString(ii) + "th";
-      const auto iith_baseFunction = std::make_shared< BasisVisualization >(asImp(), ii, number + " basis");
+      const auto iith_baseFunction = std::make_shared< BasisVisualization >(this->as_imp(*this), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }
     vtk_writer.write(filename);
   } // ... visualize(...)
 
-  derived_type& asImp()
-  {
-    return static_cast< derived_type& >(*this);
-  }
-
-  const derived_type& asImp() const
-  {
-    return static_cast< const derived_type& >(*this);
-  }
+  /* @} */
 
 protected:
   mutable std::vector< typename BaseFunctionSetType::RangeType > tmp_basis_values_;
