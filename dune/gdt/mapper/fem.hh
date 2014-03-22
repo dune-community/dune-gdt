@@ -11,7 +11,7 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
-#ifdef HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM
 # include <dune/fem/space/mapper/dofmapper.hh>
 #endif
 
@@ -21,7 +21,7 @@ namespace Dune {
 namespace GDT {
 namespace Mapper {
 
-#ifdef HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM
 
 
 // forward, to be used in the traits and to allow for specialization

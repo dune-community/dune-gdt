@@ -15,7 +15,7 @@
 
 #include <dune/grid/common/capabilities.hh>
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 # include <dune/pdelab/finiteelementmap/pkfem.hh>
 # include <dune/pdelab/finiteelementmap/qkfem.hh>
 # include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
@@ -31,7 +31,7 @@ namespace Dune {
 namespace GDT {
 namespace ContinuousLagrangeSpace {
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization

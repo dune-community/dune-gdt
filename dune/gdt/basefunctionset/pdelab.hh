@@ -13,7 +13,7 @@
 
 #include <dune/common/typetraits.hh>
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 # include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #endif
 
@@ -25,7 +25,7 @@ namespace Dune {
 namespace GDT {
 namespace BaseFunctionSet {
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 
 // forward, to be used in the traits and to allow for specialization
 template< class PdelabSpaceImp, class EntityImp,
