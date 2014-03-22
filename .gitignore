@@ -31,3 +31,4 @@ demos
 *.vtu
 *.pc
 build-cmake
+build-clang-debug
