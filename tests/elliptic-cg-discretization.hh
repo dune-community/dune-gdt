@@ -179,7 +179,7 @@ public:
 
     // solve
     Dune::Stuff::LA::Solver<MatrixType>(system_matrix_).apply(rhs_vector_, solution);
-    solution.backend() += dirichlet_shift_vector_.backend();
+    solution += dirichlet_shift_vector_;
   } // ... solve()
 
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
