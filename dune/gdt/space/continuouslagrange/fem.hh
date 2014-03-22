@@ -70,37 +70,6 @@ public:
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
-// unspecialized version, to give better compile errors
-template <class GP, int p, class R, int r, int rC>
-class FemWrapper : public SpaceInterface<FemWrapperTraits<GP, p, R, r, rC>>
-{
-public:
-  typedef FemWrapperTraits<GP, p, R, r, rC> Traits;
-
-  typedef typename Traits::GridPartType GridPartType;
-  static const int polOrder = Traits::polOrder;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange     = Traits::dimRange;
-  static const unsigned int dimRangeCols = Traits::dimRangeCols;
-
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::MapperType MapperType;
-  typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::EntityType EntityType;
-
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
-
-  FemWrapper(const std::shared_ptr<const GridPartType>& /*grid_prt*/)
-  {
-    static_assert((Dune::AlwaysFalse<GP>::value),
-                  "Not yet implemented for this combination of dimensions! One of the specializations below should "
-                  "work, they are just untested for other dimensions!");
-  }
-}; // FemWrapper
-
-
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int r>
 class FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>
     : public SpaceInterface<FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>>
