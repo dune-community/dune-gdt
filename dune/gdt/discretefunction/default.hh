@@ -128,11 +128,11 @@ public:
    */
   void visualize(const std::string filename) const
   {
-    typedef typename SpaceType::gridViewType::GridViewType GridViewType;
+    typedef typename SpaceType::GridViewType GridViewType;
     if (filename.empty())
       DUNE_THROW(RangeError, "Empty filename given!");
     auto adapter = std::make_shared<Stuff::Function::VisualizationAdapter<GridViewType, dimRange>>(*this);
-    SubsamplingVTKWriter<GridViewType> vtk_writer(space_.gridView()->gridView(), VTK::nonconforming);
+    SubsamplingVTKWriter<GridViewType> vtk_writer(*(space_.gridView()), VTK::nonconforming);
     vtk_writer.addVertexData(adapter);
     vtk_writer.write(filename);
   } // ... visualize(...)
