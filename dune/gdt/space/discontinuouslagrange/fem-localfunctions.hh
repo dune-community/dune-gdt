@@ -18,11 +18,11 @@
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
 
-#ifdef HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM
 #include <dune/fem/space/common/allgeomtypes.hh>
 #endif
 
-#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+#if HAVE_DUNE_FEM_LOCALFUNCTIONS
 #include <dune/fem_localfunctions/localfunctions/transformations.hh>
 #include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
 #include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
@@ -40,7 +40,7 @@ namespace Dune {
 namespace GDT {
 namespace DiscontinuousLagrangeSpace {
 
-#ifdef HAVE_DUNE_FEM_LOCALFUNCTIONS
+#if HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
 // forward, to be used in the traits and to allow for specialization
