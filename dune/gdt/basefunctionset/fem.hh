@@ -12,7 +12,7 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
-#ifdef HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM
 #include <dune/fem/space/basefunctions/basefunctionsetinterface.hh>
 #include <dune/fem/space/common/discretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM
@@ -25,7 +25,7 @@ namespace Dune {
 namespace GDT {
 namespace BaseFunctionSet {
 
-#ifdef HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM
 
 
 // forward, to be used in the traits and to allow for specialization

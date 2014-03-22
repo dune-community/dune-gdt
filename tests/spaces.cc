@@ -245,7 +245,7 @@ typedef Dune::grid::Part::Leaf::Const<AluCube3dGridType> AluCube3dGridPartType;
       Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<S1dGridPartType, 1, double, 1>,                                \
       Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp1dGridPartType, 1, double, 1>
 
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
 #define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID                                                                          \
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 1>,                              \
       Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 1>,                          \
@@ -262,7 +262,7 @@ typedef Dune::grid::Part::Leaf::Const<AluCube3dGridType> AluCube3dGridPartType;
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dGridPartType, 1, double, 2>,                                       \
       Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dGridPartType, 1, double, 2>
 
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
 #define P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID                                                                          \
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dGridPartType, 1, double, 2>,                              \
       Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dGridPartType, 1, double, 2>,                          \
@@ -285,7 +285,7 @@ typedef Dune::grid::Part::Leaf::Const<AluCube3dGridType> AluCube3dGridPartType;
       Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp2dGridPartType, 1, double, 1>,                             \
       Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp3dGridPartType, 1, double, 1>
 
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID                                                                          \
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 1>,                                 \
       Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<AluCube3dGridPartType, 1, double, 1>
@@ -299,44 +299,44 @@ typedef Dune::grid::Part::Leaf::Const<AluCube3dGridType> AluCube3dGridPartType;
       Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dGridPartType, 1, double, 2>,                                \
       Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dGridPartType, 1, double, 2>
 
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
 #define Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID                                                                          \
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dGridPartType, 1, double, 2>
 #endif // HAVE_ALUGRID
 
 typedef testing::Types<P1_CONTINUOUS_LAGRANGE_SPACES
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
                        ,
                        Q1_CONTINUOUS_LAGRANGE_SPACES
-#ifdef P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+#if P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
                        ,
                        Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
                        > P1Q1_Continuous_Lagrange_Spaces;
 
 typedef testing::Types<P1_CONTINUOUS_LAGRANGE_SPACES
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
                        ,
                        P2_CONTINUOUS_LAGRANGE_SPACES
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
                        ,
                        Q1_CONTINUOUS_LAGRANGE_SPACES
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
                        ,
                        Q2_CONTINUOUS_LAGRANGE_SPACES
-#ifdef HAVE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
 #endif
@@ -346,7 +346,7 @@ typedef testing::Types<P1_CONTINUOUS_LAGRANGE_SPACES
 //                      >
 //                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1,
 //                      double, 1 >
-//#ifdef HAVE_ALUGRID
+//#if HAVE_ALUGRID
 //                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1,
 //                      double, 1 >
 //                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1,

@@ -11,7 +11,7 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #endif
 
@@ -21,7 +21,7 @@ namespace Dune {
 namespace GDT {
 namespace Mapper {
 
-#ifdef HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
