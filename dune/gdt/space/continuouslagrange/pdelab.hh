@@ -25,7 +25,7 @@
 #include "../../basefunctionset/pdelab.hh"
 
 #include "../interface.hh"
-#include "../constraints.hh"
+#include "../continuouslagrange.hh"
 
 namespace Dune {
 namespace GDT {
@@ -56,9 +56,9 @@ public:
 
 private:
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
+  static const unsigned int dimDomain = GridViewType::dimension;
   typedef RangeFieldImp RangeFieldType;
   static const unsigned int dimRange     = rangeDim;
   static const unsigned int dimRangeCols = rangeDimCols;
@@ -102,9 +102,11 @@ private:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public SpaceInterface<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>>
+    : public ContinuousLagrangeSpaceBase<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                         GridViewImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef SpaceInterface<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>> BaseType;
+  typedef ContinuousLagrangeSpaceBase<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                      GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
   typedef PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -122,21 +124,21 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::EntityType EntityType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef typename BaseType::IntersectionType IntersectionType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::PatternType PatternType;
+  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
   PdelabWrapper(const std::shared_ptr<const GridViewType>& gV)
     : gridView_(gV)
     , fe_map_(std::make_shared<FEMapType>(*(gridView_)))
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*gridView_), *fe_map_))
     , mapper_(std::make_shared<MapperType>(*backend_))
-    , tmpMappedRows_(mapper_->maxNumDofs())
-    , tmpMappedCols_(mapper_->maxNumDofs())
   {
   }
 
@@ -145,8 +147,6 @@ public:
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
-    , tmpMappedRows_(mapper_->maxNumDofs())
-    , tmpMappedCols_(mapper_->maxNumDofs())
   {
   }
 
@@ -156,9 +156,7 @@ public:
       gridView_ = other.gridView_;
       fe_map_   = other.fe_map_;
       backend_  = other.backend_;
-      mapper_ = other.mapper_;
-      tmpMappedRows_.resize(mapper_->maxNumDofs());
-      tmpMappedCols_.resize(mapper_->maxNumDofs());
+      mapper_   = other.mapper_;
     }
     return *this;
   }
@@ -167,7 +165,7 @@ public:
   {
   }
 
-  const std::shared_ptr<const GridViewType>& gridView() const
+  const std::shared_ptr<const GridViewType>& grid_view() const
   {
     return gridView_;
   }
@@ -187,126 +185,26 @@ public:
     return *mapper_;
   }
 
-  BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     return BaseFunctionSetType(*backend_, entity, polOrder);
   }
 
-  template <class R>
-  void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault<R>& /*ret*/) const
+  using BaseType::compute_pattern;
+
+  template <class LocalGridViewType, class T>
+  PatternType compute_pattern(const LocalGridViewType& localgridView, const SpaceInterface<T>& otherSpace) const
   {
-    static_assert((Dune::AlwaysFalse<R>::value), "Not implemented for arbitrary constraints!");
+    return BaseType::compute_volume_pattern(localgridView, otherSpace);
   }
 
-  void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet<typename GridViewType::Intersection, RangeFieldType, true>& ret) const
-  {
-    static_assert(dimDomain == 2, "Not tested for other dimensions!");
-    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
-    const std::set<size_t> localDirichletDofs = this->findLocalDirichletDoFs(entity, ret.gridBoundary());
-    const size_t numRows = localDirichletDofs.size();
-    if (numRows > 0) {
-      const size_t numCols = mapper_->numDofs(entity);
-      ret.setSize(numRows, numCols);
-      mapper_->globalIndices(entity, tmpMappedRows_);
-      mapper_->globalIndices(entity, tmpMappedCols_);
-      size_t localRow = 0;
-      const RangeFieldType zero(0);
-      const RangeFieldType one(1);
-      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
-           ++localDirichletDofIt) {
-        const size_t& localDirichletDofIndex = *localDirichletDofIt;
-        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
-        for (size_t jj = 0; jj < ret.cols(); ++jj) {
-          ret.globalCol(jj) = tmpMappedCols_[jj];
-          if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
-            ret.value(localRow, jj) = one;
-          else
-            ret.value(localRow, jj) = zero;
-        }
-        ++localRow;
-      }
-    } else {
-      ret.setSize(0, 0);
-    }
-  } // ... localConstraints(..., Dirichlet< ..., true >)
-
-  void localConstraints(const EntityType& entity,
-                        Constraints::Dirichlet<typename GridViewType::Intersection, RangeFieldType, false>& ret) const
-  {
-    static_assert(dimDomain == 2, "Not tested for other dimensions!");
-    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
-    const std::set<size_t> localDirichletDofs = this->findLocalDirichletDoFs(entity, ret.gridBoundary());
-    const size_t numRows = localDirichletDofs.size();
-    if (numRows > 0) {
-      const size_t numCols = mapper_->numDofs(entity);
-      ret.setSize(numRows, numCols);
-      mapper_->globalIndices(entity, tmpMappedRows_);
-      mapper_->globalIndices(entity, tmpMappedCols_);
-      size_t localRow = 0;
-      const RangeFieldType zero(0);
-      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
-           ++localDirichletDofIt) {
-        const size_t& localDirichletDofIndex = *localDirichletDofIt;
-        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
-        for (size_t jj = 0; jj < ret.cols(); ++jj) {
-          ret.globalCol(jj) = tmpMappedCols_[jj];
-          ret.value(localRow, jj) = zero;
-        }
-        ++localRow;
-      }
-    } else {
-      ret.setSize(0, 0);
-    }
-  } // ... localConstraints(..., Dirichlet< ..., false >)
-
-  using BaseType::computePattern;
-
-  template <class LocalGridViewType, class OtherSpaceType>
-  PatternType* computePattern(const LocalGridViewType& localgridView, const OtherSpaceType& otherSpace) const
-  {
-    return BaseType::computeCodim0Pattern(localgridView, otherSpace);
-  }
-
-  std::vector<DomainType> lagrange_points(const EntityType& entity) const
-  {
-    // check
-    static_assert(polOrder == 1, "Not yet implemented for other polynomial orders!");
-    // get the basis and reference element
-    const auto basis              = baseFunctionSet(entity);
-    const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
-    const int num_vertices = reference_element.size(dimDomain);
-    assert(num_vertices >= 0);
-    assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
-    // prepare return vector
-    std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
-    if (this->tmp_basis_values_.size() < basis.size())
-      this->tmp_basis_values_.resize(basis.size());
-    // loop over all vertices
-    for (int ii = 0; ii < num_vertices; ++ii) {
-      // get the local coordinate of the iith vertex
-      const auto local_vertex = reference_element.position(ii, dimDomain);
-      // evaluate the basefunctionset
-      basis.evaluate(local_vertex, this->tmp_basis_values_);
-      // find the basis function that evaluates to one here (has to be only one!)
-      size_t found = 0;
-      for (size_t jj = 0; jj < basis.size(); ++jj)
-        if (Dune::Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
-          ++found;
-          local_vertices[jj] = local_vertex;
-        }
-      assert(found == 1 && "This must not happen for polOrder 1!");
-    }
-    return local_vertices;
-  } // ... lagrange_points(...)
+  using BaseType::local_constraints;
 
 private:
   std::shared_ptr<const GridViewType> gridView_;
   std::shared_ptr<const FEMapType> fe_map_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
-  mutable Dune::DynamicVector<size_t> tmpMappedRows_;
-  mutable Dune::DynamicVector<size_t> tmpMappedCols_;
 }; // class PdelabWrapper< ..., 1 >
 
 
