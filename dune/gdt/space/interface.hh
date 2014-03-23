@@ -35,7 +35,6 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::EntityType EntityType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
@@ -44,6 +43,7 @@ public:
   static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
   typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
