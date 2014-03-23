@@ -37,8 +37,8 @@ template< class SpaceType >
 struct Any_Space
   : public ::testing::Test
 {
-  typedef typename SpaceType::GridPartType          GridPartType;
-  typedef typename GridPartType::GridType           GridType;
+  typedef typename SpaceType::GridViewType          GridViewType;
+  typedef typename GridViewType::Grid               GridType;
   typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
 
   void fulfills_interface() const
@@ -46,12 +46,12 @@ struct Any_Space
     // grid
     const GridProviderType grid_provider(0.0, 1.0, 2u);
     const auto grid_ptr = grid_provider.grid();
-    const auto grid_part = std::make_shared< const GridPartType >(*grid_ptr);
+    const auto grid_view = std::make_shared< const GridViewType >(grid_ptr->leafGridView());
     // check the space
-    const SpaceType space(grid_part);
+    const SpaceType space(grid_view);
     // check for static information
     typedef typename SpaceType::Traits              Traits;
-    typedef typename SpaceType::GridPartType        S_GridPartType;
+    typedef typename SpaceType::GridViewType        S_GridViewType;
     typedef typename SpaceType::DomainFieldType     S_DomainFieldType;
     static const unsigned int                       s_dimDomain = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType      S_RangeFieldType;
@@ -64,16 +64,15 @@ struct Any_Space
     typedef typename SpaceType::EntityType          EntityType;
     typedef typename SpaceType::PatternType         PatternType;
     // check for functionality
-    const auto entityIt = grid_part->template begin< 0 >();
+    const auto entityIt = grid_view->template begin< 0 >();
     const EntityType& entity = *entityIt;
     typedef typename Dune::GDT::SpaceInterface< Traits > SpaceInterfaceType;
     const SpaceInterfaceType& spaceAsInterface = static_cast< const SpaceInterfaceType& >(space);
-    const std::shared_ptr< const S_GridPartType > DUNE_UNUSED(s_gridPart) = spaceAsInterface.gridPart();
+    const std::shared_ptr< const S_GridViewType > DUNE_UNUSED(s_gridView) = spaceAsInterface.grid_view();
     const S_BackendType& DUNE_UNUSED(       s_backend)      = spaceAsInterface.backend();
-    const bool DUNE_UNUSED(                 s_continuous)   = spaceAsInterface.continuous();
     const MapperType&                       mapper          = spaceAsInterface.mapper();
-    const BaseFunctionSetType               baseFunctionSet = spaceAsInterface.baseFunctionSet(entity);
-    const std::unique_ptr< const PatternType > pattern(spaceAsInterface.computePattern());
+    BaseFunctionSetType                     baseFunctionSet = spaceAsInterface.base_function_set(entity);
+    PatternType pattern = spaceAsInterface.compute_pattern();
 
     // check the mapper for static information
     typedef typename MapperType::Traits M_Traits;
@@ -118,8 +117,8 @@ template< class SpaceType >
 struct P1Q1_Continuous_Lagrange
   : public ::testing::Test
 {
-  typedef typename SpaceType::GridPartType          GridPartType;
-  typedef typename GridPartType::GridType           GridType;
+  typedef typename SpaceType::GridViewType          GridViewType;
+  typedef typename GridViewType::Grid               GridType;
   typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
   static const unsigned int dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
@@ -133,6 +132,45 @@ struct P1Q1_Continuous_Lagrange
     return ret;
   }
 
+  template< class T, int d, class R, int r, int rC >
+  void matches_signature(const Dune::GDT::ContinuousLagrangeSpaceBase< T, d, R, r, rC >& /*space*/)
+  {
+    static_assert(std::is_same< typename SpaceType::Traits, T >::value, "");
+    static_assert(std::is_same< typename SpaceType::RangeFieldType, R >::value, "");
+    static_assert(d == SpaceType::dimDomain, "");
+    static_assert(r == SpaceType::dimRange, "");
+    static_assert(rC == SpaceType::dimRangeCols, "");
+  }
+
+  void fulfills_interface()
+  {
+    using namespace Dune;
+    using namespace Dune::Stuff;
+    using namespace Dune::GDT;
+    // prepare
+    const GridProviderType grid_provider(0.0, 1.0, 4u);
+    const auto grid_ptr = grid_provider.grid();
+    const auto grid_view = std::make_shared< const GridViewType >(grid_ptr->leafGridView());
+    const SpaceType space(grid_view);
+    matches_signature(space);
+    const auto entity_ptr = grid_view->template begin< 0 >();
+    const auto& entity = *entity_ptr;
+    const auto basis = space.base_function_set(entity);
+    std::vector< DomainType > lagrange_points = space.lagrange_points(entity);
+    if (lagrange_points.size() != basis.size())
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error,
+                            "lagrange_points.size() = " << lagrange_points.size() << ", basis.size() = "
+                            << basis.size());
+    typedef typename SpaceType::IntersectionType IntersectionType;
+    typedef typename SpaceType::RangeFieldType RangeFieldType;
+    GridboundaryAllDirichlet< IntersectionType > boundary_info;
+    std::set< size_t > local_dirichlet_DoFs = space.local_dirichlet_DoFs(entity, boundary_info);
+    Constraints::Dirichlet< IntersectionType, RangeFieldType, true > dirichlet_constraints_a(boundary_info, 0, 0);
+    Constraints::Dirichlet< IntersectionType, RangeFieldType, false > dirichlet_constraints_b(boundary_info, 0, 0);
+    space.local_constraints(entity, dirichlet_constraints_a);
+    space.local_constraints(entity, dirichlet_constraints_b);
+  }
+
   void maps_correctly()
   {
     using namespace Dune;
@@ -140,14 +178,13 @@ struct P1Q1_Continuous_Lagrange
     using namespace Dune::GDT;
     // prepare
     const GridProviderType grid_provider(0.0, 1.0, 4u);
-    grid_provider.visualize("grid");
     const auto grid_ptr = grid_provider.grid();
-    const auto grid_part = std::make_shared< const GridPartType >(*grid_ptr);
-    const SpaceType space(grid_part);
+    const auto grid_view = std::make_shared< const GridViewType >(grid_ptr->leafGridView());
+    const SpaceType space(grid_view);
     // walk the grid to create a map of all vertices
     std::map< std::vector< DomainFieldType >, std::set< size_t > > vertex_to_indices_map;
-    const auto entity_end_it = grid_part->template end< 0 >();
-    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+    const auto entity_end_it = grid_view->template end< 0 >();
+    for (auto entity_it = grid_view->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (int cc = 0; cc < entity.template count< dimDomain >(); ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
@@ -156,33 +193,36 @@ struct P1Q1_Continuous_Lagrange
       }
     }
     // walk the grid again to find all DoF ids
-    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+    for (auto entity_it = grid_view->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       const int num_vertices = entity.template count< dimDomain >();
-      const auto basis = space.baseFunctionSet(entity);
-      if (basis.size() != num_vertices)
+      const auto basis = space.base_function_set(entity);
+      if (basis.size() != size_t(num_vertices))
         DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis.size() = " << basis.size());
       for (int cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
-        if (basis_values.size() != num_vertices)
+        if (basis_values.size() != size_t(num_vertices))
           DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
-        size_t matches = 0;
-        size_t misses = 0;
+        size_t ones = 0;
+        size_t zeros = 0;
+        size_t failures = 0;
         size_t local_DoF_index = 0;
-        for (size_t ii = 0; ii < num_vertices; ++ii) {
+        for (size_t ii = 0; ii < basis.size(); ++ii) {
           if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
             local_DoF_index = ii;
-            ++matches;
-          } else
-            ++misses;
+            ++ones;
+          } else if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(0)))
+            ++zeros;
+          else
+            ++failures;
         }
-        if (matches != 1 || misses != (num_vertices - 1)) {
+        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
           std::stringstream ss;
-          ss << "matches = " << matches << ", misses = " << misses << ", num_vertices = "
-             << num_vertices << ", entity " << grid_part->indexSet().index(entity)
+          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
+             << num_vertices << ", entity " << grid_view->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
           DUNE_THROW_COLORFULLY(Exceptions::internal_error, ss.str());
@@ -216,17 +256,23 @@ struct P1Q1_Continuous_Lagrange
 
 typedef Dune::SGrid< 1, 1 >                           S1dGridType;
 typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
+typedef S1dGridType::LeafGridView                     S1dGridViewType;
 typedef Dune::SGrid< 2, 2 >                           S2dGridType;
 typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dGridPartType;
+typedef S2dGridType::LeafGridView                     S2dGridViewType;
 typedef Dune::SGrid< 3, 3 >                           S3dGridType;
 typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dGridPartType;
+typedef S3dGridType::LeafGridView                     S3dGridViewType;
 
 typedef Dune::YaspGrid< 1 >                             Yasp1dGridType;
 typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dGridPartType;
+typedef Yasp1dGridType::LeafGridView                    Yasp1dGridViewType;
 typedef Dune::YaspGrid< 2 >                             Yasp2dGridType;
 typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
+typedef Yasp2dGridType::LeafGridView                    Yasp2dGridViewType;
 typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
 typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
+typedef Yasp3dGridType::LeafGridView                    Yasp3dGridViewType;
 
 #if HAVE_ALUGRID
 typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
@@ -240,12 +286,12 @@ typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartT
 #endif
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES \
-    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 > \
+    /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 > \
-  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridPartType, 1, double, 1 > \
-  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridPartType, 1, double, 1 >
+  ,*/ Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< S1dGridViewType, 1, double, 1 > \
+  , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< Yasp1dGridViewType, 1, double, 1 >
 
 #if HAVE_ALUGRID
 # define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID \
@@ -307,31 +353,31 @@ typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartT
 #endif // HAVE_ALUGRID
 
 typedef testing::Types< P1_CONTINUOUS_LAGRANGE_SPACES
-#if HAVE_ALUGRID
-                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES
-#if P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
+//#if HAVE_ALUGRID
+//                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
+//                      , Q1_CONTINUOUS_LAGRANGE_SPACES
+//#if HAVE_ALUGRID
+//                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
                       > P1Q1_Continuous_Lagrange_Spaces;
 
 typedef testing::Types< P1_CONTINUOUS_LAGRANGE_SPACES
-#if HAVE_ALUGRID
-                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
-                      , P2_CONTINUOUS_LAGRANGE_SPACES
-#if HAVE_ALUGRID
-                      , P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES
-#if HAVE_ALUGRID
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
-                      , Q2_CONTINUOUS_LAGRANGE_SPACES
-#if HAVE_ALUGRID
-                      , Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
-#endif
+//#if HAVE_ALUGRID
+//                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
+//                      , P2_CONTINUOUS_LAGRANGE_SPACES
+//#if HAVE_ALUGRID
+//                      , P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
+//                      , Q1_CONTINUOUS_LAGRANGE_SPACES
+//#if HAVE_ALUGRID
+//                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
+//                      , Q2_CONTINUOUS_LAGRANGE_SPACES
+//#if HAVE_ALUGRID
+//                      , Q2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID
+//#endif
                       > All_Spaces;
 
 //                      , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 >
@@ -350,6 +396,12 @@ TYPED_TEST(Any_Space, fulfills_interface)
 }
 
 TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
+TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
 TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
 {
   this->maps_correctly();
@@ -362,7 +414,7 @@ int main(int argc, char** argv)
     test_init(argc, argv);
     return RUN_ALL_TESTS();
   } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error: " << e.what() << std::endl;
+    std::cerr << "Dune reported error:\n" << e.what() << std::endl;
     std::abort();
   } catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
