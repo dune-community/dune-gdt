@@ -44,8 +44,17 @@ public:
   typedef typename BaseType::EntityType       EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
+  typedef typename BaseType::PatternType      PatternType;
 
   virtual ~ContinuousLagrangeSpaceBase() {}
+
+  using BaseType::compute_pattern;
+
+  template< class LocalGridPartType, class T >
+  PatternType compute_pattern(const LocalGridPartType& localGridPart, const SpaceInterface< T >& otherSpace) const
+  {
+    return BaseType::compute_volume_pattern(localGridPart, otherSpace);
+  }
 
   virtual std::vector< DomainType > lagrange_points(const EntityType& entity) const
   {
@@ -61,7 +70,7 @@ public:
     // prepare return vector
     std::vector< DomainType > local_vertices(num_vertices, DomainType(0));
     if (this->tmp_basis_values_.size() < basis.size())
-      this->tmp_basis_values_.resize(basis.size(), DomainType(0));
+      this->tmp_basis_values_.resize(basis.size());
     // loop over all vertices
     for (int ii = 0; ii < num_vertices; ++ii) {
       // get the local coordinate of the iith vertex
