@@ -156,47 +156,45 @@ public:
     }
   } // ... evaluate< ..., 1, 1 >(...)
 
-  //  the following specialization upsets gcc-4.8.2
-  //  /**
-  //   *  \brief  Computes an elliptic evaluation for a matrix-valued local function and matrix-valued basefunctionsets.
-  //   *  \tparam E EntityType
-  //   *  \tparam D DomainFieldType
-  //   *  \tparam d dimDomain
-  //   *  \tparam R RangeFieldType
-  //   */
-  //  template< class E, class D, int d, class R>
-  //  static void evaluate(const Stuff::LocalfunctionInterface< E, D, d, R, d, d >& localFunction,
-  //                       const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& testBase,
-  //                       const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatzBase,
-  //                       const Dune::FieldVector< D, d >& localPoint,
-  //                       Dune::DynamicMatrix< R >& ret)
-  //  {
-  //    typedef typename Stuff::LocalfunctionInterface< E, D, d, R, d, d >::RangeType             DiffusionRangeType;
-  //    typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
-  //    typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::RangeType          RangeType;
+  /**
+   *  \brief  Computes an elliptic evaluation for a matrix-valued local function and matrix-valued basefunctionsets.
+   *  \tparam E EntityType
+   *  \tparam D DomainFieldType
+   *  \tparam d dimDomain
+   *  \tparam R RangeFieldType
+   */
+  template <class E, class D, int d, class R>
+  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localFunction,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  {
+    typedef typename Stuff::LocalfunctionInterface<E, D, d, R, d, d>::RangeType DiffusionRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
 
-  //    // evaluate local function
-  //    const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
-  //    // evaluate test gradient
-  //    const size_t rows = testBase.size();
-  //    std::vector< JacobianRangeType > testGradients(rows, JacobianRangeType(0));
-  //    testBase.jacobian(localPoint, testGradients);
-  //    // evaluate ansatz gradient
-  //    const size_t cols = ansatzBase.size();
-  //    std::vector< JacobianRangeType > ansatzGradients(cols, JacobianRangeType(0));
-  //    ansatzBase.jacobian(localPoint, ansatzGradients);
-  //    // compute products
-  //    assert(ret.rows() >= rows);
-  //    assert(ret.cols() >= cols);
-  //    FieldVector< D, d > product(0.0);
-  //    for (size_t ii = 0; ii < rows; ++ii) {
-  //      auto& retRow = ret[ii];
-  //      for (size_t jj = 0; jj < cols; ++jj) {
-  //        functionValue.mv(ansatzGradients[jj][0], product);
-  //        retRow[jj] = product * testGradients[ii][0];
-  //      }
-  //    }
-  //  } // ... evaluate< ..., d, d >(...)
+    // evaluate local function
+    const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
+    // evaluate test gradient
+    const size_t rows = testBase.size();
+    std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
+    testBase.jacobian(localPoint, testGradients);
+    // evaluate ansatz gradient
+    const size_t cols = ansatzBase.size();
+    std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
+    ansatzBase.jacobian(localPoint, ansatzGradients);
+    // compute products
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    FieldVector<D, d> product(0.0);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      auto& retRow = ret[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        functionValue.mv(ansatzGradients[jj][0], product);
+        retRow[jj] = product * testGradients[ii][0];
+      }
+    }
+  } // ... evaluate< ..., d, d >(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
