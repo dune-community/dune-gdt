@@ -112,7 +112,7 @@ public:
 
   ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.gridView()->indexSet().contains(entity));
+    assert(space_.grid_view()->indexSet().contains(entity));
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
@@ -196,7 +196,7 @@ public:
 
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
-    assert(space_.gridView()->indexSet().contains(entity));
+    assert(space_.grid_view()->indexSet().contains(entity));
     return LocalDiscreteFunctionType(space_, vector_, entity);
   }
 

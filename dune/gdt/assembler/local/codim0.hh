@@ -88,7 +88,7 @@ public:
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // apply local operator (result is in localMatrix)
     localOperator_.apply(
-        testSpace.baseFunctionSet(entity), ansatzSpace.baseFunctionSet(entity), localMatrix, tmpOperatorMatrices);
+        testSpace.base_function_set(entity), ansatzSpace.base_function_set(entity), localMatrix, tmpOperatorMatrices);
     // write local matrix to global
     Dune::DynamicVector<size_t>& globalRows = tmpIndicesContainer[0];
     Dune::DynamicVector<size_t>& globalCols = tmpIndicesContainer[1];
@@ -175,7 +175,7 @@ public:
     Dune::Stuff::Common::clear(localVector);
     auto& tmpFunctionalVectors = tmpLocalVectorContainer[1];
     // apply local functional (result is in localVector)
-    localFunctional_.apply(testSpace.baseFunctionSet(entity), localVector, tmpFunctionalVectors);
+    localFunctional_.apply(testSpace.base_function_set(entity), localVector, tmpFunctionalVectors);
     // write local vector to global
     const size_t size = testSpace.mapper().numDofs(entity);
     assert(tmpIndices.size() >= size);
