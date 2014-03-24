@@ -87,8 +87,8 @@ public:
     Dune::Stuff::Common::clear(localMatrix);
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // apply local operator (result is in localMatrix)
-    localOperator_.apply(testSpace.baseFunctionSet(entity),
-                         ansatzSpace.baseFunctionSet(entity),
+    localOperator_.apply(testSpace.base_function_set(entity),
+                         ansatzSpace.base_function_set(entity),
                          localMatrix,
                          tmpOperatorMatrices);
     // write local matrix to global
@@ -176,7 +176,7 @@ public:
     Dune::Stuff::Common::clear(localVector);
     auto& tmpFunctionalVectors = tmpLocalVectorContainer[1];
     // apply local functional (result is in localVector)
-    localFunctional_.apply(testSpace.baseFunctionSet(entity),
+    localFunctional_.apply(testSpace.base_function_set(entity),
                            localVector,
                            tmpFunctionalVectors);
     // write local vector to global

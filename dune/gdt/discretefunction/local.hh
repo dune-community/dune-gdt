@@ -137,7 +137,7 @@ public:
   ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& globalVector, const EntityType& ent)
     : BaseType(ent)
     , space_(space)
-    , base_(new BaseFunctionSetType(space_.baseFunctionSet(this->entity())))
+    , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
     , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
     , tmpBaseValues_(base_->size(), RangeType(0))
     , tmpBaseJacobianValues_(base_->size(), JacobianRangeType(0))

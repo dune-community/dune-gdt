@@ -362,7 +362,7 @@ public:
     const auto entityPtr = intersection.inside();
     const auto& entity = *entityPtr;
     // apply local functional (results are in localVector)
-    localFunctional_.apply(testSpace.baseFunctionSet(entity), intersection, localVector, tmpFunctionalVectors);
+    localFunctional_.apply(testSpace.base_function_set(entity), intersection, localVector, tmpFunctionalVectors);
     // write local vectors to global
     const size_t size = testSpace.mapper().numDofs(entity);
     assert(tmpIndicesContainer.size() >= size);
