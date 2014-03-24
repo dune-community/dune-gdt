@@ -82,13 +82,19 @@ public:
   template< class ConstraintsType >
   void local_constraints(const EntityType& entity, ConstraintsType& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(entity, ret));
-    this->as_imp(*this).local_constraints(entity, ret);
+    local_constraints(*this, entity, ret);
+  }
+
+  template< class ConstraintsType, class T >
+  void local_constraints(const SpaceInterface< T >& other, const EntityType& entity, ConstraintsType& ret) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(other, entity, ret));
+    this->as_imp(*this).local_constraints(other, entity, ret);
   }
 
   /**
    *  \brief  Computes the appropriate sparsity pattern.
-   *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this class, namely compute_colume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
+   *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this class, namely compute_volume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
    */
   template< class LocalGridViewType, class T >
   PatternType compute_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface< T >& other) const
