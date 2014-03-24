@@ -28,7 +28,7 @@ namespace ProductOperator {
 template< class GridViewImp, class FieldImp >
 class L2Base;
 
-template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp = RangeImp, class FieldImp = double >
 class L2Localizable;
 
 template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
@@ -100,6 +100,10 @@ private:
 public:
   L2Localizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
     : BaseType(grid_view, range, source)
+  {}
+
+  L2Localizable(const GridViewType& grid_view, const RangeType& range)
+    : BaseType(grid_view, range, range)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
@@ -215,7 +219,7 @@ private:
 template< class GridViewImp, class FieldImp >
 class H1SemiBase;
 
-template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp, class RangeImp, class SourceImp = RangeImp, class FieldImp = double >
 class H1SemiLocalizable;
 
 template< class GridViewImp, class RangeSpaceImp, class SourceSpaceImp, class MatrixImp >
@@ -287,6 +291,10 @@ private:
 public:
   H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
     : BaseType(grid_view, range, source)
+  {}
+
+  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range)
+    : BaseType(grid_view, range, range)
   {}
 
   virtual const LocalOperatorType& local_operator() const DS_FINAL
