@@ -24,7 +24,6 @@
 #include "../../mapper/pdelab.hh"
 #include "../../basefunctionset/pdelab.hh"
 
-#include "../interface.hh"
 #include "../continuouslagrange.hh"
 
 namespace Dune {
@@ -180,16 +179,6 @@ public:
   {
     return BaseFunctionSetType(*backend_, entity, polOrder);
   }
-
-  using BaseType::compute_pattern;
-
-  template< class LocalGridViewType, class T >
-  PatternType compute_pattern(const LocalGridViewType& localgridView, const SpaceInterface< T >& otherSpace) const
-  {
-    return BaseType::compute_volume_pattern(localgridView, otherSpace);
-  }
-
-  using BaseType::local_constraints;
 
 private:
   std::shared_ptr< const GridViewType > gridView_;
