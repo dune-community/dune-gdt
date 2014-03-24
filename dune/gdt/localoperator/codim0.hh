@@ -9,6 +9,7 @@
 #include <vector>
 #include <utility>
 #include <type_traits>
+#include <limits>
 
 #include <dune/common/densematrix.hh>
 
@@ -84,8 +85,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const int quadratureOrder = int(evaluation().order(localFunctions, ansatzBase, testBase));
-    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), 2*quadratureOrder + 1);
+    const size_t quadratureOrder = evaluation().order(localFunctions, ansatzBase, testBase);
+    assert(quadratureOrder < std::numeric_limits< int >::max());
+    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), int(quadratureOrder));
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
