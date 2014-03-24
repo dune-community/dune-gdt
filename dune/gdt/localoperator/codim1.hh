@@ -89,8 +89,8 @@ public:
     // quadrature
     const size_t quadratureOrder = evaluation().order(
         localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase);
-    assert((2 * quadratureOrder + 1) < std::numeric_limits<int>::max());
-    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(2 * quadratureOrder + 1));
+    assert(quadratureOrder < std::numeric_limits<int>::max());
+    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(quadratureOrder));
     // check matrices
     Dune::Stuff::Common::clear(entityEntityRet);
     Dune::Stuff::Common::clear(neighborNeighborRet);
@@ -242,9 +242,8 @@ public:
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
     const size_t quadratureOrder = evaluation().order(localFunctions, testBase, ansatzBase);
-    assert((2 * quadratureOrder + 1) < std::numeric_limits<int>::max());
-    const FaceQuadratureType& faceQuadrature =
-        FaceQuadratureRules::rule(intersection.type(), int(2 * quadratureOrder + 1));
+    assert(quadratureOrder) < std::numeric_limits< int >::max());
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(quadratureOrder));
     // check matrix and tmp storage
     Dune::Stuff::Common::clear(ret);
     const size_t rows = testBase.size();

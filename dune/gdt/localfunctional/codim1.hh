@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <type_traits>
+#include <limits>
 
 #include <dune/common/densevector.hh>
 
@@ -80,8 +81,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const int quadratureOrder                = int(evaluation().order(localFunctions, testBase));
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), 2 * quadratureOrder + 1);
+    const size_t quadratureOrder = evaluation().order(localFunctions, testBase);
+    assert(quadratureOrder < std::numeric_limits<int>::max());
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(quadratureOrder));
     // check vector and tmp storage
     Dune::Stuff::Common::clear(ret);
     const size_t size = testBase.size();
