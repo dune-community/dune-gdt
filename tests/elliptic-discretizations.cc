@@ -45,6 +45,20 @@ typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>,
                        //                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                        > AluConform2dTestCases;
 
+static std::vector<double> truncate_vector(const std::vector<double>& in, const size_t size)
+{
+  assert(size <= in.size());
+  if (size == in.size())
+    return in;
+  else {
+    std::vector<double> out(size);
+    for (size_t ii = 0; ii < size; ++ii)
+      out[ii] = in[ii];
+    return out;
+  }
+} // ... truncate_vector(...)
+
+
 template <class TestCase>
 struct EllipticCGDiscretization : public ::testing::Test
 {
@@ -55,13 +69,15 @@ struct EllipticCGDiscretization : public ::testing::Test
     test_out << std::endl;
     EllipticCG::EocStudy<TestCase, 1> eoc_study(test_case);
     auto errors = eoc_study.run(test_out);
-    for (const auto& norm : eoc_study.provided_norms())
-      if (!Dune::Stuff::Common::FloatCmp::lt(errors[norm], eoc_study.expected_results(norm))) {
+    for (const auto& norm : eoc_study.provided_norms()) {
+      if (!Dune::Stuff::Common::FloatCmp::lt(errors[norm],
+                                             truncate_vector(eoc_study.expected_results(norm), errors[norm].size()))) {
         std::stringstream ss;
         Dune::Stuff::Common::print(errors[norm], "errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(eoc_study.expected_results(norm), "   expected results (" + norm + ")", ss);
         DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
+    }
   }
 }; // EllipticCGDiscretization
 
