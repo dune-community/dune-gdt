@@ -14,6 +14,9 @@
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
+#include <dune/stuff/la/container/pattern.hh>
+#include <dune/stuff/la/solver.hh>
+#include <dune/stuff/common/configtree.hh>
 
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -458,6 +461,404 @@ public:
     return range * tmp;
   } // ... apply(...)
 }; // class OperatorInterface
+
+
+template <class Traits>
+class LocalizableOperatorInterface : protected Stuff::CRTPInterface<LocalizableOperatorInterface<Traits>, Traits>
+{
+public:
+  typedef typename Traits::derived_type derived_type;
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::SourceType SourceType;
+  typedef typename Traits::RangeType RangeType;
+
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
+
+private:
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, SourceType>::value,
+                "SourceType has to be derived from Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, RangeType>::value,
+                "RangeType has to be derived from Stuff::IsLocalizableFunction!");
+  static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
+                "The EntityType of SourceType and GridViewType have to match!");
+  static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
+                "The EntityType of RangeType and GridViewType have to match!");
+  static_assert(std::is_same<typename SourceType::DomainFieldType, DomainFieldType>::value,
+                "The DomainFieldType of SourceType and GridViewType have to match!");
+  static_assert(std::is_same<typename RangeType::DomainFieldType, DomainFieldType>::value,
+                "The DomainFieldType of RangeType and GridViewType have to match!");
+  static_assert(SourceType::dimDomain == dimDomain, "The dimDomain of SourceType and GridViewType have to match!");
+  static_assert(RangeType::dimDomain == dimDomain, "The dimDomain of RangeType and GridViewType have to match!");
+
+public:
+  const GridViewType& grid_view() const
+  {
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
+  }
+
+  const SourceType& source() const
+  {
+    CHECK_CRTP(this->as_imp(*this).source());
+    return this->as_imp(*this).source();
+  }
+
+  RangeType& range()
+  {
+    CHECK_CRTP(this->as_imp(*this).range());
+    return this->as_imp(*this).range();
+  }
+
+  const RangeType& range() const
+  {
+    CHECK_CRTP(this->as_imp(*this).range());
+    return this->as_imp(*this).range();
+  }
+
+  void apply()
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).apply());
+  }
+}; // class LocalizableOperatorInterface
+
+
+template <class Traits>
+class AssemblableOperatorInterface : protected Stuff::CRTPInterface<AssemblableOperatorInterface<Traits>, Traits>
+{
+public:
+  typedef typename Traits::derived_type derived_type;
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::SourceSpaceType SourceSpaceType;
+  typedef typename Traits::RangeSpaceType RangeSpaceType;
+  typedef typename Traits::MatrixType MatrixType;
+
+  typedef typename MatrixType::ScalarType FieldType;
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
+
+private:
+  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceType::Traits>, RangeSpaceType>::value,
+                "RangeSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceType::Traits>, SourceSpaceType>::value,
+                "SourceSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_same<typename RangeSpaceType::GridViewType, GridViewType>::value,
+                "The GridViewType of RangeSpaceType and GridViewType have to match!");
+  static_assert(std::is_same<typename SourceSpaceType::GridViewType, GridViewType>::value,
+                "The GridViewType of SourceSpaceType and GridViewType have to match!");
+  static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits>, MatrixType>::value,
+                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+
+public:
+  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space)
+  {
+    return pattern(range_space, range_space);
+  }
+
+  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
+                                                   const SourceSpaceType& source_space)
+  {
+    return pattern(range_space, source_space, *(range_space.grid_view()));
+  }
+
+  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
+                                                   const SourceSpaceType& source_space, const GridViewType& grid_view)
+  {
+    return derived_type::pattern(range_space, source_space, grid_view);
+  }
+
+  const GridViewType& grid_view() const
+  {
+    CHECK_CRTP(this->as_imp(*this).grid_view());
+    return this->as_imp(*this).grid_view();
+  }
+
+  const SourceSpaceType& source_space() const
+  {
+    CHECK_CRTP(this->as_imp(*this).source_space());
+    return this->as_imp(*this).source_space();
+  }
+
+  const RangeSpaceType& range_space() const
+  {
+    CHECK_CRTP(this->as_imp(*this).range_space());
+    return this->as_imp(*this).range_space();
+  }
+
+  void assemble()
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).assemble());
+  }
+
+  MatrixType& matrix()
+  {
+    CHECK_CRTP(this->as_imp(*this).matrix());
+    return this->as_imp(*this).matrix();
+  }
+
+  const MatrixType& matrix() const
+  {
+    CHECK_CRTP(this->as_imp(*this).matrix());
+    return this->as_imp(*this).matrix();
+  }
+
+  template <class S, class R>
+  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range)
+  {
+    CHECK_CRTP(this->as_imp(*this).apply(source, range));
+    return this->as_imp(*this).apply(source, range);
+  }
+
+  template <class S, class R>
+  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source, ConstDiscreteFunction<RangeSpaceType, R>& range)
+  {
+    apply(source.vector(), range.vector());
+  }
+
+  static std::vector<std::string> invert_options()
+  {
+    return derived_type::invert_options();
+  }
+
+  static Stuff::Common::ConfigTree invert_options(const std::string& type)
+  {
+    return derived_type::invert_options(type);
+  }
+
+  template <class R, class S>
+  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source)
+  {
+    apply_inverse(range, source, invert_options()[0]);
+  }
+
+  template <class R, class S>
+  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
+                     const std::string& opt)
+  {
+    apply_inverse(range, source, invert_options(opt));
+  }
+
+  template <class R, class S>
+  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
+                     const Stuff::Common::ConfigTree& opts)
+  {
+    CHECK_CRTP(this->as_imp(*this).apply_inverse(range, source, opts));
+    return this->as_imp(*this).apply_inverse(range, source, opts);
+  }
+
+  template <class R, class S>
+  void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
+                     ConstDiscreteFunction<RangeSpaceType, S>& source)
+  {
+    apply_inverse(range.vector(), source.vector());
+  }
+
+  template <class R, class S>
+  void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
+                     ConstDiscreteFunction<RangeSpaceType, S>& source, const std::string& opt)
+  {
+    apply_inverse(range.vector(), source.vector(), opt);
+  }
+
+  template <class R, class S>
+  void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
+                     ConstDiscreteFunction<RangeSpaceType, S>& source, const Stuff::Common::ConfigTree& opts)
+  {
+    apply_inverse(range.vector(), source.vector(), opts);
+  }
+}; // class AssemblableOperatorInterface
+
+
+// forward, to be used in the traits
+template <class ImpTraits>
+class AssemblableVolumeOperatorBase;
+
+
+template <class ImpTraits>
+class AssemblableVolumeOperatorBaseTraits
+{
+public:
+  typedef typename ImpTraits::derived_type derived_type;
+  typedef typename ImpTraits::GridViewType GridViewType;
+  typedef typename ImpTraits::SourceSpaceType SourceSpaceType;
+  typedef typename ImpTraits::RangeSpaceType RangeSpaceType;
+  typedef typename ImpTraits::MatrixType MatrixType;
+}; // class AssemblableVolumeOperatorBaseTraits
+
+
+template <class ImpTraits>
+class AssemblableVolumeOperatorBase : public AssemblableOperatorInterface<ImpTraits>,
+                                      public Functor::Codim0<typename ImpTraits::GridViewType>
+{
+  typedef AssemblableOperatorInterface<ImpTraits> InterfaceType;
+  typedef AssemblableVolumeOperatorBaseTraits<ImpTraits> Traits;
+
+public:
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::SourceSpaceType SourceSpaceType;
+  typedef typename Traits::RangeSpaceType RangeSpaceType;
+  typedef typename Traits::MatrixType MatrixType;
+
+  typedef typename MatrixType::ScalarType FieldType;
+
+private:
+  typedef typename ImpTraits::LocalOperatorType LocalOperatorType;
+  typedef LocalAssembler::Codim0Matrix<LocalOperatorType> LocalAssemblerType;
+  typedef Stuff::LA::Solver<MatrixType> LinearSolverType;
+
+public:
+  using typename InterfaceType::EntityType;
+
+  AssemblableVolumeOperatorBase(MatrixType& matrix, const SourceSpaceType& source_space,
+                                const RangeSpaceType& range_space, const GridViewType& grid_view)
+    : matrix_(matrix)
+    , source_space_(source_space)
+    , range_space_(range_space)
+    , grid_view_(grid_view)
+    , local_assembler_(nullptr)
+    , linear_solver_(nullptr)
+    , prepared_(false)
+    , assembled_(false)
+  {
+  }
+
+  AssemblableVolumeOperatorBase(MatrixType& matrix, const SourceSpaceType& source_space,
+                                const RangeSpaceType& range_space)
+    : matrix_(matrix)
+    , source_space_(source_space)
+    , range_space_(range_space)
+    , grid_view_(*(source_space_.grid_view()))
+    , local_assembler_(nullptr)
+    , linear_solver_(nullptr)
+    , prepared_(false)
+    , assembled_(false)
+  {
+  }
+
+  AssemblableVolumeOperatorBase(MatrixType& matrix, const SourceSpaceType& source_space)
+    : matrix_(matrix)
+    , source_space_(source_space)
+    , range_space_(source_space_)
+    , grid_view_(*(source_space_.grid_view()))
+    , local_assembler_(nullptr)
+    , linear_solver_(nullptr)
+    , prepared_(false)
+    , assembled_(false)
+  {
+  }
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
+  }
+
+  const RangeSpaceType& range_space() const
+  {
+    return range_space_;
+  }
+
+  const SourceSpaceType& source_space() const
+  {
+    return source_space_;
+  }
+
+  MatrixType& matrix()
+  {
+    return matrix_;
+  }
+
+  const MatrixType& matrix() const
+  {
+    return matrix_;
+  }
+
+private:
+  virtual const LocalOperatorType& local_operator() const = 0;
+
+public:
+  virtual void prepare()
+  {
+    if (!assembled_ && !prepared_) {
+      local_assembler_                    = std::unique_ptr<LocalAssemblerType>(new LocalAssemblerType(local_operator()));
+      const auto num_tmp_objects_required = local_assembler_->numTmpObjectsRequired();
+      const size_t max_local_size         = std::max(range_space_.mapper().maxNumDofs(), source_space_.mapper().maxNumDofs());
+      tmp_local_matrices_ = {
+          std::vector<DynamicMatrix<FieldType>>(num_tmp_objects_required[0],
+                                                DynamicMatrix<FieldType>(max_local_size, max_local_size)),
+          std::vector<DynamicMatrix<FieldType>>(num_tmp_objects_required[1],
+                                                DynamicMatrix<FieldType>(max_local_size, max_local_size))};
+      tmp_indices_container_ = {DynamicVector<size_t>(max_local_size, 0), DynamicVector<size_t>(max_local_size, 0)};
+      prepared_              = true;
+    }
+  } // ... prepare()
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    assert(prepared_);
+    assert(local_assembler_);
+    local_assembler_->assembleLocal(
+        range_space_, source_space_, entity, matrix(), tmp_local_matrices_, tmp_indices_container_);
+  } // ... apply_local(...)
+
+  virtual void finalize()
+  {
+    linear_solver_ = std::unique_ptr<LinearSolverType>(new LinearSolverType(matrix_));
+  }
+
+  void assemble()
+  {
+    if (!assembled_) {
+      GridWalker<GridViewType> grid_walker(grid_view_);
+      grid_walker.add(*this);
+      grid_walker.walk();
+      assembled_ = true;
+    }
+  } // ... assemble()
+
+  template <class S, class R>
+  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range)
+  {
+    typedef typename S::derived_type SourceType;
+    typedef typename R::derived_type RangeType;
+    assemble();
+    matrix_.mv(static_cast<const SourceType&>(source), static_cast<RangeType&>(range));
+  }
+
+  static std::vector<std::string> invert_options()
+  {
+    return LinearSolverType::options();
+  }
+
+  static Stuff::Common::ConfigTree invert_options(const std::string& type)
+  {
+    return LinearSolverType::options(type);
+  }
+
+  template <class R, class S>
+  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
+                     const Stuff::Common::ConfigTree& opts)
+  {
+    typedef typename S::derived_type SourceType;
+    typedef typename R::derived_type RangeType;
+    assemble();
+    assert(linear_solver_);
+    linear_solver_->apply(static_cast<const RangeType&>(range), static_cast<SourceType&>(source), opts);
+  }
+
+private:
+  MatrixType& matrix_;
+  const SourceSpaceType& source_space_;
+  const RangeSpaceType& range_space_;
+  const GridViewType& grid_view_;
+  std::unique_ptr<LocalAssemblerType> local_assembler_;
+  std::unique_ptr<LinearSolverType> linear_solver_;
+  bool prepared_;
+  bool assembled_;
+  std::vector<std::vector<DynamicMatrix<FieldType>>> tmp_local_matrices_;
+  std::vector<DynamicVector<size_t>> tmp_indices_container_;
+}; // class AssemblableVolumeOperatorBase
 
 
 } // namespace GDT
