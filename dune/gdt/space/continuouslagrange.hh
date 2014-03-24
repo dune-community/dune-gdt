@@ -31,6 +31,7 @@ template <class ImpTraits, int domainDim, class RangeFieldImp>
 class ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, 1, 1> : public SpaceInterface<ImpTraits>
 {
   typedef SpaceInterface<ImpTraits> BaseType;
+  typedef ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, 1, 1> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -163,8 +164,8 @@ private:
     }
   };
 
-  template <bool set_row>
-  void compute_local_constraints(const EntityType& entity,
+  template <class T, bool set_row>
+  void compute_local_constraints(const SpaceInterface<T>& other, const EntityType& entity,
                                  Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>& ret) const
   {
     // check
@@ -177,7 +178,7 @@ private:
       const size_t numCols = this->mapper().numDofs(entity);
       ret.setSize(numRows, numCols);
       this->mapper().globalIndices(entity, tmpMappedRows_);
-      this->mapper().globalIndices(entity, tmpMappedCols_);
+      other.mapper().globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
       for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
@@ -199,16 +200,22 @@ private:
   } // ... compute_local_constraints(..., Dirichlet< ..., true >)
 
 public:
-  virtual void local_constraints(const EntityType& entity,
-                                 Constraints::Dirichlet<IntersectionType, RangeFieldType, true>& ret) const
+  void local_constraints(const EntityType& entity,
+                         Constraints::Dirichlet<IntersectionType, RangeFieldType, true>& ret) const
   {
-    compute_local_constraints(entity, ret);
+    local_constraints(*this, entity, ret);
   }
 
-  virtual void local_constraints(const EntityType& entity,
+  virtual void local_constraints(const ThisType& other, const EntityType& entity,
+                                 Constraints::Dirichlet<IntersectionType, RangeFieldType, true>& ret) const
+  {
+    compute_local_constraints(other, entity, ret);
+  }
+
+  virtual void local_constraints(const ThisType& other, const EntityType& entity,
                                  Constraints::Dirichlet<IntersectionType, RangeFieldType, false>& ret) const
   {
-    compute_local_constraints(entity, ret);
+    compute_local_constraints(other, entity, ret);
   }
 
 protected:
