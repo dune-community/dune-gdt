@@ -292,7 +292,7 @@ public:
   FieldType apply2(const ConstDiscreteFunction<RangeSpaceType, R>& range,
                    const ConstDiscreteFunction<SourceSpaceType, S>& source)
   {
-    apply2(range.vector(), source.vector());
+    return apply2(range.vector(), source.vector());
   }
 }; // class AssemblableProductInterface
 
@@ -444,7 +444,7 @@ public:
   using BaseType::GridViewType;
 
   template <class SourceType, class RangeType>
-  void apply(const SourceType& source, const RangeType& range) const
+  void apply(const SourceType& source, RangeType& range) const
   {
     CHECK_CRTP(this->as_imp(*this).apply(source, range));
     return this->as_imp(*this).apply(source, range);
