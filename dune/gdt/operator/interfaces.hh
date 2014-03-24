@@ -150,6 +150,7 @@ public:
     , range_(range)
     , source_(source)
     , prepared_(false)
+    , finalized_(false)
     , tmp_local_operator_result_(1, 1, 0)
     , tmp_matrices_()
     , result_(0)
@@ -184,6 +185,7 @@ public:
     if (!prepared_) {
       tmp_matrices_ = std::vector<DynamicMatrix<FieldType>>(local_operator().numTmpObjectsRequired(),
                                                             DynamicMatrix<FieldType>(1, 1, 0));
+      result_ *= 0.0;
       prepared_ = true;
     }
   } // ... prepare()
@@ -201,12 +203,18 @@ public:
     result_ += tmp_local_operator_result_[0][0];
   } // ... apply_local(...)
 
+  virtual void finalize()
+  {
+    finalized_ = true;
+  }
+
   FieldType apply2()
   {
-    result_ *= FieldType(0);
-    GridWalker<GridViewType> grid_walker(grid_view_);
-    grid_walker.add(*this);
-    grid_walker.walk();
+    if (!finalized_) {
+      GridWalker<GridViewType> grid_walker(grid_view_);
+      grid_walker.add(*this);
+      grid_walker.walk();
+    }
     return result_;
   }
 
@@ -215,6 +223,7 @@ private:
   const RangeType& range_;
   const SourceType& source_;
   bool prepared_;
+  bool finalized_;
   DynamicMatrix<FieldType> tmp_local_operator_result_;
   std::vector<DynamicMatrix<FieldType>> tmp_matrices_;
   FieldType result_;
