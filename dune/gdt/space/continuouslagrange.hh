@@ -86,7 +86,7 @@ public:
         if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
           local_vertices[jj] = local_vertex;
           ++ones;
-        } else if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(0)))
+        } else if (Stuff::Common::FloatCmp::eq(1.0 + this->tmp_basis_values_[jj][0], RangeFieldType(1)))
           ++zeros;
         else
           ++failures;
@@ -134,7 +134,7 @@ public:
         if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
           localDirichletDofs.insert(jj);
           ++ones;
-        } else if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(0)))
+        } else if (Stuff::Common::FloatCmp::eq(1.0 + this->tmp_basis_values_[jj][0], RangeFieldType(1)))
           ++zeros;
         else
           ++failures;
