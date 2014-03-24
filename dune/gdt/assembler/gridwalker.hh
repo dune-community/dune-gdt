@@ -46,12 +46,14 @@ public:
 
   virtual void prepare() {}
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& inside_entity,
-                           const EntityType& outside_entity) = 0;
+  virtual void apply_local(const IntersectionType& intersection) = 0;
 
   virtual void finalize() {}
 }; // class Codim1
+
+
+} // namespace Functor
+namespace ApplyOn {
 
 
 /**
@@ -66,34 +68,52 @@ virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) c
 \endcode
  */
 template< class GridViewImp >
-class ApplyOnWhichEntity
+class WhichEntity
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 
-  virtual ~ ApplyOnWhichEntity() {}
+  virtual ~ WhichEntity() {}
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const = 0;
-}; // class ApplyOnWhichEntity
+}; // class WhichEntity
 
 
 /**
  *  \brief Selects all entities.
  */
 template< class GridViewImp >
-class ApplyOnAllEntities
-  : public ApplyOnWhichEntity< GridViewImp >
+class AllEntities
+  : public WhichEntity< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const DS_FINAL
   {
     return true;
   }
-}; // class ApplyOnAllEntities
+}; // class AllEntities
+
+
+/**
+ *  \brief Selects entities which have a boundary intersection.
+ */
+template< class GridViewImp >
+class BoundaryEntities
+  : public WhichEntity< GridViewImp >
+{
+public:
+  typedef GridViewImp GridViewType;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_FINAL
+  {
+    return entity.hasBoundaryIntersections();
+  }
+}; // class BoundaryEntities
 
 
 /**
@@ -108,16 +128,35 @@ virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& int
 \endcode
  */
 template< class GridViewImp >
-class ApplyOnWhichIntersection
+class WhichIntersection
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType IntersectionType;
+  typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual ~ ApplyOnWhichIntersection< GridViewImp >() {}
+  virtual ~ WhichIntersection< GridViewImp >() {}
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const = 0;
-}; // class ApplyOnWhichIntersection< GridViewImp >
+}; // class WhichIntersection< GridViewImp >
+
+
+
+/**
+ *  \brief Selects all intersections.
+ */
+template< class GridViewImp >
+class AllIntersections
+  : public WhichIntersection< GridViewImp >
+{
+public:
+  typedef GridViewImp GridViewType;
+  typedef typename GridViewType::Intersection IntersectionType;
+
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const DS_FINAL
+  {
+    return true;
+  }
+}; // class AllIntersections
 
 
 /**
@@ -130,18 +169,18 @@ intersection.neighbor() && !intersection.boundary()
  *  is used.
  */
 template< class GridViewImp >
-class ApplyOnInnerIntersections
-  : public ApplyOnWhichIntersection< GridViewImp >
+class InnerIntersections
+  : public WhichIntersection< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType IntersectionType;
+  typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
   {
     return intersection.neighbor() && !intersection.boundary();
   }
-}; // class ApplyOnInnerIntersections
+}; // class InnerIntersections
 
 
 /**
@@ -155,14 +194,14 @@ intersection.neighbor() && !intersection.boundary()
  *  entity.
  */
 template< class GridViewImp >
-class ApplyOnInnerIntersectionsPrimally
-  : public ApplyOnWhichIntersection< GridViewImp >
+class InnerIntersectionsPrimally
+  : public WhichIntersection< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType IntersectionType;
+  typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_FINAL
   {
     if (intersection.neighbor() && !intersection.boundary()) {
       const auto insideEntityPtr = intersection.inside();
@@ -173,71 +212,71 @@ public:
     } else
       return false;
   }
-}; // class ApplyOnInnerIntersections
+}; // class InnerIntersections
 
 
 template< class GridViewImp >
-class ApplyOnBoundaryIntersections
-  : public ApplyOnWhichIntersection< GridViewImp >
+class BoundaryIntersections
+  : public WhichIntersection< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType IntersectionType;
+  typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
   {
     return intersection.boundary();
   }
-}; // class ApplyOnBoundaryIntersections
+}; // class BoundaryIntersections
 
 
 template< class GridViewImp >
-class ApplyOnDirichletIntersections
-  : public ApplyOnWhichIntersection< GridViewImp >
+class DirichletIntersections
+  : public WhichIntersection< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType           IntersectionType;
+  typedef typename GridViewType::Intersection           IntersectionType;
   typedef Stuff::GridboundaryInterface< IntersectionType >  BoundaryInfoType;
 
-  ApplyOnDirichletIntersections(const BoundaryInfoType& boundary_info)
+  DirichletIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
   {
     return boundary_info_.dirichlet(intersection);
   }
 
 private:
   const BoundaryInfoType& boundary_info_;
-}; // class ApplyOnDirichletIntersections
+}; // class DirichletIntersections
 
 
 template< class GridViewImp >
-class ApplyOnNeumannIntersections
-  : public ApplyOnWhichIntersection< GridViewImp >
+class NeumannIntersections
+  : public WhichIntersection< GridViewImp >
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IntersectionType           IntersectionType;
+  typedef typename GridViewType::Intersection           IntersectionType;
   typedef Stuff::GridboundaryInterface< IntersectionType >  BoundaryInfoType;
 
-  ApplyOnNeumannIntersections(const BoundaryInfoType& boundary_info)
+  NeumannIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const /*DS_OVERRIDE*/
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
   {
     return boundary_info_.neumann(intersection);
   }
 
 private:
   const BoundaryInfoType& boundary_info_;
-}; // class ApplyOnNeumannIntersections
+}; // class NeumannIntersections
 
 
-} // namespace Functor
+} // namespace ApplyOn
 
 
 template< class GridViewImp >
@@ -249,22 +288,39 @@ public:
   typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
   typedef typename GridViewType::Intersection                 IntersectionType;
 
-private:
+protected:
   typedef Stuff::GridboundaryInterface< IntersectionType > BoundaryInfoType;
-  typedef Functor::Codim0< GridViewType > Codim0FunctorType;
-  typedef Functor::Codim1< GridViewType > Codim1FunctorType;
 
-  class Codim0FunctorWrapper
+  class Codim0Object
     : public Functor::Codim0< GridViewType >
   {
   public:
-    Codim0FunctorWrapper(Codim0FunctorType& wrapped_functor)
+    ~ Codim0Object() {}
+    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const = 0;
+  };
+
+
+  template< class Codim0FunctorType >
+  class Codim0FunctorWrapper
+    : public Codim0Object
+  {
+  public:
+    Codim0FunctorWrapper(Codim0FunctorType& wrapped_functor,
+                         const ApplyOn::WhichEntity< GridViewType >* where)
       : wrapped_functor_(wrapped_functor)
+      , where_(where)
     {}
+
+    virtual ~Codim0FunctorWrapper() {}
 
     virtual void prepare() DS_FINAL
     {
       wrapped_functor_.prepare();
+    }
+
+    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_FINAL
+    {
+      return where_->apply_on(grid_view, entity);
     }
 
     virtual void apply_local(const EntityType& entity) DS_FINAL
@@ -279,14 +335,28 @@ private:
 
   private:
     Codim0FunctorType& wrapped_functor_;
+    std::unique_ptr< const ApplyOn::WhichEntity< GridViewType > > where_;
   }; // class Codim0FunctorWrapper
 
-  class Codim1FunctorWrapper
+
+  class Codim1Object
     : public Functor::Codim1< GridViewType >
   {
   public:
-    Codim1FunctorWrapper(Codim1FunctorType& wrapped_functor)
+    ~ Codim1Object() {}
+    virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const = 0;
+  };
+
+
+  template< class Codim1FunctorType >
+  class Codim1FunctorWrapper
+    : public Codim1Object
+  {
+  public:
+    Codim1FunctorWrapper(Codim1FunctorType& wrapped_functor,
+                         const ApplyOn::WhichIntersection< GridViewType >* where)
       : wrapped_functor_(wrapped_functor)
+      , where_(where)
     {}
 
     virtual void prepare() DS_FINAL
@@ -294,11 +364,14 @@ private:
       wrapped_functor_.prepare();
     }
 
-    virtual void apply_local(const IntersectionType& intersection,
-                             const EntityType& inside_entity,
-                             const EntityType& outside_entity) DS_FINAL
+    virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_FINAL
     {
-      wrapped_functor_.apply_local(intersection, inside_entity, outside_entity);
+      return where_->apply_on(grid_view, intersection);
+    }
+
+    virtual void apply_local(const IntersectionType& intersection) DS_FINAL
+    {
+      wrapped_functor_.apply_local(intersection);
     }
 
     virtual void finalize() DS_FINAL
@@ -308,6 +381,7 @@ private:
 
   private:
     Codim1FunctorType& wrapped_functor_;
+    std::unique_ptr< const ApplyOn::WhichIntersection< GridViewType > > where_;
   }; // class Codim1FunctorWrapper
 
 public:
@@ -315,20 +389,30 @@ public:
     : grid_view_(grid_view)
   {}
 
-  void add(Functor::Codim0< GridViewType >& functor)
+  const GridViewType& grid_view() const
   {
-    codim0_functors_.emplace_back(new Codim0FunctorWrapper(functor));
+    return grid_view_;
   }
 
-  void add(Functor::Codim1< GridViewType >& functor)
+  void add(Functor::Codim0< GridViewType >& functor,
+           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
   {
-    codim1_functors_.emplace_back(new Codim1FunctorWrapper(functor));
+    codim0_functors_.emplace_back(new Codim0FunctorWrapper< Functor::Codim0< GridViewType > >(functor, where));
+  }
+
+  void add(Functor::Codim1< GridViewType >& functor,
+           const ApplyOn::WhichIntersection< GridViewType >* where
+              = new ApplyOn::AllIntersections< GridViewType >())
+  {
+    codim1_functors_.emplace_back(new Codim1FunctorWrapper< Functor::Codim1< GridViewType > >(functor, where));
   }
 
   void walk() const
   {
     // prepare functors
     for (auto& functor : codim0_functors_)
+      functor->prepare();
+    for (auto& functor : codim1_functors_)
       functor->prepare();
 
     // only do something, if we have to
@@ -340,22 +424,20 @@ public:
 
         // apply codim0 functors
         for (auto& functor : codim0_functors_)
-          functor->apply_local(entity);
+          if (functor->apply_on(grid_view_, entity)) functor->apply_local(entity);
 
         // only walk the intersections, if there are codim1 functors present
-        if (codim1_functors_.size()) {
+        if (codim1_functors_.size() > 0) {
           // walk the intersections
           const auto intersection_it_end = grid_view_.iend(entity);
           for (auto intersection_it = grid_view_.ibegin(entity);
                intersection_it != intersection_it_end;
                ++intersection_it) {
             const auto& intersection = *intersection_it;
-            const auto neighbor_ptr = intersection.outside();
-            const EntityType& neighbor = *neighbor_ptr;
 
             // apply codim1 functors
             for (auto& functor : codim1_functors_)
-              functor->apply_local(intersection, entity, neighbor);
+              if (functor->apply_on(grid_view_, intersection)) functor->apply_local(intersection);
 
           } // walk the intersections
         } // only walk the intersections, if there are codim1 functors present
@@ -365,12 +447,20 @@ public:
     // finalize functors
     for (auto& functor : codim0_functors_)
       functor->finalize();
+    for (auto& functor : codim1_functors_)
+      functor->finalize();
   } // ... walk()
 
-private:
+  void clear()
+  {
+    codim0_functors_ = std::vector< std::unique_ptr< Codim0Object > >();
+    codim1_functors_ = std::vector< std::unique_ptr< Codim1Object > >();
+  }
+
+protected:
   const GridViewType& grid_view_;
-  std::vector< std::unique_ptr< Codim0FunctorType > > codim0_functors_;
-  std::vector< std::unique_ptr< Codim1FunctorType > > codim1_functors_;
+  std::vector< std::unique_ptr< Codim0Object > > codim0_functors_;
+  std::vector< std::unique_ptr< Codim1Object > > codim1_functors_;
 }; // class GridWalker
 
 
