@@ -21,19 +21,13 @@
 #include <dune/stuff/functions/combined.hh>
 
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/localevaluation/product.hh>
-#include <dune/gdt/localfunctional/codim0.hh>
-#include <dune/gdt/localfunctional/codim1.hh>
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operator/projections.hh>
-#include <dune/gdt/assembler/local/codim0.hh>
-#include <dune/gdt/assembler/local/codim1.hh>
-#include <dune/gdt/space/constraints.hh>
+#include <dune/gdt/operator/elliptic.hh>
+#include <dune/gdt/functional/l2.hh>
 #include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/space/constraints.hh>
 #include <dune/gdt/operator/products.hh>
 #include <dune/gdt/operator/prolongations.hh>
+#include <dune/gdt/operator/projections.hh>
 
 #include "elliptic-testcases.hh"
 
@@ -100,61 +94,48 @@ public:
 
   void assemble() const
   {
+    using namespace Dune;
+    using namespace Dune::GDT;
     if (!is_assembled_) {
-      using namespace Dune;
-      using namespace Dune::GDT;
-
-      const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computePattern());
-      system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+      // create the containers (use the sparsity pattern of the operator)
+      typedef GDT::Operator::Elliptic< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
+      system_matrix_ = MatrixType(space_.mapper().size(),
+                                  space_.mapper().size(),
+                                  EllipticOperatorType::pattern(space_));
       rhs_vector_ = VectorType (space_.mapper().size());
       dirichlet_shift_vector_ = VectorType(space_.mapper().size());
-
-      // left hand side
-      // * elliptic diffusion operator
-      typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > >  EllipticOperatorType;
-      const EllipticOperatorType diffusion_operator(diffusion_);
-      // right hand side
-      // * L2 force functional
-      typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > L2VolumeFunctionalType;
-      const L2VolumeFunctionalType force_functional(force_);
-      // * L2 neumann functional
-      typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > L2FaceFunctionalType;
-      const L2FaceFunctionalType neumann_functional(neumann_);
-
-      // dirichlet boundary values
-      DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_, "dirichlet");
-      typedef ProjectionOperator::Dirichlet< GridViewType > DirichletProjectionOperatorType;
-      const DirichletProjectionOperatorType dirichlet_projection_operator(*(space_.gridView()), boundary_info_);
-      dirichlet_projection_operator.apply(dirichlet_, dirichlet_projection);
-
-      // local matrix assembler
-      typedef LocalAssembler::Codim0Matrix< EllipticOperatorType > LocalEllipticOperatorMatrixAssemblerType;
-      const LocalEllipticOperatorMatrixAssemblerType diffusion_matrix_assembler(diffusion_operator);
-      // local vector assemblers
-      // * force vector
-      typedef LocalAssembler::Codim0Vector< L2VolumeFunctionalType > LocalL2VolumeFunctionalVectorAssemblerType;
-      const LocalL2VolumeFunctionalVectorAssemblerType force_vector_assembler(force_functional);
-      // * neumann vector
-      typedef LocalAssembler::Codim1Vector< L2FaceFunctionalType > LocalL2FaceFunctionalVectorAssemblerType;
-      const LocalL2FaceFunctionalVectorAssemblerType neumann_vector_assembler(neumann_functional);
-      // system assembler
-      typedef SystemAssembler< SpaceType > SystemAssemblerType;
-      SystemAssemblerType system_assembler(space_);
-      system_assembler.addLocalAssembler(diffusion_matrix_assembler, system_matrix_);
-      system_assembler.addLocalAssembler(force_vector_assembler, rhs_vector_);
-      system_assembler.addLocalAssembler(neumann_vector_assembler,
-                                        typename SystemAssemblerType::AssembleOnNeumann(boundary_info_),
-                                        rhs_vector_);
-      system_assembler.assemble();
-
+      // define the lhs operator and the rhs functionals
+      EllipticOperatorType elliptic_operator(diffusion_, system_matrix_, space_);
+      typedef GDT::Functional::L2Volume< FunctionType, VectorType, SpaceType > L2VolumeFunctionalType;
+      L2VolumeFunctionalType force_functional(force_, rhs_vector_, space_);
+      typedef GDT::Functional::L2Face< FunctionType, VectorType, SpaceType > L2FaceFunctionalType;
+      L2FaceFunctionalType neumann_functional(force_, rhs_vector_, space_);
+      DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_);
+      typedef ProjectionOperator::DirichletLocalizable< GridViewType, FunctionType, DiscreteFunctionType >
+          DirichletProjectionOperator;
+      DirichletProjectionOperator dirichlet_projection_operator(*(space_.grid_view()),
+                                                                boundary_info_,
+                                                                dirichlet_,
+                                                                dirichlet_projection);
+      // assemble everything
+      SystemAssembler< SpaceType > grid_walker(space_);
+      grid_walker.add(elliptic_operator);
+      grid_walker.add(force_functional);
+      grid_walker.add(neumann_functional, new ApplyOn::NeumannIntersections< GridViewType >(boundary_info_));
+      grid_walker.add(dirichlet_projection_operator, new ApplyOn::BoundaryEntities< GridViewType >());
+      grid_walker.walk();
+      grid_walker.clear();
+      // substract the operators action on the dirichlet values
+      auto tmp = rhs_vector_.copy();
+      elliptic_operator.apply(dirichlet_shift_vector_, tmp);
+      rhs_vector_ -= tmp;
+      // apply the dirichlet constraints
       Constraints::Dirichlet < typename GridViewType::Intersection, RangeFieldType >
         dirichlet_constraints(boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
-      auto tmp = rhs_vector_.copy();
-      system_matrix_.mv(dirichlet_shift_vector_, tmp);
-      rhs_vector_ -= tmp;
-      system_assembler.addLocalConstraints(dirichlet_constraints, system_matrix_);
-      system_assembler.addLocalConstraints(dirichlet_constraints, rhs_vector_);
-      system_assembler.applyConstraints();
+      grid_walker.add(dirichlet_constraints, system_matrix_);
+      grid_walker.add(dirichlet_constraints, rhs_vector_);
+      grid_walker.walk();
+      grid_walker.clear();
 
       is_assembled_ = true;
     }
