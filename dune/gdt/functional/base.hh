@@ -252,6 +252,7 @@ public:
   virtual void apply_local(const IntersectionType& intersection)
   {
     assert(prepared_);
+    assert(local_assembler_);
     local_assembler_->assembleLocal(space_, intersection, vector_, tmp_local_vectors_, tmp_indices_);
   } // ... apply_local(...)
 
