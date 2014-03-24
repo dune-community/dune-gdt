@@ -18,6 +18,7 @@
 #include <dune/stuff/common/vector.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/space/continuouslagrange.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
@@ -343,17 +344,128 @@ private:
 }; // Generic
 
 
-template< class GridViewImp, class FieldImp = double >
+// forward, to be used in the traits
+template< class GridViewImp, class SourceImp, class RangeImp >
+class DirichletLocalizable;
+
+
+template< class GridViewImp, class SourceImp, class RangeImp >
+class DirichletLocalizableTraits
+{
+  typedef typename RangeImp::SpaceType::Traits T;
+  static const unsigned int d = RangeImp::dimDomain;
+  typedef typename RangeImp::RangeFieldType R;
+  static const unsigned int r = RangeImp::dimRange;
+  static const unsigned int rC = RangeImp::dimRangeCols;
+  static_assert(std::is_base_of< ContinuousLagrangeSpaceBase< T, d, R, r, rC >, typename RangeImp::SpaceType >::value,
+                "The SpaceType of RangeImp has to be derived from ContinuousLagrangeSpaceBase!");
+  static_assert(r == 1, "Not implemeneted for higher dimensions!");
+  static_assert(rC == 1, "Not implemeneted for higher dimensions!");
+  typedef typename SourceImp::EntityType E;
+  typedef typename SourceImp::DomainFieldType D;
+  static_assert(SourceImp::dimDomain == d, "Dimensions do not match!");
+  static_assert(std::is_same< typename SourceImp::RangeFieldType, R >::value, "Types do not match!");
+  static_assert(SourceImp::dimRange == r, "Dimensions do not match!");
+  static_assert(SourceImp::dimRangeCols == rC, "Dimensions do not match!");
+  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >, SourceImp >::value,
+                "SourceImp has to be derived from Stuff::LocalizableFunctionInterface!");
+public:
+  typedef DirichletLocalizable< GridViewImp, SourceImp, RangeImp > derived_type;
+  typedef GridViewImp GridViewType;
+  typedef SourceImp   SourceType;
+  typedef RangeImp    RangeType;
+}; // class DirichletLocalizableTraits
+
+
+template< class GridViewImp, class SourceImp, class RangeImp >
+class DirichletLocalizable
+  : public LocalizableOperatorInterface< DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp > >
+  , public Functor::Codim0< GridViewImp >
+{
+public:
+  typedef DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp > Traits;
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::SourceType   SourceType;
+  typedef typename Traits::RangeType    RangeType;
+
+  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
+  typedef typename GridViewType::Intersection                 IntersectionType;
+  typedef Stuff::GridboundaryInterface< IntersectionType >    BoundaryInfoType;
+
+public:
+  DirichletLocalizable(const GridViewType& grid_view,
+                       const BoundaryInfoType& boundary_info,
+                       const SourceType& source,
+                       RangeType& range)
+    : grid_view_(grid_view)
+    , boundary_info_(boundary_info)
+    , source_(source)
+    , range_(range)
+  {}
+
+  virtual ~DirichletLocalizable() {}
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    if (entity.hasBoundaryIntersections()) {
+      const auto local_dirichlet_DoFs = range_.space().local_dirichlet_DoFs(entity, boundary_info_);
+      if (local_dirichlet_DoFs.size() > 0) {
+        const auto local_source = source_.local_function(entity);
+        auto local_range = range_.local_discrete_function(entity);
+        auto& local_range_DoF_vector = local_range.vector();
+        const auto lagrange_points = range_.space().lagrange_points(entity);
+        assert(lagrange_points.size() == local_range_DoF_vector.size());
+        for (const size_t& local_DoF_id : local_dirichlet_DoFs)
+          local_range_DoF_vector.set(local_DoF_id, local_source->evaluate(lagrange_points[local_DoF_id]));
+      }
+    }
+  } // ... apply_local(...)
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
+  }
+
+  const SourceType& source() const
+  {
+    return source_;
+  }
+
+  RangeType& range()
+  {
+    return range_;
+  }
+
+  const RangeType& range() const
+  {
+    return range_;
+  }
+
+  void apply()
+  {
+    GridWalker< GridViewType > grid_walker(grid_view_);
+    grid_walker.add(*this, new ApplyOn::BoundaryEntities< GridViewType >());
+    grid_walker.walk();
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const BoundaryInfoType& boundary_info_;
+  const SourceType& source_;
+  RangeType& range_;
+}; // class DirichletLocalizable
+
+
+template< class GridViewImp >
 class Dirichlet;
 
 
-template< class GridViewImp, class FieldImp = double >
+template< class GridViewImp >
 class DirichletTraits
 {
 public:
-  typedef Dirichlet< GridViewImp, FieldImp > derived_type;
+  typedef Dirichlet< GridViewImp > derived_type;
   typedef GridViewImp GridViewType;
-  typedef FieldImp FieldType;
 }; // class DirichletTraits
 
 
@@ -364,20 +476,18 @@ public:
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
-template< class GridViewImp, class FieldImp >
+template< class GridViewImp >
 class Dirichlet
 {
 public:
-  typedef DirichletTraits< GridViewImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::FieldType    FieldType;
-  typedef Stuff::GridboundaryInterface< typename GridViewType::Intersection > BoundaryInfoType;
-private:
-  typedef typename GridViewType::ctype              DomainFieldType;
-  static const unsigned int                         dimDomain = GridViewType::dimension;
-  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef DirichletTraits< GridViewImp > Traits;
 
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename Traits::GridViewType GridViewType;
+
+  typedef typename GridViewType::template Codim< 0 >::Entity                  EntityType;
+  typedef typename GridViewType::ctype                                        DomainFieldType;
+  static const unsigned int                                                   dimDomain = GridViewType::dimension;
+  typedef Stuff::GridboundaryInterface< typename GridViewType::Intersection > BoundaryInfoType;
 
 public:
   Dirichlet(const GridViewType& grid_view, const BoundaryInfoType& boundary_info)
@@ -385,118 +495,16 @@ public:
     , boundary_info_(boundary_info)
   {}
 
-  template< class E, class D, int d, class R, int r, int rC, class T, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
-             DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
+  template< class R, int r, int rC, class GV, int p, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::PdelabWrapper< GV, p, R, r, rC >, V >& range) const
   {
-    static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range!");
+    typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC > SourceType;
+    typedef DiscreteFunction< ContinuousLagrangeSpace::PdelabWrapper< GV, p, R, r, rC >, V >        RangeType;
+    DirichletLocalizable< GridViewType, SourceType, RangeType >
+        localizable_operator(grid_view_, boundary_info_, source, range);
+    localizable_operator.apply();
   }
-
-  template< class R, class GP, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 >, V >& range) const
-  {
-    // checks
-    typedef ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 > SpaceType;
-    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    // clear range
-    Stuff::Common::clear(range.vector());
-    // walk the grid
-    const auto entity_it_end = grid_view_.template end< 0 >();
-    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-        const auto local_source = source.local_function(entity);
-        auto local_range = range.local_discrete_function(entity);
-        auto& local_range_DoF_vector = local_range.vector();
-        // get the lagrange points
-        const auto lagrange_points = range.space().backend().lagrangePointSet(entity);
-        std::vector< DomainType > points(lagrange_points.nop(), DomainType(0));
-        for (size_t ii = 0; ii < lagrange_points.nop(); ++ii)
-          points[ii] = lagrange_points.point(ii);
-        // and do the work (see below)
-        apply_local(entity, points, local_source, local_range_DoF_vector);
-    } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, 1, 1 > ...) const
-
-  template< class R, class GP, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 >, V >& range) const
-  {
-    // checks
-    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > SpaceType;
-    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    // clear range
-    Stuff::Common::clear(range.vector());
-    // walk the grid
-    const auto entity_it_end = grid_view_.template end< 0 >();
-    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-        const auto local_source = source.local_function(entity);
-        auto local_range = range.local_discrete_function(entity);
-        auto& local_range_DoF_vector = local_range.vector();
-        const auto lagrange_points = range.space().lagrange_points(entity);
-        // and do the work (see below)
-        apply_local(entity, lagrange_points, local_source, local_range_DoF_vector);
-    } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > ...) const
-
-  template< class R, class GP, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::PdelabWrapper< GP, 1, R, 1, 1 >, V >& range) const
-  {
-    // checks
-    typedef ContinuousLagrangeSpace::PdelabWrapper< GP, 1, R, 1, 1 > SpaceType;
-    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    // clear range
-    Stuff::Common::clear(range.vector());
-    // walk the grid
-    const auto entity_it_end = grid_view_.template end< 0 >();
-    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-        const auto local_source = source.local_function(entity);
-        auto local_range = range.local_discrete_function(entity);
-        auto& local_range_DoF_vector = local_range.vector();
-        const auto lagrange_points = range.space().lagrange_points(entity);
-        // and do the work (see below)
-        apply_local(entity, lagrange_points, local_source, local_range_DoF_vector);
-    } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, 1, 1 > ...) const
-
-private:
-  template< class LagrangePointsType, class LocalSourceType, class LocalRangeVectorType >
-  void apply_local(const EntityType& entity,
-                   const LagrangePointsType& lagrange_points,
-                   const LocalSourceType& local_source,
-                   LocalRangeVectorType& local_range_DoF_vector) const
-  {
-    assert(lagrange_points.size() == local_range_DoF_vector.size());
-    // walk the intersections
-    const auto intersection_it_end = grid_view_.iend(entity);
-    for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
-      const auto& intersection = *intersection_it;
-      // only work on boundary intersections
-      if (boundary_info_.dirichlet(intersection)) {
-        const auto& intersection_geometry = intersection.geometry();
-        // and walk its corners (i.e. the vertices in 2d)
-        for (int local_intersection_corner_id = 0;
-             local_intersection_corner_id < intersection_geometry.corners();
-             ++local_intersection_corner_id) {
-          const auto local_vertex
-              = entity.geometry().local(intersection_geometry.corner(local_intersection_corner_id));
-          // loop over all local lagrange points
-          for (size_t lagrange_point_id = 0; lagrange_point_id < lagrange_points.size(); ++lagrange_point_id) {
-            const auto& lagrange_point = lagrange_points[lagrange_point_id];
-            // and check for equality
-            if (Stuff::Common::FloatCmp::eq(local_vertex, lagrange_point)) {
-              // this lagrange point is on the dirichlet boundary
-              // so we evaluate the source and set the corresponding local DoF
-              local_range_DoF_vector.set(lagrange_point_id, local_source->evaluate(lagrange_point));
-            }
-          } // loop over all local lagrange points
-        } // walk its corners
-      } // only work on boundary intersections
-    } // walk the intersections
-  } // ... apply_local(...)
 
   const GridViewType& grid_view_;
   const BoundaryInfoType& boundary_info_;
