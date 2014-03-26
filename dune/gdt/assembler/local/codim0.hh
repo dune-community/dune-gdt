@@ -168,7 +168,7 @@ public:
                      Dune::DynamicVector< size_t >& tmpIndices) const
   {
     // check
-    assert(tmpLocalVectorContainer.size() >= 1);
+    assert(tmpLocalVectorContainer.size() >= 2);
     assert(tmpLocalVectorContainer[0].size() >= numTmpObjectsRequired_);
     assert(tmpLocalVectorContainer[1].size() >= localFunctional_.numTmpObjectsRequired());
     // get and clear vector
