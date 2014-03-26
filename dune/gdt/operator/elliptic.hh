@@ -25,12 +25,12 @@ namespace Operator {
 // forward, to be used in the traits
 template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
           class GridViewImp                                                              = typename SourceSpaceImp::GridViewType>
-class Elliptic;
+class EllipticCG;
 
 
 template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
           class GridViewImp                                                              = typename SourceSpaceImp::GridViewType>
-class EllipticTraits
+class EllipticCGTraits
 {
   static_assert(std::is_base_of<Stuff::LocalizableFunctionInterface<
                                     typename DiffusionImp::EntityType, typename DiffusionImp::DomainFieldType,
@@ -46,7 +46,7 @@ class EllipticTraits
                 "RangeSpaceImp has to be derived from SpaceInterface!");
 
 public:
-  typedef Elliptic<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> derived_type;
+  typedef EllipticCG<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> derived_type;
   typedef MatrixImp MatrixType;
   typedef SourceSpaceImp SourceSpaceType;
   typedef RangeSpaceImp RangeSpaceType;
@@ -59,16 +59,16 @@ public:
   typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> LocalOperatorType;
 
 private:
-  friend class Elliptic<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp>;
+  friend class EllipticCG<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp>;
 }; // class EllipticTraits
 
 
 template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
-class Elliptic : public AssemblableVolumeOperatorBase<EllipticTraits<DiffusionImp, MatrixImp, SourceSpaceImp,
-                                                                     RangeSpaceImp, GridViewImp>>
+class EllipticCG : public AssemblableVolumeOperatorBase<EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp,
+                                                                         RangeSpaceImp, GridViewImp>>
 {
 public:
-  typedef EllipticTraits<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> Traits;
+  typedef EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> Traits;
 
 private:
   typedef AssemblableVolumeOperatorBase<Traits> BaseType;
@@ -90,34 +90,34 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  Elliptic(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
-           const RangeSpaceType& range_space, const GridViewType& grid_view)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
+             const RangeSpaceType& range_space, const GridViewType& grid_view)
     : BaseType(matrix, source_space, range_space, grid_view)
     , local_operator_(diffusion)
   {
   }
 
-  Elliptic(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
-           const RangeSpaceType& range_space)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
+             const RangeSpaceType& range_space)
     : BaseType(matrix, source_space, range_space)
     , local_operator_(diffusion)
   {
   }
 
-  Elliptic(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space)
     : BaseType(matrix, source_space)
     , local_operator_(diffusion)
   {
   }
 
+private:
   virtual const LocalOperatorType& local_operator() const
   {
     return local_operator_;
   }
 
-private:
   const LocalOperatorType local_operator_;
-}; // class Elliptic
+}; // class EllipticCG
 
 
 } // namespace Operator
