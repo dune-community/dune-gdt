@@ -90,18 +90,21 @@ public:
     using namespace Dune;
     using namespace Dune::GDT;
     if (!is_assembled_) {
+
       // create the containers (use the sparsity pattern of the operator)
-      typedef GDT::Operator::Elliptic<FunctionType, MatrixType, SpaceType> EllipticOperatorType;
+      typedef GDT::Operator::EllipticCG<FunctionType, MatrixType, SpaceType> EllipticOperatorType;
       system_matrix_ =
           MatrixType(space_.mapper().size(), space_.mapper().size(), EllipticOperatorType::pattern(space_));
       rhs_vector_             = VectorType(space_.mapper().size());
       dirichlet_shift_vector_ = VectorType(space_.mapper().size());
+
       // define the lhs operator and the rhs functionals
       EllipticOperatorType elliptic_operator(diffusion_, system_matrix_, space_);
       typedef GDT::Functional::L2Volume<FunctionType, VectorType, SpaceType> L2VolumeFunctionalType;
       L2VolumeFunctionalType force_functional(force_, rhs_vector_, space_);
       typedef GDT::Functional::L2Face<FunctionType, VectorType, SpaceType> L2FaceFunctionalType;
-      L2FaceFunctionalType neumann_functional(force_, rhs_vector_, space_);
+      L2FaceFunctionalType neumann_functional(neumann_, rhs_vector_, space_);
+      // project the dirichlet boundary values
       DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_);
       typedef ProjectionOperator::DirichletLocalizable<GridViewType, FunctionType, DiscreteFunctionType>
           DirichletProjectionOperator;
@@ -114,10 +117,9 @@ public:
       grid_walker.add(neumann_functional, new ApplyOn::NeumannIntersections<GridViewType>(boundary_info_));
       grid_walker.add(dirichlet_projection_operator, new ApplyOn::BoundaryEntities<GridViewType>());
       grid_walker.walk();
-      grid_walker.clear();
       // substract the operators action on the dirichlet values
       auto tmp = rhs_vector_.copy();
-      elliptic_operator.apply(dirichlet_shift_vector_, tmp);
+      system_matrix_.mv(dirichlet_shift_vector_, tmp);
       rhs_vector_ -= tmp;
       // apply the dirichlet constraints
       Constraints::Dirichlet<typename GridViewType::Intersection, RangeFieldType> dirichlet_constraints(
@@ -125,7 +127,6 @@ public:
       grid_walker.add(dirichlet_constraints, system_matrix_);
       grid_walker.add(dirichlet_constraints, rhs_vector_);
       grid_walker.walk();
-      grid_walker.clear();
 
       is_assembled_ = true;
     }
