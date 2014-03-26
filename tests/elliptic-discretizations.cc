@@ -3,6 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#define DUNE_STUFF_FUNCTIONS_DISABLE_CHECKS
+
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
@@ -45,7 +47,7 @@ typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
 //                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
-static std::vector< double > truncate_vector(const std::vector< double >& in, const size_t size)
+std::vector< double > truncate_vector(const std::vector< double >& in, const size_t size)
 {
   assert(size <= in.size());
   if (size == in.size())
@@ -74,7 +76,7 @@ struct EllipticCGDiscretization
       if (!Dune::Stuff::Common::FloatCmp::lt(errors[norm],
                                              truncate_vector(eoc_study.expected_results(norm), errors[norm].size()))) {
         std::stringstream ss;
-        Dune::Stuff::Common::print(errors[norm],                     "errors           (" + norm + ")", ss);
+        Dune::Stuff::Common::print(errors[norm],                        "errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(eoc_study.expected_results(norm), "   expected results (" + norm + ")", ss);
         DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
