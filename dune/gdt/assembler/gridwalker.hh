@@ -407,7 +407,7 @@ public:
     codim1_functors_.emplace_back(new Codim1FunctorWrapper< Functor::Codim1< GridViewType > >(functor, where));
   }
 
-  void walk() const
+  void walk(const bool clear_stack = true)
   {
     // prepare functors
     for (auto& functor : codim0_functors_)
@@ -449,6 +449,10 @@ public:
       functor->finalize();
     for (auto& functor : codim1_functors_)
       functor->finalize();
+
+    // clear the stack of functors
+    if (clear_stack)
+      clear();
   } // ... walk()
 
   void clear()
