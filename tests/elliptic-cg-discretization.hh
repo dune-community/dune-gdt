@@ -25,7 +25,8 @@
 #include <dune/gdt/functional/l2.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/space/constraints.hh>
-#include <dune/gdt/operator/products.hh>
+#include <dune/gdt/product/l2.hh>
+#include <dune/gdt/product/h1.hh>
 #include <dune/gdt/operator/prolongations.hh>
 #include <dune/gdt/operator/projections.hh>
 
@@ -444,10 +445,10 @@ private:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      ProductOperator::L2Generic<GridViewType> l2_product_operator(grid_view);
+      Product::L2Generic<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      ProductOperator::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
+      Product::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
