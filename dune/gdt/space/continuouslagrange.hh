@@ -200,8 +200,9 @@ private:
   } // ... compute_local_constraints(..., Dirichlet< ..., true >)
 
 public:
+  template <bool set>
   void local_constraints(const EntityType& entity,
-                         Constraints::Dirichlet<IntersectionType, RangeFieldType, true>& ret) const
+                         Constraints::Dirichlet<IntersectionType, RangeFieldType, set>& ret) const
   {
     local_constraints(*this, entity, ret);
   }
