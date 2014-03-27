@@ -28,8 +28,8 @@
 
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
-#include "elliptic-sipdg-discretization.hh"
-#include "elliptic-swipdg-discretization.hh"
+//#include "elliptic-sipdg-discretization.hh"
+//#include "elliptic-swipdg-discretization.hh"
 
 class errors_are_not_as_expected : public Dune::Exception
 {
@@ -182,7 +182,7 @@ struct SmallEllipticSystems : public ::testing::Test, EllipticDiscretizations
   typedef typename std::tuple_element<1, TestTuple>::type MatrixType;
   typedef typename std::tuple_element<2, TestTuple>::type VectorType;
 
-  typedef typename TestCase::GridPartType GridPartType;
+  typedef typename TestCase::GridViewType GridViewType;
 
   void produces_correct_results() const
   {
@@ -193,9 +193,9 @@ struct SmallEllipticSystems : public ::testing::Test, EllipticDiscretizations
     test_out << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
 
     const TestCase test_case;
-    const auto grid_part = test_case.level_grid_part(1);
+    const auto grid_view = test_case.level_grid_view(1);
 
-    run(EllipticCG::Discretization<GridPartType, 1, MatrixType, VectorType>(grid_part,
+    run(EllipticCG::Discretization<GridViewType, 1, MatrixType, VectorType>(grid_view,
                                                                             test_case.boundary_info(),
                                                                             test_case.diffusion(),
                                                                             test_case.force(),
@@ -204,14 +204,13 @@ struct SmallEllipticSystems : public ::testing::Test, EllipticDiscretizations
         "continuous Galerkin",
         false);
 
-    run(EllipticSWIPDG::Discretization<GridPartType, 1, MatrixType, VectorType>(grid_part,
-                                                                                test_case.boundary_info(),
-                                                                                test_case.diffusion(),
-                                                                                test_case.force(),
-                                                                                test_case.dirichlet(),
-                                                                                test_case.neumann()),
-        "SWIP discontinuous Galerkin",
-        false);
+    //    run(EllipticSWIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
+    //                                                                                  test_case.boundary_info(),
+    //                                                                                  test_case.diffusion(),
+    //                                                                                  test_case.force(),
+    //                                                                                  test_case.dirichlet(),
+    //                                                                                  test_case.neumann()),
+    //        "SWIP discontinuous Galerkin", false);
   } // ... produces_correct_results()
 }; // SmallEllipticSystems
 
@@ -223,7 +222,7 @@ struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
   typedef typename std::tuple_element<1, TestTuple>::type MatrixType;
   typedef typename std::tuple_element<2, TestTuple>::type VectorType;
 
-  typedef typename TestCase::GridPartType GridPartType;
+  typedef typename TestCase::GridViewType GridViewType;
 
   void produces_correct_results() const
   {
@@ -234,9 +233,9 @@ struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
     test_out << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
 
     const TestCase test_case;
-    const auto grid_part = test_case.reference_grid_part();
+    const auto grid_view = test_case.reference_grid_view();
 
-    run(EllipticCG::Discretization<GridPartType, 1, MatrixType, VectorType>(grid_part,
+    run(EllipticCG::Discretization<GridViewType, 1, MatrixType, VectorType>(grid_view,
                                                                             test_case.boundary_info(),
                                                                             test_case.diffusion(),
                                                                             test_case.force(),
@@ -244,19 +243,37 @@ struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
                                                                             test_case.neumann()),
         "continuous Galerkin");
 
-    run(EllipticSWIPDG::Discretization<GridPartType, 2, MatrixType, VectorType>(grid_part,
-                                                                                test_case.boundary_info(),
-                                                                                test_case.diffusion(),
-                                                                                test_case.force(),
-                                                                                test_case.dirichlet(),
-                                                                                test_case.neumann()),
-        "SWIP discontinuous Galerkin");
+    //    run(EllipticSWIPDG::Discretization< GridPartType, 2, MatrixType, VectorType >(grid_part,
+    //                                                                                  test_case.boundary_info(),
+    //                                                                                  test_case.diffusion(),
+    //                                                                                  test_case.force(),
+    //                                                                                  test_case.dirichlet(),
+    //                                                                                  test_case.neumann()),
+    //        "SWIP discontinuous Galerkin");
   } // ... produces_correct_results()
 }; // LargeEllipticSystems
 
 // +----------------------------------------------------------------------------+
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
+
+#define ALU_CONFORM_2D_COMMONDENSE_TEST_CASES                                                                          \
+  std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
+             Dune::Stuff::LA::CommonDenseMatrix<double>,                                                               \
+             Dune::Stuff::LA::CommonDenseVector<double>>,                                                              \
+      std::tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                            \
+                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
+                 Dune::Stuff::LA::                                                                                     \
+                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07< AluConform2dGridType >,        \
+                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
+                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/        \
+      ,                                                                                                                \
+      std::tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                           \
+                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
+                 Dune::Stuff::LA::                                                                                     \
+                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
+                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/
 
 #define ALU_CONFORM_2D_EIGENDENSE_TEST_CASES                                                                           \
   std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
@@ -296,24 +313,6 @@ struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
       std::tuple<EllipticTestCase::Spe10Model1<AluConform2dGridType>,                                                  \
                  Dune::Stuff::LA::EigenRowMajorSparseMatrix<double>,                                                   \
                  Dune::Stuff::LA::EigenDenseVector<double>>
-
-#define ALU_CONFORM_2D_COMMONDENSE_TEST_CASES                                                                          \
-  std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
-             Dune::Stuff::LA::CommonDenseMatrix<double>,                                                               \
-             Dune::Stuff::LA::CommonDenseVector<double>>,                                                              \
-      std::tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                            \
-                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
-                 Dune::Stuff::LA::                                                                                     \
-                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07< AluConform2dGridType >,        \
-                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
-                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/        \
-      ,                                                                                                                \
-      std::tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                           \
-                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
-                 Dune::Stuff::LA::                                                                                     \
-                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
-                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
-                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/
 
 #define ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES                                                                           \
   std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
