@@ -96,6 +96,7 @@ public:
   typedef BaseFunctionSet::FemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain, RangeFieldType,
                                                     dimRange, dimRangeCols> BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
+  static const bool needs_grid_view = false;
 
 private:
   template <class G, int p, class R, int r, int rC>

@@ -68,6 +68,7 @@ public:
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper<typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain,
                                       RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
+  static const bool needs_grid_view = false;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
