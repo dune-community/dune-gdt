@@ -6,9 +6,11 @@
 #ifndef DUNE_GDT_FUNCTIONAL_BASE_HH
 #define DUNE_GDT_FUNCTIONAL_BASE_HH
 
-#include <dune/common/dynvector.hh>
+#include <type_traits>
 
-#include <dune/gdt/assembler/gridwalker.hh>
+#include <dune/stuff/la/container/interfaces.hh>
+
+#include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
 
@@ -33,6 +35,10 @@ public:
   typedef typename ImpTraits::SpaceType SpaceType;
   typedef typename ImpTraits::VectorType VectorType;
   typedef typename ImpTraits::ScalarType ScalarType;
+
+private:
+  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits>, VectorType>::value,
+                "VectorType has to be derived from Stuff::LA::VectorInterface!");
 }; // class AssemblableVolumeBaseTraits
 
 
@@ -42,6 +48,7 @@ class AssemblableVolumeBase : public AssemblableFunctionalInterface<ImpTraits>,
 {
   typedef AssemblableFunctionalInterface<ImpTraits> InterfaceType;
   typedef AssemblableVolumeBaseTraits<ImpTraits> Traits;
+  typedef TmpStorageProvider::Vectors<typename ImpTraits::ScalarType> TmpStorageProviderType;
 
 public:
   typedef typename Traits::GridViewType GridViewType;
@@ -61,6 +68,7 @@ public:
     , space_(space)
     , grid_view_(grid_view)
     , local_assembler_(nullptr)
+    , tmp_storage_provider_(nullptr)
     , prepared_(false)
     , assembled_(false)
   {
@@ -71,6 +79,7 @@ public:
     , space_(space)
     , grid_view_(*(space.grid_view()))
     , local_assembler_(nullptr)
+    , tmp_storage_provider_(nullptr)
     , prepared_(false)
     , assembled_(false)
   {
@@ -100,25 +109,23 @@ private:
   virtual const LocalFunctionalType& local_functional() const = 0;
 
 public:
-  virtual void prepare()
+  virtual void prepare() DS_OVERRIDE
   {
     if (!assembled_ && !prepared_) {
-      local_assembler_                    = std::unique_ptr<LocalAssemblerType>(new LocalAssemblerType(local_functional()));
-      const auto num_tmp_objects_required = local_assembler_->numTmpObjectsRequired();
-      const size_t max_local_size         = space_.mapper().maxNumDofs();
-      tmp_local_vectors_ = {std::vector<DynamicVector<ScalarType>>(num_tmp_objects_required[0],
-                                                                   DynamicVector<ScalarType>(max_local_size)),
-                            std::vector<DynamicVector<ScalarType>>(num_tmp_objects_required[1],
-                                                                   DynamicVector<ScalarType>(max_local_size))};
-      tmp_indices_ = DynamicVector<size_t>(max_local_size, 0);
-      prepared_    = true;
+      local_assembler_      = std::unique_ptr<LocalAssemblerType>(new LocalAssemblerType(local_functional()));
+      tmp_storage_provider_ = std::unique_ptr<TmpStorageProviderType>(
+          new TmpStorageProviderType(local_assembler_->numTmpObjectsRequired(), space_.mapper().maxNumDofs()));
+      prepared_ = true;
     }
   } // ... prepare()
 
-  virtual void apply_local(const EntityType& entity)
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
     assert(prepared_);
-    local_assembler_->assembleLocal(space_, entity, vector_, tmp_local_vectors_, tmp_indices_);
+    assert(local_assembler_);
+    assert(tmp_storage_provider_);
+    local_assembler_->assembleLocal(
+        space_, entity, vector_, tmp_storage_provider_->vectors(), tmp_storage_provider_->indices());
   } // ... apply_local(...)
 
   void assemble()
@@ -134,8 +141,9 @@ public:
   template <class S>
   ScalarType apply(const Stuff::LA::VectorInterface<S>& source) const
   {
+    typedef typename S::derived_type SourceType;
     assemble();
-    return vector_.dot(source);
+    return vector_.dot(static_cast<const SourceType&>(source));
   } // ... apply(...)
 
 private:
@@ -143,10 +151,9 @@ private:
   const SpaceType& space_;
   const GridViewType& grid_view_;
   std::unique_ptr<LocalAssemblerType> local_assembler_;
+  std::unique_ptr<TmpStorageProviderType> tmp_storage_provider_;
   bool prepared_;
   bool assembled_;
-  std::vector<std::vector<DynamicVector<ScalarType>>> tmp_local_vectors_;
-  DynamicVector<size_t> tmp_indices_;
 }; // class AssemblableVolumeBase
 
 
@@ -164,6 +171,10 @@ public:
   typedef typename ImpTraits::SpaceType SpaceType;
   typedef typename ImpTraits::VectorType VectorType;
   typedef typename ImpTraits::ScalarType ScalarType;
+
+private:
+  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits>, VectorType>::value,
+                "VectorType has to be derived from Stuff::LA::VectorInterface!");
 }; // class AssemblableFaceBaseTraits
 
 
@@ -173,6 +184,7 @@ class AssemblableFaceBase : public AssemblableFunctionalInterface<ImpTraits>,
 {
   typedef AssemblableFunctionalInterface<AssemblableFaceBaseTraits<ImpTraits>> InterfaceType;
   typedef AssemblableFaceBaseTraits<ImpTraits> Traits;
+  typedef TmpStorageProvider::Vectors<typename ImpTraits::ScalarType> TmpStorageProviderType;
 
 public:
   typedef typename Traits::GridViewType GridViewType;
@@ -193,6 +205,7 @@ public:
     , space_(space)
     , grid_view_(grid_view)
     , local_assembler_(nullptr)
+    , tmp_storage_provider_(nullptr)
     , prepared_(false)
     , assembled_(false)
   {
@@ -203,6 +216,7 @@ public:
     , space_(space)
     , grid_view_(*(space.grid_view()))
     , local_assembler_(nullptr)
+    , tmp_storage_provider_(nullptr)
     , prepared_(false)
     , assembled_(false)
   {
@@ -220,13 +234,11 @@ public:
 
   VectorType& vector()
   {
-    assemble();
     return vector_;
   }
 
   const VectorType& vector() const
   {
-    assemble();
     return vector_;
   }
 
@@ -234,26 +246,23 @@ private:
   virtual const LocalFunctionalType& local_functional() const = 0;
 
 public:
-  virtual void prepare()
+  virtual void prepare() DS_OVERRIDE
   {
     if (!assembled_ && !prepared_) {
-      local_assembler_                    = std::unique_ptr<LocalAssemblerType>(new LocalAssemblerType(local_functional()));
-      const auto num_tmp_objects_required = local_assembler_->numTmpObjectsRequired();
-      const size_t max_local_size         = space_.mapper().maxNumDofs();
-      tmp_local_vectors_ = {std::vector<DynamicVector<ScalarType>>(num_tmp_objects_required[0],
-                                                                   DynamicVector<ScalarType>(max_local_size)),
-                            std::vector<DynamicVector<ScalarType>>(num_tmp_objects_required[1],
-                                                                   DynamicVector<ScalarType>(max_local_size))};
-      tmp_indices_ = DynamicVector<size_t>(max_local_size, 0);
-      prepared_    = true;
+      local_assembler_      = std::unique_ptr<LocalAssemblerType>(new LocalAssemblerType(local_functional()));
+      tmp_storage_provider_ = std::unique_ptr<TmpStorageProviderType>(
+          new TmpStorageProviderType(local_assembler_->numTmpObjectsRequired(), space_.mapper().maxNumDofs()));
+      prepared_ = true;
     }
   } // ... prepare()
 
-  virtual void apply_local(const IntersectionType& intersection)
+  virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE
   {
     assert(prepared_);
     assert(local_assembler_);
-    local_assembler_->assembleLocal(space_, intersection, vector_, tmp_local_vectors_, tmp_indices_);
+    assert(tmp_storage_provider_);
+    local_assembler_->assembleLocal(
+        space_, intersection, vector_, tmp_storage_provider_->vectors(), tmp_storage_provider_->indices());
   } // ... apply_local(...)
 
   void assemble()
@@ -269,8 +278,9 @@ public:
   template <class S>
   ScalarType apply(const Stuff::LA::VectorInterface<S>& source) const
   {
+    typedef typename S::derived_type SourceType;
     assemble();
-    return vector_.dot(source);
+    return vector_.dot(static_cast<const SourceType&>(source));
   } // ... apply(...)
 
 private:
@@ -278,10 +288,9 @@ private:
   const SpaceType& space_;
   const GridViewType& grid_view_;
   std::unique_ptr<LocalAssemblerType> local_assembler_;
+  std::unique_ptr<TmpStorageProviderType> tmp_storage_provider_;
   bool prepared_;
   bool assembled_;
-  std::vector<std::vector<DynamicVector<ScalarType>>> tmp_local_vectors_;
-  DynamicVector<size_t> tmp_indices_;
 }; // class AssemblableFaceBase
 
 
