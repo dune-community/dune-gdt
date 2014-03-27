@@ -7,25 +7,15 @@
 #define DUNE_GDT_ASSEMBLER_SYSTEM_HH
 
 #include <type_traits>
-//#include <vector>
 #include <memory>
 
-#include <dune/common/dynmatrix.hh>
-#include <dune/common/dynvector.hh>
-//#include <dune/common/static_assert.hh>
-//#include <dune/common/typetraits.hh>
-
-//#include <dune/stuff/la/container/interfaces.hh>
-//#include <dune/stuff/la/container/pattern.hh>
-//#ifdef DUNE_STUFF_PROFILER_ENABLED
-//# include <dune/stuff/common/profiler.hh>
-//#endif
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/space/constraints.hh>
 
 #include "local/codim0.hh"
 #include "local/codim1.hh"
 #include "gridwalker.hh"
+#include "tmp-storage.hh"
 
 namespace Dune {
 namespace GDT {
@@ -52,8 +42,6 @@ public:
 
 private:
   typedef typename TestSpaceType::RangeFieldType RangeFieldType;
-  typedef Dune::DynamicMatrix<RangeFieldType> LocalMatrixType;
-  typedef Dune::DynamicVector<RangeFieldType> LocalVectorType;
 
 public:
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridViewType& grid_view)
@@ -116,12 +104,12 @@ private:
     {
     }
 
-    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_FINAL
+    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(gv, entity);
     }
 
-    virtual void apply_local(const EntityType& entity) DS_FINAL
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
     {
       t_space_.local_constraints(a_space_, entity, constraints_);
       for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
@@ -140,6 +128,7 @@ private:
     MatrixType& matrix_;
   }; // class LocalMatrixConstraintsWrapper
 
+
   template <class ConstraintsType, class VectorType>
   class LocalVectorConstraintsWrapper : public BaseType::Codim0Object
   {
@@ -157,12 +146,12 @@ private:
     {
     }
 
-    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_FINAL
+    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(gv, entity);
     }
 
-    virtual void apply_local(const EntityType& entity) DS_FINAL
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
     {
       t_space_.local_constraints(entity, constraints_);
       for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
@@ -177,89 +166,18 @@ private:
     VectorType& vector_;
   }; // class LocalVectorConstraintsWrapper
 
-  class NeedsTmpMatrixStorage
-  {
-  public:
-    static size_t safely_get(const std::vector<size_t>& vec, const size_t ii)
-    {
-      assert(ii < vec.size());
-      return vec[ii];
-    }
-
-    NeedsTmpMatrixStorage(const std::vector<size_t>& num_tmp_objects, const size_t max_rows, const size_t max_cols)
-      : matrices_({std::vector<LocalMatrixType>(safely_get(num_tmp_objects, 0),
-                                                LocalMatrixType(max_rows, max_cols, RangeFieldType(0))),
-                   std::vector<LocalMatrixType>(safely_get(num_tmp_objects, 1),
-                                                LocalMatrixType(max_rows, max_cols, RangeFieldType(0)))})
-      , indices_(4, Dune::DynamicVector<size_t>(std::max(max_rows, max_cols)))
-    {
-    }
-
-    virtual ~NeedsTmpMatrixStorage()
-    {
-    }
-
-    std::vector<std::vector<LocalMatrixType>>& matrices()
-    {
-      return matrices_;
-    }
-
-    std::vector<Dune::DynamicVector<size_t>>& indices()
-    {
-      return indices_;
-    }
-
-  protected:
-    std::vector<std::vector<LocalMatrixType>> matrices_;
-    std::vector<Dune::DynamicVector<size_t>> indices_;
-  }; // class NeedsTmpMatrixStorage
-
-  class NeedsTmpVectorStorage
-  {
-  public:
-    static size_t safely_get(const std::vector<size_t>& vec, const size_t ii)
-    {
-      assert(ii < vec.size());
-      return vec[ii];
-    }
-
-    NeedsTmpVectorStorage(const std::vector<size_t>& num_tmp_objects, const size_t max_size)
-      : vectors_(
-            {std::vector<LocalVectorType>(safely_get(num_tmp_objects, 0), LocalVectorType(max_size, RangeFieldType(0))),
-             std::vector<LocalVectorType>(safely_get(num_tmp_objects, 1),
-                                          LocalVectorType(max_size, RangeFieldType(0)))})
-      , indices_(max_size)
-    {
-    }
-
-    virtual ~NeedsTmpVectorStorage()
-    {
-    }
-
-    std::vector<std::vector<LocalVectorType>>& vectors()
-    {
-      return vectors_;
-    }
-
-    Dune::DynamicVector<size_t>& indices()
-    {
-      return indices_;
-    }
-
-  protected:
-    std::vector<std::vector<LocalVectorType>> vectors_;
-    Dune::DynamicVector<size_t> indices_;
-  }; // class NeedsTmpVectorStorage
 
   template <class LocalVolumeMatrixAssembler, class MatrixType>
-  class LocalVolumeMatrixAssemblerWrapper : public BaseType::Codim0Object, NeedsTmpMatrixStorage
+  class LocalVolumeMatrixAssemblerWrapper : public BaseType::Codim0Object, TmpStorageProvider::Matrices<RangeFieldType>
   {
+    typedef TmpStorageProvider::Matrices<RangeFieldType> TmpMatricesProvider;
+
   public:
     LocalVolumeMatrixAssemblerWrapper(const TestSpaceType& t_space, const AnsatzSpaceType& a_space,
                                       const ApplyOn::WhichEntity<GridViewType>* where,
                                       const LocalVolumeMatrixAssembler& localAssembler, MatrixType& matrix)
-      : NeedsTmpMatrixStorage(localAssembler.numTmpObjectsRequired(), t_space.mapper().maxNumDofs(),
-                              a_space.mapper().maxNumDofs())
+      : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), t_space.mapper().maxNumDofs(),
+                            a_space.mapper().maxNumDofs())
       , t_space_(t_space)
       , a_space_(a_space)
       , where_(where)
@@ -272,12 +190,12 @@ private:
     {
     }
 
-    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_FINAL
+    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(gv, entity);
     }
 
-    virtual void apply_local(const EntityType& entity) DS_FINAL
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
     {
       localMatrixAssembler_.assembleLocal(t_space_, a_space_, entity, matrix_, this->matrices(), this->indices());
     }
@@ -291,12 +209,14 @@ private:
   }; // class LocalVolumeMatrixAssemblerWrapper
 
   template <class LocalVolumeVectorAssembler, class VectorType>
-  class LocalVolumeVectorAssemblerWrapper : public BaseType::Codim0Object, NeedsTmpVectorStorage
+  class LocalVolumeVectorAssemblerWrapper : public BaseType::Codim0Object, TmpStorageProvider::Vectors<RangeFieldType>
   {
+    typedef TmpStorageProvider::Vectors<RangeFieldType> TmpVectorsProvider;
+
   public:
     LocalVolumeVectorAssemblerWrapper(const TestSpaceType& space, const ApplyOn::WhichEntity<GridViewType>* where,
                                       const LocalVolumeVectorAssembler& localAssembler, VectorType& vector)
-      : NeedsTmpVectorStorage(localAssembler.numTmpObjectsRequired(), space.mapper().maxNumDofs())
+      : TmpVectorsProvider(localAssembler.numTmpObjectsRequired(), space.mapper().maxNumDofs())
       , space_(space)
       , where_(where)
       , localVectorAssembler_(localAssembler)
@@ -308,12 +228,12 @@ private:
     {
     }
 
-    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_FINAL
+    virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(gv, entity);
     }
 
-    virtual void apply_local(const EntityType& entity) DS_FINAL
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
     {
       localVectorAssembler_.assembleLocal(space_, entity, vector_, this->vectors(), this->indices());
     }
@@ -327,12 +247,14 @@ private:
 
 
   template <class LocalFaceVectorAssembler, class VectorType>
-  class LocalFaceVectorAssemblerWrapper : public BaseType::Codim1Object, NeedsTmpVectorStorage
+  class LocalFaceVectorAssemblerWrapper : public BaseType::Codim1Object, TmpStorageProvider::Vectors<RangeFieldType>
   {
+    typedef TmpStorageProvider::Vectors<RangeFieldType> TmpVectorsProvider;
+
   public:
     LocalFaceVectorAssemblerWrapper(const TestSpaceType& space, const ApplyOn::WhichIntersection<GridViewType>* where,
                                     const LocalFaceVectorAssembler& localAssembler, VectorType& vector)
-      : NeedsTmpVectorStorage(localAssembler.numTmpObjectsRequired(), space.mapper().maxNumDofs())
+      : TmpVectorsProvider(localAssembler.numTmpObjectsRequired(), space.mapper().maxNumDofs())
       , space_(space)
       , where_(where)
       , localVectorAssembler_(localAssembler)
@@ -344,12 +266,12 @@ private:
     {
     }
 
-    virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const DS_FINAL
+    virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(gv, intersection);
     }
 
-    virtual void apply_local(const IntersectionType& intersection) DS_FINAL
+    virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE DS_FINAL
     {
       localVectorAssembler_.assembleLocal(space_, intersection, vector_, this->vectors(), this->indices());
     }
@@ -420,9 +342,9 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
   } // ... add(...)
 
-  void assemble()
+  void assemble(const bool clear_stack = true)
   {
-    this->walk();
+    this->walk(clear_stack);
   }
 
 private:
