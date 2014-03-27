@@ -25,7 +25,7 @@
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -235,7 +235,7 @@ public:
   inline void apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPS, pS, R, r, 1>, VS>& source,
                     DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: ContinuousLagrangeSpace::FemLocalfunctionsWrapper
@@ -255,7 +255,7 @@ public:
   apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GPS, pS, R, r, 1>, VS>& source,
         DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
@@ -275,7 +275,7 @@ public:
   apply(const ConstDiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GPS, pS, R, r, 1>, VS>& source,
         DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: ContinuousLagrangeSpace::FemWrapper
@@ -295,7 +295,7 @@ public:
   apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GPS, pS, R, r, 1>, VS>& source,
         DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: ContinuousLagrangeSpace::FemLocalfunctionsWrapper
@@ -316,7 +316,7 @@ public:
   apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GPS, pS, R, r, 1>, VS>& source,
         DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
@@ -337,7 +337,7 @@ public:
   apply(const ConstDiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GPS, pS, R, r, 1>, VS>& source,
         DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GPR, pR, R, r, 1>, VR>& range) const
   {
-    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
   // Source: ContinuousLagrangeSpace::PdelabWrapper
@@ -355,44 +355,12 @@ public:
   inline void apply(const ConstDiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPS, pS, R, r, rC>, VS>& source,
                     DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GPR, 1, R, r, rC>, VR>& range) const
   {
-    prolong_onto_cg_fem_localfunctions_wrapper(source, range);
+    redirect_to_appropriate_apply(source, range);
   }
 
 private:
   template <class SourceType, class RangeType>
-  void prolong_onto_cg_fem_wrapper(const SourceType& source, RangeType& range) const
-  {
-    // create search in the source grid part
-    typedef typename SourceType::SpaceType::GridViewType::GridViewType SourceGridViewType;
-    typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
-    EntitySearch entity_search(source.space().gridPart()->gridView());
-    // set all range dofs to infinity
-    const auto infinity = std::numeric_limits<typename RangeType::RangeFieldType>::infinity();
-    for (size_t ii = 0; ii < range.vector().size(); ++ii)
-      range.vector().set_entry(ii, infinity);
-    // walk the grid
-    const auto entity_it_end = grid_view_.template end<0>();
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // get global lagrange point coordinates
-      const auto lagrange_point_set = range.space().backend().lagrangePointSet(entity);
-      typedef FieldVector<typename SourceGridViewType::ctype, SourceGridViewType::dimension> DomainType;
-      std::vector<DomainType> lagrange_points(lagrange_point_set.nop());
-      for (size_t ii = 0; ii < lagrange_point_set.nop(); ++ii)
-        lagrange_points[ii] = entity.geometry().global(lagrange_point_set.point(ii));
-      // get source entities
-      const auto source_entity_ptrs = entity_search(lagrange_points);
-      assert(source_entity_ptrs.size() == lagrange_points.size());
-      // get range
-      auto local_range            = range.local_discrete_function(entity);
-      auto local_range_DoF_vector = local_range.vector();
-      // do the actual work (see below)
-      apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
-    } // walk the grid
-  } // ... prolong_onto_cg_fem_wrapper(...)
-
-  template <class SourceType, class RangeType>
-  void prolong_onto_cg_fem_localfunctions_wrapper(const SourceType& source, RangeType& range) const
+  void redirect_to_appropriate_apply(const SourceType& source, RangeType& range) const
   {
     // create search in the source grid part
     typedef typename SourceType::SpaceType::GridViewType SourceGridViewType;
@@ -421,7 +389,7 @@ private:
       // do the actual work (see below)
       apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
     } // walk the grid
-  } // ... prolong_onto_cg_fem_localfunctions_wrapper(...)
+  } // ... redirect_to_appropriate_apply(...)
 
   template <class SourceType, class LagrangePointsType, class EntityPointers, class LocalDoFVectorType>
   void apply_local(const SourceType& source, const LagrangePointsType& lagrange_points,
