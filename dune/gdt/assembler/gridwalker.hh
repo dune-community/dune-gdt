@@ -91,7 +91,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const DS_OVERRIDE DS_FINAL
   {
     return true;
   }
@@ -109,7 +109,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_OVERRIDE DS_FINAL
   {
     return entity.hasBoundaryIntersections();
   }
@@ -152,7 +152,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const DS_OVERRIDE DS_FINAL
   {
     return true;
   }
@@ -176,7 +176,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return intersection.neighbor() && !intersection.boundary();
   }
@@ -201,7 +201,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_FINAL
+  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     if (intersection.neighbor() && !intersection.boundary()) {
       const auto insideEntityPtr = intersection.inside();
@@ -223,7 +223,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return intersection.boundary();
   }
@@ -243,7 +243,7 @@ public:
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return boundary_info_.dirichlet(intersection);
   }
@@ -266,7 +266,7 @@ public:
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return boundary_info_.neumann(intersection);
   }
@@ -313,22 +313,22 @@ protected:
 
     virtual ~Codim0FunctorWrapper() {}
 
-    virtual void prepare() DS_FINAL
+    virtual void prepare() DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.prepare();
     }
 
-    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_FINAL
+    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(grid_view, entity);
     }
 
-    virtual void apply_local(const EntityType& entity) DS_FINAL
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.apply_local(entity);
     }
 
-    virtual void finalize() DS_FINAL
+    virtual void finalize() DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.finalize();
     }
@@ -359,22 +359,22 @@ protected:
       , where_(where)
     {}
 
-    virtual void prepare() DS_FINAL
+    virtual void prepare() DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.prepare();
     }
 
-    virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_FINAL
+    virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
     {
       return where_->apply_on(grid_view, intersection);
     }
 
-    virtual void apply_local(const IntersectionType& intersection) DS_FINAL
+    virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.apply_local(intersection);
     }
 
-    virtual void finalize() DS_FINAL
+    virtual void finalize() DS_OVERRIDE DS_FINAL
     {
       wrapped_functor_.finalize();
     }
@@ -453,13 +453,13 @@ public:
     // clear the stack of functors
     if (clear_stack)
       clear();
-  } // ... walk()
+  } // ... walk(...)
 
   void clear()
   {
     codim0_functors_ = std::vector< std::unique_ptr< Codim0Object > >();
     codim1_functors_ = std::vector< std::unique_ptr< Codim1Object > >();
-  }
+  } // ... clear()
 
 protected:
   const GridViewType& grid_view_;
