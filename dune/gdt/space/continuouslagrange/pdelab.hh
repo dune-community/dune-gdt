@@ -90,6 +90,7 @@ public:
   typedef BaseFunctionSet::PdelabWrapper
       < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >
     BaseFunctionSetType;
+  static const bool needs_grid_view = true;
 private:
   friend class PdelabWrapper< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
 }; // class SpaceWrappedFemContinuousLagrangeTraits

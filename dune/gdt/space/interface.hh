@@ -49,6 +49,8 @@ public:
   typedef Stuff::GridboundaryInterface< IntersectionType >    BoundaryInfoType;
   typedef Dune::Stuff::LA::SparsityPatternDefault             PatternType;
 
+  static const bool needs_grid_view = Traits::needs_grid_view;
+
 public:
   /**
    * \defgroup interface ´´These methods have to be implemented!''

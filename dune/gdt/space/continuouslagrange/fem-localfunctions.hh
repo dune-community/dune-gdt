@@ -94,6 +94,7 @@ public:
   typedef BaseFunctionSet::FemLocalfunctionsWrapper< BaseFunctionSetMapType,
               DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >  BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType                                  EntityType;
+  static const bool needs_grid_view = false;
 private:
   template< class G, int p, class R, int r, int rC >
   friend class FemLocalfunctionsWrapper;
@@ -132,6 +133,7 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
+
   FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > gridP)
     : gridPart_(assertGridPart(gridP))
     , gridView_(std::make_shared< GridViewType >(gridPart_->gridView()))
