@@ -29,56 +29,12 @@
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/common/print.hh>
 
+#include <dune/gdt/space/tools.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
-
-
-template< class SpaceType >
-struct GridPartView
-{
-  template< class G, bool needs_grid_view >
-  struct Choose;
-
-  template< class G >
-  struct Choose< G, false >
-  {
-    typedef Dune::grid::Part::Leaf::Const< G > Type;
-
-    static std::shared_ptr< Type > create(const G& grid)
-    {
-      return std::make_shared< Type >(grid);
-    }
-  };
-
-  template< class G >
-  struct Choose< G, true >
-  {
-    typedef typename SpaceType::GridViewType Type;
-
-    static std::shared_ptr< Type > create(const G& grid)
-    {
-      return std::make_shared< Type >(grid.leafGridView());
-    }
-  };
-
-  typedef typename SpaceType::GridViewType GV;
-  static const unsigned int p = SpaceType::polOrder;
-  typedef typename SpaceType::RangeFieldType R;
-  static const unsigned int r = SpaceType::dimRange;
-  static const unsigned int rC = SpaceType::dimRangeCols;
-
-  static const bool needs_grid_view
-    = std::is_same< SpaceType, Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< GV, p, R, r, rC > >::value;
-
-  template< class GridType >
-  static std::shared_ptr< typename Choose< GridType, needs_grid_view >::Type > create(const GridType& grid)
-  {
-    return Choose< GridType, needs_grid_view >::create(grid);
-  }
-}; // struct GridPartView
 
 
 template< class SpaceType >
@@ -92,11 +48,11 @@ struct Any_Space
   void fulfills_interface() const
   {
     // grid
-    const GridProviderType grid_provider(0.0, 1.0, 2u);
-    const auto grid_ptr = grid_provider.grid();
-    const auto grid_part_or_view = GridPartView< SpaceType >::create(*grid_ptr);
+    GridProviderType grid_provider(0.0, 1.0, 2u);
+    auto grid_ptr = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_ptr);
     // check the space
-    const SpaceType space(grid_part_or_view);
+    const SpaceType space(grid_part_view);
     // check for static information
     typedef typename SpaceType::Traits              Traits;
     typedef typename SpaceType::GridViewType        S_GridViewType;
@@ -112,7 +68,7 @@ struct Any_Space
     typedef typename SpaceType::EntityType          EntityType;
     typedef typename SpaceType::PatternType         PatternType;
     // check for functionality
-    const auto entityIt = grid_part_or_view->template begin< 0 >();
+    const auto entityIt = grid_part_view ->template begin< 0 >();
     const EntityType& entity = *entityIt;
     typedef typename Dune::GDT::SpaceInterface< Traits > SpaceInterfaceType;
     const SpaceInterfaceType& spaceAsInterface = static_cast< const SpaceInterfaceType& >(space);
@@ -196,12 +152,12 @@ struct P1Q1_Continuous_Lagrange
     using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // prepare
-    const GridProviderType grid_provider(0.0, 1.0, 4u);
-    const auto grid_ptr = grid_provider.grid();
-    const auto grid_part_or_view = GridPartView< SpaceType >::create(*grid_ptr);
-    const SpaceType space(grid_part_or_view);
+    GridProviderType grid_provider(0.0, 1.0, 4u);
+    auto grid_ptr = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_ptr);
+    const SpaceType space(grid_part_view);
     matches_signature(space);
-    const auto entity_ptr = grid_part_or_view->template begin< 0 >();
+    const auto entity_ptr = grid_part_view ->template begin< 0 >();
     const auto& entity = *entity_ptr;
     const auto basis = space.base_function_set(entity);
     std::vector< DomainType > lagrange_points = space.lagrange_points(entity);
@@ -225,14 +181,14 @@ struct P1Q1_Continuous_Lagrange
     using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // prepare
-    const GridProviderType grid_provider(0.0, 1.0, 4u);
-    const auto grid_ptr = grid_provider.grid();
-    const auto grid_part_or_view = GridPartView< SpaceType >::create(*grid_ptr);
-    const SpaceType space(grid_part_or_view);
+    GridProviderType grid_provider(0.0, 1.0, 4u);
+    auto grid_ptr = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_ptr);
+    const SpaceType space(grid_part_view);
     // walk the grid to create a map of all vertices
     std::map< std::vector< DomainFieldType >, std::set< size_t > > vertex_to_indices_map;
-    const auto entity_end_it = grid_part_or_view->template end< 0 >();
-    for (auto entity_it = grid_part_or_view->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+    const auto entity_end_it = grid_part_view ->template end< 0 >();
+    for (auto entity_it = grid_part_view ->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (int cc = 0; cc < entity.template count< dimDomain >(); ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
@@ -241,7 +197,7 @@ struct P1Q1_Continuous_Lagrange
       }
     }
     // walk the grid again to find all DoF ids
-    for (auto entity_it = grid_part_or_view->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+    for (auto entity_it = grid_part_view ->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       const int num_vertices = entity.template count< dimDomain >();
       const auto basis = space.base_function_set(entity);
@@ -270,7 +226,7 @@ struct P1Q1_Continuous_Lagrange
         if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
-             << num_vertices << ", entity " << grid_part_or_view->indexSet().index(entity)
+             << num_vertices << ", entity " << grid_part_view ->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
           DUNE_THROW_COLORFULLY(Exceptions::internal_error, ss.str());
@@ -302,39 +258,39 @@ struct P1Q1_Continuous_Lagrange
 }; // struct P1Q1_Continuous_Lagrange
 
 
-typedef Dune::SGrid< 1, 1 >                           S1dGridType;
-typedef Dune::grid::Part::Leaf::Const< S1dGridType >  S1dGridPartType;
-typedef S1dGridType::LeafGridView                     S1dGridViewType;
-typedef Dune::SGrid< 2, 2 >                           S2dGridType;
-typedef Dune::grid::Part::Leaf::Const< S2dGridType >  S2dGridPartType;
-typedef S2dGridType::LeafGridView                     S2dGridViewType;
-typedef Dune::SGrid< 3, 3 >                           S3dGridType;
-typedef Dune::grid::Part::Leaf::Const< S3dGridType >  S3dGridPartType;
-typedef S3dGridType::LeafGridView                     S3dGridViewType;
+typedef Dune::SGrid< 1, 1 > S1dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S1dGridType >::Type         S1dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S1dGridType, false >::Type  S1dGridPartType;
+typedef Dune::SGrid< 2, 2 > S2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S2dGridType >::Type         S2dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S2dGridType, false >::Type  S2dGridPartType;
+typedef Dune::SGrid< 3, 3 > S3dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S3dGridType >::Type         S3dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S3dGridType, false >::Type  S3dGridPartType;
 
-typedef Dune::YaspGrid< 1 >                             Yasp1dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp1dGridType > Yasp1dGridPartType;
-typedef Yasp1dGridType::LeafGridView                    Yasp1dGridViewType;
-typedef Dune::YaspGrid< 2 >                             Yasp2dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp2dGridType > Yasp2dGridPartType;
-typedef Yasp2dGridType::LeafGridView                    Yasp2dGridViewType;
-typedef Dune::YaspGrid< 3 >                             Yasp3dGridType;
-typedef Dune::grid::Part::Leaf::Const< Yasp3dGridType > Yasp3dGridPartType;
-typedef Yasp3dGridType::LeafGridView                    Yasp3dGridViewType;
+typedef Dune::YaspGrid< 1 > Yasp1dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp1dGridType >::Type         Yasp1dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp1dGridType, false >::Type  Yasp1dGridPartType;
+typedef Dune::YaspGrid< 2 > Yasp2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp2dGridType >::Type         Yasp2dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp2dGridType, false >::Type  Yasp2dGridPartType;
+typedef Dune::YaspGrid< 3 > Yasp3dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp3dGridType >::Type         Yasp3dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp3dGridType, false >::Type  Yasp3dGridPartType;
 
 #if HAVE_ALUGRID
-typedef Dune::ALUConformGrid< 2, 2 >                          AluConform2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluConform2dGridType > AluConform2dGridPartType;
-typedef AluConform2dGridType::LeafGridView                    AluConform2dGridViewType;
-typedef Dune::ALUSimplexGrid< 2, 2 >                          AluSimplex2dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex2dGridType > AluSimplex2dGridPartType;
-typedef AluSimplex2dGridType::LeafGridView                    AluSimplex2dGridViewType;
-typedef Dune::ALUSimplexGrid< 3, 3 >                          AluSimplex3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluSimplex3dGridType > AluSimplex3dGridPartType;
-typedef AluSimplex3dGridType::LeafGridView                    AluSimplex3dGridViewType;
-typedef Dune::ALUCubeGrid< 3, 3 >                             AluCube3dGridType;
-typedef Dune::grid::Part::Leaf::Const< AluCube3dGridType >    AluCube3dGridPartType;
-typedef AluCube3dGridType::LeafGridView                    AluCube3dGridViewType;
+typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType >::Type         AluConform2dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type  AluConform2dGridPartType;
+typedef Dune::ALUSimplexGrid< 2, 2 > AluSimplex2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType >::Type         AluSimplex2dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type  AluSimplex2dGridPartType;
+typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType >::Type         AluSimplex3dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type  AluSimplex3dGridPartType;
+typedef Dune::ALUCubeGrid< 3, 3 > AluCube3dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType >::Type         AluCube3dGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, false >::Type  AluCube3dGridPartType;
 #endif
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_FEM \
