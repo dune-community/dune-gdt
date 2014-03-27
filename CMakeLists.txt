@@ -8,7 +8,7 @@ project("dune-gdt" C CXX)
 
 if(CMAKE_WITH_AUTOTOOLS)
   # this is how it used to be in the good old days :)
-  # this assumes that we use autotools to configure everythnig and yust use this CMakeLists.txt for the tests and
+  # this assumes that we use autotools to configure everything and just use this CMakeLists.txt for the tests and
   # examples in dune-gdt
   if( NOT CMAKE_BUILD_TYPE )
     message( STATUS "No build type selected, setting default build type 'Debug'" )
@@ -29,6 +29,10 @@ if(CMAKE_WITH_AUTOTOOLS)
   set( ENV{LD_LIBRARY_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib:$ENV{LD_LIBRARY_PATH}" )
   set( ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}" )
 
+  # needs to come first to include correct config.h
+  include_directories( ${dune-gdt_SOURCE_DIR} )
+  include_directories( ${dune-gdt_BINARY_DIR} )
+
   # dune-stuff cmake includes
   set( CMAKE_MODULE_PATH
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake
@@ -37,10 +41,6 @@ if(CMAKE_WITH_AUTOTOOLS)
   )
   include(DuneUtils)
   include(GridUtils)
-
-  # needs to come first to include correct config.h
-  include_directories( ${dune-gdt_SOURCE_DIR} )
-  include_directories( ${dune-gdt_BINARY_DIR} )
 
   # we need eigen
   if( NOT EIGEN_FOUND )
