@@ -33,8 +33,6 @@ class L2VolumeTraits
                                     FunctionType::dimRange, FunctionType::dimRangeCols>,
                                 FunctionType>::value,
                 "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
-                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits>, SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 
@@ -44,7 +42,6 @@ public:
   typedef SpaceImp SpaceType;
   typedef GridViewImp GridViewType;
   typedef typename VectorType::ScalarType ScalarType;
-
   typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> LocalFunctionalType;
 }; // class L2VolumeTraits
 
@@ -53,10 +50,10 @@ template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp
 class L2Volume
     : public Functional::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
 {
-  typedef L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
-  typedef Functional::AssemblableVolumeBase<Traits> BaseType;
+  typedef Functional::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
 
 public:
+  typedef L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType SpaceType;
   typedef typename Traits::GridViewType GridViewType;
@@ -77,7 +74,7 @@ public:
   {
   }
 
-  virtual const LocalFunctionalType& local_functional() const DS_FINAL
+  virtual const LocalFunctionalType& local_functional() const DS_OVERRIDE DS_FINAL
   {
     return local_functional_;
   }
@@ -100,8 +97,6 @@ class L2FaceTraits
                                     FunctionType::dimRange, FunctionType::dimRangeCols>,
                                 FunctionType>::value,
                 "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorImp::Traits>, VectorImp>::value,
-                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits>, SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 
@@ -111,7 +106,6 @@ public:
   typedef SpaceImp SpaceType;
   typedef GridViewImp GridViewType;
   typedef typename VectorType::ScalarType ScalarType;
-
   typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> LocalFunctionalType;
 }; // class L2FaceTraits
 
@@ -119,10 +113,11 @@ public:
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
 class L2Face : public Functional::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
 {
-  typedef L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
-  typedef Functional::AssemblableFaceBase<Traits> BaseType;
+  typedef Functional::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
 
 public:
+  typedef L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
+
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType SpaceType;
   typedef typename Traits::GridViewType GridViewType;
@@ -143,7 +138,7 @@ public:
   {
   }
 
-  virtual const LocalFunctionalType& local_functional() const DS_FINAL
+  virtual const LocalFunctionalType& local_functional() const DS_OVERRIDE DS_FINAL
   {
     return local_functional_;
   }
