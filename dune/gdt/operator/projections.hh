@@ -17,12 +17,13 @@
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/common/vector.hh>
 
+#include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/space/continuouslagrange.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
 
 #include "interfaces.hh"
 
@@ -60,9 +61,9 @@ public:
   typedef typename Traits::FieldType    FieldType;
 
 private:
-  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype              DomainFieldType;
+  static const unsigned int                         dimDomain = GridViewType::dimension;
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
 
 public:
@@ -183,9 +184,9 @@ public:
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 private:
-  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridViewType::dimension;
 
 public:
   L2(const GridViewType& grid_view)
@@ -287,9 +288,9 @@ public:
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 private:
-  typedef typename GridViewType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype  DomainFieldType;
+  static const unsigned int             dimDomain = GridViewType::dimension;
 
 public:
   Generic(const GridViewType& grid_view)
@@ -405,7 +406,7 @@ public:
 
   virtual ~DirichletLocalizable() {}
 
-  virtual void apply_local(const EntityType& entity)
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
   {
     if (entity.hasBoundaryIntersections()) {
       const auto local_dirichlet_DoFs = range_.space().local_dirichlet_DoFs(entity, boundary_info_);
@@ -497,6 +498,28 @@ public:
 
   template< class R, int r, int rC, class GV, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GV, p, R, r, rC >, V >& range) const
+  {
+    typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC > SourceType;
+    typedef DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GV, p, R, r, rC >, V >           RangeType;
+    DirichletLocalizable< GridViewType, SourceType, RangeType >
+        localizable_operator(grid_view_, boundary_info_, source, range);
+    localizable_operator.apply();
+  }
+
+  template< class R, int r, int rC, class GV, int p, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+             DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GV, p, R, r, rC >, V >& range) const
+  {
+    typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >     SourceType;
+    typedef DiscreteFunction< ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GV, p, R, r, rC >, V > RangeType;
+    DirichletLocalizable< GridViewType, SourceType, RangeType >
+        localizable_operator(grid_view_, boundary_info_, source, range);
+    localizable_operator.apply();
+  }
+
+  template< class R, int r, int rC, class GV, int p, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
              DiscreteFunction< ContinuousLagrangeSpace::PdelabWrapper< GV, p, R, r, rC >, V >& range) const
   {
     typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC > SourceType;
@@ -506,6 +529,7 @@ public:
     localizable_operator.apply();
   }
 
+private:
   const GridViewType& grid_view_;
   const BoundaryInfoType& boundary_info_;
 }; // class Dirichlet
