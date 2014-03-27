@@ -79,13 +79,16 @@ public:
   template <class S>
   ScalarType apply(const Stuff::LA::VectorInterface<S>& source) const
   {
-    CHECK_CRTP(this->as_imp(*this).apply(source));
-    return this->as_imp(*this).apply(source);
+    typedef typename S::derived_type SourceType;
+    assemble();
+    return vector().dot(static_cast<SourceType&>(source));
   }
 
   template <class S>
   ScalarType apply(const ConstDiscreteFunction<SpaceType, S>& source) const
   {
+    assemble();
+    assert(source.vector().size() == vector().size());
     return apply(source.vector());
   }
 }; // class AssemblableFunctionalInterface
