@@ -15,7 +15,7 @@
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 
-#include "interfaces.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -64,14 +64,14 @@ private:
 
 
 template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
-class EllipticCG : public AssemblableVolumeOperatorBase<EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp,
-                                                                         RangeSpaceImp, GridViewImp>>
+class EllipticCG : public Operator::AssemblableVolumeBase<EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp,
+                                                                           RangeSpaceImp, GridViewImp>>
 {
 public:
   typedef EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> Traits;
 
 private:
-  typedef AssemblableVolumeOperatorBase<Traits> BaseType;
+  typedef Operator::AssemblableVolumeBase<Traits> BaseType;
 
   typedef typename Traits::DiffusionType DiffusionType;
   typedef typename Traits::LocalOperatorType LocalOperatorType;
@@ -111,7 +111,7 @@ public:
   }
 
 private:
-  virtual const LocalOperatorType& local_operator() const
+  virtual const LocalOperatorType& local_operator() const DS_OVERRIDE DS_FINAL
   {
     return local_operator_;
   }
