@@ -8,8 +8,6 @@
 
 #include <memory>
 
-#include <dune/common/exceptions.hh>
-
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 #define ENABLE_ALUGRID 1
 #include <dune/grid/alugrid.hh>
@@ -17,6 +15,7 @@
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 
+#include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -28,7 +27,7 @@
 #include <dune/gdt/space/tools.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-//#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operator/projections.hh>
 #include <dune/gdt/product/l2.hh>
@@ -964,17 +963,15 @@ typedef testing::Types<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dLeafGri
 
 #define L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID                                                                     \
   Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 1, double, 1>,         \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 1, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dLeafGridPartType, 1, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 2, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 2, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dLeafGridPartType, 2, double, 1>
+      Dune::GDT::DiscontinuousLagrangeSpace::                                                                          \
+          FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType,                                                       \
+                                   1,                                                                                  \
+                                   double,                                                                             \
+                                   1> /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >*/ /* <- does not work in 3d any more! */ /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 2, double, 1 >*/ /* <- does not work for polOrder 2 any more! */ /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 2, double, 1 >*/ /* <- does not work for polOrder 2 any more! */ /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 2, double, 1 >*/ /* <- does not work in 3d and for polOrder 2 any more! */
 
-typedef testing::Types<
 #if HAVE_ALUGRID
-    L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
-#endif
-    > L2ProjectionOperatorSpaceTypes;
+typedef testing::Types<L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID> L2ProjectionOperatorSpaceTypes;
+#endif // HAVE_ALUGRID
 
 #define LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES                                                                       \
   Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dLeafGridPartType, 1, double, 1>,                                   \
@@ -1006,8 +1003,7 @@ typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
 typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
 #if HAVE_ALUGRID
                        ,
-                       LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
-//                      , L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
+                       LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID, L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif
                        > GenericProjectionOperatorSpaceTypes;
 
@@ -1050,25 +1046,20 @@ typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
       std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                \
                     FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                             \
                 Dune::GDT::DiscontinuousLagrangeSpace::                                                                \
-                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>                             \
-                                                                                                                       \
-      , std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,         \
-                  Dune::GDT::DiscontinuousLagrangeSpace::                                                              \
-                      FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                          \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::                                                                   \
-                    FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                             \
-                Dune::GDT::DiscontinuousLagrangeSpace::                                                                \
-                    FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                            \
-      std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                \
-                    FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                             \
-                Dune::GDT::DiscontinuousLagrangeSpace::                                                                \
-                    FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType,                                            \
+                                             1,                                                                        \
+                                             double,                                                                   \
+                                             1>> //   /* those below do not work in 3d any more! */ \
+//  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+//  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+//  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
-typedef testing::Types<
 #if HAVE_ALUGRID
-    L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+typedef testing::Types<L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID> L2ProlongationOperatorSpaceTypes;
 #endif
-    > L2ProlongationOperatorSpaceTypes;
 
 #define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES                                                                     \
   /* all combinations which have ContinuousLagrangeSpace::FemWrapper as FineSpaceType */                               \
@@ -1086,114 +1077,83 @@ typedef testing::Types<
       std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dLevelGridPartType, 1, double, 1>,                 \
                 Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dLevelGridPartType, 1, double, 1>>
 
-#define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID                                                                                                                                             \
-  /* all combinations which have ContinuousLagrangeSpace::FemWrapper as FineSpaceType */                                                                                                               \
-  std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                               \
-            Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                              \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemWrapper<AluConform2dLevelGridPartType,                                                                                                                                           \
-                              1,                                                                                                                                                                       \
-                              double,                                                                                                                                                                  \
-                              1>> /*, std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<                                  \
-                                     AluConform2dLevelGridPartType, 1, double, 1 >,*/ /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< \
-                                                                                                                                                        AluConform2dLevelGridPartType,                 \
-                                                                                                                                                        1, double, 1 > >*/                             \
-                                                                                                                                                                                                       \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                           \
-                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                          \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemWrapper<AluSimplex2dLevelGridPartType,                                                                                                                                           \
-                              1,                                                                                                                                                                       \
-                              double,                                                                                                                                                                  \
-                              1>> /*, std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<                                  \
-                                     AluSimplex2dLevelGridPartType, 1, double, 1 >,*/ /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< \
-                                                                                                                                                        AluSimplex2dLevelGridPartType,                 \
-                                                                                                                                                        1, double, 1 > >*/                             \
-                                                                                                                                                                                                       \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                           \
-                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                                                                                          \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemWrapper<AluSimplex3dLevelGridPartType,                                                                                                                                           \
-                              1,                                                                                                                                                                       \
-                              double,                                                                                                                                                                  \
-                              1>> /*, std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<                                  \
-                                     AluSimplex3dLevelGridPartType, 1, double, 1 >,*/ /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< \
-                                                                                                                                                        AluSimplex3dLevelGridPartType,                 \
-                                                                                                                                                        1, double, 1 > >*/                             \
-                                                                                                                                                                                                       \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dLevelGridPartType, 1, double, 1>,                                                                                              \
-                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                   \
-                    FemWrapper<AluCube3dLevelGridPartType,                                                                                                                                             \
-                               1,                                                                                                                                                                      \
-                               double,                                                                                                                                                                 \
-                               1>> /* all combinations which have                                                                                                                                      \
-                                       ContinuousLagrangeSpace::FemLocalfunctionsWrapper as                                                                                                            \
-                                       FineSpaceType */                                                                                                                                                \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                           \
-                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                   \
-                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                                            \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluConform2dLevelGridPartType,                                                                                                                             \
-                                            1,                                                                                                                                                         \
-                                            double,                                                                                                                                                    \
-                                            1>> /*, std::pair<                                                            \
-                                                                            Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<       \
-                                                                            AluConform2dLevelGridPartType, 1, double,                              \
-                                                                            1 >,*/ /*Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<            \
-                                                                                                                               AluConform2dLevelGridPartType,                                          \
-                                                                                                                               1, double, 1 > >*/                                                      \
-                                                                                                                                                                                                       \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                           \
-                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                   \
-                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                                            \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType,                                                                                                                             \
-                                            1,                                                                                                                                                         \
-                                            double,                                                                                                                                                    \
-                                            1>> /*, std::pair<                                                            \
-                                                                            Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<       \
-                                                                            AluSimplex2dLevelGridPartType, 1, double,                              \
-                                                                            1 >,*/ /*Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<            \
-                                                                                                                               AluSimplex2dLevelGridPartType,                                          \
-                                                                                                                               1, double, 1 > >*/                                                      \
-                                                                                                                                                                                                       \
-      ,                                                                                                                                                                                                \
-      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                           \
-                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                   \
-                    FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                                                                                                            \
-      std::                                                                                                                                                                                            \
-          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                              \
-               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                    \
-                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType,                                                                                                                             \
-                                            1,                                                                                                                                                         \
-                                            double,                                                                                                                                                    \
-                                            1>> /*, std::pair<                                                            \
-                                                                            Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<       \
-                                                                            AluSimplex3dLevelGridPartType, 1, double,                              \
-                                                                            1 >,*/ //               Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<
-//               AluSimplex3dLevelGridPartType,
-//               1, double, 1 > >
+#define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID                                                                                                                                                                                                                                                                            \
+  /* all combinations which have ContinuousLagrangeSpace::FemWrapper as FineSpaceType */                                                                                                                                                                                                                                              \
+  std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                              \
+            Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                             \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                         \
+      std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                                                                                                                                                                                                                               \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>>                                                                                                                                                                                                                          \
+                                                                                                                                                                                                                                                                                                                                      \
+      , std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                        \
+                  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                       \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                         \
+      std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                                                                                                                                                                                                                               \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>                                                                                                                                                                                                                          \
+                                                                                                                                                                                                                                                                                                                                      \
+      , std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                        \
+                  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                       \
+      std::                                                                                                                                                                                                                                                                                                                           \
+          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                   \
+                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                             \
+               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                   \
+                   FemWrapper<AluSimplex3dLevelGridPartType,                                                                                                                                                                                                                                                                          \
+                              1,                                                                                                                                                                                                                                                                                                      \
+                              double,                                                                                                                                                                                                                                                                                                 \
+                              1>> /*, std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >,*/ /* <- this test works but the space is disabled for 3d atm! */ /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >*/ \
+                                                                                                                                                                                                                                                                                                                                      \
+      ,                                                                                                                                                                                                                                                                                                                               \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                             \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemWrapper<AluCube3dLevelGridPartType,                                                                                                                                                                                                                                                                            \
+                               1,                                                                                                                                                                                                                                                                                                     \
+                               double,                                                                                                                                                                                                                                                                                                \
+                               1>> /* all combinations which have                                                                                                                                                                                                                                                                     \
+                                       ContinuousLagrangeSpace::FemLocalfunctionsWrapper as                                                                                                                                                                                                                                           \
+                                       FineSpaceType */                                                                                                                                                                                                                                                                               \
+      ,                                                                                                                                                                                                                                                                                                                               \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                          \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                                           \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                                           \
+      std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                                                                                                                                                                                                                               \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluConform2dLevelGridPartType, 1, double, 1>>                                                                                                                                                                                                                                            \
+                                                                                                                                                                                                                                                                                                                                      \
+      , std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                        \
+                  Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                \
+                      FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                                         \
+      std::pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                                           \
+      std::pair<Dune::GDT::DiscontinuousLagrangeSpace::                                                                                                                                                                                                                                                                               \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                            \
+                Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                  \
+                    FemLocalfunctionsWrapper<AluSimplex2dLevelGridPartType, 1, double, 1>>                                                                                                                                                                                                                                            \
+                                                                                                                                                                                                                                                                                                                                      \
+      , std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                        \
+                  Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                \
+                      FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>>,                                                                                                                                                                                                                                         \
+      std::                                                                                                                                                                                                                                                                                                                           \
+          pair<Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                   \
+                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType, 1, double, 1>,                                                                                                                                                                                                                                             \
+               Dune::GDT::ContinuousLagrangeSpace::                                                                                                                                                                                                                                                                                   \
+                   FemLocalfunctionsWrapper<AluSimplex3dLevelGridPartType,                                                                                                                                                                                                                                                            \
+                                            1,                                                                                                                                                                                                                                                                                        \
+                                            double,                                                                                                                                                                                                                                                                                   \
+                                            1>> //  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, /* <- this test works but the space is disabled for 3d atm! */ \
+//               Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
 typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
 #if HAVE_ALUGRID
@@ -1205,8 +1165,7 @@ typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
 typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
 #if HAVE_ALUGRID
                        ,
-                       LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
-//                      , L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+                       LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID, L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif
                        > GenericProlongationOperatorSpaceTypes;
 
@@ -1251,10 +1210,13 @@ TYPED_TEST(GenericH1SemiProductOperator, produces_correct_results)
 // | * we need the projection operator tests next for reliable projections |
 // +-----------------------------------------------------------------------+
 
-// TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
-// TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
-// this->produces_correct_results();
-//}
+#if HAVE_ALUGRID
+TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
+TYPED_TEST(L2ProjectionOperator, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+#endif // HAVE_ALUGRID
 
 TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
 TYPED_TEST(LagrangeProjectionOperator, produces_correct_results)
@@ -1330,10 +1292,13 @@ TYPED_TEST(H1SemiAssemblableProduct, produces_correct_results)
 // |  * the prolongation operator tests |
 // +------------------------------------+
 
-// TYPED_TEST_CASE(L2ProlongationOperator, L2ProlongationOperatorSpaceTypes);
-// TYPED_TEST(L2ProlongationOperator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+#if HAVE_ALUGRID
+TYPED_TEST_CASE(L2ProlongationOperator, L2ProlongationOperatorSpaceTypes);
+TYPED_TEST(L2ProlongationOperator, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+#endif // HAVE_ALUGRID
 
 TYPED_TEST_CASE(LagrangeProlongationOperator, LagrangeProlongationOperatorSpaceTypes);
 TYPED_TEST(LagrangeProlongationOperator, produces_correct_results)
