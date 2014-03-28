@@ -7,7 +7,6 @@
 #define DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_LOCALFUNCTIONS_HH
 
 #include <memory>
-#include <limits>
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
@@ -15,16 +14,14 @@
 #include <dune/common/exceptions.hh>
 
 #include <dune/geometry/referenceelements.hh>
+#include <dune/geometry/genericgeometry/topologytypes.hh>
 
-#include <dune/grid/sgrid.hh>
-#include <dune/grid/yaspgrid.hh>
+#include <dune/grid/common/capabilities.hh>
 
+#if HAVE_DUNE_LOCALFUNCTIONS
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 #include <dune/localfunctions/lagrange.hh>
-
-#if HAVE_DUNE_FEM
-#include <dune/fem/space/common/allgeomtypes.hh>
-#endif
+#endif // HAVE_DUNE_LOCALFUNCTIONS
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 #include <dune/fem_localfunctions/localfunctions/transformations.hh>
@@ -32,9 +29,6 @@
 #include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
 #include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
-
-#include <dune/stuff/common/color.hh>
-#include <dune/stuff/common/float_cmp.hh>
 
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem-localfunctions.hh"
@@ -78,6 +72,12 @@ public:
   typedef FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols> derived_type;
 
 private:
+  typedef typename GridPartType::GridType GridType;
+  static_assert(dimDomain == 1 || Dune::Capabilities::hasSingleGeometryType<GridType>::v,
+                "This space is only implemented for fully simplicial grids!");
+  static_assert(dimDomain == 1 || (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+                                   == GenericGeometry::SimplexTopology<dimDomain>::type::id),
+                "This space is only implemented for fully simplicial grids!");
   typedef FemLocalfunctionsWrapperTraits<GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols> ThisType;
 
 public:
@@ -139,7 +139,7 @@ private:
 
 public:
   FemLocalfunctionsWrapper(std::shared_ptr<const GridPartType> gridP)
-    : gridPart_(assertGridPart(gridP))
+    : gridPart_(gridP)
     , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
     , backend_(new BackendType(const_cast<GridPartType&>(*gridPart_), *baseFunctionSetMap_))
@@ -171,12 +171,12 @@ public:
     return *this;
   }
 
-  std::shared_ptr<const GridPartType> grid_part() const
+  const std::shared_ptr<const GridPartType>& grid_part() const
   {
     return gridPart_;
   }
 
-  std::shared_ptr<const GridViewType> grid_view() const
+  const std::shared_ptr<const GridViewType>& grid_view() const
   {
     return gridView_;
   }
@@ -202,26 +202,6 @@ public:
   }
 
 private:
-  static std::shared_ptr<const GridPartType> assertGridPart(const std::shared_ptr<const GridPartType> gP)
-  {
-    // static checks
-    typedef typename GridPartType::GridType GridType;
-    static_assert((dimDomain == 1) || !std::is_same<GridType, SGrid<dimDomain, dimDomain>>::value,
-                  "This space is only implemented for simplicial grids!");
-    static_assert((dimDomain == 1) || !std::is_same<GridType, YaspGrid<dimDomain>>::value,
-                  "This space is only implemented for simplicial grids!");
-    // dynamic checks
-    typedef typename Dune::Fem::AllGeomTypes<typename GridPartType::IndexSetType, typename GridPartType::GridType>
-        AllGeometryTypes;
-    const AllGeometryTypes allGeometryTypes(gP->indexSet());
-    const std::vector<Dune::GeometryType>& geometryTypes = allGeometryTypes.geomTypes(0);
-    if (!(geometryTypes.size() == 1 && geometryTypes[0].isSimplex()))
-      DUNE_THROW(Dune::NotImplemented,
-                 "\n" << Dune::Stuff::Common::colorStringRed("ERROR:")
-                      << " this space is only implemented for simplicial grids!");
-    return gP;
-  } // ... assertGridPart(...)
-
   std::shared_ptr<const GridPartType> gridPart_;
   std::shared_ptr<const GridViewType> gridView_;
   std::shared_ptr<BaseFunctionSetMapType> baseFunctionSetMap_;
