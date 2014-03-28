@@ -217,7 +217,7 @@ public:
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       // prepare
       const auto& entity      = *entity_it;
-      const auto local_basis  = range.space().baseFunctionSet(entity);
+      const auto local_basis  = range.space().base_function_set(entity);
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
       DynamicMatrix<R> local_matrix(local_basis.size(), local_basis.size(), R(0));
