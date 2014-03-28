@@ -8,19 +8,14 @@
 
 #include <type_traits>
 
-#include <dune/common/typetraits.hh>
-#include <dune/common/exceptions.hh>
+#include <dune/geometry/genericgeometry/topologytypes.hh>
 
-#include <dune/grid/sgrid.hh>
-#include <dune/grid/yaspgrid.hh>
-#include <dune/grid/alugrid.hh>
+#include <dune/grid/common/capabilities.hh>
 
-#include <dune/localfunctions/lagrange/equidistantpoints.hh>
-#include <dune/localfunctions/lagrange.hh>
-
-#if HAVE_DUNE_FEM
-# include <dune/fem/space/common/allgeomtypes.hh>
-#endif
+#if HAVE_DUNE_LOCALFUNCTIONS
+# include <dune/localfunctions/lagrange/equidistantpoints.hh>
+# include <dune/localfunctions/lagrange.hh>
+#endif // HAVE_DUNE_LOCALFUNCTIONS
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 # include <dune/fem_localfunctions/localfunctions/transformations.hh>
@@ -51,7 +46,6 @@ class FemLocalfunctionsWrapper
 };
 
 
-
 /**
  *  \brief Traits class for DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper.
  */
@@ -60,11 +54,18 @@ class FemLocalfunctionsWrapperTraits
 {
 public:
   typedef GridPartImp                   GridPartType;
+  typedef typename GridPartType::GridViewType GridViewType;
   static const int                      polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
   static const unsigned int             dimDomain = GridPartType::dimension;
+  typedef typename GridPartType::GridType GridType;
+  static_assert(dimDomain == 1 || Dune::Capabilities::hasSingleGeometryType< GridType >::v,
+                "This space is only implemented for fully simplicial grids!");
+  static_assert(dimDomain == 1 || (Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId
+                                   == GenericGeometry::SimplexTopology< dimDomain >::type::id),
+                "This space is only implemented for fully simplicial grids!");
 public:
   typedef RangeFieldImp                 RangeFieldType;
   static const unsigned int             dimRange = rangeDim;
@@ -76,6 +77,10 @@ public:
                                             RangeFieldType > ContinuousFiniteElementType;
   typedef Dune::DGLocalFiniteElement< ContinuousFiniteElementType > FiniteElementType;
 private:
+  static_assert(dimDomain < 3,
+                "The L2ProjectionOperator test from tests/operators_products.cc fails for this space in 3d!");
+  static_assert(polOrder < 2,
+                "The L2ProjectionOperator test from tests/operators_products.cc fails for this space for polOrder 2!");
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<  GridPartType,
                                                         FiniteElementType,
                                                         Dune::FemLocalFunctions::NoTransformation,
@@ -88,6 +93,7 @@ public:
   typedef BaseFunctionSet::FemLocalfunctionsWrapper< BaseFunctionSetMapType,
               DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >  BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType                                  EntityType;
+  static const bool needs_grid_view = false;
 private:
   template< class G, int p, class R, int r, int rC >
   friend class FemLocalfunctionsWrapper;
@@ -105,6 +111,7 @@ public:
   typedef FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
   typedef typename Traits::GridPartType   GridPartType;
+  typedef typename Traits::GridViewType   GridViewType;
   typedef typename GridPartType::ctype    DomainFieldType;
   static const int                        polOrder = Traits::polOrder;
   static const unsigned int               dimDomain = GridPartType::dimension;
@@ -124,7 +131,8 @@ private:
 
 public:
   FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > gridP)
-    : gridPart_(assertGridPart(gridP))
+    : gridPart_(gridP)
+    , gridView_(std::make_shared< GridViewType >(gridPart_->gridView()))
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
     , backend_(new BackendType(const_cast< GridPartType& >(*gridPart_), *baseFunctionSetMap_))
     , mapper_(new MapperType(backend_->mapper()))
@@ -132,6 +140,7 @@ public:
 
   FemLocalfunctionsWrapper(const ThisType& other)
     : gridPart_(other.gridPart_)
+    , gridView_(other.gridView_)
     , baseFunctionSetMap_(other.baseFunctionSetMap_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
@@ -141,6 +150,7 @@ public:
   {
     if (this != &other) {
       gridPart_ = other.gridPart_;
+      gridView_ = other.gridView_;
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
@@ -148,11 +158,14 @@ public:
     return *this;
   }
 
-  ~FemLocalfunctionsWrapper() {}
-
-  std::shared_ptr< const GridPartType > gridPart() const
+  const std::shared_ptr< const GridPartType >& grid_part() const
   {
     return gridPart_;
+  }
+
+  const std::shared_ptr< const GridViewType >& grid_view() const
+  {
+    return gridView_;
   }
 
   const BackendType& backend() const
@@ -160,61 +173,33 @@ public:
     return *backend_;
   }
 
-  bool continuous() const
-  {
-    return false;
-  }
-
   const MapperType& mapper() const
   {
     return *mapper_;
   }
 
-  BaseFunctionSetType baseFunctionSet(const EntityType& entity) const
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
   template< class R >
-  void localConstraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
+  void local_constraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
   {
     static_assert((Dune::AlwaysFalse< R >::value), "Not implemented for arbitrary constraints!");
   }
 
-  using BaseType::computePattern;
+  using BaseType::compute_pattern;
 
-  template< class LocalGridPartType, class OtherSpaceType >
-  PatternType* computePattern(const LocalGridPartType& localGridPart, const OtherSpaceType& otherSpace) const
+  template< class LocalGridViewType, class O >
+  PatternType compute_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface< O >& other) const
   {
-    return BaseType::computeCodim0AndCodim1Pattern(localGridPart, otherSpace);
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, other);
   }
 
 private:
-  static std::shared_ptr< const GridPartType > assertGridPart(const std::shared_ptr< const GridPartType > gP)
-  {
-    // static checks
-    typedef typename GridPartType::GridType GridType;
-#if HAVE_ALUGRID
-    static_assert(!(Dune::is_same< GridType, Dune::ALUCubeGrid< dimDomain, dimDomain > >::value),
-                  "This space is only implemented for simplicial grids!");
-#endif
-    static_assert((dimDomain == 1 ) || !(Dune::is_same< GridType, Dune::SGrid< dimDomain, dimDomain > >::value),
-                  "This space is only implemented for simplicial grids!");
-    static_assert((dimDomain == 1 ) || !(Dune::is_same< GridType, Dune::YaspGrid< dimDomain > >::value),
-                  "This space is only implemented for simplicial grids!");
-    // dynamic checks
-    typedef typename Dune::Fem::AllGeomTypes< typename GridPartType::IndexSetType,
-                                              typename GridPartType::GridType > AllGeometryTypes;
-    const AllGeometryTypes allGeometryTypes(gP->indexSet());
-    const std::vector< Dune::GeometryType >& geometryTypes = allGeometryTypes.geomTypes(0);
-    if (!(geometryTypes.size() == 1 && geometryTypes[0].isSimplex()))
-      DUNE_THROW(Dune::NotImplemented,
-                 "\n" << Dune::Stuff::Common::colorStringRed("ERROR:")
-                 << " this space is only implemented for simplicial grids!");
-    return gP;
-  } // ... assertGridPart(...)
-
   std::shared_ptr< const GridPartType > gridPart_;
+  std::shared_ptr< const GridViewType > gridView_;
   std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
