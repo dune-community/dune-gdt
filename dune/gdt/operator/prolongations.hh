@@ -129,9 +129,9 @@ private:
     // clear
     Stuff::Common::clear(range.vector());
     // create search in the source grid part
-    typedef typename SourceFunctionType::SpaceType::GridViewType::GridViewType SourceGridViewType;
+    typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
-    EntitySearch entity_search(source.space().gridPart()->gridView());
+    EntitySearch entity_search(*(source.space().grid_view()));
     // walk the grid
     RangeType source_value(0);
     std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs());
@@ -139,7 +139,7 @@ private:
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       // prepare
       const auto& entity     = *entity_it;
-      const auto local_basis = range.space().baseFunctionSet(entity);
+      const auto local_basis = range.space().base_function_set(entity);
       auto local_range = range.local_discrete_function(entity);
       DynamicMatrix<RangeFieldType> local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
       DynamicVector<RangeFieldType> local_vector(local_basis.size(), RangeFieldType(0));
