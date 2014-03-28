@@ -87,10 +87,10 @@ public:
     const auto& neighbor        = neighborTestBase.entity();
     const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
     // quadrature
-    const size_t quadratureOrder = evaluation().order(
+    const size_t integrand_order = evaluation().order(
         localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase);
-    assert(quadratureOrder < std::numeric_limits<int>::max());
-    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(quadratureOrder));
+    assert(integrand_order < std::numeric_limits<int>::max());
+    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(integrand_order));
     // check matrices
     Dune::Stuff::Common::clear(entityEntityRet);
     Dune::Stuff::Common::clear(neighborNeighborRet);
@@ -241,9 +241,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const size_t quadratureOrder = evaluation().order(localFunctions, testBase, ansatzBase);
-    assert(quadratureOrder) < std::numeric_limits< int >::max());
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(quadratureOrder));
+    const size_t integrand_order = evaluation().order(localFunctions, testBase, ansatzBase);
+    assert(integrand_order < std::numeric_limits<int>::max());
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
     // check matrix and tmp storage
     Dune::Stuff::Common::clear(ret);
     const size_t rows = testBase.size();

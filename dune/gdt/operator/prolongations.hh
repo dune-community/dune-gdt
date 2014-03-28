@@ -144,10 +144,9 @@ private:
       DynamicMatrix<RangeFieldType> local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
       DynamicVector<RangeFieldType> local_vector(local_basis.size(), RangeFieldType(0));
       // create quadrature
-      const size_t quadrature_order = local_range.order();
-      assert((2 * quadrature_order + 1) < std::numeric_limits<int>::max());
-      const auto& quadrature =
-          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(2 * quadrature_order + 1));
+      const size_t integrand_order = local_range.order();
+      assert(integrand_order < std::numeric_limits<int>::max());
+      const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
       // get global quadrature points
       std::vector<DomainType> quadrature_points;
       for (const auto& quadrature_point : quadrature)

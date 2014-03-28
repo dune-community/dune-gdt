@@ -91,7 +91,7 @@ public:
         assert(intersection_index < intersection_id_to_local_DoF_id_map.size() && "This should not happen!");
         const size_t intersection_DoF_index = intersection_id_to_local_DoF_id_map[intersection_index];
         // prepare quadrature
-        const size_t quadrature_order =
+        const size_t integrand_order =
             std::max(rtn_basis.order(),
                      std::max(inner_evaluation.order(*local_diffusion,
                                                      *local_diffusion,
@@ -100,9 +100,9 @@ public:
                                                      *local_source,
                                                      *local_constant_one),
                               boundary_evaluation.order(*local_diffusion, *local_source, *local_constant_one)));
-        assert((2 * quadrature_order + 1) < std::numeric_limits<int>::max());
+        assert(integrand_order < std::numeric_limits<int>::max());
         const auto& face_quadrature =
-            QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(2 * quadrature_order + 1));
+            QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(integrand_order));
         R lhs_integral = 0;
         R rhs_integral = 0;
         if (intersection.boundary() && !intersection.neighbor()) {

@@ -81,9 +81,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const size_t quadratureOrder = evaluation().order(localFunctions, testBase);
-    assert(quadratureOrder < std::numeric_limits<int>::max());
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(quadratureOrder));
+    const size_t integrand_order = evaluation().order(localFunctions, testBase);
+    assert(integrand_order < std::numeric_limits<int>::max());
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
     // check vector and tmp storage
     Dune::Stuff::Common::clear(ret);
     const size_t size = testBase.size();
