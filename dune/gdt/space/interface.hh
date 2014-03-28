@@ -57,7 +57,7 @@ public:
    * @{
    **/
 
-  std::shared_ptr< const GridViewType > grid_view() const
+  const std::shared_ptr< const GridViewType >& grid_view() const
   {
     CHECK_CRTP(this->as_imp(*this).grid_view());
     return this->as_imp(*this).grid_view();
