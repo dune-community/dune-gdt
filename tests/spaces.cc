@@ -7,7 +7,7 @@
 #include <dune/stuff/test/test_common.hh>
 
 #if !HAVE_DUNE_FEM && !HAVE_DUNE_FEM_LOCALFUNCTIONS && !HAVE_DUNE_PDELAB
-# error "This tests requires at least one discretization module!"
+# error "These tests requires at least one discretization module!"
 #endif
 
 #include <memory>
@@ -33,6 +33,7 @@
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
@@ -322,17 +323,6 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, fal
   , Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluSimplex3dGridViewType, 1, double, 1 >
 #endif // HAVE_ALUGRID
 
-#define P2_CONTINUOUS_LAGRANGE_SPACES_FEM \
-    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 2 > \
-  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< Yasp1dGridPartType, 1, double, 2 >
-
-#if HAVE_ALUGRID
-# define P2_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM \
-    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 2 > \
-  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 2 > \
-  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 2 >
-#endif // HAVE_ALUGRID
-
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_FEM \
     Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S2dGridPartType, 1, double, 1 > \
@@ -359,8 +349,23 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, fal
 
 # define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB \
     Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper< AluCube3dGridViewType, 1, double, 1 >
-#endif // HAVE_ALUGRID
+#endif
 
+#define DISCONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS \
+    Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< S1dGridPartType, 2, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 1, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< Yasp1dGridPartType, 2, double, 1 >
+
+#if HAVE_ALUGRID
+# define DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS \
+    Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 2, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 2, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 1, double, 1 > /* <- does not work anymore in 3d */ \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dGridPartType, 2, double, 1 > /* <- does not work anymore in 3d */
+#endif // HAVE_ALUGRID
 
 typedef testing::Types<
 #if HAVE_DUNE_FEM
@@ -409,8 +414,10 @@ typedef testing::Types<
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
                         P1_CONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS
                       , Q1_CONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS
+                      , DISCONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS
 # if HAVE_ALUGRID
                       , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS
+                      , DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS
 # endif
 # if HAVE_DUNE_PDELAB
                       ,
