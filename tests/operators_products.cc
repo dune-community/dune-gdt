@@ -27,7 +27,7 @@
 #include <dune/gdt/space/tools.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operator/projections.hh>
 #include <dune/gdt/product/l2.hh>
