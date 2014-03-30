@@ -887,10 +887,10 @@ typedef testing::Types< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< S1dLeafG
 #define L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID \
     Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 > \
   , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 1, double, 1 > \
-  /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 >*/ /* <- does not work in 3d any more! */ \
-  /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 2, double, 1 >*/ /* <- does not work for polOrder 2 any more! */ \
-  /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 2, double, 1 >*/ /* <- does not work for polOrder 2 any more! */ \
-  /*, Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 2, double, 1 >*/ /* <- does not work in 3d and for polOrder 2 any more! */
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 1, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 2, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLeafGridPartType, 2, double, 1 > \
+  , Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLeafGridPartType, 2, double, 1 >
 
 #if HAVE_ALUGRID
 typedef testing::Types<
@@ -963,13 +963,13 @@ typedef testing::Types<
                Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
   , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-//   /* those below do not work in 3d any more! */ \
-//  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-//  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-//  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-//               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
+   /* those below do not work in 3d any more! */ \
+  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
 #if HAVE_ALUGRID
 typedef testing::Types<
@@ -1013,8 +1013,8 @@ typedef testing::Types<
                Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
   , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  /*, std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >,*/ /* <- this test works but the space is disabled for 3d atm! */ \
-               /*Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >*/ \
+  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
   \
   , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluCube3dLevelGridPartType, 1, double, 1 > > \
@@ -1037,8 +1037,8 @@ typedef testing::Types<
                Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
   , std::pair< Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-//  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, /* <- this test works but the space is disabled for 3d atm! */ \
-//               Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
+  , std::pair< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
 typedef testing::Types<
                         LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
