@@ -16,6 +16,8 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/common/vector.hh>
+#include <dune/stuff/la/container.hh>
+#include <dune/stuff/la/solver.hh>
 
 #include <dune/geometry/quadraturerules.hh>
 
@@ -121,6 +123,13 @@ private:
     typedef typename RangeFunctionType::DomainType DomainType;
     typedef typename RangeFunctionType::RangeType RangeType;
     typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
+#if HAVE_EIGEN
+    typedef Stuff::LA::EigenDenseMatrix< RangeFieldType > LocalMatrixType;
+    typedef Stuff::LA::EigenDenseVector< RangeFieldType > LocalVectorType;
+#else // HAVE_EIGEN
+    typedef Stuff::LA::CommonDenseMatrix< RangeFieldType > LocalMatrixType;
+    typedef Stuff::LA::CommonDenseVector< RangeFieldType > LocalVectorType;
+#endif // HAVE_EIGEN
     // clear
     Stuff::Common::clear(range.vector());
     // create search in the source grid part
@@ -138,8 +147,9 @@ private:
       const auto& entity = *entity_it;
       const auto local_basis = range.space().base_function_set(entity);
       auto local_range = range.local_discrete_function(entity);
-      DynamicMatrix< RangeFieldType > local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
-      DynamicVector< RangeFieldType > local_vector(local_basis.size(), RangeFieldType(0));
+      LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
+      LocalVectorType local_vector(local_basis.size(), RangeFieldType(0));
+      LocalVectorType local_DoFs(local_basis.size(), RangeFieldType(0));
       // create quadrature
       const size_t integrand_order = local_range.order();
       assert(integrand_order < std::numeric_limits< int >::max());
@@ -171,21 +181,21 @@ private:
         // compute integrals
         for (size_t ii = 0; ii < local_basis.size(); ++ii) {
           local_vector[ii] += integration_element * quadrature_weight * (source_value * basis_values[ii]);
-          auto& local_matrix_row = local_matrix[ii];
           for (size_t jj = 0; jj < local_basis.size(); ++jj) {
-            local_matrix_row[jj] += integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]);
+            local_matrix.add_to_entry(ii,
+                                      jj,
+                                      integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]));
           }
         }
         ++pp;
       } // loop over all quadrature points
       // compute local DoFs
-      DynamicVector< RangeFieldType > local_DoFs(local_basis.size(), 0);
-      local_matrix.solve(local_DoFs, local_vector);
+      Stuff::LA::Solver< LocalMatrixType >(local_matrix).apply(local_vector, local_DoFs);
       // set local DoFs
       auto local_range_vector = local_range.vector();
       assert(local_range_vector.size() == local_DoFs.size());
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-        local_range_vector.set(ii, local_DoFs[ii]);
+        local_range_vector.set(ii, local_DoFs.get_entry(ii));
     } // walk the grid
   } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
 
