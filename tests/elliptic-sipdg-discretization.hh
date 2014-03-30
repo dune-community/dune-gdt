@@ -23,7 +23,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
@@ -36,7 +36,8 @@
 #include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/space/constraints.hh>
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/operator/products.hh>
+#include <dune/gdt/product/l2.hh>
+#include <dune/gdt/product/h1.hh>
 #include <dune/gdt/operator/prolongations.hh>
 
 #include "elliptic-testcases.hh"
@@ -108,8 +109,8 @@ public:
       using namespace Dune;
       using namespace Dune::GDT;
 
-      const std::unique_ptr< Stuff::LA::SparsityPatternDefault > sparsity_pattern(space_.computeCodim0AndCodim1Pattern());
-      system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), *sparsity_pattern);
+      Stuff::LA::SparsityPatternDefault sparsity_pattern = space_.compute_face_and_volume_pattern();
+      system_matrix_ = MatrixType(space_.mapper().size(), space_.mapper().size(), sparsity_pattern);
       rhs_vector_ = VectorType (space_.mapper().size());
       typedef SystemAssembler< SpaceType > SystemAssemblerType;
       SystemAssemblerType systemAssembler(space_);
@@ -119,28 +120,29 @@ public:
       typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > > EllipticOperatorType;
       const EllipticOperatorType                                  ellipticOperator(diffusion_);
       const LocalAssembler::Codim0Matrix< EllipticOperatorType >  diffusionMatrixAssembler(ellipticOperator);
-      systemAssembler.addLocalAssembler(diffusionMatrixAssembler, system_matrix_);
+      systemAssembler.add(diffusionMatrixAssembler, system_matrix_);
       // * rhs
       typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > ForceFunctionalType;
       const ForceFunctionalType                                 forceFunctional(force_);
       const LocalAssembler::Codim0Vector< ForceFunctionalType > forceVectorAssembler(forceFunctional);
-      systemAssembler.addLocalAssembler(forceVectorAssembler, rhs_vector_);
+      systemAssembler.add(forceVectorAssembler, rhs_vector_);
       // inner face terms
-      typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SIPDG::Inner< FunctionType > > CouplingOperatorType;
+      typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SIPDG::Inner< FunctionType > >
+          CouplingOperatorType;
       const CouplingOperatorType                                          couplingOperator(diffusion_, beta_);
       const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
-      systemAssembler.addLocalAssembler(couplingMatrixAssembler,
-                                        typename SystemAssemblerType::AssembleOnInnerPrimally(),
-                                        system_matrix_);
+      systemAssembler.add(couplingMatrixAssembler,
+                          system_matrix_,
+                          new ApplyOn::InnerIntersectionsPrimally< typename SpaceType::GridViewType >());
       // dirichlet boundary face terms
       // * lhs
       typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SIPDG::BoundaryLHS< FunctionType > >
           DirichletOperatorType;
       const DirichletOperatorType                                         dirichletOperator(diffusion_, beta_);
       const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
-      systemAssembler.addLocalAssembler(dirichletMatrixAssembler,
-                                        typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_),
-                                        system_matrix_);
+      systemAssembler.add(dirichletMatrixAssembler,
+                          system_matrix_,
+                          new ApplyOn::DirichletIntersections< typename SpaceType::GridViewType >(boundary_info_));
       // * rhs
       typedef LocalFunctional::Codim1Integral< LocalEvaluation::SIPDG::BoundaryRHS< FunctionType, FunctionType > >
           DirichletFunctionalType;
@@ -148,17 +150,17 @@ public:
                                                                                         dirichlet_,
                                                                                         beta_);
       const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
-      systemAssembler.addLocalAssembler(dirichletVectorAssembler,
-                                        typename SystemAssemblerType::AssembleOnDirichlet(boundary_info_),
-                                        rhs_vector_);
+      systemAssembler.add(dirichletVectorAssembler,
+                          rhs_vector_,
+                          new ApplyOn::DirichletIntersections< typename SpaceType::GridViewType >(boundary_info_));
       // neumann boundary face terms
       // * rhs
       typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
       const NeumannFunctionalType                                 neumannFunctional(neumann_);
       const LocalAssembler::Codim1Vector< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
-      systemAssembler.addLocalAssembler(neumannVectorAssembler,
-                                        typename SystemAssemblerType::AssembleOnNeumann(boundary_info_),
-                                        rhs_vector_);
+      systemAssembler.add(neumannVectorAssembler,
+                          rhs_vector_,
+                          new ApplyOn::NeumannIntersections< typename SpaceType::GridViewType >(boundary_info_));
       // do all the work
       systemAssembler.assemble();
       is_assembled_ = true;
@@ -190,7 +192,7 @@ public:
   void visualize(const VectorType& vector, const std::string filename, const std::string name) const
   {
     ConstDiscreteFunctionType function(space_, vector, name);
-    function.visualize(space_.gridPart()->gridView(), filename);
+    function.visualize(filename);
   }
 
 private:
@@ -213,6 +215,7 @@ class EocStudy
 {
   typedef Dune::Stuff::Common::ConvergenceStudy BaseType;
   typedef typename TestCase::GridPartType GridPartType;
+  typedef typename TestCase::GridViewType GridViewType;
   typedef typename TestCase::EntityType   EntityType;
 
   typedef typename TestCase::DomainFieldType  DomainFieldType;
@@ -240,12 +243,12 @@ public:
 
   virtual ~EocStudy() {}
 
-  virtual std::string identifier() const DS_OVERRIDE
+  virtual std::string identifier() const DS_OVERRIDE DS_FINAL
   {
     return "SIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::toString(polOrder);
   }
 
-  virtual size_t num_refinements() const DS_OVERRIDE
+  virtual size_t num_refinements() const DS_OVERRIDE DS_FINAL
   {
     if (test_.num_levels() == 0)
       return test_.num_levels();
@@ -253,12 +256,12 @@ public:
       return test_.num_levels() - 1;
   }
 
-  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE
+  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE DS_FINAL
   {
     return {"L2", "H1_semi"};
   }
 
-  virtual size_t expected_rate(const std::string type) const
+  virtual size_t expected_rate(const std::string type) const DS_OVERRIDE DS_FINAL
   {
     if (type.compare("L2") == 0)
       return polOrder + 1;
@@ -268,37 +271,37 @@ public:
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
   } // ... expected_rate(...)
 
-  virtual double norm_reference_solution(const std::string type) DS_OVERRIDE
+  virtual double norm_reference_solution(const std::string type) DS_OVERRIDE DS_FINAL
   {
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_part()), test_.exact_solution(), type);
+      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(reference_discretization_->space(),
                                                          *reference_solution_vector_,
-                                                         "CG reference solution");
+                                                         "reference solution");
       // compute norm
-      return compute_norm(*(test_.reference_grid_part()), reference_solution, type);
+      return compute_norm(*(test_.reference_grid_view()), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_grid_size() const DS_OVERRIDE
+  virtual size_t current_grid_size() const DS_OVERRIDE DS_FINAL
   {
     assert(current_level_ < test_.num_levels());
     const auto grid_part = test_.level_grid_part(current_level_);
     return grid_part->grid().size(grid_part->level(), 0);
   } // ... current_grid_size(...)
 
-  virtual double current_grid_width() const DS_OVERRIDE
+  virtual double current_grid_width() const DS_OVERRIDE DS_FINAL
   {
     assert(current_level_ < test_.num_levels());
     const auto grid_part = test_.level_grid_part(current_level_);
     return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
   } // ... current_grid_width(...)
 
-  virtual double compute_on_current_refinement() DS_OVERRIDE
+  virtual double compute_on_current_refinement() DS_OVERRIDE DS_FINAL
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -320,21 +323,22 @@ public:
       if (!reference_solution_computed_)
         compute_reference_solution();
       timer.reset();
-      const auto reference_grid_part = test_.reference_grid_part();
-      const ProlongationOperator::L2< GridPartType > prolongation_operator(*reference_grid_part);
+      const auto reference_grid_view = test_.reference_grid_view();
       assert(reference_discretization_);
-      current_solution_vector_
-          = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));
+      if (!current_solution_vector_)
+        current_solution_vector_
+            = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));
       DiscreteFunctionType reference_level_solution(reference_discretization_->space(),
                                                     *current_solution_vector_,
-                                                    "solution on reference grid part");
+                                                    "solution on reference grid view");
+      const ProlongationOperator::L2< GridViewType > prolongation_operator(*reference_grid_view);
       prolongation_operator.apply(current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
     return timer.elapsed() + elapsed;
   } // ... compute_on_current_refinement(...)
 
-  virtual double current_error_norm(const std::string type) DS_OVERRIDE
+  virtual double current_error_norm(const std::string type) DS_OVERRIDE DS_FINAL
   {
     // get current solution
     assert(current_level_ < test_.num_levels());
@@ -353,7 +357,7 @@ public:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Function::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      return compute_norm(*(test_.reference_grid_part()), difference, type);
+      return compute_norm(*(test_.reference_grid_view()), difference, type);
     } else {
       // get reference solution
       compute_reference_solution();
@@ -361,14 +365,14 @@ public:
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(reference_discretization_->space(),
                                                          *reference_solution_vector_,
-                                                         "CG reference solution");
+                                                         "reference solution");
       typedef Dune::Stuff::Function::Difference< ConstDiscreteFunctionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
-      return compute_norm(*(test_.reference_grid_part()), difference, type);
+      return compute_norm(*(test_.reference_grid_view()), difference, type);
     }
   } // ... current_error_norm(...)
 
-  virtual void refine() DS_OVERRIDE
+  virtual void refine() DS_OVERRIDE DS_FINAL
   {
     if (current_level_ < test_.num_levels())
       ++current_level_;
@@ -448,7 +452,7 @@ public:
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   }
 
-  virtual std::map< std::string, std::vector< double > > run(std::ostream& out = std::cout)
+  std::map< std::string, std::vector< double > > run(std::ostream& out = std::cout)
   {
     return BaseType::run(true, out);
   }
@@ -464,23 +468,24 @@ private:
                                                                        test_.force(),
                                                                        test_.dirichlet(),
                                                                        test_.neumann()));
-      reference_solution_vector_
-          = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));
+      if (!reference_solution_vector_)
+        reference_solution_vector_
+            = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));
       reference_discretization_->solve(*reference_solution_vector_);
       reference_solution_computed_ = true;
     }
   } // ... compute_reference_solution()
 
-  template< class GridPartType, class FunctionType >
-  double compute_norm(const GridPartType& grid_part, const FunctionType& function, const std::string type)
+  template< class GridViewType, class FunctionType >
+  double compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type)
   {
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      ProductOperator::L2Generic< GridPartType > l2_product_operator(grid_part);
+      Product::L2Generic< GridViewType > l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      ProductOperator::H1SemiGeneric< GridPartType > h1_product_operator(grid_part);
+      Product::H1SemiGeneric< GridViewType > h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
