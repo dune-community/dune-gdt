@@ -56,7 +56,27 @@ private:
   const VectorType& vector_;
 protected:
   mutable Dune::DynamicVector< size_t > indices_;
+
+private:
+  template< class V >
+  friend std::ostream& operator<<(std::ostream& /*out*/, const ConstLocalDoFVector< V >& /*vector*/);
 }; // class ConstLocalDoFVector
+
+
+template< class V >
+std::ostream& operator<<(std::ostream& out, const ConstLocalDoFVector< V >& vector)
+{
+  out << "[";
+  const size_t sz = vector.size();
+  if (sz > 0) {
+    out << vector.get(0);
+    for (size_t ii = 1; ii < sz; ++ii)
+      out << ", " << vector.get(ii);
+  } else
+    out << " ";
+  out << "]";
+  return out;
+} // ... operator<<(...)
 
 
 template< class VectorImp >
