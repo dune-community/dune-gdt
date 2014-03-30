@@ -206,6 +206,50 @@ private:
     MatrixType& matrix_;
   }; // class LocalVolumeMatrixAssemblerWrapper
 
+
+  template< class LocalFaceMatrixAssembler, class MatrixType >
+  class LocalFaceMatrixAssemblerWrapper
+    : public BaseType::Codim1Object
+    , TmpStorageProvider::Matrices< RangeFieldType >
+  {
+    typedef TmpStorageProvider::Matrices< RangeFieldType > TmpMatricesProvider;
+  public:
+    LocalFaceMatrixAssemblerWrapper(const TestSpaceType& t_space,
+                                        const AnsatzSpaceType& a_space,
+                                        const ApplyOn::WhichIntersection< GridViewType >* where,
+                                        const LocalFaceMatrixAssembler& localAssembler,
+                                        MatrixType& matrix)
+      : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(),
+                            t_space.mapper().maxNumDofs(),
+                            a_space.mapper().maxNumDofs())
+      , t_space_(t_space)
+      , a_space_(a_space)
+      , where_(where)
+      , localMatrixAssembler_(localAssembler)
+      , matrix_(matrix)
+    {}
+
+    virtual ~LocalFaceMatrixAssemblerWrapper() {}
+
+    virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+    {
+      return where_->apply_on(gv, intersection);
+    }
+
+    virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE DS_FINAL
+    {
+      localMatrixAssembler_.assembleLocal(t_space_, a_space_, intersection, matrix_, this->matrices(), this->indices());
+    }
+
+  private:
+    const TestSpaceType& t_space_;
+    const AnsatzSpaceType& a_space_;
+    std::unique_ptr< const ApplyOn::WhichIntersection< GridViewType > > where_;
+    const LocalFaceMatrixAssembler& localMatrixAssembler_;
+    MatrixType& matrix_;
+  }; // class LocalFaceMatrixAssemblerWrapper
+
+
   template< class LocalVolumeVectorAssembler, class VectorType >
   class LocalVolumeVectorAssemblerWrapper
     : public BaseType::Codim0Object
@@ -318,6 +362,32 @@ public:
     assert(matrix_imp.cols() == ansatz_space_.mapper().size());
     typedef LocalVolumeMatrixAssemblerWrapper< LocalAssembler::Codim0Matrix< L >, MatrixType > WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
+  }  // ... add(...)
+
+  template< class L, class M >
+  void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
+           Dune::Stuff::LA::MatrixInterface< M >& matrix,
+           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
+  {
+    typedef typename M::derived_type MatrixType;
+    MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
+    assert(matrix_imp.rows() == test_space_.mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    typedef LocalFaceMatrixAssemblerWrapper< LocalAssembler::Codim1CouplingMatrix< L >, MatrixType > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
+  }  // ... add(...)
+
+  template< class L, class M >
+  void add(const LocalAssembler::Codim1BoundaryMatrix< L >& local_assembler,
+           Dune::Stuff::LA::MatrixInterface< M >& matrix,
+           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
+  {
+    typedef typename M::derived_type MatrixType;
+    MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
+    assert(matrix_imp.rows() == test_space_.mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    typedef LocalFaceMatrixAssemblerWrapper< LocalAssembler::Codim1BoundaryMatrix< L >, MatrixType > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
   }  // ... add(...)
 
   template< class L, class V >
