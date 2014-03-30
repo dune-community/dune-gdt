@@ -77,10 +77,6 @@ public:
                                             RangeFieldType > ContinuousFiniteElementType;
   typedef Dune::DGLocalFiniteElement< ContinuousFiniteElementType > FiniteElementType;
 private:
-  static_assert(dimDomain < 3,
-                "The L2ProjectionOperator test from tests/operators_products.cc fails for this space in 3d!");
-  static_assert(polOrder < 2,
-                "The L2ProjectionOperator test from tests/operators_products.cc fails for this space for polOrder 2!");
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<  GridPartType,
                                                         FiniteElementType,
                                                         Dune::FemLocalFunctions::NoTransformation,
