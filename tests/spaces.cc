@@ -33,7 +33,7 @@
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/playground/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
