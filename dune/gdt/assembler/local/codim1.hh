@@ -109,8 +109,8 @@ public:
       DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
 #endif
     // apply local operator (results are in local*Matrix)
-    localOperator_.apply(testSpaceEntity.baseFunctionSet(entity), ansatzSpaceEntity.baseFunctionSet(entity),
-                         testSpaceNeighbor.baseFunctionSet(neighbor), ansatzSpaceNeighbor.baseFunctionSet(neighbor),
+    localOperator_.apply(testSpaceEntity.base_function_set(entity), ansatzSpaceEntity.base_function_set(entity),
+                         testSpaceNeighbor.base_function_set(neighbor), ansatzSpaceNeighbor.base_function_set(neighbor),
                          intersection,
                          localEntityEntityMatrix,
                          localNeighborNeighborMatrix,
@@ -270,7 +270,7 @@ public:
     const auto entityPtr = intersection.inside();
     const auto& entity = *entityPtr;
     // apply local operator (results are in local*Matrix)
-    localOperator_.apply(testSpace.baseFunctionSet(entity), ansatzSpace.baseFunctionSet(entity),
+    localOperator_.apply(testSpace.base_function_set(entity), ansatzSpace.base_function_set(entity),
                          intersection,
                          localMatrix, tmpOperatorMatrices);
     // write local matrices to global
