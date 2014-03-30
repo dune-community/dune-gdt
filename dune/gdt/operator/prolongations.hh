@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -35,6 +35,10 @@ namespace ProlongationOperator {
 
 
 /**
+ *  \note The polynomial order of the local source is guessed by taking the polynomial order of the sources local
+ *        function for the first entity in the sources grid view, only. Thus this operator will fail for highly varying
+ *        local polynomial degree.
+ *
  *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
 template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
@@ -153,8 +157,10 @@ private:
       LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
       LocalVectorType local_vector(local_basis.size(), RangeFieldType(0));
       LocalVectorType local_DoFs(local_basis.size(), RangeFieldType(0));
+      // guess the polynomial order of the source by hoping that they are the same for all entities
+      const size_t source_order = source.local_function(*(source.space().grid_view()->template begin<0>()))->order();
       // create quadrature
-      const size_t integrand_order = local_range.order();
+      const size_t integrand_order = std::max(source_order, local_basis.order()) + local_basis.order();
       assert(integrand_order < std::numeric_limits<int>::max());
       const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
       // get global quadrature points
