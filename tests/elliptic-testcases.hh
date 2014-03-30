@@ -146,7 +146,7 @@ public:
         << "||  Testcase ER07: smooth data, nonhomogeneous dirichlet  ||\n"
         << "||  (see page 858 in Epshteyn, Riviere, 2007)             ||\n"
         << "|+--------------------------------------------------------+|\n"
-        << "||  domain = [0, 1] x [0 , 1]                             ||\n"
+        << "||  domain = [0, 1] x [0, 1]                              ||\n"
         << "||  diffusion = 1                                         ||\n"
         << "||  force     = 64 pi^2 (cos(8 pi x) + cos(8 pi y))       ||\n"
         << "||  dirichlet = cos(8 pi x) + cos(8 pi y)                 ||\n"
