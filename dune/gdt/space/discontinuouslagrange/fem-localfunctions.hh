@@ -12,12 +12,10 @@
 
 #include <dune/grid/common/capabilities.hh>
 
-#if HAVE_DUNE_LOCALFUNCTIONS
+#if HAVE_DUNE_FEM_LOCALFUNCTIONS
 # include <dune/localfunctions/lagrange/equidistantpoints.hh>
 # include <dune/localfunctions/lagrange.hh>
-#endif // HAVE_DUNE_LOCALFUNCTIONS
 
-#if HAVE_DUNE_FEM_LOCALFUNCTIONS
 # include <dune/fem_localfunctions/localfunctions/transformations.hh>
 # include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
 # include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
