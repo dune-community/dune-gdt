@@ -34,6 +34,7 @@
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
@@ -362,11 +363,14 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView<AluCube3dGridType, fals
       Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dGridPartType, 2, double, 1>,         \
       Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 1, double, 1>,         \
       Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 2, double, 1>,         \
-      Dune::GDT::DiscontinuousLagrangeSpace::                                                                          \
-          FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 1, double, 1> /* <- does not work anymore in 3d */        \
-      ,                                                                                                                \
-      Dune::GDT::DiscontinuousLagrangeSpace::                                                                          \
-          FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 2, double, 1> /* <- does not work anymore in 3d */
+      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 1, double, 1>,         \
+      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dGridPartType, 2, double, 1>
+#endif // HAVE_ALUGRID
+
+#if HAVE_ALUGRID
+#define RTN0_RAVIART_THOMAS_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                          \
+  Dune::GDT::RaviartThomasSpace::FemLocalfunctionsWrapper<AluConform2dGridPartType, 0, double, 2>,                     \
+      Dune::GDT::RaviartThomasSpace::FemLocalfunctionsWrapper<AluSimplex2dGridPartType, 0, double, 2>
 #endif // HAVE_ALUGRID
 
 typedef testing::Types<
@@ -415,7 +419,8 @@ typedef testing::Types<
     DISCONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS
 #if HAVE_ALUGRID
     ,
-    P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS, DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS
+    P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS, DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS,
+    RTN0_RAVIART_THOMAS_SPACES_ALUGRID_FEM_LOCALFUNCTIONS
 #endif
 #if HAVE_DUNE_PDELAB
     ,
