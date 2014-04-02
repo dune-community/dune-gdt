@@ -28,8 +28,7 @@
 
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
-//#include "elliptic-sipdg-discretization.hh"
-//#include "elliptic-swipdg-discretization.hh"
+#include "elliptic-swipdg-discretization.hh"
 
 class errors_are_not_as_expected
   : public Dune::Exception
@@ -183,6 +182,7 @@ struct SmallEllipticSystems
   typedef typename std::tuple_element< 2, TestTuple >::type VectorType;
 
   typedef typename TestCase::GridViewType GridViewType;
+  typedef typename TestCase::GridPartType GridPartType;
 
   void produces_correct_results() const
   {
@@ -194,6 +194,7 @@ struct SmallEllipticSystems
 
     const TestCase test_case;
     const auto grid_view = test_case.level_grid_view(1);
+    const auto grid_part = test_case.level_grid_part(1);
 
     run(EllipticCG::Discretization< GridViewType, 1, MatrixType, VectorType >(grid_view,
                                                                               test_case.boundary_info(),
@@ -203,13 +204,13 @@ struct SmallEllipticSystems
                                                                               test_case.neumann()),
         "continuous Galerkin", false);
 
-//    run(EllipticSWIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
-//                                                                                  test_case.boundary_info(),
-//                                                                                  test_case.diffusion(),
-//                                                                                  test_case.force(),
-//                                                                                  test_case.dirichlet(),
-//                                                                                  test_case.neumann()),
-//        "SWIP discontinuous Galerkin", false);
+    run(EllipticSWIPDG::Discretization< GridPartType, 1, MatrixType, VectorType >(grid_part,
+                                                                                  test_case.boundary_info(),
+                                                                                  test_case.diffusion(),
+                                                                                  test_case.force(),
+                                                                                  test_case.dirichlet(),
+                                                                                  test_case.neumann()),
+        "SWIP discontinuous Galerkin", false);
   } // ... produces_correct_results()
 }; // SmallEllipticSystems
 
@@ -224,6 +225,7 @@ struct LargeEllipticSystems
   typedef typename std::tuple_element< 2, TestTuple >::type VectorType;
 
   typedef typename TestCase::GridViewType GridViewType;
+  typedef typename TestCase::GridPartType GridPartType;
 
   void produces_correct_results() const
   {
@@ -235,6 +237,7 @@ struct LargeEllipticSystems
 
     const TestCase test_case;
     const auto grid_view = test_case.reference_grid_view();
+    const auto grid_part = test_case.reference_grid_part();
 
     run(EllipticCG::Discretization< GridViewType, 1, MatrixType, VectorType >(grid_view,
                                                                               test_case.boundary_info(),
@@ -244,13 +247,13 @@ struct LargeEllipticSystems
                                                                               test_case.neumann()),
         "continuous Galerkin");
 
-//    run(EllipticSWIPDG::Discretization< GridPartType, 2, MatrixType, VectorType >(grid_part,
-//                                                                                  test_case.boundary_info(),
-//                                                                                  test_case.diffusion(),
-//                                                                                  test_case.force(),
-//                                                                                  test_case.dirichlet(),
-//                                                                                  test_case.neumann()),
-//        "SWIP discontinuous Galerkin");
+    run(EllipticSWIPDG::Discretization< GridPartType, 2, MatrixType, VectorType >(grid_part,
+                                                                                  test_case.boundary_info(),
+                                                                                  test_case.diffusion(),
+                                                                                  test_case.force(),
+                                                                                  test_case.dirichlet(),
+                                                                                  test_case.neumann()),
+        "SWIP discontinuous Galerkin");
   } // ... produces_correct_results()
 }; // LargeEllipticSystems
 
