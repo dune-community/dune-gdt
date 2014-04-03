@@ -301,9 +301,9 @@ private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
     typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
-    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(-1, 1, 2));
+    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(-1, 1, 4));
     auto grid = grid_provider->grid();
-    grid->globalRefine(1);
+    grid->globalRefine(2);
     return grid;
   } // ... create_initial_grid(...)
 
