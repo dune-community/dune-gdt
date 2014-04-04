@@ -182,6 +182,8 @@ public:
     return vector_;
   }
 
+  using BaseType::local_discrete_function;
+
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
     assert(space_.grid_view()->indexSet().contains(entity));
