@@ -30,21 +30,14 @@
 #include "elliptic-sipdg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
 
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
-
-typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
-
 // change this to toggle output
 std::ostream& test_out = std::cout;
 // std::ostream& test_out = DSC_LOG.devnull();
 
-typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>,
-                       EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,
-                       EllipticTestCase::ER07<AluConform2dGridType>,
-                       EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,
-                       EllipticTestCase::Spe10Model1<AluConform2dGridType>> AluConform2dTestCases;
+
+class errors_are_not_as_expected : public Dune::Exception
+{
+};
 
 std::vector<double> truncate_vector(const std::vector<double>& in, const size_t size)
 {
@@ -58,6 +51,15 @@ std::vector<double> truncate_vector(const std::vector<double>& in, const size_t 
     return ret;
   }
 } // ... truncate_vector(...)
+
+
+typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
+
+typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>,
+                       EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,
+                       EllipticTestCase::ER07<AluConform2dGridType>,
+                       EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,
+                       EllipticTestCase::Spe10Model1<AluConform2dGridType>> AluConform2dTestCases;
 
 
 template <class TestCase>
@@ -118,7 +120,6 @@ struct EllipticSIPDGDiscretization : public ::testing::Test
     }
   }
 }; // EllipticSIPDGDiscretization
-
 
 template <class TestCase>
 struct EllipticSWIPDGDiscretization : public ::testing::Test
