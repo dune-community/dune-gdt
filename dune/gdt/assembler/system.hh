@@ -236,7 +236,9 @@ private:
       return where_->apply_on(gv, intersection);
     }
 
-    virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE DS_FINAL
+    virtual void apply_local(const IntersectionType& intersection,
+                             const EntityType& /*inside_entity*/,
+                             const EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
     {
       localMatrixAssembler_.assembleLocal(t_space_, a_space_, intersection, matrix_, this->matrices(), this->indices());
     }
@@ -313,7 +315,9 @@ private:
       return where_->apply_on(gv, intersection);
     }
 
-    virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE DS_FINAL
+    virtual void apply_local(const IntersectionType& intersection,
+                             const EntityType& /*inside_entity*/,
+                             const EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
     {
       localVectorAssembler_.assembleLocal(space_, intersection, vector_, this->vectors(), this->indices());
     }
