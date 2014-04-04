@@ -256,7 +256,8 @@ public:
     }
   } // ... prepare()
 
-  virtual void apply_local(const IntersectionType& intersection) DS_OVERRIDE
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
+                           const EntityType& /*outside_entity*/) DS_OVERRIDE
   {
     assert(prepared_);
     assert(local_assembler_);
