@@ -596,7 +596,7 @@ public:
     };
   } // ... provided_norms(...)
 
-  virtual size_t expected_rate(const std::string type) const
+  virtual size_t expected_rate(const std::string type) const DS_OVERRIDE DS_FINAL
   {
     if (type == "energy")
       return polOrder;
@@ -705,6 +705,32 @@ private:
       return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
     }
   } // ... compute_energy_norm(...)
+
+  double compute_nonconformity_estimator()
+  {
+    using namespace Dune;
+    using namespace Dune::GDT;
+
+    // prepare discrete solution
+    BaseType::compute_on_current_refinement();
+    assert(current_solution_vector_on_level_);
+    const auto grid_part  = test_.level_grid_part(current_level_);
+    const auto& grid_view = *(test_.level_grid_view(current_level_));
+    const DiscretizationType discretization(
+        grid_part, test_.boundary_info(), test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
+    const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
+    VectorType oswald_interpolation_vector(discretization.space().mapper().size());
+    DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
+
+    const GDT::Operator::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view);
+    oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
+    const Stuff::Function::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(discrete_solution,
+                                                                                                  oswald_interpolation);
+
+    const Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
+                                                                                             grid_view);
+    return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+  } // ... compute_nonconformity_estimator(...)
 
 #if 0
   double compute_residual_estimator_ESV07()
@@ -1016,32 +1042,6 @@ private:
     return std::sqrt(diffusive_flux_estimator);
   } // ... compute_diffusive_flux_estimator_ESV10(...)
 #endif
-
-  double compute_nonconformity_estimator()
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-
-    // prepare discrete solution
-    BaseType::compute_on_current_refinement();
-    assert(current_solution_vector_on_level_);
-    const auto grid_part  = test_.level_grid_part(current_level_);
-    const auto& grid_view = *(test_.level_grid_view(current_level_));
-    const DiscretizationType discretization(
-        grid_part, test_.boundary_info(), test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
-    const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
-    VectorType oswald_interpolation_vector(discretization.space().mapper().size());
-    DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
-
-    const GDT::Operator::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view);
-    oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
-    const Stuff::Function::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(discrete_solution,
-                                                                                                  oswald_interpolation);
-
-    const Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
-                                                                                             grid_view);
-    return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
-  } // ... compute_nonconformity_estimator(...)
 
 #if 0
   double compute_estimator_ESV10()
