@@ -240,7 +240,7 @@ public:
     , force_("x", "0.5 * pi * pi * cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])", 3)
     , dirichlet_(0)
     , neumann_(0)
-    , exact_solution_("x", "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])", 3, "exact solution",
+    , exact_solution_("x", "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])", 2, "exact solution",
                       {{"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
                         "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"}})
   {
