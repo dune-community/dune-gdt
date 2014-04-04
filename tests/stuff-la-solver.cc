@@ -261,45 +261,49 @@ struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
-#define ALU_CONFORM_2D_COMMONDENSE_TEST_CASES                                                                          \
-  std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
-             Dune::Stuff::LA::CommonDenseMatrix<double>,                                                               \
-             Dune::Stuff::LA::CommonDenseVector<double>>,                                                              \
-      std::tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                            \
-                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
-                 Dune::Stuff::LA::                                                                                     \
-                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07< AluConform2dGridType >,        \
-                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
-                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/        \
-      ,                                                                                                                \
-      std::tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                           \
-                 Dune::Stuff::LA::CommonDenseMatrix<double>,                                                           \
-                 Dune::Stuff::LA::                                                                                     \
-                     CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
-                                                               Dune::Stuff::LA::CommonDenseMatrix< double >,           \
-                                                               Dune::Stuff::LA::CommonDenseVector< double > >*/
+#define ALU_CONFORM_2D_COMMONDENSE_TEST_CASES                                                                                                                                                                               \
+  /*std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >,*/                                                                                                                                                          \
+  /*Dune::Stuff::LA::CommonDenseMatrix< double >,*/                                                                                                                                                                         \
+  /*Dune::Stuff::LA::CommonDenseVector< double > >*/                                                                                                                                                                        \
+  /*,*/ std::                                                                                                                                                                                                               \
+      tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                                                                                                                                      \
+            Dune::Stuff::LA::CommonDenseMatrix<double>,                                                                                                                                                                     \
+            Dune::Stuff::LA::                                                                                                                                                                                               \
+                CommonDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07<                                           \
+                                                                AluConform2dGridType >,*/ /*Dune::Stuff::LA::CommonDenseMatrix<                \
+                                                                                             double >,*/ /*Dune::Stuff::LA::CommonDenseVector< \
+                                                                                                                                                                                         double >                           \
+                                                                                                                                                                                         >*/                                \
+      ,                                                                                                                                                                                                                     \
+      std::                                                                                                                                                                                                                 \
+          tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                                                                                                                                 \
+                Dune::Stuff::LA::CommonDenseMatrix<double>,                                                                                                                                                                 \
+                Dune::Stuff::LA::                                                                                                                                                                                           \
+                    CommonDenseVector<double>> //  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+//                Dune::Stuff::LA::CommonDenseMatrix< double >, \
+//                Dune::Stuff::LA::CommonDenseVector< double > >
 
-#define ALU_CONFORM_2D_EIGENDENSE_TEST_CASES                                                                           \
-  std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
-             Dune::Stuff::LA::EigenDenseMatrix<double>,                                                                \
-             Dune::Stuff::LA::EigenDenseVector<double>>,                                                               \
-      std::tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                            \
-                 Dune::Stuff::LA::EigenDenseMatrix<double>,                                                            \
-                 Dune::Stuff::LA::EigenDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07<                    \
-                                                                AluConform2dGridType >,                                \
-                                                                           Dune::Stuff::LA::EigenDenseMatrix< double   \
-                                                               >,                                                      \
-                                                                           Dune::Stuff::LA::EigenDenseVector< double > \
-                                                                >*/                                                    \
-      ,                                                                                                                \
-      std::tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                           \
-                 Dune::Stuff::LA::EigenDenseMatrix<double>,                                                            \
-                 Dune::Stuff::LA::EigenDenseVector<double>> /*, std::tuple< EllipticTestCase::Spe10Model1<             \
-                                                                AluConform2dGridType >,                                \
-                                                                           Dune::Stuff::LA::EigenDenseMatrix< double   \
-                                                               >,                                                      \
-                                                                           Dune::Stuff::LA::EigenDenseVector< double > \
-                                                                >*/
+#define ALU_CONFORM_2D_EIGENDENSE_TEST_CASES                                                                                                                                                                            \
+  /*std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >,*/                                                                                                                                                      \
+  /*Dune::Stuff::LA::EigenDenseMatrix< double >,*/                                                                                                                                                                      \
+  /*Dune::Stuff::LA::EigenDenseVector< double > >*/                                                                                                                                                                     \
+  /*,*/ std::                                                                                                                                                                                                           \
+      tuple<EllipticTestCase::LocalThermalBlock<AluConform2dGridType>,                                                                                                                                                  \
+            Dune::Stuff::LA::EigenDenseMatrix<double>,                                                                                                                                                                  \
+            Dune::Stuff::LA::                                                                                                                                                                                           \
+                EigenDenseVector<double>> /*, std::tuple< EllipticTestCase::ER07<                                          \
+                                                               AluConform2dGridType >,*/ /*Dune::Stuff::LA::EigenDenseMatrix<                \
+                                                                                            double >,*/ /*Dune::Stuff::LA::EigenDenseVector< \
+                                                                                                                                                                                      double >                          \
+                                                                                                                                                                                      >*/                               \
+      ,                                                                                                                                                                                                                 \
+      std::                                                                                                                                                                                                             \
+          tuple<EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,                                                                                                                                             \
+                Dune::Stuff::LA::EigenDenseMatrix<double>,                                                                                                                                                              \
+                Dune::Stuff::LA::                                                                                                                                                                                       \
+                    EigenDenseVector<double>> //  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
+//                Dune::Stuff::LA::EigenDenseMatrix< double >, \
+//                Dune::Stuff::LA::EigenDenseVector< double > >
 
 #define ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES                                                                          \
   std::tuple<EllipticTestCase::ESV07<AluConform2dGridType>,                                                            \
