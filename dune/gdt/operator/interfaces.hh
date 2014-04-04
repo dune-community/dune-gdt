@@ -21,17 +21,20 @@
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
+#include "../product/interfaces.hh"
+
 namespace Dune {
 namespace GDT {
 
 
 template< class Traits >
 class OperatorInterface
+  : public ProductInterface< Traits >
 {
+  typedef ProductInterface< Traits > BaseType;
 public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::FieldType    FieldType;
-  typedef typename Traits::GridViewType GridViewType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::FieldType;
 
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range) const
@@ -39,18 +42,35 @@ public:
     CHECK_CRTP(this->as_imp(*this).apply(source, range));
     return this->as_imp(*this).apply(source, range);
   }
+
+  template< class S, class R >
+  FieldType apply2(const Stuff::LA::VectorInterface< S >& source, const Stuff::LA::VectorInterface< R >& range) const
+  {
+    auto tmp = range.copy();
+    apply(source.as_imp(source), tmp);
+    return range.dot(tmp);
+  } // ... apply2(...)
+
+  template< class SS, class SV, class RS, class RV >
+  FieldType apply2(const ConstDiscreteFunction< SS, SV >& source, const ConstDiscreteFunction< RS, RV >& range) const
+  {
+    auto tmp_vector = range.copy();
+    DiscreteFunction< RS, RV > tmp_function(range.space(), tmp_vector);
+    apply(source, tmp_function);
+    return range.vector().dot(tmp_vector);
+  }
 }; // class OperatorInterface
 
 
 template< class Traits >
 class LocalizableOperatorInterface
-  : protected Stuff::CRTPInterface< LocalizableOperatorInterface< Traits >, Traits >
+  : public Stuff::CRTPInterface< LocalizableOperatorInterface< Traits >, Traits >
 {
-public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::SourceType   SourceType;
   typedef typename Traits::RangeType    RangeType;
+  typedef typename Traits::FieldType    FieldType;
 
   typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
   typedef typename GridViewType::ctype                        DomainFieldType;
@@ -86,13 +106,13 @@ public:
     return this->as_imp(*this).source();
   }
 
-  RangeType& range()
+  const RangeType& range() const
   {
     CHECK_CRTP(this->as_imp(*this).range());
     return this->as_imp(*this).range();
   }
 
-  const RangeType& range() const
+  RangeType& range()
   {
     CHECK_CRTP(this->as_imp(*this).range());
     return this->as_imp(*this).range();
@@ -107,91 +127,28 @@ public:
 
 template< class Traits >
 class AssemblableOperatorInterface
-  : protected Stuff::CRTPInterface< AssemblableOperatorInterface< Traits >, Traits >
+  : public AssemblableProductInterface< Traits >
 {
+  typedef AssemblableProductInterface< Traits > BaseType;
 public:
-  typedef typename Traits::derived_type     derived_type;
-  typedef typename Traits::GridViewType     GridViewType;
-  typedef typename Traits::SourceSpaceType  SourceSpaceType;
-  typedef typename Traits::RangeSpaceType   RangeSpaceType;
-  typedef typename Traits::MatrixType       MatrixType;
+  using typename BaseType::derived_type;
 
-  typedef typename MatrixType::ScalarType                     FieldType;
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::ctype                        DomainFieldType;
-  static const unsigned int                                   dimDomain = GridViewType::dimension;
+  using typename BaseType::GridViewType;
+  using typename BaseType::FieldType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::MatrixType;
 
-private:
-  static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceType::Traits >, RangeSpaceType >::value,
-                "RangeSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceType::Traits >, SourceSpaceType >::value,
-                "SourceSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_same< typename RangeSpaceType::GridViewType, GridViewType >::value,
-                "The GridViewType of RangeSpaceType and GridViewType have to match!");
-  static_assert(std::is_same< typename SourceSpaceType::GridViewType, GridViewType >::value,
-                "The GridViewType of SourceSpaceType and GridViewType have to match!");
-  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixType::Traits >, MatrixType >::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
-
-public:
-  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space)
-  {
-    return pattern(range_space, range_space);
-  }
-
-  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
-                                                   const SourceSpaceType& source_space)
-  {
-    return pattern(range_space, source_space, *(range_space.grid_view()));
-  }
-
-  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
-                                                   const SourceSpaceType& source_space,
-                                                   const GridViewType& grid_view)
-  {
-    return derived_type::pattern(range_space, source_space, grid_view);
-  }
-
-  const GridViewType& grid_view() const
-  {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
-  }
-
-  const SourceSpaceType& source_space() const
-  {
-    CHECK_CRTP(this->as_imp(*this).source_space());
-    return this->as_imp(*this).source_space();
-  }
-
-  const RangeSpaceType& range_space() const
-  {
-    CHECK_CRTP(this->as_imp(*this).range_space());
-    return this->as_imp(*this).range_space();
-  }
-
-  void assemble()
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).assemble());
-  }
-
-  MatrixType& matrix()
-  {
-    CHECK_CRTP(this->as_imp(*this).matrix());
-    return this->as_imp(*this).matrix();
-  }
-
-  const MatrixType& matrix() const
-  {
-    CHECK_CRTP(this->as_imp(*this).matrix());
-    return this->as_imp(*this).matrix();
-  }
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::PatternType;
 
   template< class S, class R >
   void apply(const Stuff::LA::VectorInterface< S >& source, Stuff::LA::VectorInterface< R >& range)
   {
-    CHECK_CRTP(this->as_imp(*this).apply(source, range));
-    return this->as_imp(*this).apply(source, range);
+    CHECK_CRTP(this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range)));
+    return this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range));
   }
 
   template< class S, class R >
@@ -230,8 +187,8 @@ public:
                      Stuff::LA::VectorInterface< S >& source,
                      const Stuff::Common::ConfigTree& opts)
   {
-    CHECK_CRTP(this->as_imp(*this).apply_inverse(range, source, opts));
-    return this->as_imp(*this).apply_inverse(range, source, opts);
+    CHECK_CRTP(this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts));
+    return this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts);
   }
 
   template< class R, class S >
@@ -256,6 +213,32 @@ public:
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }
+
+  template< class R, class S, class P >
+  FieldType apply2(const Stuff::LA::VectorInterface< R >& range,
+                   const Stuff::LA::VectorInterface< S >& source,
+                   const AssemblableProductInterface< P >& product)
+  {
+    apply(source, range);
+    return product.apply2(range, source);
+  }
+
+  template< class R, class S, class P >
+  FieldType apply2(const Stuff::LA::VectorInterface< R >& range, const Stuff::LA::VectorInterface< S >& source)
+  {
+    this->assemble();
+    auto tmp = range.copy();
+    this->matrix().mv(source.as_imp(source), tmp);
+    return range.dot(tmp);
+  }
+
+  template< class S, class R >
+  FieldType apply2(const ConstDiscreteFunction< SourceSpaceType, S >& source,
+                   const ConstDiscreteFunction< RangeSpaceType, R >& range)
+  {
+    return apply2(range.vector(), source.vector());
+  }
+
 }; // class AssemblableOperatorInterface
 
 
