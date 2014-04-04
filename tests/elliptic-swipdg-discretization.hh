@@ -45,6 +45,7 @@
 #include <dune/gdt/product/h1.hh>
 #include <dune/gdt/product/elliptic.hh>
 #include <dune/gdt/operator/prolongations.hh>
+#include <dune/gdt/operator/oswald.hh>
 //#include <dune/gdt/operator/reconstructions.hh>
 
 #include "elliptic-testcases.hh"
@@ -1021,166 +1022,25 @@ private:
     using namespace Dune;
     using namespace Dune::GDT;
 
-    const size_t integration_order = 5;
-
     // prepare discrete solution
     BaseType::compute_on_current_refinement();
-    const auto grid_part = test_.level_grid_part(current_level_);
+    assert(current_solution_vector_on_level_);
+    const auto grid_part  = test_.level_grid_part(current_level_);
+    const auto& grid_view = *(test_.level_grid_view(current_level_));
     const DiscretizationType discretization(
         grid_part, test_.boundary_info(), test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
-    const ConstDiscreteFunctionType discrete_solution(
-        discretization.space(), *current_solution_vector_on_level_, "discrete solution");
-    VectorType oswald_projection_vector(discretization.space().mapper().size());
-    DiscreteFunctionType oswald_projection(discretization.space(), oswald_projection_vector, "oswald projection");
+    const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
+    VectorType oswald_interpolation_vector(discretization.space().mapper().size());
+    DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
 
-    typedef typename DiscretizationType::SpaceType TestSpaceType;
-    typedef FieldVector<DomainFieldType, dimDomain> DomainType;
+    const GDT::Operator::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view);
+    oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
+    const Stuff::Function::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(discrete_solution,
+                                                                                                  oswald_interpolation);
 
-    // data structures we need
-    // * a map from a global vertex id to global DoF ids
-    //   given a vertex, one obtains a set of all global DoF ids, which are associated with this vertex
-    typedef std::vector<std::set<size_t>> VertexToEntitiesMapType;
-    VertexToEntitiesMapType vertex_to_dof_id_map(grid_part->indexSet().size(dimDomain));
-    // * a set to hold the global id off all boundary vertices
-    std::set<size_t> boundary_vertices;
-    // * vectors to hold the local estimators
-    std::vector<RangeFieldType> estimators_nonconformity(grid_part->indexSet().size(0), RangeFieldType(0));
-
-    // walk the grid for the first time
-    const auto entity_it_end = grid_part->template end<0>();
-    for (auto entity_it = grid_part->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // get the local finite elements
-      typedef typename TestSpaceType::Traits::ContinuousFiniteElementType FiniteElementType;
-      const auto dg_finite_element = discretization.space().backend().finiteElement(entity);
-      const FiniteElementType cg_finite_element(entity.geometry().type(), polOrder);
-      const auto& dg_local_coefficients = dg_finite_element.localCoefficients();
-      const auto& cg_local_coefficients = cg_finite_element.localCoefficients();
-      assert(dg_local_coefficients.size() == cg_local_coefficients.size() && "Wrong finite element given!");
-      // loop over all vertices
-      std::vector<DomainType> global_vertices(entity.template count<dimDomain>(), DomainType(0));
-      std::vector<size_t> global_vertex_ids(global_vertices.size(), 0);
-      assert(global_vertices.size() < std::numeric_limits<int>::max());
-      for (size_t local_vertex_id = 0; local_vertex_id < global_vertices.size(); ++local_vertex_id) {
-        // get global vertex id
-        const auto vertexPtr               = entity.template subEntity<dimDomain>(int(local_vertex_id));
-        const auto& vertex                 = *vertexPtr;
-        global_vertex_ids[local_vertex_id] = grid_part->indexSet().index(vertex);
-        global_vertices[local_vertex_id]   = vertex.geometry().center();
-        // find the global DoF id to this vertex, therefore
-        // loop over all local DoFs
-        for (size_t ii = 0; ii < dg_local_coefficients.size(); ++ii) {
-          const auto& entity_cg_local_key = cg_local_coefficients.localKey(ii);
-          if (entity_cg_local_key.subEntity() == local_vertex_id) {
-            const auto& entity_dg_local_key = dg_local_coefficients.localKey(ii);
-            assert(entity_cg_local_key.codim() == dimDomain && "Wrong finite element given!");
-            const size_t local_DOF_id  = entity_dg_local_key.index();
-            const size_t global_DOF_id = discretization.space().mapper().mapToGlobal(entity, local_DOF_id);
-            // add this global DoF to this vertex
-            vertex_to_dof_id_map[global_vertex_ids[local_vertex_id]].insert(global_DOF_id);
-            // there must be one and only one for a polorder 1 lagrange basis
-            break;
-          }
-        } // loop over all local DoFs
-      } // loop over all vertices
-      // in order to determine the boundary vertices, we need to
-      // loop over all intersections
-      const auto intersectionEndIt = grid_part->iend(entity);
-      for (auto intersectionIt = grid_part->ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
-        const auto& intersection = *intersectionIt;
-        if (intersection.boundary() && !intersection.neighbor()) {
-          const auto& intersection_geometry = intersection.geometry();
-          for (size_t local_intersection_corner_id = 0;
-               int(local_intersection_corner_id) < intersection_geometry.corners();
-               ++local_intersection_corner_id) {
-            const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
-            // now, we need to find the entity's vertex this intersection's corner point equals to, so we
-            // loop over all vertices of the entity
-            for (size_t local_vertex_id = 0; local_vertex_id < global_vertices.size(); ++local_vertex_id) {
-              if (Stuff::Common::FloatCmp::eq(global_intersection_corner, global_vertices[local_vertex_id]))
-                boundary_vertices.insert(global_vertex_ids[local_vertex_id]);
-            } // loop over all vertices of the entity
-          } // if (intersection.boundary() && !intersection.neighbor())
-        } // loop over all intersections
-      } // loop over all intersections
-    } // walk the grid for the first time
-
-    // walk the grid for the second time
-    for (auto entity_it = grid_part->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // get the local functions
-      const auto local_solution_entity             = discrete_solution.local_discrete_function(entity);
-      const auto& local_solution_entity_DoF_vector = local_solution_entity.vector();
-      // get the local finite elements
-      // * for the oswald projection
-      typedef typename TestSpaceType::Traits::ContinuousFiniteElementType FiniteElementType;
-      const auto dg_finite_element = discretization.space().backend().finiteElement(entity);
-      const FiniteElementType cg_finite_element(entity.geometry().type(), polOrder);
-      const auto& dg_local_coefficients = dg_finite_element.localCoefficients();
-      const auto& cg_local_coefficients = cg_finite_element.localCoefficients();
-      assert(dg_local_coefficients.size() == cg_local_coefficients.size() && "Wrong finite element given!");
-      // to compute the oswald projection
-      // * loop over all local DoFs
-      for (size_t ii = 0; ii < dg_local_coefficients.size(); ++ii) {
-        const auto& entity_dg_local_key = dg_local_coefficients.localKey(ii);
-        const auto& entity_cg_local_key = cg_local_coefficients.localKey(ii);
-        assert(entity_cg_local_key.codim() == dimDomain && "Wrong finite element given!");
-        const size_t local_vertex_id  = entity_cg_local_key.subEntity();
-        const size_t local_DoF_id     = entity_dg_local_key.index();
-        const auto vertexPtr          = entity.template subEntity<dimDomain>(local_vertex_id);
-        const auto& vertex            = *vertexPtr;
-        const size_t global_vertex_id = grid_part->indexSet().index(vertex);
-        // if we are on the domain boundary
-        if (boundary_vertices.count(global_vertex_id)) {
-          // get global DoF id
-          const size_t global_DoF_id = discretization.space().mapper().mapToGlobal(entity, local_DoF_id);
-          // set the dof to zero (we have dirichlet zero)
-          oswald_projection.vector().set(global_DoF_id, RangeFieldType(0));
-        } else {
-          // do the oswald projection
-          const size_t num_DoFS_per_vertex = vertex_to_dof_id_map[global_vertex_id].size();
-          // * get the source Dof
-          const RangeFieldType source_Dof_value = local_solution_entity_DoF_vector.get(local_DoF_id);
-          // * and add it to all target DoFs
-          for (size_t target_global_DoF_id : vertex_to_dof_id_map[global_vertex_id])
-            oswald_projection.vector().add(target_global_DoF_id, source_Dof_value / num_DoFS_per_vertex);
-        } // if (boundary_vertices.find(global_vertex_id))
-      } // loop over all local DoFs
-    } // walk the grid for the second time
-
-    // walk the grid for the third time
-    for (auto entity_it = grid_part->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity        = *entity_it;
-      const size_t entity_index = grid_part->indexSet().index(entity);
-      // get the local functions
-      const auto local_diffusion         = test_.diffusion().local_function(entity);
-      const auto local_solution          = discrete_solution.local_function(entity);
-      const auto local_oswald_projection = oswald_projection.local_function(entity);
-      // do a volume quadrature
-      const auto& volume_quadrature =
-          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), 2 * integration_order + 1);
-      for (auto quadrature_point : volume_quadrature) {
-        const FieldVector<DomainFieldType, dimDomain> point_entity = quadrature_point.position();
-        const double quadrature_weight                             = quadrature_point.weight();
-        // evaluate
-        const double integration_factor       = entity.geometry().integrationElement(point_entity);
-        const auto diffusion_value            = local_diffusion->evaluate(point_entity);
-        auto solution_gradient                = local_solution->jacobian(point_entity);
-        const auto oswald_projection_gradient = local_oswald_projection->jacobian(point_entity);
-        // compute local nonconformity estimator
-        const auto nonconformity_difference = solution_gradient[0] - oswald_projection_gradient[0];
-        const auto nonconformity_product    = nonconformity_difference * nonconformity_difference;
-        estimators_nonconformity[entity_index] +=
-            integration_factor * quadrature_weight * diffusion_value * nonconformity_product;
-      } // do a volume quadrature
-    } // walk the grid for the third time
-
-    // compute error components
-    double nonconformity_estimator = 0;
-    for (size_t ii = 0; ii < estimators_nonconformity.size(); ++ii) {
-      nonconformity_estimator += std::pow(estimators_nonconformity[ii], 2);
-    }
-    return std::sqrt(nonconformity_estimator);
+    const Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
+                                                                                             grid_view);
+    return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
   } // ... compute_nonconformity_estimator(...)
 
 #if 0
