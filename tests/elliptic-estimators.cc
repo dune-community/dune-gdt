@@ -17,104 +17,63 @@
 #endif
 
 #include "elliptic-testcases.hh"
-//#include "elliptic-cg-discretization.hh"
-//#include "elliptic-sipdg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
+
+// change this to toggle test_output
+std::ostream& test_out = std::cout;
+// std::ostream& test_out = DSC_LOG.devnull();
+
 
 class errors_are_not_as_expected : public Dune::Exception
 {
 };
 
+std::vector<double> truncate_vector(const std::vector<double>& in, const size_t size)
+{
+  assert(size <= in.size());
+  if (size == in.size())
+    return in;
+  else {
+    std::vector<double> ret(size);
+    for (size_t ii = 0; ii < size; ++ii)
+      ret[ii] = in[ii];
+    return ret;
+  }
+} // ... truncate_vector(...)
+
+
 typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
 
-// change this to toggle output
-std::ostream& out = std::cout;
-// std::ostream& out = DSC_LOG.devnull();
-
-typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>
-                       //                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
-                       //                      , EllipticTestCase::ER07< AluConform2dGridType >
-                       //                      , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >
-                       //                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
-                       > AluConform2dTestCases;
-
-// template< class TestCase >
-// struct EllipticCGDiscretization
-//  : public ::testing::Test
-//{
-//  void check() const
-//  {
-//    const TestCase test_case;
-//    test_case.print_header(out);
-//    out << std::endl;
-//    EllipticCG::EstimatorStudy< TestCase > eoc_study(test_case);
-//    auto errors = eoc_study.run(out);
-//    for (const auto& norm : eoc_study.provided_norms())
-//      if (errors[norm] > eoc_study.expected_results(norm))
-//        DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
-//  }
-//};
-
-// TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
-// TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
-//  this->check();
-//}
-
-
-// template< class TestCase >
-// struct EllipticSIPDGDiscretization
-//  : public ::testing::Test
-//{
-//  void check() const
-//  {
-//    if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      std::cerr << "EllipticSIPDGDiscretization does not work for EllipticTestCase::Spe10Model1< Dune::ALUConformGrid<
-//      2, 2 > >!";
-//    } else {
-//      const TestCase test_case;
-//      test_case.print_header(out);
-//      out << std::endl;
-//      size_t failure = 0;
-//      EllipticSIPDG::EocStudy< TestCase, 1 > eoc_study_1(test_case);
-//      auto errors_1 = eoc_study_1.run(out);
-//      for (const auto& norm : eoc_study_1.provided_norms())
-//        if (errors_1[norm] > eoc_study_1.expected_results(norm))
-//          ++failure;
-//      if (failure)
-//        DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
-//    }
-//  }
-//};
-
-// TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
-// TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
-//  this->check();
-//}
+typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>> AluConform2dTestCases;
 
 
 template <class TestCase>
 struct EllipticSWIPDGDiscretization : public ::testing::Test
 {
-  void check() const
+  void produces_correct_results() const
   {
     const TestCase test_case;
-    test_case.print_header(out);
-    out << std::endl;
+    test_case.print_header(test_out);
+    test_out << std::endl;
     EllipticSWIPDG::EstimatorStudy<TestCase> estimator_study(test_case);
-    /*auto results =*/estimator_study.run(out);
-    //    size_t failure = 0;
-    //    for (const auto& norm : estimator_study.provided_norms())
-    //      if (results[norm] > estimator_study.expected_results(norm))
-    //        ++failure;
-    //    if (failure)
-    //      DUNE_THROW(errors_are_not_as_expected, "They really ain't (or you have to lower the expectations)!");
-  }
-};
+    auto results = estimator_study.run(test_out);
+    for (const auto& norm : estimator_study.provided_norms())
+      if (!Dune::Stuff::Common::FloatCmp::lt(
+              results[norm], truncate_vector(estimator_study.expected_results(norm), results[norm].size()))) {
+        std::stringstream ss;
+        Dune::Stuff::Common::print(results[norm], "errors           (" + norm + ")", ss);
+        Dune::Stuff::Common::print(estimator_study.expected_results(norm), "   expected results (" + norm + ")", ss);
+        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
+      }
+  } // ... produces_correct_results()
+}; // struct EllipticSWIPDGDiscretization
 
-// TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
-// TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-//  this->check();
-//}
+
+TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
+TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results)
+{
+  this->produces_correct_results();
+}
 
 
 int main(int argc, char** argv)
