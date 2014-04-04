@@ -183,14 +183,12 @@ public:
   template <class R, class S>
   FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source)
   {
-    typedef typename R::derived_type RangeType;
-    typedef typename S::derived_type SourceType;
+    assemble();
     assert(range.size() == matrix().rows());
     assert(source.size() == matrix().cols());
-    assemble();
     auto tmp = range.copy();
-    matrix().mv(static_cast<const SourceType&>(source), tmp);
-    return static_cast<const RangeType&>(range).dot(tmp);
+    matrix().mv(source.as_imp(source), tmp);
+    return range.dot(tmp);
   } // ... apply2(...)
 
   template <class R, class S>
