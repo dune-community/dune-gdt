@@ -119,19 +119,15 @@ public:
         (new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
 
-  /**
-   * \note  We use the SubsamplingVTKWriter (which is better for higher orders). This means that the grid you see
-   *        in the visualization is a refinement of the actual grid!
-   */
-  void visualize(const std::string filename, VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  void visualize(const std::string filename,
+                 const bool subsampling = true,
+                 VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    typedef typename SpaceType::GridViewType GridViewType;
-    if (filename.empty()) DUNE_THROW(RangeError, "Empty filename given!");
-    auto adapter = std::make_shared< Stuff::Function::VisualizationAdapter< GridViewType, dimRange > >(*this);
-    SubsamplingVTKWriter< GridViewType > vtk_writer(*(space_.grid_view()), VTK::nonconforming);
-    vtk_writer.addVertexData(adapter);
-    vtk_writer.write(filename, vtk_output_type);
-  } // ... visualize(...)
+    BaseType::template visualize< typename SpaceType::GridViewType >(*(space().grid_view()),
+                                                                     filename,
+                                                                     subsampling,
+                                                                     vtk_output_type);
+  }
 
 protected:
   const SpaceType& space_;
