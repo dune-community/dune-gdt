@@ -55,13 +55,15 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim0Integral(const BinaryEvaluationImp eval)
+  Codim0Integral(const BinaryEvaluationImp eval, const size_t over_integrate = 0)
     : evaluation_(eval)
+    , over_integrate_(over_integrate)
   {}
 
   template< class... Args >
-  Codim0Integral(Args&& ...args)
+  Codim0Integral(Args&& ...args, const size_t over_integrate = 0)
     : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(over_integrate)
   {}
 
   const BinaryEvaluationType& inducingEvaluation() const
@@ -85,7 +87,7 @@ public:
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, ansatzBase, testBase);
+    const size_t integrand_order = evaluation().order(localFunctions, ansatzBase, testBase) + over_integrate_;
     assert(integrand_order < std::numeric_limits< int >::max());
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), int(integrand_order));
     // check matrix and tmp storage
@@ -122,6 +124,7 @@ private:
   }
 
   const BinaryEvaluationImp evaluation_;
+  const size_t over_integrate_;
 }; // class Codim0Integral
 
 
