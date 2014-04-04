@@ -28,7 +28,7 @@
 #include <dune/stuff/functions/combined.hh>
 
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
-//#include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
+#include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
@@ -43,6 +43,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/product/l2.hh>
 #include <dune/gdt/product/h1.hh>
+#include <dune/gdt/product/elliptic.hh>
 #include <dune/gdt/operator/prolongations.hh>
 //#include <dune/gdt/operator/reconstructions.hh>
 
@@ -530,7 +531,6 @@ protected:
 }; // class EOCStudy
 
 
-#if 0
 template< class TestCase >
 class EstimatorStudy
   : public EocStudy< TestCase, 1 >
@@ -539,6 +539,7 @@ class EstimatorStudy
   static const unsigned int polOrder = 1;
 
   typedef typename BaseType::GridPartType GridPartType;
+  typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
 
   typedef typename BaseType::DomainFieldType  DomainFieldType;
@@ -553,11 +554,16 @@ class EstimatorStudy
 
   typedef typename TestCase::ExactSolutionType ExactSolutionType;
 
-  static std::string residual_estimator_ESV07_string() { return "eta_R (ESV07)"; }
-  static std::string residual_estimator_ESV10_string() { return "eta_R (ESV10)"; }
-  static std::string diffusive_flux_estimator_ESV10_string() { return "eta_DF (ESV10)"; }
-  static std::string nonconformity_estimator_ESV10_string() { return "eta_NC (ESV10)"; }
-  static std::string estimator_ESV10_string() { return "estimator (ESV10)"; }
+  static std::string nonconformity_estimator_id() {  return "eta_NC"; }
+  static std::string residual_estimator_ESV07_id() { return "eta_R (ESV07)"; }
+  static std::string diffusive_flux_estimator_id() { return "eta_DF"; }
+  static std::string estimator_ESV07_id() {          return "eta (ESV07)"; }
+  static std::string efficiency_ESV07_id() {         return "efficiency (ESV07)"; }
+  static std::string residual_estimator_ESV10_id() { return "eta_R (ESV10)"; }
+  static std::string estimator_ESV10_id() {          return "eta (ESV10)"; }
+  static std::string efficiency_ESV10_id() {         return "efficiency (ESV10)"; }
+
+  static const size_t over_integrate = 2;
 
 public:
   EstimatorStudy(const TestCase& test)
@@ -566,100 +572,83 @@ public:
 
   virtual ~EstimatorStudy() {}
 
-  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE
+  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE DS_FINAL
   {
-    return {/*"L2",*/ "H1_semi", /*residual_estimator_ESV07_string(),*/ residual_estimator_ESV10_string()
-           , diffusive_flux_estimator_ESV10_string(), nonconformity_estimator_ESV10_string(), estimator_ESV10_string()};
-  }
+    return { "energy"
+            , nonconformity_estimator_id()
+//            , residual_estimator_ESV07_id()
+//            , diffusive_flux_estimator_id()
+//            , estimator_ESV07_id()
+//            , efficiency_ESV07_id()
+//            , residual_estimator_ESV10_id()
+//            , estimator_ESV10_id()
+//            , efficiency_ESV10_id()
+           };
+  } // ... provided_norms(...)
 
   virtual size_t expected_rate(const std::string type) const
   {
-    if (type.compare(residual_estimator_ESV07_string()) == 0)
-      return polOrder + 1;
-    else if (type.compare(residual_estimator_ESV10_string()) == 0)
-      return polOrder + 1;
-    else if (type.compare(diffusive_flux_estimator_ESV10_string()) == 0)
+    if (type == "energy")
       return polOrder;
-    else if (type.compare(nonconformity_estimator_ESV10_string()) == 0)
+    else if (type == nonconformity_estimator_id())
       return polOrder;
-    else if (type.compare(estimator_ESV10_string()) == 0)
+    else if (type == residual_estimator_ESV07_id())
       return polOrder + 1;
+    else if (type == diffusive_flux_estimator_id())
+      return polOrder;
+    else if (type == estimator_ESV07_id())
+      return polOrder;
+    else if (type == efficiency_ESV07_id())
+      return 0;
+    else if (type == residual_estimator_ESV10_id())
+      return polOrder + 1;
+    else if (type == estimator_ESV10_id())
+      return polOrder;
+    else if (type == efficiency_ESV10_id())
+      return 0;
     else
       return BaseType::expected_rate(type);
   } // ... expected_rate(...)
 
-  virtual double current_error_norm(const std::string type) DS_OVERRIDE
+  virtual double current_error_norm(const std::string type) DS_OVERRIDE DS_FINAL
   {
-    if (type.compare(residual_estimator_ESV07_string()) == 0) {
-      return compute_residual_estimator_ESV07();
-    } else if (type.compare(residual_estimator_ESV10_string()) == 0) {
-      return compute_residual_estimator_ESV10();
-    } else if (type.compare(diffusive_flux_estimator_ESV10_string()) == 0) {
-      return compute_diffusive_flux_estimator_ESV10();
-    } else if (type.compare(nonconformity_estimator_ESV10_string()) == 0) {
-      return compute_nonconformity_estimator_ESV10();
-    } else if (type.compare(estimator_ESV10_string()) == 0) {
-      return compute_estimator_ESV10();
-    } else
+    if (type == "energy")
+      return compute_energy_norm();
+    else if (type == nonconformity_estimator_id())
+      return compute_nonconformity_estimator();
+    else
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
 
-  std::vector< double > expected_results(const std::string /*type*/) const
+  std::vector< double > expected_results(const std::string type) const
   {
-    return {0.0};
-//    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      if (polOrder == 1) {
-//        if (type.compare("L2") == 0)
-//          return {1.97e-01, 4.86e-02, 1.22e-02, 3.03e-03};
-//        else if (type.compare("H1") == 0)
-//          return {4.12e-01, 2.08e-01, 1.04e-01, 5.18e-02};
-//        else
-//          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-//      } else
-//        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-//    } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      if (polOrder == 1) {
-//        if (type.compare("L2") == 0)
-//          return {8.04e-02, 4.39e-02, 1.27e-02, 2.88e-03};
-//        else if (type.compare("H1") == 0)
-//          return {3.61e-01, 3.15e-01, 1.71e-01, 7.83e-02};
-//        else
-//          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-//      } else
-//        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-//    } else if (std::is_same< TestCase, EllipticTestCase::ER07< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      if (polOrder == 1) {
-//        if (type.compare("L2") == 0)
-//          return {1.93e-01, 5.73e-02, 1.55e-02};
-//        else if (type.compare("H1") == 0)
-//          return {3.62e-01, 1.85e-01, 9.25e-02};
-//        else
-//          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-//      } else
-//        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-//    } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      if (polOrder == 1) {
-//        if (type.compare("L2") == 0)
-//          return {1.19e-01, 3.12e-02, 7.73e-03, 1.66e-03};
-//        else if (type.compare("H1") == 0)
-//          return {3.21e-01, 1.67e-01, 8.30e-02, 3.76e-02};
-//        else
-//          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-//      } else
-//        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-//    } else if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
-//      if (polOrder == 1) {
-//        if (type.compare("L2") == 0)
-//          return {2.91e-03, 1.13e-03, 3.72e-04};
-//        else if (type.compare("H1") == 0)
-//          return {2.37e-01, 1.43e-01, 7.57e-02};
-//        else
-//          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
-//      } else
-//        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-//    } else
-//      DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
-  }
+    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
+      if (polOrder == 1) {
+        if (type.compare("energy") == 0)
+          return {3.29e-01, 1.63e-01, 8.05e-02, 4.02e-02};
+        else if (type == nonconformity_estimator_id())
+          return {1.90e-1, 9.73e-2, 4.90e-2, 2.46e-2};
+        else if (type == residual_estimator_ESV07_id())
+          return {7.24e-2, 1.83e-2, 4.55e-3, 1.15e-3};
+        else if (type == diffusive_flux_estimator_id())
+          return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
+        else if (type == estimator_ESV07_id())
+          return {0.0, 0.0, 0.0, 0.0};
+        else if (type == efficiency_ESV07_id())
+          return {1.2, 1.2, 1.2, 1.2};
+        else if (type == residual_estimator_ESV10_id())
+          return {0.0, 0.0, 0.0, 0.0};
+        else if (type == estimator_ESV10_id())
+          return {0.0, 0.0, 0.0, 0.0};
+        else if (type == efficiency_ESV10_id())
+          return {0.0, 0.0, 0.0, 0.0};
+        else
+          return BaseType::expected_results(type);
+      } else
+        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
+    } else
+      DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
+  } // ... expected_results(...)
 
   virtual std::map< std::string, std::vector< double > > run(std::ostream& out = std::cout)
   {
@@ -667,6 +656,44 @@ public:
   }
 
 private:
+  double compute_energy_norm()
+  {
+    using namespace Dune;
+    using namespace GDT;
+    // get current solution
+    assert(current_level_ < test_.num_levels());
+    if (last_computed_level_ != current_level_) {
+      this->compute_on_current_refinement();
+    }
+    assert(last_computed_level_ == current_level_);
+    const DiscretizationType discretization(test_.level_grid_part(current_level_), test_.boundary_info(),
+                                            test_.diffusion(), test_.force(), test_.dirichlet(), test_.neumann());
+    assert(current_solution_vector_on_level_);
+    const ConstDiscreteFunctionType current_solution(discretization.space(),
+                                                      *current_solution_vector_on_level_,
+                                                      "discrete solution");
+    // compute error
+    if (test_.provides_exact_solution()) {
+      typedef Dune::Stuff::Function::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
+      const DifferenceType difference(test_.exact_solution(), current_solution);
+      const GDT::Product::Elliptic< typename TestCase::DiffusionType, GridViewType >
+          elliptic_product(test_.diffusion(), *(test_.level_grid_view(current_level_)));
+      return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+    } else {
+      if (!reference_solution_computed_)
+        this->compute_reference_solution();
+      assert(reference_discretization_);
+      assert(reference_solution_vector_);
+      assert(current_solution_vector_);
+      const VectorType difference_vector = (*reference_solution_vector_) - (*current_solution_vector_);
+      const ConstDiscreteFunctionType difference(reference_discretization_->space(), difference_vector);
+      const GDT::Product::Elliptic< typename TestCase::DiffusionType, GridViewType >
+          elliptic_product(test_.diffusion(), *(test_.reference_grid_view()));
+      return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+    }
+  } // ... compute_energy_norm(...)
+
+#if 0
   double compute_residual_estimator_ESV07()
   {
     using namespace Dune;
@@ -704,7 +731,9 @@ private:
     } // walk the grid
     return std::sqrt(ret);
   } // ... compute_residual_estimator_ESV07(...)
+#endif
 
+#if 0
   double compute_residual_estimator_ESV10()
   {
     using namespace Dune;
@@ -903,7 +932,9 @@ private:
     }
     return std::sqrt(residual_estimator);
   } // ... compute_residual_estimator_ESV10(...)
+#endif
 
+#if 0
   double compute_diffusive_flux_estimator_ESV10()
   {
     using namespace Dune;
@@ -971,8 +1002,9 @@ private:
     }
     return std::sqrt(diffusive_flux_estimator);
   } // ... compute_diffusive_flux_estimator_ESV10(...)
+#endif
 
-  double compute_nonconformity_estimator_ESV10()
+  double compute_nonconformity_estimator()
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -1142,8 +1174,9 @@ private:
       nonconformity_estimator += std::pow(estimators_nonconformity[ii], 2);
     }
     return std::sqrt(nonconformity_estimator);
-  }
+  } // ... compute_nonconformity_estimator(...)
 
+#if 0
   double compute_estimator_ESV10()
   {
     using namespace Dune;
@@ -1362,6 +1395,7 @@ private:
     }
     return std::sqrt(estimator);
   } // ... compute_estimator_ESV10(...)
+#endif
 
 private:
   using BaseType::test_;
@@ -1373,7 +1407,6 @@ private:
   using BaseType::current_solution_vector_on_level_;
   using BaseType::current_solution_vector_;
 }; // class EstimatorStudy
-#endif
 
 
 } // namespace EllipticSWIPDG
