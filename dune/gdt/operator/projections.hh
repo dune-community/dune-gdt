@@ -354,11 +354,11 @@ private:
 
 
 // forward, to be used in the traits
-template< class GridViewImp, class SourceImp, class RangeImp >
+template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double >
 class DirichletLocalizable;
 
 
-template< class GridViewImp, class SourceImp, class RangeImp >
+template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
 class DirichletLocalizableTraits
 {
   typedef typename RangeImp::SpaceType::Traits T;
@@ -381,18 +381,19 @@ class DirichletLocalizableTraits
 public:
   typedef DirichletLocalizable< GridViewImp, SourceImp, RangeImp > derived_type;
   typedef GridViewImp GridViewType;
+  typedef FieldImp    FieldType;
   typedef SourceImp   SourceType;
   typedef RangeImp    RangeType;
 }; // class DirichletLocalizableTraits
 
 
-template< class GridViewImp, class SourceImp, class RangeImp >
+template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
 class DirichletLocalizable
-  : public LocalizableOperatorInterface< DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp > >
+  : public LocalizableOperatorInterface< DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
   , public Functor::Codim0< GridViewImp >
 {
 public:
-  typedef DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp > Traits;
+  typedef DirichletLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::SourceType   SourceType;
   typedef typename Traits::RangeType    RangeType;
