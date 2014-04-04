@@ -52,10 +52,10 @@ std::vector<double> truncate_vector(const std::vector<double>& in, const size_t 
   if (size == in.size())
     return in;
   else {
-    std::vector<double> out(size);
+    std::vector<double> ret(size);
     for (size_t ii = 0; ii < size; ++ii)
-      out[ii] = in[ii];
-    return out;
+      ret[ii] = in[ii];
+    return ret;
   }
 } // ... truncate_vector(...)
 
