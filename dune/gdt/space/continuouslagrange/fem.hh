@@ -145,11 +145,6 @@ public:
     return *backend_;
   }
 
-  bool continuous() const
-  {
-    return true;
-  }
-
   const MapperType& mapper() const
   {
     return *mapper_;
