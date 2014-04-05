@@ -28,6 +28,7 @@
 #include <dune/stuff/functions/combined.hh>
 
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/finitevolume.hh>
 #include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
@@ -44,8 +45,10 @@
 #include <dune/gdt/product/l2.hh>
 #include <dune/gdt/product/h1.hh>
 #include <dune/gdt/product/elliptic.hh>
+#include <dune/gdt/operator/projections.hh>
 #include <dune/gdt/operator/prolongations.hh>
 #include <dune/gdt/operator/oswald.hh>
+#include <dune/gdt/playground/product/ESV2007.hh>
 //#include <dune/gdt/operator/reconstructions.hh>
 
 #include "elliptic-testcases.hh"
@@ -577,7 +580,7 @@ public:
   {
     return { "energy"
             , nonconformity_estimator_id()
-//            , residual_estimator_ESV07_id()
+            , residual_estimator_ESV07_id()
 //            , diffusive_flux_estimator_id()
 //            , estimator_ESV07_id()
 //            , efficiency_ESV07_id()
@@ -617,6 +620,8 @@ public:
       return compute_energy_norm();
     else if (type == nonconformity_estimator_id())
       return compute_nonconformity_estimator();
+    else if (type == residual_estimator_ESV07_id())
+      return compute_residual_estimator_ESV07();
     else
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
@@ -720,45 +725,28 @@ private:
     return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
   } // ... compute_nonconformity_estimator(...)
 
-#if 0
   double compute_residual_estimator_ESV07()
   {
     using namespace Dune;
-    typename TestCase::DiffusionType::RangeType diffusion_min = std::numeric_limits< RangeFieldType >::max();
-    long double ret = 0;
-    // walk the grid
-    const auto grid_part = test_.level_grid_part(current_level_);
-    const auto entity_it_end = grid_part->template end< 0 >();
-    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // get local functions
-      const auto local_force = test_.force().local_function(entity);
-      const auto local_diffusion = test_.diffusion().local_function(entity);
-      const auto force_mean_value = local_force->evaluate(entity.geometry().local(entity.geometry().center()));
-      diffusion_min = std::numeric_limits< RangeFieldType >::max();
-      // do a volume quadrature
-      const size_t quadrature_order = 2*local_force->order() + 4;
-      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
-                                                                                   2*quadrature_order + 1);
-      double integral = 0;
-      for (auto quadrature_point : quadrature) {
-        const auto& point_entity = quadrature_point.position();
-        const double quadrature_weight = quadrature_point.weight();
-        const double integration_factor = entity.geometry().integrationElement(point_entity);
-        // evaluate
-        const auto diffusion_value = local_diffusion->evaluate(point_entity);
-        if (diffusion_value < diffusion_min)
-          diffusion_min = diffusion_value;
-        const auto force_value = local_force->evaluate(point_entity);
-        const auto difference = force_value - force_mean_value;
-        integral += quadrature_weight * integration_factor * (difference * difference);
-      } // do a volume quadrature
-      // apply scaling factor
-      ret += (std::pow(entity.geometry().volume(), 2) / (diffusion_min * M_PIl * M_PIl)) * integral;
-    } // walk the grid
-    return std::sqrt(ret);
+    using namespace GDT;
+    const auto grid_view = test_.level_grid_view(current_level_);
+
+    typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
+    const P0SpaceType p0_space(grid_view);
+    VectorType p0_force_vector(p0_space.mapper().size());
+    typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
+    P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
+
+    ProjectionOperator::Generic< GridViewType > projection_operator(*grid_view);
+    projection_operator.apply(test_.force(), p0_force);
+
+    const Stuff::Function::Difference< typename TestCase::ForceType, P0DiscreteFunctionType >
+        difference(test_.force(), p0_force);
+
+    const Product::ESV2007::WeightedL2< GridViewType, typename TestCase::DiffusionType >
+        weighted_l2_product(*grid_view, test_.diffusion());
+    return std::sqrt(weighted_l2_product.apply2(difference, difference, 1));
   } // ... compute_residual_estimator_ESV07(...)
-#endif
 
 #if 0
   double compute_residual_estimator_ESV10()
