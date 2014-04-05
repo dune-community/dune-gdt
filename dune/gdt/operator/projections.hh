@@ -26,6 +26,7 @@
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/finitevolume.hh>
 
 #include "interfaces.hh"
 
@@ -264,6 +265,46 @@ public:
     } // walk the grid
   } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, r, 1 > ...)
 
+  template< class E, class D, int d, class R, class GV, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, 1, 1 >& source,
+             DiscreteFunction< FiniteVolumeSpace::Default< GV, R, 1, 1 >, V >& range) const
+  {
+    // checks
+    typedef FiniteVolumeSpace::Default< GV, R, 1, 1 > SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
+    typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
+    // clear
+    Stuff::Common::clear(range.vector());
+    // walk the grid
+    RangeType source_value(0);
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+      // prepare
+      const auto& entity = *entity_it;
+      const auto local_source = source.local_function(entity);
+      auto local_range = range.local_discrete_function(entity);
+      auto local_range_vector = local_range.vector();
+      assert(local_range_vector.size() == 1);
+      R integral = 0.0;
+      // create quadrature
+      const size_t integrand_order = local_source->order();
+      assert(integrand_order < std::numeric_limits< int >::max());
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(), int(integrand_order));
+      // loop over all quadrature points
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto integration_element = entity.geometry().integrationElement(local_point);
+        // evaluate
+        local_source->evaluate(local_point, source_value);
+        // compute integrals
+        integral += source_value * (integration_element * quadrature_weight);
+      } // loop over all quadrature points
+      // set local DoF
+      local_range_vector.set(0, integral / entity.geometry().volume());
+    } // walk the grid
+  } // ... apply(... FiniteVolumeSpace::Default< ..., 1, 1 > ...)
+
 private:
   const GridViewType& grid_view_;
 }; // class L2
@@ -273,7 +314,7 @@ template< class GridViewImp, class FieldImp = double >
 class Generic;
 
 
-template< class GridViewImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp >
 class GenericTraits
 {
 public:
@@ -344,6 +385,15 @@ private:
                                                   source,
                                                DiscreteFunction< DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
                                                   < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GV, class RR, int rR, int rCR, class V >
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< FiniteVolumeSpace::Default< GV, RR, rR, rCR >, V >&
+                                                  range) const
   {
     l2_operator_.apply(source, range);
   }
