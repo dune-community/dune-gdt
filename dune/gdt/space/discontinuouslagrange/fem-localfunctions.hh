@@ -50,11 +50,11 @@ class FemLocalfunctionsWrapper
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemLocalfunctionsWrapperTraits
 {
+  static_assert(polynomialOrder >= 1, "Wrong polOrder given!");
 public:
   typedef GridPartImp                   GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
   static const int                      polOrder = polynomialOrder;
-  static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
   static const unsigned int             dimDomain = GridPartType::dimension;
