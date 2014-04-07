@@ -121,23 +121,22 @@ public:
   }
 
   /**
-   *  \brief  Computes an elliptic evaluation for a scalar local function and scalar basefunctionsets.
+   *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
    *  \tparam E EntityType
    *  \tparam D DomainFieldType
    *  \tparam d dimDomain
    *  \tparam R RangeFieldType
    */
-  template< class E, class D, int d, class R >
+  template< class E, class D, int d, class R, int r >
   static void evaluate(const Stuff::LocalfunctionInterface< E, D, d, R, 1, 1 >& localFunction,
-                       const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& testBase,
-                       const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatzBase,
+                       const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& testBase,
+                       const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& ansatzBase,
                        const Dune::FieldVector< D, d >& localPoint,
                        Dune::DynamicMatrix< R >& ret)
   {
-    typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local function
-    const RangeType functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
     const size_t rows = testBase.size();
     std::vector< JacobianRangeType > testGradients(rows, JacobianRangeType(0));
@@ -152,8 +151,7 @@ public:
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
-        const R gradientProduct = ansatzGradients[jj][0] * testGradients[ii][0];
-        retRow[jj] = functionValue * gradientProduct;
+        retRow[jj] = functionValue * (ansatzGradients[jj][0] * testGradients[ii][0]);
       }
     }
   } // ... evaluate< ..., 1, 1 >(...)
