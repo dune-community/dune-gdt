@@ -70,16 +70,16 @@ public:
 
 
 // untested for the vector-valued case, especially ContinuousLagrangeSpaceBase
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public ContinuousLagrangeSpaceBase< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-                                      , GridPartImp::dimension, RangeFieldImp, 1, 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim >
+class FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1 >
+  : public ContinuousLagrangeSpaceBase< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1 >
+                                      , GridPartImp::dimension, RangeFieldImp, rangeDim, 1 >
 {
-  typedef ContinuousLagrangeSpaceBase< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-                                     , GridPartImp::dimension, RangeFieldImp, 1, 1 > BaseType;
-  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >                             ThisType;
+  typedef ContinuousLagrangeSpaceBase< FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1 >
+                                     , GridPartImp::dimension, RangeFieldImp, rangeDim, 1 > BaseType;
+  typedef FemWrapper< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1 >                             ThisType;
 public:
-  typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
+  typedef FemWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1 > Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
