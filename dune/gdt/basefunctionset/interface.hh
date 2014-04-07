@@ -10,51 +10,40 @@
 
 #include <vector>
 
-#include <dune/common/bartonnackmanifcheck.hh>
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/crtp.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-/**
- *  \brief Interface for matrix valued basis functions.
- *
- *  \note   see specialization for rangeDimCols = 1 for vector and scalar valued basis functions.
- */
-template <class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDimRows,
-          int rangeDimCols = 1>
-class BaseFunctionSetInterface;
-
-
-/**
- *  \brief Interface for scalar and vector valued basis functions.
- */
-template <class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim>
-class BaseFunctionSetInterface<Traits, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+template <class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+class BaseFunctionSetInterface
     : public Stuff::LocalfunctionSetInterface<typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp,
-                                              rangeDim>
+                                              rangeDim, rangeDimCols>,
+      public Stuff::CRTPInterface<BaseFunctionSetInterface<Traits, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                                           rangeDimCols>,
+                                  Traits>
 {
   typedef Stuff::LocalfunctionSetInterface<typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp,
-                                           rangeDim> BaseType;
+                                           rangeDim, rangeDimCols> BaseType;
 
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef DomainFieldImp DomainFieldType;
-  static const unsigned int dimDomain = domainDim;
-  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef RangeFieldImp RangeFieldType;
-  static const unsigned int dimRange     = rangeDim;
-  static const unsigned int dimRangeRows = rangeDim;
-  static const unsigned int dimRangeCols = 1;
-  typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
-  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
 
   BaseFunctionSetInterface(const EntityType& ent)
     : BaseType(ent)
@@ -63,18 +52,8 @@ public:
 
   const BackendType& backend() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().backend());
-    return asImp().backend();
-  }
-
-  derived_type& asImp()
-  {
-    return static_cast<derived_type&>(*this);
-  }
-
-  const derived_type& asImp() const
-  {
-    return static_cast<const derived_type&>(*this);
+    CHECK_CRTP(this->as_imp(*this).backend());
+    return this->as_imp(*this).backend();
   }
 }; // class BaseFunctionSetInterface
 
