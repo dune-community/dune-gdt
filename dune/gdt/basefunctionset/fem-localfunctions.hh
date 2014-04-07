@@ -6,7 +6,11 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
 
+#include <type_traits>
+
 #include <vector>
+
+#include <dune/common/typetraits.hh>
 
 #include "interface.hh"
 
@@ -18,11 +22,14 @@ namespace BaseFunctionSet {
 // forward, to be used in the traits and to allow for specialization
 template <class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
           int rangeDimCols = 1>
-class FemLocalfunctionsWrapper;
+class FemLocalfunctionsWrapper
+{
+  static_assert(AlwaysFalse<BaseFunctionSetMapImp>::value, "Untested for these dimensions!");
+};
 
 
 template <class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
-          int rangeDimCols = 1>
+          int rangeDimCols>
 class FemLocalfunctionsWrapperTraits
 {
 public:
@@ -41,7 +48,7 @@ class FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
 {
   typedef BaseFunctionSetInterface<FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
                                                                   RangeFieldImp, rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> InterfaceType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
   typedef FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
 
@@ -51,24 +58,24 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef DomainFieldImp DomainFieldType;
-  static const unsigned int dimDomain = domainDim;
-  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef RangeFieldImp RangeFieldType;
-  static const unsigned int dimRange     = rangeDim;
-  static const unsigned int dimRangeCols = 1;
-  typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
-  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
 
   FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& ent)
-    : InterfaceType(ent)
+    : BaseType(ent)
     , baseFunctionSetMap_(baseFunctionSetMap)
     , backend_(new BackendType(baseFunctionSetMap_.find(this->entity())))
   {
   }
 
   FemLocalfunctionsWrapper(ThisType&& source)
-    : InterfaceType(source.entity())
+    : BaseType(source.entity())
     , baseFunctionSetMap_(source.baseFunctionSetMap_)
     , backend_(std::move(source.backend_))
   {
@@ -99,7 +106,7 @@ public:
     backend_->evaluateAll(x, ret);
   }
 
-  using InterfaceType::evaluate;
+  using BaseType::evaluate;
 
   virtual void jacobian(const DomainType& x, std::vector<JacobianRangeType>& ret) const DS_OVERRIDE
   {
@@ -107,7 +114,7 @@ public:
     backend_->jacobianAll(x, this->entity().geometry().jacobianInverseTransposed(x), ret);
   }
 
-  using InterfaceType::jacobian;
+  using BaseType::jacobian;
 
 private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
