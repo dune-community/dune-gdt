@@ -17,7 +17,7 @@
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
-#include "../../operator/interfaces.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
@@ -72,6 +72,9 @@ public:
     static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range!");
   }
 
+  /**
+   * \brief Does an L2 projection of '- function * \gradient source' onto range.
+   */
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
              DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, p, FieldType, dimDomain, 1 >, V >& range) const
