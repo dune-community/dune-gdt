@@ -29,8 +29,8 @@ namespace GDT {
 template< class SpaceImp, class VectorImp >
 class ConstDiscreteFunction
   : public Stuff::LocalizableFunctionInterface< typename SpaceImp::EntityType,
-        typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-        typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols >
+                                                typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
+                                                typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols >
 {
   static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
