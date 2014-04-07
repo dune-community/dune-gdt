@@ -313,6 +313,11 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, fal
   , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 1 >
 
+# define P1D_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM \
+    Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluConform2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex2dGridPartType, 1, double, 2 > \
+  , Dune::GDT::ContinuousLagrangeSpace::FemWrapper< AluSimplex3dGridPartType, 1, double, 3 >
+
 # define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS \
     Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dGridPartType, 1, double, 1 > \
   , Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper< AluSimplex2dGridPartType, 1, double, 1 > \
@@ -412,6 +417,7 @@ typedef testing::Types<
                       , Q1_CONTINUOUS_LAGRANGE_SPACES_FEM
 # if HAVE_ALUGRID
                       , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
+                      , P1D_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
                       , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
 # endif
 # if HAVE_DUNE_FEM_LOCALFUNCTIONS || HAVE_DUNE_PDELAB
