@@ -176,21 +176,20 @@ public:
   }
 
   /**
-   *  \brief computes a scalar product evaluation.
+   *  \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
    */
-  template <class E, class D, int d, class R>
+  template <class E, class D, int d, class R, int r>
   void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatzBase,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    // checks
-    typedef Dune::FieldVector<R, 1> RangeType;
     // evaluate local function
-    const RangeType functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate bases
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>::RangeType RangeType;
     std::vector<RangeType> testValues(rows, RangeType(0));
     std::vector<RangeType> ansatzValues(cols, RangeType(0));
     testBase.evaluate(localPoint, testValues);
