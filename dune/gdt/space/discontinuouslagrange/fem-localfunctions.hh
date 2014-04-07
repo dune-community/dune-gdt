@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
+#include <dune/gdt/../../config.h>
+
 #include <type_traits>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
@@ -40,6 +42,7 @@ namespace DiscontinuousLagrangeSpace {
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
 class FemLocalfunctionsWrapper
 {
+  static_assert(rangeDim == 1 && rangeDimCols == 1, "Not yet implemented (find suitable vector valued basis)!");
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
 };
 
@@ -47,10 +50,12 @@ class FemLocalfunctionsWrapper
 /**
  *  \brief Traits class for DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper.
  */
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
 class FemLocalfunctionsWrapperTraits
 {
   static_assert(polynomialOrder >= 1, "Wrong polOrder given!");
+  static_assert(rangeDim == 1, "Not yet implemented (find suitable vector valued basis)!");
+  static_assert(rangeDimCols == 1, "Not yet implemented (find suitable vector valued basis)!");
 
 public:
   typedef GridPartImp GridPartType;
