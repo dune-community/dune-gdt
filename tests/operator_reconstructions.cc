@@ -25,7 +25,7 @@
 #include <dune/gdt/space/tools.hh>
 #include <dune/gdt/space/continuouslagrange/fem.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/playground/operator/darcy.hh>
+#include <dune/gdt/operator/darcy.hh>
 #include <dune/gdt/product/l2.hh>
 #include <dune/gdt/product/h1.hh>
 
