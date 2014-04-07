@@ -13,6 +13,8 @@
 
 #include <dune/geometry/genericreferenceelements.hh>
 
+#include <dune/stuff/common/exceptions.hh>
+
 #include "interface.hh"
 
 namespace Dune {
@@ -27,25 +29,29 @@ class ContinuousLagrangeSpaceBase
 };
 
 
-template <class ImpTraits, int domainDim, class RangeFieldImp>
-class ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, 1, 1> : public SpaceInterface<ImpTraits>
+template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
+class ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> : public SpaceInterface<ImpTraits>
 {
   typedef SpaceInterface<ImpTraits> BaseType;
-  typedef ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, 1, 1> ThisType;
+  typedef ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
   typedef ImpTraits Traits;
 
-  static const int polOrder = Traits::polOrder;
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  using BaseType::polOrder;
 
-  typedef typename BaseType::DomainFieldType DomainFieldType;
-  typedef typename BaseType::DomainType DomainType;
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::IntersectionType IntersectionType;
-  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
-  typedef typename BaseType::PatternType PatternType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::BoundaryInfoType;
+  using typename BaseType::PatternType;
 
   virtual ~ContinuousLagrangeSpaceBase()
   {
@@ -63,6 +69,8 @@ public:
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    if (dimRange != 1)
+      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
     // get the basis and reference element
     const auto basis              = this->base_function_set(entity);
@@ -101,6 +109,8 @@ public:
   virtual std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    if (dimRange != 1)
+      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
     // check
     assert(this->grid_view()->indexSet().contains(entity));
     // prepare
@@ -170,6 +180,8 @@ private:
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    if (dimRange != 1)
+      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
     typedef DirichletConstraints<Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>, set_row> SetRow;
     const std::set<size_t> localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.gridBoundary());
