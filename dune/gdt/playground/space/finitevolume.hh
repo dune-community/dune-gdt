@@ -38,7 +38,7 @@ public:
   typedef RangeFieldImp     RangeFieldType;
   static const unsigned int dimRange = rangeDim;
   static const unsigned int dimRangeCols = rangeDimCols;
-  typedef Mapper::FiniteVolume< GridViewType > MapperType;
+  typedef Mapper::FiniteVolume< GridViewType, dimRange, dimRangeCols > MapperType;
   typedef BaseFunctionSet::FiniteVolume< typename GridViewType::template Codim< 0 >::Entity
                                        , typename GridViewType::ctype, GridViewType::dimension
                                        , RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
@@ -46,14 +46,14 @@ public:
 }; // class DefaultTraits
 
 
-template< class GridViewImp, class RangeFieldImp >
-class Default< GridViewImp, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, 1, 1 > >
+template< class GridViewImp, class RangeFieldImp, int rangeDim >
+class Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
+  : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >
 {
-  typedef SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, 1, 1 > > BaseType;
-  typedef Default< GridViewImp, RangeFieldImp, 1, 1 >                         ThisType;
+  typedef SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > > BaseType;
+  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >                         ThisType;
 public:
-  typedef DefaultTraits< GridViewImp, RangeFieldImp, 1, 1 > Traits;
+  typedef DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
 
   typedef typename Traits::GridViewType GridViewType;
   static const int                      polOrder = Traits::polOrder;
