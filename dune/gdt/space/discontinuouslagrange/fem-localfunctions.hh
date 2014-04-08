@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#include <dune/gdt/../../config.h>
-
 #include <type_traits>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
