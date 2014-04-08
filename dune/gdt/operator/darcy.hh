@@ -15,6 +15,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
 #include "interfaces.hh"
@@ -79,6 +80,20 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
              DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, p, FieldType, dimDomain, 1 >, V >& range) const
   {
+    apply_l2_projection_to_(source, range);
+  }
+
+  template< class GP, int p, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
+             DiscreteFunction< RaviartThomasSpace::PdelabBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
+  {
+    apply_l2_projection_to_(source, range);
+  }
+
+private:
+  template< class SourceType, class RangeType >
+  void apply_l2_projection_to_(const SourceType& source, RangeType& range) const
+  {
 #if HAVE_EIGEN
     typedef Stuff::LA::EigenRowMajorSparseMatrix< FieldType > MatrixType;
     typedef Stuff::LA::EigenDenseVector< FieldType >          VectorType;
@@ -132,9 +147,8 @@ public:
 
     // solve
     Stuff::LA::Solver< MatrixType >(lhs).apply(rhs, range.vector());
-  } // ... apply(...)
+  } // ... apply_l2_projection(...)
 
-private:
   const GridViewType& grid_view_;
   const FunctionImp& function_;
 }; // class DarcyReconstruction
