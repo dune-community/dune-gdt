@@ -12,7 +12,8 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/stuff/common/vector.hh>
+#include <dune/stuff/common/matrix.hh>
 
 #include "../../basefunctionset/interface.hh"
 
@@ -53,14 +54,14 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef DomainFieldImp DomainFieldType;
-  static const unsigned int dimDomain = domainDim;
-  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef RangeFieldImp RangeFieldType;
-  static const unsigned int dimRange     = 1;
-  static const unsigned int dimRangeCols = 1;
-  typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
-  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
@@ -106,7 +107,82 @@ public:
   }
 
   using BaseType::jacobian;
-}; // class FiniteVolume
+}; // class FiniteVolume< ..., 1, 1 >
+
+
+template <class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim>
+class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                                         1>,
+                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+{
+  typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef BaseFunctionSetInterface<FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>,
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+
+public:
+  typedef FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> Traits;
+  typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType EntityType;
+
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
+
+  FiniteVolume(const EntityType& en)
+    : BaseType(en)
+  {
+  }
+
+  FiniteVolume(ThisType&& source)
+    : BaseType(source.entity())
+  {
+  }
+
+  FiniteVolume(const ThisType& /*other*/) = delete;
+
+  ThisType& operator=(const ThisType& /*other*/) = delete;
+
+  const BackendType& backend() const
+  {
+    return 1.0;
+  }
+
+  virtual size_t size() const DS_OVERRIDE DS_FINAL
+  {
+    return dimRange;
+  }
+
+  virtual size_t order() const DS_OVERRIDE DS_FINAL
+  {
+    return 0;
+  }
+
+  virtual void evaluate(const DomainType& /*xx*/, std::vector<RangeType>& ret) const DS_OVERRIDE DS_FINAL
+  {
+    assert(ret.size() >= dimRange);
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      Stuff::Common::clear(ret[ii]);
+      ret[ii][ii] = RangeFieldType(1);
+    }
+  } // ... evaluate(...)
+
+  using BaseType::evaluate;
+
+  virtual void jacobian(const DomainType& /*xx*/, std::vector<JacobianRangeType>& ret) const DS_OVERRIDE DS_FINAL
+  {
+    assert(ret.size() >= dimRange);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      Stuff::Common::clear(ret[ii]);
+  } // ... jacobian(...)
+
+  using BaseType::jacobian;
+}; // class FiniteVolume< ..., rangeDim, 1 >
 
 
 } // namespace BaseFunctionSet
