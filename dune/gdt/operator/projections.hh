@@ -26,6 +26,7 @@
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
 #include <dune/gdt/playground/space/finitevolume.hh>
 
 #include "interfaces.hh"
@@ -210,19 +211,50 @@ public:
     // checks
     typedef DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
+    apply_local_l2_projection_(source, range);
+  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< ..., 1 > ...)
+
+  template <class E, class D, int d, class R, int r, class GV, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, 1>& source,
+             DiscreteFunction<FiniteVolumeSpace::Default<GV, R, r, 1>, V>& range) const
+  {
+    typedef FiniteVolumeSpace::Default<GV, R, r, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
+    apply_local_l2_projection_(source, range);
+  } // ... apply(... FiniteVolumeSpace::Default< ..., 1 > ...)
+
+  template <class GP, int p, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
+             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, FieldType, dimDomain, 1>, V>& range) const
+  {
+    apply_global_l2_projection_(source, range);
+  }
+
+  template <class GP, int p, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, dimDomain, 1>&
+                 source,
+             DiscreteFunction<RaviartThomasSpace::PdelabBased<GP, p, FieldType, dimDomain, 1>, V>& range) const
+  {
+    apply_global_l2_projection_(source, range);
+  } // ... apply(...)
+
+private:
+  template <class SourceType, class RangeFunctionType>
+  void apply_local_l2_projection_(const SourceType& source, RangeFunctionType& range) const
+  {
+    typedef typename RangeFunctionType::RangeType RangeType;
 #if HAVE_EIGEN
-    typedef Stuff::LA::EigenDenseMatrix<R> LocalMatrixType;
-    typedef Stuff::LA::EigenDenseVector<R> LocalVectorType;
+    typedef Stuff::LA::EigenDenseMatrix<FieldType> LocalMatrixType;
+    typedef Stuff::LA::EigenDenseVector<FieldType> LocalVectorType;
 #else // HAVE_EIGEN
-    typedef Stuff::LA::CommonDenseMatrix<R> LocalMatrixType;
-    typedef Stuff::LA::CommonDenseVector<R> LocalVectorType;
+    typedef Stuff::LA::CommonDenseMatrix<FieldType> LocalMatrixType;
+    typedef Stuff::LA::CommonDenseVector<FieldType> LocalVectorType;
 #endif // HAVE_EIGEN
     // clear
     Stuff::Common::clear(range.vector());
     // walk the grid
     RangeType source_value(0);
-    std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs());
+    std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs(), RangeType(0));
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       // prepare
@@ -230,9 +262,9 @@ public:
       const auto local_basis  = range.space().base_function_set(entity);
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
-      LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), R(0));
-      LocalVectorType local_vector(local_basis.size(), R(0));
-      LocalVectorType local_DoFs(local_basis.size(), R(0));
+      LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), FieldType(0));
+      LocalVectorType local_vector(local_basis.size(), FieldType(0));
+      LocalVectorType local_DoFs(local_basis.size(), FieldType(0));
       // create quadrature
       // guess the polynomial order of the source by hoping that they are the same for all entities
       const size_t integrand_order = std::max(local_source->order(), local_basis.order()) + local_basis.order();
@@ -262,49 +294,61 @@ public:
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
-  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, p, R, r, 1 > ...)
+  } // ... apply_local_l2_projection_(...)
 
-  template <class E, class D, int d, class R, class GV, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, 1, 1>& source,
-             DiscreteFunction<FiniteVolumeSpace::Default<GV, R, 1, 1>, V>& range) const
+  template <class SourceType, class RangeFunctionType>
+  void apply_global_l2_projection_(const SourceType& source, RangeFunctionType& range) const
   {
-    // checks
-    typedef FiniteVolumeSpace::Default<GV, R, 1, 1> SpaceType;
-    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
-    typedef typename SpaceType::BaseFunctionSetType::RangeType RangeType;
-    // clear
-    Stuff::Common::clear(range.vector());
+#if HAVE_EIGEN
+    typedef Stuff::LA::EigenRowMajorSparseMatrix<FieldType> MatrixType;
+    typedef Stuff::LA::EigenDenseVector<FieldType> VectorType;
+#elif HAVE_DUNE_ISTL
+    typedef Stuff::LA::IstlRowMajorSparseMatrix<FieldType> MatrixType;
+    typedef Stuff::LA::IstlDenseVector<FieldType> VectorType;
+#else
+    typedef Stuff::LA::CommonDenseMatrix<FieldType> MatrixType;
+    typedef Stuff::LA::CommonDenseVector<FieldType> VectorType;
+#endif
+    MatrixType lhs(
+        range.space().mapper().size(), range.space().mapper().size(), range.space().compute_volume_pattern());
+    VectorType rhs(range.space().mapper().size());
+
     // walk the grid
+    typedef typename RangeFunctionType::LocalfunctionType::RangeType RangeType;
     RangeType source_value(0);
+    std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs(), RangeType(0));
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      // prepare
       const auto& entity      = *entity_it;
       const auto local_source = source.local_function(entity);
-      auto local_range        = range.local_discrete_function(entity);
-      auto local_range_vector = local_range.vector();
-      assert(local_range_vector.size() == 1);
-      R integral = 0.0;
-      // create quadrature
-      const size_t integrand_order = local_source->order();
+      const auto basis        = range.space().base_function_set(entity);
+      // do a volume quadrature
+      const size_t integrand_order = std::max(size_t(local_source->order() - 1), basis.order()) + basis.order();
       assert(integrand_order < std::numeric_limits<int>::max());
-      const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
-      // loop over all quadrature points
-      for (const auto& quadrature_point : quadrature) {
-        const auto local_point         = quadrature_point.position();
-        const auto quadrature_weight   = quadrature_point.weight();
-        const auto integration_element = entity.geometry().integrationElement(local_point);
-        // evaluate
-        local_source->evaluate(local_point, source_value);
-        // compute integrals
-        integral += source_value * (integration_element * quadrature_weight);
-      } // loop over all quadrature points
-      // set local DoF
-      local_range_vector.set(0, integral / entity.geometry().volume());
+      const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
+      const auto quadrature_it_end = quadrature.end();
+      for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
+        const auto xx                             = quadrature_it->position();
+        const FieldType quadrature_weight         = quadrature_it->weight();
+        const DomainFieldType integration_element = entity.geometry().integrationElement(xx);
+        local_source->evaluate(xx, source_value);
+        basis.evaluate(xx, basis_values);
+        for (size_t ii = 0; ii < basis.size(); ++ii) {
+          const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
+          rhs.add_to_entry(global_ii, integration_element * quadrature_weight * (source_value * basis_values[ii]));
+          for (size_t jj = 0; jj < basis.size(); ++jj) {
+            const size_t global_jj = range.space().mapper().mapToGlobal(entity, jj);
+            lhs.add_to_entry(
+                global_ii, global_jj, integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]));
+          }
+        }
+      } // do a volume quadrature
     } // walk the grid
-  } // ... apply(... FiniteVolumeSpace::Default< ..., 1, 1 > ...)
 
-private:
+    // solve
+    Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
+  } // ... apply_global_l2_projection_(...)
+
   const GridViewType& grid_view_;
 }; // class L2
 
