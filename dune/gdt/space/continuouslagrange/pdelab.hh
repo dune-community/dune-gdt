@@ -89,7 +89,7 @@ private:
 
 public:
   typedef PDELab::GridFunctionSpace<GridViewType, FEMapType> BackendType;
-  typedef Mapper::PdelabPkQk<BackendType> MapperType;
+  typedef Mapper::SimplePdelabWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::PdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                          dimRangeCols> BaseFunctionSetType;
@@ -175,11 +175,6 @@ public:
     return *backend_;
   }
 
-  bool continuous() const
-  {
-    return true;
-  }
-
   const MapperType& mapper() const
   {
     return *mapper_;
@@ -187,7 +182,7 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*backend_, entity, polOrder);
+    return BaseFunctionSetType(*backend_, entity);
   }
 
 private:
