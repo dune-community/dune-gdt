@@ -39,6 +39,12 @@ public:
     CHECK_CRTP(this->as_imp(*this).apply2(range, source));
     return this->as_imp(*this).apply2(range, source);
   }
+
+  template <class RangeType>
+  FieldType induced_norm(const RangeType& range) const
+  {
+    return std::sqrt(apply2(range, range));
+  }
 }; // class ProductInterface
 
 
@@ -196,6 +202,18 @@ public:
                    const ConstDiscreteFunction<SourceSpaceType, S>& source)
   {
     return apply2(range.vector(), source.vector());
+  }
+
+  template <class R>
+  FieldType induced_norm(const Stuff::LA::VectorInterface<R>& range)
+  {
+    return std::sqrt(apply2(range, range));
+  }
+
+  template <class R>
+  FieldType induced_norm(const ConstDiscreteFunction<RangeSpaceType, R>& range)
+  {
+    return std::sqrt(apply2(range, range));
   }
 }; // class AssemblableProductInterface
 
