@@ -53,6 +53,18 @@ TYPED_TEST(FV_Space, fulfills_interface)
   this->fulfills_interface();
 }
 
+TYPED_TEST_CASE(FV_Space, FV_Spaces);
+TYPED_TEST(FV_Space, mapper_fulfills_interface)
+{
+  this->mapper_fulfills_interface();
+}
+
+TYPED_TEST_CASE(FV_Space, FV_Spaces);
+TYPED_TEST(FV_Space, basefunctionset_fulfills_interface)
+{
+  this->basefunctionset_fulfills_interface();
+}
+
 
 int main(int argc, char** argv)
 {
