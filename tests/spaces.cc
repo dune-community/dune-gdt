@@ -374,6 +374,18 @@ TYPED_TEST(Any_Space, fulfills_interface)
   this->fulfills_interface();
 }
 
+TYPED_TEST_CASE(Any_Space, All_Spaces);
+TYPED_TEST(Any_Space, mapper_fulfills_interface)
+{
+  this->mapper_fulfills_interface();
+}
+
+TYPED_TEST_CASE(Any_Space, All_Spaces);
+TYPED_TEST(Any_Space, basefunctionset_fulfills_interface)
+{
+  this->basefunctionset_fulfills_interface();
+}
+
 TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
 TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
 {
