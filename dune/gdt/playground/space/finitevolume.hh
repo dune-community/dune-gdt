@@ -74,6 +74,7 @@ public:
   Default(const std::shared_ptr<const GridViewType>& gv)
     : grid_view_(gv)
     , mapper_(std::make_shared<MapperType>(*grid_view_))
+    , backend_(1)
   {
   }
 
@@ -103,7 +104,7 @@ public:
 
   const BackendType& backend() const
   {
-    return 1.0;
+    return backend_;
   }
 
   const MapperType& mapper() const
@@ -119,6 +120,7 @@ public:
 private:
   std::shared_ptr<const GridViewType> grid_view_;
   std::shared_ptr<const MapperType> mapper_;
+  const BackendType backend_;
 }; // class Default< ..., 1, 1 >
 
 
