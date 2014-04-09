@@ -7,6 +7,7 @@
 #define DUNE_GDT_RAVIARTTHOMASSPACE_PDELAB_HH
 
 #include <type_traits>
+#include <limits>
 
 #include <dune/common/static_assert.hh>
 
@@ -18,6 +19,8 @@
 # include<dune/pdelab/finiteelementmap/raviartthomasfem.hh>
 # include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #endif // HAVE_DUNE_PDELAB
+
+#include <dune/stuff/common/float_cmp.hh>
 
 #include <dune/gdt/basefunctionset/pdelab.hh>
 #include <dune/gdt/mapper/pdelab.hh>
@@ -122,14 +125,14 @@ private:
 
 public:
   PdelabBased(const std::shared_ptr< const GridViewType >& gV)
-    : gridView_(gV)
-    , fe_map_(std::make_shared< FEMapType >(*(gridView_)))
-    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*gridView_), *fe_map_))
+    : grid_view_(gV)
+    , fe_map_(std::make_shared< FEMapType >(*(grid_view_)))
+    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*grid_view_), *fe_map_))
     , mapper_(std::make_shared< MapperType >(*backend_))
   {}
 
   PdelabBased(const ThisType& other)
-    : gridView_(other.gridView_)
+    : grid_view_(other.grid_view_)
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
@@ -138,7 +141,7 @@ public:
   ThisType& operator=(const ThisType& other)
   {
     if (this != &other) {
-      gridView_ = other.gridView_;
+      grid_view_ = other.grid_view_;
       fe_map_ = other.fe_map_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
@@ -150,7 +153,7 @@ public:
 
   const std::shared_ptr< const GridViewType >& grid_view() const
   {
-    return gridView_;
+    return grid_view_;
   }
 
   const BackendType& backend() const
@@ -168,8 +171,99 @@ public:
     return BaseFunctionSetType(*backend_, entity);
   }
 
+  /**
+   *  \brief  Computes a vector 'indices' of length entity.count< 1 >(), where 'indices[intersection.indexInInside()]'
+   *          is the index of the basis function (aka the local DoF index) corresponding to the intersection.
+   */
+  std::vector< size_t > local_DoF_indices(const EntityType& entity) const
+  {
+    static_assert(dimDomain == 2 && polOrder == 0, "Not implemented!");
+    // prepare
+    const size_t num_intersections = entity.template count< 1 >();
+    std::vector< size_t > local_DoF_index_of_vertex(num_intersections, std::numeric_limits< size_t >::infinity());
+    std::vector< size_t > local_DoF_index_of_intersection(num_intersections, std::numeric_limits< size_t >::infinity());
+    typedef typename BaseFunctionSetType::DomainType DomainType;
+    std::vector< DomainType > vertices(num_intersections, DomainType(0));
+    std::vector< bool > lies_on_intersection(num_intersections, false);
+    DomainType vertex_entity(0);
+    DomainType corner(0);
+    typedef typename BaseFunctionSetType::RangeType RangeType;
+    const RangeType zero(0);
+    std::vector< RangeType > basis_values(num_intersections, zero);
+    const auto basis = base_function_set(entity);
+    assert(basis.size() == num_intersections);
+    const auto geometry = entity.geometry();
+    // find the basis function index that corresponds to each vertex of the entity
+    // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
+    // therefore we walk the vertices
+    assert(int(num_intersections) == entity.template count< dimDomain >());
+    for (size_t vv = 0; vv < num_intersections; ++vv) {
+      const auto vertex_ptr = entity.template subEntity< dimDomain >(int(vv));
+      const auto& vertex = *vertex_ptr;
+      // get the vertex coordinates
+      vertices[vv] = vertex.geometry().center();
+      vertex_entity = geometry.local(vertices[vv]);
+      // evalaute the basis
+      basis.evaluate(vertex_entity, basis_values);
+      // and find the basis that evaluates zero here
+      size_t zeros = 0;
+      size_t nonzeros = 0;
+      for (size_t ii = 0; ii < num_intersections; ++ii) {
+        if (Stuff::Common::FloatCmp::eq(basis_values[ii], zero)) {
+          // this is a candidate for the basis function we are looking for
+          local_DoF_index_of_vertex[vv] = ii;
+          ++zeros;
+        } else
+          ++nonzeros;
+      }
+      // make sure there was only one candidate
+      assert(zeros == 1 && nonzeros == (num_intersections - 1) && "This must not happen for RTN0 in 2d!");
+    } // walk the vertices
+    // so from here on we have the local DoF index that corresponds to each vertex vv in local_DoF_index_of_vertex[vv]
+    // now we need to find the intersection opposite to this vertex
+    // therefore we walk the intersections
+    size_t intersection_counter = 0;
+    const auto intersection_it_end = grid_view_->iend(entity);
+    for (auto intersection_it = grid_view_->ibegin(entity);
+         intersection_it != intersection_it_end;
+         ++intersection_it) {
+      const auto& intersection = *intersection_it;
+      const auto intersection_geometry = intersection.geometry();
+      const size_t local_intersection_index = intersection.indexInInside();
+      // make sure this index has not been already taken by another intersection
+      assert(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits< size_t >::infinity());
+      // walk the corners of the intersection
+      for (size_t cc = 0; cc < num_intersections; ++cc) {
+        corner = intersection_geometry.corner(int(cc));
+        // check which vertices lie on the intersection
+        for (size_t vv = 0; vv < num_intersections; ++vv)
+          if (Stuff::Common::FloatCmp::eq(vertices[vv], corner))
+            lies_on_intersection[vv] = true;
+      } // walk the corners of the intersection
+      // now see if we find a vertex that does not lie on the intersection
+      size_t found = 0;
+      size_t missed = 0;
+      for (size_t vv = 0; vv < num_intersections; ++vv) {
+        if (!(lies_on_intersection[vv])) {
+          // this is a good candidate
+          // so the local DoF id that corresponds to this vertex is the one that corresponds to the intersection
+          local_DoF_index_of_intersection[local_intersection_index] = local_DoF_index_of_vertex[vv];
+          ++found;
+        } else
+          ++missed;
+        // and clear for the next intersection
+        lies_on_intersection[vv] = false;
+      } // walk the vertices of this entity
+      // make sure there was only one candidate
+      assert(found == 1 && missed == (num_intersections - 1) && "This must not happen for RTN0 in 2d!");
+      ++intersection_counter;
+    } // walk the intersection
+    assert(intersection_counter == num_intersections);
+    return local_DoF_index_of_intersection;
+  } // ... local_DoF_indices(...)
+
 private:
-  std::shared_ptr< const GridViewType > gridView_;
+  std::shared_ptr< const GridViewType > grid_view_;
   std::shared_ptr< const FEMapType > fe_map_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
