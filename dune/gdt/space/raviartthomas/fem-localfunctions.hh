@@ -194,10 +194,10 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class LocalGridViewType, class O >
-  PatternType compute_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface< O >& other) const
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, other);
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
 private:

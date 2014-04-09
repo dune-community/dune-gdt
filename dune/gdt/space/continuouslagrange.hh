@@ -57,10 +57,10 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class LocalGridPartType, class T >
-  PatternType compute_pattern(const LocalGridPartType& localGridPart, const SpaceInterface< T >& otherSpace) const
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
   {
-    return BaseType::compute_volume_pattern(localGridPart, otherSpace);
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
   }
 
   virtual std::vector< DomainType > lagrange_points(const EntityType& entity) const

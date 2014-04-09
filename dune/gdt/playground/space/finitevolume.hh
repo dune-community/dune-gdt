@@ -112,6 +112,14 @@ public:
     return BaseFunctionSetType(entity);
   }
 
+  using BaseType::compute_pattern;
+
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  {
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+  }
+
 private:
   std::shared_ptr< const GridViewType > grid_view_;
   std::shared_ptr< const MapperType > mapper_;
