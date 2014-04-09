@@ -173,27 +173,21 @@ public:
     const D_BackendType& d_backend                           = space_->backend();
     const D_MapperType& d_mapper                             = space_->mapper();
     const std::shared_ptr<const D_GridViewType>& d_grid_view = space_->grid_view();
-    //   walk the grid
-    const auto d_entity_it_end = d_grid_view->template end<0>();
-    for (auto d_entity_it = d_grid_view->template begin<0>(); d_entity_it != d_entity_it_end; ++d_entity_it) {
-      const D_EntityType& d_entity = *d_entity_it;
-      D_BaseFunctionSetType DUNE_UNUSED(d_base_function_set) = space_->base_function_set(d_entity);
-    }
-    D_PatternType d_pattern                        = space_->compute_pattern();
-    D_PatternType d_pattern_view                   = space_->compute_pattern(*d_grid_view);
-    D_PatternType d_pattern_other                  = space_->compute_pattern(*space_);
-    D_PatternType d_pattern_view_other             = space_->compute_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_volume                 = space_->compute_volume_pattern();
-    D_PatternType d_pattern_volume_view            = space_->compute_volume_pattern(*d_grid_view);
-    D_PatternType d_pattern_volume_other           = space_->compute_volume_pattern(*space_);
-    D_PatternType d_pattern_volume_view_other      = space_->compute_volume_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_face_volume            = space_->compute_face_and_volume_pattern();
-    D_PatternType d_pattern_face_volume_view       = space_->compute_face_and_volume_pattern(*d_grid_view);
-    D_PatternType d_pattern_face_volume_other      = space_->compute_face_and_volume_pattern(*space_);
-    D_PatternType d_pattern_face_volume_view_other = space_->compute_face_and_volume_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_face                   = space_->compute_face_pattern();
-    D_PatternType d_pattern_face_view              = space_->compute_face_pattern(*d_grid_view);
-    D_PatternType d_pattern_face_other             = space_->compute_face_pattern(*space_);
+    D_PatternType d_pattern                                  = space_->compute_pattern();
+    D_PatternType d_pattern_view                             = space_->compute_pattern(*d_grid_view);
+    D_PatternType d_pattern_other                            = space_->compute_pattern(*space_);
+    D_PatternType d_pattern_view_other                       = space_->compute_pattern(*d_grid_view, *space_);
+    D_PatternType d_pattern_volume                           = space_->compute_volume_pattern();
+    D_PatternType d_pattern_volume_view                      = space_->compute_volume_pattern(*d_grid_view);
+    D_PatternType d_pattern_volume_other                     = space_->compute_volume_pattern(*space_);
+    D_PatternType d_pattern_volume_view_other                = space_->compute_volume_pattern(*d_grid_view, *space_);
+    D_PatternType d_pattern_face_volume                      = space_->compute_face_and_volume_pattern();
+    D_PatternType d_pattern_face_volume_view                 = space_->compute_face_and_volume_pattern(*d_grid_view);
+    D_PatternType d_pattern_face_volume_other                = space_->compute_face_and_volume_pattern(*space_);
+    D_PatternType d_pattern_face_volume_view_other           = space_->compute_face_and_volume_pattern(*d_grid_view, *space_);
+    D_PatternType d_pattern_face                             = space_->compute_face_pattern();
+    D_PatternType d_pattern_face_view                        = space_->compute_face_pattern(*d_grid_view);
+    D_PatternType d_pattern_face_other                       = space_->compute_face_pattern(*space_);
     D_PatternType d_pattern_face_view_other = space_->compute_face_pattern(*d_grid_view, *space_);
     if (d_pattern != d_pattern_other)
       DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
@@ -224,27 +218,21 @@ public:
     const I_BackendType& i_backend                           = i_space.backend();
     const D_MapperType& i_mapper                             = i_space.mapper();
     const std::shared_ptr<const I_GridViewType>& i_grid_view = i_space.grid_view();
-    //   walk the grid
-    const auto i_entity_it_end = i_grid_view->template end<0>();
-    for (auto i_entity_it = d_grid_view->template begin<0>(); i_entity_it != i_entity_it_end; ++i_entity_it) {
-      const I_EntityType& i_entity = *i_entity_it;
-      I_BaseFunctionSetType DUNE_UNUSED(i_base_function_set) = i_space.base_function_set(i_entity);
-    }
-    I_PatternType i_pattern                        = i_space.compute_pattern();
-    I_PatternType i_pattern_view                   = i_space.compute_pattern(*i_grid_view);
-    I_PatternType i_pattern_other                  = i_space.compute_pattern(i_space);
-    I_PatternType i_pattern_view_other             = i_space.compute_pattern(*i_grid_view, i_space);
-    I_PatternType i_pattern_volume                 = i_space.compute_volume_pattern();
-    I_PatternType i_pattern_volume_view            = i_space.compute_volume_pattern(*i_grid_view);
-    I_PatternType i_pattern_volume_other           = i_space.compute_volume_pattern(i_space);
-    I_PatternType i_pattern_volume_view_other      = i_space.compute_volume_pattern(*i_grid_view, i_space);
-    I_PatternType i_pattern_face_volume            = i_space.compute_face_and_volume_pattern();
-    I_PatternType i_pattern_face_volume_view       = i_space.compute_face_and_volume_pattern(*i_grid_view);
-    I_PatternType i_pattern_face_volume_other      = i_space.compute_face_and_volume_pattern(i_space);
-    I_PatternType i_pattern_face_volume_view_other = i_space.compute_face_and_volume_pattern(*i_grid_view, i_space);
-    I_PatternType i_pattern_face                   = i_space.compute_face_pattern();
-    I_PatternType i_pattern_face_view              = i_space.compute_face_pattern(*i_grid_view);
-    I_PatternType i_pattern_face_other             = i_space.compute_face_pattern(i_space);
+    I_PatternType i_pattern                                  = i_space.compute_pattern();
+    I_PatternType i_pattern_view                             = i_space.compute_pattern(*i_grid_view);
+    I_PatternType i_pattern_other                            = i_space.compute_pattern(i_space);
+    I_PatternType i_pattern_view_other                       = i_space.compute_pattern(*i_grid_view, i_space);
+    I_PatternType i_pattern_volume                           = i_space.compute_volume_pattern();
+    I_PatternType i_pattern_volume_view                      = i_space.compute_volume_pattern(*i_grid_view);
+    I_PatternType i_pattern_volume_other                     = i_space.compute_volume_pattern(i_space);
+    I_PatternType i_pattern_volume_view_other                = i_space.compute_volume_pattern(*i_grid_view, i_space);
+    I_PatternType i_pattern_face_volume                      = i_space.compute_face_and_volume_pattern();
+    I_PatternType i_pattern_face_volume_view                 = i_space.compute_face_and_volume_pattern(*i_grid_view);
+    I_PatternType i_pattern_face_volume_other                = i_space.compute_face_and_volume_pattern(i_space);
+    I_PatternType i_pattern_face_volume_view_other           = i_space.compute_face_and_volume_pattern(*i_grid_view, i_space);
+    I_PatternType i_pattern_face                             = i_space.compute_face_pattern();
+    I_PatternType i_pattern_face_view                        = i_space.compute_face_pattern(*i_grid_view);
+    I_PatternType i_pattern_face_other                       = i_space.compute_face_pattern(i_space);
     I_PatternType i_pattern_face_view_other = i_space.compute_face_pattern(*i_grid_view, i_space);
     if (&i_backend != &d_backend)
       DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
@@ -284,6 +272,20 @@ public:
       DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
     if (i_pattern_face_view_other != d_pattern_face_view_other)
       DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    // walk the grid
+    const auto entity_it_end = d_grid_view->template end<0>();
+    for (auto entity_it = d_grid_view->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const D_EntityType& entity = *entity_it;
+      // * s the derived type
+      D_BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
+      size_t d_bfs_size = d_base_function_set.size();
+      if (d_bfs_size != d_mapper.numDofs(entity))
+        DUNE_THROW_COLORFULLY(Exceptions::index_out_of_range, d_bfs_size << " vs. " << d_mapper.numDofs(entity));
+      I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
+      size_t i_bfs_size = i_base_function_set.size();
+      if (d_bfs_size != i_bfs_size)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    } // walk the grid
   } // ... fulfills_interface()
 
   /**
@@ -368,7 +370,7 @@ public:
 
   /**
     * \brief  Checks the spaces basefunctionsets for their interface compliance.
-    * \note   We do not check for the fucntionality enforced by LocalfuntionSetInterface at the moment!
+    * \note   We do not check for the functionality enforced by LocalfuntionSetInterface at the moment!
     */
   void basefunctionset_fulfills_interface() const
   {
@@ -437,10 +439,17 @@ public:
       // * as the derived type
       BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
       const D_BackendType& d_backend          = d_base_function_set.backend();
+      size_t d_order = d_base_function_set.order();
+      if (d_order != SpaceType::polOrder)
+        DUNE_THROW_COLORFULLY(Exceptions::internal_error, d_order << " vs. " << SpaceType::polOrder);
+      //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
       const I_BackendType& i_backend = i_base_function_set.backend();
       if (&d_backend != &i_backend)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      size_t i_order = i_base_function_set.order();
+      if (i_order != d_order)
         DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
     } // walk the grid
   } // ... basefunctionset_fulfills_interface()
