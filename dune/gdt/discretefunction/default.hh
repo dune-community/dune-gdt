@@ -122,7 +122,7 @@ public:
         new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
   }
 
-  void visualize(const std::string filename, const bool subsampling = true,
+  void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
                  VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
