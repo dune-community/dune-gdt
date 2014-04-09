@@ -159,6 +159,8 @@ public:
   PatternType compute_volume_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
   {
     PatternType pattern(mapper().size());
+    Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
+    Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
     // walk the grid view
     const auto entityItEnd = local_grid_view.template end<0>();
     for (auto entityIt = local_grid_view.template begin<0>(); entityIt != entityItEnd; ++entityIt) {
@@ -166,9 +168,7 @@ public:
       // get basefunctionsets
       const auto testBase   = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
-      Dune::DynamicVector<size_t> globalRows(testBase.size(), 0);
       mapper().globalIndices(entity, globalRows);
-      Dune::DynamicVector<size_t> globalCols(ansatzBase.size(), 0);
       ansatz_space.mapper().globalIndices(entity, globalCols);
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
         auto& columns = pattern.inner(globalRows[ii]);
