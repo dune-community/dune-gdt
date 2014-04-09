@@ -12,6 +12,7 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
+#include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
 #include <dune/stuff/common/crtp.hh>
@@ -39,6 +40,11 @@ public:
   static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
 
+private:
+  static_assert(std::is_base_of<GridView<typename GridViewType::Traits>, GridViewType>::value,
+                "GridViewType has to be derived from GridView!");
+
+public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -87,10 +93,10 @@ public:
   }
 
   template <class ConstraintsType, class T>
-  void local_constraints(const SpaceInterface<T>& other, const EntityType& entity, ConstraintsType& ret) const
+  void local_constraints(const SpaceInterface<T>& ansatz_space, const EntityType& entity, ConstraintsType& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(other, entity, ret));
-    this->as_imp(*this).local_constraints(other, entity, ret);
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(ansatz_space, entity, ret));
+    this->as_imp(*this).local_constraints(ansatz_space, entity, ret);
   }
 
   /**
@@ -98,11 +104,11 @@ public:
    *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this
    * class, namely compute_volume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
    */
-  template <class LocalGridViewType, class T>
-  PatternType compute_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface<T>& other) const
+  template <class G, class S>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
   {
-    CHECK_CRTP(this->as_imp(*this).compute_pattern(local_grid_view, other));
-    return this->as_imp(*this).compute_pattern(local_grid_view, other);
+    CHECK_CRTP(this->as_imp(*this).compute_pattern(local_grid_view, ansatz_space));
+    return this->as_imp(*this).compute_pattern(local_grid_view, ansatz_space);
   }
   /* @} */
 
@@ -116,10 +122,16 @@ public:
     return compute_pattern(*this);
   }
 
-  template <class T>
-  PatternType compute_pattern(const SpaceInterface<T>& other) const
+  template <class S>
+  PatternType compute_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_pattern(*(grid_view()), other);
+    return compute_pattern(*(grid_view()), ansatz_space);
+  }
+
+  template <class G>
+  PatternType compute_pattern(const GridView<G>& local_grid_view) const
+  {
+    return compute_pattern(local_grid_view, *this);
   }
 
   PatternType compute_volume_pattern() const
@@ -127,31 +139,37 @@ public:
     return compute_volume_pattern(*this);
   }
 
-  template <class T>
-  PatternType compute_volume_pattern(const SpaceInterface<T>& other) const
+  template <class S>
+  PatternType compute_volume_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_volume_pattern(*(grid_view()), other);
+    return compute_volume_pattern(*(grid_view()), ansatz_space);
+  }
+
+  template <class G>
+  PatternType compute_volume_pattern(const GridView<G>& local_grid_view) const
+  {
+    return compute_volume_pattern(local_grid_view, *this);
   }
 
   /**
    *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class LocalGridViewType, class T>
-  PatternType compute_volume_pattern(const LocalGridViewType& localGridView, const SpaceInterface<T>& other) const
+  template <class G, class S>
+  PatternType compute_volume_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
   {
     PatternType pattern(mapper().size());
     // walk the grid view
-    const auto entityItEnd = localGridView.template end<0>();
-    for (auto entityIt = localGridView.template begin<0>(); entityIt != entityItEnd; ++entityIt) {
+    const auto entityItEnd = local_grid_view.template end<0>();
+    for (auto entityIt = local_grid_view.template begin<0>(); entityIt != entityItEnd; ++entityIt) {
       const auto& entity = *entityIt;
       // get basefunctionsets
       const auto testBase   = base_function_set(entity);
-      const auto ansatzBase = other.base_function_set(entity);
+      const auto ansatzBase = ansatz_space.base_function_set(entity);
       Dune::DynamicVector<size_t> globalRows(testBase.size(), 0);
       mapper().globalIndices(entity, globalRows);
       Dune::DynamicVector<size_t> globalCols(ansatzBase.size(), 0);
-      other.mapper().globalIndices(entity, globalCols);
+      ansatz_space.mapper().globalIndices(entity, globalCols);
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
         auto& columns = pattern.inner(globalRows[ii]);
         for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
@@ -167,33 +185,39 @@ public:
     return compute_face_and_volume_pattern(*(grid_view()), *this);
   }
 
-  template <class LocalGridViewType>
-  PatternType compute_face_and_volume_pattern(const LocalGridViewType& local_grid_view) const
+  template <class G>
+  PatternType compute_face_and_volume_pattern(const GridView<G>& local_grid_view) const
   {
     return compute_face_and_volume_pattern(local_grid_view, *this);
+  }
+
+  template <class S>
+  PatternType compute_face_and_volume_pattern(const SpaceInterface<S>& ansatz_space) const
+  {
+    return compute_face_and_volume_pattern(*(grid_view()), ansatz_space);
   }
 
   /**
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class LocalGridViewType, class T>
-  PatternType compute_face_and_volume_pattern(const LocalGridViewType& local_grid_view,
-                                              const SpaceInterface<T>& other) const
+  template <class G, class S>
+  PatternType compute_face_and_volume_pattern(const GridView<G>& local_grid_view,
+                                              const SpaceInterface<S>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
-    Dune::DynamicVector<size_t> global_cols(other.mapper().maxNumDofs(), 0);
+    Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
     // walk the grid view
     const auto entity_it_end = local_grid_view.template end<0>();
     for (auto entity_it = local_grid_view.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // get basefunctionsets
       const auto test_base_entity   = base_function_set(entity);
-      const auto ansatz_base_entity = other.base_function_set(entity);
+      const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
-      other.mapper().globalIndices(entity, global_cols);
+      ansatz_space.mapper().globalIndices(entity, global_cols);
       // compute entity/entity
       for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
         auto& columns = pattern.inner(global_rows[ii]);
@@ -211,8 +235,8 @@ public:
           const auto neighbour_ptr = intersection.outside();
           const auto& neighbour    = *neighbour_ptr;
           // get the basis
-          const auto ansatz_base_neighbour = other.base_function_set(neighbour);
-          other.mapper().globalIndices(neighbour, global_cols);
+          const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
+          ansatz_space.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
@@ -231,19 +255,25 @@ public:
     return compute_face_pattern(*(grid_view()), *this);
   }
 
-  template <class LocalGridViewType>
-  PatternType compute_face_pattern(const LocalGridViewType& local_grid_view) const
+  template <class G>
+  PatternType compute_face_pattern(const GridView<G>& local_grid_view) const
   {
     return compute_face_pattern(local_grid_view, *this);
   }
 
-  template <class LocalGridViewType, class T>
-  PatternType compute_face_pattern(const LocalGridViewType& local_grid_view, const SpaceInterface<T>& other) const
+  template <class S>
+  PatternType compute_face_pattern(const SpaceInterface<S>& ansatz_space) const
+  {
+    return compute_face_pattern(*(grid_view()), ansatz_space);
+  }
+
+  template <class G, class S>
+  PatternType compute_face_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
-    Dune::DynamicVector<size_t> global_cols(other.mapper().maxNumDofs(), 0);
+    Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
     // walk the grid view
     const auto entity_it_end = local_grid_view.template end<0>();
     for (auto entity_it = local_grid_view.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -261,8 +291,8 @@ public:
           const auto neighbour_ptr = intersection.outside();
           const auto& neighbour    = *neighbour_ptr;
           // get the basis
-          const auto ansatz_base_neighbour = other.base_function_set(neighbour);
-          other.mapper().globalIndices(neighbour, global_cols);
+          const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
+          ansatz_space.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
