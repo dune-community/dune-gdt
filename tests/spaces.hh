@@ -97,17 +97,22 @@ public:
   {
     using namespace Dune;
     using namespace GDT;
-    Stuff::GridProviderCube<GridType> grid_provider(0.0, 1.0, 4u);
+    Stuff::GridProviderCube<GridType> grid_provider(0.0, 1.0, 3u);
     grid_                     = grid_provider.grid();
     const auto grid_part_view = SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_);
     space_                    = std::unique_ptr<SpaceType>(new SpaceType(grid_part_view));
   }
 
+  /**
+    * \brief Checks the space for it's interface compliance.
+    */
   void fulfills_interface() const
   {
     using namespace Dune;
     using namespace GDT;
     using namespace Stuff;
+    if (!grid_)
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     if (!space_)
       DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     // static checks
@@ -146,6 +151,8 @@ public:
     typedef typename InterfaceType::PatternType I_PatternType;
     typedef typename InterfaceType::BoundaryInfoType I_BoundaryInfoType;
     static const bool i_needs_grid_view = InterfaceType::needs_grid_view;
+    static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
+    static_assert(std::is_same<derived_type, SpaceType>::value, "Types do not match!");
     static_assert(std::is_same<I_GridViewType, D_GridViewType>::value, "Types do not match!");
     static_assert(std::is_same<I_DomainFieldType, D_DomainFieldType>::value, "Types do not match!");
     static_assert(std::is_same<I_RangeFieldType, D_RangeFieldType>::value, "Types do not match!");
@@ -166,7 +173,7 @@ public:
     const D_BackendType& d_backend                           = space_->backend();
     const D_MapperType& d_mapper                             = space_->mapper();
     const std::shared_ptr<const D_GridViewType>& d_grid_view = space_->grid_view();
-    // walk the grid
+    //   walk the grid
     const auto d_entity_it_end = d_grid_view->template end<0>();
     for (auto d_entity_it = d_grid_view->template begin<0>(); d_entity_it != d_entity_it_end; ++d_entity_it) {
       const D_EntityType& d_entity = *d_entity_it;
@@ -217,7 +224,7 @@ public:
     const I_BackendType& i_backend                           = i_space.backend();
     const D_MapperType& i_mapper                             = i_space.mapper();
     const std::shared_ptr<const I_GridViewType>& i_grid_view = i_space.grid_view();
-    // walk the grid
+    //   walk the grid
     const auto i_entity_it_end = i_grid_view->template end<0>();
     for (auto i_entity_it = d_grid_view->template begin<0>(); i_entity_it != i_entity_it_end; ++i_entity_it) {
       const I_EntityType& i_entity = *i_entity_it;
@@ -278,6 +285,165 @@ public:
     if (i_pattern_face_view_other != d_pattern_face_view_other)
       DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
   } // ... fulfills_interface()
+
+  /**
+    * \brief Checks the spaces mapper for it's interface compliance.
+    */
+  void mapper_fulfills_interface() const
+  {
+    using namespace Dune;
+    using namespace GDT;
+    using namespace Stuff;
+    if (!grid_)
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
+    if (!space_)
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
+    // static checks
+    // * as the derived type
+    typedef typename SpaceType::MapperType MapperType;
+    typedef typename MapperType::Traits Traits;
+    typedef typename MapperType::BackendType D_BackendType;
+    // * as the interface
+    typedef MapperInterface<Traits> InterfaceType;
+    typedef typename InterfaceType::derived_type derived_type;
+    typedef typename InterfaceType::BackendType I_BackendType;
+    static_assert(std::is_base_of<InterfaceType, MapperType>::value,
+                  "MapperType has to be derived from MapperInterface!");
+    static_assert(std::is_same<derived_type, MapperType>::value, "Types do not match!");
+    static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
+    // dynamic checks
+    // * as the derived type
+    const MapperType& d_mapper     = space_->mapper();
+    const D_BackendType& d_backend = d_mapper.backend();
+    size_t d_size                  = d_mapper.size();
+    size_t d_maxNumDofs            = d_mapper.maxNumDofs();
+    // * as the interface type
+    const InterfaceType& i_mapper  = static_cast<const InterfaceType&>(d_mapper);
+    const D_BackendType& i_backend = i_mapper.backend();
+    size_t i_size                  = i_mapper.size();
+    size_t i_maxNumDofs = i_mapper.maxNumDofs();
+    if (&i_backend != &d_backend)
+      DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    if (i_size != d_size)
+      DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    if (i_maxNumDofs != d_maxNumDofs)
+      DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    //   walk the grid
+    const auto entity_it_end = space_->grid_view()->template end<0>();
+    for (auto entity_it = space_->grid_view()->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+      // * as the derived type
+      size_t d_numDofs = d_mapper.numDofs(entity);
+      DynamicVector<size_t> d_globalIndices(d_numDofs, 0);
+      d_mapper.globalIndices(entity, d_globalIndices);
+      if (d_globalIndices.size() > d_numDofs)
+        DUNE_THROW_COLORFULLY(Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
+      DynamicVector<size_t> d_globalIndices_return = d_mapper.globalIndices(entity);
+      if (d_globalIndices_return != d_globalIndices)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      // * as the interface
+      size_t i_numDofs = i_mapper.numDofs(entity);
+      DynamicVector<size_t> i_globalIndices(i_numDofs, 0);
+      i_mapper.globalIndices(entity, i_globalIndices);
+      DynamicVector<size_t> i_globalIndices_return = i_mapper.globalIndices(entity);
+      if (i_numDofs != d_numDofs)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      if (i_globalIndices != d_globalIndices)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      if (i_globalIndices_return != d_globalIndices_return)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      //   walk the local DoFs
+      for (size_t ii = 0; ii < d_numDofs; ++ii) {
+        // * as the derived type
+        size_t d_mapToGlobal = d_mapper.mapToGlobal(entity, ii);
+        if (d_mapToGlobal != d_globalIndices[ii])
+          DUNE_THROW_COLORFULLY(Exceptions::index_out_of_range, d_mapToGlobal << " vs. " << d_globalIndices[ii]);
+        // * as the interface
+        size_t i_mapToGlobal = i_mapper.mapToGlobal(entity, ii);
+        if (i_mapToGlobal != d_mapToGlobal)
+          DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+      } //   walk the local DoFs
+    } //   walk the grid
+  } // ... mapper_fulfills_interface()
+
+  /**
+    * \brief  Checks the spaces basefunctionsets for their interface compliance.
+    * \note   We do not check for the fucntionality enforced by LocalfuntionSetInterface at the moment!
+    */
+  void basefunctionset_fulfills_interface() const
+  {
+    using namespace Dune;
+    using namespace GDT;
+    using namespace Stuff;
+    if (!grid_)
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
+    if (!space_)
+      DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
+    // static checks
+    // * as the derived type
+    typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
+    typedef typename BaseFunctionSetType::Traits Traits;
+    typedef typename BaseFunctionSetType::BackendType D_BackendType;
+    typedef typename BaseFunctionSetType::EntityType D_EntityType;
+    typedef typename BaseFunctionSetType::DomainFieldType D_DomainFieldType;
+    static const unsigned int d_dimDomain = BaseFunctionSetType::dimDomain;
+    typedef typename BaseFunctionSetType::DomainType D_DomainType;
+    typedef typename BaseFunctionSetType::RangeFieldType D_RangeFieldType;
+    static const unsigned int d_dimRange     = BaseFunctionSetType::dimRange;
+    static const unsigned int d_dimRangeCols = BaseFunctionSetType::dimRangeCols;
+    typedef typename BaseFunctionSetType::RangeType D_RangeType;
+    typedef typename BaseFunctionSetType::JacobianRangeType D_JacobianRangeType;
+    static_assert(std::is_same<D_EntityType, typename SpaceType::EntityType>::value, "Types do not match!");
+    static_assert(std::is_same<D_DomainFieldType, typename SpaceType::DomainFieldType>::value, "Types do not match!");
+    static_assert(std::is_same<D_DomainType, typename SpaceType::DomainType>::value, "Types do not match!");
+    static_assert(std::is_same<D_RangeFieldType, typename SpaceType::RangeFieldType>::value, "Types do not match!");
+    static_assert(d_dimDomain == SpaceType::dimDomain, "Dimensions do not match!");
+    static_assert(d_dimRange == SpaceType::dimRange, "Dimensions do not match!");
+    static_assert(d_dimRangeCols == SpaceType::dimRangeCols, "Dimensions do not match!");
+    // * as the interface type
+    typedef BaseFunctionSetInterface<Traits,
+                                     D_DomainFieldType,
+                                     d_dimDomain,
+                                     D_RangeFieldType,
+                                     d_dimRange,
+                                     d_dimRangeCols> InterfaceType;
+    typedef typename InterfaceType::derived_type derived_type;
+    typedef typename InterfaceType::BackendType I_BackendType;
+    typedef typename InterfaceType::EntityType I_EntityType;
+    typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
+    static const unsigned int i_dimDomain = InterfaceType::dimDomain;
+    typedef typename InterfaceType::DomainType I_DomainType;
+    typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
+    static const unsigned int i_dimRange     = InterfaceType::dimRange;
+    static const unsigned int i_dimRangeCols = InterfaceType::dimRangeCols;
+    typedef typename InterfaceType::RangeType I_RangeType;
+    typedef typename InterfaceType::JacobianRangeType I_JacobianRangeType;
+    static_assert(std::is_same<derived_type, BaseFunctionSetType>::value, "Types do not match!");
+    static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
+    static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
+    static_assert(std::is_same<I_DomainFieldType, D_DomainFieldType>::value, "Types do not match!");
+    static_assert(std::is_same<I_DomainType, D_DomainType>::value, "Types do not match!");
+    static_assert(std::is_same<I_RangeFieldType, D_RangeFieldType>::value, "Types do not match!");
+    static_assert(std::is_same<I_RangeType, D_RangeType>::value, "Types do not match!");
+    static_assert(std::is_same<I_JacobianRangeType, D_JacobianRangeType>::value, "Types do not match!");
+    static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
+    static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
+    static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
+    // dynamic checks
+    // walk the grid
+    const auto entity_end_it = space_->grid_view()->template end<0>();
+    for (auto entity_it = space_->grid_view()->template begin<0>(); entity_it != entity_end_it; ++entity_it) {
+      const auto& entity = *entity_it;
+      // * as the derived type
+      BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
+      const D_BackendType& d_backend          = d_base_function_set.backend();
+      // * as the interface
+      InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
+      const I_BackendType& i_backend = i_base_function_set.backend();
+      if (&d_backend != &i_backend)
+        DUNE_THROW_COLORFULLY(Exceptions::CRTP_check_failed, "");
+    } // walk the grid
+  } // ... basefunctionset_fulfills_interface()
 
 protected:
   std::shared_ptr<GridType> grid_;
