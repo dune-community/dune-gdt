@@ -65,11 +65,13 @@ public:
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
+    , backend_(1)
   {
   }
 
   FiniteVolume(ThisType&& source)
     : BaseType(source.entity())
+    , backend_(1)
   {
   }
 
@@ -79,7 +81,7 @@ public:
 
   const BackendType& backend() const
   {
-    return 1.0;
+    return backend_;
   }
 
   virtual size_t size() const DS_OVERRIDE DS_FINAL
@@ -107,6 +109,9 @@ public:
   }
 
   using BaseType::jacobian;
+
+private:
+  const BackendType backend_;
 }; // class FiniteVolume< ..., 1, 1 >
 
 
@@ -136,11 +141,13 @@ public:
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
+    , backend_(1)
   {
   }
 
   FiniteVolume(ThisType&& source)
     : BaseType(source.entity())
+    , backend_(1)
   {
   }
 
@@ -150,7 +157,7 @@ public:
 
   const BackendType& backend() const
   {
-    return 1.0;
+    return backend_;
   }
 
   virtual size_t size() const DS_OVERRIDE DS_FINAL
@@ -182,6 +189,9 @@ public:
   } // ... jacobian(...)
 
   using BaseType::jacobian;
+
+private:
+  const BackendType backend_;
 }; // class FiniteVolume< ..., rangeDim, 1 >
 
 
