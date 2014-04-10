@@ -9,12 +9,14 @@
 #include <type_traits>
 #include <limits>
 
+#include <dune/common/dynmatrix.hh>
+
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 
-#include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
+#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/swipdg.hh>
 
@@ -23,172 +25,178 @@ namespace GDT {
 namespace ReconstructionOperator {
 
 
-template< class GridPartType, class LocalizableFunctionType >
+/**
+ *  \todo Add more static checks that GridViewType and LocalizableFunctionType match.
+ *  \todo Derived from operator interfaces.
+ */
+template< class GridViewType, class LocalizableFunctionType >
 class DiffusiveFlux
 {
-  static_assert(GridPartType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
+  static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionType >::value,
                 "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
 public:
-  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
+  static const unsigned int dimDomain = GridViewType::dimension;
+  typedef typename LocalizableFunctionType::RangeFieldType FieldType;
+  typedef typename LocalizableFunctionType::DomainType DomainType;
 
-  DiffusiveFlux(const GridPartType& grid_part,
+private:
+  static_assert(dimDomain == 2, "Not implemented!");
+
+public:
+  DiffusiveFlux(const GridViewType& grid_view,
                 const LocalizableFunctionType& diffusion)
-    : grid_part_(grid_part)
+    : grid_view_(grid_view)
     , diffusion_(diffusion)
   {}
 
-  template< class R, class RGP, class RV >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1 >& source,
-             DiscreteFunction< RaviartThomasSpace::FemLocalfunctionsWrapper< RGP, 0, R, dimDomain >, RV >& range) const
+  template< class GV, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1 >& source,
+             DiscreteFunction< RaviartThomasSpace::PdelabBased< GV, 0, FieldType, dimDomain >, V >& range) const
   {
-    typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1 > SourceType;
-    typedef DiscreteFunction< RaviartThomasSpace::FemLocalfunctionsWrapper< RGP, 0, R, dimDomain >, RV > RangeType;
-    static_assert(dimDomain == 2, "Only implemented for dimDomain 2!");
-    // prepare tmp storage
-    std::vector< size_t > intersection_id_to_local_DoF_id_map(3, 0); // <- there should be 3 intersections on a simplex in 2d!
-    const auto& rtn_space = range.space();
-    std::vector< typename RangeType::RangeType > rtn_basis_values(rtn_space.mapper().maxNumDofs(),
-                                                                  typename RangeType::RangeType(0));
-    typename SourceType::DomainType unit_outer_normal(0);
-    typename SourceType::DomainType point_entity(0);
-    Dune::DynamicMatrix< R > tmp_result(1, 1, 0);
-    Dune::DynamicMatrix< R > tmp_result_en_en(1, 1, 0);
-    Dune::DynamicMatrix< R > tmp_result_en_ne(1, 1, 0);
-    // create local evaluations
-    const LocalEvaluation::SWIPDG::BoundaryLHS< LocalizableFunctionType > boundary_evaluation(diffusion_);
+    const auto& rtn0_space = range.space();
+    auto& range_vector = range.vector();
+    const FieldType infinity = std::numeric_limits< FieldType >::infinity();
+    for (size_t ii = 0; ii < range_vector.size(); ++ii)
+      range_vector[ii] = infinity;
     const LocalEvaluation::SWIPDG::Inner< LocalizableFunctionType > inner_evaluation(diffusion_);
-    const Stuff::Function::Constant< EntityType, DomainFieldType, dimDomain, R, 1 > constant_one(1);
+    const LocalEvaluation::SWIPDG::BoundaryLHS< LocalizableFunctionType > boundary_evaluation(diffusion_);
+    const Stuff::Function::Constant< EntityType, DomainFieldType, dimDomain, FieldType, 1 > constant_one(1);
+    DomainType normal(0);
+    DomainType xx_entity(0);
+    DynamicMatrix< FieldType > tmp_matrix(1, 1, 0);
+    DynamicMatrix< FieldType > tmp_matrix_en_en(1, 1, 0);
+    DynamicMatrix< FieldType > tmp_matrix_en_ne(1, 1, 0);
+    std::vector< typename RaviartThomasSpace::PdelabBased< GV, 0, FieldType, dimDomain >::BaseFunctionSetType::RangeType >
+        basis_values(rtn0_space.mapper().maxNumDofs(),
+                     typename RaviartThomasSpace::PdelabBased< GV, 0, FieldType, dimDomain >::BaseFunctionSetType::RangeType(0));
     // walk the grid
-    const auto entity_it_end = grid_part_.template end< 0 >();
-    for (auto entity_it = grid_part_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
-      // get the local functions
-      const auto local_source = source.local_function(entity);
-      auto local_range = range.local_discrete_function(entity);
-      auto local_range_vector = local_range.vector();
+      const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
+      const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
+      assert(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_diffusion = diffusion_.local_function(entity);
+      const auto local_source = source.local_function(entity);
+      const auto local_basis = rtn0_space.base_function_set(entity);
       const auto local_constant_one = constant_one.local_function(entity);
-      const auto rtn_basis = rtn_space.baseFunctionSet(entity);
-      // get the local finite element
-      const auto rtn_finite_element = rtn_space.backend().finiteElement(entity);
-      const auto& rtn_local_coefficients = rtn_finite_element.localCoefficients();
-      assert(intersection_id_to_local_DoF_id_map.size() >= rtn_local_coefficients.size());
-      assert(rtn_local_coefficients.size() < std::numeric_limits< int >::max());
-      for (size_t ii = 0; ii < rtn_local_coefficients.size(); ++ii)
-        intersection_id_to_local_DoF_id_map[rtn_local_coefficients.localKey(int(ii)).subEntity()] = ii;
-      // loop over all intersections
-      const auto intersection_end_it = grid_part_.iend(entity);
-      for (auto intersection_it = grid_part_.ibegin(entity);
-           intersection_it != intersection_end_it;
+      // walk the intersections
+      const auto intersection_it_end = grid_view_.iend(entity);
+      for (auto intersection_it = grid_view_.ibegin(entity);
+           intersection_it != intersection_it_end;
            ++intersection_it) {
-        // get intersection information
         const auto& intersection = *intersection_it;
-        const size_t intersection_index = intersection.indexInInside();
-        assert(intersection_index < intersection_id_to_local_DoF_id_map.size() && "This should not happen!");
-        const size_t intersection_DoF_index = intersection_id_to_local_DoF_id_map[intersection_index];
-        // prepare quadrature
-        const size_t integrand_order = std::max(rtn_basis.order(),
-                                                std::max(inner_evaluation.order(*local_diffusion,
-                                                                                *local_diffusion,
-                                                                                *local_source,
-                                                                                *local_constant_one,
-                                                                                *local_source,
-                                                                                *local_constant_one),
-                                                         boundary_evaluation.order(*local_diffusion,
-                                                                                   *local_source,
-                                                                                   *local_constant_one)));
-        assert(integrand_order < std::numeric_limits< int >::max());
-        const auto& face_quadrature
-            = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(), int(integrand_order));
-        R lhs_integral = 0;
-        R rhs_integral = 0;
-        if (intersection.boundary() && !intersection.neighbor()) {
-          // we are on the domain boundary
-          // loop over all quadrature points
-          for (auto quadrature_point : face_quadrature) {
-            const FieldVector< DomainFieldType, dimDomain - 1 >& point_intersection = quadrature_point.position();
-            point_entity = intersection.geometryInInside().global(point_intersection);
-            const R integration_factor = intersection.geometry().integrationElement(point_intersection);
-            const R quadrature_weight = quadrature_point.weight();
-            // evaluate
-            unit_outer_normal = intersection.unitOuterNormal(point_intersection);
-            rtn_basis.evaluate(point_entity, rtn_basis_values);
-            assert(rtn_basis_values.size() > intersection_DoF_index);
-            const auto& rtn_basis_value = rtn_basis_values[intersection_DoF_index];
-            // compute integrals
-            lhs_integral += integration_factor * quadrature_weight * (rtn_basis_value * unit_outer_normal);
-            tmp_result *= R(0);
+        if (intersection.neighbor() && !intersection.boundary()) {
+          const auto neighbor_ptr = intersection.outside();
+          const auto& neighbor = *neighbor_ptr;
+          if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
+            const auto local_diffusion_neighbor = diffusion_.local_function(neighbor);
+            const auto local_source_neighbor = source.local_function(neighbor);
+            const auto local_constant_one_neighbor = constant_one.local_function(neighbor);
+            const size_t local_intersection_index = intersection.indexInInside();
+            const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
+            // do a face quadrature
+            FieldType lhs = 0;
+            FieldType rhs = 0;
+            const size_t integrand_order = inner_evaluation.order(*local_diffusion,
+                                                                  *local_diffusion_neighbor,
+                                                                  *local_constant_one,
+                                                                  *local_source,
+                                                                  *local_constant_one_neighbor,
+                                                                  *local_source_neighbor);
+            assert(integrand_order < std::numeric_limits< int >::max());
+            const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(),
+                                                                                             int(integrand_order));
+            const auto quadrature_it_end = quadrature.end();
+            for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
+              const auto& xx_intersection = quadrature_it->position();
+              xx_entity = intersection.geometryInInside().global(xx_intersection);
+              normal = intersection.unitOuterNormal(xx_intersection);
+              const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
+              const FieldType weigth = quadrature_it->weight();
+              // evalaute
+              local_basis.evaluate(xx_entity, basis_values);
+              const auto& basis_value = basis_values[local_DoF_index];
+              tmp_matrix *= 0.0;
+              tmp_matrix_en_en *= 0.0;
+              tmp_matrix_en_ne *= 0.0;
+              inner_evaluation.evaluate(*local_diffusion,
+                                        *local_diffusion_neighbor,
+                                        *local_constant_one,
+                                        *local_source,
+                                        *local_constant_one_neighbor,
+                                        *local_source_neighbor,
+                                        intersection,
+                                        xx_intersection,
+                                        tmp_matrix_en_en, // <- we are interested in this one
+                                        tmp_matrix,
+                                        tmp_matrix_en_ne, // <- and this one
+                                        tmp_matrix);
+              // compute integrals
+              assert(tmp_matrix_en_en.rows() >= 1);
+              assert(tmp_matrix_en_en.cols() >= 1);
+              assert(tmp_matrix_en_ne.rows() >= 1);
+              assert(tmp_matrix_en_ne.cols() >= 1);
+              lhs += integration_factor * weigth * (basis_value * normal);
+              rhs += integration_factor * weigth * (tmp_matrix_en_en[0][0] + tmp_matrix_en_ne[0][0]);
+            } // do a face quadrature
+            // set DoF
+            const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
+            // and make sure we are the first to do so
+            assert(!(range_vector[global_DoF_index] < infinity));
+            range_vector[global_DoF_index] = rhs / lhs;
+          }
+        } else if (intersection.boundary() && !intersection.neighbor()) {
+          const size_t local_intersection_index = intersection.indexInInside();
+          const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
+          // do a face quadrature
+          FieldType lhs = 0;
+          FieldType rhs = 0;
+          const size_t integrand_order = boundary_evaluation.order(*local_diffusion,
+                                                                   *local_source,
+                                                                   *local_constant_one);
+          assert(integrand_order < std::numeric_limits< int >::max());
+          const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(),
+                                                                                           int(integrand_order));
+          const auto quadrature_it_end = quadrature.end();
+          for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
+            const auto xx_intersection = quadrature_it->position();
+            normal = intersection.unitOuterNormal(xx_intersection);
+            const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
+            const FieldType weigth = quadrature_it->weight();
+            xx_entity = intersection.geometryInInside().global(xx_intersection);
+            // evalaute
+            local_basis.evaluate(xx_entity, basis_values);
+            const auto& basis_value = basis_values[local_DoF_index];
+            tmp_matrix *= 0.0;
             boundary_evaluation.evaluate(*local_diffusion,
                                          *local_constant_one,
                                          *local_source,
                                          intersection,
-                                         point_intersection,
-                                         tmp_result);
-            assert(tmp_result.rows() == 1);
-            assert(tmp_result.cols() == 1);
-            rhs_integral += integration_factor * quadrature_weight * tmp_result[0][0];
-          } // loop over all quadrature points
-          // set local DoF
-          local_range_vector.set(intersection_DoF_index, rhs_integral / lhs_integral);
-        } else if (intersection.neighbor() && !intersection.boundary()) {
-          // we are on the inside
-          // get the neighbour
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour = *neighbour_ptr;
-          // work only once on each intersection
-          if (grid_part_.indexSet().index(entity) < grid_part_.indexSet().index(neighbour)) {
-            // get the neighbours local functions
-            const auto local_source_neighbour = source.local_function(neighbour);
-            const auto local_diffusion_neighbour = diffusion_.local_function(neighbour);
-            const auto local_constant_one_neighbour = constant_one.local_function(neighbour);
-            // loop over all quadrature points
-            for (auto quadrature_point : face_quadrature) {
-              const FieldVector< DomainFieldType, dimDomain - 1 >& point_intersection = quadrature_point.position();
-              point_entity = intersection.geometryInInside().global(point_intersection);
-              const R integration_factor = intersection.geometry().integrationElement(point_intersection);
-              const R quadrature_weight = quadrature_point.weight();
-              // evaluate
-              unit_outer_normal = intersection.unitOuterNormal(point_intersection);
-              rtn_basis.evaluate(point_entity, rtn_basis_values);
-              const auto& rtn_basis_value = rtn_basis_values[intersection_DoF_index];
-              // compute integrals
-              lhs_integral += integration_factor * quadrature_weight * (rtn_basis_value * unit_outer_normal);
-              tmp_result *= R(0);
-              tmp_result_en_en *= R(0);
-              tmp_result_en_ne *= R(0);
-              inner_evaluation.evaluate(*local_diffusion,
-                                        *local_diffusion_neighbour,
-                                        *local_constant_one,
-                                        *local_source,
-                                        *local_constant_one_neighbour,
-                                        *local_source_neighbour,
-                                        intersection,
-                                        point_intersection,
-                                        tmp_result_en_en, // <- we are interested in this one
-                                        tmp_result,
-                                        tmp_result_en_ne, // <- and this one
-                                        tmp_result);
-              assert(tmp_result_en_en.rows() == 1);
-              assert(tmp_result_en_en.cols() == 1);
-              assert(tmp_result_en_ne.rows() == 1);
-              assert(tmp_result_en_ne.cols() == 1);
-              rhs_integral += integration_factor * quadrature_weight
-                            * (tmp_result_en_en[0][0] + tmp_result_en_ne[0][0]);
-            } // loop over all quadrature points
-            // set local DoF
-            local_range_vector.set(intersection_DoF_index, rhs_integral / lhs_integral);
-          } // work only once on each intersection
+                                         xx_intersection,
+                                         tmp_matrix);
+            // compute integrals
+            assert(tmp_matrix.rows() >= 1);
+            assert(tmp_matrix.cols() >= 1);
+            lhs += integration_factor * weigth * (basis_value * normal);
+            rhs += integration_factor * weigth * tmp_matrix[0][0];
+          } // do a face quadrature
+          // set DoF
+          const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
+          assert(!(range_vector[global_DoF_index] < infinity));
+          // and make sure we are the first to do so
+          range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW(InvalidStateException, "Unknwon intersection type encountered!");
-      } // loop over all intersections
+          DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+      } // walk the intersections
     } // walk the grid
   } // ... apply(...)
 
 private:
-  const GridPartType& grid_part_;
+  const GridViewType& grid_view_;
   const LocalizableFunctionType& diffusion_;
 }; // class DiffusiveFlux
 
