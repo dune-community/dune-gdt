@@ -63,7 +63,7 @@ class EllipticBase
 public:
   EllipticBase(const DiffusionType& diffusion, const size_t over_integrate = 0)
     : diffusion_(diffusion)
-    , local_operator_(diffusion_, over_integrate)
+    , local_operator_(over_integrate, diffusion_)
   {
   }
 
