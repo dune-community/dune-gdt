@@ -28,8 +28,8 @@
 #include <dune/stuff/functions/combined.hh>
 
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/playground/space/finitevolume.hh>
-#include <dune/gdt/space/raviartthomas/fem-localfunctions.hh>
+#include <dune/gdt/space/continuouslagrange/fem.hh>
+#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
@@ -49,7 +49,7 @@
 #include <dune/gdt/operator/prolongations.hh>
 #include <dune/gdt/operator/oswald.hh>
 #include <dune/gdt/playground/product/ESV2007.hh>
-//#include <dune/gdt/operator/reconstructions.hh>
+#include <dune/gdt/operator/reconstructions.hh>
 
 #include "elliptic-testcases.hh"
 
@@ -581,7 +581,7 @@ public:
     return { "energy"
             , nonconformity_estimator_id()
             , residual_estimator_ESV07_id()
-//            , diffusive_flux_estimator_id()
+            , diffusive_flux_estimator_id()
 //            , estimator_ESV07_id()
 //            , efficiency_ESV07_id()
 //            , residual_estimator_ESV10_id()
@@ -622,6 +622,8 @@ public:
       return compute_nonconformity_estimator();
     else if (type == residual_estimator_ESV07_id())
       return compute_residual_estimator_ESV07();
+    else if (type == diffusive_flux_estimator_id())
+      return compute_diffusive_flux_estimator();
     else
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
@@ -704,7 +706,6 @@ private:
     using namespace Dune;
     using namespace Dune::GDT;
 
-    // prepare discrete solution
     BaseType::compute_on_current_refinement();
     assert(current_solution_vector_on_level_);
     const auto grid_part = test_.level_grid_part(current_level_);
@@ -747,6 +748,38 @@ private:
         weighted_l2_product(*grid_view, test_.diffusion());
     return std::sqrt(weighted_l2_product.apply2(difference, difference, 1));
   } // ... compute_residual_estimator_ESV07(...)
+
+  double compute_diffusive_flux_estimator()
+  {
+    using namespace Dune;
+    using namespace Dune::GDT;
+
+    BaseType::compute_on_current_refinement();
+    assert(current_solution_vector_on_level_);
+
+    const auto grid_part = test_.level_grid_part(current_level_);
+    const auto grid_view = test_.level_grid_view(current_level_);
+    const DiscretizationType discretization(grid_part, test_.boundary_info(), test_.diffusion(), test_.force(),
+                                            test_.dirichlet(), test_.neumann());
+    const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
+
+    typedef RaviartThomasSpace::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
+    const RTN0SpaceType rtn0_space(grid_view);
+    VectorType diffusive_flux_vector(rtn0_space.mapper().size());
+    typedef DiscreteFunction< RTN0SpaceType, VectorType > RTN0DiscreteFunctionType;
+    RTN0DiscreteFunctionType diffusive_flux(rtn0_space, diffusive_flux_vector);
+
+    typedef typename TestCase::DiffusionType DiffusionType;
+    const GDT::ReconstructionOperator::DiffusiveFlux< GridViewType, DiffusionType >
+      diffusive_flux_reconstruction(*grid_view, test_.diffusion());
+    diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
+
+    GDT::Product::ESV2007::DiffusiveFluxEstimate< GridViewType, DiffusionType, RTN0DiscreteFunctionType
+                                                , ConstDiscreteFunctionType, ConstDiscreteFunctionType >
+      diffusive_flux_estimator_product(*grid_view, discrete_solution, discrete_solution,
+                                       test_.diffusion(), diffusive_flux, 1);
+    return std::sqrt(diffusive_flux_estimator_product.apply2());
+  } // ... compute_diffusive_flux_estimator(...)
 
 #if 0
   double compute_residual_estimator_ESV10()
@@ -947,76 +980,6 @@ private:
     }
     return std::sqrt(residual_estimator);
   } // ... compute_residual_estimator_ESV10(...)
-#endif
-
-#if 0
-  double compute_diffusive_flux_estimator_ESV10()
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-
-    const size_t integration_order = 5;
-
-    // prepare discrete solution
-    BaseType::compute_on_current_refinement();
-    const auto grid_part = test_.level_grid_part(current_level_);
-    const DiscretizationType discretization(grid_part, test_.boundary_info(), test_.diffusion(), test_.force(),
-                                            test_.dirichlet(), test_.neumann());
-    const ConstDiscreteFunctionType discrete_solution(discretization.space(),
-                                                      *current_solution_vector_on_level_,
-                                                      "discrete solution");
-
-    typedef RaviartThomasSpace::FemLocalfunctionsWrapper< GridPartType, 0, RangeFieldType, dimDomain > RTN_SpaceType;
-    const RTN_SpaceType rtn_space(grid_part);
-    typedef DiscreteFunction< RTN_SpaceType, VectorType > RTN_DiscreteFunctionType;
-    VectorType rtn_vector(rtn_space.mapper().size());
-    RTN_DiscreteFunctionType diffusive_flux_reconstruction(rtn_space,
-                                                           rtn_vector,
-                                                           "diffusive flux reconstruction");
-    // reconstruct
-    typedef ReconstructionOperator::DiffusiveFlux< GridPartType,
-                                                   typename TestCase::DiffusionType > ReconstructionOperatorType;
-    const ReconstructionOperatorType reconstruction_operator(*grid_part, test_.diffusion());
-    reconstruction_operator.apply(discrete_solution, diffusive_flux_reconstruction);
-
-    // walk the grid for the third time
-    std::vector< RangeFieldType > estimators_diffusive_flux(grid_part->indexSet().size(0), RangeFieldType(0));
-    const auto entity_it_end = grid_part->template end< 0 >();
-    for (auto entity_it = grid_part->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      const size_t entity_index = grid_part->indexSet().index(entity);
-      // get the local functions
-      const auto local_diffusion = test_.diffusion().local_function(entity);
-      const auto local_solution = discrete_solution.local_function(entity);
-      const auto local_diffusive_flux_reconstruction = diffusive_flux_reconstruction.local_function(entity);
-      // do a volume quadrature
-      const auto& volume_quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
-                                                                                          2*integration_order + 1);
-      for (auto quadrature_point : volume_quadrature) {
-        const FieldVector< DomainFieldType, dimDomain > point_entity = quadrature_point.position();
-        const double quadrature_weight = quadrature_point.weight();
-        // evaluate
-        const double integration_factor = entity.geometry().integrationElement(point_entity);
-        const auto diffusion_value = local_diffusion->evaluate(point_entity);
-        auto solution_gradient = local_solution->jacobian(point_entity);
-        auto diffusive_flux_value = local_diffusive_flux_reconstruction->evaluate(point_entity);
-        // compute diffusive flux estimator
-        const auto diffusion_value_sqrt = std::sqrt(diffusion_value);
-        solution_gradient[0] *= diffusion_value_sqrt;
-        diffusive_flux_value /= diffusion_value_sqrt;
-        const auto diffusive_flux_sum = solution_gradient[0] + diffusive_flux_value;
-        const auto diffusive_flux_product = diffusive_flux_sum * diffusive_flux_sum;
-        estimators_diffusive_flux[entity_index] += integration_factor * quadrature_weight * diffusive_flux_product;
-      } // do a volume quadrature
-    } // walk the grid for the third time
-
-    // compute error components
-    double diffusive_flux_estimator = 0;
-    for (size_t ii = 0; ii < estimators_diffusive_flux.size(); ++ii) {
-      diffusive_flux_estimator += std::pow(estimators_diffusive_flux[ii], 2);
-    }
-    return std::sqrt(diffusive_flux_estimator);
-  } // ... compute_diffusive_flux_estimator_ESV10(...)
 #endif
 
 #if 0
