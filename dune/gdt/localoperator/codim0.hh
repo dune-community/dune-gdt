@@ -61,8 +61,21 @@ public:
   {
   }
 
+  Codim0Integral(const size_t over_integrate, const BinaryEvaluationImp eval)
+    : evaluation_(eval)
+    , over_integrate_(over_integrate)
+  {
+  }
+
   template <class... Args>
-  Codim0Integral(Args&&... args, const size_t over_integrate = 0)
+  Codim0Integral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(0)
+  {
+  }
+
+  template <class... Args>
+  Codim0Integral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
   {
