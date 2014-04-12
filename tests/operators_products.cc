@@ -51,7 +51,7 @@ typedef Dune::Stuff::LA::EigenDenseVector<double> VectorType;
 //      - first the interfaces
 
 template <class SpaceType, class ProductType>
-struct GenericProduct
+struct ProductBase
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
@@ -101,7 +101,7 @@ struct GenericProduct
     if (Dune::Stuff::Common::FloatCmp::ne(i_a, d_a))
       DUNE_THROW_COLORFULLY(Dune::Exception, "");
   }
-}; // struct GenericProduct
+}; // struct ProductBase
 
 template <class SpaceType, class ProductType>
 struct LocalizableProduct
@@ -261,7 +261,7 @@ struct AssemblableProduct
 //      - then the L2 products
 
 template <class SpaceType>
-struct GenericL2ProductOperator : public ::testing::Test
+struct L2ProductOperator : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
@@ -273,7 +273,7 @@ struct GenericL2ProductOperator : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::GDT::Product::L2Generic<GridViewType> ProductType;
+  typedef Dune::GDT::Product::L2<GridViewType> ProductType;
 
   void produces_correct_results() const
   {
@@ -319,9 +319,9 @@ struct GenericL2ProductOperator : public ::testing::Test
 
   void fulfills_interface() const
   {
-    GenericProduct<SpaceType, ProductType>::fulfills_interface();
+    ProductBase<SpaceType, ProductType>::fulfills_interface();
   }
-}; // GenericL2ProductOperator
+}; // L2ProductOperator
 
 template <class SpaceType>
 struct L2LocalizableProduct : public ::testing::Test
@@ -466,7 +466,7 @@ struct L2AssemblableProduct : public ::testing::Test
 //      - then the H1 semi products
 
 template <class SpaceType>
-struct GenericH1SemiProductOperator : public ::testing::Test
+struct H1SemiProductOperator : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
@@ -529,9 +529,9 @@ struct GenericH1SemiProductOperator : public ::testing::Test
 
   void fulfills_interface() const
   {
-    GenericProduct<SpaceType, ProductType>::fulfills_interface();
+    ProductBase<SpaceType, ProductType>::fulfills_interface();
   }
-}; // GenericH1SemiProductOperator
+}; // H1SemiProductOperator
 
 template <class SpaceType>
 struct H1SemiLocalizableProduct : public ::testing::Test
@@ -723,7 +723,7 @@ struct ProjectionOperatorBase
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
-    const Dune::GDT::Product::L2Generic<GridViewType> l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Product::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
@@ -747,7 +747,7 @@ struct LagrangeProjectionOperator
 };
 
 template <class SpaceType>
-struct GenericProjectionOperator
+struct ProjectionOperator
     : public ProjectionOperatorBase<SpaceType,
                                     Dune::GDT::ProjectionOperator::Generic<typename SpaceType::GridViewType>>,
       public ::testing::Test
@@ -791,7 +791,7 @@ struct DirichletProjectionOperator : public ::testing::Test
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
-    const Dune::GDT::Product::L2Generic<GridViewType> l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Product::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
@@ -839,7 +839,7 @@ struct ProlongationOperatorBase
     coarse_projection_operator.apply(function, coarse_discrete_function);
     // since the projection operator was tested above we are confident this worked
     // but we check anyway (the L2 product operator was also tested above)
-    const Dune::GDT::Product::L2Generic<GridViewType> coarse_l2_product_operator(*(coarse_space.grid_view()));
+    const Dune::GDT::Product::L2<GridViewType> coarse_l2_product_operator(*(coarse_space.grid_view()));
     const Dune::Stuff::Function::Difference<FunctionType, CoarseDiscreteFunctionType> coarse_difference(
         function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
@@ -855,7 +855,7 @@ struct ProlongationOperatorBase
     const ProlongationOperatorType prolongation_operator(*(fine_space.grid_view()));
     prolongation_operator.apply(coarse_discrete_function, fine_discrete_function);
     // and measure the error
-    const Dune::GDT::Product::L2Generic<GridViewType> fine_l2_product_operator(*(fine_space.grid_view()));
+    const Dune::GDT::Product::L2<GridViewType> fine_l2_product_operator(*(fine_space.grid_view()));
     const Dune::Stuff::Function::Difference<FunctionType, FineDiscreteFunctionType> fine_difference(
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
@@ -881,7 +881,7 @@ struct LagrangeProlongationOperator
 };
 
 template <class P>
-struct GenericProlongationOperator
+struct ProlongationOperator
     : public ProlongationOperatorBase<typename P::first_type, typename P::second_type,
                                       Dune::GDT::ProlongationOperator::Generic<typename P::second_type::GridViewType>>,
       public ::testing::Test
@@ -1005,7 +1005,7 @@ typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
                        ,
                        LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID, L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif
-                       > GenericProjectionOperatorSpaceTypes;
+                       > ProjectionOperatorSpaceTypes;
 
 typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
 #if HAVE_ALUGRID
@@ -1167,7 +1167,7 @@ typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
                        ,
                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID, L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif
-                       > GenericProlongationOperatorSpaceTypes;
+                       > ProlongationOperatorSpaceTypes;
 
 #undef L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #undef LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
@@ -1182,26 +1182,26 @@ typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
 // | * those have to come first for error measurement |
 // +--------------------------------------------------+
 
-TYPED_TEST_CASE(GenericL2ProductOperator, ProductOperatorSpaceTypes);
-TYPED_TEST(GenericL2ProductOperator, fulfills_interface)
+TYPED_TEST_CASE(L2ProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(L2ProductOperator, fulfills_interface)
 {
   this->fulfills_interface();
 }
 
-TYPED_TEST_CASE(GenericL2ProductOperator, ProductOperatorSpaceTypes);
-TYPED_TEST(GenericL2ProductOperator, produces_correct_results)
+TYPED_TEST_CASE(L2ProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(L2ProductOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(GenericH1SemiProductOperator, ProductOperatorSpaceTypes);
-TYPED_TEST(GenericH1SemiProductOperator, fulfills_interface)
+TYPED_TEST_CASE(H1SemiProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiProductOperator, fulfills_interface)
 {
   this->fulfills_interface();
 }
 
-TYPED_TEST_CASE(GenericH1SemiProductOperator, ProductOperatorSpaceTypes);
-TYPED_TEST(GenericH1SemiProductOperator, produces_correct_results)
+TYPED_TEST_CASE(H1SemiProductOperator, ProductOperatorSpaceTypes);
+TYPED_TEST(H1SemiProductOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
@@ -1224,8 +1224,8 @@ TYPED_TEST(LagrangeProjectionOperator, produces_correct_results)
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(GenericProjectionOperator, GenericProjectionOperatorSpaceTypes);
-TYPED_TEST(GenericProjectionOperator, produces_correct_results)
+TYPED_TEST_CASE(ProjectionOperator, ProjectionOperatorSpaceTypes);
+TYPED_TEST(ProjectionOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
@@ -1306,8 +1306,8 @@ TYPED_TEST(LagrangeProlongationOperator, produces_correct_results)
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(GenericProlongationOperator, GenericProlongationOperatorSpaceTypes);
-TYPED_TEST(GenericProlongationOperator, produces_correct_results)
+TYPED_TEST_CASE(ProlongationOperator, ProlongationOperatorSpaceTypes);
+TYPED_TEST(ProlongationOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
