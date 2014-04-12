@@ -57,8 +57,9 @@ private:
 template <class DiffusionImp, class GridViewImp, class FieldImp>
 class EllipticBase
 {
-  typedef typename EllipticBaseTraits<DiffusionImp, GridViewImp, FieldImp>::DiffusionType DiffusionType;
-  typedef typename EllipticBaseTraits<DiffusionImp, GridViewImp, FieldImp>::LocalOperatorType LocalOperatorType;
+  typedef EllipticBaseTraits<DiffusionImp, GridViewImp, FieldImp> Traits;
+  typedef typename Traits::DiffusionType DiffusionType;
+  typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
   EllipticBase(const DiffusionType& diffusion, const size_t over_integrate = 0)
