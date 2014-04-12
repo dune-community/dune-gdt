@@ -26,7 +26,7 @@
 
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
 #include <dune/gdt/operator/elliptic.hh>
-#include <dune/gdt/functional/l2.hh>
+#include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/space/constraints.hh>
 #include <dune/gdt/product/l2.hh>
@@ -113,9 +113,9 @@ public:
 
       // define the lhs operator and the rhs functionals
       EllipticOperatorType elliptic_operator(diffusion_, system_matrix_, space_);
-      typedef GDT::Functional::L2Volume< FunctionType, VectorType, SpaceType > L2VolumeFunctionalType;
+      typedef GDT::Functionals::L2Volume< FunctionType, VectorType, SpaceType > L2VolumeFunctionalType;
       L2VolumeFunctionalType force_functional(force_, rhs_vector_, space_);
-      typedef GDT::Functional::L2Face< FunctionType, VectorType, SpaceType > L2FaceFunctionalType;
+      typedef GDT::Functionals::L2Face< FunctionType, VectorType, SpaceType > L2FaceFunctionalType;
       L2FaceFunctionalType neumann_functional(neumann_, rhs_vector_, space_);
       // project the dirichlet boundary values
       DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_);

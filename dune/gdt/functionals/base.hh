@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_FUNCTIONAL_BASE_HH
-#define DUNE_GDT_FUNCTIONAL_BASE_HH
+#ifndef DUNE_GDT_FUNCTIONALS_BASE_HH
+#define DUNE_GDT_FUNCTIONALS_BASE_HH
 
 #include <type_traits>
 
@@ -18,7 +18,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Functional {
+namespace Functionals {
 
 
 // forward, to be used in the traits
@@ -290,8 +290,8 @@ private:
 }; // class AssemblableFaceBase
 
 
-} // namespace Functional
+} // namespace Functionals
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_FUNCTIONAL_BASE_HH
+#endif // DUNE_GDT_FUNCTIONALS_BASE_HH
