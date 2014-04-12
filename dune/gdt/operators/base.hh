@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATOR_BASE_HH
-#define DUNE_GDT_OPERATOR_BASE_HH
+#ifndef DUNE_GDT_OPERATORS_BASE_HH
+#define DUNE_GDT_OPERATORS_BASE_HH
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
@@ -13,7 +13,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operator {
+namespace Operators {
 
 
 template< class Traits >
@@ -192,8 +192,8 @@ private:
 }; // class AssemblableVolumeBase
 
 
-} // namespace Operator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATOR_BASE_HH
+#endif // DUNE_GDT_OPERATORS_BASE_HH

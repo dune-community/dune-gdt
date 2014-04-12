@@ -25,14 +25,14 @@
 #include <dune/stuff/functions/combined.hh>
 
 #include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/operator/elliptic.hh>
+#include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/space/constraints.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
-#include <dune/gdt/operator/prolongations.hh>
-#include <dune/gdt/operator/projections.hh>
+#include <dune/gdt/operators/prolongations.hh>
+#include <dune/gdt/operators/projections.hh>
 
 #include "elliptic-testcases.hh"
 
@@ -104,7 +104,7 @@ public:
     if (!is_assembled_) {
 
       // create the containers (use the sparsity pattern of the operator)
-      typedef GDT::Operator::EllipticCG< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
+      typedef GDT::Operators::EllipticCG< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
       system_matrix_ = MatrixType(space_.mapper().size(),
                                   space_.mapper().size(),
                                   EllipticOperatorType::pattern(space_));

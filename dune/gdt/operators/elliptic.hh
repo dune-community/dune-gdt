@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATOR_ELLIPTIC_HH
-#define DUNE_GDT_OPERATOR_ELLIPTIC_HH
+#ifndef DUNE_GDT_OPERATORS_ELLIPTIC_HH
+#define DUNE_GDT_OPERATORS_ELLIPTIC_HH
 
 #include <type_traits>
 
@@ -19,7 +19,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operator {
+namespace Operators {
 
 
 // forward, to be used in the traits
@@ -75,12 +75,12 @@ template< class DiffusionImp
         , class RangeSpaceImp
         , class GridViewImp >
 class EllipticCG
-  : public Operator::AssemblableVolumeBase< EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
+  : public Operators::AssemblableVolumeBase< EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
 {
 public:
   typedef EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > Traits;
 private:
-  typedef Operator::AssemblableVolumeBase< Traits > BaseType;
+  typedef Operators::AssemblableVolumeBase< Traits > BaseType;
 
   typedef typename Traits::DiffusionType      DiffusionType;
   typedef typename Traits::LocalOperatorType  LocalOperatorType;
@@ -133,8 +133,8 @@ private:
 }; // class EllipticCG
 
 
-} // namespace Operator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATOR_ELLIPTIC_HH
+#endif // DUNE_GDT_OPERATORS_ELLIPTIC_HH

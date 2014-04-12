@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATOR_DARCY_HH
-#define DUNE_GDT_OPERATOR_DARCY_HH
+#ifndef DUNE_GDT_OPERATORS_DARCY_HH
+#define DUNE_GDT_OPERATORS_DARCY_HH
 
 #include <limits>
 
@@ -23,7 +23,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operator {
+namespace Operators {
 
 
 // forward, to be used in the traits
@@ -248,8 +248,8 @@ private:
 }; // class DarcyReconstruction
 
 
-} // namespace Operator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATOR_DARCY_HH
+#endif // DUNE_GDT_OPERATORS_DARCY_HH

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATOR_INTERFACES_HH
-#define DUNE_GDT_OPERATOR_INTERFACES_HH
+#ifndef DUNE_GDT_OPERATORS_INTERFACES_HH
+#define DUNE_GDT_OPERATORS_INTERFACES_HH
 
 #include <type_traits>
 
@@ -245,4 +245,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATOR_INTERFACES_HH
+#endif // DUNE_GDT_OPERATORS_INTERFACES_HH

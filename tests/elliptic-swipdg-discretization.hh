@@ -46,11 +46,11 @@
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/products/elliptic.hh>
-#include <dune/gdt/operator/projections.hh>
-#include <dune/gdt/operator/prolongations.hh>
-#include <dune/gdt/operator/oswald.hh>
+#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/operators/prolongations.hh>
+#include <dune/gdt/operators/oswald.hh>
 #include <dune/gdt/playground/products/ESV2007.hh>
-#include <dune/gdt/operator/reconstructions.hh>
+#include <dune/gdt/operators/reconstructions.hh>
 
 #include "elliptic-testcases.hh"
 
@@ -721,7 +721,7 @@ private:
     VectorType oswald_interpolation_vector(discretization.space().mapper().size());
     DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
 
-    const GDT::Operator::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
+    const GDT::Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
     const Stuff::Function::Difference< ConstDiscreteFunctionType, DiscreteFunctionType >
         difference(discrete_solution, oswald_interpolation);
@@ -802,7 +802,7 @@ private:
 
     VectorType oswald_interpolation_vector(discretization.space().mapper().size());
     DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
-    const GDT::Operator::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
+    const GDT::Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
 
     typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;

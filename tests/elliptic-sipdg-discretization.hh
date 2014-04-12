@@ -38,7 +38,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
-#include <dune/gdt/operator/prolongations.hh>
+#include <dune/gdt/operators/prolongations.hh>
 
 #include "elliptic-testcases.hh"
 
