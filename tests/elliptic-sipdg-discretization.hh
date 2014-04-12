@@ -470,7 +470,7 @@ private:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      Product::L2Generic<GridViewType> l2_product_operator(grid_view);
+      Product::L2<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
       Product::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
