@@ -24,6 +24,7 @@
 #include <dune/stuff/la/solver/eigen.hh>
 #include <dune/stuff/la/solver/fasp.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/functions/ESV2007.hh>
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
@@ -498,7 +499,7 @@ protected:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      Product::L2Generic<GridViewType> l2_product_operator(grid_view);
+      Product::L2<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
       Product::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
@@ -751,12 +752,11 @@ private:
     ProjectionOperator::Generic<GridViewType> projection_operator(*grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
-    const Stuff::Function::Difference<typename TestCase::ForceType, P0DiscreteFunctionType> difference(test_.force(),
-                                                                                                       p0_force);
+    typedef typename Stuff::Function::ESV2007Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
+    const CutoffFunctionType cutoff_function(test_.diffusion());
 
-    const Product::ESV2007::WeightedL2<GridViewType, typename TestCase::DiffusionType> weighted_l2_product(
-        *grid_view, test_.diffusion());
-    return std::sqrt(weighted_l2_product.apply2(difference, difference, 1));
+    const Product::WeightedL2<GridViewType, CutoffFunctionType> weighted_l2_product(*grid_view, cutoff_function, 1);
+    return weighted_l2_product.induced_norm(test_.force() - p0_force);
   } // ... compute_residual_estimator_ESV07(...)
 
   double compute_diffusive_flux_estimator()
