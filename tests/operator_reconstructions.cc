@@ -29,8 +29,8 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operator/darcy.hh>
 #include <dune/gdt/operator/projections.hh>
-#include <dune/gdt/product/l2.hh>
-#include <dune/gdt/product/h1.hh>
+#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/h1.hh>
 
 class errors_are_not_as_expected : public Dune::Exception
 {
@@ -87,13 +87,13 @@ public:
     const Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain> desired_output(
         "x", std::vector<std::string>({"x[1]", "x[0]"}), 1, "desired output", {{"0.0", "1.0"}, {"1.0", "0.0"}});
 
-    const Product::L2<GridViewType> l2_product(*(range_space.grid_view()));
+    const Products::L2<GridViewType> l2_product(*(range_space.grid_view()));
     const RangeFieldType l2_error          = l2_product.induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     if (l2_error > l2_error_expected)
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected, l2_error << " vs. " << l2_error_expected);
 
-    const Product::H1SemiGeneric<GridViewType> h1_semi_product(*(range_space.grid_view()));
+    const Products::H1SemiGeneric<GridViewType> h1_semi_product(*(range_space.grid_view()));
     const RangeFieldType h1_error          = h1_semi_product.induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
     if (h1_error > h1_error_expected)
@@ -122,8 +122,8 @@ private:
       Dune::GDT::DiscreteFunction<FvSpaceType, VectorType> fv_desired_output(fv_space, fv_desired_output_vector);
       const Dune::GDT::ProjectionOperator::L2<GV> l2_projection(*grid_view_ptr);
       l2_projection.apply(desired_output, fv_desired_output);
-      const Dune::GDT::Product::L2<GV> l2_product(*grid_view_ptr);
-      const Dune::GDT::Product::H1SemiGeneric<GV> h1_semi_product(*grid_view_ptr);
+      const Dune::GDT::Products::L2<GV> l2_product(*grid_view_ptr);
+      const Dune::GDT::Products::H1SemiGeneric<GV> h1_semi_product(*grid_view_ptr);
       if (type == "l2")
         return 2.0 * l2_product.induced_norm(desired_output - fv_desired_output);
       else if (type == "h1")

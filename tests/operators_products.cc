@@ -30,8 +30,8 @@
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operator/projections.hh>
-#include <dune/gdt/product/l2.hh>
-#include <dune/gdt/product/h1.hh>
+#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/h1.hh>
 #include <dune/gdt/operator/prolongations.hh>
 
 class errors_are_not_as_expected : public Dune::Exception
@@ -273,7 +273,7 @@ struct L2ProductOperator : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::GDT::Product::L2<GridViewType> ProductType;
+  typedef Dune::GDT::Products::L2<GridViewType> ProductType;
 
   void produces_correct_results() const
   {
@@ -336,7 +336,7 @@ struct L2LocalizableProduct : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::GDT::Product::L2Localizable<GridViewType, FunctionType, FunctionType> ProductType;
+  typedef Dune::GDT::Products::L2Localizable<GridViewType, FunctionType, FunctionType> ProductType;
 
   void produces_correct_results() const
   {
@@ -405,7 +405,7 @@ struct L2AssemblableProduct : public ::testing::Test
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ProjectionOperator::Generic<GridViewType> ProjectionOperatorType;
-  typedef Dune::GDT::Product::L2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
+  typedef Dune::GDT::Products::L2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
 
   void produces_correct_results() const
   {
@@ -478,7 +478,7 @@ struct H1SemiProductOperator : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::GDT::Product::H1SemiGeneric<GridViewType> ProductType;
+  typedef Dune::GDT::Products::H1SemiGeneric<GridViewType> ProductType;
 
   void produces_correct_results() const
   {
@@ -546,7 +546,7 @@ struct H1SemiLocalizableProduct : public ::testing::Test
   static const unsigned int dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::GDT::Product::H1SemiLocalizable<GridViewType, FunctionType, FunctionType> ProductType;
+  typedef Dune::GDT::Products::H1SemiLocalizable<GridViewType, FunctionType, FunctionType> ProductType;
 
   void produces_correct_results() const
   {
@@ -620,7 +620,7 @@ struct H1SemiAssemblableProduct : public ::testing::Test
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ProjectionOperator::Generic<GridViewType> ProjectionOperatorType;
-  typedef Dune::GDT::Product::H1SemiAssemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
+  typedef Dune::GDT::Products::H1SemiAssemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
 
   void produces_correct_results() const
   {
@@ -723,7 +723,7 @@ struct ProjectionOperatorBase
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
-    const Dune::GDT::Product::L2<GridViewType> l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
@@ -791,7 +791,7 @@ struct DirichletProjectionOperator : public ::testing::Test
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
-    const Dune::GDT::Product::L2<GridViewType> l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
@@ -839,7 +839,7 @@ struct ProlongationOperatorBase
     coarse_projection_operator.apply(function, coarse_discrete_function);
     // since the projection operator was tested above we are confident this worked
     // but we check anyway (the L2 product operator was also tested above)
-    const Dune::GDT::Product::L2<GridViewType> coarse_l2_product_operator(*(coarse_space.grid_view()));
+    const Dune::GDT::Products::L2<GridViewType> coarse_l2_product_operator(*(coarse_space.grid_view()));
     const Dune::Stuff::Function::Difference<FunctionType, CoarseDiscreteFunctionType> coarse_difference(
         function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
@@ -855,7 +855,7 @@ struct ProlongationOperatorBase
     const ProlongationOperatorType prolongation_operator(*(fine_space.grid_view()));
     prolongation_operator.apply(coarse_discrete_function, fine_discrete_function);
     // and measure the error
-    const Dune::GDT::Product::L2<GridViewType> fine_l2_product_operator(*(fine_space.grid_view()));
+    const Dune::GDT::Products::L2<GridViewType> fine_l2_product_operator(*(fine_space.grid_view()));
     const Dune::Stuff::Function::Difference<FunctionType, FineDiscreteFunctionType> fine_difference(
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));

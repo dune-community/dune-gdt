@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCT_L2_HH
-#define DUNE_GDT_PRODUCT_L2_HH
+#ifndef DUNE_GDT_PRODUCTS_L2_HH
+#define DUNE_GDT_PRODUCTS_L2_HH
 
 #include <type_traits>
 
@@ -21,7 +21,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Product {
+namespace Products {
 
 
 // forward
@@ -206,12 +206,12 @@ public:
 
 template <class GridViewImp, class FunctionImp, class RangeImp, class SourceImp>
 class WeightedL2Localizable
-    : public Product::LocalizableBase<internal::WeightedL2LocalizableTraits<GridViewImp, FunctionImp, RangeImp,
-                                                                            SourceImp>>,
+    : public Products::LocalizableBase<internal::WeightedL2LocalizableTraits<GridViewImp, FunctionImp, RangeImp,
+                                                                             SourceImp>>,
       public internal::WeightedL2Base<GridViewImp, FunctionImp>
 {
-  typedef Product::LocalizableBase<internal::WeightedL2LocalizableTraits<GridViewImp, FunctionImp, RangeImp, SourceImp>>
-      LocalizableBaseType;
+  typedef Products::LocalizableBase<internal::WeightedL2LocalizableTraits<GridViewImp, FunctionImp, RangeImp,
+                                                                          SourceImp>> LocalizableBaseType;
   typedef internal::WeightedL2Base<GridViewImp, FunctionImp> WeightedL2BaseType;
 
 public:
@@ -248,12 +248,12 @@ private:
 
 template <class MatrixImp, class FunctionImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp>
 class WeightedL2Assemblable
-    : public Product::AssemblableBase<internal::WeightedL2AssemblableTraits<MatrixImp, FunctionImp, RangeSpaceImp,
-                                                                            GridViewImp, SourceSpaceImp>>,
+    : public Products::AssemblableBase<internal::WeightedL2AssemblableTraits<MatrixImp, FunctionImp, RangeSpaceImp,
+                                                                             GridViewImp, SourceSpaceImp>>,
       public internal::WeightedL2Base<GridViewImp, FunctionImp>
 {
-  typedef Product::AssemblableBase<internal::WeightedL2AssemblableTraits<MatrixImp, FunctionImp, RangeSpaceImp,
-                                                                         GridViewImp, SourceSpaceImp>>
+  typedef Products::AssemblableBase<internal::WeightedL2AssemblableTraits<MatrixImp, FunctionImp, RangeSpaceImp,
+                                                                          GridViewImp, SourceSpaceImp>>
       AssemblableBaseType;
   typedef internal::WeightedL2Base<GridViewImp, FunctionImp> WeightedL2BaseType;
 
@@ -361,10 +361,11 @@ private:
 
 
 template <class GridViewImp, class RangeImp, class SourceImp>
-class L2Localizable : public Product::LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>>,
+class L2Localizable : public Products::LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>>,
                       public internal::L2Base<GridViewImp, typename RangeImp::RangeFieldType>
 {
-  typedef Product::LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>> LocalizableBaseType;
+  typedef Products::LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>>
+      LocalizableBaseType;
   typedef internal::L2Base<GridViewImp, typename RangeImp::RangeFieldType> L2BaseType;
 
 public:
@@ -399,12 +400,12 @@ private:
 
 
 template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp>
-class L2Assemblable : public Product::AssemblableBase<internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp,
-                                                                                    GridViewImp, SourceSpaceImp>>,
+class L2Assemblable : public Products::AssemblableBase<internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp,
+                                                                                     GridViewImp, SourceSpaceImp>>,
                       public internal::L2Base<GridViewImp, typename RangeSpaceImp::RangeFieldType>
 {
-  typedef Product::AssemblableBase<internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>
-      AssemblableBaseType;
+  typedef Products::AssemblableBase<internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp,
+                                                                  SourceSpaceImp>> AssemblableBaseType;
   typedef internal::L2Base<GridViewImp, typename RangeSpaceImp::RangeFieldType> L2BaseType;
 
 public:
@@ -504,8 +505,8 @@ private:
 }; // class L2
 
 
-} // namespace Product
+} // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCT_WeightedL2_HH
+#endif // DUNE_GDT_PRODUCTS_L2_HH

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCT_H1_HH
-#define DUNE_GDT_PRODUCT_H1_HH
+#ifndef DUNE_GDT_PRODUCTS_H1_HH
+#define DUNE_GDT_PRODUCTS_H1_HH
 
 #include <type_traits>
 
@@ -19,7 +19,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Product {
+namespace Products {
 
 
 // forward, to be used in the traits
@@ -91,10 +91,10 @@ private:
 
 template <class GridViewImp, class RangeImp, class SourceImp, class FieldImp>
 class H1SemiLocalizable
-    : public Product::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>>,
+    : public Products::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>>,
       public H1SemiBase<GridViewImp, FieldImp>
 {
-  typedef Product::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>> BaseType;
+  typedef Products::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>> BaseType;
 
 public:
   typedef H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp> Traits;
@@ -140,10 +140,10 @@ private:
 
 template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp>
 class H1SemiAssemblable
-    : public Product::AssemblableBase<H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>,
+    : public Products::AssemblableBase<H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>,
       public H1SemiBase<GridViewImp, typename MatrixImp::ScalarType>
 {
-  typedef Product::AssemblableBase<H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>
+  typedef Products::AssemblableBase<H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>
       BaseType;
 
 public:
@@ -251,8 +251,8 @@ private:
 }; // class H1SemiGeneric
 
 
-} // namespace Operator
+} // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCT_H1_HH
+#endif // DUNE_GDT_PRODUCTS_H1_HH

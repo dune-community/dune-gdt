@@ -21,7 +21,7 @@
 #include <dune/gdt/space/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
-#include "../product/interfaces.hh"
+#include "../products/interfaces.hh"
 
 namespace Dune {
 namespace GDT {

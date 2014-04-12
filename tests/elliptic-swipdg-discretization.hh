@@ -43,13 +43,13 @@
 #include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/space/constraints.hh>
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/product/l2.hh>
-#include <dune/gdt/product/h1.hh>
-#include <dune/gdt/product/elliptic.hh>
+#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/h1.hh>
+#include <dune/gdt/products/elliptic.hh>
 #include <dune/gdt/operator/projections.hh>
 #include <dune/gdt/operator/prolongations.hh>
 #include <dune/gdt/operator/oswald.hh>
-#include <dune/gdt/playground/product/ESV2007.hh>
+#include <dune/gdt/playground/products/ESV2007.hh>
 #include <dune/gdt/operator/reconstructions.hh>
 
 #include "elliptic-testcases.hh"
@@ -499,10 +499,10 @@ protected:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      Product::L2<GridViewType> l2_product_operator(grid_view);
+      Products::L2<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      Product::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
+      Products::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -703,7 +703,7 @@ private:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Function::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      const GDT::Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(
+      const GDT::Products::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(
           test_.diffusion(), *(test_.level_grid_view(current_level_)));
       return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
     } else {
@@ -714,7 +714,7 @@ private:
       assert(current_solution_vector_);
       const VectorType difference_vector = (*reference_solution_vector_) - (*current_solution_vector_);
       const ConstDiscreteFunctionType difference(reference_discretization_->space(), difference_vector);
-      const GDT::Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(
+      const GDT::Products::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(
           test_.diffusion(), *(test_.reference_grid_view()));
       return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
     }
@@ -740,8 +740,8 @@ private:
     const Stuff::Function::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(discrete_solution,
                                                                                                   oswald_interpolation);
 
-    const Product::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
-                                                                                             grid_view);
+    const Products::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
+                                                                                              grid_view);
     return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
   } // ... compute_nonconformity_estimator(...)
 
@@ -763,7 +763,7 @@ private:
     typedef typename Stuff::Function::ESV2007Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
-    const Product::WeightedL2<GridViewType, CutoffFunctionType> weighted_l2_product(*grid_view, cutoff_function, 1);
+    const Products::WeightedL2<GridViewType, CutoffFunctionType> weighted_l2_product(*grid_view, cutoff_function, 1);
     return weighted_l2_product.induced_norm(test_.force() - p0_force);
   } // ... compute_residual_estimator_ESV07(...)
 
@@ -792,11 +792,11 @@ private:
         *grid_view, test_.diffusion());
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
-    GDT::Product::ESV2007::DiffusiveFluxEstimate<GridViewType,
-                                                 DiffusionType,
-                                                 RTN0DiscreteFunctionType,
-                                                 ConstDiscreteFunctionType,
-                                                 ConstDiscreteFunctionType>
+    GDT::Products::ESV2007::DiffusiveFluxEstimate<GridViewType,
+                                                  DiffusionType,
+                                                  RTN0DiscreteFunctionType,
+                                                  ConstDiscreteFunctionType,
+                                                  ConstDiscreteFunctionType>
         diffusive_flux_estimator_product(
             *grid_view, discrete_solution, discrete_solution, test_.diffusion(), diffusive_flux, 1);
     return std::sqrt(diffusive_flux_estimator_product.apply2());

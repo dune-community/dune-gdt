@@ -3,18 +3,18 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCT_ESV2007_HH
-#define DUNE_GDT_PRODUCT_ESV2007_HH
+#ifndef DUNE_GDT_PRODUCTS_ESV2007_HH
+#define DUNE_GDT_PRODUCTS_ESV2007_HH
 
 #include <dune/gdt/playground/localevaluation/ESV2007.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 
-#include "../../product/interfaces.hh"
-#include "../../product/base.hh"
+#include "../../products/interfaces.hh"
+#include "../../products/base.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Product {
+namespace Products {
 namespace ESV2007 {
 
 
@@ -49,11 +49,11 @@ public:
 template <class GridViewImp, class DiffusionImp, class DiffusiveFluxImp, class RangeImp, class SourceImp,
           class FieldImp>
 class DiffusiveFluxEstimate
-    : public Product::LocalizableBase<DiffusiveFluxEstimateTraits<GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp,
-                                                                  SourceImp, FieldImp>>
+    : public Products::LocalizableBase<DiffusiveFluxEstimateTraits<GridViewImp, DiffusionImp, DiffusiveFluxImp,
+                                                                   RangeImp, SourceImp, FieldImp>>
 {
-  typedef Product::LocalizableBase<DiffusiveFluxEstimateTraits<GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp,
-                                                               SourceImp, FieldImp>> BaseType;
+  typedef Products::LocalizableBase<DiffusiveFluxEstimateTraits<GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp,
+                                                                SourceImp, FieldImp>> BaseType;
 
 public:
   typedef DiffusiveFluxEstimateTraits<GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp, SourceImp, FieldImp>
@@ -93,8 +93,8 @@ private:
 
 
 } // namespace ESV2007
-} // namespace Product
+} // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCT_ESV2007_HH
+#endif // DUNE_GDT_PRODUCTS_ESV2007_HH
