@@ -584,7 +584,7 @@ public:
             , residual_estimator_ESV07_id()
             , diffusive_flux_estimator_id()
 //            , estimator_ESV07_id()
-//            , efficiency_ESV07_id()
+            , efficiency_ESV07_id()
 //            , residual_estimator_ESV10_id()
 //            , estimator_ESV10_id()
 //            , efficiency_ESV10_id()
@@ -625,6 +625,10 @@ public:
       return compute_residual_estimator_ESV07();
     else if (type == diffusive_flux_estimator_id())
       return compute_diffusive_flux_estimator();
+    else if (type == estimator_ESV07_id())
+      return compute_estimator_ESV07();
+    else if (type == efficiency_ESV07_id())
+      return compute_efficiency_ESV07();
     else
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
@@ -642,9 +646,9 @@ public:
         else if (type == diffusive_flux_estimator_id())
           return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
         else if (type == estimator_ESV07_id())
-          return {0.0, 0.0, 0.0, 0.0};
+          return {4.50e-01, 2.08e-01,  9.92e-02, 4.86e-02};
         else if (type == efficiency_ESV07_id())
-          return {1.2, 1.2, 1.2, 1.2};
+          return {1.21, 1.21, 1.21, 1.21};
         else if (type == residual_estimator_ESV10_id())
           return {0.0, 0.0, 0.0, 0.0};
         else if (type == estimator_ESV10_id())
@@ -781,6 +785,100 @@ private:
                                        test_.diffusion(), diffusive_flux, 1);
     return std::sqrt(diffusive_flux_estimator_product.apply2());
   } // ... compute_diffusive_flux_estimator(...)
+
+  double compute_estimator_ESV07()
+  {
+    using namespace Dune;
+    using namespace Dune::GDT;
+
+    BaseType::compute_on_current_refinement();
+    assert(current_solution_vector_on_level_);
+    const auto grid_part = test_.level_grid_part(current_level_);
+    const auto grid_view = test_.level_grid_view(current_level_);
+
+    const DiscretizationType discretization(grid_part, test_.boundary_info(), test_.diffusion(), test_.force(),
+                                            test_.dirichlet(), test_.neumann());
+    const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
+
+    VectorType oswald_interpolation_vector(discretization.space().mapper().size());
+    DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
+    const GDT::Operator::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
+    oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
+
+    typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
+    const P0SpaceType p0_space(grid_view);
+    VectorType p0_force_vector(p0_space.mapper().size());
+    typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
+    P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
+    ProjectionOperator::Generic< GridViewType > projection_operator(*grid_view);
+    projection_operator.apply(test_.force(), p0_force);
+
+    typedef RaviartThomasSpace::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
+    const RTN0SpaceType rtn0_space(grid_view);
+    VectorType diffusive_flux_vector(rtn0_space.mapper().size());
+    typedef DiscreteFunction< RTN0SpaceType, VectorType > RTN0DiscreteFunctionType;
+    RTN0DiscreteFunctionType diffusive_flux(rtn0_space, diffusive_flux_vector);
+
+    typedef typename TestCase::DiffusionType DiffusionType;
+    const GDT::ReconstructionOperator::DiffusiveFlux< GridViewType, DiffusionType >
+      diffusive_flux_reconstruction(*grid_view, test_.diffusion());
+    diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
+
+    const LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >
+      local_eta_nc_product(1, test_.diffusion());
+    const auto eta_nc_difference = discrete_solution - oswald_interpolation;
+
+    typedef typename Stuff::Function::ESV2007Cutoff< DiffusionType > CutoffFunctionType;
+    const CutoffFunctionType cutoff_function(test_.diffusion());
+    const  LocalOperator::Codim0Integral< LocalEvaluation::Product< CutoffFunctionType > >
+      local_eta_r_product(1, cutoff_function);
+    const auto eta_r_difference = test_.force() - p0_force;
+
+    const LocalOperator::Codim0Integral< LocalEvaluation::ESV2007::DiffusiveFluxEstimate< DiffusionType
+                                                                                        , RTN0DiscreteFunctionType > >
+      local_eta_df_product(1, test_.diffusion(), diffusive_flux);
+
+    // walk the grid
+    double eta = 0.0;
+    std::vector< DynamicMatrix< RangeFieldType > > tmp_matrices(std::max(std::max(local_eta_nc_product.numTmpObjectsRequired(),
+                                                                                  local_eta_r_product.numTmpObjectsRequired()),
+                                                                         local_eta_df_product.numTmpObjectsRequired()),
+                                                                DynamicMatrix< RangeFieldType >(1, 1, 0.0));
+    DynamicMatrix< RangeFieldType > local_result_matrix(1, 1, 0.0);
+    const auto entity_it_end = grid_view->template end< 0 >();
+    for (auto entity_it = grid_view->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+
+      local_result_matrix *= 0.0;
+      const auto local_eta_nc_difference = eta_nc_difference.local_function(entity);
+      local_eta_nc_product.apply(*local_eta_nc_difference, *local_eta_nc_difference, local_result_matrix, tmp_matrices);
+      assert(local_result_matrix.rows() >= 1);
+      assert(local_result_matrix.cols() >= 1);
+      const double eta_nc_t_squared = local_result_matrix[0][0];
+
+      local_result_matrix *= 0.0;
+      const auto local_eta_r_difference = eta_r_difference.local_function(entity);
+      local_eta_r_product.apply(*local_eta_r_difference, *local_eta_r_difference, local_result_matrix, tmp_matrices);
+      assert(local_result_matrix.rows() >= 1);
+      assert(local_result_matrix.cols() >= 1);
+      const double eta_r = std::sqrt(local_result_matrix[0][0]);
+
+      local_result_matrix *= 0.0;
+      const auto local_discrete_solution = discrete_solution.local_function(entity);
+      local_eta_df_product.apply(*local_discrete_solution, *local_discrete_solution, local_result_matrix, tmp_matrices);
+      assert(local_result_matrix.rows() >= 1);
+      assert(local_result_matrix.cols() >= 1);
+      const double eta_df = std::sqrt(local_result_matrix[0][0]);
+
+      eta += eta_nc_t_squared + std::pow(eta_r + eta_df, 2);
+    } // walk the grid
+    return std::sqrt(eta);
+  } // ... compute_estimator_ESV07(...)
+
+  double compute_efficiency_ESV07()
+  {
+    return compute_estimator_ESV07() / compute_energy_norm();
+  }
 
 #if 0
   double compute_residual_estimator_ESV10()
