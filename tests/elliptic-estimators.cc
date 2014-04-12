@@ -57,14 +57,16 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
     test_out << std::endl;
     EllipticSWIPDG::EstimatorStudy<TestCase> estimator_study(test_case);
     auto results = estimator_study.run(test_out);
+    std::stringstream ss;
     for (const auto& norm : estimator_study.provided_norms())
       if (!Dune::Stuff::Common::FloatCmp::lt(
               results[norm], truncate_vector(estimator_study.expected_results(norm), results[norm].size()))) {
-        std::stringstream ss;
-        Dune::Stuff::Common::print(results[norm], "errors           (" + norm + ")", ss);
+        Dune::Stuff::Common::print(results[norm], "   errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(estimator_study.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
       }
+    const std::string failure = ss.str();
+    if (!failure.empty())
+      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, "\n" << failure);
   } // ... produces_correct_results()
 }; // struct EllipticSWIPDGDiscretization
 
