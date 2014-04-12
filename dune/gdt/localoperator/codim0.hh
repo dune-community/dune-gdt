@@ -72,6 +72,12 @@ public:
   {}
 
   template< class... Args >
+  Codim0Integral(const int over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(over_integrate)
+  {}
+
+  template< class... Args >
   Codim0Integral(const size_t over_integrate, Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
