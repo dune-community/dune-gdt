@@ -27,8 +27,8 @@
 //#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
 #include <dune/gdt/playground/space/finitevolume.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operator/darcy.hh>
-#include <dune/gdt/operator/projections.hh>
+#include <dune/gdt/operators/darcy.hh>
+#include <dune/gdt/operators/projections.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
 
@@ -80,8 +80,8 @@ public:
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
     const FunctionType function("x", "-1.0", 0);
-    const GDT::Operator::DarcyReconstruction<GridViewType, FunctionType> darcy_operator(*(range_space.grid_view()),
-                                                                                        function);
+    const GDT::Operators::DarcyReconstruction<GridViewType, FunctionType> darcy_operator(*(range_space.grid_view()),
+                                                                                         function);
     darcy_operator.apply(source, range);
 
     const Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain> desired_output(

@@ -22,7 +22,7 @@
 #include <dune/gdt/space/tools.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operator/oswald.hh>
+#include <dune/gdt/operators/oswald.hh>
 
 class errors_are_not_as_expected : public Dune::Exception
 {
@@ -75,7 +75,7 @@ struct Oswald_Interpolation_Operator : public ::testing::Test
     source.visualize("source", false);
     VectorType range_vector(space.mapper().size());
     DiscreteFunctionType range(space, range_vector);
-    GDT::Operator::OswaldInterpolation<typename SpaceType::GridViewType> oswald_operator(*(space.grid_view()));
+    GDT::Operators::OswaldInterpolation<typename SpaceType::GridViewType> oswald_operator(*(space.grid_view()));
     oswald_operator.apply(source, range);
     range.visualize("range", false);
   } // ... produces_correct_results()

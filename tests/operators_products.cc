@@ -29,10 +29,10 @@
 #include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operator/projections.hh>
+#include <dune/gdt/operators/projections.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
-#include <dune/gdt/operator/prolongations.hh>
+#include <dune/gdt/operators/prolongations.hh>
 
 class errors_are_not_as_expected : public Dune::Exception
 {
