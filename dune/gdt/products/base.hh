@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCT_BASE_HH
-#define DUNE_GDT_PRODUCT_BASE_HH
+#ifndef DUNE_GDT_PRODUCTS_BASE_HH
+#define DUNE_GDT_PRODUCTS_BASE_HH
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/assembler/tmp-storage.hh>
@@ -14,7 +14,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Product {
+namespace Products {
 
 
 template< class Traits >
@@ -270,8 +270,8 @@ private:
 }; // class AssemblableBase
 
 
-} // namespace Product
+} // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCT_BASE_HH
+#endif // DUNE_GDT_PRODUCTS_BASE_HH

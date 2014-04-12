@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCT_ELLIPTIC_HH
-#define DUNE_GDT_PRODUCT_ELLIPTIC_HH
+#ifndef DUNE_GDT_PRODUCTS_ELLIPTIC_HH
+#define DUNE_GDT_PRODUCTS_ELLIPTIC_HH
 
 #include <type_traits>
 
@@ -19,7 +19,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Product {
+namespace Products {
 
 
 // forward, to be used in the traits
@@ -90,10 +90,10 @@ private:
 
 template< class DiffusionImp, class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
 class EllipticLocalizable
-  : public Product::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
+  : public Products::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
   , public EllipticBase< DiffusionImp, GridViewImp, FieldImp >
 {
-  typedef Product::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
+  typedef Products::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
     LocalizableBaseType;
   typedef EllipticBase< DiffusionImp, GridViewImp, FieldImp > EllipticBaseType;
 public:
@@ -146,10 +146,10 @@ private:
 
 template< class DiffusionImp, class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
 class EllipticAssemblable
-  : public Product::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  : public Products::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
   , public EllipticBase< DiffusionImp, GridViewImp, typename MatrixImp::ScalarType >
 {
-  typedef Product::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  typedef Products::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
     AssemblableBaseType;
   typedef EllipticBase< DiffusionImp, GridViewImp, typename MatrixImp::ScalarType > EllipticBaseType;
 public:
@@ -268,8 +268,8 @@ private:
 }; // class Elliptic
 
 
-} // namespace Operator
+} // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCT_ELLIPTIC_HH
+#endif // DUNE_GDT_PRODUCTS_ELLIPTIC_HH
