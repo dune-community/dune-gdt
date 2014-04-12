@@ -3,8 +3,8 @@
 // Copyright holders: Felix Albrecht
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_FUNCTIONAL_L2_HH
-#define DUNE_GDT_FUNCTIONAL_L2_HH
+#ifndef DUNE_GDT_FUNCTIONALS_L2_HH
+#define DUNE_GDT_FUNCTIONALS_L2_HH
 
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
@@ -17,7 +17,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Functional {
+namespace Functionals {
 
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType>
@@ -48,9 +48,9 @@ public:
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
 class L2Volume
-    : public Functional::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
+    : public Functionals::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
 {
-  typedef Functional::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
+  typedef Functionals::AssemblableVolumeBase<L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
 
 public:
   typedef L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
@@ -111,9 +111,9 @@ public:
 
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
-class L2Face : public Functional::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
+class L2Face : public Functionals::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
 {
-  typedef Functional::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
+  typedef Functionals::AssemblableFaceBase<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> BaseType;
 
 public:
   typedef L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
@@ -148,8 +148,8 @@ private:
 }; // class L2Face
 
 
-} // namespace Functional
+} // namespace Functionals
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_FUNCTIONAL_L2_HH
+#endif // DUNE_GDT_FUNCTIONALS_L2_HH
