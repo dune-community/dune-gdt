@@ -33,21 +33,21 @@
 
 namespace Dune {
 namespace GDT {
-namespace ProjectionOperator {
+namespace Operators {
 
 
 template <class GridViewImp, class FieldImp = double>
-class Lagrange;
+class LagrangeProjection;
 
 
 template <class GridViewImp, class FieldImp = double>
-class LagrangeTraits
+class LagrangeProjectionTraits
 {
 public:
-  typedef Lagrange<GridViewImp, FieldImp> derived_type;
+  typedef LagrangeProjection<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
-}; // class LagrangeTraits
+}; // class LagrangeProjectionTraits
 
 
 /**
@@ -57,10 +57,10 @@ public:
  *          tests/operators.cc!
  */
 template <class GridViewImp, class FieldImp>
-class Lagrange
+class LagrangeProjection
 {
 public:
-  typedef LagrangeTraits<GridViewImp, FieldImp> Traits;
+  typedef LagrangeProjectionTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
 
@@ -71,7 +71,7 @@ private:
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
 public:
-  Lagrange(const GridViewType& grid_view)
+  LagrangeProjection(const GridViewType& grid_view)
     : grid_view_(grid_view)
   {
   }
@@ -156,21 +156,21 @@ private:
   } // ... apply_local(...)
 
   const GridViewType& grid_view_;
-}; // class Lagrange
+}; // class LagrangeProjection
 
 
 template <class GridViewImp, class FieldImp = double>
-class L2;
+class L2Projection;
 
 
 template <class GridViewImp, class FieldImp = double>
-class L2Traits
+class L2ProjectionTraits
 {
 public:
-  typedef L2<GridViewImp, FieldImp> derived_type;
+  typedef L2Projection<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
-}; // class L2Traits
+}; // class L2ProjectionTraits
 
 
 /**
@@ -179,10 +179,10 @@ public:
  *          tests/operators.cc!
  */
 template <class GridViewImp, class FieldImp>
-class L2
+class L2Projection
 {
 public:
-  typedef L2Traits<GridViewImp, FieldImp> Traits;
+  typedef L2ProjectionTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
 
@@ -192,7 +192,7 @@ private:
   static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  L2(const GridViewType& grid_view)
+  L2Projection(const GridViewType& grid_view)
     : grid_view_(grid_view)
   {
   }
@@ -350,21 +350,21 @@ private:
   } // ... apply_global_l2_projection_(...)
 
   const GridViewType& grid_view_;
-}; // class L2
+}; // class L2Projection
 
 
 template <class GridViewImp, class FieldImp = double>
-class Generic;
+class Projection;
 
 
 template <class GridViewImp, class FieldImp>
-class GenericTraits
+class ProjectionTraits
 {
 public:
-  typedef Generic<GridViewImp, FieldImp> derived_type;
+  typedef Projection<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
-}; // class GenericTraits
+}; // class ProjectionTraits
 
 
 /**
@@ -373,10 +373,10 @@ public:
  *          tests/operators.cc!
  */
 template <class GridViewImp, class FieldImp>
-class Generic
+class Projection
 {
 public:
-  typedef GenericTraits<GridViewImp, FieldImp> Traits;
+  typedef ProjectionTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
 
@@ -386,7 +386,7 @@ private:
   static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  Generic(const GridViewType& grid_view)
+  Projection(const GridViewType& grid_view)
     : lagrange_operator_(grid_view)
     , l2_operator_(grid_view)
   {
@@ -439,18 +439,18 @@ private:
     l2_operator_.apply(source, range);
   }
 
-  const Lagrange<GridViewType> lagrange_operator_;
-  const L2<GridViewType> l2_operator_;
-}; // Generic
+  const LagrangeProjection<GridViewType> lagrange_operator_;
+  const L2Projection<GridViewType> l2_operator_;
+}; // Projection
 
 
 // forward, to be used in the traits
 template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double>
-class DirichletLocalizable;
+class DirichletProjectionLocalizable;
 
 
 template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp>
-class DirichletLocalizableTraits
+class DirichletProjectionLocalizableTraits
 {
   typedef typename RangeImp::SpaceType::Traits T;
   static const unsigned int d = RangeImp::dimDomain;
@@ -471,21 +471,22 @@ class DirichletLocalizableTraits
                 "SourceImp has to be derived from Stuff::LocalizableFunctionInterface!");
 
 public:
-  typedef DirichletLocalizable<GridViewImp, SourceImp, RangeImp> derived_type;
+  typedef DirichletProjectionLocalizable<GridViewImp, SourceImp, RangeImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
   typedef SourceImp SourceType;
   typedef RangeImp RangeType;
-}; // class DirichletLocalizableTraits
+}; // class DirichletProjectionLocalizableTraits
 
 
 template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp>
-class DirichletLocalizable
-    : public LocalizableOperatorInterface<DirichletLocalizableTraits<GridViewImp, SourceImp, RangeImp, FieldImp>>,
+class DirichletProjectionLocalizable
+    : public LocalizableOperatorInterface<DirichletProjectionLocalizableTraits<GridViewImp, SourceImp, RangeImp,
+                                                                               FieldImp>>,
       public Functor::Codim0<GridViewImp>
 {
 public:
-  typedef DirichletLocalizableTraits<GridViewImp, SourceImp, RangeImp, FieldImp> Traits;
+  typedef DirichletProjectionLocalizableTraits<GridViewImp, SourceImp, RangeImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::SourceType SourceType;
   typedef typename Traits::RangeType RangeType;
@@ -495,8 +496,8 @@ public:
   typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
 
 public:
-  DirichletLocalizable(const GridViewType& grid_view, const BoundaryInfoType& boundary_info, const SourceType& source,
-                       RangeType& range)
+  DirichletProjectionLocalizable(const GridViewType& grid_view, const BoundaryInfoType& boundary_info,
+                                 const SourceType& source, RangeType& range)
     : grid_view_(grid_view)
     , boundary_info_(boundary_info)
     , source_(source)
@@ -504,7 +505,7 @@ public:
   {
   }
 
-  virtual ~DirichletLocalizable()
+  virtual ~DirichletProjectionLocalizable()
   {
   }
 
@@ -556,20 +557,20 @@ private:
   const BoundaryInfoType& boundary_info_;
   const SourceType& source_;
   RangeType& range_;
-}; // class DirichletLocalizable
+}; // class DirichletProjectionLocalizable
 
 
 template <class GridViewImp>
-class Dirichlet;
+class DirichletProjection;
 
 
 template <class GridViewImp>
-class DirichletTraits
+class DirichletProjectionTraits
 {
 public:
-  typedef Dirichlet<GridViewImp> derived_type;
+  typedef DirichletProjection<GridViewImp> derived_type;
   typedef GridViewImp GridViewType;
-}; // class DirichletTraits
+}; // class DirichletProjectionTraits
 
 
 /**
@@ -580,10 +581,10 @@ public:
  *          tests/operators.cc!
  */
 template <class GridViewImp>
-class Dirichlet
+class DirichletProjection
 {
 public:
-  typedef DirichletTraits<GridViewImp> Traits;
+  typedef DirichletProjectionTraits<GridViewImp> Traits;
 
   typedef typename Traits::GridViewType GridViewType;
 
@@ -593,7 +594,7 @@ public:
   typedef Stuff::GridboundaryInterface<typename GridViewType::Intersection> BoundaryInfoType;
 
 public:
-  Dirichlet(const GridViewType& grid_view, const BoundaryInfoType& boundary_info)
+  DirichletProjection(const GridViewType& grid_view, const BoundaryInfoType& boundary_info)
     : grid_view_(grid_view)
     , boundary_info_(boundary_info)
   {
@@ -605,7 +606,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
     typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GV, p, R, r, rC>, V> RangeType;
-    DirichletLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
+    DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
   }
@@ -616,7 +617,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
     typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GV, p, R, r, rC>, V> RangeType;
-    DirichletLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
+    DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
   }
@@ -627,7 +628,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
     typedef DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GV, p, R, r, rC>, V> RangeType;
-    DirichletLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
+    DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
   }
@@ -635,10 +636,10 @@ public:
 private:
   const GridViewType& grid_view_;
   const BoundaryInfoType& boundary_info_;
-}; // class Dirichlet
+}; // class DirichletProjection
 
 
-} // namespace ProjectionOperator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 

@@ -404,7 +404,7 @@ struct L2AssemblableProduct : public ::testing::Test
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
-  typedef Dune::GDT::ProjectionOperator::Generic<GridViewType> ProjectionOperatorType;
+  typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
   typedef Dune::GDT::Products::L2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
 
   void produces_correct_results() const
@@ -619,7 +619,7 @@ struct H1SemiAssemblableProduct : public ::testing::Test
   typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
-  typedef Dune::GDT::ProjectionOperator::Generic<GridViewType> ProjectionOperatorType;
+  typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
   typedef Dune::GDT::Products::H1SemiAssemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
 
   void produces_correct_results() const
@@ -733,7 +733,7 @@ struct ProjectionOperatorBase
 
 template <class SpaceType>
 struct L2ProjectionOperator
-    : public ProjectionOperatorBase<SpaceType, Dune::GDT::ProjectionOperator::L2<typename SpaceType::GridViewType>>,
+    : public ProjectionOperatorBase<SpaceType, Dune::GDT::Operators::L2Projection<typename SpaceType::GridViewType>>,
       public ::testing::Test
 {
 };
@@ -741,15 +741,14 @@ struct L2ProjectionOperator
 template <class SpaceType>
 struct LagrangeProjectionOperator
     : public ProjectionOperatorBase<SpaceType,
-                                    Dune::GDT::ProjectionOperator::Lagrange<typename SpaceType::GridViewType>>,
+                                    Dune::GDT::Operators::LagrangeProjection<typename SpaceType::GridViewType>>,
       public ::testing::Test
 {
 };
 
 template <class SpaceType>
 struct ProjectionOperator
-    : public ProjectionOperatorBase<SpaceType,
-                                    Dune::GDT::ProjectionOperator::Generic<typename SpaceType::GridViewType>>,
+    : public ProjectionOperatorBase<SpaceType, Dune::GDT::Operators::Projection<typename SpaceType::GridViewType>>,
       public ::testing::Test
 {
 };
@@ -786,8 +785,8 @@ struct DirichletProjectionOperator : public ::testing::Test
     typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
     DiscreteFunctionType discrete_function(space, vector, "discrete function");
     // project
-    const Dune::GDT::ProjectionOperator::Dirichlet<GridViewType> projection_operator(*(space.grid_view()),
-                                                                                     boundary_info);
+    const Dune::GDT::Operators::DirichletProjection<GridViewType> projection_operator(*(space.grid_view()),
+                                                                                      boundary_info);
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
@@ -835,7 +834,7 @@ struct ProlongationOperatorBase
     VectorType coarse_vector(coarse_space.mapper().size());
     typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;
     CoarseDiscreteFunctionType coarse_discrete_function(coarse_space, coarse_vector, "coarse discrete function");
-    const Dune::GDT::ProjectionOperator::Generic<GridViewType> coarse_projection_operator(*(coarse_space.grid_view()));
+    const Dune::GDT::Operators::Projection<GridViewType> coarse_projection_operator(*(coarse_space.grid_view()));
     coarse_projection_operator.apply(function, coarse_discrete_function);
     // since the projection operator was tested above we are confident this worked
     // but we check anyway (the L2 product operator was also tested above)
@@ -867,15 +866,16 @@ struct ProlongationOperatorBase
 template <class P>
 struct L2ProlongationOperator
     : public ProlongationOperatorBase<typename P::first_type, typename P::second_type,
-                                      Dune::GDT::ProlongationOperator::L2<typename P::second_type::GridViewType>>,
+                                      Dune::GDT::Operators::L2Prolongation<typename P::second_type::GridViewType>>,
       public ::testing::Test
 {
 };
 
 template <class P>
 struct LagrangeProlongationOperator
-    : public ProlongationOperatorBase<typename P::first_type, typename P::second_type,
-                                      Dune::GDT::ProlongationOperator::Lagrange<typename P::second_type::GridViewType>>,
+    : public ProlongationOperatorBase<
+          typename P::first_type, typename P::second_type,
+          Dune::GDT::Operators::LagrangeProlongation<typename P::second_type::GridViewType>>,
       public ::testing::Test
 {
 };
@@ -883,7 +883,7 @@ struct LagrangeProlongationOperator
 template <class P>
 struct ProlongationOperator
     : public ProlongationOperatorBase<typename P::first_type, typename P::second_type,
-                                      Dune::GDT::ProlongationOperator::Generic<typename P::second_type::GridViewType>>,
+                                      Dune::GDT::Operators::Prolongation<typename P::second_type::GridViewType>>,
       public ::testing::Test
 {
 };

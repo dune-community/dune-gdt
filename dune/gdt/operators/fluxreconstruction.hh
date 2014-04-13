@@ -22,7 +22,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace ReconstructionOperator {
+namespace Operators {
 
 
 /**
@@ -30,7 +30,7 @@ namespace ReconstructionOperator {
  *  \todo Derived from operator interfaces.
  */
 template <class GridViewType, class LocalizableFunctionType>
-class DiffusiveFlux
+class DiffusiveFluxReconstruction
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
@@ -47,7 +47,7 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFlux(const GridViewType& grid_view, const LocalizableFunctionType& diffusion)
+  DiffusiveFluxReconstruction(const GridViewType& grid_view, const LocalizableFunctionType& diffusion)
     : grid_view_(grid_view)
     , diffusion_(diffusion)
   {
@@ -194,10 +194,10 @@ public:
 private:
   const GridViewType& grid_view_;
   const LocalizableFunctionType& diffusion_;
-}; // class DiffusiveFlux
+}; // class DiffusiveFluxReconstruction
 
 
-} // namespace ReconstructionOperator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 

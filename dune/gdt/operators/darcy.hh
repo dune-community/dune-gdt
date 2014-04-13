@@ -28,11 +28,11 @@ namespace Operators {
 
 // forward, to be used in the traits
 template <class GridViewImp, class FunctionImp>
-class DarcyReconstruction;
+class Darcy;
 
 
 template <class GridViewImp, class FunctionImp>
-class DarcyReconstructionTraits
+class DarcyTraits
 {
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, FunctionImp>::value,
                 "FunctionImp has to be derived from Stuff::IsLocalizableFunction!");
@@ -41,20 +41,20 @@ class DarcyReconstructionTraits
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
 
 public:
-  typedef DarcyReconstruction<GridViewImp, FunctionImp> derived_type;
+  typedef Darcy<GridViewImp, FunctionImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef typename FunctionImp::RangeFieldType FieldType;
-}; // class DarcyReconstructionTraits
+}; // class DarcyTraits
 
 
 /**
   * \note Only works for scalar valued function atm.
   **/
 template <class GridViewImp, class FunctionImp>
-class DarcyReconstruction : public OperatorInterface<DarcyReconstructionTraits<GridViewImp, FunctionImp>>
+class Darcy : public OperatorInterface<DarcyTraits<GridViewImp, FunctionImp>>
 {
 public:
-  typedef DarcyReconstructionTraits<GridViewImp, FunctionImp> Traits;
+  typedef DarcyTraits<GridViewImp, FunctionImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
 
@@ -62,7 +62,7 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  DarcyReconstruction(const GridViewType& grid_view, const FunctionImp& function)
+  Darcy(const GridViewType& grid_view, const FunctionImp& function)
     : grid_view_(grid_view)
     , function_(function)
   {
@@ -242,7 +242,7 @@ public:
 private:
   const GridViewType& grid_view_;
   const FunctionImp& function_;
-}; // class DarcyReconstruction
+}; // class Darcy
 
 
 } // namespace Operators

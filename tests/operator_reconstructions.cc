@@ -80,8 +80,7 @@ public:
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
     const FunctionType function("x", "-1.0", 0);
-    const GDT::Operators::DarcyReconstruction<GridViewType, FunctionType> darcy_operator(*(range_space.grid_view()),
-                                                                                         function);
+    const Operators::Darcy<GridViewType, FunctionType> darcy_operator(*(range_space.grid_view()), function);
     darcy_operator.apply(source, range);
 
     const Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain> desired_output(
@@ -120,7 +119,7 @@ private:
       const FvSpaceType fv_space(grid_view_ptr);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
       Dune::GDT::DiscreteFunction<FvSpaceType, VectorType> fv_desired_output(fv_space, fv_desired_output_vector);
-      const Dune::GDT::ProjectionOperator::L2<GV> l2_projection(*grid_view_ptr);
+      const Dune::GDT::Operators::L2Projection<GV> l2_projection(*grid_view_ptr);
       l2_projection.apply(desired_output, fv_desired_output);
       const Dune::GDT::Products::L2<GV> l2_product(*grid_view_ptr);
       const Dune::GDT::Products::H1SemiGeneric<GV> h1_semi_product(*grid_view_ptr);
