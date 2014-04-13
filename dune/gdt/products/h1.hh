@@ -61,9 +61,9 @@ class H1SemiBase
   typedef typename H1SemiTraits<GridViewImp, FieldImp>::LocalOperatorType LocalOperatorType;
 
 public:
-  H1SemiBase()
+  H1SemiBase(const size_t over_integrate = 0)
     : function_(1)
-    , local_operator_(function_)
+    , local_operator_(over_integrate, function_)
   {
   }
 
@@ -94,7 +94,9 @@ class H1SemiLocalizable
     : public Products::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>>,
       public H1SemiBase<GridViewImp, FieldImp>
 {
-  typedef Products::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>> BaseType;
+  typedef Products::LocalizableBase<H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp>>
+      LocalizableBaseType;
+  typedef H1SemiBase<GridViewImp, FieldImp> H1SemiBaseType;
 
 public:
   typedef H1SemiLocalizableTraits<GridViewImp, RangeImp, SourceImp, FieldImp> Traits;
@@ -106,13 +108,16 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
-    : BaseType(grid_view, range, source)
+  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
+                    const size_t over_integrate = 0)
+    : LocalizableBaseType(grid_view, range, source)
+    , H1SemiBaseType(over_integrate)
   {
   }
 
-  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range)
-    : BaseType(grid_view, range)
+  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const size_t over_integrate = 0)
+    : LocalizableBaseType(grid_view, range)
+    , H1SemiBaseType(over_integrate)
   {
   }
 
@@ -144,7 +149,8 @@ class H1SemiAssemblable
       public H1SemiBase<GridViewImp, typename MatrixImp::ScalarType>
 {
   typedef Products::AssemblableBase<H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>>
-      BaseType;
+      AssemblableBaseType;
+  typedef H1SemiBase<GridViewImp, typename MatrixImp::ScalarType> H1SemiBaseType;
 
 public:
   typedef H1SemiAssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp> Traits;
@@ -157,7 +163,7 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  using BaseType::pattern;
+  using AssemblableBaseType::pattern;
 
   static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
                                                    const SourceSpaceType& source_space, const GridViewType& grid_view)
@@ -166,18 +172,22 @@ public:
   }
 
   H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const GridViewType& grid_view,
-                    const SourceSpaceType& source_space)
-    : BaseType(matrix, range_space, grid_view, source_space)
+                    const SourceSpaceType& source_space, const size_t over_integrate = 0)
+    : AssemblableBaseType(matrix, range_space, grid_view, source_space)
+    , H1SemiBaseType(over_integrate)
   {
   }
 
-  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const GridViewType& grid_view)
-    : BaseType(matrix, range_space, grid_view, range_space)
+  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const GridViewType& grid_view,
+                    const size_t over_integrate = 0)
+    : AssemblableBaseType(matrix, range_space, grid_view, range_space)
+    , H1SemiBaseType(over_integrate)
   {
   }
 
-  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space)
-    : BaseType(matrix, range_space, *(range_space.grid_view()), range_space)
+  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const size_t over_integrate = 0)
+    : AssemblableBaseType(matrix, range_space, *(range_space.grid_view()), range_space)
+    , H1SemiBaseType(over_integrate)
   {
   }
 
@@ -215,8 +225,9 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  H1SemiGeneric(const GridViewType& grid_view)
+  H1SemiGeneric(const GridViewType& grid_view, const size_t over_integrate = 0)
     : grid_view_(grid_view)
+    , over_integrate_(over_integrate)
   {
   }
 
@@ -242,12 +253,14 @@ public:
     typedef Stuff::
         LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols>
             FunctionType;
-    H1SemiLocalizable<GridViewType, FunctionType, FunctionType, FieldType> product_operator(grid_view_, range, source);
+    H1SemiLocalizable<GridViewType, FunctionType, FunctionType, FieldType> product_operator(
+        grid_view_, range, source, over_integrate_);
     return product_operator.apply2();
   } // ... apply2(...)
 
 private:
   const GridViewType& grid_view_;
+  const size_t over_integrate_;
 }; // class H1SemiGeneric
 
 
