@@ -57,7 +57,7 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test
   }
 
   template <class T, int d, class R, int r, int rC>
-  void matches_signature(const Dune::GDT::ContinuousLagrangeSpaceBase<T, d, R, r, rC>& /*space*/)
+  void matches_signature(const Dune::GDT::Spaces::ContinuousLagrangeBase<T, d, R, r, rC>& /*space*/)
   {
     static_assert(std::is_same<typename SpaceType::Traits, T>::value, "");
     static_assert(std::is_same<typename SpaceType::RangeFieldType, R>::value, "");
@@ -218,87 +218,87 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test
 //#endif
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_FEM                                                                              \
-  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dLeafGridPartType, 1, double, 1>,                                   \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                                  \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<Yasp1dLeafGridPartType, 1, double, 1>
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS                                                               \
-  Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dLeafGridPartType, 1, double, 1>,                     \
-      Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 1, double, 1>,                    \
+      Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 1, double, 1>
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                           \
-  Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<S1dLeafGridViewType, 1, double, 1>,                                \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp1dLeafGridViewType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<S1dLeafGridViewType, 1, double, 1>,                               \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 1, double, 1>
 
 #if HAVE_ALUGRID
 #define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                      \
-  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLeafGridPartType, 1, double, 1>,                          \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLeafGridPartType, 1, double, 1>,                      \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,                         \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 1>,                     \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 1>
 
 #define P1D_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                     \
-  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLeafGridPartType, 1, double, 2>,                          \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex2dLeafGridPartType, 1, double, 2>,                      \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluSimplex3dLeafGridPartType, 1, double, 3>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 2>,                         \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 2>,                     \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 3>
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                       \
-  Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 1, double, 1>,            \
-      Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 1, double, 1>,        \
-      Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 1, double, 1>,           \
+      Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 1, double, 1>,       \
+      Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<AluSimplex3dLeafGridPartType, 1, double, 1>
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                   \
-  Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<AluConform2dLeafGridViewType, 1, double, 1>,                       \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<AluSimplex2dLeafGridViewType, 1, double, 1>,                   \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<AluSimplex3dLeafGridViewType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluConform2dLeafGridViewType, 1, double, 1>,                      \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluSimplex2dLeafGridViewType, 1, double, 1>,                  \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluSimplex3dLeafGridViewType, 1, double, 1>
 #endif // HAVE_ALUGRID
 
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_FEM                                                                              \
-  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S1dLeafGridPartType, 1, double, 1>,                                   \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S2dLeafGridPartType, 1, double, 1>,                               \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<S3dLeafGridPartType, 1, double, 1>,                               \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp1dLeafGridPartType, 1, double, 1>,                            \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp2dLeafGridPartType, 1, double, 1>,                            \
-      Dune::GDT::ContinuousLagrangeSpace::FemWrapper<Yasp3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                                  \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<S2dLeafGridPartType, 1, double, 1>,                              \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<S3dLeafGridPartType, 1, double, 1>,                              \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<Yasp1dLeafGridPartType, 1, double, 1>,                           \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<Yasp2dLeafGridPartType, 1, double, 1>,                           \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<Yasp3dLeafGridPartType, 1, double, 1>
 
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS                                                               \
-  Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dLeafGridPartType, 1, double, 1>,                     \
-      Dune::GDT::ContinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 1, double, 1>,                    \
+      Dune::GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 1, double, 1>
 
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                           \
-  Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<S1dLeafGridViewType, 1, double, 1>,                                \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<S2dLeafGridViewType, 1, double, 1>,                            \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<S3dLeafGridViewType, 1, double, 1>,                            \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp1dLeafGridViewType, 1, double, 1>,                         \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp2dLeafGridViewType, 1, double, 1>,                         \
-      Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<Yasp3dLeafGridViewType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<S1dLeafGridViewType, 1, double, 1>,                               \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<S2dLeafGridViewType, 1, double, 1>,                           \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<S3dLeafGridViewType, 1, double, 1>,                           \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 1, double, 1>,                        \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<Yasp2dLeafGridViewType, 1, double, 1>,                        \
+      Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<Yasp3dLeafGridViewType, 1, double, 1>
 
 #if HAVE_ALUGRID
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                      \
-  Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluCube3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluCube3dLeafGridPartType, 1, double, 1>
 
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                   \
-  Dune::GDT::ContinuousLagrangeSpace::PdelabWrapper<AluCube3dLeafGridViewType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 1, double, 1>
 #endif
 
 #define DISCONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS                                                               \
-  Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dLeafGridPartType, 1, double, 1>,                  \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<S1dLeafGridPartType, 2, double, 1>,              \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dLeafGridPartType, 1, double, 1>,           \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<Yasp1dLeafGridPartType, 2, double, 1>
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 1, double, 1>,                 \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 2, double, 1>,             \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 1, double, 1>,          \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 2, double, 1>
 
 #if HAVE_ALUGRID
 #define DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                       \
-  Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 1, double, 1>,         \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 2, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 1, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 2, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dLeafGridPartType, 1, double, 1>,     \
-      Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluSimplex3dLeafGridPartType, 2, double, 1>
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 1, double, 1>,        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 2, double, 1>,    \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 1, double, 1>,    \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 2, double, 1>,    \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex3dLeafGridPartType, 1, double, 1>,    \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex3dLeafGridPartType, 2, double, 1>
 #endif // HAVE_ALUGRID
 
 #if HAVE_ALUGRID
 #define RTN0_RAVIART_THOMAS_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                          \
-  Dune::GDT::RaviartThomasSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 0, double, 2>,                 \
-      Dune::GDT::RaviartThomasSpace::FemLocalfunctionsWrapper<AluSimplex2dLeafGridPartType, 0, double, 2>
+  Dune::GDT::Spaces::RaviartThomas::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 0, double, 2>,                \
+      Dune::GDT::Spaces::RaviartThomas::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 0, double, 2>
 #endif // HAVE_ALUGRID
 
 typedef testing::Types<

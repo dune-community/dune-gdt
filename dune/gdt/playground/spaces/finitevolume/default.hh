@@ -6,13 +6,14 @@
 #ifndef DUNE_GDT_SPACE_FINITEVOLUME_HH
 #define DUNE_GDT_SPACE_FINITEVOLUME_HH
 
-#include "../mapper/finitevolume.hh"
-#include "../basefunctionset/finitevolume.hh"
-#include "../../spaces/interface.hh"
+#include "../../mapper/finitevolume.hh"
+#include "../../basefunctionset/finitevolume.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {
-namespace FiniteVolumeSpace {
+namespace Spaces {
+namespace FiniteVolume {
 
 
 // forward, to be used in the traits and to allow for specialization
@@ -24,7 +25,7 @@ class Default
 
 
 /**
- *  \brief Traits class for ContinuousLagrangeSpace::FemWrapper.
+ *  \brief Traits class for Spaces::ContinuousLagrange::FemBased.
  */
 template <class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols>
 class DefaultTraits
@@ -132,7 +133,8 @@ private:
 }; // class Default< ..., 1, 1 >
 
 
-} // namespace FiniteVolumeSpace
+} // namespace FiniteVolume
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

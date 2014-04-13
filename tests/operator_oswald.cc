@@ -95,8 +95,8 @@ typedef
 // typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type
 // AluSimplex3dLeafGridPartType;
 
-typedef testing::Types<Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<AluConform2dLeafGridPartType, 1,
-                                                                                       double, 1>> SpaceTypes;
+typedef testing::Types<Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 1,
+                                                                                        double, 1>> SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine all test structs with their appropriate arguments to create the tests |

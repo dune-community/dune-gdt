@@ -29,7 +29,8 @@
 
 namespace Dune {
 namespace GDT {
-namespace RaviartThomasSpace {
+namespace Spaces {
+namespace RaviartThomas {
 
 #if HAVE_DUNE_PDELAB
 
@@ -289,7 +290,8 @@ class PdelabBased
 
 #endif // HAVE_DUNE_PDELAB
 
-} // namespace RaviartThomasSpace
+} // namespace RaviartThomas
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

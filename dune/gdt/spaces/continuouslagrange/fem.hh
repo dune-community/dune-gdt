@@ -19,32 +19,30 @@
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem.hh"
 
-#include "../continuouslagrange.hh"
+#include "base.hh"
 #include "../constraints.hh"
 
 namespace Dune {
 namespace GDT {
-namespace ContinuousLagrangeSpace {
+namespace Spaces {
+namespace ContinuousLagrange {
 
 #if HAVE_DUNE_FEM
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class FemWrapper
+class FemBased
 {
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
 };
 
 
-/**
- *  \brief Traits class for ContinuousLagrangeSpace::FemWrapper.
- */
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class FemWrapperTraits
+class FemBasedTraits
 {
 public:
-  typedef FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
   static const int polOrder = polynomialOrder;
@@ -72,18 +70,18 @@ public:
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
-// untested for the vector-valued case, especially ContinuousLagrangeSpaceBase
+// untested for the vector-valued case, especially Spaces::ContinuousLagrangeBase
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim>
-class FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public ContinuousLagrangeSpaceBase<FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                                         GridPartImp::dimension, RangeFieldImp, rangeDim, 1>
+class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
+    : public Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
+                                            GridPartImp::dimension, RangeFieldImp, rangeDim, 1>
 {
-  typedef ContinuousLagrangeSpaceBase<FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                                      GridPartImp::dimension, RangeFieldImp, rangeDim, 1> BaseType;
-  typedef FemWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
+                                         GridPartImp::dimension, RangeFieldImp, rangeDim, 1> BaseType;
+  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
-  typedef FemWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
+  typedef FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
@@ -101,7 +99,7 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  FemWrapper(const std::shared_ptr<const GridPartType>& gridP)
+  FemBased(const std::shared_ptr<const GridPartType>& gridP)
     : gridPart_(gridP)
     , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
@@ -111,7 +109,7 @@ public:
   {
   }
 
-  FemWrapper(const ThisType& other)
+  FemBased(const ThisType& other)
     : gridPart_(other.gridPart_)
     , gridView_(other.gridView_)
     , backend_(other.backend_)
@@ -134,7 +132,7 @@ public:
     return *this;
   }
 
-  ~FemWrapper()
+  ~FemBased()
   {
   }
 
@@ -170,14 +168,14 @@ private:
   std::shared_ptr<const MapperType> mapper_;
   mutable Dune::DynamicVector<size_t> tmpMappedRows_;
   mutable Dune::DynamicVector<size_t> tmpMappedCols_;
-}; // class FemWrapper< ..., 1 >
+}; // class FemBased< ..., 1 >
 
 
 #else // HAVE_DUNE_FEM
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class FemWrapper
+class FemBased
 {
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "You are missing dune-fem!");
 };
@@ -185,7 +183,8 @@ class FemWrapper
 
 #endif // HAVE_DUNE_FEM
 
-} // namespace ContinuousLagrangeSpace
+} // namespace ContinuousLagrange
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

@@ -21,13 +21,13 @@
 
 #include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/continuouslagrange.hh>
+#include <dune/gdt/spaces/continuouslagrange/base.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
-#include <dune/gdt/playground/spaces/finitevolume.hh>
+#include <dune/gdt/playground/spaces/finitevolume/default.hh>
 
 #include "interfaces.hh"
 
@@ -85,10 +85,10 @@ public:
 
   template <class GP, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::FemBased<GP, 1, R, r, 1>, V>& range) const
   {
     // checks
-    typedef ContinuousLagrangeSpace::FemWrapper<GP, 1, R, r, 1> SpaceType;
+    typedef Spaces::ContinuousLagrange::FemBased<GP, 1, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // set all dofs to infinity
     const auto infinity = std::numeric_limits<R>::infinity();
@@ -108,20 +108,20 @@ public:
       // and do the work (see below)
       apply_local(points, *local_source, local_range_DoF_vector);
     } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemWrapper< GP, 1, R, r, 1 > ...)
+  } // ... apply(... Spaces::ContinuousLagrange::FemBased< GP, 1, R, r, 1 > ...)
 
   template <class GP, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GP, 1, R, r, 1>, V>& range) const
   {
     // checks
-    typedef ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1> SpaceType;
+    typedef Spaces::ContinuousLagrange::FemLocalfunctionsBased<GP, 1, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // set all dofs to infinity
     const auto infinity = std::numeric_limits<R>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set_entry(ii, infinity);
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, 1, R, r, 1>, V> RangeFunctionType;
+    typedef DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GP, 1, R, r, 1>, V> RangeFunctionType;
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -133,7 +133,7 @@ public:
       // and do the work (see below)
       apply_local(lagrange_points, *local_source, local_range_DoF_vector);
     } // walk the grid
-  } // ... apply(... ContinuousLagrangeSpace::FemLocalfunctionsWrapper< GP, 1, R, r, 1 > ...)
+  } // ... apply(... Spaces::ContinuousLagrange::FemLocalfunctionsBased< GP, 1, R, r, 1 > ...)
 
 private:
   template <class LagrangePointsType, class LocalSourceType, class LocalRangeVectorType>
@@ -206,26 +206,26 @@ public:
 
   template <class GP, int p, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
-             DiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1>, V>& range) const
+             DiscreteFunction<Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<GP, p, R, r, 1>, V>& range) const
   {
     // checks
-    typedef DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, R, r, 1> SpaceType;
+    typedef Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<GP, p, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
-  } // ... apply(... DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< ..., 1 > ...)
+  } // ... apply(... Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< ..., 1 > ...)
 
   template <class E, class D, int d, class R, int r, class GV, class V>
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, 1>& source,
-             DiscreteFunction<FiniteVolumeSpace::Default<GV, R, r, 1>, V>& range) const
+             DiscreteFunction<Spaces::FiniteVolume::Default<GV, R, r, 1>, V>& range) const
   {
-    typedef FiniteVolumeSpace::Default<GV, R, r, 1> SpaceType;
+    typedef Spaces::FiniteVolume::Default<GV, R, r, 1> SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
-  } // ... apply(... FiniteVolumeSpace::Default< ..., 1 > ...)
+  } // ... apply(... Spaces::FiniteVolume::Default< ..., 1 > ...)
 
   template <class GP, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, FieldType, dimDomain, 1>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::FemBased<GP, p, FieldType, dimDomain, 1>, V>& range) const
   {
     apply_global_l2_projection_(source, range);
   }
@@ -233,7 +233,7 @@ public:
   template <class GP, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, dimDomain, 1>&
                  source,
-             DiscreteFunction<RaviartThomasSpace::PdelabBased<GP, p, FieldType, dimDomain, 1>, V>& range) const
+             DiscreteFunction<Spaces::RaviartThomas::PdelabBased<GP, p, FieldType, dimDomain, 1>, V>& range) const
   {
     apply_global_l2_projection_(source, range);
   } // ... apply(...)
@@ -410,7 +410,7 @@ private:
   template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
   inline void redirect_to_appropriate_operator(
       const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
-      DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GP, p, RR, rR, rCR>, V>& range) const
+      DiscreteFunction<Spaces::ContinuousLagrange::FemBased<GP, p, RR, rR, rCR>, V>& range) const
   {
     lagrange_operator_.apply(source, range);
   }
@@ -418,7 +418,7 @@ private:
   template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
   inline void redirect_to_appropriate_operator(
       const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
-      DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, RR, rR, rCR>, V>& range) const
+      DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GP, p, RR, rR, rCR>, V>& range) const
   {
     lagrange_operator_.apply(source, range);
   }
@@ -426,7 +426,7 @@ private:
   template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
   inline void redirect_to_appropriate_operator(
       const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
-      DiscreteFunction<DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GP, p, RR, rR, rCR>, V>& range) const
+      DiscreteFunction<Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<GP, p, RR, rR, rCR>, V>& range) const
   {
     l2_operator_.apply(source, range);
   }
@@ -434,7 +434,7 @@ private:
   template <class E, class D, int d, class RS, int rS, int rCS, class GV, class RR, int rR, int rCR, class V>
   inline void
   redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
-                                   DiscreteFunction<FiniteVolumeSpace::Default<GV, RR, rR, rCR>, V>& range) const
+                                   DiscreteFunction<Spaces::FiniteVolume::Default<GV, RR, rR, rCR>, V>& range) const
   {
     l2_operator_.apply(source, range);
   }
@@ -457,8 +457,8 @@ class DirichletProjectionLocalizableTraits
   typedef typename RangeImp::RangeFieldType R;
   static const unsigned int r  = RangeImp::dimRange;
   static const unsigned int rC = RangeImp::dimRangeCols;
-  static_assert(std::is_base_of<ContinuousLagrangeSpaceBase<T, d, R, r, rC>, typename RangeImp::SpaceType>::value,
-                "The SpaceType of RangeImp has to be derived from ContinuousLagrangeSpaceBase!");
+  static_assert(std::is_base_of<Spaces::ContinuousLagrangeBase<T, d, R, r, rC>, typename RangeImp::SpaceType>::value,
+                "The SpaceType of RangeImp has to be derived from Spaces::ContinuousLagrangeBase!");
   static_assert(r == 1, "Not implemeneted for higher dimensions!");
   static_assert(rC == 1, "Not implemeneted for higher dimensions!");
   typedef typename SourceImp::EntityType E;
@@ -602,10 +602,10 @@ public:
 
   template <class R, int r, int rC, class GV, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GV, p, R, r, rC>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::FemBased<GV, p, R, r, rC>, V>& range) const
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemWrapper<GV, p, R, r, rC>, V> RangeType;
+    typedef DiscreteFunction<Spaces::ContinuousLagrange::FemBased<GV, p, R, r, rC>, V> RangeType;
     DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
@@ -613,10 +613,10 @@ public:
 
   template <class R, int r, int rC, class GV, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GV, p, R, r, rC>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GV, p, R, r, rC>, V>& range) const
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
-    typedef DiscreteFunction<ContinuousLagrangeSpace::FemLocalfunctionsWrapper<GV, p, R, r, rC>, V> RangeType;
+    typedef DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GV, p, R, r, rC>, V> RangeType;
     DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
@@ -624,10 +624,10 @@ public:
 
   template <class R, int r, int rC, class GV, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& source,
-             DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GV, p, R, r, rC>, V>& range) const
+             DiscreteFunction<Spaces::ContinuousLagrange::PdelabBased<GV, p, R, r, rC>, V>& range) const
   {
     typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC> SourceType;
-    typedef DiscreteFunction<ContinuousLagrangeSpace::PdelabWrapper<GV, p, R, r, rC>, V> RangeType;
+    typedef DiscreteFunction<Spaces::ContinuousLagrange::PdelabBased<GV, p, R, r, rC>, V> RangeType;
     DirichletProjectionLocalizable<GridViewType, SourceType, RangeType> localizable_operator(
         grid_view_, boundary_info_, source, range);
     localizable_operator.apply();

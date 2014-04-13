@@ -15,25 +15,26 @@
 
 #include <dune/stuff/common/exceptions.hh>
 
-#include "interface.hh"
+#include "../interface.hh"
 
 namespace Dune {
 namespace GDT {
+namespace Spaces {
 
 
 // forward, to allow for specialization
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class ContinuousLagrangeSpaceBase
+class ContinuousLagrangeBase
 {
   static_assert(AlwaysFalse<ImpTraits>::value, "Untested for these dimensions!");
 };
 
 
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
-class ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> : public SpaceInterface<ImpTraits>
+class ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> : public SpaceInterface<ImpTraits>
 {
   typedef SpaceInterface<ImpTraits> BaseType;
-  typedef ContinuousLagrangeSpaceBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -53,7 +54,7 @@ public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
-  virtual ~ContinuousLagrangeSpaceBase()
+  virtual ~ContinuousLagrangeBase()
   {
   }
 
@@ -234,9 +235,10 @@ public:
 protected:
   mutable Dune::DynamicVector<size_t> tmpMappedRows_;
   mutable Dune::DynamicVector<size_t> tmpMappedCols_;
-}; // class ContinuousLagrangeSpaceBase
+}; // class ContinuousLagrangeBase
 
 
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

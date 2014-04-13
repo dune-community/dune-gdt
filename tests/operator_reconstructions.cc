@@ -24,7 +24,7 @@
 
 #include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/playground/spaces/finitevolume.hh>
+#include <dune/gdt/playground/spaces/finitevolume/default.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/darcy.hh>
 #include <dune/gdt/operators/projections.hh>
@@ -104,7 +104,7 @@ private:
                                   const std::shared_ptr<const GV>& grid_view_ptr) const
   {
     typedef typename Dune::GDT::SpaceTools::LeafGridPartView<GridType, RangeSpaceType::needs_grid_view>::Type GPV;
-    if (std::is_base_of<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<GPV, 1, RangeFieldType, dimDomain>,
+    if (std::is_base_of<Dune::GDT::Spaces::ContinuousLagrange::FemBased<GPV, 1, RangeFieldType, dimDomain>,
                         RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;
@@ -112,9 +112,9 @@ private:
         return 3.12e-15;
       else
         DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, type);
-    } else if (std::is_base_of<Dune::GDT::RaviartThomasSpace::PdelabBased<GPV, 0, RangeFieldType, dimDomain>,
+    } else if (std::is_base_of<Dune::GDT::Spaces::RaviartThomas::PdelabBased<GPV, 0, RangeFieldType, dimDomain>,
                                RangeSpaceType>::value) {
-      typedef Dune::GDT::FiniteVolumeSpace::Default<GV, RangeFieldType, dimDomain> FvSpaceType;
+      typedef Dune::GDT::Spaces::FiniteVolume::Default<GV, RangeFieldType, dimDomain> FvSpaceType;
       const FvSpaceType fv_space(grid_view_ptr);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
       Dune::GDT::DiscreteFunction<FvSpaceType, VectorType> fv_desired_output(fv_space, fv_desired_output_vector);
@@ -143,10 +143,11 @@ typedef
     typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, false>::Type AluConform2dLeafGridPartType;
 
 typedef testing::
-    Types<std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLeafGridPartType, 1, double, 1>,
-                    Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLeafGridPartType, 1, double, 2>>,
-          std::pair<Dune::GDT::ContinuousLagrangeSpace::FemWrapper<AluConform2dLeafGridPartType, 1, double, 1>,
-                    Dune::GDT::RaviartThomasSpace::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>> SpaceTypes;
+    Types<std::pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
+                    Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 2>>,
+          std::pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
+                    Dune::GDT::Spaces::RaviartThomas::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>>
+        SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine all test structs with their appropriate arguments to create the tests |

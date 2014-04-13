@@ -66,8 +66,8 @@ public:
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
 
-  typedef Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType,
-                                                                          dimRange> SpaceType;
+  typedef Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<GridPartType, polOrder, RangeFieldType,
+                                                                           dimRange> SpaceType;
 
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;

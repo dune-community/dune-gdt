@@ -24,31 +24,29 @@
 #include "../../mapper/pdelab.hh"
 #include "../../basefunctionset/pdelab.hh"
 
-#include "../continuouslagrange.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
-namespace ContinuousLagrangeSpace {
+namespace Spaces {
+namespace ContinuousLagrange {
 
 #if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class PdelabWrapper
+class PdelabBased
 {
   static_assert((Dune::AlwaysFalse<GridViewImp>::value), "Untested for this combination of dimensions!");
 };
 
 
-/**
- *  \brief Traits class for ContinuousLagrangeSpace::PdelabWrapper.
- */
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class PdelabWrapperTraits
+class PdelabBasedTraits
 {
 public:
-  typedef PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
   static const int polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
@@ -96,21 +94,21 @@ public:
   static const bool needs_grid_view = true;
 
 private:
-  friend class PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
+  friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
-class PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public ContinuousLagrangeSpaceBase<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         GridViewImp::dimension, RangeFieldImp, 1, 1>
+class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                            GridViewImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef ContinuousLagrangeSpaceBase<PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                      GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
-  typedef PdelabWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
+  typedef Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                         GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
-  typedef PdelabWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
+  typedef PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridViewType GridViewType;
   static const int polOrder = Traits::polOrder;
@@ -134,7 +132,7 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-  PdelabWrapper(const std::shared_ptr<const GridViewType>& gV)
+  PdelabBased(const std::shared_ptr<const GridViewType>& gV)
     : gridView_(gV)
     , fe_map_(std::make_shared<FEMapType>(*(gridView_)))
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*gridView_), *fe_map_))
@@ -142,7 +140,7 @@ public:
   {
   }
 
-  PdelabWrapper(const ThisType& other)
+  PdelabBased(const ThisType& other)
     : gridView_(other.gridView_)
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
@@ -161,7 +159,7 @@ public:
     return *this;
   }
 
-  ~PdelabWrapper()
+  ~PdelabBased()
   {
   }
 
@@ -190,14 +188,14 @@ private:
   std::shared_ptr<const FEMapType> fe_map_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
-}; // class PdelabWrapper< ..., 1 >
+}; // class PdelabBased< ..., 1 >
 
 
 #else // HAVE_DUNE_PDELAB
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class PdelabWrapper
+class PdelabBased
 {
   static_assert((Dune::AlwaysFalse<GridViewImp>::value), "You are missing dune-pdelab!");
 };
@@ -205,7 +203,8 @@ class PdelabWrapper
 
 #endif // HAVE_DUNE_PDELAB
 
-} // namespace ContinuousLagrangeSpace
+} // namespace ContinuousLagrange
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
