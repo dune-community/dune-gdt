@@ -79,7 +79,7 @@ public:
    */
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
-             DiscreteFunction< ContinuousLagrangeSpace::FemWrapper< GP, p, FieldType, dimDomain, 1 >, V >& range) const
+             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
   {
 #if HAVE_EIGEN
     typedef Stuff::LA::EigenRowMajorSparseMatrix< FieldType > MatrixType;
@@ -138,7 +138,7 @@ public:
 
   template< class GP, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1 >& source,
-             DiscreteFunction< RaviartThomasSpace::PdelabBased< GP, 0, FieldType, dimDomain >, V >& range) const
+             DiscreteFunction< Spaces::RaviartThomas::PdelabBased< GP, 0, FieldType, dimDomain >, V >& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();

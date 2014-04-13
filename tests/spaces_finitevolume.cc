@@ -12,25 +12,25 @@
 
 #include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/playground/spaces/finitevolume.hh>
+#include <dune/gdt/playground/spaces/finitevolume/default.hh>
 
 #define SGRID_SPACE(dd, rr) \
-  Dune::GDT::FiniteVolumeSpace::Default< S ## dd ## dLeafGridViewType, double, rr >
+  Dune::GDT::Spaces::FiniteVolume::Default< S ## dd ## dLeafGridViewType, double, rr >
 #define SGRID_SPACES(dd) \
     SGRID_SPACE(dd, 1) \
   , SGRID_SPACE(dd, 2) \
   , SGRID_SPACE(dd, 3)
 
 #define YASPGRID_SPACE(dd, rr) \
-  Dune::GDT::FiniteVolumeSpace::Default< Yasp ## dd ## dLeafGridViewType, double, rr >
+  Dune::GDT::Spaces::FiniteVolume::Default< Yasp ## dd ## dLeafGridViewType, double, rr >
 #define YASPGRID_SPACES(dd) \
     YASPGRID_SPACE(dd, 1) \
   , YASPGRID_SPACE(dd, 2) \
   , YASPGRID_SPACE(dd, 3)
 
 #define ALUGRID2D_SPACES(rr) \
-    Dune::GDT::FiniteVolumeSpace::Default< AluConform2dLeafGridViewType, double, rr > \
-  , Dune::GDT::FiniteVolumeSpace::Default< AluSimplex2dLeafGridViewType, double, rr >
+    Dune::GDT::Spaces::FiniteVolume::Default< AluConform2dLeafGridViewType, double, rr > \
+  , Dune::GDT::Spaces::FiniteVolume::Default< AluSimplex2dLeafGridViewType, double, rr >
 
 typedef testing::Types< SGRID_SPACES(1)
                       , SGRID_SPACES(2)

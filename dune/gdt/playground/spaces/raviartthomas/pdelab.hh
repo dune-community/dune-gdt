@@ -16,7 +16,7 @@
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_PDELAB
-# include<dune/pdelab/finiteelementmap/raviartthomasfem.hh>
+# include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
 # include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #endif // HAVE_DUNE_PDELAB
 
@@ -29,7 +29,8 @@
 
 namespace Dune {
 namespace GDT {
-namespace RaviartThomasSpace {
+namespace Spaces {
+namespace RaviartThomas {
 
 #if HAVE_DUNE_PDELAB
 
@@ -282,7 +283,8 @@ class PdelabBased
 
 #endif // HAVE_DUNE_PDELAB
 
-} // namespace RaviartThomasSpace
+} // namespace RaviartThomas
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

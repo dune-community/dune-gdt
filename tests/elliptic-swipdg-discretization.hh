@@ -81,7 +81,7 @@ public:
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
 
-  typedef Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper
+  typedef Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
       < GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
 
   typedef typename SpaceType::GridViewType GridViewType;
@@ -737,7 +737,7 @@ private:
     using namespace GDT;
     const auto grid_view = test_.level_grid_view(current_level_);
 
-    typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
+    typedef Spaces::FiniteVolume::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
     const P0SpaceType p0_space(grid_view);
     VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
@@ -768,7 +768,7 @@ private:
                                             test_.dirichlet(), test_.neumann());
     const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
 
-    typedef RaviartThomasSpace::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
+    typedef Spaces::RaviartThomas::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
     const RTN0SpaceType rtn0_space(grid_view);
     VectorType diffusive_flux_vector(rtn0_space.mapper().size());
     typedef DiscreteFunction< RTN0SpaceType, VectorType > RTN0DiscreteFunctionType;
@@ -805,7 +805,7 @@ private:
     const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
 
-    typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
+    typedef Spaces::FiniteVolume::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
     const P0SpaceType p0_space(grid_view);
     VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
@@ -813,7 +813,7 @@ private:
     Operators::Projection< GridViewType > projection_operator(*grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
-    typedef RaviartThomasSpace::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
+    typedef Spaces::RaviartThomas::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
     const RTN0SpaceType rtn0_space(grid_view);
     VectorType diffusive_flux_vector(rtn0_space.mapper().size());
     typedef DiscreteFunction< RTN0SpaceType, VectorType > RTN0DiscreteFunctionType;

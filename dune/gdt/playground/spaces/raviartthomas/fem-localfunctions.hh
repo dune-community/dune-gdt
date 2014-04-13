@@ -31,14 +31,15 @@
 
 namespace Dune {
 namespace GDT {
-namespace RaviartThomasSpace {
+namespace Spaces {
+namespace RaviartThomas {
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
 // forward, to be used in the traits and to allow for specialization
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemLocalfunctionsWrapper
+class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
 };
@@ -46,14 +47,14 @@ class FemLocalfunctionsWrapper
 
 // forward, to allow for specialization
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols >
-class FemLocalfunctionsWrapperTraits
+class FemLocalfunctionsBasedTraits
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
 };
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 >
+class FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 >
 {
   static_assert(GridPartImp::dimension == 2, "Only implemented for dimDomain 2!");
   static_assert(polynomialOrder == 0, "Wrong polOrder given!");
@@ -68,7 +69,7 @@ public:
   typedef RangeFieldImp                 RangeFieldType;
   static const unsigned int             dimRange = 2;
   static const unsigned int             dimRangeCols = 1;
-  typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
+  typedef FemLocalfunctionsBased< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
 private:
   typedef typename GridPartType::GridType GridType;
   static_assert(Capabilities::hasSingleGeometryType< GridType >::v,
@@ -95,18 +96,18 @@ public:
   static const bool needs_grid_view = false;
 private:
   template< class G, int p, class R, int r, int rC >
-  friend class FemLocalfunctionsWrapper;
-}; // class FemLocalfunctionsWrapperTraits< ..., 2, 1 >
+  friend class FemLocalfunctionsBased;
+}; // class FemLocalfunctionsBasedTraits< ..., 2, 1 >
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 >
-  : public SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > >
+class FemLocalfunctionsBased< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 >
+  : public SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > >
 {
-  typedef FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > ThisType;
-  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > > BaseType;
+  typedef FemLocalfunctionsBased< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > ThisType;
+  typedef SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > > BaseType;
 public:
-  typedef FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > Traits;
+  typedef FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 2, 1 > Traits;
 
   typedef typename Traits::GridPartType   GridPartType;
   typedef typename Traits::GridViewType   GridViewType;
@@ -128,7 +129,7 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsWrapper(const std::shared_ptr< const GridPartType >& gridP)
+  FemLocalfunctionsBased(const std::shared_ptr< const GridPartType >& gridP)
     : gridPart_(gridP)
     , grid_view_(new GridViewType(gridPart_->gridView()))
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
@@ -136,7 +137,7 @@ public:
     , mapper_(new MapperType(backend_->mapper()))
   {}
 
-  FemLocalfunctionsWrapper(const ThisType& other)
+  FemLocalfunctionsBased(const ThisType& other)
     : gridPart_(other.gridPart_)
     , grid_view_(other.grid_view_)
     , baseFunctionSetMap_(other.baseFunctionSetMap_)
@@ -206,14 +207,14 @@ private:
   std::shared_ptr< BaseFunctionSetMapType  >baseFunctionSetMap_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
-}; // class FemLocalfunctionsWrapper< ..., 2, 1 >
+}; // class FemLocalfunctionsBased< ..., 2, 1 >
 
 
 #else // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class FemLocalfunctionsWrapper
+class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "You are missing dune-fem-localfunctions!");
 };
@@ -221,7 +222,8 @@ class FemLocalfunctionsWrapper
 
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-} // namespace RaviartThomasSpace
+} // namespace RaviartThomas
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

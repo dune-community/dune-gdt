@@ -94,7 +94,7 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, 
 //typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
 //typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type   AluSimplex3dLeafGridPartType;
 
-typedef testing::Types< Dune::GDT::DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper< AluConform2dLeafGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< AluConform2dLeafGridPartType, 1, double, 1 >
                       > SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
