@@ -9,8 +9,8 @@
 #include <type_traits>
 #include <memory>
 
-#include <dune/gdt/space/interface.hh>
-#include <dune/gdt/space/constraints.hh>
+#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/constraints.hh>
 
 #include "local/codim0.hh"
 #include "local/codim1.hh"

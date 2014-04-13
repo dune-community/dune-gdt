@@ -16,7 +16,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 
-#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
+#include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/swipdg.hh>
 

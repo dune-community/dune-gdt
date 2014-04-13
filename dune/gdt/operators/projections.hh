@@ -21,13 +21,13 @@
 
 #include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/space/continuouslagrange.hh>
-#include <dune/gdt/space/continuouslagrange/fem.hh>
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
-#include <dune/gdt/playground/space/finitevolume.hh>
+#include <dune/gdt/spaces/continuouslagrange.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
+#include <dune/gdt/playground/spaces/finitevolume.hh>
 
 #include "interfaces.hh"
 

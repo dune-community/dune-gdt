@@ -18,7 +18,7 @@
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/common/configtree.hh>
 
-#include <dune/gdt/space/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
 #include "../products/interfaces.hh"

@@ -24,11 +24,11 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/space/constraints.hh>
+#include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/operators/prolongations.hh>

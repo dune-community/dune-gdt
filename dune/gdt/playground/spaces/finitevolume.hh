@@ -8,7 +8,7 @@
 
 #include "../mapper/finitevolume.hh"
 #include "../basefunctionset/finitevolume.hh"
-#include "../../space/interface.hh"
+#include "../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {

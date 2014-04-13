@@ -22,12 +22,12 @@
 
 #include <dune/stuff/common/print.hh>
 
-#include <dune/gdt/space/tools.hh>
-#include <dune/gdt/space/continuouslagrange/fem.hh>
-#include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/playground/space/raviartthomas/fem-localfunctions.hh>
+#include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/spaces/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 

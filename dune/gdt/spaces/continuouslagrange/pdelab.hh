@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACE_CONTINUOUSLAGRANGE_PDELAB_HH
-#define DUNE_GDT_SPACE_CONTINUOUSLAGRANGE_PDELAB_HH
+#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
+#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
 
 #include <memory>
 
@@ -209,4 +209,4 @@ class PdelabWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACE_CONTINUOUSLAGRANGE_PDELAB_HH
+#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH

@@ -12,7 +12,7 @@
 
 #include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/playground/space/finitevolume.hh>
+#include <dune/gdt/playground/spaces/finitevolume.hh>
 
 #define SGRID_SPACE(dd, rr) Dune::GDT::FiniteVolumeSpace::Default<S##dd##dLeafGridViewType, double, rr>
 #define SGRID_SPACES(dd)                                                                                               \

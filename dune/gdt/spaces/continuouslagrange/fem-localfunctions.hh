@@ -3,18 +3,24 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
-#define DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#include <type_traits>
 #include <memory>
+#include <type_traits>
 
+#include <dune/common/typetraits.hh>
+#include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
+
+#include <dune/geometry/referenceelements.hh>
+#include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
-#include <dune/localfunctions/raviartthomas.hh>
+#include <dune/localfunctions/lagrange/equidistantpoints.hh>
+#include <dune/localfunctions/lagrange.hh>
 
 #include <dune/fem_localfunctions/localfunctions/transformations.hh>
 #include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
@@ -22,16 +28,13 @@
 #include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-#include <dune/stuff/common/color.hh>
-
-#include "../../../mapper/fem.hh"
-#include "../../../basefunctionset/fem-localfunctions.hh"
-#include "../../../space/constraints.hh"
-#include "../../../space/interface.hh"
+#include "../../mapper/fem.hh"
+#include "../../basefunctionset/fem-localfunctions.hh"
+#include "../continuouslagrange.hh"
 
 namespace Dune {
 namespace GDT {
-namespace RaviartThomasSpace {
+namespace ContinuousLagrangeSpace {
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 
@@ -44,47 +47,46 @@ class FemLocalfunctionsWrapper
 };
 
 
-// forward, to allow for specialization
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
+/**
+ *  \brief Traits class for ContinuousLagrangeSpace::FemLocalfunctionsWrapper.
+ */
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
 class FemLocalfunctionsWrapperTraits
 {
-  static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
-};
-
-
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>
-{
-  static_assert(GridPartImp::dimension == 2, "Only implemented for dimDomain 2!");
-  static_assert(polynomialOrder == 0, "Wrong polOrder given!");
-
 public:
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
   static const int polOrder = polynomialOrder;
+  static_assert(polOrder >= 1, "Wrong polOrder given!");
 
 private:
   typedef typename GridPartType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridPartType::dimension;
 
 public:
+  static const unsigned int dimDomain = GridPartType::dimension;
   typedef RangeFieldImp RangeFieldType;
-  static const unsigned int dimRange     = 2;
-  static const unsigned int dimRangeCols = 1;
+  static const unsigned int dimRange     = rangeDim;
+  static const unsigned int dimRangeCols = rangeDimCols;
   typedef FemLocalfunctionsWrapper<GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols> derived_type;
 
 private:
   typedef typename GridPartType::GridType GridType;
-  static_assert(Capabilities::hasSingleGeometryType<GridType>::v,
+  static_assert(dimDomain == 1 || Dune::Capabilities::hasSingleGeometryType<GridType>::v,
                 "This space is only implemented for fully simplicial grids!");
-  static_assert(Capabilities::hasSingleGeometryType<GridType>::topologyId
-                    == GenericGeometry::SimplexTopology<dimDomain>::type::id,
+  static_assert(dimDomain == 1 || (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+                                   == GenericGeometry::SimplexTopology<dimDomain>::type::id),
                 "This space is only implemented for fully simplicial grids!");
-  typedef Dune::RaviartThomasSimplexLocalFiniteElement<dimDomain, DomainFieldType, RangeFieldType> FiniteElementType;
+  typedef FemLocalfunctionsWrapperTraits<GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols> ThisType;
+
+public:
+  typedef Dune::LagrangeLocalFiniteElement<Dune::EquidistantPointSet, dimDomain, DomainFieldType, RangeFieldType>
+      FiniteElementType;
+
+private:
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType, FiniteElementType,
-                                                      Dune::FemLocalFunctions::PiolaTransformation,
-                                                      Dune::FemLocalFunctions::SimpleStorage, polOrder, polOrder,
-                                                      true> BaseFunctionSetMapType;
+                                                      Dune::FemLocalFunctions::NoTransformation,
+                                                      Dune::FemLocalFunctions::SimpleStorage, polOrder,
+                                                      polOrder> BaseFunctionSetMapType;
 
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
@@ -97,24 +99,28 @@ public:
 private:
   template <class G, int p, class R, int r, int rC>
   friend class FemLocalfunctionsWrapper;
-}; // class FemLocalfunctionsWrapperTraits< ..., 2, 1 >
+}; // class FemLocalfunctionsWrapperTraits
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>
-    : public SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>>
+class FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public ContinuousLagrangeSpaceBase<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1,
+                                                                        1>,
+                                         GridPartImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1> ThisType;
-  typedef SpaceInterface<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>> BaseType;
+  typedef ContinuousLagrangeSpaceBase<FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                      GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef FemLocalfunctionsWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
-  typedef FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1> Traits;
+  typedef FemLocalfunctionsWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
+  static const int polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype DomainFieldType;
-  static const int polOrder           = Traits::polOrder;
   static const unsigned int dimDomain = GridPartType::dimension;
+  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
   static const unsigned int dimRangeCols = Traits::dimRangeCols;
@@ -130,21 +136,23 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsWrapper(const std::shared_ptr<const GridPartType>& gridP)
+  FemLocalfunctionsWrapper(std::shared_ptr<const GridPartType> gridP)
     : gridPart_(gridP)
-    , grid_view_(new GridViewType(gridPart_->gridView()))
+    , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
     , backend_(new BackendType(const_cast<GridPartType&>(*gridPart_), *baseFunctionSetMap_))
     , mapper_(new MapperType(backend_->mapper()))
+    , tmp_global_indices_(mapper_->maxNumDofs())
   {
   }
 
   FemLocalfunctionsWrapper(const ThisType& other)
     : gridPart_(other.gridPart_)
-    , grid_view_(other.grid_view_)
+    , gridView_(other.gridView_)
     , baseFunctionSetMap_(other.baseFunctionSetMap_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
+    , tmp_global_indices_(mapper_->maxNumDofs())
   {
   }
 
@@ -152,10 +160,11 @@ public:
   {
     if (this != &other) {
       gridPart_           = other.gridPart_;
-      grid_view_          = other.grid_view_;
+      gridView_           = other.gridView_;
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
       backend_            = other.backend_;
-      mapper_             = other.mapper_;
+      mapper_ = other.mapper_;
+      tmp_global_indices_.resize(mapper_->maxNumDofs());
     }
     return *this;
   }
@@ -167,7 +176,7 @@ public:
 
   const std::shared_ptr<const GridViewType>& grid_view() const
   {
-    return grid_view_;
+    return gridView_;
   }
 
   const BackendType& backend() const
@@ -177,7 +186,7 @@ public:
 
   bool continuous() const
   {
-    return false;
+    return true;
   }
 
   const MapperType& mapper() const
@@ -190,27 +199,14 @@ public:
     return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
-  template <class R>
-  void local_constraints(const EntityType& /*entity*/, Constraints::LocalDefault<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for arbitrary constraints!");
-  }
-
-  using BaseType::compute_pattern;
-
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
-  {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
-  }
-
 private:
   std::shared_ptr<const GridPartType> gridPart_;
-  std::shared_ptr<const GridViewType> grid_view_;
+  std::shared_ptr<const GridViewType> gridView_;
   std::shared_ptr<BaseFunctionSetMapType> baseFunctionSetMap_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
-}; // class FemLocalfunctionsWrapper< ..., 2, 1 >
+  mutable Dune::DynamicVector<size_t> tmp_global_indices_;
+}; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
 
 #else // HAVE_DUNE_FEM_LOCALFUNCTIONS
@@ -225,8 +221,8 @@ class FemLocalfunctionsWrapper
 
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-} // namespace RaviartThomasSpace
+} // namespace ContinuousLagrangeSpace
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH

@@ -11,7 +11,7 @@
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include <dune/gdt/space/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 

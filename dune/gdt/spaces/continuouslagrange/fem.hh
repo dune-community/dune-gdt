@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
-#define DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
+#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
+#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
 
 #include <memory>
 #include <type_traits>
@@ -189,4 +189,4 @@ class FemWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACE_CONTINUOUS_LAGRANGE_FEM_HH
+#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
