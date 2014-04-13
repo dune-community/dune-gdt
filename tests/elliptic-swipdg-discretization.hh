@@ -48,9 +48,9 @@
 #include <dune/gdt/products/elliptic.hh>
 #include <dune/gdt/operators/projections.hh>
 #include <dune/gdt/operators/prolongations.hh>
-#include <dune/gdt/operators/oswald.hh>
+#include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/playground/products/ESV2007.hh>
-#include <dune/gdt/operators/reconstructions.hh>
+#include <dune/gdt/operators/fluxreconstruction.hh>
 
 #include "elliptic-testcases.hh"
 
@@ -342,7 +342,7 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_view = test_.reference_grid_view();
-      const ProlongationOperator::Generic< GridViewType > prolongation_operator(*reference_grid_view);
+      const Operators::Prolongation< GridViewType > prolongation_operator(*reference_grid_view);
       assert(reference_discretization_);
       if (!current_solution_vector_)
         current_solution_vector_
@@ -721,7 +721,7 @@ private:
     VectorType oswald_interpolation_vector(discretization.space().mapper().size());
     DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
 
-    const GDT::Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
+    const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
     const Stuff::Function::Difference< ConstDiscreteFunctionType, DiscreteFunctionType >
         difference(discrete_solution, oswald_interpolation);
@@ -743,7 +743,7 @@ private:
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
 
-    ProjectionOperator::Generic< GridViewType > projection_operator(*grid_view);
+    Operators::Projection< GridViewType > projection_operator(*grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
     typedef typename Stuff::Function::ESV2007Cutoff< typename TestCase::DiffusionType > CutoffFunctionType;
@@ -775,7 +775,7 @@ private:
     RTN0DiscreteFunctionType diffusive_flux(rtn0_space, diffusive_flux_vector);
 
     typedef typename TestCase::DiffusionType DiffusionType;
-    const GDT::ReconstructionOperator::DiffusiveFlux< GridViewType, DiffusionType >
+    const Operators::DiffusiveFluxReconstruction< GridViewType, DiffusionType >
       diffusive_flux_reconstruction(*grid_view, test_.diffusion());
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
@@ -802,7 +802,7 @@ private:
 
     VectorType oswald_interpolation_vector(discretization.space().mapper().size());
     DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
-    const GDT::Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
+    const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
 
     typedef FiniteVolumeSpace::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
@@ -810,7 +810,7 @@ private:
     VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
-    ProjectionOperator::Generic< GridViewType > projection_operator(*grid_view);
+    Operators::Projection< GridViewType > projection_operator(*grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
     typedef RaviartThomasSpace::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
@@ -820,7 +820,7 @@ private:
     RTN0DiscreteFunctionType diffusive_flux(rtn0_space, diffusive_flux_vector);
 
     typedef typename TestCase::DiffusionType DiffusionType;
-    const GDT::ReconstructionOperator::DiffusiveFlux< GridViewType, DiffusionType >
+    const Operators::DiffusiveFluxReconstruction< GridViewType, DiffusionType >
       diffusive_flux_reconstruction(*grid_view, test_.diffusion());
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
@@ -1029,7 +1029,7 @@ private:
                                                                                 diffusive_flux_reconstruction_vector_2,
                                                                                 "diffusive flux reconstruction");
     // reconstruct
-    typedef ReconstructionOperator::DiffusiveFlux< GridPartType,
+    typedef Operators::DiffusiveFluxReconstruction< GridPartType,
                                                    typename TestCase::DiffusionType > ReconstructionOperatorType;
     const ReconstructionOperatorType reconstruction_operator(*grid_part, test_.diffusion());
     reconstruction_operator.apply(discrete_solution, diffusive_flux_reconstruction_2);
@@ -1114,7 +1114,7 @@ private:
                                                            rtn_vector,
                                                            "diffusive flux reconstruction");
     // reconstruct
-    typedef ReconstructionOperator::DiffusiveFlux< GridPartType,
+    typedef Operators::DiffusiveFluxReconstruction< GridPartType,
                                                    typename TestCase::DiffusionType > ReconstructionOperatorType;
     const ReconstructionOperatorType reconstruction_operator(*grid_part, test_.diffusion());
     reconstruction_operator.apply(discrete_solution, diffusive_flux_reconstruction);

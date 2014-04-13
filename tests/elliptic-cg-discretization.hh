@@ -104,7 +104,7 @@ public:
     if (!is_assembled_) {
 
       // create the containers (use the sparsity pattern of the operator)
-      typedef GDT::Operators::EllipticCG< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
+      typedef Operators::EllipticCG< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
       system_matrix_ = MatrixType(space_.mapper().size(),
                                   space_.mapper().size(),
                                   EllipticOperatorType::pattern(space_));
@@ -119,7 +119,7 @@ public:
       L2FaceFunctionalType neumann_functional(neumann_, rhs_vector_, space_);
       // project the dirichlet boundary values
       DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_);
-      typedef ProjectionOperator::DirichletLocalizable< GridViewType, FunctionType, DiscreteFunctionType >
+      typedef Operators::DirichletProjectionLocalizable< GridViewType, FunctionType, DiscreteFunctionType >
           DirichletProjectionOperator;
       DirichletProjectionOperator dirichlet_projection_operator(*(space_.grid_view()),
                                                                 boundary_info_,
@@ -323,7 +323,7 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_view = test_.reference_grid_view();
-      const ProlongationOperator::Generic< GridViewType > prolongation_operator(*reference_grid_view);
+      const Operators::Prolongation< GridViewType > prolongation_operator(*reference_grid_view);
       assert(reference_discretization_);
       current_solution_vector_
           = std::unique_ptr< VectorType >(new VectorType(reference_discretization_->create_vector()));

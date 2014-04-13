@@ -31,7 +31,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace ProlongationOperator {
+namespace Operators {
 
 
 /**
@@ -50,14 +50,14 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
  */
 template< class GridViewType >
-class L2
+class L2Prolongation
 {
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  L2(const GridViewType& grid_view)
+  L2Prolongation(const GridViewType& grid_view)
     : grid_view_(grid_view)
   {}
 
@@ -204,7 +204,7 @@ private:
   } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
 
   const GridViewType& grid_view_;
-}; // class L2
+}; // class L2Prolongation
 
 
 /**
@@ -219,13 +219,13 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
  */
 template< class GridViewType >
-class Lagrange
+class LagrangeProlongation
 {
 public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  Lagrange(const GridViewType& grid_view)
+  LagrangeProlongation(const GridViewType& grid_view)
     : grid_view_(grid_view)
   {}
 
@@ -430,17 +430,17 @@ private:
   } // ... apply_local(...)
 
   const GridViewType& grid_view_;
-}; // class Lagrange
+}; // class LagrangeProlongation
 
 
 template< class GridViewType >
-class Generic
+class Prolongation
 {
 public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  Generic(const GridViewType& grid_view)
+  Prolongation(const GridViewType& grid_view)
     : l2_prolongation_operator_(grid_view)
     , lagrange_prolongation_operator_(grid_view)
   {}
@@ -570,12 +570,12 @@ private:
     lagrange_prolongation_operator_.apply(source, range);
   }
 
-  const L2< GridViewType > l2_prolongation_operator_;
-  const Lagrange< GridViewType > lagrange_prolongation_operator_;
-}; // class Generic
+  const L2Prolongation< GridViewType > l2_prolongation_operator_;
+  const LagrangeProlongation< GridViewType > lagrange_prolongation_operator_;
+}; // class Prolongation
 
 
-} // namespace ProlongationOperator
+} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 

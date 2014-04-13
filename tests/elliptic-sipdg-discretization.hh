@@ -331,7 +331,7 @@ public:
       DiscreteFunctionType reference_level_solution(reference_discretization_->space(),
                                                     *current_solution_vector_,
                                                     "solution on reference grid view");
-      const ProlongationOperator::L2< GridViewType > prolongation_operator(*reference_grid_view);
+      const Operators::L2Prolongation< GridViewType > prolongation_operator(*reference_grid_view);
       prolongation_operator.apply(current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
