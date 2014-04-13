@@ -26,8 +26,8 @@
 
 #include "../../../mapper/fem.hh"
 #include "../../../basefunctionset/fem-localfunctions.hh"
-#include "../../../space/constraints.hh"
-#include "../../../space/interface.hh"
+#include "../../../spaces/constraints.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {

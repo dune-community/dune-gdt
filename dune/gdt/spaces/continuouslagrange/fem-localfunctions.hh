@@ -3,11 +3,17 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
-#define DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
+#include <memory>
 #include <type_traits>
 
+#include <dune/common/typetraits.hh>
+#include <dune/common/static_assert.hh>
+#include <dune/common/exceptions.hh>
+
+#include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
@@ -22,16 +28,13 @@
 # include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-#include <dune/stuff/common/color.hh>
-
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem-localfunctions.hh"
-#include "../constraints.hh"
-#include "../interface.hh"
+#include "../continuouslagrange.hh"
 
 namespace Dune {
 namespace GDT {
-namespace DiscontinuousLagrangeSpace {
+namespace ContinuousLagrangeSpace {
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 
@@ -40,43 +43,42 @@ namespace DiscontinuousLagrangeSpace {
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemLocalfunctionsWrapper
 {
-  static_assert(rangeDim == 1 && rangeDimCols == 1, "Not yet implemented (find suitable vector valued basis)!");
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
 };
 
 
 /**
- *  \brief Traits class for DiscontinuousLagrangeSpace::FemLocalfunctionsWrapper.
+ *  \brief Traits class for ContinuousLagrangeSpace::FemLocalfunctionsWrapper.
  */
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemLocalfunctionsWrapperTraits
 {
-  static_assert(polynomialOrder >= 1, "Wrong polOrder given!");
-  static_assert(rangeDim == 1, "Not yet implemented (find suitable vector valued basis)!");
-  static_assert(rangeDimCols == 1, "Not yet implemented (find suitable vector valued basis)!");
 public:
   typedef GridPartImp                   GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
   static const int                      polOrder = polynomialOrder;
+  static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
+public:
   static const unsigned int             dimDomain = GridPartType::dimension;
+  typedef RangeFieldImp                 RangeFieldType;
+  static const unsigned int             dimRange = rangeDim;
+  static const unsigned int             dimRangeCols = rangeDimCols;
+  typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
+private:
   typedef typename GridPartType::GridType GridType;
   static_assert(dimDomain == 1 || Dune::Capabilities::hasSingleGeometryType< GridType >::v,
                 "This space is only implemented for fully simplicial grids!");
   static_assert(dimDomain == 1 || (Dune::Capabilities::hasSingleGeometryType< GridType >::topologyId
                                    == GenericGeometry::SimplexTopology< dimDomain >::type::id),
                 "This space is only implemented for fully simplicial grids!");
+  typedef FemLocalfunctionsWrapperTraits< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > ThisType;
 public:
-  typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = rangeDim;
-  static const unsigned int             dimRangeCols = rangeDimCols;
-  typedef FemLocalfunctionsWrapper< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
   typedef Dune::LagrangeLocalFiniteElement< Dune::EquidistantPointSet,
                                             dimDomain,
                                             DomainFieldType,
-                                            RangeFieldType > ContinuousFiniteElementType;
-  typedef Dune::DGLocalFiniteElement< ContinuousFiniteElementType > FiniteElementType;
+                                            RangeFieldType >        FiniteElementType;
 private:
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<  GridPartType,
                                                         FiniteElementType,
@@ -99,19 +101,21 @@ private:
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+  : public ContinuousLagrangeSpaceBase< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+                                      , GridPartImp::dimension, RangeFieldImp, 1, 1 >
 {
-  typedef SpaceInterface< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
-    BaseType;
-  typedef FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
+  typedef ContinuousLagrangeSpaceBase< FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
+                                     , GridPartImp::dimension, RangeFieldImp, 1, 1 > BaseType;
+  typedef FemLocalfunctionsWrapper< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >               ThisType;
 public:
   typedef FemLocalfunctionsWrapperTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
   typedef typename Traits::GridPartType   GridPartType;
   typedef typename Traits::GridViewType   GridViewType;
-  typedef typename GridPartType::ctype    DomainFieldType;
   static const int                        polOrder = Traits::polOrder;
-  static const unsigned int               dimDomain = GridPartType::dimension;
+  typedef typename GridPartType::ctype              DomainFieldType;
+  static const unsigned int                         dimDomain = GridPartType::dimension;
+  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int               dimRange = Traits::dimRange;
   static const unsigned int               dimRangeCols = Traits::dimRangeCols;
@@ -127,12 +131,14 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
+
   FemLocalfunctionsWrapper(std::shared_ptr< const GridPartType > gridP)
     : gridPart_(gridP)
     , gridView_(std::make_shared< GridViewType >(gridPart_->gridView()))
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
     , backend_(new BackendType(const_cast< GridPartType& >(*gridPart_), *baseFunctionSetMap_))
     , mapper_(new MapperType(backend_->mapper()))
+    , tmp_global_indices_(mapper_->maxNumDofs())
   {}
 
   FemLocalfunctionsWrapper(const ThisType& other)
@@ -141,6 +147,7 @@ public:
     , baseFunctionSetMap_(other.baseFunctionSetMap_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
+    , tmp_global_indices_(mapper_->maxNumDofs())
   {}
 
   ThisType& operator=(const ThisType& other)
@@ -151,6 +158,7 @@ public:
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
       backend_ = other.backend_;
       mapper_ = other.mapper_;
+      tmp_global_indices_.resize(mapper_->maxNumDofs());
     }
     return *this;
   }
@@ -170,6 +178,11 @@ public:
     return *backend_;
   }
 
+  bool continuous() const
+  {
+    return true;
+  }
+
   const MapperType& mapper() const
   {
     return *mapper_;
@@ -180,26 +193,13 @@ public:
     return BaseFunctionSetType(*baseFunctionSetMap_, entity);
   }
 
-  template< class R >
-  void local_constraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
-  {
-    static_assert((Dune::AlwaysFalse< R >::value), "Not implemented for arbitrary constraints!");
-  }
-
-  using BaseType::compute_pattern;
-
-  template< class G, class S >
-  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
-  {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
-  }
-
 private:
   std::shared_ptr< const GridPartType > gridPart_;
   std::shared_ptr< const GridViewType > gridView_;
   std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
+  mutable Dune::DynamicVector< size_t > tmp_global_indices_;
 }; // class FemLocalfunctionsWrapper< ..., 1, 1 >
 
 
@@ -215,8 +215,8 @@ class FemLocalfunctionsWrapper
 
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-} // namespace DiscontinuousLagrangeSpace
+} // namespace ContinuousLagrangeSpace
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACE_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH

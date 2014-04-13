@@ -15,8 +15,8 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/gdt/space/continuouslagrange/fem.hh>
-#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
 #include "interfaces.hh"

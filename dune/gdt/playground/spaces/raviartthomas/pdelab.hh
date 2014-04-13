@@ -25,7 +25,7 @@
 #include <dune/gdt/basefunctionset/pdelab.hh>
 #include <dune/gdt/mapper/pdelab.hh>
 
-#include "../../../space/interface.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {

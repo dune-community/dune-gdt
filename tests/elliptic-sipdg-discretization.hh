@@ -23,7 +23,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
@@ -34,7 +34,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
-#include <dune/gdt/space/constraints.hh>
+#include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>

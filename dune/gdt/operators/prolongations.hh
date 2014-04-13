@@ -24,10 +24,10 @@
 #include <dune/stuff/grid/search.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/space/continuouslagrange/fem.hh>
-#include <dune/gdt/space/continuouslagrange/pdelab.hh>
-#include <dune/gdt/space/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
 
 namespace Dune {
 namespace GDT {

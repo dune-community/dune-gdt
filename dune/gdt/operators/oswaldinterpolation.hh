@@ -14,7 +14,7 @@
 
 #include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/space/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
 
 #include "interfaces.hh"
 

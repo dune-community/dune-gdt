@@ -18,7 +18,7 @@
 
 #include <dune/stuff/la/container/interfaces.hh>
 
-#include <dune/gdt/space/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 #include "local.hh"
 

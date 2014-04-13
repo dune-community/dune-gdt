@@ -14,8 +14,8 @@
 
 #include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/space/tools.hh>
-#include <dune/gdt/space/interface.hh>
+#include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 

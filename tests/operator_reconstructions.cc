@@ -22,10 +22,9 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/space/tools.hh>
-#include <dune/gdt/space/continuouslagrange/fem.hh>
-//#include <dune/gdt/playground/space/raviartthomas/pdelab.hh>
-#include <dune/gdt/playground/space/finitevolume.hh>
+#include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/finitevolume.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/darcy.hh>
 #include <dune/gdt/operators/projections.hh>

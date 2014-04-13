@@ -16,7 +16,7 @@
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/spe10.hh>
 
-#include <dune/gdt/space/tools.hh>
+#include <dune/gdt/spaces/tools.hh>
 
 namespace EllipticTestCase {
 
