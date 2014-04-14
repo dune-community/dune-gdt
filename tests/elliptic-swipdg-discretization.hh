@@ -452,16 +452,16 @@ public:
     } else if (std::is_same<TestCase, EllipticTestCase::Spe10Model1<Dune::ALUConformGrid<2, 2>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {1.21e-03, 3.99e-04};
+          return {7.23e-02, 2.60e-02};
         else if (type.compare("H1_semi") == 0)
-          return {1.66e-01, 8.29e-02};
+          return {5.29e-01, 3.49e-01};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {4.63e-04, 1.71e-04};
+          return {2.09e-02, 3.75e-03};
         else if (type.compare("H1_semi") == 0)
-          return {7.89e-02, 3.73e-02};
+          return {2.57e-01, 8.48e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else

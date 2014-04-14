@@ -410,9 +410,9 @@ public:
     } else if (std::is_same<TestCase, EllipticTestCase::Spe10Model1<Dune::ALUConformGrid<2, 2>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {2.91e-03, 1.13e-03, 3.72e-04};
+          return {7.80e-02, 4.91e-02};
         else if (type.compare("H1_semi") == 0)
-          return {2.37e-01, 1.43e-01, 7.57e-02};
+          return {4.04e-01, 3.78e-01};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
