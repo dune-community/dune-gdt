@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 #include <type_traits>
-#include <math.h>
+#include <cmath>
 #include <limits>
 
 #include <dune/common/timer.hh>
@@ -660,12 +660,60 @@ public:
           return {4.50e-01, 2.08e-01, 9.92e-02, 4.86e-02};
         else if (type == efficiency_ESV07_id())
           return {1.21, 1.21, 1.21, 1.21};
-        else if (type == residual_estimator_ESV10_id())
-          return {0.0, 0.0, 0.0, 0.0};
-        else if (type == estimator_ESV10_id())
-          return {0.0, 0.0, 0.0, 0.0};
-        else if (type == efficiency_ESV10_id())
-          return {0.0, 0.0, 0.0, 0.0};
+        //        else if (type == residual_estimator_ESV10_id())
+        //          return {0.0, 0.0, 0.0, 0.0};
+        //        else if (type == estimator_ESV10_id())
+        //          return {0.0, 0.0, 0.0, 0.0};
+        //        else if (type == efficiency_ESV10_id())
+        //          return {0.0, 0.0, 0.0, 0.0};
+        else
+          return BaseType::expected_results(type);
+      } else
+        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same<TestCase, EllipticTestCase::LocalThermalBlock<Dune::ALUConformGrid<2, 2>>>::value) {
+      if (polOrder == 1) {
+        if (type.compare("energy") == 0)
+          return {9.11e-02, 5.24e-02, 2.69e-02, 1.21e-02};
+        else if (type == nonconformity_estimator_id())
+          return {9.58e-02, 1.11e-01, 5.13e-02, 2.18e-02};
+        else if (type == residual_estimator_ESV07_id())
+          return {1.00e-10, 1.00e-10, 1.00e-10, 1.00e-10};
+        else if (type == diffusive_flux_estimator_id())
+          return {1.13e-01, 6.55e-02, 3.55e-02, 1.91e-02};
+        //        else if (type == estimator_ESV07_id())
+        //          return {};
+        else if (type == efficiency_ESV07_id())
+          return {1.63e+00, 2.46e+00, 2.33e+00, 2.41e+00};
+        //        else if (type == residual_estimator_ESV10_id())
+        //          return {};
+        //        else if (type == estimator_ESV10_id())
+        //          return {};
+        //        else if (type == efficiency_ESV10_id())
+        //          return {};
+        else
+          return BaseType::expected_results(type);
+      } else
+        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same<TestCase, EllipticTestCase::Spe10Model1<Dune::ALUConformGrid<2, 2>>>::value) {
+      if (polOrder == 1) {
+        if (type.compare("energy") == 0)
+          return {3.31e-02, 1.66e-02};
+        else if (type == nonconformity_estimator_id())
+          return {8.50e-01, 1.16e+00};
+        else if (type == residual_estimator_ESV07_id())
+          return {1.00e-10, 1.00e-10};
+        else if (type == diffusive_flux_estimator_id())
+          return {4.77e-02, 3.07e-02};
+        //        else if (type == estimator_ESV07_id())
+        //          return {};
+        else if (type == efficiency_ESV07_id())
+          return {2.58e+01, 7.00e+01};
+        //        else if (type == residual_estimator_ESV10_id())
+        //          return {};
+        //        else if (type == estimator_ESV10_id())
+        //          return {};
+        //        else if (type == efficiency_ESV10_id())
+        //          return {};
         else
           return BaseType::expected_results(type);
       } else
