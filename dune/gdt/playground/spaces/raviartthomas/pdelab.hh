@@ -12,6 +12,7 @@
 #include <dune/common/static_assert.hh>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
+#include <dune/geometry/referenceelements.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
@@ -21,6 +22,7 @@
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/float_cmp.hh>
+#include <dune/stuff/common/exceptions.hh>
 
 #include <dune/gdt/basefunctionset/pdelab.hh>
 #include <dune/gdt/mapper/pdelab.hh>
@@ -186,14 +188,14 @@ public:
     typedef typename BaseFunctionSetType::DomainType DomainType;
     std::vector< DomainType > vertices(num_intersections, DomainType(0));
     std::vector< bool > lies_on_intersection(num_intersections, false);
-    DomainType vertex_entity(0);
     DomainType corner(0);
     typedef typename BaseFunctionSetType::RangeType RangeType;
-    const RangeType zero(0);
-    std::vector< RangeType > basis_values(num_intersections, zero);
+    const RangeType one(1);
+    std::vector< RangeType > basis_values(num_intersections, one);
     const auto basis = base_function_set(entity);
     assert(basis.size() == num_intersections);
     const auto geometry = entity.geometry();
+    const auto& reference_element = ReferenceElements< DomainFieldType, dimDomain >::general(geometry.type());
     // find the basis function index that corresponds to each vertex of the entity
     // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
     // therefore we walk the vertices
@@ -203,14 +205,15 @@ public:
       const auto& vertex = *vertex_ptr;
       // get the vertex coordinates
       vertices[vv] = vertex.geometry().center();
-      vertex_entity = geometry.local(vertices[vv]);
+      const auto& vertex_entity = reference_element.position(int(vv), dimDomain);
       // evalaute the basis
       basis.evaluate(vertex_entity, basis_values);
       // and find the basis that evaluates zero here
       size_t zeros = 0;
       size_t nonzeros = 0;
       for (size_t ii = 0; ii < num_intersections; ++ii) {
-        if (Stuff::Common::FloatCmp::eq(basis_values[ii], zero)) {
+        // we would like to check against 0, but there is a bug in dune-commons FloatCmp
+        if (Stuff::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
           // this is a candidate for the basis function we are looking for
           local_DoF_index_of_vertex[vv] = ii;
           ++zeros;
@@ -218,7 +221,11 @@ public:
           ++nonzeros;
       }
       // make sure there was only one candidate
-      assert(zeros == 1 && nonzeros == (num_intersections - 1) && "This must not happen for RTN0 in 2d!");
+      if (zeros != 1 || nonzeros != (num_intersections - 1))
+        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
+                              "This must not happen for RTN0 in 2d!\n"
+                              << "  zeros    = " << zeros << "\n"
+                              << "  nonzeros = " << nonzeros);
     } // walk the vertices
     // so from here on we have the local DoF index that corresponds to each vertex vv in local_DoF_index_of_vertex[vv]
     // now we need to find the intersection opposite to this vertex
@@ -256,7 +263,11 @@ public:
         lies_on_intersection[vv] = false;
       } // walk the vertices of this entity
       // make sure there was only one candidate
-      assert(found == 1 && missed == (num_intersections - 1) && "This must not happen for RTN0 in 2d!");
+      if (found != 1 || missed != (num_intersections - 1))
+        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
+                              "This must not happen for RTN0 in 2d!\n"
+                              << "  found  = " << found << "\n"
+                              << "  missed = " << missed);
       ++intersection_counter;
     } // walk the intersection
     assert(intersection_counter == num_intersections);
