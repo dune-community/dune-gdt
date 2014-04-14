@@ -577,7 +577,7 @@ public:
     Spe10Model1FunctionType;
   typedef Spe10Model1FunctionType DiffusionType;
   typedef ConstantFunctionType    ForceType;
-  typedef ExpressionFunctionType  DirichletType;
+  typedef ConstantFunctionType    DirichletType;
   typedef ConstantFunctionType    NeumannType;
   typedef ConstantFunctionType    ExactSolutionType;
 
@@ -587,8 +587,8 @@ public:
     , diffusion_("perm_case1.dat",
                  {0.0, 0.0},
                  {5.0, 1.0})
-    , force_(0)
-    , dirichlet_("x", "x[0]", 1)
+    , force_(1)
+    , dirichlet_(0)
     , neumann_(0)
   {}
 
