@@ -96,8 +96,7 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     lfs_.bind(entity);
-    const size_t numLocalDofs = numDofs(entity);
-    assert(localIndex < numLocalDofs);
+    assert(localIndex < lfs_.size());
     return lfs_.dofIndex(localIndex).entityIndex()[1];
   } // ... mapToGlobal(...)
 
