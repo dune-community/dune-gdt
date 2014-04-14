@@ -29,21 +29,6 @@ AC_CONFIG_FILES([
   doc/Makefile
   doc/doxygen/Makefile
   doc/doxygen/Doxyfile
-  dune/Makefile
-  dune/gdt/Makefile
-  dune/gdt/assembler/Makefile
-  dune/gdt/assembler/local/Makefile
-  dune/gdt/basefunctionset/Makefile
-  dune/gdt/discretefunction/Makefile
-  dune/gdt/la/Makefile
-  dune/gdt/la/containerfactory/Makefile
-  dune/gdt/localevaluation/Makefile
-  dune/gdt/localfunctional/Makefile
-  dune/gdt/localoperator/Makefile
-  dune/gdt/mapper/Makefile
-  dune/gdt/space/Makefile
-  dune/gdt/space/continuouslagrange/Makefile
-  dune/gdt/space/discontinuouslagrange/Makefile
   m4/Makefile
   dune-gdt.pc
 ])
