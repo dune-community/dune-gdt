@@ -493,7 +493,7 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
 
 public:
   DirichletProjectionLocalizable(const GridViewType& grid_view, const BoundaryInfoType& boundary_info,
@@ -591,7 +591,7 @@ public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
-  typedef Stuff::GridboundaryInterface<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<typename GridViewType::Intersection> BoundaryInfoType;
 
 public:
   DirichletProjection(const GridViewType& grid_view, const BoundaryInfoType& boundary_info)

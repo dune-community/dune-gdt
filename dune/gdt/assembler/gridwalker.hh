@@ -276,7 +276,7 @@ class DirichletIntersections : public WhichIntersection<GridViewImp>
 public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
 
   DirichletIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
@@ -300,7 +300,7 @@ class NeumannIntersections : public WhichIntersection<GridViewImp>
 public:
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
 
   NeumannIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
@@ -332,7 +332,7 @@ public:
   typedef typename GridViewType::Intersection IntersectionType;
 
 protected:
-  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
 
   class Codim0Object : public Functor::Codim0<GridViewType>
   {

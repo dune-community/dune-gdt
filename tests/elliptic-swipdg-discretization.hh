@@ -71,7 +71,7 @@ public:
 
   static const unsigned int polOrder = polynomialOrder;
 
-  typedef Dune::Stuff::GridboundaryInterface<typename GridPartType::IntersectionType> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfoInterface<typename GridPartType::IntersectionType> BoundaryInfoType;
   typedef Dune::Stuff::LocalizableFunctionInterface<typename GridPartType::template Codim<0>::EntityType,
                                                     DomainFieldType, dimDomain, RangeFieldType, dimRange> FunctionType;
 

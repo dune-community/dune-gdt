@@ -51,7 +51,7 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::GridboundaryInterface<IntersectionType> BoundaryInfoType;
+  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
   static const bool needs_grid_view = Traits::needs_grid_view;
