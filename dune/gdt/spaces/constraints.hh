@@ -118,7 +118,7 @@ class Dirichlet
 {
 public:
   typedef LocalDefault< RangeFieldImp > BaseType;
-  typedef Dune::Stuff::GridboundaryInterface< IntersectionType > GridBoundaryType;
+  typedef Dune::Stuff::Grid::BoundaryInfoInterface< IntersectionType > GridBoundaryType;
 
   Dirichlet(const GridBoundaryType& gB,
             const size_t numRows,

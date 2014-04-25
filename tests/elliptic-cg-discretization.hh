@@ -55,7 +55,7 @@ public:
 
   static const unsigned int polOrder = polynomialOrder;
 
-  typedef Dune::Stuff::GridboundaryInterface< typename GridViewType::Intersection > BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfoInterface< typename GridViewType::Intersection > BoundaryInfoType;
   typedef Dune::Stuff::LocalizableFunctionInterface
       < typename GridViewType::template Codim< 0 >::Entity, DomainFieldType, dimDomain, RangeFieldType, dimRange >
     FunctionType;
@@ -102,7 +102,6 @@ public:
     using namespace Dune;
     using namespace Dune::GDT;
     if (!is_assembled_) {
-
       // create the containers (use the sparsity pattern of the operator)
       typedef Operators::EllipticCG< FunctionType, MatrixType, SpaceType > EllipticOperatorType;
       system_matrix_ = MatrixType(space_.mapper().size(),
