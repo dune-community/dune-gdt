@@ -27,6 +27,15 @@ namespace Dune {
 namespace GDT {
 
 
+enum class ChooseSpaceBackend
+{
+  gdt,
+  pdelab,
+  fem,
+  fem_localfunction
+}; // enum class ChooseSpaceBackend
+
+
 template <class Traits>
 class SpaceInterface : protected Stuff::CRTPInterface<SpaceInterface<Traits>, Traits>
 {
