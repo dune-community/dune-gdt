@@ -136,7 +136,7 @@ public:
       system_matrix_.mv(dirichlet_shift_vector_, tmp);
       rhs_vector_ -= tmp;
       // apply the dirichlet constraints
-      Constraints::Dirichlet < typename GridViewType::Intersection, RangeFieldType >
+      Constraints::Dirichlet< typename GridViewType::Intersection, RangeFieldType >
         dirichlet_constraints(boundary_info_, space_.mapper().maxNumDofs(), space_.mapper().maxNumDofs());
       grid_walker.add(dirichlet_constraints, system_matrix_);
       grid_walker.add(dirichlet_constraints, rhs_vector_);
