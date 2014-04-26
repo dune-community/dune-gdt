@@ -63,6 +63,7 @@ public:
   typedef BaseFunctionSet::FemWrapper
       < typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain,
         RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
+  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view = false;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 

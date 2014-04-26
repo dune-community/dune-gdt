@@ -43,6 +43,7 @@ public:
   typedef BaseFunctionSet::FiniteVolume< typename GridViewType::template Codim< 0 >::Entity
                                        , typename GridViewType::ctype, GridViewType::dimension
                                        , RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
+  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool         needs_grid_view = true;
 }; // class DefaultTraits
 
