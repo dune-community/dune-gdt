@@ -19,6 +19,7 @@
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/common/float_cmp.hh>
+#include <dune/stuff/grid/partview.hh>
 
 #include "constraints.hh"
 
@@ -53,6 +54,8 @@ public:
   typedef typename GridViewType::Intersection IntersectionType;
   typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+
+  static const Stuff::Grid::ChoosePartView part_view_type = Traits::part_view_type;
 
   static const bool needs_grid_view = Traits::needs_grid_view;
 

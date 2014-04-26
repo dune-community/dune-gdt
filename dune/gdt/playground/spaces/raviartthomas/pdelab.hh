@@ -98,7 +98,8 @@ public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::PiolaTransformedPdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
                                                          RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
-  static const bool needs_grid_view = true;
+  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
+  static const bool needs_grid_view                       = true;
 
 private:
   friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
