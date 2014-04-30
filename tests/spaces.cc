@@ -22,7 +22,6 @@
 
 #include <dune/stuff/common/print.hh>
 
-#include <dune/gdt/spaces.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
