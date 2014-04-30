@@ -61,7 +61,7 @@ struct ProductBase
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef typename Dune::GDT::ProductInterface<typename ProductType::Traits> InterfaceType;
 
@@ -114,7 +114,7 @@ struct LocalizableProduct
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef typename Dune::GDT::LocalizableProductInterface<typename ProductType::Traits> InterfaceType;
 
@@ -271,7 +271,7 @@ struct L2ProductOperator : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::Products::L2<GridViewType> ProductType;
 
@@ -334,7 +334,7 @@ struct L2LocalizableProduct : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::Products::L2Localizable<GridViewType, FunctionType, FunctionType> ProductType;
 
@@ -401,7 +401,7 @@ struct L2AssemblableProduct : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
@@ -476,7 +476,7 @@ struct H1SemiProductOperator : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::Products::H1SemiGeneric<GridViewType> ProductType;
 
@@ -544,7 +544,7 @@ struct H1SemiLocalizableProduct : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::Products::H1SemiLocalizable<GridViewType, FunctionType, FunctionType> ProductType;
 
@@ -616,7 +616,7 @@ struct H1SemiAssemblableProduct : public ::testing::Test
   static const unsigned int dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
@@ -704,7 +704,7 @@ struct ProjectionOperatorBase
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
   static const unsigned int polOrder = SpaceType::polOrder;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   void produces_correct_results() const
@@ -722,7 +722,8 @@ struct ProjectionOperatorBase
     const ProjectionOperatorType projection_operator(*(space.grid_view()));
     projection_operator.apply(function, discrete_function);
     // measure error
-    const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
+    const Dune::Stuff::Functions::Difference<FunctionType, DiscreteFunctionType> difference(function,
+                                                                                            discrete_function);
     const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
@@ -766,7 +767,7 @@ struct DirichletProjectionOperator : public ::testing::Test
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = SpaceType::dimRange;
   static const unsigned int polOrder = SpaceType::polOrder;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   void produces_correct_results() const
@@ -789,7 +790,8 @@ struct DirichletProjectionOperator : public ::testing::Test
                                                                                       boundary_info);
     projection_operator.apply(function, discrete_function);
     // measure error
-    const Dune::Stuff::Function::Difference<FunctionType, DiscreteFunctionType> difference(function, discrete_function);
+    const Dune::Stuff::Functions::Difference<FunctionType, DiscreteFunctionType> difference(function,
+                                                                                            discrete_function);
     const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
@@ -814,7 +816,7 @@ struct ProlongationOperatorBase
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename FineSpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange = FineSpaceType::dimRange;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   void produces_correct_results() const
@@ -839,7 +841,7 @@ struct ProlongationOperatorBase
     // since the projection operator was tested above we are confident this worked
     // but we check anyway (the L2 product operator was also tested above)
     const Dune::GDT::Products::L2<GridViewType> coarse_l2_product_operator(*(coarse_space.grid_view()));
-    const Dune::Stuff::Function::Difference<FunctionType, CoarseDiscreteFunctionType> coarse_difference(
+    const Dune::Stuff::Functions::Difference<FunctionType, CoarseDiscreteFunctionType> coarse_difference(
         function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
     if (coarse_l2_error > RangeFieldType(1e-15))
@@ -855,7 +857,7 @@ struct ProlongationOperatorBase
     prolongation_operator.apply(coarse_discrete_function, fine_discrete_function);
     // and measure the error
     const Dune::GDT::Products::L2<GridViewType> fine_l2_product_operator(*(fine_space.grid_view()));
-    const Dune::Stuff::Function::Difference<FunctionType, FineDiscreteFunctionType> fine_difference(
+    const Dune::Stuff::Functions::Difference<FunctionType, FineDiscreteFunctionType> fine_difference(
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
     if (fine_l2_error > RangeFieldType(1e-15))

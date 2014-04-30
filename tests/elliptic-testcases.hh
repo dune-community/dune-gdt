@@ -117,9 +117,9 @@ public:
   static const unsigned int dimRange = 1;
   typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
-  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ExpressionFunctionType;
   typedef ConstantFunctionType DiffusionType;
   typedef ExpressionFunctionType ForceType;
@@ -223,9 +223,9 @@ public:
   static const unsigned int dimRange = 1;
   typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
-  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ExpressionFunctionType;
   typedef ConstantFunctionType DiffusionType;
   typedef ExpressionFunctionType ForceType;
@@ -330,9 +330,9 @@ public:
   static const unsigned int dimRange = 1;
   typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
-  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
-  typedef Dune::Stuff::Function::Checkerboard<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Checkerboard<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       CheckerboardFunctionType;
   typedef CheckerboardFunctionType DiffusionType;
   typedef ConstantFunctionType ForceType;
@@ -469,9 +469,9 @@ public:
   static const unsigned int dimRange = 1;
   typedef Dune::Stuff::GridboundaryNormalBased<typename GridViewType::Intersection> BoundaryInfoType;
 
-  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ExpressionFunctionType;
   typedef ConstantFunctionType DiffusionType;
   typedef ConstantFunctionType ForceType;
@@ -582,11 +582,11 @@ public:
   static const unsigned int dimRange = 1;
   typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
-  typedef Dune::Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
-  typedef Dune::Stuff::Function::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ExpressionFunctionType;
-  typedef Dune::Stuff::Function::Spe10Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Spe10Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       Spe10Model1FunctionType;
   typedef Spe10Model1FunctionType DiffusionType;
   typedef ConstantFunctionType ForceType;

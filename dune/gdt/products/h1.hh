@@ -43,8 +43,8 @@ public:
   typedef GridViewImp GridViewType;
 
 protected:
-  typedef Stuff::Function::Constant<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
-                                    GridViewType::dimension, FieldImp, 1> FunctionType;
+  typedef Stuff::Functions::Constant<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
+                                     GridViewType::dimension, FieldImp, 1> FunctionType;
 
 public:
   typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<FunctionType>> LocalOperatorType;

@@ -342,7 +342,7 @@ public:
         reference_discretization_->space(), *current_solution_vector_, "current solution");
     // compute error
     if (test_.provides_exact_solution()) {
-      typedef Dune::Stuff::Function::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
+      typedef Dune::Stuff::Functions::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
       return compute_norm(*(test_.reference_grid_view()), difference, type);
     } else {
@@ -352,7 +352,7 @@ public:
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->space(), *reference_solution_vector_, "CG reference solution");
-      typedef Dune::Stuff::Function::Difference<ConstDiscreteFunctionType, ConstDiscreteFunctionType> DifferenceType;
+      typedef Dune::Stuff::Functions::Difference<ConstDiscreteFunctionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
       return compute_norm(*(test_.reference_grid_view()), difference, type);
     }

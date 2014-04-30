@@ -357,7 +357,7 @@ public:
         reference_discretization_->space(), *current_solution_vector_, "current solution");
     // compute error
     if (test_.provides_exact_solution()) {
-      typedef Dune::Stuff::Function::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
+      typedef Dune::Stuff::Functions::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
       return compute_norm(*(test_.reference_grid_view()), difference, type);
     } else {
@@ -367,7 +367,7 @@ public:
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->space(), *reference_solution_vector_, "reference solution");
-      typedef Dune::Stuff::Function::Difference<ConstDiscreteFunctionType, ConstDiscreteFunctionType> DifferenceType;
+      typedef Dune::Stuff::Functions::Difference<ConstDiscreteFunctionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
       return compute_norm(*(test_.reference_grid_view()), difference, type);
     }
@@ -749,7 +749,7 @@ private:
         discretization.space(), *current_solution_vector_on_level_, "discrete solution");
     // compute error
     if (test_.provides_exact_solution()) {
-      typedef Dune::Stuff::Function::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
+      typedef Dune::Stuff::Functions::Difference<ExactSolutionType, ConstDiscreteFunctionType> DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
       const GDT::Products::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(
           test_.diffusion(), *(test_.level_grid_view(current_level_)));
@@ -785,8 +785,8 @@ private:
 
     const Operators::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
-    const Stuff::Function::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(discrete_solution,
-                                                                                                  oswald_interpolation);
+    const Stuff::Functions::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(
+        discrete_solution, oswald_interpolation);
 
     const Products::Elliptic<typename TestCase::DiffusionType, GridViewType> elliptic_product(test_.diffusion(),
                                                                                               grid_view);
@@ -808,7 +808,7 @@ private:
     Operators::Projection<GridViewType> projection_operator(*grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
-    typedef typename Stuff::Function::ESV2007Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
+    typedef typename Stuff::Functions::ESV2007Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
     const Products::WeightedL2<GridViewType, CutoffFunctionType> weighted_l2_product(*grid_view, cutoff_function, 1);
@@ -892,7 +892,7 @@ private:
         1, test_.diffusion());
     const auto eta_nc_difference = discrete_solution - oswald_interpolation;
 
-    typedef typename Stuff::Function::ESV2007Cutoff<DiffusionType> CutoffFunctionType;
+    typedef typename Stuff::Functions::ESV2007Cutoff<DiffusionType> CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
     const LocalOperator::Codim0Integral<LocalEvaluation::Product<CutoffFunctionType>> local_eta_r_product(
         1, cutoff_function);

@@ -64,7 +64,7 @@ public:
       range_vector[ii] = infinity;
     const LocalEvaluation::SWIPDG::Inner<LocalizableFunctionType> inner_evaluation(diffusion_);
     const LocalEvaluation::SWIPDG::BoundaryLHS<LocalizableFunctionType> boundary_evaluation(diffusion_);
-    const Stuff::Function::Constant<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
+    const Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
