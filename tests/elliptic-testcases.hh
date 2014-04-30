@@ -193,7 +193,7 @@ public:
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
-    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 16));
     auto grid = grid_provider->grid();
     grid->globalRefine(1);
@@ -300,7 +300,7 @@ public:
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
-    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(-1, 1, 4));
     auto grid = grid_provider->grid();
     grid->globalRefine(2);
@@ -440,7 +440,7 @@ public:
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
-    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 6));
     auto grid = grid_provider->grid();
     grid->globalRefine(1);
@@ -545,7 +545,7 @@ public:
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
-    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 2));
     auto grid = grid_provider->grid();
     grid->globalRefine(1);
@@ -659,7 +659,7 @@ public:
 private:
   static std::shared_ptr<GridType> create_initial_grid()
   {
-    typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType({0.0, 0.0}, {5.0, 1.0}, {100u, 20u}));
     auto grid = grid_provider->grid();
     grid->globalRefine(1);

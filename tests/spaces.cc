@@ -43,7 +43,7 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::GridProviderCube<GridType> GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   static const unsigned int dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;

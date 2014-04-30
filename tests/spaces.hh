@@ -97,7 +97,7 @@ public:
   {
     using namespace Dune;
     using namespace GDT;
-    Stuff::GridProviderCube<GridType> grid_provider(0.0, 1.0, 3u);
+    Stuff::Grid::Providers::Cube<GridType> grid_provider(0.0, 1.0, 3u);
     grid_                     = grid_provider.grid();
     const auto grid_part_view = SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_);
     space_                    = std::unique_ptr<SpaceType>(new SpaceType(grid_part_view));
