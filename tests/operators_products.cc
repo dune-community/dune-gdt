@@ -55,7 +55,7 @@ struct ProductBase
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -105,7 +105,7 @@ struct LocalizableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -169,7 +169,7 @@ struct AssemblableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -249,7 +249,7 @@ struct L2ProductOperator
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -305,7 +305,7 @@ struct L2LocalizableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -363,7 +363,7 @@ struct L2AssemblableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename Dune::Stuff::LA::CommonDenseVector< double > VectorType;
   typedef typename Dune::Stuff::LA::CommonDenseMatrix< double > MatrixType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
@@ -435,7 +435,7 @@ struct H1SemiProductOperator
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -493,7 +493,7 @@ struct H1SemiLocalizableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -553,7 +553,7 @@ struct H1SemiAssemblableProduct
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename Dune::Stuff::LA::CommonDenseVector< double > VectorType;
   typedef typename Dune::Stuff::LA::CommonDenseMatrix< double > MatrixType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
@@ -630,7 +630,7 @@ struct ProjectionOperatorBase
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -691,7 +691,7 @@ struct DirichletProjectionOperator
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
@@ -741,7 +741,7 @@ struct ProlongationOperatorBase
 {
   typedef typename FineSpaceType::GridViewType      GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename FineSpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                       dimDomain = FineSpaceType::dimDomain;

@@ -40,7 +40,7 @@ struct Oswald_Interpolation_Operator
 {
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
-  typedef Dune::Stuff::GridProviderCube< GridType > GridProviderType;
+  typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
 //  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
 //  typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
