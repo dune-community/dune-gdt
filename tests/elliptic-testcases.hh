@@ -115,7 +115,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -221,7 +221,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -328,7 +328,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -467,7 +467,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryNormalBased<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfos::NormalBased<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -580,7 +580,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::GridboundaryAllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;

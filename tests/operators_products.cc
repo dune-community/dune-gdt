@@ -779,8 +779,8 @@ struct DirichletProjectionOperator : public ::testing::Test
     const SpaceType space(grid_part_view);
     DomainType dirichlet_normal(0);
     dirichlet_normal[0] = DomainFieldType(1);
-    const Dune::Stuff::GridboundaryNormalBased<typename GridViewType::Intersection> boundary_info(false,
-                                                                                                  {dirichlet_normal});
+    const Dune::Stuff::Grid::BoundaryInfos::NormalBased<typename GridViewType::Intersection> boundary_info(
+        false, {dirichlet_normal});
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
