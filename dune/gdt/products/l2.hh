@@ -105,13 +105,13 @@ protected:
 template< class GridViewImp, class FieldImp >
 class L2BaseTraits
   : public WeightedL2BaseTraits< GridViewImp
-                               , Stuff::Function::Constant< typename GridViewImp::template Codim< 0 >::Entity
-                                                          , typename GridViewImp::ctype
-                                                          , GridViewImp::dimension, FieldImp, 1 > >
+                               , Stuff::Functions::Constant< typename GridViewImp::template Codim< 0 >::Entity
+                                                           , typename GridViewImp::ctype
+                                                           , GridViewImp::dimension, FieldImp, 1 > >
 {
-  typedef Stuff::Function::Constant< typename GridViewImp::template Codim< 0 >::Entity
-                                   , typename GridViewImp::ctype
-                                   , GridViewImp::dimension, FieldImp, 1 > FunctionType;
+  typedef Stuff::Functions::Constant< typename GridViewImp::template Codim< 0 >::Entity
+                                    , typename GridViewImp::ctype
+                                    , GridViewImp::dimension, FieldImp, 1 > FunctionType;
 private:
   friend class L2Base< GridViewImp, FieldImp >;
 }; // class L2BaseTraits

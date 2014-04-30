@@ -72,7 +72,7 @@ public:
     auto grid = grid_provider.grid();
     grid->globalRefine(1);
 
-    typedef Stuff::Function::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > FunctionType;
+    typedef Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {{"x[1]", "x[0]"}});
 
     const RangeSpaceType range_space(SpaceTools::GridPartView< RangeSpaceType >::create_leaf(*grid));
@@ -84,7 +84,7 @@ public:
                                                                                           function);
     darcy_operator.apply(source, range);
 
-    const Stuff::Function::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain >
+    const Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain >
       desired_output("x", std::vector< std::string >({"x[1]", "x[0]"}), 1,
                      "desired output",
                      {{"0.0", "1.0"}, {"1.0", "0.0"}});
