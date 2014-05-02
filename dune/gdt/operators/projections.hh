@@ -100,12 +100,9 @@ public:
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
       auto& local_range_DoF_vector = local_range.vector();
-      const auto lagrange_points = range.space().backend().lagrangePointSet(entity);
-      std::vector< DomainType > points(lagrange_points.nop(), DomainType(0));
-      for (size_t ii = 0; ii < lagrange_points.nop(); ++ii)
-        points[ii] = lagrange_points.point(ii);
+      const auto lagrange_points = range.space().lagrange_points(entity);
       // and do the work (see below)
-      apply_local(points, *local_source, local_range_DoF_vector);
+      apply_local(lagrange_points, *local_source, local_range_DoF_vector);
     } // walk the grid
   } // ... apply(... Spaces::ContinuousLagrange::FemBased< GP, 1, R, r, 1 > ...)
 
