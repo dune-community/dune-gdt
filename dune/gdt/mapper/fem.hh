@@ -11,10 +11,6 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
-#if HAVE_DUNE_FEM
-# include <dune/fem/space/mapper/dofmapper.hh>
-#endif
-
 #include "interface.hh"
 
 namespace Dune {
@@ -33,8 +29,8 @@ template< class FemDofMapperImp >
 class FemDofWrapperTraits
 {
 public:
-  typedef FemDofWrapper< FemDofMapperImp >                          derived_type;
-  typedef Dune::Fem::DofMapper< typename FemDofMapperImp::Traits >  BackendType;
+  typedef FemDofWrapper< FemDofMapperImp >  derived_type;
+  typedef FemDofMapperImp                   BackendType;
 };
 
 
@@ -99,7 +95,7 @@ public:
       ret.resize(numLocalDofs);
     // compute
     Functor functor(ret);
-    backend_.mapEachEntityDof(entity, functor);
+    backend_.mapEach(entity, functor);
   }
 
   using InterfaceType::globalIndices;
