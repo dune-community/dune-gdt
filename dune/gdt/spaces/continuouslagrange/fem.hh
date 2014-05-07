@@ -13,7 +13,7 @@
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/common/functionspace.hh>
-#include <dune/fem/space/lagrangespace.hh>
+#include <dune/fem/space/lagrange/space.hh>
 #endif // HAVE_DUNE_FEM
 
 #include "../../mapper/fem.hh"
@@ -38,7 +38,7 @@ class FemBased
 };
 
 
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
 class FemBasedTraits
 {
 public:
@@ -62,27 +62,27 @@ private:
 
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
-  typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
+  typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::FemWrapper<typename BackendType::BaseFunctionSetType, EntityType, DomainFieldType, dimDomain,
-                                      RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::FemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
+                                      dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
 // untested for the vector-valued case, especially Spaces::ContinuousLagrangeBase
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim>
-class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                                            GridPartImp::dimension, RangeFieldImp, rangeDim, 1>
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
+class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                            GridPartImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                                         GridPartImp::dimension, RangeFieldImp, rangeDim, 1> BaseType;
-  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                         GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
-  typedef FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
+  typedef FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
@@ -104,7 +104,7 @@ public:
     : gridPart_(gridP)
     , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
-    , mapper_(std::make_shared<MapperType>(backend_->mapper()))
+    , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
     , tmpMappedRows_(mapper_->maxNumDofs())
     , tmpMappedCols_(mapper_->maxNumDofs())
   {
