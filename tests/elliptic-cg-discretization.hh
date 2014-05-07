@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <vector>
+#include <limits>
 #include <type_traits>
 
 #include <dune/common/timer.hh>
@@ -221,7 +222,7 @@ public:
   EocStudy(const TestCase& test)
     : test_(test)
     , current_level_(0)
-    , last_computed_level_(666)
+    , last_computed_level_(std::numeric_limits< size_t >::max())
     , reference_solution_computed_(false)
     , reference_discretization_(nullptr)
     , reference_solution_vector_(nullptr)
