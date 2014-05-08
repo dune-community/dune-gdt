@@ -6,6 +6,8 @@
 # set up project
 project("dune-gdt" C CXX)
 
+cmake_minimum_required(VERSION 2.8.6)
+
 if(CMAKE_WITH_AUTOTOOLS)
   # this is how it used to be in the good old days :)
   # this assumes that we use autotools to configure everything and just use this CMakeLists.txt for the tests and
@@ -15,10 +17,7 @@ if(CMAKE_WITH_AUTOTOOLS)
     set( CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "DEBUG/RELEASE")
   endif( NOT CMAKE_BUILD_TYPE )
 
-  project( dune-gdt )
-
   # cmake specific
-  cmake_minimum_required( VERSION 2.8 )
   set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true )
   set( CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".lib" ".la" ".a")
   set( CMAKE_COLOR_MAKEFILE ON)
@@ -89,13 +88,10 @@ if(CMAKE_WITH_AUTOTOOLS)
 else(CMAKE_WITH_AUTOTOOLS)
   # this assumes that we run dunecontrol with the --use-cmake option
 
-  #circumvent not building docs
+  # circumvent not building docs
   set(BUILD_DOCS 1)
 
-  # general stuff
-  cmake_minimum_required(VERSION 2.8.6)
-
-  #find dune-common and set the module path
+  # find dune-common and set the module path
   find_package(dune-common)
   list(APPEND CMAKE_MODULE_PATH ${dune-common_MODULE_PATH}
         "${CMAKE_SOURCE_DIR}/cmake/modules")
@@ -118,6 +114,13 @@ else(CMAKE_WITH_AUTOTOOLS)
       --with-dune-fem=${DUNE_FEM_ROOT}
       --with-dune-stuff=${DUNE_STUFF_ROOT}
       --with-dune-geometry=${DUNE_GEOMETRY_ROOT} CXX="${CXX}" CC="${CC}")
+
+  set( COMMON_LIBS
+      ${DUNE_DEFAULT_LIBS}
+      ${GRIDLIBS}
+      ${FASPLIB}
+  )
+
   foreach(i ${SUBDIRS})
     if(${i} STREQUAL "test")
       set(opt EXCLUDE_FROM_ALL)
