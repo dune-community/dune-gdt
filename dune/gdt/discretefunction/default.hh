@@ -83,9 +83,9 @@ public:
     , name_(std::move(source.name_))
   {}
 
-  ThisType& operator=(const ThisType& other) = delete;
+  virtual ~ConstDiscreteFunction() {}
 
-  ~ConstDiscreteFunction() {}
+  ThisType& operator=(const ThisType& other) = delete;
 
   virtual ThisType* copy() const DS_OVERRIDE
   {
@@ -168,9 +168,9 @@ public:
     , vector_(source.vector_)
   {}
 
-  ThisType& operator=(const ThisType& other) = delete;
-
   ~DiscreteFunction() {}
+
+  ThisType& operator=(const ThisType& other) = delete;
 
   virtual ThisType* copy() const DS_OVERRIDE
   {
