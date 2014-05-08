@@ -84,11 +84,11 @@ public:
   {
   }
 
-  ThisType& operator=(const ThisType& other) = delete;
-
-  ~ConstDiscreteFunction()
+  virtual ~ConstDiscreteFunction()
   {
   }
+
+  ThisType& operator=(const ThisType& other) = delete;
 
   virtual ThisType* copy() const DS_OVERRIDE
   {
@@ -170,11 +170,11 @@ public:
   {
   }
 
-  ThisType& operator=(const ThisType& other) = delete;
-
   ~DiscreteFunction()
   {
   }
+
+  ThisType& operator=(const ThisType& other) = delete;
 
   virtual ThisType* copy() const DS_OVERRIDE
   {
