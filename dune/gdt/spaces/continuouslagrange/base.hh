@@ -36,6 +36,8 @@ class ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 >
 {
   typedef SpaceInterface< ImpTraits > BaseType;
   typedef ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
+
+  static const RangeFieldImp compare_tolerance_ = 1e-13;
 public:
   typedef ImpTraits Traits;
 
@@ -91,10 +93,10 @@ public:
       size_t zeros = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
-        if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
+        if (std::abs(this->tmp_basis_values_[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
           local_vertices[jj] = local_vertex;
           ++ones;
-        } else if (Stuff::Common::FloatCmp::eq(1.0 + this->tmp_basis_values_[jj][0], RangeFieldType(1)))
+        } else if (std::abs(this->tmp_basis_values_[jj][0]) < compare_tolerance_)
           ++zeros;
         else
           ++failures;
@@ -140,10 +142,10 @@ public:
       size_t zeros = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
-        if (Stuff::Common::FloatCmp::eq(this->tmp_basis_values_[jj][0], RangeFieldType(1))) {
+        if (std::abs(this->tmp_basis_values_[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
           localDirichletDofs.insert(jj);
           ++ones;
-        } else if (Stuff::Common::FloatCmp::eq(1.0 + this->tmp_basis_values_[jj][0], RangeFieldType(1)))
+        } else if (std::abs(this->tmp_basis_values_[jj][0]) < compare_tolerance_)
           ++zeros;
         else
           ++failures;
