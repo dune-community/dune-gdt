@@ -36,6 +36,38 @@ enum class ChooseSpaceBackend
 }; // enum class ChooseSpaceBackend
 
 
+template< ChooseSpaceBackend type >
+struct ChooseGridPartView;
+
+
+template<>
+struct ChooseGridPartView< ChooseSpaceBackend::gdt >
+{
+  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+};
+
+
+template<>
+struct ChooseGridPartView< ChooseSpaceBackend::pdelab >
+{
+  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+};
+
+
+template<>
+struct ChooseGridPartView< ChooseSpaceBackend::fem >
+{
+  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
+};
+
+
+template<>
+struct ChooseGridPartView< ChooseSpaceBackend::fem_localfunction >
+{
+  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
+};
+
+
 template< class Traits >
 class SpaceInterface
   : protected Stuff::CRTPInterface< SpaceInterface< Traits >, Traits >
