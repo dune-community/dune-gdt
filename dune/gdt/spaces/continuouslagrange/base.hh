@@ -37,7 +37,7 @@ class ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 >
   typedef SpaceInterface< ImpTraits > BaseType;
   typedef ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
 
-  static const RangeFieldImp compare_tolerance_ = 1e-13;
+  static const constexpr RangeFieldImp compare_tolerance_ = 1e-13;
 public:
   typedef ImpTraits Traits;
 
