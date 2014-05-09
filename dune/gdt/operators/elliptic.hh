@@ -10,10 +10,12 @@
 
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
+#include <dune/gdt/assembler/local/codim0.hh>
 
 #include "base.hh"
 
@@ -69,28 +71,27 @@ private:
 }; // class EllipticTraits
 
 
-template< class DiffusionImp
-        , class MatrixImp
-        , class SourceSpaceImp
-        , class RangeSpaceImp
-        , class GridViewImp >
+template< class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp >
 class EllipticCG
-  : public Operators::AssemblableVolumeBase< EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
+  : public Operators::MatrixBasedBase< internal::EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
+  , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
-public:
-  typedef EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > Traits;
-private:
-  typedef Operators::AssemblableVolumeBase< Traits > BaseType;
+  typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
+  typedef Operators::MatrixBasedBase< internal::EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
+      OperatorBaseType;
 
-  typedef typename Traits::DiffusionType      DiffusionType;
-  typedef typename Traits::LocalOperatorType  LocalOperatorType;
+  typedef DiffusionImp DiffusionType;
+  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > > LocalOperatorType;
+  typedef LocalAssembler::Codim0Matrix< LocalOperatorType > LocalAssemblerType;
 public:
+  typedef internal::EllipticCGTraits< DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > Traits;
+
   typedef typename Traits::MatrixType       MatrixType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::GridViewType     GridViewType;
 
-  using BaseType::pattern;
+  using OperatorBaseType::pattern;
 
   static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
                                                    const SourceSpaceType& source_space,
@@ -104,32 +105,45 @@ public:
              const SourceSpaceType& source_space,
              const RangeSpaceType& range_space,
              const GridViewType& grid_view)
-    : BaseType(matrix, source_space, range_space, grid_view)
+    : OperatorBaseType(matrix, source_space, range_space, grid_view)
+    , AssemblerBaseType(range_space, grid_view, source_space)
     , local_operator_(diffusion)
-  {}
+    , local_assembler_(local_operator_)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
 
   EllipticCG(const DiffusionType& diffusion,
              MatrixType& matrix,
              const SourceSpaceType& source_space,
              const RangeSpaceType& range_space)
-    : BaseType(matrix, source_space, range_space)
+    : OperatorBaseType(matrix, source_space, range_space)
+    , AssemblerBaseType(range_space, source_space)
     , local_operator_(diffusion)
-  {}
+    , local_assembler_(local_operator_)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
 
   EllipticCG(const DiffusionType& diffusion,
              MatrixType& matrix,
              const SourceSpaceType& source_space)
-    : BaseType(matrix, source_space)
+    : OperatorBaseType(matrix, source_space)
+    , AssemblerBaseType(source_space)
     , local_operator_(diffusion)
-  {}
-
-private:
-  virtual const LocalOperatorType& local_operator() const DS_OVERRIDE DS_FINAL
+    , local_assembler_(local_operator_)
   {
-    return local_operator_;
+    this->add(local_assembler_, this->matrix());
   }
 
+  virtual void assemble() DS_OVERRIDE DS_FINAL
+  {
+    AssemblerBaseType::assemble();
+  }
+
+private:
   const LocalOperatorType local_operator_;
+  const LocalAssemblerType local_assembler_;
 }; // class EllipticCG
 
 
