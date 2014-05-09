@@ -24,7 +24,7 @@ namespace Spaces {
 
 template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
           class RangeFieldType, int dimRange, int dimRangeCols = 1>
-class ContinuousLagrangeSpace
+class ContinuousLagrangeProvider
 {
   static const Stuff::Grid::ChoosePartView part_view_type = ChooseGridPartView<backend_type>::type;
 
@@ -68,7 +68,7 @@ public:
   {
     return Type(grid_provider.template layer<layer_type, part_view_type>(level));
   }
-}; // class ContinuousLagrangeSpace
+}; // class ContinuousLagrangeProvider
 
 
 } // namespace Spaces
