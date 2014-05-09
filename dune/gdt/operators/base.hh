@@ -17,9 +17,8 @@ namespace Operators {
 
 
 template< class Traits >
-class AssemblableVolumeBase
-    : public AssemblableOperatorInterface< Traits >
-    , public Functor::Codim0< typename Traits::GridViewType >
+class MatrixBasedBase
+  : public AssemblableOperatorInterface< Traits >
 {
   typedef AssemblableOperatorInterface< Traits > InterfaceType;
 public:
@@ -30,53 +29,35 @@ public:
 
   typedef typename MatrixType::ScalarType   FieldType;
 private:
-  typedef TmpStorageProvider::Matrices< FieldType >         TmpMatricesProviderType;
-  typedef typename Traits::LocalOperatorType                LocalOperatorType;
-  typedef LocalAssembler::Codim0Matrix< LocalOperatorType > LocalAssemblerType;
-  typedef Stuff::LA::Solver< MatrixType >                   LinearSolverType;
+  typedef Stuff::LA::Solver< MatrixType > LinearSolverType;
 
 public:
   using typename InterfaceType::EntityType;
 
-  AssemblableVolumeBase(MatrixType& matrix,
-                        const SourceSpaceType& source_space,
-                        const RangeSpaceType& range_space,
-                        const GridViewType& grid_view)
+  MatrixBasedBase(MatrixType& matrix,
+                  const SourceSpaceType& source_space,
+                  const RangeSpaceType& range_space,
+                  const GridViewType& grid_view)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(range_space)
     , grid_view_(grid_view)
-    , local_assembler_(nullptr)
-    , tmp_storage_(nullptr)
-    , linear_solver_(nullptr)
-    , prepared_(false)
     , assembled_(false)
   {}
 
-  AssemblableVolumeBase(MatrixType& matrix,
-                        const SourceSpaceType& source_space,
-                        const RangeSpaceType& range_space)
+  MatrixBasedBase(MatrixType& matrix, const SourceSpaceType& source_space, const RangeSpaceType& range_space)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(range_space)
     , grid_view_(*(source_space_.grid_view()))
-    , local_assembler_(nullptr)
-    , tmp_storage_(nullptr)
-    , linear_solver_(nullptr)
-    , prepared_(false)
     , assembled_(false)
   {}
 
-  AssemblableVolumeBase(MatrixType& matrix,
-                        const SourceSpaceType& source_space)
+  MatrixBasedBase(MatrixType& matrix, const SourceSpaceType& source_space)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(source_space_)
     , grid_view_(*(source_space_.grid_view()))
-    , local_assembler_(nullptr)
-    , tmp_storage_(nullptr)
-    , linear_solver_(nullptr)
-    , prepared_(false)
     , assembled_(false)
   {}
 
@@ -105,57 +86,14 @@ public:
     return matrix_;
   }
 
-private:
-  virtual const LocalOperatorType& local_operator() const = 0;
-
-public:
-  virtual void prepare()
-  {
-    if (!assembled_ && !prepared_) {
-      local_assembler_ = std::unique_ptr< LocalAssemblerType >(new LocalAssemblerType(local_operator()));
-      tmp_storage_
-          = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(local_assembler_->numTmpObjectsRequired(),
-                                                                                   range_space_.mapper().maxNumDofs(),
-                                                                                   source_space_.mapper().maxNumDofs()));
-      prepared_ = true;
-    }
-  } // ... prepare()
-
-  virtual void apply_local(const EntityType& entity)
-  {
-    assert(prepared_);
-    assert(local_assembler_);
-    assert(tmp_storage_);
-    local_assembler_->assembleLocal(range_space_, source_space_,
-                                    entity,
-                                    matrix(),
-                                    tmp_storage_->matrices(), tmp_storage_->indices());
-  } // ... apply_local(...)
-
-  virtual void finalize()
-  {
-    if (!linear_solver_)
-      linear_solver_ = std::unique_ptr< LinearSolverType >(new LinearSolverType(matrix_));
-  }
-
-  void assemble()
-  {
-    if (!assembled_) {
-      GridWalker< GridViewType > grid_walker(grid_view_);
-      grid_walker.add(*this);
-      grid_walker.walk();
-      assembled_ = true;
-    }
-  } // ... assemble()
+  virtual void assemble() = 0;
 
   template< class S, class R >
   void apply(const Stuff::LA::VectorInterface< S >& source, Stuff::LA::VectorInterface< R >& range)
   {
-    typedef typename S::derived_type SourceType;
-    typedef typename R::derived_type RangeType;
     assemble();
-    matrix_.mv(static_cast< const SourceType& >(source), static_cast< RangeType& >(range));
-  }
+    matrix_.mv(source.as_imp(), range.as_imp());
+  } // ... apply(...)
 
   static std::vector< std::string > invert_options()
   {
@@ -172,24 +110,17 @@ public:
                      Stuff::LA::VectorInterface< S >& source,
                      const Stuff::Common::ConfigTree& opts)
   {
-    typedef typename S::derived_type SourceType;
-    typedef typename R::derived_type RangeType;
     assemble();
-    assert(linear_solver_);
-    linear_solver_->apply(static_cast< const RangeType& >(range), static_cast< SourceType& >(source), opts);
-  }
+    LinearSolverType(matrix).apply(range.as_imp(), source.as_imp(), opts);
+  } // ... apply_inverse(...)
 
 private:
   MatrixType& matrix_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const GridViewType& grid_view_;
-  std::unique_ptr< LocalAssemblerType > local_assembler_;
-  std::unique_ptr< TmpMatricesProviderType > tmp_storage_;
-  std::unique_ptr< LinearSolverType > linear_solver_;
-  bool prepared_;
   bool assembled_;
-}; // class AssemblableVolumeBase
+}; // class MatrixBasedBase
 
 
 } // namespace Operators
