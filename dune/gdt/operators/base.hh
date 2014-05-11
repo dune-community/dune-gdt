@@ -6,8 +6,7 @@
 #ifndef DUNE_GDT_OPERATORS_BASE_HH
 #define DUNE_GDT_OPERATORS_BASE_HH
 
-#include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/stuff/la/solver.hh>
 
 #include "interfaces.hh"
 
@@ -17,27 +16,23 @@ namespace Operators {
 
 
 template< class Traits >
-class MatrixBasedBase
+class MatrixBased
   : public AssemblableOperatorInterface< Traits >
 {
-  typedef AssemblableOperatorInterface< Traits > InterfaceType;
+  typedef AssemblableOperatorInterface< Traits > BaseType;
 public:
-  typedef typename Traits::GridViewType     GridViewType;
-  typedef typename Traits::SourceSpaceType  SourceSpaceType;
-  typedef typename Traits::RangeSpaceType   RangeSpaceType;
-  typedef typename Traits::MatrixType       MatrixType;
-
-  typedef typename MatrixType::ScalarType   FieldType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::MatrixType;
 private:
   typedef Stuff::LA::Solver< MatrixType > LinearSolverType;
 
 public:
-  using typename InterfaceType::EntityType;
-
-  MatrixBasedBase(MatrixType& matrix,
-                  const SourceSpaceType& source_space,
-                  const RangeSpaceType& range_space,
-                  const GridViewType& grid_view)
+  MatrixBased(MatrixType& matrix,
+              const SourceSpaceType& source_space,
+              const RangeSpaceType& range_space,
+              const GridViewType& grid_view)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(range_space)
@@ -45,7 +40,7 @@ public:
     , assembled_(false)
   {}
 
-  MatrixBasedBase(MatrixType& matrix, const SourceSpaceType& source_space, const RangeSpaceType& range_space)
+  MatrixBased(MatrixType& matrix, const SourceSpaceType& source_space, const RangeSpaceType& range_space)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(range_space)
@@ -53,7 +48,7 @@ public:
     , assembled_(false)
   {}
 
-  MatrixBasedBase(MatrixType& matrix, const SourceSpaceType& source_space)
+  MatrixBased(MatrixType& matrix, const SourceSpaceType& source_space)
     : matrix_(matrix)
     , source_space_(source_space)
     , range_space_(source_space_)
@@ -120,7 +115,7 @@ private:
   const RangeSpaceType& range_space_;
   const GridViewType& grid_view_;
   bool assembled_;
-}; // class MatrixBasedBase
+}; // class MatrixBased
 
 
 } // namespace Operators
