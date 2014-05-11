@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_ELLIPTIC_HH
-#define DUNE_GDT_OPERATORS_ELLIPTIC_HH
+#ifndef DUNE_GDT_OPERATORS_ELLIPTIC_CG_HH
+#define DUNE_GDT_OPERATORS_ELLIPTIC_CG_HH
 
 #include "config.h"
 
@@ -139,4 +139,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_ELLIPTIC_HH
+#endif // DUNE_GDT_OPERATORS_ELLIPTIC_CG_HH
