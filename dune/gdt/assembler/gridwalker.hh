@@ -417,8 +417,18 @@ protected:
     , public Codim1Object
   {
   public:
-    GridWalkerWrapper(ThisType& grid_walker)
+    GridWalkerWrapper(ThisType& grid_walker,
+                      const ApplyOn::WhichEntity< GridViewType >* which_entities)
       : grid_walker_(grid_walker)
+      , which_entities_(which_entities)
+      , which_intersections_(new ApplyOn::AllIntersections< GridViewType >())
+    {}
+
+    GridWalkerWrapper(ThisType& grid_walker,
+                      const ApplyOn::WhichIntersection< GridViewType >* which_intersections)
+      : grid_walker_(grid_walker)
+      , which_entities_(new ApplyOn::AllEntities< GridViewType >())
+      , which_intersections_(which_intersections)
     {}
 
     virtual ~GridWalkerWrapper() {}
@@ -428,14 +438,14 @@ protected:
       grid_walker_.prepare();
     }
 
-    virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_OVERRIDE DS_FINAL
+    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_OVERRIDE DS_FINAL
     {
-      return grid_walker_.apply_on(entity);
+      return which_entities_->apply_on(grid_view, entity) && grid_walker_.apply_on(entity);
     }
 
-    virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+    virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
     {
-      return grid_walker_.apply_on(intersection);
+      return which_intersections_->apply_on(grid_view, intersection) && grid_walker_.apply_on(intersection);
     }
 
     virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
@@ -457,6 +467,8 @@ protected:
 
   private:
     ThisType& grid_walker_;
+    std::unique_ptr< const ApplyOn::WhichEntity< GridViewType > > which_entities_;
+    std::unique_ptr< const ApplyOn::WhichIntersection< GridViewType > > which_intersections_;
   }; // class GridWalkerWrapper
 
 
@@ -477,8 +489,7 @@ public:
   }
 
   void add(Functor::Codim1< GridViewType >& functor,
-           const ApplyOn::WhichIntersection< GridViewType >* where
-              = new ApplyOn::AllIntersections< GridViewType >())
+           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
   {
     codim1_functors_.emplace_back(new Codim1FunctorWrapper< Functor::Codim1< GridViewType > >(functor, where));
   }
@@ -504,13 +515,26 @@ public:
                                                                                                   which_intersections));
   }
 
-  void add(ThisType& other)
+  void add(ThisType& other,
+           const ApplyOn::WhichEntity< GridViewType >* which_entities = new ApplyOn::AllEntities< GridViewType >(),
+           const ApplyOn::WhichIntersection< GridViewType >* which_intersections
+              = new ApplyOn::AllIntersections< GridViewType >())
   {
     if (&other == this)
       DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
-    codim0_functors_.emplace_back(new GridWalkerWrapper(other));
-    codim1_functors_.emplace_back(new GridWalkerWrapper(other));
-  }
+    codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
+    codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
+  } // ... add(...)
+
+  void add(ThisType& other,
+           const ApplyOn::WhichIntersection< GridViewType >* which_intersections,
+           const ApplyOn::WhichEntity< GridViewType >* which_entities = new ApplyOn::AllEntities< GridViewType >())
+  {
+    if (&other == this)
+      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
+    codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
+    codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
+  } // ... add(...)
 
   void clear()
   {
