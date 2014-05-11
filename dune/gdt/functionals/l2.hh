@@ -12,6 +12,7 @@
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
 #include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/assembler/system.hh>
 
 #include "base.hh"
 
@@ -22,6 +23,9 @@ namespace Functionals {
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType >
 class L2Volume;
+
+
+namespace internal {
 
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp >
@@ -43,44 +47,60 @@ public:
   typedef SpaceImp    SpaceType;
   typedef GridViewImp GridViewType;
   typedef typename VectorType::ScalarType ScalarType;
-  typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > LocalFunctionalType;
 }; // class L2VolumeTraits
+
+
+} // namespace internal
 
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp >
 class L2Volume
-  : public Functionals::AssemblableVolumeBase< L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+  : public Functionals::VectorBased< internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+  , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
 {
-  typedef Functionals::AssemblableVolumeBase< L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > > BaseType;
+  typedef Functionals::VectorBased< internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+      FunctionalBaseType;
+  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
+
+  typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > LocalFunctionalType;
+  typedef LocalAssembler::Codim0Vector< LocalFunctionalType > LocalAssemblerType;
+
 public:
-  typedef L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > Traits;
+  typedef internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > Traits;
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType  SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
-private:
-  typedef typename Traits::LocalFunctionalType LocalFunctionalType;
-
-public:
   L2Volume(const FunctionType& function, VectorType& vector, const SpaceType& space, const GridViewType& grid_view)
-    : BaseType(vector, space, grid_view)
-    , local_functional_(function)
-  {}
+    : FunctionalBaseType(vector, space, grid_view)
+    , AssemblerBaseType(space, grid_view)
+    , function_(function)
+    , local_functional_(function_)
+    , local_assembler_(local_functional_)
+  {
+    this->add(local_assembler_, this->vector());
+  }
 
   L2Volume(const FunctionType& function, VectorType& vector, const SpaceType& space)
-    : BaseType(vector, space)
-    , local_functional_(function)
-  {}
-
-  virtual const LocalFunctionalType& local_functional() const DS_OVERRIDE DS_FINAL
+    : FunctionalBaseType(vector, space)
+    , AssemblerBaseType(space)
+    , function_(function)
+    , local_functional_(function_)
+    , local_assembler_(local_functional_)
   {
-    return local_functional_;
+    this->add(local_assembler_, this->vector());
+  }
+
+  virtual void assemble() DS_OVERRIDE DS_FINAL
+  {
+    AssemblerBaseType::assemble();
   }
 
 private:
+  const FunctionType& function_;
   const LocalFunctionalType local_functional_;
+  const LocalAssemblerType local_assembler_;
 }; // class L2Volume
-
 
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType >
