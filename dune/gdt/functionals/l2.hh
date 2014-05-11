@@ -126,15 +126,20 @@ public:
   typedef SpaceImp    SpaceType;
   typedef GridViewImp GridViewType;
   typedef typename VectorType::ScalarType ScalarType;
-  typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > LocalFunctionalType;
 }; // class L2FaceTraits
 
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp >
 class L2Face
-  : public Functionals::AssemblableFaceBase< L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+  : public Functionals::VectorBased< L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+  , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
 {
-  typedef Functionals::AssemblableFaceBase< L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > > BaseType;
+  typedef Functionals::VectorBased< L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
+      FunctionalBaseType;
+  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
+
+  typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > LocalFunctionalType;
+  typedef LocalAssembler::Codim1Vector< LocalFunctionalType > LocalAssemblerType;
 public:
   typedef L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > Traits;
 
@@ -142,27 +147,44 @@ public:
   typedef typename Traits::SpaceType  SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
-private:
-  typedef typename Traits::LocalFunctionalType LocalFunctionalType;
-
-public:
-  L2Face(const FunctionType& function, VectorType& vector, const SpaceType& space, const GridViewType& grid_view)
-    : BaseType(vector, space, grid_view)
-    , local_functional_(function)
-  {}
-
-  L2Face(const FunctionType& function, VectorType& vector, const SpaceType& space)
-    : BaseType(vector, space)
-    , local_functional_(function)
-  {}
-
-  virtual const LocalFunctionalType& local_functional() const DS_OVERRIDE DS_FINAL
+  L2Face(const FunctionType& function,
+         VectorType& vector,
+         const SpaceType& space,
+         const GridViewType& grid_view,
+         GDT::ApplyOn::WhichIntersection< GridViewType >* which_intersections
+            = new GDT::ApplyOn::AllIntersections< GridViewType >())
+    : FunctionalBaseType(vector, space, grid_view)
+    , AssemblerBaseType(space, grid_view)
+    , function_(function)
+    , local_functional_(function_)
+    , local_assembler_(local_functional_)
   {
-    return local_functional_;
+    this->add(local_assembler_, *(this->vector()), which_intersections);
+  }
+
+  L2Face(const FunctionType& function,
+         VectorType& vector,
+         const SpaceType& space,
+         GDT::ApplyOn::WhichIntersection< GridViewType >* which_intersections
+            = new GDT::ApplyOn::AllIntersections< GridViewType >())
+    : FunctionalBaseType(vector, space)
+    , AssemblerBaseType(space)
+    , function_(function)
+    , local_functional_(function_)
+    , local_assembler_(local_functional_)
+  {
+    this->add(local_assembler_, this->vector(), which_intersections);
+  }
+
+  virtual void assemble() DS_OVERRIDE DS_FINAL
+  {
+    AssemblerBaseType::assemble();
   }
 
 private:
+  const FunctionType& function_;
   const LocalFunctionalType local_functional_;
+  const LocalAssemblerType local_assembler_;
 }; // class L2Face
 
 
