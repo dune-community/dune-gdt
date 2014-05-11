@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_OPERATORS_ELLIPTIC_HH
 #define DUNE_GDT_OPERATORS_ELLIPTIC_HH
 
+#include "config.h"
+
 #include <type_traits>
 
 #include <dune/stuff/la/container/interfaces.hh>
@@ -24,22 +26,24 @@ namespace GDT {
 namespace Operators {
 
 
-// forward, to be used in the traits
-template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
-          class GridViewImp                                                              = typename SourceSpaceImp::GridViewType>
+// forwards
+template <class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
+          class GridViewImp                                                               = typename SourceSpaceImp::GridViewType>
 class EllipticCG;
 
 
-template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
-          class GridViewImp                                                              = typename SourceSpaceImp::GridViewType>
+namespace internal {
+
+
+template <class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
 class EllipticCGTraits
 {
   static_assert(std::is_base_of<Stuff::LocalizableFunctionInterface<
-                                    typename DiffusionImp::EntityType, typename DiffusionImp::DomainFieldType,
-                                    DiffusionImp::dimDomain, typename DiffusionImp::RangeFieldType,
-                                    DiffusionImp::dimRange, DiffusionImp::dimRangeCols>,
-                                DiffusionImp>::value,
-                "DiffusionImp has to be derived from Stuff::LocalizableFunctionInterface!");
+                                    typename DiffusionType::EntityType, typename DiffusionType::DomainFieldType,
+                                    DiffusionType::dimDomain, typename DiffusionType::RangeFieldType,
+                                    DiffusionType::dimRange, DiffusionType::dimRangeCols>,
+                                DiffusionType>::value,
+                "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixImp::Traits>, MatrixImp>::value,
                 "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceImp::Traits>, SourceSpaceImp>::value,
@@ -48,38 +52,31 @@ class EllipticCGTraits
                 "RangeSpaceImp has to be derived from SpaceInterface!");
 
 public:
-  typedef EllipticCG<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> derived_type;
+  typedef EllipticCG<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> derived_type;
   typedef MatrixImp MatrixType;
   typedef SourceSpaceImp SourceSpaceType;
   typedef RangeSpaceImp RangeSpaceType;
   typedef GridViewImp GridViewType;
-
-private:
-  typedef DiffusionImp DiffusionType;
-
-public:
-  typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> LocalOperatorType;
-
-private:
-  friend class EllipticCG<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp>;
-}; // class EllipticTraits
+}; // class EllipticCGTraits
 
 
-template <class DiffusionImp, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
-class EllipticCG : public Operators::MatrixBasedBase<internal::EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp,
-                                                                                RangeSpaceImp, GridViewImp>>,
+} // namespace internal
+
+
+template <class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
+class EllipticCG : public Operators::MatrixBased<internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp,
+                                                                            RangeSpaceImp, GridViewImp>>,
                    public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
 {
   typedef SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp> AssemblerBaseType;
-  typedef Operators::MatrixBasedBase<internal::EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp,
-                                                                GridViewImp>> OperatorBaseType;
+  typedef Operators::MatrixBased<internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp,
+                                                            GridViewImp>> OperatorBaseType;
 
-  typedef DiffusionImp DiffusionType;
   typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> LocalOperatorType;
   typedef LocalAssembler::Codim0Matrix<LocalOperatorType> LocalAssemblerType;
 
 public:
-  typedef internal::EllipticCGTraits<DiffusionImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> Traits;
+  typedef internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp> Traits;
 
   typedef typename Traits::MatrixType MatrixType;
   typedef typename Traits::SourceSpaceType SourceSpaceType;
@@ -121,6 +118,10 @@ public:
     , local_assembler_(local_operator_)
   {
     this->add(local_assembler_, this->matrix());
+  }
+
+  virtual ~EllipticCG()
+  {
   }
 
   virtual void assemble() DS_OVERRIDE DS_FINAL
