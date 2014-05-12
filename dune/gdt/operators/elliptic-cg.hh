@@ -18,6 +18,7 @@
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/gdt/assembler/system.hh>
 
 #include "base.hh"
 
@@ -102,7 +103,8 @@ public:
              const GridViewType& grid_view)
     : OperatorBaseType(matrix, source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
-    , local_operator_(diffusion)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
   {
     this->add(local_assembler_, this->matrix());
@@ -114,7 +116,8 @@ public:
              const RangeSpaceType& range_space)
     : OperatorBaseType(matrix, source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
-    , local_operator_(diffusion)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
   {
     this->add(local_assembler_, this->matrix());
@@ -125,7 +128,8 @@ public:
              const SourceSpaceType& source_space)
     : OperatorBaseType(matrix, source_space)
     , AssemblerBaseType(source_space)
-    , local_operator_(diffusion)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
   {
     this->add(local_assembler_, this->matrix());
@@ -139,6 +143,7 @@ public:
   }
 
 private:
+  const DiffusionType& diffusion_;
   const LocalOperatorType local_operator_;
   const LocalAssemblerType local_assembler_;
 }; // class EllipticCG
