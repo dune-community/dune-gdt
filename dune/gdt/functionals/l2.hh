@@ -77,7 +77,7 @@ public:
     , local_functional_(function_)
     , local_assembler_(local_functional_)
   {
-    this->add(local_assembler_, this->vector());
+    setup();
   }
 
   L2Volume(const FunctionType& function, VectorType& vector, const SpaceType& space)
@@ -87,7 +87,7 @@ public:
     , local_functional_(function_)
     , local_assembler_(local_functional_)
   {
-    this->add(local_assembler_, this->vector());
+    setup();
   }
 
   virtual void assemble() DS_OVERRIDE DS_FINAL
@@ -96,6 +96,11 @@ public:
   }
 
 private:
+  void setup()
+  {
+    this->add(local_assembler_, this->vector());
+  }
+
   const FunctionType& function_;
   const LocalFunctionalType local_functional_;
   const LocalAssemblerType local_assembler_;
@@ -104,6 +109,9 @@ private:
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType>
 class L2Face;
+
+
+namespace internal {
 
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
@@ -127,25 +135,29 @@ public:
 }; // class L2FaceTraits
 
 
+} // namespace internal
+
+
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
-class L2Face : public Functionals::VectorBased<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>,
+class L2Face : public Functionals::VectorBased<internal::L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>,
                public SystemAssembler<SpaceImp, GridViewImp, SpaceImp>
 {
-  typedef Functionals::VectorBased<L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>> FunctionalBaseType;
+  typedef Functionals::VectorBased<internal::L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
+      FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
 
   typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> LocalFunctionalType;
   typedef LocalAssembler::Codim1Vector<LocalFunctionalType> LocalAssemblerType;
 
 public:
-  typedef L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
+  typedef internal::L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
 
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
   L2Face(const FunctionType& function, VectorType& vector, const SpaceType& space, const GridViewType& grid_view,
-         GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
+         const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
              new GDT::ApplyOn::AllIntersections<GridViewType>())
     : FunctionalBaseType(vector, space, grid_view)
     , AssemblerBaseType(space, grid_view)
@@ -153,11 +165,11 @@ public:
     , local_functional_(function_)
     , local_assembler_(local_functional_)
   {
-    this->add(local_assembler_, *(this->vector()), which_intersections);
+    setup(which_intersections);
   }
 
   L2Face(const FunctionType& function, VectorType& vector, const SpaceType& space,
-         GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
+         const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
              new GDT::ApplyOn::AllIntersections<GridViewType>())
     : FunctionalBaseType(vector, space)
     , AssemblerBaseType(space)
@@ -165,7 +177,7 @@ public:
     , local_functional_(function_)
     , local_assembler_(local_functional_)
   {
-    this->add(local_assembler_, this->vector(), which_intersections);
+    setup(which_intersections);
   }
 
   virtual void assemble() DS_OVERRIDE DS_FINAL
@@ -174,6 +186,11 @@ public:
   }
 
 private:
+  void setup(const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections)
+  {
+    this->add(local_assembler_, this->vector(), which_intersections);
+  }
+
   const FunctionType& function_;
   const LocalFunctionalType local_functional_;
   const LocalAssemblerType local_assembler_;
