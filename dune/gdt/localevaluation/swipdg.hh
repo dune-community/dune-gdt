@@ -486,7 +486,7 @@ public:
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // class BoundaryDirichletLHS
+}; // class BoundaryLHS
 
 
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
