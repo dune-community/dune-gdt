@@ -24,34 +24,51 @@ namespace GDT {
 namespace LocalEvaluation {
 
 
-// forward, to be used in the traits
-template <class LocalizableFunctionImp>
+// forwards
+template <class DiffusionFactorType, class DiffusionTensorType = void>
 class Elliptic;
+
+
+namespace internal {
 
 
 /**
  *  \brief  Traits for the Elliptic evaluation.
  */
-template <class LocalizableFunctionImp>
+template <class DiffusionFactorType, class DiffusionTensorType = void>
 class EllipticTraits
 {
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
+                "DiffusionFactorType has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionTensorType>::value,
+                "DiffusionTensorType has to be derived from Stuff::IsLocalizableFunction.");
+
 public:
-  typedef Elliptic<LocalizableFunctionImp> derived_type;
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  typedef Elliptic<DiffusionFactorType, DiffusionTensorType> derived_type;
 };
+
+
+template <class LocalizableFunctionType>
+class EllipticTraits<LocalizableFunctionType, void>
+{
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
+                "LocalizableFunctionType has to be derived from Stuff::IsLocalizableFunction.");
+
+public:
+  typedef Elliptic<LocalizableFunctionType, void> derived_type;
+};
+} // namespace internal
 
 
 /**
  *  \brief  Computes an elliptic evaluation.
  */
-template <class LocalizableFunctionImp>
-class Elliptic : public LocalEvaluation::Codim0Interface<EllipticTraits<LocalizableFunctionImp>, 2>
+template <class LocalizableFunctionType>
+class Elliptic<LocalizableFunctionType, void>
+    : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<LocalizableFunctionType, void>, 2>
 {
 public:
-  typedef EllipticTraits<LocalizableFunctionImp> Traits;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef internal::EllipticTraits<LocalizableFunctionType, void> Traits;
 
   Elliptic(const LocalizableFunctionType& inducingFunction)
     : inducingFunction_(inducingFunction)
