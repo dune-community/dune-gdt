@@ -30,27 +30,54 @@ namespace Operators {
 
 
 // forwards
-template< class DiffusionType
+template< class DiffusionFactorType
         , class MatrixImp
         , class SourceSpaceImp
         , class RangeSpaceImp = SourceSpaceImp
-        , class GridViewImp = typename SourceSpaceImp::GridViewType >
+        , class GridViewImp = typename SourceSpaceImp::GridViewType
+        , class DiffusionTensorType = void >
 class EllipticSWIPDG;
 
 
 namespace internal {
 
 
-template< class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp >
+template< class DiffusionFactorType
+        , class MatrixImp
+        , class SourceSpaceImp
+        , class RangeSpaceImp
+        , class GridViewImp
+        , class DiffusionTensorType = void >
 class EllipticSWIPDGTraits
 {
-  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< typename DiffusionType::EntityType
-                                                                    , typename DiffusionType::DomainFieldType
-                                                                    , DiffusionType::dimDomain
-                                                                    , typename DiffusionType::RangeFieldType
-                                                                    , DiffusionType::dimRange
-                                                                    , DiffusionType::dimRangeCols >
-                               , DiffusionType >::value,
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionFactorType >::value,
+                "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionTensorType >::value,
+                "DiffusionTensorType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
+                "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceImp::Traits >, SourceSpaceImp >::value,
+                "SourceSpaceImp has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceImp::Traits >, RangeSpaceImp >::value,
+                "RangeSpaceImp has to be derived from SpaceInterface!");
+public:
+  typedef EllipticSWIPDG< DiffusionFactorType, MatrixImp, SourceSpaceImp
+                        , RangeSpaceImp, GridViewImp, DiffusionTensorType > derived_type;
+  typedef MatrixImp       MatrixType;
+  typedef SourceSpaceImp  SourceSpaceType;
+  typedef RangeSpaceImp   RangeSpaceType;
+  typedef GridViewImp     GridViewType;
+}; // class EllipticSWIPDGTraits
+
+
+template< class DiffusionType
+        , class MatrixImp
+        , class SourceSpaceImp
+        , class RangeSpaceImp
+        , class GridViewImp >
+class EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
+{
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionType >::value,
                 "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
                 "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
@@ -59,7 +86,7 @@ class EllipticSWIPDGTraits
   static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceImp::Traits >, RangeSpaceImp >::value,
                 "RangeSpaceImp has to be derived from SpaceInterface!");
 public:
-  typedef EllipticSWIPDG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > derived_type;
+  typedef EllipticSWIPDG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void > derived_type;
   typedef MatrixImp       MatrixType;
   typedef SourceSpaceImp  SourceSpaceType;
   typedef RangeSpaceImp   RangeSpaceType;
@@ -71,18 +98,22 @@ public:
 
 
 template< class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp >
-class EllipticSWIPDG
-  : public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
+class EllipticSWIPDG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
+  : public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp
+                                                                 , RangeSpaceImp, GridViewImp, void > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
   typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
-  typedef Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > >
-      OperatorBaseType;
+  typedef Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp
+                                                                , SourceSpaceImp, RangeSpaceImp
+                                                                , GridViewImp, void > > OperatorBaseType;
 
   typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > > VolumeOperatorType;
   typedef LocalAssembler::Codim0Matrix< VolumeOperatorType >                          VolumeAssemblerType;
-  typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SWIPDG::Inner< DiffusionType > > CouplingOperatorType;
-  typedef LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >                             CouplingAssemblerType;
+  typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SWIPDG::Inner< DiffusionType > >
+      CouplingOperatorType;
+  typedef LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >
+      CouplingAssemblerType;
 
   typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SWIPDG::BoundaryLHS< DiffusionType > >
       DirichletBoundaryOperatorType;
@@ -91,7 +122,8 @@ class EllipticSWIPDG
   typedef typename MatrixImp::ScalarType ScalarType;
 
 public:
-  typedef internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp > Traits;
+  typedef internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
+      Traits;
 
   typedef typename Traits::MatrixType       MatrixType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
@@ -115,7 +147,7 @@ public:
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
                  const GridViewType& grid_view,
-                 const ScalarType beta = 1.0)
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
     : OperatorBaseType(matrix, source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
     , diffusion_(diffusion)
@@ -139,7 +171,7 @@ public:
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
-                 const ScalarType beta = 1.0)
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
     : OperatorBaseType(matrix, source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
     , diffusion_(diffusion)
@@ -162,7 +194,7 @@ public:
                  const BoundaryInfoType& boundary_info,
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
-                 const ScalarType beta = 1.0)
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
     : OperatorBaseType(matrix, source_space)
     , AssemblerBaseType(source_space)
     , diffusion_(diffusion)
