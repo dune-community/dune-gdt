@@ -100,7 +100,7 @@ public:
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& testBase,
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& ansatzBase,
                 const Dune::FieldVector< D, d >& localPoint,
-                Dune::DynamicMatrix< R >& ret)
+                Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local functions
@@ -132,7 +132,7 @@ public:
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& testBase,
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatzBase,
                 const Dune::FieldVector< D, d >& localPoint,
-                Dune::DynamicMatrix< R >& ret)
+                Dune::DynamicMatrix< R >& ret) const
   {
     evaluate_matrix_valued_(local_diffusion_factor, local_diffusion_tensor, testBase, ansatzBase, localPoint, ret);
   }
@@ -143,7 +143,7 @@ public:
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& testBase,
                 const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatzBase,
                 const Dune::FieldVector< D, d >& localPoint,
-                Dune::DynamicMatrix< R >& ret)
+                Dune::DynamicMatrix< R >& ret) const
   {
     evaluate_matrix_valued_(local_diffusion_factor, local_diffusion_tensor, testBase, ansatzBase, localPoint, ret);
   }
@@ -155,7 +155,7 @@ private:
                                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& testBase,
                                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatzBase,
                                const Dune::FieldVector< D, d >& localPoint,
-                               Dune::DynamicMatrix< R >& ret)
+                               Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local functions
