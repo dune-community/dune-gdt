@@ -56,7 +56,7 @@ public:
     , local_operator_(diffusion_factor_, diffusion_tensor_)
     , local_assembler_(local_operator_)
   {
-    this->add(local_assembler_, this->matrix());
+    setup();
   }
 
   EllipticCG(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -68,7 +68,7 @@ public:
     , local_operator_(diffusion_factor_, diffusion_tensor_)
     , local_assembler_(local_operator_)
   {
-    this->add(local_assembler_, this->matrix());
+    setup();
   }
 
   EllipticCG(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -80,7 +80,7 @@ public:
     , local_operator_(diffusion_factor_, diffusion_tensor_)
     , local_assembler_(local_operator_)
   {
-    this->add(local_assembler_, this->matrix());
+    setup();
   }
 
   virtual ~EllipticCG()
@@ -93,6 +93,11 @@ public:
   }
 
 private:
+  void setup()
+  {
+    this->add(local_assembler_, this->matrix());
+  }
+
   const DiffusionFactorType& diffusion_factor_;
   const DiffusionTensorType& diffusion_tensor_;
   const LocalOperatorType local_operator_;
