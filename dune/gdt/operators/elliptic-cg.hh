@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_OPERATORS_ELLIPTIC_CG_HH
 #define DUNE_GDT_OPERATORS_ELLIPTIC_CG_HH
 
-#include "config.h"
-
 #include <type_traits>
 
 #include <dune/stuff/la/container/interfaces.hh>
