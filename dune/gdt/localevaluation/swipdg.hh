@@ -34,34 +34,168 @@ namespace LocalEvaluation {
 namespace SWIPDG {
 
 
-template< class LocalizableFunctionImp >
+// fowards
+template< class DiffusionFactorType, class DiffusionTensorType = void >
 class Inner;
 
 
-template< class LocalizableFunctionImp >
+template< class DiffusionFactorType, class DiffusionTensorType = void >
+class BoundaryLHS;
+
+
+template< class DiffusionFactorType, class DirichletType, class DiffusionTensorType = void >
+class BoundaryRHS;
+
+
+namespace internal {
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static double default_beta(const int dimDomain)
+{
+  return 1.0/(dimDomain - 1.0);
+}
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static double inner_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 8.0;
+  else if (pol_order <= 2)
+    sigma *= 20.0;
+  else if (pol_order <= 3)
+    sigma *= 38.0;
+  else {
+#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+    std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
+              << " a polynomial order of " << pol_order << " is untested!" << std::endl
+              << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+#endif
+#endif
+    sigma *= 50.0;
+  }
+  return sigma;
+} // ... inner_sigma(...)
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static double boundary_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 14.0;
+  else if (pol_order <= 2)
+    sigma *= 38.0;
+  else if (pol_order <= 3)
+    sigma *= 74.0;
+  else {
+#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+    std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundaryrhs):")
+              << " a polynomial order of " << pol_order << " is untested!" << std::endl
+              << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+#endif
+#endif
+    sigma *= 100.0;
+  }
+  return sigma;
+} // ... boundary_sigma(...)
+
+
+template< class DiffusionFactorType, class DiffusionTensorType >
 class InnerTraits
 {
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorType >::value,
+                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorType >::value,
+                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
 public:
-  typedef Inner< LocalizableFunctionImp > derived_type;
-  typedef LocalizableFunctionImp          LocalizableFunctionType;
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
+  typedef Inner< DiffusionFactorType, DiffusionTensorType > derived_type;
 };
+
+
+template< class LocalizableFunctionType >
+class InnerTraits< LocalizableFunctionType, void >
+{
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionType >::value,
+                "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+public:
+  typedef Inner< LocalizableFunctionType, void > derived_type;
+};
+
+
+template< class DiffusionFactorType, class DiffusionTensorType >
+class BoundaryLHSTraits
+{
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorType >::value,
+                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorType >::value,
+                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
+public:
+  typedef BoundaryLHS< DiffusionFactorType, DiffusionTensorType > derived_type;
+};
+
+
+template< class LocalizableFunctionType >
+class BoundaryLHSTraits< LocalizableFunctionType, void >
+{
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionType >::value,
+                "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+public:
+  typedef BoundaryLHS< LocalizableFunctionType > derived_type;
+};
+
+
+template< class DiffusionFactorType, class DirichletType, class DiffusionTensorType >
+class BoundaryRHSTraits
+{
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorType >::value,
+                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DirichletType >::value,
+                "DirichletType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorType >::value,
+                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
+public:
+  typedef BoundaryRHS< DiffusionFactorType, DirichletType, DiffusionTensorType > derived_type;
+};
+
+
+template< class LocalizableDiffusionFunctionType, class LocalizableDirichletFunctionType >
+class BoundaryRHSTraits< LocalizableDiffusionFunctionType, LocalizableDirichletFunctionType, void >
+{
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDiffusionFunctionType >::value,
+                "LocalizableDiffusionFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDirichletFunctionType >::value,
+                "LocalizableDirichletFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+public:
+  typedef BoundaryRHS< LocalizableDiffusionFunctionType, LocalizableDirichletFunctionType, void > derived_type;
+};
+
+
+} // namespace internal
 
 
 /**
  *  see Epshteyn, Riviere, 2007 for the meaning of beta
  */
-template< class LocalizableFunctionImp >
-class Inner
-  : public LocalEvaluation::Codim1Interface< InnerTraits< LocalizableFunctionImp >, 4 >
+template< class LocalizableFunctionType >
+class Inner< LocalizableFunctionType, void >
+  : public LocalEvaluation::Codim1Interface< internal::InnerTraits< LocalizableFunctionType, void >, 4 >
 {
 public:
-  typedef InnerTraits< LocalizableFunctionImp >     Traits;
-  typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
+  typedef internal::InnerTraits< LocalizableFunctionType, void > Traits;
 
   Inner(const LocalizableFunctionType& inducingFunction,
-        const double beta = 1.0/(LocalizableFunctionImp::dimDomain - 1.0))
+        const double beta = internal::default_beta(LocalizableFunctionType::dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {}
@@ -84,12 +218,12 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class E, class N, class D, int d, class R, int rT, int rCT, int rA, int rCA >
-  static size_t order(const typename LocalfunctionTuple< E >::Type& localFunctionsEntity,
-                      const typename LocalfunctionTuple< N >::Type& localFunctionsNeighbor,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& ansatzBaseNeighbor)
+  size_t order(const typename LocalfunctionTuple< E >::Type& localFunctionsEntity,
+               const typename LocalfunctionTuple< N >::Type& localFunctionsNeighbor,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBaseEntity,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBaseEntity,
+               const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& testBaseNeighbor,
+               const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& ansatzBaseNeighbor) const
   {
     const auto localFunctionEntity = std::get< 0 >(localFunctionsEntity);
     const auto localFunctionNeighbor = std::get< 0 >(localFunctionsNeighbor);
@@ -99,16 +233,16 @@ public:
   }
 
   template< class E, class N, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rL, rCL >& localFunctionEntity,
-                      const Stuff::LocalfunctionInterface< N, D, d, R, rL, rCL >& localFunctionNeighbor,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& ansatzBaseNeighbor)
+  size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rL, rCL >& localFunctionEntity,
+               const Stuff::LocalfunctionInterface< N, D, d, R, rL, rCL >& localFunctionNeighbor,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBaseEntity,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBaseEntity,
+               const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& testBaseNeighbor,
+               const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& ansatzBaseNeighbor) const
   {
-      return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
-          + std::max(testBaseEntity.order(), testBaseNeighbor.order())
-          + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
+    return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
+        + std::max(testBaseEntity.order(), testBaseNeighbor.order())
+        + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
   /**
@@ -205,23 +339,7 @@ public:
                                          std::max(ansatzBaseEntity.order(),
                                                   std::max(testBaseNeighbor.order(),
                                                            ansatzBaseNeighbor.order())));
-    R sigma = 1.0;
-    if (max_polorder <= 1)
-      sigma *= 8.0;
-    else if (max_polorder <= 2)
-      sigma *= 20.0;
-    else if (max_polorder <= 3)
-      sigma *= 38.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
-                << " a polynomial order of " << max_polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 50.0;
-    }
+    const R sigma = internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R delta_plus  = /*unitOuterNormal * (*/functionValueNe /** unitOuterNormal)*/;
     const R delta_minus = /*unitOuterNormal * (*/functionValueEn /** unitOuterNormal)*/;
@@ -327,31 +445,15 @@ private:
 }; // CouplingPrimal
 
 
-template< class LocalizableFunctionImp >
-class BoundaryLHS;
-
-
-template< class LocalizableFunctionImp >
-class BoundaryLHSTraits
+template< class LocalizableFunctionType >
+class BoundaryLHS< LocalizableFunctionType, void >
+  : public LocalEvaluation::Codim1Interface< internal::BoundaryLHSTraits< LocalizableFunctionType, void >, 2 >
 {
 public:
-  typedef BoundaryLHS< LocalizableFunctionImp > derived_type;
-  typedef LocalizableFunctionImp                LocalizableFunctionType;
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-};
-
-
-template< class LocalizableFunctionImp >
-class BoundaryLHS
-  : public LocalEvaluation::Codim1Interface< BoundaryLHSTraits< LocalizableFunctionImp >, 2 >
-{
-public:
-  typedef BoundaryLHSTraits< LocalizableFunctionImp > Traits;
-  typedef typename Traits::LocalizableFunctionType    LocalizableFunctionType;
+  typedef internal::BoundaryLHSTraits< LocalizableFunctionType, void > Traits;
 
   BoundaryLHS(const LocalizableFunctionType& inducingFunction,
-              const double beta = 1.0/(LocalizableFunctionImp::dimDomain - 1.0))
+              const double beta = internal::default_beta(LocalizableFunctionType::dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {}
@@ -374,18 +476,18 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class E, class D, int d, class R, int rT, int rCT, int rA, int rCA >
-  static size_t order(const typename LocalfunctionTuple< E >::Type& localFuncs,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase)
+  size_t order(const typename LocalfunctionTuple< E >::Type& localFuncs,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return order(*localFunction, testBase, ansatzBase);
   }
 
   template< class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rL, rCL >& localFunction,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase)
+  size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rL, rCL >& localFunction,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase) const
   {
       return localFunction.order() + testBase.order() + ansatzBase.order();
   }
@@ -437,23 +539,7 @@ public:
     const RangeType functionValue = localFunction.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    R sigma = 1.0;
-    if (max_polorder <= 1)
-      sigma *= 14.0;
-    else if (max_polorder <= 2)
-      sigma *= 38.0;
-    else if (max_polorder <= 3)
-      sigma *= 74.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundarylhs):")
-                << " a polynomial order of " << max_polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 100.0;
-    }
+    const R sigma = internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = /*unitOuterNormal * (*/functionValue /** unitOuterNormal)*/;
     const R penalty = (sigma * gamma ) / std::pow(intersection.geometry().volume(), beta_);
@@ -494,36 +580,19 @@ private:
 }; // class BoundaryLHS
 
 
-template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
-class BoundaryRHS;
-
-
-template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
-class BoundaryRHSTraits
+template< class LocalizableDiffusionFunctionType, class LocalizableDirichletFunctionType >
+class BoundaryRHS< LocalizableDiffusionFunctionType, LocalizableDirichletFunctionType, void >
+  : public LocalEvaluation::Codim1Interface< internal::BoundaryRHSTraits< LocalizableDiffusionFunctionType
+                                                                        , LocalizableDirichletFunctionType, void >
+                                           , 1 >
 {
 public:
-  typedef BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp > derived_type;
-  typedef LocalizableDiffusionFunctionImp LocalizableDiffusionFunctionType;
-  typedef LocalizableDirichletFunctionImp LocalizableDirichletFunctionType;
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDiffusionFunctionImp >::value,
-                "LocalizableDiffusionFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDirichletFunctionImp >::value,
-                "LocalizableDirichletFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-};
-
-
-template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
-class BoundaryRHS
-  : public LocalEvaluation::Codim1Interface< BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >, 1 >
-{
-public:
-  typedef BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp > Traits;
-  typedef typename Traits::LocalizableDiffusionFunctionType LocalizableDiffusionFunctionType;
-  typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
+  typedef internal::BoundaryRHSTraits< LocalizableDiffusionFunctionType, LocalizableDirichletFunctionType, void >
+      Traits;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion,
               const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = 1.0/(LocalizableDiffusionFunctionType::dimDomain - 1.0))
+              const double beta = internal::default_beta(LocalizableDiffusionFunctionType::dimDomain))
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
@@ -549,8 +618,8 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class E, class D, int d, class R, int r, int rC >
-  static size_t order(const typename LocalfunctionTuple< E >::Type& localFuncs,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, r, rC >& testBase)
+  size_t order(const typename LocalfunctionTuple< E >::Type& localFuncs,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, r, rC >& testBase) const
   {
     const auto localDiffusion = std::get< 0 >(localFuncs);
     const auto localDirichlet = std::get< 1 >(localFuncs);
@@ -558,16 +627,16 @@ public:
   }
 
   template< class E, class D, int d, class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
-  static size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rLF, rCLF >& localDiffusion,
-                      const Stuff::LocalfunctionInterface< E, D, d, R, rLR, rCLR >& localDirichlet,
-                      const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase)
+  size_t order(const Stuff::LocalfunctionInterface< E, D, d, R, rLF, rCLF >& localDiffusion,
+               const Stuff::LocalfunctionInterface< E, D, d, R, rLR, rCLR >& localDirichlet,
+               const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase) const
   {
       const size_t testOrder = testBase.order();
       const size_t testGradientOrder = std::max(int(testOrder - 1), 0);
       const size_t diffusionOrder = localDiffusion.order();
       const size_t dirichletOrder = localDirichlet.order();
       return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-  } // static int order(...)
+  } // ... order(...)
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
@@ -617,23 +686,7 @@ public:
     const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
-    R sigma = 1.0;
-    if (polorder <= 1)
-      sigma *= 14.0;
-    else if (polorder <= 2)
-      sigma *= 38.0;
-    else if (polorder <= 3)
-      sigma *= 74.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundaryrhs):")
-                << " a polynomial order of " << polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 100.0;
-    }
+    const R sigma = internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = /*unitOuterNormal * (*/diffusionValue /** unitOuterNormal)*/;
     const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
@@ -658,7 +711,7 @@ private:
   const LocalizableDiffusionFunctionType& diffusion_;
   const LocalizableDirichletFunctionType& dirichlet_;
   const double beta_;
-}; // class BoundaryDirichletRHS
+}; // class BoundaryRHS
 
 
 } // namespace SWIPDG
