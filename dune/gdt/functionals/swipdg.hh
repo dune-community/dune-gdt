@@ -20,38 +20,33 @@ namespace GDT {
 namespace Functionals {
 
 
-template< class DiffusionType, class DirichletType,
+template< class DiffusionFactorType, class DirichletType,
           class VectorImp,
-          class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType >
+          class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType,
+          class DiffusionTensorType = void >
 class DirichletBoundarySWIPDG;
 
 
 namespace internal {
 
 
-template< class DiffusionType, class DirichletType, class VectorImp, class SpaceImp, class GridViewImp >
+template< class DiffusionFactorType, class DirichletType,
+          class VectorImp,
+          class SpaceImp, class GridViewImp,
+          class DiffusionTensorType >
 class DirichletBoundarySWIPDGTraits
 {
-  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< typename DiffusionType::EntityType
-                                                                    , typename DiffusionType::DomainFieldType
-                                                                    , DiffusionType::dimDomain
-                                                                    , typename DiffusionType::RangeFieldType
-                                                                    , DiffusionType::dimRange
-                                                                    , DiffusionType::dimRangeCols >
-                               , DiffusionType >::value,
-                "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< typename DirichletType::EntityType
-                                                                    , typename DirichletType::DomainFieldType
-                                                                    , DirichletType::dimDomain
-                                                                    , typename DirichletType::RangeFieldType
-                                                                    , DirichletType::dimRange
-                                                                    , DirichletType::dimRangeCols >
-                               , DirichletType >::value,
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionFactorType >::value,
+                "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionTensorType >::value,
+                "DiffusionTensorType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DirichletType >::value,
                 "DirichletType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 public:
-  typedef DirichletBoundarySWIPDG< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp > derived_type;
+  typedef DirichletBoundarySWIPDG
+      < DiffusionFactorType, DirichletType, VectorImp, SpaceImp, GridViewImp, DiffusionTensorType > derived_type;
   typedef VectorImp   VectorType;
   typedef SpaceImp    SpaceType;
   typedef GridViewImp GridViewType;
@@ -59,15 +54,35 @@ public:
 }; // class DirichletBoundarySWIPDGTraits
 
 
+template< class DiffusionType, class DirichletType, class VectorImp, class SpaceImp, class GridViewImp >
+class DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void >
+{
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionType >::value,
+                "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DirichletType >::value,
+                "DirichletType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
+                "SpaceImp has to be derived from SpaceInterface!");
+public:
+  typedef DirichletBoundarySWIPDG< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void > derived_type;
+  typedef VectorImp   VectorType;
+  typedef SpaceImp    SpaceType;
+  typedef GridViewImp GridViewType;
+  typedef typename VectorType::ScalarType ScalarType;
+}; // class DirichletBoundarySWIPDGTraits< ..., void >
+
+
 } // namespace internal
 
 
 template< class DiffusionType, class DirichletType, class VectorImp, class SpaceImp, class GridViewImp >
-class DirichletBoundarySWIPDG
-  : public Functionals::VectorBased< internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp > >
+class DirichletBoundarySWIPDG< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void >
+  : public Functionals::VectorBased< internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp
+                                                                            , SpaceImp, GridViewImp, void > >
   , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
 {
-  typedef Functionals::VectorBased< internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp > >
+  typedef Functionals::VectorBased< internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp
+                                                                           , SpaceImp, GridViewImp, void > >
       FunctionalBaseType;
   typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
 
@@ -78,8 +93,8 @@ class DirichletBoundarySWIPDG
   typedef typename VectorImp::ScalarType ScalarType;
 
 public:
-  typedef internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp >
-      Traits;
+  typedef internal::DirichletBoundarySWIPDGTraits
+      < DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void > Traits;
 
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType  SpaceType;
@@ -93,7 +108,7 @@ public:
                           VectorType& vector,
                           const SpaceType& space,
                           const GridViewType& grid_view,
-                          const ScalarType beta = 1.0)
+                          const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space, grid_view)
     , AssemblerBaseType(space, grid_view)
     , diffusion_(diffusion)
@@ -110,7 +125,7 @@ public:
                           const BoundaryInfoType& boundary_info,
                           VectorType& vector,
                           const SpaceType& space,
-                          const ScalarType beta = 1.0)
+                          const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space)
     , AssemblerBaseType(space)
     , diffusion_(diffusion)
