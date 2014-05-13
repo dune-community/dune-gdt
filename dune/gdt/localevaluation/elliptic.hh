@@ -35,7 +35,7 @@ namespace internal {
 /**
  *  \brief  Traits for the Elliptic evaluation.
  */
-template <class DiffusionFactorType, class DiffusionTensorType = void>
+template <class DiffusionFactorType, class DiffusionTensorType>
 class EllipticTraits
 {
   static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
