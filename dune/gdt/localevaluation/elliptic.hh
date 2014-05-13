@@ -93,7 +93,9 @@ public:
                const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
                const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase) const
   {
-    return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order() - 2), 0);
+    return localFunction.order()
+        + std::max(int(testBase.order() - 1), 0)
+        + std::max(int(ansatzBase.order() - 1), 0);
   }
 
   /**
