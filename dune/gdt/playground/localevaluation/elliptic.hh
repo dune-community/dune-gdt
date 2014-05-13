@@ -95,7 +95,7 @@ public:
                 const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& local_diffusion_tensor,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& testBase,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatzBase,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>::JacobianRangeType JacobianRangeType;
     // evaluate local functions
@@ -126,7 +126,7 @@ public:
                 const Stuff::LocalfunctionInterface<E, D, d, R, 2, 2>& local_diffusion_tensor,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     evaluate_matrix_valued_(local_diffusion_factor, local_diffusion_tensor, testBase, ansatzBase, localPoint, ret);
   }
@@ -136,7 +136,7 @@ public:
                 const Stuff::LocalfunctionInterface<E, D, d, R, 3, 3>& local_diffusion_tensor,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     evaluate_matrix_valued_(local_diffusion_factor, local_diffusion_tensor, testBase, ansatzBase, localPoint, ret);
   }
@@ -147,7 +147,7 @@ private:
                                const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& local_diffusion_tensor,
                                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
                                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                               const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+                               const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // evaluate local functions
