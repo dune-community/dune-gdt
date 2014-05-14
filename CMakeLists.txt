@@ -8,6 +8,12 @@ project("dune-gdt" C CXX)
 
 cmake_minimum_required(VERSION 2.8.6)
 
+# local environment
+set( ENV{PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/bin:$ENV{PATH}" )
+set( ENV{LD_LIBRARY_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib:$ENV{LD_LIBRARY_PATH}" )
+set( ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}" )
+
+
 if(CMAKE_WITH_AUTOTOOLS)
   # this is how it used to be in the good old days :)
   # this assumes that we use autotools to configure everything and just use this CMakeLists.txt for the tests and
@@ -22,11 +28,6 @@ if(CMAKE_WITH_AUTOTOOLS)
   set( CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".lib" ".la" ".a")
   set( CMAKE_COLOR_MAKEFILE ON)
   set( CMAKE_VERBOSE_MAKEFILE ON )
-
-  # local environment
-  set( ENV{PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/bin:$ENV{PATH}" )
-  set( ENV{LD_LIBRARY_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib:$ENV{LD_LIBRARY_PATH}" )
-  set( ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}" )
 
   # needs to come first to include correct config.h
   include_directories( ${dune-gdt_SOURCE_DIR} )
