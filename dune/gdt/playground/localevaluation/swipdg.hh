@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 #define DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 
+#include <dune/stuff/common/fmatrix.hh>
+
 #include <dune/gdt/localevaluation/swipdg.hh>
 
 namespace Dune {
@@ -164,28 +166,26 @@ public:
     const DomainType localPointNe    = intersection.geometryInOutside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const auto local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
-    auto local_diffusion_tensor_en       = localDiffusionTensorEntity.evaluate(localPointEn);
-    const auto local_diffusion_factor_ne = localDiffusionFactorEntity.evaluate(localPointNe);
-    auto local_diffusion_tensor_ne       = localDiffusionTensorEntity.evaluate(localPointNe);
+    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    const auto local_diffusion_factor_en       = localDiffusionFactorEntity.evaluate(localPointEn);
+    const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
+    const auto local_diffusion_factor_ne       = localDiffusionFactorEntity.evaluate(localPointNe);
+    const TensorType local_diffusion_tensor_ne = localDiffusionTensorEntity.evaluate(localPointNe);
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
     const R sigma = internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    FieldVector<D, 2> product(0.0);
-    local_diffusion_tensor_ne.mv(unitOuterNormal, product);
-    const R delta_plus = unitOuterNormal * product;
-    local_diffusion_tensor_en.mv(unitOuterNormal, product);
-    const R delta_minus  = unitOuterNormal * product;
+    const R delta_plus   = unitOuterNormal * (local_diffusion_tensor_ne * unitOuterNormal);
+    const R delta_minus  = unitOuterNormal * (local_diffusion_tensor_en * unitOuterNormal);
     const R gamma        = (delta_plus * delta_minus) / (delta_plus + delta_minus);
     const R penalty      = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     const R weight_plus  = delta_minus / (delta_plus + delta_minus);
     const R weight_minus = delta_plus / (delta_plus + delta_minus);
-    // compute functions value
-    local_diffusion_tensor_en *= local_diffusion_factor_en[0];
-    local_diffusion_tensor_ne *= local_diffusion_factor_ne[0];
+    // compute diffusion value (should be factor * tensor, but this is the same)
+    const TensorType diffusion_value_en = local_diffusion_tensor_en * local_diffusion_factor_en[0];
+    const TensorType diffusion_value_ne = local_diffusion_tensor_ne * local_diffusion_factor_ne[0];
     // evaluate bases
     // * entity
     //   * test
@@ -229,22 +229,22 @@ public:
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
         // consistency term
-        local_diffusion_tensor_en.mv(ansatzGradientsEn[jj][0], product);
-        entityEntityRetRow[jj] += -weight_minus * (product * unitOuterNormal) * testValuesEn[ii];
+        entityEntityRetRow[jj] +=
+            -weight_minus * ((diffusion_value_en * ansatzGradientsEn[jj][0]) * unitOuterNormal) * testValuesEn[ii];
         // symmetry term
-        local_diffusion_tensor_en.mv(testGradientsEn[ii][0], product);
-        entityEntityRetRow[jj] += -weight_minus * ansatzValuesEn[jj] * (product * unitOuterNormal);
+        entityEntityRetRow[jj] +=
+            -weight_minus * ansatzValuesEn[jj] * ((diffusion_value_en * testGradientsEn[ii][0]) * unitOuterNormal);
         // penalty term
         entityEntityRetRow[jj] += penalty * ansatzValuesEn[jj] * testValuesEn[ii];
       } // loop over all entity ansatz basis functions
       // loop over all neighbor ansatz basis functions
       for (size_t jj = 0; jj < colsNe; ++jj) {
         // consistency term
-        local_diffusion_tensor_ne.mv(ansatzGradientsNe[jj][0], product);
-        entityNeighborRetRow[jj] += -weight_plus * (product * unitOuterNormal) * testValuesEn[ii];
+        entityNeighborRetRow[jj] +=
+            -weight_plus * ((diffusion_value_ne * ansatzGradientsNe[jj][0]) * unitOuterNormal) * testValuesEn[ii];
         // symmetry term
-        local_diffusion_tensor_en.mv(testGradientsEn[ii][0], product);
-        entityNeighborRetRow[jj] += weight_minus * ansatzValuesNe[jj] * (product * unitOuterNormal);
+        entityNeighborRetRow[jj] +=
+            weight_minus * ansatzValuesNe[jj] * ((diffusion_value_en * testGradientsEn[ii][0]) * unitOuterNormal);
         // penalty term
         entityNeighborRetRow[jj] += -1.0 * penalty * ansatzValuesNe[jj] * testValuesEn[ii];
       } // loop over all neighbor ansatz basis functions
@@ -256,22 +256,22 @@ public:
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
         // consistency term
-        local_diffusion_tensor_en.mv(ansatzGradientsEn[jj][0], product);
-        neighborEntityRetRow[jj] += weight_minus * (product * unitOuterNormal) * testValuesNe[ii];
+        neighborEntityRetRow[jj] +=
+            weight_minus * ((diffusion_value_en * ansatzGradientsEn[jj][0]) * unitOuterNormal) * testValuesNe[ii];
         // symmetry term
-        local_diffusion_tensor_ne.mv(testGradientsNe[ii][0], product);
-        neighborEntityRetRow[jj] += -weight_plus * ansatzValuesEn[jj] * (product * unitOuterNormal);
+        neighborEntityRetRow[jj] +=
+            -weight_plus * ansatzValuesEn[jj] * ((diffusion_value_ne * testGradientsNe[ii][0]) * unitOuterNormal);
         // penalty term
         neighborEntityRetRow[jj] += -1.0 * penalty * ansatzValuesEn[jj] * testValuesNe[ii];
       } // loop over all entity ansatz basis functions
       // loop over all neighbor ansatz basis functions
       for (size_t jj = 0; jj < colsNe; ++jj) {
         // consistency term
-        local_diffusion_tensor_ne.mv(ansatzGradientsNe[jj][0], product);
-        neighborNeighborRetRow[jj] += weight_plus * (product * unitOuterNormal) * testValuesNe[ii];
+        neighborNeighborRetRow[jj] +=
+            weight_plus * ((diffusion_value_ne * ansatzGradientsNe[jj][0]) * unitOuterNormal) * testValuesNe[ii];
         // symmetry term
-        local_diffusion_tensor_ne.mv(testGradientsNe[ii][0], product);
-        neighborNeighborRetRow[jj] += weight_plus * ansatzValuesNe[jj] * (product * unitOuterNormal);
+        neighborNeighborRetRow[jj] +=
+            weight_plus * ansatzValuesNe[jj] * ((diffusion_value_ne * testGradientsNe[ii][0]) * unitOuterNormal);
         // penalty term
         neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
       } // loop over all neighbor ansatz basis functions
@@ -382,16 +382,17 @@ public:
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const auto diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
-    auto diffusion_tensor_value       = localDiffusionTensor.evaluate(localPointEntity);
+    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    const auto diffusion_factor_value       = localDiffusionFactor.evaluate(localPointEntity);
+    const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
     const R sigma             = internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    FieldVector<D, 2> product(0.0);
-    diffusion_tensor_value.mv(unitOuterNormal, product);
-    const R gamma   = unitOuterNormal * product;
+    const R gamma   = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
     const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    // compute diffusion value (should be factor * tensor, but this is the same)
+    const TensorType diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // evaluate bases
     // * test
     const size_t rows = testBase.size();
@@ -405,8 +406,6 @@ public:
     std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
     ansatzBase.evaluate(localPointEntity, ansatzValues);
     ansatzBase.jacobian(localPointEntity, ansatzGradients);
-    // evaluate functions
-    diffusion_tensor_value *= diffusion_factor_value[0];
     // compute products
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
@@ -416,11 +415,9 @@ public:
       // loop over all ansatz basis functions
       for (size_t jj = 0; jj < cols; ++jj) {
         // consistency term
-        diffusion_tensor_value.mv(ansatzGradients[jj][0], product);
-        retRow[jj] += -1.0 * (product * unitOuterNormal) * testValues[ii];
+        retRow[jj] += -1.0 * ((diffusion_value * ansatzGradients[jj][0]) * unitOuterNormal) * testValues[ii];
         // symmetry term
-        diffusion_tensor_value.mv(testGradients[ii][0], product);
-        retRow[jj] += -1.0 * ansatzValues[jj] * (product * unitOuterNormal);
+        retRow[jj] += -1.0 * ansatzValues[jj] * ((diffusion_value * testGradients[ii][0]) * unitOuterNormal);
         // penalty term
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
@@ -542,32 +539,30 @@ public:
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local functions
-    const auto diffusionFactorValue = localDiffusionFactor.evaluate(localPointEntity);
-    auto diffusionTensorValue       = localDiffusionTensor.evaluate(localPointEntity);
-    const RangeType dirichletValue  = localDirichlet.evaluate(localPointEntity);
+    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    const auto diffusionFactorValue       = localDiffusionFactor.evaluate(localPointEntity);
+    const TensorType diffusionTensorValue = localDiffusionTensor.evaluate(localPointEntity);
+    const RangeType dirichletValue        = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
     const R sigma         = internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    FieldVector<D, 2> product(0.0);
-    diffusionTensorValue.mv(unitOuterNormal, product);
-    const R gamma   = unitOuterNormal * product;
+    const R gamma   = unitOuterNormal * (diffusionTensorValue * unitOuterNormal);
     const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    // compute diffusion value (should be factor * tensor, but this is the same)
+    const TensorType diffusionValue = diffusionTensorValue * diffusionFactorValue;
     // evaluate basis
     const size_t size = testBase.size();
     std::vector<RangeType> testValues(size, RangeType(0));
     std::vector<JacobianRangeType> testGradients(size, JacobianRangeType(0));
     testBase.evaluate(localPointEntity, testValues);
     testBase.jacobian(localPointEntity, testGradients);
-    // evaluate functions
-    diffusionTensorValue *= diffusionFactorValue[0];
     // compute
     assert(ret.size() >= size);
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term
-      diffusionTensorValue.mv(testGradients[ii][0], product);
-      ret[ii] += -1.0 * dirichletValue * (product * unitOuterNormal);
+      ret[ii] += -1.0 * dirichletValue * ((diffusionValue * testGradients[ii][0]) * unitOuterNormal);
       // penalty term
       ret[ii] += penalty * dirichletValue * testValues[ii];
     } // loop over all test basis functions
