@@ -18,6 +18,7 @@
 
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -130,6 +131,11 @@ public:
         *(space().grid_view()), filename, subsampling, vtk_output_type);
   }
 
+  bool dofs_valid() const
+  {
+    return vector().valid();
+  }
+
 protected:
   const SpaceType& space_;
 
@@ -139,9 +145,122 @@ private:
 }; // class ConstDiscreteFunction
 
 
-template <class SpaceImp, class VectorImp>
-class DiscreteFunction : public ConstDiscreteFunction<SpaceImp, VectorImp>
+namespace internal {
+
+
+template <class VectorType>
+class RefProvider
 {
+public:
+  virtual ~RefProvider()
+  {
+  }
+
+  virtual VectorType& ref() = 0;
+};
+
+
+template <class VectorType>
+class RefProviderByRef : public RefProvider<VectorType>
+{
+public:
+  RefProviderByRef(VectorType& vec)
+    : vector_(vec)
+  {
+  }
+
+  virtual ~RefProviderByRef()
+  {
+  }
+
+  virtual VectorType& ref() DS_OVERRIDE DS_FINAL
+  {
+    return vector_;
+  }
+
+private:
+  VectorType& vector_;
+};
+
+
+template <class VectorType>
+class RefProviderByPtr : public RefProvider<VectorType>
+{
+public:
+  RefProviderByPtr(const size_t sz)
+    : vector_(new VectorType(sz))
+  {
+  }
+
+  virtual ~RefProviderByPtr()
+  {
+  }
+
+  virtual VectorType& ref() DS_OVERRIDE DS_FINAL
+  {
+    return *vector_;
+  }
+
+private:
+  std::unique_ptr<VectorType> vector_;
+};
+
+
+template <class VectorType>
+class VectorProvider
+{
+public:
+  VectorProvider(VectorType& ref)
+    : ref_provider_(Stuff::Common::make_unique<RefProviderByRef<VectorType>>(ref))
+  {
+  }
+
+  VectorProvider(const size_t sz)
+    : ref_provider_(Stuff::Common::make_unique<RefProviderByPtr<VectorType>>(sz))
+  {
+  }
+
+  VectorProvider(const VectorProvider<VectorType>& other)
+    : ref_provider_(Stuff::Common::make_unique<RefProviderByPtr<VectorType>>(other.vector_ref().size()))
+  {
+    vector_ref() = other.vector_ref();
+  }
+
+  VectorProvider(VectorProvider<VectorType>&& source)
+    : ref_provider_(std::move(source.ref_provider_))
+  {
+  }
+
+  VectorProvider<VectorType>& operator=(const VectorProvider<VectorType>& other)
+  {
+    if (this != &other) {
+      vector_ref() = other.vector_ref();
+    }
+    return *this;
+  }
+
+  VectorType& vector_ref()
+  {
+    return ref_provider_->ref();
+  }
+
+  const VectorType& vector_ref() const
+  {
+    return ref_provider_->ref();
+  }
+
+private:
+  std::unique_ptr<RefProvider<VectorType>> ref_provider_;
+};
+
+
+} // namespace internal
+
+
+template <class SpaceImp, class VectorImp>
+class DiscreteFunction : internal::VectorProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
+{
+  typedef internal::VectorProvider<VectorImp> VectorProviderBaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> BaseType;
   typedef DiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -154,20 +273,26 @@ public:
   typedef LocalDiscreteFunction<SpaceType, VectorType> LocalDiscreteFunctionType;
 
   DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "dune.gdt.discretefunction")
-    : BaseType(sp, vec, nm)
-    , vector_(vec)
+    : VectorProviderBaseType(vec)
+    , BaseType(sp, VectorProviderBaseType::vector_ref(), nm)
+  {
+  }
+
+  DiscreteFunction(const SpaceType& sp, const std::string nm = "dune.gdt.discretefunction")
+    : VectorProviderBaseType(sp.mapper().size())
+    , BaseType(sp, VectorProviderBaseType::vector_ref(), nm)
   {
   }
 
   DiscreteFunction(const ThisType& other)
-    : BaseType(other)
-    , vector_(other.vector_)
+    : VectorProviderBaseType(other)
+    , BaseType(other.space(), VectorProviderBaseType::vector_ref(), other.name())
   {
   }
 
   DiscreteFunction(ThisType&& source)
-    : BaseType(std::move(source))
-    , vector_(source.vector_)
+    : VectorProviderBaseType(source)
+    , BaseType(source.space(), VectorProviderBaseType::vector_ref(), source.name())
   {
   }
 
@@ -184,7 +309,7 @@ public:
 
   VectorType& vector()
   {
-    return vector_;
+    return this->vector_ref();
   }
 
   using BaseType::local_discrete_function;
@@ -192,68 +317,13 @@ public:
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
     assert(space_.grid_view()->indexSet().contains(entity));
-    return LocalDiscreteFunctionType(space_, vector_, entity);
+    return LocalDiscreteFunctionType(space_, this->vector_ref(), entity);
   }
 
 private:
   using BaseType::space_;
-  VectorType& vector_;
 }; // class DiscreteFunction
 
-template <class SpaceImp, class VectorImp>
-class StoredDiscreteFunction : public DiscreteFunction<SpaceImp, VectorImp>
-{
-  typedef DiscreteFunction<SpaceImp, VectorImp> BaseType;
-  typedef StoredDiscreteFunction<SpaceImp, VectorImp> ThisType;
-
-public:
-  typedef typename BaseType::SpaceType SpaceType;
-  typedef typename BaseType::VectorType VectorType;
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::LocalfunctionType LocalfunctionType;
-
-  typedef LocalDiscreteFunction<SpaceType, VectorType> LocalDiscreteFunctionType;
-
-  StoredDiscreteFunction(const SpaceType& sp, const std::string nm = "dune.gdt.discretefunction")
-    : BaseType(sp, vector_, nm)
-    , vector_(sp.mapper().size())
-  {
-  }
-
-
-  ~StoredDiscreteFunction()
-  {
-  }
-
-  ThisType& operator=(const ThisType& other) = delete;
-
-  virtual ThisType* copy() const DS_OVERRIDE
-  {
-    return new ThisType(*this);
-  }
-
-  VectorType& vector()
-  {
-    return vector_;
-  }
-
-  LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
-  {
-    return LocalDiscreteFunctionType(BaseType::space(), vector_, entity);
-  }
-
-  bool dofsValid() const
-  {
-    for (const auto& val : vector_) {
-      if (std::isnan(val) || std::isinf(val))
-        return false;
-    }
-    return true;
-  }
-
-private:
-  VectorType vector_;
-}; // class DiscreteFunction
 
 } // namespace GDT
 } // namespace Dune
