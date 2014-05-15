@@ -17,6 +17,7 @@
 #include <dune/grid/io/file/vtk.hh>
 
 #include <dune/stuff/la/container/interfaces.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -199,6 +200,60 @@ private:
   VectorType& vector_;
 }; // class DiscreteFunction
 
+template <class SpaceImp, class VectorImp>
+class StoredDiscreteFunction : public DiscreteFunction<SpaceImp, VectorImp>
+{
+  typedef DiscreteFunction<SpaceImp, VectorImp> BaseType;
+  typedef StoredDiscreteFunction<SpaceImp, VectorImp> ThisType;
+
+public:
+  typedef typename BaseType::SpaceType SpaceType;
+  typedef typename BaseType::VectorType VectorType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::LocalfunctionType LocalfunctionType;
+
+  typedef LocalDiscreteFunction<SpaceType, VectorType> LocalDiscreteFunctionType;
+
+  StoredDiscreteFunction(const SpaceType& sp, const std::string nm = "dune.gdt.discretefunction")
+    : BaseType(sp, vector_, nm)
+    , vector_(sp.mapper().size())
+  {
+  }
+
+
+  ~StoredDiscreteFunction()
+  {
+  }
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  virtual ThisType* copy() const DS_OVERRIDE
+  {
+    return new ThisType(*this);
+  }
+
+  VectorType& vector()
+  {
+    return vector_;
+  }
+
+  LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
+  {
+    return LocalDiscreteFunctionType(BaseType::space(), vector_, entity);
+  }
+
+  bool dofsValid() const
+  {
+    for (const auto& val : vector_) {
+      if (std::isnan(val) || std::isinf(val))
+        return false;
+    }
+    return true;
+  }
+
+private:
+  VectorType vector_;
+}; // class DiscreteFunction
 
 } // namespace GDT
 } // namespace Dune
