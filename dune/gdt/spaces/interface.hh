@@ -438,6 +438,17 @@ protected:
   mutable std::vector< typename BaseFunctionSetType::RangeType > tmp_basis_values_;
 }; // class SpaceInterface
 
+template < class Traits, int codim = 0 >
+typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template begin< codim >();
+}
+
+template < class Traits, int codim = 0 >
+typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template end< codim >();
+}
 
 } // namespace GDT
 } // namespace Dune
