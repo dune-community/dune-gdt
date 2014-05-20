@@ -78,6 +78,7 @@ public:
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
+  typedef typename Traits::CommunicatorType     CommunicatorType;
   typedef typename Traits::GridViewType         GridViewType;
   typedef typename Traits::RangeFieldType       RangeFieldType;
   static const unsigned int                     dimRange = Traits::dimRange;
@@ -129,6 +130,12 @@ public:
   {
     CHECK_CRTP(this->as_imp(*this).base_function_set(entity));
     return this->as_imp(*this).base_function_set(entity);
+  }
+
+  CommunicatorType& communicator() const
+  {
+    CHECK_CRTP(this->as_imp(*this).communicator());
+    return this->as_imp(*this).communicator();
   }
 
   template< class ConstraintsType >
