@@ -34,7 +34,7 @@ private:
   typedef TmpStorageProvider::Matrices<FieldType> TmpMatricesProviderType;
   typedef typename Traits::LocalOperatorType LocalOperatorType;
   typedef LocalAssembler::Codim0Matrix<LocalOperatorType> LocalAssemblerType;
-  typedef Stuff::LA::Solver<MatrixType> LinearSolverType;
+  typedef Stuff::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
 
 public:
   using typename InterfaceType::EntityType;
@@ -132,7 +132,7 @@ public:
   virtual void finalize()
   {
     if (!linear_solver_)
-      linear_solver_ = std::unique_ptr<LinearSolverType>(new LinearSolverType(matrix_));
+      linear_solver_ = std::unique_ptr<LinearSolverType>(new LinearSolverType(matrix_, source_space_.communicator()));
   }
 
   void assemble()
