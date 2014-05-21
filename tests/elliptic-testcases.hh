@@ -9,8 +9,10 @@
 #include <iostream>
 #include <memory>
 
-#include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/stuff/grid/provider/cube.hh>
+# include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
