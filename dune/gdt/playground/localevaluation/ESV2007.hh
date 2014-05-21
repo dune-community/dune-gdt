@@ -88,9 +88,9 @@ public:
   {
     // there is no way to guess the order of local_diffusion^-1, so we take local_diffusion.order()
     return local_diffusion.order()
-        + (std::max(local_diffusion.order() + std::max(test_base.order() - 1, size_t(0)),
+        + (std::max(local_diffusion.order() + std::max(ssize_t(test_base.order()) - 1, ssize_t(0)),
                     local_diffusive_flux.order()))
-        + (std::max(local_diffusion.order() + std::max(ansatz_base.order() - 1, size_t(0)),
+        + (std::max(local_diffusion.order() + std::max(ssize_t(ansatz_base.order()) - 1, ssize_t(0)),
                     local_diffusive_flux.order()));
   } // ... order(...)
 
