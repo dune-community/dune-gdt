@@ -322,7 +322,7 @@ private:
 
 
 template <class GridViewImp>
-class GridWalker
+class GridWalker : public Functor::Codim0And1<GridViewImp>
 {
   typedef GridWalker<GridViewImp> ThisType;
 
@@ -431,6 +431,67 @@ protected:
     std::unique_ptr<const ApplyOn::WhichIntersection<GridViewType>> where_;
   }; // class Codim1FunctorWrapper
 
+
+  class GridWalkerWrapper : public Codim0Object, public Codim1Object
+  {
+  public:
+    GridWalkerWrapper(ThisType& grid_walker, const ApplyOn::WhichEntity<GridViewType>* which_entities)
+      : grid_walker_(grid_walker)
+      , which_entities_(which_entities)
+      , which_intersections_(new ApplyOn::AllIntersections<GridViewType>())
+    {
+    }
+
+    GridWalkerWrapper(ThisType& grid_walker, const ApplyOn::WhichIntersection<GridViewType>* which_intersections)
+      : grid_walker_(grid_walker)
+      , which_entities_(new ApplyOn::AllEntities<GridViewType>())
+      , which_intersections_(which_intersections)
+    {
+    }
+
+    virtual ~GridWalkerWrapper()
+    {
+    }
+
+    virtual void prepare() DS_OVERRIDE DS_FINAL
+    {
+      grid_walker_.prepare();
+    }
+
+    virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_OVERRIDE DS_FINAL
+    {
+      return which_entities_->apply_on(grid_view, entity) && grid_walker_.apply_on(entity);
+    }
+
+    virtual bool apply_on(const GridViewType& grid_view,
+                          const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+    {
+      return which_intersections_->apply_on(grid_view, intersection) && grid_walker_.apply_on(intersection);
+    }
+
+    virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
+    {
+      grid_walker_.apply_local(entity);
+    }
+
+    virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
+                             const EntityType& outside_entity) DS_OVERRIDE DS_FINAL
+    {
+      grid_walker_.apply_local(intersection, inside_entity, outside_entity);
+    }
+
+    virtual void finalize() DS_OVERRIDE DS_FINAL
+    {
+      grid_walker_.finalize();
+    }
+
+  private:
+    ThisType& grid_walker_;
+    std::unique_ptr<const ApplyOn::WhichEntity<GridViewType>> which_entities_;
+    std::unique_ptr<const ApplyOn::WhichIntersection<GridViewType>> which_intersections_;
+  }; // class GridWalkerWrapper
+
+
 public:
   GridWalker(const GridViewType& grid_view)
     : grid_view_(grid_view)
@@ -473,13 +534,83 @@ public:
         new Codim1FunctorWrapper<Functor::Codim0And1<GridViewType>>(functor, which_intersections));
   }
 
-  void walk(const bool clear_stack = true)
+  void add(ThisType& other,
+           const ApplyOn::WhichEntity<GridViewType>* which_entities = new ApplyOn::AllEntities<GridViewType>(),
+           const ApplyOn::WhichIntersection<GridViewType>* which_intersections =
+               new ApplyOn::AllIntersections<GridViewType>())
   {
-    // prepare functors
+    if (&other == this)
+      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
+    codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
+    codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
+  } // ... add(...)
+
+  void add(ThisType& other, const ApplyOn::WhichIntersection<GridViewType>* which_intersections,
+           const ApplyOn::WhichEntity<GridViewType>* which_entities = new ApplyOn::AllEntities<GridViewType>())
+  {
+    if (&other == this)
+      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
+    codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
+    codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
+  } // ... add(...)
+
+  void clear()
+  {
+    codim0_functors_ = std::vector<std::unique_ptr<Codim0Object>>();
+    codim1_functors_ = std::vector<std::unique_ptr<Codim1Object>>();
+  } // ... clear()
+
+  virtual void prepare()
+  {
     for (auto& functor : codim0_functors_)
       functor->prepare();
     for (auto& functor : codim1_functors_)
       functor->prepare();
+  } // ... prepare()
+
+  bool apply_on(const EntityType& entity) const
+  {
+    for (const auto& functor : codim0_functors_)
+      if (functor->apply_on(grid_view_, entity))
+        return true;
+    return false;
+  } // ... apply_on(...)
+
+  bool apply_on(const IntersectionType& intersection) const
+  {
+    for (const auto& functor : codim1_functors_)
+      if (functor->apply_on(grid_view_, intersection))
+        return true;
+    return false;
+  } // ... apply_on(...)
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    for (auto& functor : codim0_functors_)
+      if (functor->apply_on(grid_view_, entity))
+        functor->apply_local(entity);
+  } // ... apply_local(...)
+
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
+                           const EntityType& outside_entity)
+  {
+    for (auto& functor : codim1_functors_)
+      if (functor->apply_on(grid_view_, intersection))
+        functor->apply_local(intersection, inside_entity, outside_entity);
+  } // ... apply_local(...)
+
+  virtual void finalize()
+  {
+    for (auto& functor : codim0_functors_)
+      functor->finalize();
+    for (auto& functor : codim1_functors_)
+      functor->finalize();
+  } // ... finalize()
+
+  void walk(const bool clear_stack = true)
+  {
+    // prepare functors
+    prepare();
 
     // only do something, if we have to
     if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
@@ -489,9 +620,7 @@ public:
         const EntityType& entity = *entity_it;
 
         // apply codim0 functors
-        for (auto& functor : codim0_functors_)
-          if (functor->apply_on(grid_view_, entity))
-            functor->apply_local(entity);
+        apply_local(entity);
 
         // only walk the intersections, if there are codim1 functors present
         if (codim1_functors_.size() > 0) {
@@ -505,14 +634,9 @@ public:
             if (intersection.neighbor()) {
               const auto neighbor_ptr = intersection.outside();
               const auto& neighbor = *neighbor_ptr;
-              for (auto& functor : codim1_functors_)
-                if (functor->apply_on(grid_view_, intersection))
-                  functor->apply_local(intersection, entity, neighbor);
-            } else {
-              for (auto& functor : codim1_functors_)
-                if (functor->apply_on(grid_view_, intersection))
-                  functor->apply_local(intersection, entity, entity);
-            }
+              apply_local(intersection, entity, neighbor);
+            } else
+              apply_local(intersection, entity, entity);
 
           } // walk the intersections
         } // only walk the intersections, if there are codim1 functors present
@@ -520,21 +644,12 @@ public:
     } // only do something, if we have to
 
     // finalize functors
-    for (auto& functor : codim0_functors_)
-      functor->finalize();
-    for (auto& functor : codim1_functors_)
-      functor->finalize();
+    finalize();
 
     // clear the stack of functors
     if (clear_stack)
       clear();
   } // ... walk(...)
-
-  void clear()
-  {
-    codim0_functors_ = std::vector<std::unique_ptr<Codim0Object>>();
-    codim1_functors_ = std::vector<std::unique_ptr<Codim1Object>>();
-  } // ... clear()
 
 protected:
   const GridViewType& grid_view_;

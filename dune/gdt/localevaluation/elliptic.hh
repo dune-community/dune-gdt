@@ -24,34 +24,51 @@ namespace GDT {
 namespace LocalEvaluation {
 
 
-// forward, to be used in the traits
-template <class LocalizableFunctionImp>
+// forwards
+template <class DiffusionFactorType, class DiffusionTensorType = void>
 class Elliptic;
+
+
+namespace internal {
 
 
 /**
  *  \brief  Traits for the Elliptic evaluation.
  */
-template <class LocalizableFunctionImp>
+template <class DiffusionFactorType, class DiffusionTensorType>
 class EllipticTraits
 {
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
+                "DiffusionFactorType has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionTensorType>::value,
+                "DiffusionTensorType has to be derived from Stuff::IsLocalizableFunction.");
+
 public:
-  typedef Elliptic<LocalizableFunctionImp> derived_type;
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  typedef Elliptic<DiffusionFactorType, DiffusionTensorType> derived_type;
 };
+
+
+template <class LocalizableFunctionType>
+class EllipticTraits<LocalizableFunctionType, void>
+{
+  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
+                "LocalizableFunctionType has to be derived from Stuff::IsLocalizableFunction.");
+
+public:
+  typedef Elliptic<LocalizableFunctionType, void> derived_type;
+};
+} // namespace internal
 
 
 /**
  *  \brief  Computes an elliptic evaluation.
  */
-template <class LocalizableFunctionImp>
-class Elliptic : public LocalEvaluation::Codim0Interface<EllipticTraits<LocalizableFunctionImp>, 2>
+template <class LocalizableFunctionType>
+class Elliptic<LocalizableFunctionType, void>
+    : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<LocalizableFunctionType, void>, 2>
 {
 public:
-  typedef EllipticTraits<LocalizableFunctionImp> Traits;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef internal::EllipticTraits<LocalizableFunctionType, void> Traits;
 
   Elliptic(const LocalizableFunctionType& inducingFunction)
     : inducingFunction_(inducingFunction)
@@ -94,27 +111,28 @@ public:
                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
-    return std::max(int(localFunction.order() + testBase.order() + ansatzBase.order() - 2), 0);
+    return localFunction.order() + std::max(ssize_t(testBase.order()) - 1, ssize_t(0))
+           + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  static void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     const auto localFunction = std::get<0>(localFuncs);
     evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
   }
 
   template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBase*/,
-                       const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/)
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, rL, rCL>& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& /*ansatzBase*/,
+                const Dune::FieldVector<D, d>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/) const
   {
     static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
@@ -127,10 +145,10 @@ public:
    *  \tparam R RangeFieldType
    */
   template <class E, class D, int d, class R, int r>
-  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& testBase,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>::JacobianRangeType JacobianRangeType;
     // evaluate local function
@@ -163,10 +181,10 @@ public:
    *  \note   Unfortunately we need this explicit specialization, otherwise the compiler will complain for 1d grids.
    */
   template <class E, class D, int d, class R>
-  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 2, 2>& localFunction,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 2, 2>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     evaluate_matrix_valued_(localFunction, testBase, ansatzBase, localPoint, ret);
   }
@@ -180,20 +198,20 @@ public:
    *  \note   Unfortunately we need this explicit specialization, otherwise the compiler will complain for 1d grids.
    */
   template <class E, class D, int d, class R>
-  static void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 3, 3>& localFunction,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
-                       const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                       const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 3, 3>& localFunction,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     evaluate_matrix_valued_(localFunction, testBase, ansatzBase, localPoint, ret);
   }
 
 private:
   template <class E, class D, int d, class R>
-  static void evaluate_matrix_valued_(const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localFunction,
-                                      const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
-                                      const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
-                                      const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret)
+  void evaluate_matrix_valued_(const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localFunction,
+                               const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                               const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                               const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     typedef typename Stuff::LocalfunctionInterface<E, D, d, R, d, d>::RangeType DiffusionRangeType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
