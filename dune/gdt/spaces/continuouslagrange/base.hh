@@ -124,7 +124,8 @@ public:
          ++intersection_it) {
       // only work on dirichlet ones
       const auto& intersection = *intersection_it;
-      if (boundaryInfo.dirichlet(intersection)) {
+      // actual dirichlet intersections + process boundaries for parallel runs
+      if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
         for (int cc = 0; cc < geometry.corners(); ++cc)
