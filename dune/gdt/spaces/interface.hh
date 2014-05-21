@@ -130,12 +130,6 @@ public:
     return this->as_imp(*this).base_function_set(entity);
   }
 
-  template <class ConstraintsType>
-  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
-  {
-    local_constraints(*this, entity, ret);
-  }
-
   template <class ConstraintsType, class T>
   void local_constraints(const SpaceInterface<T>& ansatz_space, const EntityType& entity, ConstraintsType& ret) const
   {
@@ -160,6 +154,12 @@ public:
    * \defgroup provided ´´These methods are provided by the interface for convenience.''
    * @{
    **/
+
+  template <class ConstraintsType>
+  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
+  {
+    local_constraints(*this, entity, ret);
+  }
 
   PatternType compute_pattern() const
   {
@@ -300,7 +300,7 @@ public:
   }
 
   template <class G>
-  PatternType compute_face_pattern(const GridView<G>& local_grid_view) const
+  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
   {
     return compute_face_pattern(local_grid_view, *this);
   }
@@ -312,7 +312,8 @@ public:
   }
 
   template <class G, class S>
-  PatternType compute_face_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view,
+                                   const SpaceInterface<S>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
