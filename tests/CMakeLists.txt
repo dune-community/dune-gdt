@@ -11,8 +11,10 @@ enable_testing()
 BEGIN_TESTCASES()
 
 foreach( test ${testnames} )
-  add_dune_mpi_flags(${test})
-  add_dune_alugrid_flags(${test})
+  IF(NOT CMAKE_WITH_AUTOTOOLS)
+    add_dune_mpi_flags(${test})
+    add_dune_alugrid_flags(${test})
+  ENDIF(NOT CMAKE_WITH_AUTOTOOLS)
   TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
 endforeach( test ${testnames} )
 
