@@ -61,7 +61,6 @@ struct EllipticDiscretizations
       using namespace Dune::GDT;
 
       typedef typename DiscretizationType::MatrixType MatrixType;
-      typedef typename DiscretizationType::VectorType VectorType;
 
       auto solution_vector = discretization.create_vector();
       auto tmp_vector = discretization.create_vector();
@@ -274,9 +273,9 @@ struct LargeEllipticSystems
   , std::tuple< EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >, \
                 Dune::Stuff::LA::CommonDenseMatrix< double >, \
                 Dune::Stuff::LA::CommonDenseVector< double > > \
-//  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
-//                Dune::Stuff::LA::CommonDenseMatrix< double >, \
-//                Dune::Stuff::LA::CommonDenseVector< double > >
+  /*, std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >,*/ \
+                /*Dune::Stuff::LA::CommonDenseMatrix< double >,*/ \
+                /*Dune::Stuff::LA::CommonDenseVector< double > >*/
 
 #define ALU_CONFORM_2D_EIGENDENSE_TEST_CASES \
     /*std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >,*/ \
@@ -291,9 +290,9 @@ struct LargeEllipticSystems
   , std::tuple< EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType >, \
                 Dune::Stuff::LA::EigenDenseMatrix< double >, \
                 Dune::Stuff::LA::EigenDenseVector< double > > \
-//  , std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >, \
-//                Dune::Stuff::LA::EigenDenseMatrix< double >, \
-//                Dune::Stuff::LA::EigenDenseVector< double > >
+  /*, std::tuple< EllipticTestCase::Spe10Model1< AluConform2dGridType >,*/ \
+                /*Dune::Stuff::LA::EigenDenseMatrix< double >,*/ \
+                /*Dune::Stuff::LA::EigenDenseVector< double > >*/
 
 #define ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES \
     std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >, \
