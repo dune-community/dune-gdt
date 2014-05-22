@@ -116,6 +116,10 @@ else(CMAKE_WITH_AUTOTOOLS)
       --with-dune-stuff=${DUNE_STUFF_ROOT}
       --with-dune-geometry=${DUNE_GEOMETRY_ROOT} CXX="${CXX}" CC="${CC}")
 
+  file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/*.hh" )
+  set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
+  set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
+
   set( COMMON_LIBS
       ${DUNE_DEFAULT_LIBS}
       ${GRIDLIBS}

@@ -68,6 +68,7 @@ public:
                                       dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
+  typedef double CommunicatorType;
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
@@ -107,6 +108,7 @@ public:
     , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
     , tmpMappedRows_(mapper_->maxNumDofs())
     , tmpMappedCols_(mapper_->maxNumDofs())
+    , communicator_(0.0)
   {
   }
 
@@ -117,6 +119,7 @@ public:
     , mapper_(other.mapper_)
     , tmpMappedRows_(mapper_->maxNumDofs())
     , tmpMappedCols_(mapper_->maxNumDofs())
+    , communicator_(0.0)
   {
   }
 
@@ -162,6 +165,11 @@ public:
     return BaseFunctionSetType(*backend_, entity);
   }
 
+  double& communicator() const
+  {
+    return communicator_;
+  }
+
 private:
   std::shared_ptr<const GridPartType> gridPart_;
   std::shared_ptr<const GridViewType> gridView_;
@@ -169,6 +177,7 @@ private:
   std::shared_ptr<const MapperType> mapper_;
   mutable Dune::DynamicVector<size_t> tmpMappedRows_;
   mutable Dune::DynamicVector<size_t> tmpMappedCols_;
+  mutable double communicator_;
 }; // class FemBased< ..., 1 >
 
 

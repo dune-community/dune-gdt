@@ -30,5 +30,4 @@ demos
 *.param
 *.vtu
 *.pc
-build-cmake
-build-clang-debug
+build-*

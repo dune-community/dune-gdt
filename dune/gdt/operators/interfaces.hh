@@ -130,7 +130,7 @@ class AssemblableOperatorInterface : public AssemblableProductInterface<Traits>
   typedef AssemblableProductInterface<Traits> BaseType;
 
 public:
-  using typename BaseType::derived_type;
+  typedef typename BaseType::derived_type derived_type;
 
   using typename BaseType::GridViewType;
   using typename BaseType::FieldType;

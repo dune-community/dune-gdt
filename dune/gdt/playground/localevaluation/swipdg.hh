@@ -489,7 +489,7 @@ public:
                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase) const
   {
     const size_t testOrder         = testBase.order();
-    const size_t testGradientOrder = std::max(int(testOrder - 1), 0);
+    const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
     const size_t diffusionOrder    = localDiffusionFactor.order() + localDiffusionTensor.order();
     const size_t dirichletOrder = localDirichlet.order();
     return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
