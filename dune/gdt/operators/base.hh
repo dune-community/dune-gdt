@@ -26,7 +26,7 @@ public:
   using typename BaseType::RangeSpaceType;
   using typename BaseType::MatrixType;
 private:
-  typedef Stuff::LA::Solver< MatrixType > LinearSolverType;
+  typedef Stuff::LA::Solver< MatrixType, typename SourceSpaceType::CommunicatorType > LinearSolverType;
 
 public:
   MatrixBased(MatrixType& matrix,
@@ -106,7 +106,7 @@ public:
                      const Stuff::Common::ConfigTree& opts)
   {
     assemble();
-    LinearSolverType(matrix).apply(range.as_imp(), source.as_imp(), opts);
+    LinearSolverType(matrix, source_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
   } // ... apply_inverse(...)
 
 private:

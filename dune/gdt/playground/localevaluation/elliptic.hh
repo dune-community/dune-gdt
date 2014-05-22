@@ -64,8 +64,8 @@ public:
   {
     return local_diffusion_factor.order()
         + local_diffusion_tensor.order()
-        + std::max(int(testBase.order() - 1), 0)
-        + std::max(int(ansatzBase.order() - 1), 0);
+        + std::max(ssize_t(testBase.order()) - 1, ssize_t(0))
+        + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
   } // ... order(...)
 
   /**

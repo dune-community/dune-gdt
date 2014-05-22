@@ -78,6 +78,7 @@ public:
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
+  typedef typename Traits::CommunicatorType     CommunicatorType;
   typedef typename Traits::GridViewType         GridViewType;
   typedef typename Traits::RangeFieldType       RangeFieldType;
   static const unsigned int                     dimRange = Traits::dimRange;
@@ -129,6 +130,12 @@ public:
   {
     CHECK_CRTP(this->as_imp(*this).base_function_set(entity));
     return this->as_imp(*this).base_function_set(entity);
+  }
+
+  CommunicatorType& communicator() const
+  {
+    CHECK_CRTP(this->as_imp(*this).communicator());
+    return this->as_imp(*this).communicator();
   }
 
   template< class ConstraintsType >
@@ -438,6 +445,17 @@ protected:
   mutable std::vector< typename BaseFunctionSetType::RangeType > tmp_basis_values_;
 }; // class SpaceInterface
 
+template < class Traits, int codim = 0 >
+typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template begin< codim >();
+}
+
+template < class Traits, int codim = 0 >
+typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template end< codim >();
+}
 
 } // namespace GDT
 } // namespace Dune
