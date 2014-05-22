@@ -58,6 +58,10 @@ public:
   {
   }
 
+  virtual ~MatrixBased()
+  {
+  }
+
   const GridViewType& grid_view() const
   {
     return grid_view_;
