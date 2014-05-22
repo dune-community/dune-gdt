@@ -67,9 +67,11 @@ struct ProductBase
 
   static void fulfills_interface()
   {
-    // static tests
-    // * of the derived type
+// static tests
+// * of the derived type
+#include <dune/stuff/common/disable_warnings.hh>
     typedef typename ProductType::Traits Traits;
+#include <dune/stuff/common/reenable_warnings.hh>
     typedef typename ProductType::GridViewType D_GridViewType;
     typedef typename ProductType::FieldType D_FieldType;
     // * of the derived type as the interface
@@ -120,9 +122,11 @@ struct LocalizableProduct
 
   static void fulfills_interface()
   {
-    // static tests
-    // * of the derived type
+// static tests
+// * of the derived type
+#include <dune/stuff/common/disable_warnings.hh>
     typedef typename ProductType::Traits Traits;
+#include <dune/stuff/common/reenable_warnings.hh>
     typedef typename ProductType::GridViewType D_GridViewType;
     typedef typename ProductType::RangeType D_RangeType;
     typedef typename ProductType::SourceType D_SourceType;
@@ -194,9 +198,11 @@ struct AssemblableProduct
     auto grid                 = grid_provider.grid();
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid);
     const SpaceType space(grid_part_view);
-    // static tests
-    // * of the derived type
+// static tests
+// * of the derived type
+#include <dune/stuff/common/disable_warnings.hh>
     typedef typename ProductType::Traits Traits;
+#include <dune/stuff/common/reenable_warnings.hh>
     typedef typename ProductType::GridViewType D_GridViewType;
     typedef typename ProductType::RangeSpaceType D_RangeSpaceType;
     typedef typename ProductType::SourceSpaceType D_SourceSpaceType;
