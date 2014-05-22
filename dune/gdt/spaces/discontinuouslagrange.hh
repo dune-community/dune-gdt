@@ -8,6 +8,10 @@
 
 #include <memory>
 
+#if HAVE_DUNE_GRID_MULTISCALE
+# include <dune/grid/multiscale/provider/interface.hh>
+#endif
+
 #include <dune/stuff/grid/partview.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 
@@ -41,6 +45,12 @@ private:
     typedef GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GridLayerType, p, R, r > Type;
   };
 
+#if HAVE_DUNE_GRID_MULTISCALE
+  typedef grid::Multiscale::ProviderInterface< GridType > GridProviderType;
+#else
+  typedef Stuff::Grid::ConstProviderInterface< GridType > GridProviderType;
+#endif
+
 public:
   typedef typename SpaceChooser< GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type >::Type Type;
 
@@ -49,9 +59,9 @@ public:
     return Type(grid_layer);
   }
 
-  static Type create(const Stuff::Grid::ConstProviderInterface< GridType >& grid_provider, const int level = 0)
+  static Type create(const GridProviderType& grid_provider, const int level_or_subdomain = 0)
   {
-    return Type(grid_provider.template layer< layer_type, part_view_type >(level));
+    return Type(grid_provider.template layer< layer_type, part_view_type >(level_or_subdomain));
   }
 }; // class DiscontinuousLagrangeProvider
 
