@@ -118,7 +118,6 @@ public:
     const auto infinity = std::numeric_limits<R>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)
       range.vector().set_entry(ii, infinity);
-    typedef DiscreteFunction<Spaces::ContinuousLagrange::FemLocalfunctionsBased<GP, 1, R, r, 1>, V> RangeFunctionType;
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {

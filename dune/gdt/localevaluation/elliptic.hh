@@ -215,8 +215,6 @@ private:
   {
     typedef typename Stuff::LocalfunctionInterface<E, D, d, R, d, d>::RangeType DiffusionRangeType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
-
     // evaluate local function
     const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
