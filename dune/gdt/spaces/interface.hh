@@ -300,7 +300,7 @@ public:
   }
 
   template <class G>
-  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
+  PatternType compute_face_pattern(const GridView<G>& local_grid_view) const
   {
     return compute_face_pattern(local_grid_view, *this);
   }
