@@ -122,10 +122,10 @@ public:
     this->add(local_assembler_, this->matrix());
   }
 
-  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
-             const RangeSpaceType& range_space)
-    : OperatorBaseType(matrix, source_space, range_space)
-    , AssemblerBaseType(range_space, source_space)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc,
+             const RangeSpaceType& rng_spc)
+    : OperatorBaseType(mtrx, src_spc, rng_spc)
+    , AssemblerBaseType(rng_spc, src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
@@ -133,9 +133,9 @@ public:
     this->add(local_assembler_, this->matrix());
   }
 
-  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space)
-    : OperatorBaseType(matrix, source_space)
-    , AssemblerBaseType(source_space)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc)
+    : OperatorBaseType(mtrx, src_spc)
+    , AssemblerBaseType(src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
     , local_assembler_(local_operator_)

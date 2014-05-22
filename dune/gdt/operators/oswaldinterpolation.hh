@@ -351,8 +351,8 @@ public:
   static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
-  OswaldInterpolation(const GridViewType& grid_view, const bool zero_boundary = true)
-    : grid_view_(grid_view)
+  OswaldInterpolation(const GridViewType& grd_vw, const bool zero_boundary = true)
+    : grid_view_(grd_vw)
     , zero_boundary_(zero_boundary)
   {
   }

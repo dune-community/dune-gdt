@@ -62,8 +62,8 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  Darcy(const GridViewType& grid_view, const FunctionImp& function)
-    : grid_view_(grid_view)
+  Darcy(const GridViewType& grd_vw, const FunctionImp& function)
+    : grid_view_(grd_vw)
     , function_(function)
   {
   }

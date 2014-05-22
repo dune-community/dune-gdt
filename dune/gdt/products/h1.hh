@@ -108,15 +108,15 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
+  H1SemiLocalizable(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
                     const size_t over_integrate = 0)
-    : LocalizableBaseType(grid_view, range, source)
+    : LocalizableBaseType(grd_vw, rng, src)
     , H1SemiBaseType(over_integrate)
   {
   }
 
-  H1SemiLocalizable(const GridViewType& grid_view, const RangeType& range, const size_t over_integrate = 0)
-    : LocalizableBaseType(grid_view, range)
+  H1SemiLocalizable(const GridViewType& grd_vw, const RangeType& rng, const size_t over_integrate = 0)
+    : LocalizableBaseType(grd_vw, rng)
     , H1SemiBaseType(over_integrate)
   {
   }
@@ -171,16 +171,16 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const GridViewType& grid_view,
-                    const SourceSpaceType& source_space, const size_t over_integrate = 0)
-    : AssemblableBaseType(matrix, range_space, grid_view, source_space)
+  H1SemiAssemblable(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw,
+                    const SourceSpaceType& src_spc, const size_t over_integrate = 0)
+    : AssemblableBaseType(mtrx, rng_spc, grd_vw, src_spc)
     , H1SemiBaseType(over_integrate)
   {
   }
 
-  H1SemiAssemblable(MatrixType& matrix, const RangeSpaceType& range_space, const GridViewType& grid_view,
+  H1SemiAssemblable(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw,
                     const size_t over_integrate = 0)
-    : AssemblableBaseType(matrix, range_space, grid_view, range_space)
+    : AssemblableBaseType(mtrx, rng_spc, grd_vw, rng_spc)
     , H1SemiBaseType(over_integrate)
   {
   }
@@ -225,8 +225,8 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  H1SemiGeneric(const GridViewType& grid_view, const size_t over_integrate = 0)
-    : grid_view_(grid_view)
+  H1SemiGeneric(const GridViewType& grd_vw, const size_t over_integrate = 0)
+    : grid_view_(grd_vw)
     , over_integrate_(over_integrate)
   {
   }

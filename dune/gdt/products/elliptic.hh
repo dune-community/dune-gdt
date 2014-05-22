@@ -109,16 +109,16 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  EllipticLocalizable(const DiffusionImp& diffusion, const GridViewType& grid_view, const RangeType& range,
-                      const SourceType& source, const size_t over_integrate = 0)
-    : LocalizableBaseType(grid_view, range, source)
+  EllipticLocalizable(const DiffusionImp& diffusion, const GridViewType& grd_vw, const RangeType& rng,
+                      const SourceType& src, const size_t over_integrate = 0)
+    : LocalizableBaseType(grd_vw, rng, src)
     , EllipticBaseType(diffusion, over_integrate)
   {
   }
 
-  EllipticLocalizable(const DiffusionImp& diffusion, const GridViewType& grid_view, const RangeType& range,
+  EllipticLocalizable(const DiffusionImp& diffusion, const GridViewType& grd_vw, const RangeType& rng,
                       const size_t over_integrate = 0)
-    : LocalizableBaseType(grid_view, range)
+    : LocalizableBaseType(grd_vw, rng)
     , EllipticBaseType(diffusion, over_integrate)
   {
   }
@@ -228,9 +228,9 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  Elliptic(const DiffusionImp& diffusion, const GridViewType& grid_view)
+  Elliptic(const DiffusionImp& diffusion, const GridViewType& grd_vw)
     : diffusion_(diffusion)
-    , grid_view_(grid_view)
+    , grid_view_(grd_vw)
   {
   }
 

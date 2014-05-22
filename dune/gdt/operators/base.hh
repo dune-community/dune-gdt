@@ -30,28 +30,28 @@ private:
   typedef Stuff::LA::Solver<MatrixType> LinearSolverType;
 
 public:
-  MatrixBased(MatrixType& matrix, const SourceSpaceType& source_space, const RangeSpaceType& range_space,
-              const GridViewType& grid_view)
-    : matrix_(matrix)
-    , source_space_(source_space)
-    , range_space_(range_space)
-    , grid_view_(grid_view)
+  MatrixBased(MatrixType& mtrx, const SourceSpaceType& source_sp, const RangeSpaceType& range_sp,
+              const GridViewType& grd_vw)
+    : matrix_(mtrx)
+    , source_space_(source_sp)
+    , range_space_(range_sp)
+    , grid_view_(grd_vw)
     , assembled_(false)
   {
   }
 
-  MatrixBased(MatrixType& matrix, const SourceSpaceType& source_space, const RangeSpaceType& range_space)
-    : matrix_(matrix)
-    , source_space_(source_space)
-    , range_space_(range_space)
+  MatrixBased(MatrixType& mtrx, const SourceSpaceType& source_sp, const RangeSpaceType& range_sp)
+    : matrix_(mtrx)
+    , source_space_(source_sp)
+    , range_space_(range_sp)
     , grid_view_(*(source_space_.grid_view()))
     , assembled_(false)
   {
   }
 
-  MatrixBased(MatrixType& matrix, const SourceSpaceType& source_space)
-    : matrix_(matrix)
-    , source_space_(source_space)
+  MatrixBased(MatrixType& mtrx, const SourceSpaceType& source_sp)
+    : matrix_(mtrx)
+    , source_space_(source_sp)
     , range_space_(source_space_)
     , grid_view_(*(source_space_.grid_view()))
     , assembled_(false)
