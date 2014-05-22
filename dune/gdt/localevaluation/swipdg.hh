@@ -53,7 +53,7 @@ namespace internal {
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static double default_beta(const int dimDomain)
+static inline double default_beta(const int dimDomain)
 {
   return 1.0/(dimDomain - 1.0);
 }
@@ -62,7 +62,7 @@ static double default_beta(const int dimDomain)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static double inner_sigma(const size_t pol_order)
+static inline double inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -88,7 +88,7 @@ static double inner_sigma(const size_t pol_order)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static double boundary_sigma(const size_t pol_order)
+static inline double boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
