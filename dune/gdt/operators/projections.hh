@@ -494,14 +494,14 @@ public:
   typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >  BoundaryInfoType;
 
 public:
-  DirichletProjectionLocalizable(const GridViewType& grid_view,
+  DirichletProjectionLocalizable(const GridViewType& grd_vw,
                        const BoundaryInfoType& boundary_info,
-                       const SourceType& source,
-                       RangeType& range)
-    : grid_view_(grid_view)
+                       const SourceType& src,
+                       RangeType& rng)
+    : grid_view_(grd_vw)
     , boundary_info_(boundary_info)
-    , source_(source)
-    , range_(range)
+    , source_(src)
+    , range_(rng)
   {}
 
   virtual ~DirichletProjectionLocalizable() {}

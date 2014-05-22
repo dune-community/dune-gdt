@@ -36,19 +36,19 @@ public:
   using typename InterfaceType::EntityType;
 
 public:
-  LocalizableBase(const GridViewType& grid_view, const RangeType& range, const SourceType& source)
-    : grid_view_(grid_view)
-    , range_(range)
-    , source_(source)
+  LocalizableBase(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src)
+    : grid_view_(grd_vw)
+    , range_(rng)
+    , source_(src)
     , tmp_storage_(nullptr)
     , prepared_(false)
     , finalized_(false)
     , result_(0)
   {}
 
-  LocalizableBase(const GridViewType& grid_view, const RangeType& range)
-    : grid_view_(grid_view)
-    , range_(range)
+  LocalizableBase(const GridViewType& grd_vw, const RangeType& rng)
+    : grid_view_(grd_vw)
+    , range_(rng)
     , source_(range_)
     , tmp_storage_(nullptr)
     , prepared_(false)
@@ -155,26 +155,24 @@ public:
 
   using InterfaceType::pattern;
 
-  AssemblableBase(MatrixType& matrix,
-                  const RangeSpaceType& range_space,
-                  const GridViewType& grid_view,
-                  const SourceSpaceType& source_space)
-    : matrix_(matrix)
-    , range_space_(range_space)
-    , grid_view_(grid_view)
-    , source_space_(source_space)
+  AssemblableBase(MatrixType& mtrx,
+                  const RangeSpaceType& rng_spc,
+                  const GridViewType& grd_vw,
+                  const SourceSpaceType& src_spc)
+    : matrix_(mtrx)
+    , range_space_(rng_spc)
+    , grid_view_(grd_vw)
+    , source_space_(src_spc)
     , local_assembler_(nullptr)
     , tmp_storage_(nullptr)
     , prepared_(false)
     , assembled_(false)
   {}
 
-  AssemblableBase(MatrixType& matrix,
-                  const RangeSpaceType& range_space,
-                  const GridViewType& grid_view)
-    : matrix_(matrix)
-    , range_space_(range_space)
-    , grid_view_(grid_view)
+  AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw)
+    : matrix_(mtrx)
+    , range_space_(rng_spc)
+    , grid_view_(grd_vw)
     , source_space_(range_space_)
     , local_assembler_(nullptr)
     , tmp_storage_(nullptr)
@@ -182,10 +180,9 @@ public:
     , assembled_(false)
   {}
 
-  AssemblableBase(MatrixType& matrix,
-                  const RangeSpaceType& range_space)
-    : matrix_(matrix)
-    , range_space_(range_space)
+  AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc)
+    : matrix_(mtrx)
+    , range_space_(rng_spc)
     , grid_view_(*(range_space_->grid_view()))
     , source_space_(range_space_)
     , local_assembler_(nullptr)

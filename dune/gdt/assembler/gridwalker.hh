@@ -473,8 +473,8 @@ protected:
 
 
 public:
-  GridWalker(const GridViewType& grid_view)
-    : grid_view_(grid_view)
+  GridWalker(const GridViewType& grd_vw)
+    : grid_view_(grd_vw)
   {}
 
   const GridViewType& grid_view() const

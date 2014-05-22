@@ -71,9 +71,9 @@ public:
   typedef typename Traits::SpaceType  SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
-  L2Volume(const FunctionType& function, VectorType& vector, const SpaceType& space, const GridViewType& grid_view)
-    : FunctionalBaseType(vector, space, grid_view)
-    , AssemblerBaseType(space, grid_view)
+  L2Volume(const FunctionType& function, VectorType& vec, const SpaceType& spc, const GridViewType& grd_vw)
+    : FunctionalBaseType(vec, spc, grd_vw)
+    , AssemblerBaseType(spc, grd_vw)
     , function_(function)
     , local_functional_(function_)
     , local_assembler_(local_functional_)
@@ -81,9 +81,9 @@ public:
     setup();
   }
 
-  L2Volume(const FunctionType& function, VectorType& vector, const SpaceType& space)
-    : FunctionalBaseType(vector, space)
-    , AssemblerBaseType(space)
+  L2Volume(const FunctionType& function, VectorType& vec, const SpaceType& spc)
+    : FunctionalBaseType(vec, spc)
+    , AssemblerBaseType(spc)
     , function_(function)
     , local_functional_(function_)
     , local_assembler_(local_functional_)
@@ -159,13 +159,13 @@ public:
   typedef typename Traits::GridViewType GridViewType;
 
   L2Face(const FunctionType& function,
-         VectorType& vector,
-         const SpaceType& space,
-         const GridViewType& grid_view,
+         VectorType& vec,
+         const SpaceType& spc,
+         const GridViewType& grd_vw,
          const GDT::ApplyOn::WhichIntersection< GridViewType >* which_intersections
             = new GDT::ApplyOn::AllIntersections< GridViewType >())
-    : FunctionalBaseType(vector, space, grid_view)
-    , AssemblerBaseType(space, grid_view)
+    : FunctionalBaseType(vec, spc, grd_vw)
+    , AssemblerBaseType(spc, grd_vw)
     , function_(function)
     , local_functional_(function_)
     , local_assembler_(local_functional_)
@@ -174,12 +174,12 @@ public:
   }
 
   L2Face(const FunctionType& function,
-         VectorType& vector,
-         const SpaceType& space,
+         VectorType& vec,
+         const SpaceType& spc,
          const GDT::ApplyOn::WhichIntersection< GridViewType >* which_intersections
             = new GDT::ApplyOn::AllIntersections< GridViewType >())
-    : FunctionalBaseType(vector, space)
-    , AssemblerBaseType(space)
+    : FunctionalBaseType(vec, spc)
+    , AssemblerBaseType(spc)
     , function_(function)
     , local_functional_(function_)
     , local_assembler_(local_functional_)

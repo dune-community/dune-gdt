@@ -62,10 +62,10 @@ public:
   typedef typename Traits::LocalOperatorType  LocalOperatorType;
 
 
-  DiffusiveFluxEstimate(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
+  DiffusiveFluxEstimate(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
                         const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux,
                         const size_t over_integrate = 0)
-    : BaseType(grid_view, range, source)
+    : BaseType(grd_vw, rng, src)
     , diffusion_(diffusion)
     , diffusive_flux_(diffusive_flux)
     , local_operator_(over_integrate, diffusion_, diffusive_flux_)

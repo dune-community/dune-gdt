@@ -26,16 +26,16 @@ public:
   using typename BaseType::VectorType;
   using typename BaseType::ScalarType;
 
-  VectorBased(VectorType& vector, const SpaceType& space, const GridViewType& grid_view)
-    : vector_(vector)
-    , space_(space)
-    , grid_view_(grid_view)
+  VectorBased(VectorType& vec, const SpaceType& spc, const GridViewType& grd_vw)
+    : vector_(vec)
+    , space_(spc)
+    , grid_view_(grd_vw)
   {}
 
-  VectorBased(VectorType& vector, const SpaceType& space)
-    : vector_(vector)
-    , space_(space)
-    , grid_view_(*(space.grid_view()))
+  VectorBased(VectorType& vec, const SpaceType& spc)
+    : vector_(vec)
+    , space_(spc)
+    , grid_view_(*(spc.grid_view()))
   {}
 
   virtual ~VectorBased() {}
