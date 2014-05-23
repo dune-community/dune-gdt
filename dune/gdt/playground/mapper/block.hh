@@ -57,7 +57,7 @@ public:
 
 private:
   template <class L, class E>
-  struct Compute
+  class Compute
   {
     static_assert(AlwaysFalse<L>::value, "Not implemented for this kind of entity (only codim 0)!");
   };
@@ -67,6 +67,7 @@ private:
   {
     typedef typename MsGridType::EntityType Comdim0EntityType;
 
+  public:
     static size_t numDofs(const MsGridType& ms_grid, const std::vector<std::shared_ptr<const L>>& local_spaces,
                           const Comdim0EntityType& entity)
     {
@@ -180,20 +181,20 @@ public:
   template <class EntityType>
   size_t numDofs(const EntityType& entity) const
   {
-    return Compute<LocalSpaceType, EntityType>::numDofs(ms_grid_, local_spaces_, entity);
+    return Compute<LocalSpaceType, EntityType>::numDofs(*ms_grid_, local_spaces_, entity);
   }
 
   template <class EntityType>
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    Compute<LocalSpaceType, EntityType>::globalIndices(ms_grid_, local_spaces_, global_start_indices_, entity, ret);
+    Compute<LocalSpaceType, EntityType>::globalIndices(*ms_grid_, local_spaces_, global_start_indices_, entity, ret);
   }
 
   template <class EntityType>
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     return Compute<LocalSpaceType, EntityType>::mapToGlobal(
-        ms_grid_, global_start_indices_, local_spaces_, entity, localIndex);
+        *ms_grid_, global_start_indices_, local_spaces_, entity, localIndex);
   }
 
 private:
