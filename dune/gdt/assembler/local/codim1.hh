@@ -76,8 +76,6 @@ public:
   {
 #ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
 #endif
     // check
@@ -119,8 +117,6 @@ public:
                          tmpOperatorMatrices);
 #ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
 #endif
     // write local matrices to global
@@ -150,8 +146,6 @@ public:
     assert(localNeighborEntityMatrix.cols() >= colsEn);
 #ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
 #endif
     for (size_t ii = 0; ii < rowsEn; ++ii) {
@@ -182,8 +176,6 @@ public:
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
 #endif
   } // void assembleLocal(...) const
