@@ -77,10 +77,8 @@ public:
                      std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
 #endif
     // check
     assert(tmpLocalMatricesContainer.size() >= 2);
@@ -98,7 +96,7 @@ public:
     Dune::Stuff::Common::clear(localNeighborEntityMatrix);
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
 #endif
     // get entities
     const auto entityPtr = intersection.inside();
@@ -106,7 +104,7 @@ public:
     const auto neighborPtr = intersection.outside();
     const auto& neighbor = *neighborPtr;
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
 #endif
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpaceEntity.base_function_set(entity), ansatzSpaceEntity.base_function_set(entity),
@@ -118,10 +116,8 @@ public:
                          localNeighborEntityMatrix,
                          tmpOperatorMatrices);
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
 #endif
     // write local matrices to global
     const size_t rowsEn = testSpaceEntity.mapper().numDofs(entity);
@@ -149,10 +145,8 @@ public:
     assert(localNeighborEntityMatrix.rows() >= rowsNe);
     assert(localNeighborEntityMatrix.cols() >= colsEn);
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
 #endif
     for (size_t ii = 0; ii < rowsEn; ++ii) {
       const auto& localEntityEntityMatrixRow = localEntityEntityMatrix[ii];
@@ -181,10 +175,8 @@ public:
       }
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
-#endif
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
 #endif
   } // void assembleLocal(...) const
 
@@ -255,7 +247,7 @@ public:
                      std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
+    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
 #endif
     // check
     assert(tmpLocalMatricesContainer.size() >= 2);
@@ -293,7 +285,7 @@ public:
       }
     }
 #ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
+    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
 #endif
   } // void assembleLocal(...) const
 
