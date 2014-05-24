@@ -140,16 +140,16 @@ public:
     static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class E, class N, class IntersectionType, class D, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localDiffusionFactorEntity,
-                const Stuff::LocalfunctionInterface<E, D, 2, R, 2, 2>& localDiffusionTensorEntity,
-                const Stuff::LocalfunctionInterface<N, D, 2, R, 1, 1>& localDiffusionFactorNeighbor,
-                const Stuff::LocalfunctionInterface<N, D, 2, R, 2, 2>& localDiffusionTensorNeighbor,
-                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& testBaseEntity,
-                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& ansatzBaseEntity,
-                const Stuff::LocalfunctionSetInterface<N, D, 2, R, 1, 1>& testBaseNeighbor,
-                const Stuff::LocalfunctionSetInterface<N, D, 2, R, 1, 1>& ansatzBaseNeighbor,
-                const IntersectionType& intersection, const Dune::FieldVector<D, 1>& localPoint,
+  template <class E, class D, int d, class R, class N, class IntersectionType>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDiffusionFactorEntity,
+                const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localDiffusionTensorEntity,
+                const Stuff::LocalfunctionInterface<N, D, d, R, 1, 1>& localDiffusionFactorNeighbor,
+                const Stuff::LocalfunctionInterface<N, D, d, R, d, d>& localDiffusionTensorNeighbor,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBaseEntity,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, 1, 1>& testBaseNeighbor,
+                const Stuff::LocalfunctionSetInterface<N, D, d, R, 1, 1>& ansatzBaseNeighbor,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
@@ -158,19 +158,19 @@ public:
     Stuff::Common::clear(neighborNeighborRet);
     Stuff::Common::clear(entityNeighborRet);
     Stuff::Common::clear(neighborEntityRet);
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
     const DomainType localPointEn    = intersection.geometryInInside().global(localPoint);
     const DomainType localPointNe    = intersection.geometryInOutside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    typedef Stuff::Common::FieldMatrix<R, d, d> TensorType;
     const auto local_diffusion_factor_en       = localDiffusionFactorEntity.evaluate(localPointEn);
     const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
-    const auto local_diffusion_factor_ne       = localDiffusionFactorEntity.evaluate(localPointNe);
-    const TensorType local_diffusion_tensor_ne = localDiffusionTensorEntity.evaluate(localPointNe);
+    const auto local_diffusion_factor_ne       = localDiffusionFactorNeighbor.evaluate(localPointNe);
+    const TensorType local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(testBaseEntity.order(),
@@ -365,24 +365,24 @@ public:
     static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class E, class IntersectionType, class D, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localDiffusionFactor,
-                const Stuff::LocalfunctionInterface<E, D, 2, R, 2, 2>& localDiffusionTensor,
-                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& testBase,
-                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& ansatzBase,
-                const IntersectionType& intersection, const Dune::FieldVector<D, 1>& localPoint,
+  template <class E, class D, int d, class R, class IntersectionType>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDiffusionFactor,
+                const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localDiffusionTensor,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& ansatzBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicMatrix<R>& ret) const
   {
     // clear ret
     Stuff::Common::clear(ret);
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    typedef Stuff::Common::FieldMatrix<R, d, d> TensorType;
     const auto diffusion_factor_value       = localDiffusionFactor.evaluate(localPointEntity);
     const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
@@ -522,24 +522,24 @@ public:
     static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   }
 
-  template <class E, class IntersectionType, class D, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localDiffusionFactor,
-                const Stuff::LocalfunctionInterface<E, D, 2, R, 2, 2>& localDiffusionTensor,
-                const Stuff::LocalfunctionInterface<E, D, 2, R, 1, 1>& localDirichlet,
-                const Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>& testBase,
-                const IntersectionType& intersection, const Dune::FieldVector<D, 1>& localPoint,
+  template <class E, class D, int d, class R, class IntersectionType>
+  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDiffusionFactor,
+                const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& localDiffusionTensor,
+                const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& localDirichlet,
+                const Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>& testBase,
+                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicVector<R>& ret) const
   {
     // clear ret
     Stuff::Common::clear(ret);
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::DomainType DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local functions
-    typedef Stuff::Common::FieldMatrix<R, 2, 2> TensorType;
+    typedef Stuff::Common::FieldMatrix<R, d, d> TensorType;
     const auto diffusionFactorValue       = localDiffusionFactor.evaluate(localPointEntity);
     const TensorType diffusionTensorValue = localDiffusionTensor.evaluate(localPointEntity);
     const RangeType dirichletValue        = localDirichlet.evaluate(localPointEntity);
