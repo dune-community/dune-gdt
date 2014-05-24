@@ -12,7 +12,7 @@
 #include <dune/grid/multiscale/provider/interface.hh>
 #endif
 
-#include <dune/stuff/grid/partview.hh>
+#include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
