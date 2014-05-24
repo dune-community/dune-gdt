@@ -55,6 +55,11 @@ private:
     typedef GDT::Spaces::ContinuousLagrange::PdelabBased< GridLayerType, p, R, r > Type;
   };
 
+  typedef Stuff::Grid::ConstProviderInterface< GridType > GridProviderType;
+#if HAVE_DUNE_GRID_MULTISCALE
+  typedef grid::Multiscale::ProviderInterface< GridType > MsGridProviderType;
+#endif
+
 public:
   typedef typename SpaceChooser< GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type >::Type Type;
 
@@ -63,10 +68,17 @@ public:
     return Type(grid_layer);
   }
 
-  static Type create(const Stuff::Grid::ConstProviderInterface< GridType >& grid_provider, const int level = 0)
+  static Type create(const GridProviderType& grid_provider, const int level = 0)
   {
     return Type(grid_provider.template layer< layer_type, part_view_type >(level));
   }
+
+#if HAVE_DUNE_GRID_MULTISCALE
+  static Type create(const MsGridProviderType& grid_provider, const int level_or_subdomain = 0)
+  {
+    return Type(grid_provider.template layer< layer_type, part_view_type >(level_or_subdomain));
+  }
+#endif // HAVE_DUNE_GRID_MULTISCALE
 }; // class ContinuousLagrangeProvider
 
 
