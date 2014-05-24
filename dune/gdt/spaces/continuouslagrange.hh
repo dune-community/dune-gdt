@@ -44,7 +44,7 @@ private:
   };
 
   template< class G, int p, class R, int r, int rC >
-  struct SpaceChooser< G, p, R, r, rC, GDT::ChooseSpaceBackend::fem_localfunction >
+  struct SpaceChooser< G, p, R, r, rC, GDT::ChooseSpaceBackend::fem_localfunctions >
   {
     typedef GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased< GridLayerType, p, R, r > Type;
   };

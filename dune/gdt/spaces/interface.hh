@@ -32,7 +32,7 @@ enum class ChooseSpaceBackend
     gdt
   , pdelab
   , fem
-  , fem_localfunction
+  , fem_localfunctions
 }; // enum class ChooseSpaceBackend
 
 
@@ -62,7 +62,7 @@ struct ChooseGridPartView< ChooseSpaceBackend::fem >
 
 
 template<>
-struct ChooseGridPartView< ChooseSpaceBackend::fem_localfunction >
+struct ChooseGridPartView< ChooseSpaceBackend::fem_localfunctions >
 {
   static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
 };
