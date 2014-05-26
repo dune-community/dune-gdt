@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
 #define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
 
-#include "config.h"
-
 #include <memory>
 
 #include <dune/common/typetraits.hh>
@@ -23,8 +21,7 @@
 #endif
 
 #if HAVE_DUNE_PDELAB
-# include <dune/pdelab/finiteelementmap/pkfem.hh>
-# include <dune/pdelab/finiteelementmap/qkfem.hh>
+# include <dune/pdelab/finiteelementmap/qkdg.hh>
 # include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 # include <dune/pdelab/constraints/conforming.hh>
 # include <dune/pdelab/backend/istl/parallelhelper.hh>
@@ -76,12 +73,13 @@ private:
   template< class G >
   struct FeMap< G, true, true, false >
   {
-    typedef PDELab::PkLocalFiniteElementMap < GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    static_assert(Dune::AlwaysFalse< G >::value,
+                  "Not yet implemented for simplicial grids!");
   };
   template< class G >
   struct FeMap< G, true, false, true >
   {
-    typedef PDELab::QkLocalFiniteElementMap < GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::QkDGLocalFiniteElementMap < DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType< GridType >::v;
