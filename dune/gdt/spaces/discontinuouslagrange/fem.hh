@@ -22,6 +22,7 @@
 #include "../../basefunctionset/fem.hh"
 
 #include "../constraints.hh"
+#include "../interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -70,12 +71,13 @@ public:
 }; // class SpaceWrappedFemDiscontinuousLagrangeTraits
 
 
-// untested for the vector-valued case, especially Spaces::ContinuousLagrangeBase
+// untested for the vector-valued case
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
     : public SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
   typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >               ThisType;
+  typedef SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
 public:
   typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >         Traits;
 
@@ -129,6 +131,14 @@ public:
   }
 
   ~FemBased() {}
+
+  using BaseType::compute_pattern;
+
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  {
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+  }
 
   const std::shared_ptr< const GridPartType >& grid_part() const
   {
