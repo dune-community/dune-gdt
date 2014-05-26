@@ -24,8 +24,8 @@
 
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
-#include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/pdelab.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/fem-localfunctions.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
@@ -74,22 +74,6 @@ class Any_Space : public ::testing::Test, public SpaceTestBase<SpaceType>
 // typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType >::Type         AluCube3dGridViewType;
 // typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, false >::Type  AluCube3dGridPartType;
 //#endif
-
-#define DISCONTINUOUS_LAGRANGE_SPACES_FEM_LOCALFUNCTIONS                                                               \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 1, double, 1>,                 \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<S1dLeafGridPartType, 2, double, 1>,             \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 1, double, 1>,          \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<Yasp1dLeafGridPartType, 2, double, 1>
-
-#if HAVE_ALUGRID
-#define DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                       \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 1, double, 1>,        \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 2, double, 1>,    \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 1, double, 1>,    \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex2dLeafGridPartType, 2, double, 1>,    \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex3dLeafGridPartType, 1, double, 1>,    \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluSimplex3dLeafGridPartType, 2, double, 1>
-#endif // HAVE_ALUGRID
 
 #if HAVE_ALUGRID
 #define RTN0_RAVIART_THOMAS_SPACES_ALUGRID_FEM_LOCALFUNCTIONS                                                          \
