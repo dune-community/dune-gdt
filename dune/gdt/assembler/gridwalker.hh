@@ -11,6 +11,8 @@
 #include <type_traits>
 
 #include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/grid/entity.hh>
+#include <dune/stuff/grid/intersection.hh>
 
 namespace Dune {
 namespace GDT {
@@ -22,7 +24,7 @@ class Codim0
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
 
   virtual ~Codim0() {}
 
@@ -39,8 +41,8 @@ class Codim1
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::Intersection                 IntersectionType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type       EntityType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual ~Codim1() {}
 
@@ -59,8 +61,8 @@ class Codim0And1
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::Intersection                 IntersectionType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type       EntityType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual ~Codim0And1() {}
 
@@ -96,7 +98,7 @@ class WhichEntity
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
 
   virtual ~ WhichEntity() {}
 
@@ -113,7 +115,7 @@ class AllEntities
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const DS_OVERRIDE DS_FINAL
   {
@@ -131,7 +133,7 @@ class BoundaryEntities
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_OVERRIDE DS_FINAL
   {
@@ -156,7 +158,7 @@ class WhichIntersection
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual ~ WhichIntersection< GridViewImp >() {}
 
@@ -174,7 +176,7 @@ class AllIntersections
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const DS_OVERRIDE DS_FINAL
   {
@@ -198,7 +200,7 @@ class InnerIntersections
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
@@ -223,7 +225,7 @@ class InnerIntersectionsPrimally
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
@@ -245,7 +247,7 @@ class BoundaryIntersections
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
@@ -260,8 +262,8 @@ class DirichletIntersections
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection           IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >  BoundaryInfoType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >   BoundaryInfoType;
 
   DirichletIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
@@ -283,8 +285,8 @@ class NeumannIntersections
 {
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::Intersection           IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >  BoundaryInfoType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >   BoundaryInfoType;
 
   NeumannIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
@@ -310,8 +312,8 @@ class GridWalker
   typedef GridWalker< GridViewImp > ThisType;
 public:
   typedef GridViewImp GridViewType;
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::Intersection                 IntersectionType;
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type       EntityType;
+  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
 protected:
   typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
