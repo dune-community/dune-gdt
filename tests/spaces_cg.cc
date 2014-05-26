@@ -9,11 +9,12 @@
 // Then this one (otherwise we get alugrid problems)!
 #include "spaces.hh"
 
-#if !HAVE_DUNE_FEM && !HAVE_DUNE_FEM_LOCALFUNCTIONS && !HAVE_DUNE_PDELAB
+#if !HAVE_DUNE_FEM && !HAVE_DUNE_PDELAB
 # error "These tests requires at least one discretization module!"
 #endif
 
-//#include <dune/common/typetraits.hh>
+
+#include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/stuff/common/print.hh>
@@ -211,7 +212,7 @@ struct P1Q1_Continuous_Lagrange
 
 # define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB \
     Dune::GDT::Spaces::ContinuousLagrange::PdelabBased< AluCube3dLeafGridViewType, 1, double, 1 >
-#endif
+#endif //HAVE_ALUGRID
 
 typedef testing::Types<
 #if HAVE_DUNE_FEM
