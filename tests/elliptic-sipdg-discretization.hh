@@ -47,8 +47,8 @@ namespace EllipticSIPDG {
 
 template< class GridPartType,
           int polynomialOrder,
-          class MatrixImp = typename Dune::Stuff::LA::Container< double >::MatrixType,
-          class VectorImp = typename Dune::Stuff::LA::Container< double >::VectorType >
+          class MatrixImp = typename Dune::Stuff::LA::Container< double, Dune::Stuff::LA::ChooseBackend::eigen_sparse >::MatrixType,
+          class VectorImp = typename Dune::Stuff::LA::Container< double, Dune::Stuff::LA::ChooseBackend::eigen_sparse >::VectorType >
 class Discretization
 {
 public:
