@@ -256,16 +256,9 @@ typedef testing::Types<
     > Q1_Spaces;
 
 typedef testing::Types<
-#if HAVE_DUNE_FEM
-    P1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-#if HAVE_ALUGRID
-    ,
+#if HAVE_DUNE_FEM && HAVE_ALUGRID
     P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, P1D_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-#endif
-#if HAVE_DUNE_PDELAB
-    ,
-#endif
-#endif // HAVE_DUNE_FEM
+#endif // HAVE_DUNE_FEM && HAVE_ALUGRID
     > P1_Spaces;
 
 
