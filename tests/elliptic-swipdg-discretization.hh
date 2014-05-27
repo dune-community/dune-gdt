@@ -20,9 +20,8 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/la/container/eigen.hh>
-#include <dune/stuff/la/solver/eigen.hh>
-#include <dune/stuff/la/solver/fasp.hh>
+#include <dune/stuff/la/container.hh>
+#include <dune/stuff/la/solver.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/ESV2007.hh>
 #include <dune/stuff/common/convergence-study.hh>
@@ -60,8 +59,8 @@ namespace EllipticSWIPDG {
 
 template< class GridPartType,
           int polynomialOrder,
-          class MatrixImp = Dune::Stuff::LA::EigenRowMajorSparseMatrix< double >,
-          class VectorImp = Dune::Stuff::LA::EigenDenseVector< double > >
+          class MatrixImp = typename Dune::Stuff::LA::Container< double >::MatrixType,
+          class VectorImp = typename Dune::Stuff::LA::Container< double >::VectorType >
 class Discretization
 {
 public:
