@@ -15,6 +15,7 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/spe10.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/spaces/tools.hh>
 
@@ -198,11 +199,8 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 16));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(0, 1, 16);
+    return grid_provider.grid();
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;
@@ -309,10 +307,12 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(-1, 1, 4));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(2);
+    Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(-1, 1, 4);
+    auto grid = grid_provider.grid();
+    const std::string grid_type = Dune::Stuff::Common::Typename< GridType >::value();
+    if (grid_type == "Dune::ALUConformGrid<2, 2>"
+        || grid_type == "Dune::ALUGrid<2, 2, (Dune::ALUGridElementType)0, (Dune::ALUGridRefinementType)0, Dune::No_Comm>")
+      grid->globalRefine(1);
     return grid;
   } // ... create_initial_grid(...)
 
@@ -423,11 +423,8 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 6));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(0, 1, 6);
+    return grid_provider.grid();
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;
@@ -529,11 +526,8 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(0, 1, 2));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(0, 1, 2);
+    return grid_provider.grid();
   } // ... create_initial_grid(...)
 
   static BoundaryInfoType create_boundary_info()
@@ -647,13 +641,8 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType({0.0, 0.0},
-                                                                                  {5.0, 1.0},
-                                                                                  {100u, 20u}));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider({0.0, 0.0}, {5.0, 1.0}, {100u, 20u});
+    return grid_provider.grid();
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;
