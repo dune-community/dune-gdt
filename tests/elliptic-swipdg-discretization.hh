@@ -875,7 +875,7 @@ private:
       local_eta_nc_product(1, test_.diffusion());
     const auto eta_nc_difference = discrete_solution - oswald_interpolation;
 
-    typedef typename Stuff::Functions::ESV2007Cutoff< DiffusionType > CutoffFunctionType;
+    typedef typename Stuff::Functions::ESV2007::Cutoff< DiffusionType > CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
     const  LocalOperator::Codim0Integral< LocalEvaluation::Product< CutoffFunctionType > >
       local_eta_r_product(1, cutoff_function);
