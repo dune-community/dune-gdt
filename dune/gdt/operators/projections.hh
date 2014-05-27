@@ -237,13 +237,8 @@ private:
   void apply_local_l2_projection_(const SourceType& source, RangeFunctionType& range) const
   {
     typedef typename RangeFunctionType::RangeType RangeType;
-#if HAVE_EIGEN
-    typedef Stuff::LA::EigenDenseMatrix< FieldType > LocalMatrixType;
-    typedef Stuff::LA::EigenDenseVector< FieldType > LocalVectorType;
-#else // HAVE_EIGEN
-    typedef Stuff::LA::CommonDenseMatrix< FieldType > LocalMatrixType;
-    typedef Stuff::LA::CommonDenseVector< FieldType > LocalVectorType;
-#endif // HAVE_EIGEN
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::MatrixType LocalMatrixType;
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::VectorType LocalVectorType;
     // clear
     Stuff::Common::clear(range.vector());
     // walk the grid
@@ -294,16 +289,8 @@ private:
   template< class SourceType, class RangeFunctionType >
   void apply_global_l2_projection_(const SourceType& source, RangeFunctionType& range) const
   {
-#if HAVE_EIGEN
-    typedef Stuff::LA::EigenRowMajorSparseMatrix< FieldType > MatrixType;
-    typedef Stuff::LA::EigenDenseVector< FieldType >          VectorType;
-#elif HAVE_DUNE_ISTL
-    typedef Stuff::LA::IstlRowMajorSparseMatrix< FieldType >  MatrixType;
-    typedef Stuff::LA::IstlDenseVector< FieldType >           VectorType;
-#else
-    typedef Stuff::LA::CommonDenseMatrix< FieldType > MatrixType;
-    typedef Stuff::LA::CommonDenseVector< FieldType > VectorType;
-#endif
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_backend >::MatrixType MatrixType;
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_backend >::VectorType VectorType;
     MatrixType lhs(range.space().mapper().size(),
                    range.space().mapper().size(),
                    range.space().compute_volume_pattern());
