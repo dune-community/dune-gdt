@@ -148,7 +148,7 @@ public:
 
   PdelabBased(const std::shared_ptr<const GridViewType>& gV)
     : gridView_(gV)
-    , fe_map_(std::make_shared<FEMapType>(*(gridView_)))
+    , fe_map_(std::make_shared<FEMapType>())
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*gridView_), *fe_map_))
     , mapper_(std::make_shared<MapperType>(*backend_))
 #if HAVE_MPI && HAVE_DUNE_ISTL
@@ -196,6 +196,14 @@ public:
 
   ~PdelabBased()
   {
+  }
+
+  using BaseType::compute_pattern;
+
+  template <class G, class S>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  {
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
   }
 
   const std::shared_ptr<const GridViewType>& grid_view() const
