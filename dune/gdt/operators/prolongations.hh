@@ -135,13 +135,8 @@ private:
     typedef typename RangeFunctionType::DomainType DomainType;
     typedef typename RangeFunctionType::RangeType RangeType;
     typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
-#if HAVE_EIGEN
-    typedef Stuff::LA::EigenDenseMatrix<RangeFieldType> LocalMatrixType;
-    typedef Stuff::LA::EigenDenseVector<RangeFieldType> LocalVectorType;
-#else // HAVE_EIGEN
-    typedef Stuff::LA::CommonDenseMatrix<RangeFieldType> LocalMatrixType;
-    typedef Stuff::LA::CommonDenseVector<RangeFieldType> LocalVectorType;
-#endif // HAVE_EIGEN
+    typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_dense_backend>::MatrixType LocalMatrixType;
+    typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_dense_backend>::VectorType LocalVectorType;
     // clear
     Stuff::Common::clear(range.vector());
     // create search in the source grid part
