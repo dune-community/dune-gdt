@@ -6,7 +6,9 @@
 #define DUNE_STUFF_FUNCTIONS_DISABLE_CHECKS
 
 // This one has to come first (includes the config.h)!
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/stuff/test/test_common.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #ifdef HAVE_FASP
 #undef HAVE_FASP
@@ -16,7 +18,9 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 #define ENABLE_ALUGRID 1
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #else
 #error This test requires ALUGrid!
 #endif
@@ -154,12 +158,6 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
 };
 
 
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticCGDiscretization, produces_correct_results)
-{
-  this->produces_correct_results();
-}
-
 TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results)
 {
@@ -168,6 +166,12 @@ TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results)
 
 TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+
+TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
+TYPED_TEST(EllipticCGDiscretization, produces_correct_results)
 {
   this->produces_correct_results();
 }
