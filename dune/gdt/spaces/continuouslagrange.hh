@@ -12,7 +12,6 @@
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
-#include "continuouslagrange/fem-localfunctions.hh"
 #include "continuouslagrange/fem.hh"
 #include "continuouslagrange/pdelab.hh"
 
@@ -42,12 +41,6 @@ private:
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
     typedef GDT::Spaces::ContinuousLagrange::FemBased<GridLayerType, p, R, r> Type;
-  };
-
-  template <class G, int p, class R, int r, int rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem_localfunction>
-  {
-    typedef GDT::Spaces::ContinuousLagrange::FemLocalfunctionsBased<GridLayerType, p, R, r> Type;
   };
 
   template <class G, int p, class R, int r, int rC>
