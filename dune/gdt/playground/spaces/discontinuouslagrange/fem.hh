@@ -19,11 +19,11 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
 
-#include "../../mapper/fem.hh"
-#include "../../basefunctionset/fem.hh"
+#include "../../../mapper/fem.hh"
+#include "../../../basefunctionset/fem.hh"
 
-#include "../constraints.hh"
-#include "../interface.hh"
+#include "../../../spaces/constraints.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {
