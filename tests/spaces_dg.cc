@@ -23,16 +23,27 @@
 
 #include <dune/stuff/common/print.hh>
 
-#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/pdelab.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/pdelab.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
 
 template <class SpaceType>
-class Any_Space : public ::testing::Test, public SpaceTestBase<SpaceType>
+class P1Q1_Space : public ::testing::Test, public SpaceTestBase<SpaceType>
 {
 };
+
+template <class SpaceType>
+class P2Q2_Space : public ::testing::Test, public SpaceTestBase<SpaceType>
+{
+};
+
+template <class SpaceType>
+class P3Q3_Space : public ::testing::Test, public SpaceTestBase<SpaceType>
+{
+};
+
 
 template <class SpaceType>
 struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestBase<SpaceType>
@@ -143,12 +154,6 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
 
 
 #if HAVE_DUNE_FEM
-#define Qk_DISCONTINUOUS_LAGRANGE_SPACES_FEM                                                                           \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                               \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S1dLeafGridPartType, 2, double, 1>,                           \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp1dLeafGridPartType, 1, double, 1>,                        \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp1dLeafGridPartType, 2, double, 1>
-
 #define Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM                                                                           \
   Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                               \
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S2dLeafGridPartType, 1, double, 1>,                           \
@@ -157,38 +162,53 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp2dLeafGridPartType, 1, double, 1>,                        \
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp3dLeafGridPartType, 1, double, 1>
 
-#if HAVE_ALUGRID
-#define Pk_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,                      \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 2, double, 1>,                  \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 1>,                  \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 2, double, 1>,                  \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 1>,                  \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 2, double, 1>
+#define Q2_DISCONTINUOUS_LAGRANGE_SPACES_FEM                                                                           \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S1dLeafGridPartType, 2, double, 1>,                               \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S2dLeafGridPartType, 2, double, 1>,                           \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S3dLeafGridPartType, 2, double, 1>,                           \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp1dLeafGridPartType, 2, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp2dLeafGridPartType, 2, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp3dLeafGridPartType, 2, double, 1>
 
+#define Q3_DISCONTINUOUS_LAGRANGE_SPACES_FEM                                                                           \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S1dLeafGridPartType, 3, double, 1>,                               \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S2dLeafGridPartType, 3, double, 1>,                           \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<S3dLeafGridPartType, 3, double, 1>,                           \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp1dLeafGridPartType, 3, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp2dLeafGridPartType, 3, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<Yasp3dLeafGridPartType, 3, double, 1>
+
+#if HAVE_ALUGRID
 #define P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
   Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,                      \
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 1>,                  \
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 1>
 
-#define P1D_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                  \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 2>,                      \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 2>,                  \
-      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 3>
+#define P2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 2, double, 1>,                      \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 2, double, 1>,                  \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 2, double, 1>
+
+#define P3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 3, double, 1>,                      \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 3, double, 1>,                  \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 3, double, 1>
 
 #define Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube2dLeafGridPartType, 1, double, 1>,                         \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube3dLeafGridPartType, 1, double, 1>
+
+#define Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube2dLeafGridPartType, 2, double, 1>,                         \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube3dLeafGridPartType, 2, double, 1>
+
+#define Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                   \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube2dLeafGridPartType, 3, double, 1>,                         \
+      Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCube3dLeafGridPartType, 3, double, 1>
 #endif // HAVE_ALUGRID
 #endif // HAVE_DUNE_FEM
 
 #if HAVE_DUNE_PDELAB
-#define Qk_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                        \
-  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S1dLeafGridViewType, 1, double, 1>,                            \
-      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S1dLeafGridViewType, 2, double, 1>,                        \
-      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 1, double, 1>,                     \
-      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 2, double, 1>
-
-
 #define Q1_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                        \
   Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S1dLeafGridViewType, 1, double, 1>,                            \
       Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S2dLeafGridViewType, 1, double, 1>,                        \
@@ -197,91 +217,152 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
       Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp2dLeafGridViewType, 1, double, 1>,                     \
       Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp3dLeafGridViewType, 1, double, 1>
 
+#define Q2_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                        \
+  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S1dLeafGridViewType, 2, double, 1>,                            \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S2dLeafGridViewType, 2, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S3dLeafGridViewType, 2, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 2, double, 1>,                     \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp2dLeafGridViewType, 2, double, 1>,                     \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp3dLeafGridViewType, 2, double, 1>
+
+#define Q3_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB                                                                        \
+  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S1dLeafGridViewType, 3, double, 1>,                            \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S2dLeafGridViewType, 3, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<S3dLeafGridViewType, 3, double, 1>,                        \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp1dLeafGridViewType, 3, double, 1>,                     \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp2dLeafGridViewType, 3, double, 1>,                     \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<Yasp3dLeafGridViewType, 3, double, 1>
+
 #if HAVE_ALUGRID
 #define Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                \
-  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 1, double, 1>
+  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube2dLeafGridViewType, 1, double, 1>,                      \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 1, double, 1>
+
+#define Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                \
+  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube2dLeafGridViewType, 2, double, 1>,                      \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 2, double, 1>
+
+#define Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                \
+  Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube2dLeafGridViewType, 3, double, 1>,                      \
+      Dune::GDT::Spaces::DiscontinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 3, double, 1>
 #endif // HAVE_ALUGRID
 #endif // HAVE_DUNE_PDELAB
 
+
 typedef testing::Types<
-#if 0 // HAVE_DUNE_FEM
-                        Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-                      , Qk_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-#if HAVE_ALUGRID
-                      , P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Pk_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , P1D_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-#endif
-#if HAVE_DUNE_PDELAB
-                      ,
-#endif
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-    Q1_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB, Qk_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
+#if HAVE_DUNE_FEM
+    Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
 #if HAVE_ALUGRID
     ,
-    Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-#endif
-#endif // HAVE_DUNE_PDELAB
-    > All_Spaces;
-
-
-typedef testing::Types<
-#if 0 // HAVE_DUNE_FEM
-                        Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-#if HAVE_ALUGRID
-                        Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-#endif
-#if HAVE_DUNE_PDELAB
-                      ,
-#endif
+    P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
+#endif // HAVE_ALUGRID
 #endif // HAVE_DUNE_FEM
 #if HAVE_DUNE_PDELAB
+    ,
     Q1_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
 #if HAVE_ALUGRID
     ,
     Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
 #endif
 #endif // HAVE_DUNE_PDELAB
-    > Q1_Spaces;
+    > P1Q1_Spaces;
 
 typedef testing::Types<
-#if HAVE_DUNE_FEM && HAVE_ALUGRID
-    P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, P1D_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-#endif // HAVE_DUNE_FEM && HAVE_ALUGRID
-    > P1_Spaces;
+#if HAVE_DUNE_FEM
+    Q2_DISCONTINUOUS_LAGRANGE_SPACES_FEM
+#if HAVE_ALUGRID
+    ,
+    P2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
+#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_FEM
+#if HAVE_DUNE_PDELAB
+    ,
+    Q2_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
+#if HAVE_ALUGRID
+    ,
+    Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
+#endif
+#endif // HAVE_DUNE_PDELAB
+    > P2Q2_Spaces;
+
+typedef testing::Types<
+#if HAVE_DUNE_FEM
+    Q3_DISCONTINUOUS_LAGRANGE_SPACES_FEM
+#if HAVE_ALUGRID
+    ,
+    P3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
+#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_FEM
+#if HAVE_DUNE_PDELAB
+    ,
+    Q3_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
+#if HAVE_ALUGRID
+    ,
+    Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
+#endif
+#endif // HAVE_DUNE_PDELAB
+    > P3Q3_Spaces;
 
 
-TYPED_TEST_CASE(Any_Space, All_Spaces);
-TYPED_TEST(Any_Space, fulfills_interface)
+TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
+TYPED_TEST(P1Q1_Space, fulfills_interface)
 {
   this->fulfills_interface();
 }
 
-TYPED_TEST_CASE(Any_Space, All_Spaces);
-TYPED_TEST(Any_Space, mapper_fulfills_interface)
+TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
+TYPED_TEST(P2Q2_Space, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
+TYPED_TEST(P3Q3_Space, fulfills_interface)
+{
+  this->fulfills_interface();
+}
+
+TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
+TYPED_TEST(P1Q1_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
 }
 
-TYPED_TEST_CASE(Any_Space, All_Spaces);
-TYPED_TEST(Any_Space, basefunctionset_fulfills_interface)
+TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
+TYPED_TEST(P2Q2_Space, mapper_fulfills_interface)
+{
+  this->mapper_fulfills_interface();
+}
+
+TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
+TYPED_TEST(P3Q3_Space, mapper_fulfills_interface)
+{
+  this->mapper_fulfills_interface();
+}
+
+TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
+TYPED_TEST(P1Q1_Space, basefunctionset_fulfills_interface)
 {
   this->basefunctionset_fulfills_interface();
 }
 
-TYPED_TEST_CASE(P1Q1_Discontinuous_Lagrange, Q1_Spaces);
+TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
+TYPED_TEST(P2Q2_Space, basefunctionset_fulfills_interface)
+{
+  this->basefunctionset_fulfills_interface();
+}
+
+TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
+TYPED_TEST(P3Q3_Space, basefunctionset_fulfills_interface)
+{
+  this->basefunctionset_fulfills_interface();
+}
+
+TYPED_TEST_CASE(P1Q1_Discontinuous_Lagrange, P1Q1_Spaces);
 TYPED_TEST(P1Q1_Discontinuous_Lagrange, maps_correctly)
 {
   this->maps_correctly();
 }
-
-// TYPED_TEST_CASE(P1Q1_Discontinuous_Lagrange, P1_Spaces);
-// TYPED_TEST(P1Q1_Discontinuous_Lagrange, maps_correctly)
-//{
-//  this->maps_correctly();
-//}
 
 
 int main(int argc, char** argv)
