@@ -13,7 +13,6 @@
 #error "These tests requires at least one discretization module!"
 #endif
 
-
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 
@@ -23,6 +22,7 @@
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
+
 
 template <class SpaceType>
 struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase<SpaceType>
@@ -164,6 +164,7 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
   } // ... maps_correctly()
 }; // struct P1Q1_Continuous_Lagrange
 
+
 #define P1_CONTINUOUS_LAGRANGE_SPACES_FEM                                                                              \
   Dune::GDT::Spaces::ContinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                                  \
       Dune::GDT::Spaces::ContinuousLagrange::FemBased<Yasp1dLeafGridPartType, 1, double, 1>
@@ -177,11 +178,6 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
   Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,                         \
       Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 1>,                     \
       Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 1>
-
-#define P1D_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                     \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 2>,                         \
-      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 1, double, 2>,                     \
-      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 1, double, 3>
 
 #define P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                   \
   Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluConform2dLeafGridViewType, 1, double, 1>,                      \
@@ -207,11 +203,13 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
 
 #if HAVE_ALUGRID
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM                                                                      \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluCube3dLeafGridPartType, 1, double, 1>
+  Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluCube2dLeafGridPartType, 1, double, 1>,                            \
+      Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluCube3dLeafGridPartType, 1, double, 1>
 
 #define Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB                                                                   \
   Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<AluCube3dLeafGridViewType, 1, double, 1>
 #endif // HAVE_ALUGRID
+
 
 typedef testing::Types<
 #if HAVE_DUNE_FEM
@@ -232,6 +230,7 @@ typedef testing::Types<
 #endif
 #endif // HAVE_DUNE_PDELAB
     > P1Q1_Continuous_Lagrange_Spaces;
+
 
 TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
 TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
@@ -262,6 +261,7 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
 {
   this->maps_correctly();
 }
+
 
 int main(int argc, char** argv)
 {
