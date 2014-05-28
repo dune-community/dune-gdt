@@ -22,7 +22,6 @@
 #include "../../../mapper/fem.hh"
 #include "../../../basefunctionset/fem.hh"
 
-#include "../../../spaces/constraints.hh"
 #include "../../../spaces/interface.hh"
 
 namespace Dune {
@@ -65,7 +64,7 @@ private:
 
 public:
   typedef Dune::Fem::LagrangeDiscontinuousGalerkinSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
-  typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType> MapperType;
+  typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
                                       dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
