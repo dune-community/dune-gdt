@@ -12,27 +12,35 @@
 
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
-#include <dune/common/parallel/communicator.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/parallel/communicator.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_ISTL
-# include <dune/istl/owneroverlapcopy.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/istl/owneroverlapcopy.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif
 
 #if HAVE_DUNE_PDELAB
-# include <dune/pdelab/finiteelementmap/qkdg.hh>
-# include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
-# include <dune/pdelab/constraints/conforming.hh>
-# include <dune/pdelab/backend/istl/parallelhelper.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/pdelab/finiteelementmap/qkdg.hh>
+#   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+#   include <dune/pdelab/constraints/conforming.hh>
+#   include <dune/pdelab/backend/istl/parallelhelper.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/la/container/istl.hh>
 
-#include "../../mapper/pdelab.hh"
-#include "../../basefunctionset/pdelab.hh"
+#include "../../../mapper/pdelab.hh"
+#include "../../../basefunctionset/pdelab.hh"
+
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -155,7 +163,7 @@ public:
     , communicator_prepared_(false)
 #else // HAVE_MPI && HAVE_DUNE_ISTL
     , communicator_(0.0)
-#endif // HAVE_MPI && HAVE_DUNE_ISTL
+#endif
   {}
 
   PdelabBased(const ThisType& other)
