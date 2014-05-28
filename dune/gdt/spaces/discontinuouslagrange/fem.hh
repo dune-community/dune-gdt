@@ -131,7 +131,7 @@ public:
   template< class G, class S >
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
   {
-    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
   const std::shared_ptr< const GridPartType >& grid_part() const
