@@ -20,7 +20,7 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 
@@ -95,8 +95,8 @@ typedef
 // typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type
 // AluSimplex3dLeafGridPartType;
 
-typedef testing::Types<Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased<AluConform2dLeafGridPartType, 1,
-                                                                                        double, 1>> SpaceTypes;
+typedef testing::Types<Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>>
+    SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine all test structs with their appropriate arguments to create the tests |
