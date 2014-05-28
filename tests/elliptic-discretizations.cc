@@ -89,7 +89,6 @@ struct EllipticCGDiscretization
   }
 }; // EllipticCGDiscretization
 
-#if HAVE_DUNE_FEM_LOCALFUNCTIONS
 template< class TestCase >
 struct EllipticSIPDGDiscretization
   : public ::testing::Test
@@ -177,7 +176,6 @@ TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
   this->produces_correct_results();
 }
-#endif //HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
 TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {

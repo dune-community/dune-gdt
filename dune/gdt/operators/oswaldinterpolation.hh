@@ -14,7 +14,7 @@
 
 #include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
 
 #include "interfaces.hh"
 
@@ -45,16 +45,16 @@ private:
                 "SourceType has to be a ConstDiscreteFunction!");
   typedef typename SourceType::SpaceType S;
   static_assert(std::is_same< S
-                            , Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< typename S::GridPartType
+                            , Spaces::DiscontinuousLagrange::FemBased< typename S::GridPartType
                                                                                   , 1
                                                                                   , FieldType, 1, 1 > >::value,
-                "The SpaceType of SourceType has to be a Spaces::DiscontinuousLagrange::FemLocalfunctionsBased!");
+                "The SpaceType of SourceType has to be a Spaces::DiscontinuousLagrange::FemBased!");
   typedef typename RangeType::SpaceType R;
   static_assert(std::is_same< R
-                            , Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< typename R::GridPartType
+                            , Spaces::DiscontinuousLagrange::FemBased< typename R::GridPartType
                                                                                   , 1
                                                                                   , FieldType, 1, 1 > >::value,
-                "The SpaceType of RangeType has to be a Spaces::DiscontinuousLagrange::FemLocalfunctionsBased!");
+                "The SpaceType of RangeType has to be a Spaces::DiscontinuousLagrange::FemBased!");
 }; // class OswaldInterpolationLocalizableTraits
 
 
@@ -358,12 +358,12 @@ public:
   {}
 
   template< class SGP, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< SGP, 1, FieldType, 1, 1 >, SV >&
+  void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< SGP, 1, FieldType, 1, 1 >, SV >&
                 source,
-             DiscreteFunction< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< RGP, 1, FieldType, 1, 1 >, RV >&
+             DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< RGP, 1, FieldType, 1, 1 >, RV >&
                 range) const
   {
-    typedef Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< RGP, 1, FieldType, 1, 1 > SpaceType;
+    typedef Spaces::DiscontinuousLagrange::FemBased< RGP, 1, FieldType, 1, 1 > SpaceType;
     static const unsigned int polOrder = 1;
 
     // data structures we need
