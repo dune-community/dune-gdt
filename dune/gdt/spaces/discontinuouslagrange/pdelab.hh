@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
 #define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
 
+#include "config.h"
+
 #include <memory>
 
 #include <dune/common/typetraits.hh>
@@ -203,7 +205,7 @@ public:
   template <class G, class S>
   PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
   {
-    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
   const std::shared_ptr<const GridViewType>& grid_view() const
