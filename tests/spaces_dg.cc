@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include <sstream>
+#include <utility>
 
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
@@ -62,14 +63,15 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_ptr);
     const SpaceType space(grid_part_view);
     // walk the grid to create a map of all vertices
-    std::map<std::vector<DomainFieldType>, std::set<size_t>> vertex_to_indices_map;
+    std::map<std::vector<DomainFieldType>, std::pair<std::set<size_t>, size_t>> vertex_to_indices_map;
     const auto entity_end_it = grid_part_view->template end<0>();
     for (auto entity_it = grid_part_view->template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (int cc = 0; cc < entity.template count<dimDomain>(); ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
-        vertex_to_indices_map[convert_vector(vertex)] = std::set<size_t>();
+        vertex_to_indices_map[convert_vector(vertex)].first = std::set<size_t>();
+        ++vertex_to_indices_map[convert_vector(vertex)].second;
       }
     }
     // walk the grid again to find all DoF ids
@@ -109,13 +111,13 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
-        vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
+        vertex_to_indices_map[convert_vector(vertex)].first.insert(global_DoF_index);
       }
     }
-    // check that each vertex has the appropiate number of local DoF ids and that the numbering is consecutive
+    // check that each vertex has the appropiate number of associated DoF ids and that the numbering is consecutive
     std::set<size_t> global_DoF_indices;
     for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_ids = entry.second;
+      const auto vertex_ids = entry.second.first;
       for (auto vertex_ids_it = vertex_ids.begin(); vertex_ids_it != vertex_ids.end(); ++vertex_ids_it)
         global_DoF_indices.insert(*vertex_ids_it);
     }
@@ -126,24 +128,14 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
       ++count;
     }
     for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_coordinates = entry.first;
-      const auto vertex_ids         = entry.second;
-      size_t vertex_boundary_count = 0;
-      for (size_t ii = 0; ii < dimDomain; ++ii) {
-        if (Common::FloatCmp::eq(vertex_coordinates[ii], DomainFieldType(1))
-            || Common::FloatCmp::eq(vertex_coordinates[ii], DomainFieldType(0)))
-          ++vertex_boundary_count;
-      }
-      /* we are on a cubic grid, so each vertex in the interior of the grid should have pow(2, dimDomain) adjacent
-      entitys. If the vertex is on a face of the grid (vertex_boundary_count = 1), the number halves, if it is on the
-      intersection of exactly two faces (vertex_boundary_count = 2), it halves again, ... , if the vertex is also an
-      vertex of the grid domain (vertex_boundary_count = dimDomain), it has only 1 adjacent entity */
-      size_t adjacent_entitys_expected = pow(2, dimDomain - vertex_boundary_count);
-      size_t adjacent_entitys = vertex_ids.size();
-      if (adjacent_entitys != adjacent_entitys_expected)
+      const auto vertex_coordinates       = entry.first;
+      const auto vertex_ids               = entry.second.first;
+      size_t number_of_associated_DoF_ids = vertex_ids.size();
+      size_t number_of_adjacent_entitys = entry.second.second;
+      if (number_of_associated_DoF_ids != number_of_adjacent_entitys)
         DUNE_THROW_COLORFULLY(Exceptions::internal_error,
-                              "Vertex has only " << adjacent_entitys << "adjacent entitys, should have "
-                                                 << adjacent_entitys_expected);
+                              "Vertex has only " << number_of_associated_DoF_ids << "associated DoF_ids, should have "
+                                                 << number_of_adjacent_entitys);
     }
 
   } // ... maps_correctly()
@@ -213,8 +205,7 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
 
 typedef testing::Types<
 #if 0 // HAVE_DUNE_FEM
-                        P1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-                      , Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
+                        Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
                       , Qk_DISCONTINUOUS_LAGRANGE_SPACES_FEM
 #if HAVE_ALUGRID
                       , P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
