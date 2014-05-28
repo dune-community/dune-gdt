@@ -100,6 +100,7 @@ public:
                                                          RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
+  typedef double CommunicatorType;
 
 private:
   friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
