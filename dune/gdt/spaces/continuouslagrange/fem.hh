@@ -13,7 +13,9 @@
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/common/functionspace.hh>
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/fem/space/lagrange/space.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
 
 #include "../../mapper/fem.hh"
