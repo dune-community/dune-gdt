@@ -19,7 +19,7 @@
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/grid/partview.hh>
+#include <dune/stuff/grid/layers.hh>
 
 #include "constraints.hh"
 
