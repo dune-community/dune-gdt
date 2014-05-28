@@ -12,7 +12,7 @@
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
-#include "/../playground/spaces/discontinuouslagrange/fem.hh"
+#include "../playground/spaces/discontinuouslagrange/fem.hh"
 
 
 namespace Dune {
