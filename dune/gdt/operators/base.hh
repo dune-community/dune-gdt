@@ -22,7 +22,7 @@ class MatrixBased
   typedef AssemblableOperatorInterface< Traits > BaseType;
 public:
   using typename BaseType::GridViewType;
-  using typename BaseType::SourceSpaceType;
+  typedef typename BaseType::SourceSpaceType SourceSpaceType;
   using typename BaseType::RangeSpaceType;
   using typename BaseType::MatrixType;
 private:
