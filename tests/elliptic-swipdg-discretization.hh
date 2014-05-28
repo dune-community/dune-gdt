@@ -28,7 +28,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
@@ -81,7 +81,7 @@ public:
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
 
-  typedef Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
+  typedef Dune::GDT::Spaces::DiscontinuousLagrange::FemBased
       < GridPartType, polOrder, RangeFieldType, dimRange > SpaceType;
 
   typedef typename SpaceType::GridViewType GridViewType;

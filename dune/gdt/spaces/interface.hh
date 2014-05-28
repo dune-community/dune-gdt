@@ -85,7 +85,7 @@ public:
   static const unsigned int                     dimRangeCols = Traits::dimRangeCols;
 
 private:
-  static_assert(std::is_base_of< GridView< typename GridViewType::Traits > , GridViewType >::value,
+  static_assert(std::is_base_of< GridView< typename GridViewType::Traits >, GridViewType >::value,
                 "GridViewType has to be derived from GridView!");
 
 public:
