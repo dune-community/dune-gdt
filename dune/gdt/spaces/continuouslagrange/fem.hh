@@ -60,7 +60,7 @@ private:
   typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
-  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType > MapperType;
+  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType, 1 > MapperType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper
       < typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType, dimDomain,
@@ -161,7 +161,7 @@ public:
 private:
   std::shared_ptr< const GridPartType > gridPart_;
   std::shared_ptr< const GridViewType > gridView_;
-  std::shared_ptr< const BackendType > backend_;
+  std::shared_ptr< BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
   mutable double communicator_;
 }; // class FemBased< ..., 1 >
