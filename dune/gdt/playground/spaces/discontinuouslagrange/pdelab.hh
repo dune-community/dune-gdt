@@ -35,8 +35,10 @@
 
 #include <dune/stuff/la/container/istl.hh>
 
-#include "../../mapper/pdelab.hh"
-#include "../../basefunctionset/pdelab.hh"
+#include "../../../mapper/pdelab.hh"
+#include "../../../basefunctionset/pdelab.hh"
+
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {
