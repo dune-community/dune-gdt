@@ -64,7 +64,7 @@ private:
 
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
-  typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType> MapperType;
+  typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, 1> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
                                       dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
@@ -108,8 +108,6 @@ public:
     , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
     , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
-    , tmpMappedRows_(mapper_->maxNumDofs())
-    , tmpMappedCols_(mapper_->maxNumDofs())
     , communicator_(0.0)
   {
   }
@@ -119,8 +117,6 @@ public:
     , gridView_(other.gridView_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
-    , tmpMappedRows_(mapper_->maxNumDofs())
-    , tmpMappedCols_(mapper_->maxNumDofs())
     , communicator_(0.0)
   {
   }
@@ -131,9 +127,7 @@ public:
       gridPart_ = other.gridPart_;
       gridView_ = other.gridView_;
       backend_  = other.backend_;
-      mapper_ = other.mapper_;
-      tmpMappedRows_.resize(mapper_->maxNumDofs());
-      tmpMappedCols_.resize(mapper_->maxNumDofs());
+      mapper_   = other.mapper_;
     }
     return *this;
   }
@@ -175,10 +169,8 @@ public:
 private:
   std::shared_ptr<const GridPartType> gridPart_;
   std::shared_ptr<const GridViewType> gridView_;
-  std::shared_ptr<const BackendType> backend_;
+  std::shared_ptr<BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
-  mutable Dune::DynamicVector<size_t> tmpMappedRows_;
-  mutable Dune::DynamicVector<size_t> tmpMappedCols_;
   mutable double communicator_;
 }; // class FemBased< ..., 1 >
 

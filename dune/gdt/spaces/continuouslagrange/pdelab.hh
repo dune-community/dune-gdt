@@ -168,7 +168,7 @@ public:
     , communicator_prepared_(false)
 #else // HAVE_MPI && HAVE_DUNE_ISTL
     , communicator_(0.0)
-#endif // HAVE_MPI && HAVE_DUNE_ISTL
+#endif
   {
   }
 

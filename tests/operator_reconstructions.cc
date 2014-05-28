@@ -11,7 +11,9 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 #define ENABLE_ALUGRID 1
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #else
 #error "This test requires alugrid!"
 #endif
