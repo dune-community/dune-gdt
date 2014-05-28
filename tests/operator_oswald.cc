@@ -20,7 +20,7 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 
@@ -94,7 +94,7 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, 
 //typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
 //typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type   AluSimplex3dLeafGridPartType;
 
-typedef testing::Types< Dune::GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< AluConform2dLeafGridPartType, 1, double, 1 >
+typedef testing::Types< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >
                       > SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+

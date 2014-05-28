@@ -26,7 +26,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 
 namespace Dune {
 namespace GDT {

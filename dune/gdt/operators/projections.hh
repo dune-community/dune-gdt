@@ -24,7 +24,7 @@
 #include <dune/gdt/spaces/continuouslagrange/base.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
-#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/playground/spaces/finitevolume/default.hh>
 

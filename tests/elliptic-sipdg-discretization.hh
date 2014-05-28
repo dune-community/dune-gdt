@@ -23,7 +23,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
