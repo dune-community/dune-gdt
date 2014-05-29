@@ -22,43 +22,41 @@ namespace GDT {
 namespace Products {
 
 
-// forward, to be used in the traits
-template< class DiffusionImp, class GridViewImp, class FieldImp= double >
+// forwards
+template< class DiffusionType, class GridViewImp, class FieldImp = double >
 class EllipticBase;
 
-
-template< class DiffusionImp, class GridViewImp, class RangeImp, class SourceImp = RangeImp, class FieldImp = double >
+template< class DiffusionType, class GridViewImp, class RangeImp, class SourceImp = RangeImp, class FieldImp = double >
 class EllipticLocalizable;
 
-
-template< class DiffusionImp
+template< class DiffusionType
         , class MatrixImp
         , class RangeSpaceImp
         , class GridViewImp = typename RangeSpaceImp::GridViewType
         , class SourceSpaceImp = RangeSpaceImp >
 class EllipticAssemblable;
 
+template< class DiffusionType, class GridViewImp, class FieldImp = double >
+class Elliptic;
 
-template< class DiffusionImp, class GridViewImp, class FieldImp >
+
+namespace internal {
+
+
+template< class DiffusionType, class GridViewImp, class FieldImp >
 class EllipticBaseTraits
 {
 public:
   typedef GridViewImp GridViewType;
   typedef FieldImp    FieldType;
-protected:
-  typedef DiffusionImp DiffusionType;
-public:
   typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > > LocalOperatorType;
-private:
-  friend class EllipticBase< DiffusionImp, GridViewImp, FieldImp >;
-};
+}; // class EllipticBaseTraits
 
 
-template< class DiffusionImp, class GridViewImp, class FieldImp >
+template< class DiffusionType, class GridViewImp, class FieldImp >
 class EllipticBase
 {
-  typedef EllipticBaseTraits< DiffusionImp, GridViewImp, FieldImp > Traits;
-  typedef typename Traits::DiffusionType     DiffusionType;
+  typedef EllipticBaseTraits< DiffusionType, GridViewImp, FieldImp > Traits;
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
@@ -74,30 +72,54 @@ protected:
 }; // class EllipticBase
 
 
-template< class DiffusionImp, class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
+template< class DiffusionType, class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
 class EllipticLocalizableTraits
-  : public EllipticBaseTraits< DiffusionImp, GridViewImp, FieldImp >
+  : public EllipticBaseTraits< DiffusionType, GridViewImp, FieldImp >
 {
 public:
-  typedef EllipticLocalizable< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > derived_type;
-  typedef RangeImp    RangeType;
-  typedef SourceImp   SourceType;
-  typedef FieldImp    FieldType;
-private:
-  friend class EllipticLocalizable< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp >;
+  typedef EllipticLocalizable< DiffusionType, GridViewImp, RangeImp, SourceImp, FieldImp > derived_type;
+  typedef RangeImp  RangeType;
+  typedef SourceImp SourceType;
+  typedef FieldImp  FieldType;
 };
 
 
-template< class DiffusionImp, class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
-class EllipticLocalizable
-  : public Products::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
-  , public EllipticBase< DiffusionImp, GridViewImp, FieldImp >
+template< class DiffusionType, class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
+class EllipticAssemblableTraits
+  : public EllipticBaseTraits< DiffusionType, GridViewImp, typename MatrixImp::ScalarType >
 {
-  typedef Products::LocalizableBase< EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > >
-    LocalizableBaseType;
-  typedef EllipticBase< DiffusionImp, GridViewImp, FieldImp > EllipticBaseType;
 public:
-  typedef EllipticLocalizableTraits< DiffusionImp, GridViewImp, RangeImp, SourceImp, FieldImp > Traits;
+  typedef EllipticAssemblable< DiffusionType, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > derived_type;
+  typedef RangeSpaceImp   RangeSpaceType;
+  typedef SourceSpaceImp  SourceSpaceType;
+  typedef MatrixImp       MatrixType;
+}; // class EllipticAssemblableTraits
+
+
+template< class DiffusionType, class GridViewImp, class FieldImp >
+class EllipticTraits
+{
+public:
+  typedef Elliptic< DiffusionType, GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp GridViewType;
+  typedef FieldImp FieldType;
+};
+
+
+} // namespace internal
+
+
+template< class DiffusionType, class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
+class EllipticLocalizable
+  : public Products::LocalizableBase< internal::EllipticLocalizableTraits< DiffusionType, GridViewImp, RangeImp, SourceImp, FieldImp > >
+  , public internal::EllipticBase< DiffusionType, GridViewImp, FieldImp >
+{
+  typedef Products::LocalizableBase
+      < internal::EllipticLocalizableTraits< DiffusionType, GridViewImp, RangeImp, SourceImp, FieldImp > >
+    LocalizableBaseType;
+  typedef internal::EllipticBase< DiffusionType, GridViewImp, FieldImp > EllipticBaseType;
+public:
+  typedef internal::EllipticLocalizableTraits< DiffusionType, GridViewImp, RangeImp, SourceImp, FieldImp > Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType    RangeType;
   typedef typename Traits::SourceType   SourceType;
@@ -105,7 +127,7 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  EllipticLocalizable(const DiffusionImp& diffusion,
+  EllipticLocalizable(const DiffusionType& diffusion,
                       const GridViewType& grd_vw,
                       const RangeType& rng,
                       const SourceType& src,
@@ -114,7 +136,7 @@ public:
     , EllipticBaseType(diffusion, over_integrate)
   {}
 
-  EllipticLocalizable(const DiffusionImp& diffusion,
+  EllipticLocalizable(const DiffusionType& diffusion,
                       const GridViewType& grd_vw,
                       const RangeType& rng,
                       const size_t over_integrate = 0)
@@ -130,30 +152,18 @@ private:
 }; // class EllipticLocalizable
 
 
-template< class DiffusionImp, class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-class EllipticAssemblableTraits
-  : public EllipticBaseTraits< DiffusionImp, GridViewImp, typename MatrixImp::ScalarType >
-{
-public:
-  typedef EllipticAssemblable< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > derived_type;
-  typedef RangeSpaceImp   RangeSpaceType;
-  typedef SourceSpaceImp  SourceSpaceType;
-  typedef MatrixImp       MatrixType;
-private:
-  friend class EllipticAssemblable< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp >;
-};
-
-
-template< class DiffusionImp, class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
+template< class DiffusionType, class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
 class EllipticAssemblable
-  : public Products::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
-  , public EllipticBase< DiffusionImp, GridViewImp, typename MatrixImp::ScalarType >
+  : public Products::AssemblableBase< internal::EllipticAssemblableTraits< DiffusionType, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  , public internal::EllipticBase< DiffusionType, GridViewImp, typename MatrixImp::ScalarType >
 {
-  typedef Products::AssemblableBase< EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  typedef Products::AssemblableBase
+      < internal::EllipticAssemblableTraits< DiffusionType, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
     AssemblableBaseType;
-  typedef EllipticBase< DiffusionImp, GridViewImp, typename MatrixImp::ScalarType > EllipticBaseType;
+  typedef internal::EllipticBase< DiffusionType, GridViewImp, typename MatrixImp::ScalarType > EllipticBaseType;
 public:
-  typedef EllipticAssemblableTraits< DiffusionImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > Traits;
+  typedef internal::EllipticAssemblableTraits< DiffusionType, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp >
+    Traits;
   typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
@@ -171,7 +181,7 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  EllipticAssemblable(const DiffusionImp& diffusion,
+  EllipticAssemblable(const DiffusionType& diffusion,
                       MatrixType& matrix,
                       const RangeSpaceType& range_space,
                       const GridViewType& grid_view,
@@ -180,7 +190,7 @@ public:
     , EllipticBaseType(diffusion)
   {}
 
-  EllipticAssemblable(const DiffusionImp& diffusion,
+  EllipticAssemblable(const DiffusionType& diffusion,
                       MatrixType& matrix,
                       const RangeSpaceType& range_space,
                       const GridViewType& grid_view)
@@ -188,7 +198,7 @@ public:
     , EllipticBaseType(diffusion)
   {}
 
-  EllipticAssemblable(const DiffusionImp& diffusion,
+  EllipticAssemblable(const DiffusionType& diffusion,
                       MatrixType& matrix,
                       const RangeSpaceType& range_space)
     : AssemblableBaseType(matrix, range_space, *(range_space.grid_view()), range_space)
@@ -203,26 +213,12 @@ private:
 }; // class EllipticAssemblable
 
 
-template< class DiffusionImp, class GridViewImp, class FieldImp = double >
-class Elliptic;
-
-
-template< class DiffusionImp, class GridViewImp, class FieldImp >
-class EllipticTraits
-{
-public:
-  typedef Elliptic< DiffusionImp, GridViewImp, FieldImp > derived_type;
-  typedef GridViewImp GridViewType;
-  typedef FieldImp FieldType;
-};
-
-
-template< class DiffusionImp, class GridViewImp, class FieldImp >
+template< class DiffusionType, class GridViewImp, class FieldImp >
 class Elliptic
-  : public ProductInterface< EllipticTraits< DiffusionImp, GridViewImp, FieldImp > >
+  : public ProductInterface< internal::EllipticTraits< DiffusionType, GridViewImp, FieldImp > >
 {
 public:
-  typedef EllipticTraits< DiffusionImp, GridViewImp, FieldImp > Traits;
+  typedef internal::EllipticTraits< DiffusionType, GridViewImp, FieldImp > Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 
@@ -230,7 +226,7 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
 
-  Elliptic(const DiffusionImp& diffusion, const GridViewType& grd_vw)
+  Elliptic(const DiffusionType& diffusion, const GridViewType& grd_vw)
     : diffusion_(diffusion)
     , grid_view_(grd_vw)
   {}
@@ -257,13 +253,13 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > FunctionType;
-    EllipticLocalizable< DiffusionImp, GridViewType, FunctionType, FunctionType, FieldType >
+    EllipticLocalizable< DiffusionType, GridViewType, FunctionType, FunctionType, FieldType >
         product_operator(diffusion_, grid_view_, range, source, over_integrate);
     return product_operator.apply2();
   } // ... apply2(...)
 
 private:
-  const DiffusionImp& diffusion_;
+  const DiffusionType& diffusion_;
   const GridViewType& grid_view_;
 }; // class Elliptic
 
