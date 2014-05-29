@@ -27,6 +27,7 @@ stamp-h1
 *.orig
 *.tmp
 demos
+demos-*
 *.param
 *.vtu
 *.pc
