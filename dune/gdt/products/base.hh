@@ -17,6 +17,9 @@ namespace GDT {
 namespace Products {
 
 
+/**
+ *  \todo Derive from SystemAssembler, \see Operators::EllipticG
+ */
 template <class Traits>
 class LocalizableBase : public LocalizableProductInterface<Traits>,
                         public Functor::Codim0<typename Traits::GridViewType>
@@ -137,6 +140,9 @@ private:
 }; // class LocalizableBase
 
 
+/**
+ *  \todo Derive from SystemAssembler, \see Operators::EllipticG
+ */
 template <class Traits>
 class AssemblableBase : public AssemblableProductInterface<Traits>,
                         public Functor::Codim0<typename Traits::GridViewType>
