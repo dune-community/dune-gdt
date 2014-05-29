@@ -398,93 +398,107 @@ public:
 
   std::vector< double > expected_results(const std::string type) const
   {
-    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    using namespace Dune;
+    if (std::is_same< TestCase, EllipticTestCase::ESV07< SGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
         else if (type.compare("H1_semi") == 0)
           return {3.79e-01, 1.90e-01, 9.38e-02, 4.67e-02};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
+      } else
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+#if HAVE_ALUGRID
+    } else if (std::is_same< TestCase, EllipticTestCase::ESV07< ALUConformGrid< 2, 2 > > >::value
+               || std::is_same< TestCase, EllipticTestCase::ESV07< ALUGrid< 2, 2, simplex, conforming > > >::value) {
+      if (polOrder == 1) {
+        if (type.compare("L2") == 0)
+          return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
+        else if (type.compare("H1_semi") == 0)
+          return {3.79e-01, 1.90e-01, 9.38e-02, 4.67e-02};
+        else
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {1.25e-02, 1.42e-03, 1.69e-04, 2.08e-05};
         else if (type.compare("H1_semi") == 0)
           return {7.84e-02, 2.01e-02, 5.02e-03, 1.26e-03};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
-        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUConformGrid< 2, 2 > > >::value) {
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {5.85e-02, 2.00e-02, 5.55e-03, 1.30e-03};
         else if (type.compare("H1_semi") == 0)
           return {4.33e-01, 2.94e-01, 1.51e-01, 6.55e-02};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {1.19e-02, 2.12e-03, 3.90e-04, 7.77e-05};
         else if (type.compare("H1_semi") == 0)
           return {1.70e-01, 5.97e-02, 1.95e-02, 6.05e-03};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
-        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::ER07< Dune::ALUConformGrid< 2, 2 > > >::value) {
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same< TestCase, EllipticTestCase::ER07< ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {6.10e-02, 1.66e-02, 4.23e-03};
         else if (type.compare("H1_semi") == 0)
           return {2.99e-01, 1.47e-01, 7.26e-02};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {6.43e-03, 8.24e-04, 1.05e-04};
         else if (type.compare("H1_semi") == 0)
           return {5.41e-02, 1.42e-02, 3.56e-03};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
-        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUConformGrid< 2, 2 > > >::value) {
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {4.03e-02, 1.13e-02, 2.84e-03, 6.34e-04};
         else if (type.compare("H1_semi") == 0)
           return {2.70e-01, 1.40e-01, 6.88e-02, 3.09e-02};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {3.59e-03, 6.26e-04, 1.22e-04, 2.69e-05};
         else if (type.compare("H1_semi") == 0)
           return {4.82e-02, 1.80e-02, 7.20e-03, 2.86e-03};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
-        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+    } else if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< ALUConformGrid< 2, 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {7.23e-02, 2.60e-02};
         else if (type.compare("H1_semi") == 0)
           return {5.29e-01, 3.49e-01};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
           return {2.09e-02, 3.75e-03};
         else if (type.compare("H1_semi") == 0)
           return {2.57e-01, 8.48e-02};
         else
-          DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
+          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
-        DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
+        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
+#endif // HAVE_ALUGRID
     } else
-      DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
+      DUNE_THROW(NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   }
 
   std::map< std::string, std::vector< double > > run(std::ostream& out = std::cout)
