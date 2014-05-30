@@ -83,6 +83,16 @@ public:
                             << "  Number of local spaces given: " << local_spaces_.size());
   } // Block(...)
 
+  const std::shared_ptr< const MsGridType >& ms_grid() const
+  {
+    return ms_grid_;
+  }
+
+  const std::vector< std::shared_ptr< const LocalSpaceType > >& local_spaces() const
+  {
+    return local_spaces_;
+  }
+
   const std::shared_ptr< const GridViewType >& grid_view() const
   {
     return ms_grid_->globalGridView();
