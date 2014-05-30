@@ -25,12 +25,16 @@ namespace GDT {
 namespace Operators {
 
 
+template <class GridViewType, class DiffusionFactorType, class DiffusionTensorType = void>
+class DiffusiveFluxReconstruction;
+
+
 /**
  *  \todo Add more static checks that GridViewType and LocalizableFunctionType match.
- *  \todo Derived from operator interfaces.
+ *  \todo Derive from operator interfaces.
  */
 template <class GridViewType, class LocalizableFunctionType>
-class DiffusiveFluxReconstruction
+class DiffusiveFluxReconstruction<GridViewType, LocalizableFunctionType, void>
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
