@@ -19,51 +19,103 @@ namespace ESV2007 {
 
 
 // forward, to be used in the traits
-template< class GridViewImp, class DiffusionImp, class DiffusiveFluxImp
-        , class RangeImp, class SourceImp, class FieldImp = double >
+template< class GridViewImp,
+          class DiffusionFactorType,
+          class DiffusiveFluxType,
+          class RangeImp,
+          class SourceImp,
+          class FieldImp = double,
+          class DiffusionTensorType = void >
 class DiffusiveFluxEstimate;
 
 
-template< class GridViewImp, class DiffusionImp, class DiffusiveFluxImp
-        , class RangeImp, class SourceImp, class FieldImp >
+namespace internal {
+
+
+template< class GridViewImp,
+          class DiffusionFactorType,
+          class DiffusiveFluxType,
+          class RangeImp,
+          class SourceImp,
+          class FieldImp,
+          class DiffusionTensorType = void >
 class DiffusiveFluxEstimateTraits
 {
 public:
-  typedef DiffusiveFluxEstimate< GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp, SourceImp, FieldImp >
+  typedef DiffusiveFluxEstimate
+      < GridViewImp, DiffusionFactorType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp, DiffusionTensorType >
     derived_type;
   typedef GridViewImp GridViewType;
-  typedef DiffusionImp DiffusionType;
-  typedef DiffusiveFluxImp DiffusiveFluxType;
-  typedef RangeImp RangeType;
-  typedef SourceImp SourceType;
-  typedef FieldImp FieldType;
+  typedef RangeImp    RangeType;
+  typedef SourceImp   SourceType;
+  typedef FieldImp    FieldType;
 private:
-  typedef LocalEvaluation::ESV2007::DiffusiveFluxEstimate< DiffusionType, DiffusiveFluxType > LocalEvalautionType;
+  typedef LocalEvaluation::ESV2007::DiffusiveFluxEstimate
+    < DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType > LocalEvalautionType;
 public:
   typedef LocalOperator::Codim0Integral< LocalEvalautionType > LocalOperatorType;
 }; // class DiffusiveFluxEstimateTraits
 
 
-template< class GridViewImp, class DiffusionImp, class DiffusiveFluxImp
-        , class RangeImp, class SourceImp, class FieldImp >
-class DiffusiveFluxEstimate
-  : public Products::LocalizableBase< DiffusiveFluxEstimateTraits< GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp, SourceImp, FieldImp > >
+template< class GridViewImp,
+          class DiffusionType,
+          class DiffusiveFluxType,
+          class RangeImp,
+          class SourceImp,
+          class FieldImp >
+class DiffusiveFluxEstimateTraits< GridViewImp, DiffusionType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp, void >
 {
-  typedef Products::LocalizableBase< DiffusiveFluxEstimateTraits< GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp, SourceImp, FieldImp > >
+public:
+  typedef DiffusiveFluxEstimate< GridViewImp, DiffusionType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp >
+    derived_type;
+  typedef GridViewImp GridViewType;
+  typedef RangeImp    RangeType;
+  typedef SourceImp   SourceType;
+  typedef FieldImp    FieldType;
+private:
+  typedef LocalEvaluation::ESV2007::DiffusiveFluxEstimate< DiffusionType, DiffusiveFluxType > LocalEvalautionType;
+public:
+  typedef LocalOperator::Codim0Integral< LocalEvalautionType > LocalOperatorType;
+}; // class DiffusiveFluxEstimateTraits< ..., void >
+
+
+} // namespace internal
+
+
+template< class GridViewImp,
+          class DiffusionType,
+          class DiffusiveFluxType,
+          class RangeImp,
+          class SourceImp,
+          class FieldImp >
+class DiffusiveFluxEstimate< GridViewImp, DiffusionType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp, void >
+  : public Products::LocalizableBase< internal::DiffusiveFluxEstimateTraits< GridViewImp,
+                                                                             DiffusionType,
+                                                                             DiffusiveFluxType,
+                                                                             RangeImp,
+                                                                             SourceImp,
+                                                                             FieldImp > >
+{
+  typedef Products::LocalizableBase< internal::DiffusiveFluxEstimateTraits< GridViewImp,
+                                                                            DiffusionType,
+                                                                            DiffusiveFluxType,
+                                                                            RangeImp,
+                                                                            SourceImp,
+                                                                            FieldImp > >
     BaseType;
 public:
-  typedef DiffusiveFluxEstimateTraits< GridViewImp, DiffusionImp, DiffusiveFluxImp, RangeImp, SourceImp, FieldImp >
-    Traits;
+  typedef internal::DiffusiveFluxEstimateTraits
+    < GridViewImp, DiffusionType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp > Traits;
   using typename BaseType::GridViewType;
-  typedef typename Traits::DiffusionType      DiffusionType;
-  typedef typename Traits::DiffusiveFluxType  DiffusiveFluxType;
   using typename BaseType::RangeType;
   using typename BaseType::SourceType;
   typedef typename Traits::LocalOperatorType  LocalOperatorType;
 
-
-  DiffusiveFluxEstimate(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
-                        const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux,
+  DiffusiveFluxEstimate(const GridViewType& grd_vw,
+                        const RangeType& rng,
+                        const SourceType& src,
+                        const DiffusionType& diffusion,
+                        const DiffusiveFluxType& diffusive_flux,
                         const size_t over_integrate = 0)
     : BaseType(grd_vw, rng, src)
     , diffusion_(diffusion)
@@ -74,12 +126,73 @@ public:
   ~DiffusiveFluxEstimate() {}
 
 private:
-  virtual const LocalOperatorType& local_operator() const
+  virtual const LocalOperatorType& local_operator() const DS_OVERRIDE DS_FINAL
   {
     return local_operator_;
   }
 
   const DiffusionType& diffusion_;
+  const DiffusiveFluxType& diffusive_flux_;
+  const LocalOperatorType local_operator_;
+}; // class DiffusiveFluxEstimate< ..., void >
+
+
+template< class GridViewImp,
+          class DiffusionFactorType,
+          class DiffusiveFluxType,
+          class RangeImp,
+          class SourceImp,
+          class FieldImp,
+          class DiffusionTensorType >
+class DiffusiveFluxEstimate
+  : public Products::LocalizableBase< internal::DiffusiveFluxEstimateTraits< GridViewImp,
+                                                                             DiffusionFactorType,
+                                                                             DiffusiveFluxType,
+                                                                             RangeImp,
+                                                                             SourceImp,
+                                                                             FieldImp,
+                                                                             DiffusionTensorType > >
+{
+  typedef Products::LocalizableBase< internal::DiffusiveFluxEstimateTraits< GridViewImp,
+                                                                            DiffusionFactorType,
+                                                                            DiffusiveFluxType,
+                                                                            RangeImp,
+                                                                            SourceImp,
+                                                                            FieldImp,
+                                                                            DiffusionTensorType > >
+    BaseType;
+public:
+  typedef internal::DiffusiveFluxEstimateTraits
+    < GridViewImp, DiffusionFactorType, DiffusiveFluxType, RangeImp, SourceImp, FieldImp, DiffusionTensorType > Traits;
+  using typename BaseType::GridViewType;
+  using typename BaseType::RangeType;
+  using typename BaseType::SourceType;
+  typedef typename Traits::LocalOperatorType LocalOperatorType;
+
+  DiffusiveFluxEstimate(const GridViewType& grd_vw,
+                        const RangeType& rng,
+                        const SourceType& src,
+                        const DiffusionFactorType& diffusion_factor,
+                        const DiffusionTensorType& diffusion_tensor,
+                        const DiffusiveFluxType& diffusive_flux,
+                        const size_t over_integrate = 0)
+    : BaseType(grd_vw, rng, src)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , diffusive_flux_(diffusive_flux)
+    , local_operator_(over_integrate, diffusion_factor_, diffusion_tensor_, diffusive_flux_)
+  {}
+
+  ~DiffusiveFluxEstimate() {}
+
+private:
+  virtual const LocalOperatorType& local_operator() const DS_OVERRIDE DS_FINAL
+  {
+    return local_operator_;
+  }
+
+  const DiffusionFactorType& diffusion_factor_;
+  const DiffusionTensorType& diffusion_tensor_;
   const DiffusiveFluxType& diffusive_flux_;
   const LocalOperatorType local_operator_;
 }; // class DiffusiveFluxEstimate
