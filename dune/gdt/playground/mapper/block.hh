@@ -10,7 +10,9 @@
 
 #include <dune/stuff/common/exceptions.hh>
 
+#if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/default.hh>
+#endif
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -19,6 +21,8 @@
 namespace Dune {
 namespace GDT {
 namespace Mapper {
+
+#if HAVE_DUNE_GRID_MULTISCALE
 
 
 template <class LocalSpaceImp>
@@ -206,6 +210,18 @@ private:
   std::vector<size_t> global_start_indices_;
 }; // class Block
 
+
+#else // HAVE_DUNE_GRID_MULTISCALE
+
+
+template <class LocalSpaceImp>
+class Block
+{
+  static_assert(AlwaysFalse<LocalSpaceImp>::value, "You are missing dune-grid-multiscale!");
+};
+
+
+#endif // HAVE_DUNE_GRID_MULTISCALE
 
 } // namespace Mapper
 } // namespace GDT
