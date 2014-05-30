@@ -194,8 +194,8 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     return Compute<LocalSpaceType, EntityType>::mapToGlobal(
-        *ms_grid_, global_start_indices_, local_spaces_, entity, localIndex);
-  }
+        *ms_grid_, local_spaces_, global_start_indices_, entity, localIndex);
+  } // ... mapToGlobal(...)
 
 private:
   std::shared_ptr<const MsGridType> ms_grid_;
