@@ -104,11 +104,11 @@ typedef testing::Types<Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluCon
 // +--------------------------------------------------------------------------------------+
 
 
-TYPED_TEST_CASE(Oswald_Interpolation_Operator, SpaceTypes);
-TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results)
-{
-  this->produces_correct_results();
-}
+// TYPED_TEST_CASE(Oswald_Interpolation_Operator, SpaceTypes);
+// TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results) {
+//  this->produces_correct_results();
+//}
+
 
 // +--------------------------------------------------------------------------------------+
 // | 4th we run all the tests                                                             |
