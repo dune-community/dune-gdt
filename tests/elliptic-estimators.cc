@@ -73,11 +73,10 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
 }; // struct EllipticSWIPDGDiscretization
 
 
-TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
-TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results)
-{
-  this->produces_correct_results();
-}
+// TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
+// TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
+//  this->produces_correct_results();
+//}
 
 
 int main(int argc, char** argv)
