@@ -28,6 +28,7 @@
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem-localfunctions.hh>
 #include <dune/gdt/spaces/discontinuouslagrange/fem-localfunctions.hh>
+#include <dune/gdt/playground/spaces/block.hh>
 
 namespace Dune {
 namespace GDT {
@@ -48,6 +49,9 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
 }\endcode
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
+ *
+ *  \todo Create a Redirect class templatized with space/vector to check that its a const/discrete function with a
+ *        method which extracts the correct space if needed. This should give better compile errors.
  */
 template< class GridViewType >
 class L2Prolongation
@@ -120,6 +124,24 @@ public:
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
 
+  template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
+  inline void apply(const ConstDiscreteFunction
+                      < Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GPS, pS, R, r, rC > >, VS >& source,
+                    DiscreteFunction< Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GPR, pR, R, r, rC > >, VR >&
+                      range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+  template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
+  inline void apply(const ConstDiscreteFunction
+                      < Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GPS, pS, R, r, rC > >, VS >& source,
+                    DiscreteFunction< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GPR, pR, R, r, rC >, VR >&
+                      range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
 private:
   template< class SourceFunctionType, class RangeFunctionType >
   void prolong_onto_dg_fem_localfunctions_wrapper(const SourceFunctionType& source, RangeFunctionType& range) const
@@ -137,6 +159,8 @@ private:
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
     EntitySearch entity_search(*(source.space().grid_view()));
+    // guess the polynomial order of the source by hoping that they are the same for all entities
+    const size_t source_order = source.local_function(*(source.space().grid_view()->template begin< 0 >()))->order();
     // walk the grid
     RangeType source_value(0);
     std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
@@ -149,8 +173,6 @@ private:
       LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), RangeFieldType(0));
       LocalVectorType local_vector(local_basis.size(), RangeFieldType(0));
       LocalVectorType local_DoFs(local_basis.size(), RangeFieldType(0));
-      // guess the polynomial order of the source by hoping that they are the same for all entities
-      const size_t source_order = source.local_function(*(source.space().grid_view()->template begin< 0 >()))->order();
       // create quadrature
       const size_t integrand_order = std::max(source_order, local_basis.order()) + local_basis.order();
       assert(integrand_order < std::numeric_limits< int >::max());
@@ -479,6 +501,30 @@ private:
                                                DiscreteFunction
                                                   < Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
+                                                    < GPS, pS, RS, rS, rCS > >, VS >& source,
+                                               DiscreteFunction
+                                                  < Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
+                                                    < GPR, pR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GPS, int pS, class RS, int rS, int rCS, class VS,
+            class GPR, int pR, class RR, int rR, int rCR, class VR >
+  inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
+                                                    < GPS, pS, RS, rS, rCS > >, VS >& source,
+                                               DiscreteFunction
+                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemLocalfunctionsBased
+                                                    < GPR, pR, RR, rR, rCR > >, VR >& range) const
   {
     l2_prolongation_operator_.apply(source, range);
   }
