@@ -9,7 +9,7 @@
 // Then this one (otherwise we get alugrid problems)!
 #include "spaces.hh"
 
-#if !HAVE_DUNE_FEM && !HAVE_DUNE_FEM_LOCALFUNCTIONS && !HAVE_DUNE_PDELAB
+#if !HAVE_DUNE_FEM && !HAVE_DUNE_PDELAB
 #error "These tests requires at least one discretization module!"
 #endif
 
