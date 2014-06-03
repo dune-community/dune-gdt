@@ -16,6 +16,7 @@
 #include "../localevaluation/elliptic.hh"
 
 #include "interfaces.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
