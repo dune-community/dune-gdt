@@ -409,14 +409,14 @@ public:
           else
             ++failures;
         }
-        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
-          std::stringstream ss;
-          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
-             << num_vertices << ", entity " << grid_view_.indexSet().index(entity)
-             << ", vertex " << local_vertex_id << ": [ " << vertex << "], ";
-          Stuff::Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, ss.str());
-        }
+//        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
+//          std::stringstream ss;
+//          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
+//             << num_vertices << ", entity " << grid_view_.indexSet().index(entity)
+//             << ", vertex " << local_vertex_id << ": [ " << vertex << "], ";
+//          Stuff::Common::print(basis_values, "basis_values", ss);
+//          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, ss.str());
+//        }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_index);
         global_DoF_id_to_global_vertex_id_map[global_DoF_index] = global_vertex_id;
