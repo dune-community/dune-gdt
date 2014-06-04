@@ -307,6 +307,8 @@ public:
     return new ThisType(*this);
   }
 
+  using BaseType::vector;
+
   VectorType& vector()
   {
     return this->vector_ref();
