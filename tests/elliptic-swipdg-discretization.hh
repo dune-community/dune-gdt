@@ -14,7 +14,9 @@
 
 #include <dune/common/timer.hh>
 
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/fem/misc/gridwidth.hh>
 
