@@ -17,8 +17,10 @@
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_PDELAB
-# include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
-# include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
+#   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/float_cmp.hh>
