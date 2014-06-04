@@ -9,10 +9,12 @@
 #include <iostream>
 #include <memory>
 
-#include <dune/grid/io/file/dgfparser.hh>
-#if HAVE_ALUGRID
-# include <dune/grid/alugrid.hh>
-#endif
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/grid/io/file/dgfparser.hh>
+# if HAVE_ALUGRID
+#   include <dune/grid/alugrid.hh>
+# endif
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
