@@ -10,7 +10,9 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
-# include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #else
 # error "This test requires alugrid!"
 #endif
@@ -103,10 +105,10 @@ typedef testing::Types< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluC
 // +--------------------------------------------------------------------------------------+
 
 
-//TYPED_TEST_CASE(Oswald_Interpolation_Operator, SpaceTypes);
-//TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results) {
-//  this->produces_correct_results();
-//}
+TYPED_TEST_CASE(Oswald_Interpolation_Operator, SpaceTypes);
+TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results) {
+  this->produces_correct_results();
+}
 
 
 // +--------------------------------------------------------------------------------------+
