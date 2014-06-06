@@ -671,11 +671,13 @@ public:
         else if (type == residual_estimator_ESV07_id())
           return {7.24e-2, 1.83e-2, 4.55e-3, 1.15e-3};
         else if (type == diffusive_flux_estimator_id())
-          return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
+          return {3.55e-1, 1.76e-1, 8.73e-2, 4.35e-2};
+        //          return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
         else if (type == estimator_ESV07_id())
           return {4.50e-01, 2.08e-01, 9.92e-02, 4.86e-02};
         else if (type == efficiency_ESV07_id())
-          return {1.21, 1.21, 1.21, 1.21};
+          return {1.37, 1.28, 1.23, 1.21};
+        //          return {1.21, 1.21, 1.21, 1.21};
         //        else if (type == residual_estimator_ESV10_id())
         //          return {0.0, 0.0, 0.0, 0.0};
         //        else if (type == estimator_ESV10_id())
