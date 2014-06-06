@@ -46,9 +46,10 @@ std::vector<double> truncate_vector(const std::vector<double>& in, const size_t 
 
 typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
 
-typedef testing::Types< // EllipticTestCase::ESV07< AluConform2dGridType >
-    EllipticTestCase::LocalThermalBlock<AluConform2dGridType>, EllipticTestCase::Spe10Model1<AluConform2dGridType>>
-    AluConform2dTestCases;
+typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>
+                       //                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
+                       //                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
+                       > AluConform2dTestCases;
 
 
 template <class TestCase>
