@@ -22,8 +22,8 @@
 
 #if HAVE_DUNE_ISTL
 # include <dune/stuff/common/disable_warnings.hh>
-# include <dune/istl/owneroverlapcopy.hh>
-# include <dune/istl/paamg/pinfo.hh>
+#   include <dune/istl/owneroverlapcopy.hh>
+#   include <dune/istl/paamg/pinfo.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 # include <dune/stuff/la/solver/istl_amg.hh>
 #endif
@@ -54,37 +54,45 @@ namespace ContinuousLagrange {
 #if HAVE_DUNE_PDELAB
 
 
-template <class ViewImp, bool is_parallel = DS::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value >
-struct CommunicationChooser {
+template< class ViewImp,
+          bool is_parallel = DS::UseParallelCommunication< typename ViewImp::Grid::CollectiveCommunication >::value >
+struct CommunicationChooser
+{
   typedef OwnerOverlapCopyCommunication< bigunsignedint< 96 >, int > Type;
 
-  static std::shared_ptr<Type> create(const ViewImp& gridView) {
+  static std::shared_ptr<Type> create(const ViewImp& gridView)
+  {
     return std::make_shared< Type >(gridView.comm());
   }
 
-  template <class Space>
-  static bool prepare(const Space& space, Type& communicator) {
-    Stuff::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
-    PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
+  template< class Space >
+  static bool prepare(const Space& space, Type& communicator)
+  {
+    Stuff::LA::IstlRowMajorSparseMatrix< typename Space::RangeFieldType > matrix;
+    PDELab::istl::ParallelHelper< typename Space::BackendType >(space.backend(), 0)
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
     return true;
   }
-};
+}; // struct CommunicationChooser
 
 
-template <class ViewImp>
-struct CommunicationChooser<ViewImp, false> {
+template< class ViewImp >
+struct CommunicationChooser< ViewImp, false >
+{
   typedef DS::SequentialCommunication Type;
 
-  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/) {
+  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
+  {
     return std::make_shared< Type >();
   }
 
-  template <class SpaceBackend>
-  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/) {
+  template< class SpaceBackend >
+  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
+  {
     return false;
   }
-};
+}; // struct CommunicationChooser< ..., false >
+
 
 // forward, to be used in the traits and to allow for specialization
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
