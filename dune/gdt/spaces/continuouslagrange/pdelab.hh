@@ -73,7 +73,7 @@ struct CommunicationChooser
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
     return true;
   }
-};
+}; // struct CommunicationChooser
 
 
 template <class ViewImp>
@@ -91,7 +91,8 @@ struct CommunicationChooser<ViewImp, false>
   {
     return false;
   }
-};
+}; // struct CommunicationChooser< ..., false >
+
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
