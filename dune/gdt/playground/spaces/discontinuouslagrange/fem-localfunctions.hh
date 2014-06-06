@@ -93,6 +93,7 @@ public:
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
+  typedef double CommunicatorType;
 
 private:
   template <class G, int p, class R, int r, int rC>
@@ -136,6 +137,7 @@ public:
     , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
     , backend_(new BackendType(const_cast<GridPartType&>(*gridPart_), *baseFunctionSetMap_))
     , mapper_(new MapperType(backend_->mapper()))
+    , communicator_(0.0)
   {
   }
 
@@ -145,6 +147,7 @@ public:
     , baseFunctionSetMap_(other.baseFunctionSetMap_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
+    , communicator_(0.0)
   {
   }
 
@@ -199,12 +202,18 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
+  double& communicator() const
+  {
+    return communicator_;
+  }
+
 private:
   std::shared_ptr<const GridPartType> gridPart_;
   std::shared_ptr<const GridViewType> gridView_;
   std::shared_ptr<BaseFunctionSetMapType> baseFunctionSetMap_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
+  mutable double communicator_;
 }; // class FemLocalfunctionsBased< ..., 1, 1 >
 
 

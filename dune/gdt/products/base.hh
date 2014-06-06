@@ -116,7 +116,10 @@ public:
 
   virtual void finalize() DS_OVERRIDE
   {
-    finalized_ = true;
+    if (!finalized_) {
+      result_    = grid_view_.comm().sum(result_);
+      finalized_ = true;
+    }
   }
 
   FieldType apply2()

@@ -31,8 +31,7 @@ enum class ChooseSpaceBackend
 {
   gdt,
   pdelab,
-  fem,
-  fem_localfunctions
+  fem
 }; // enum class ChooseSpaceBackend
 
 
@@ -61,13 +60,6 @@ struct ChooseGridPartView<ChooseSpaceBackend::fem>
 };
 
 
-template <>
-struct ChooseGridPartView<ChooseSpaceBackend::fem_localfunctions>
-{
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
-};
-
-
 template <class Traits>
 class SpaceInterface : protected Stuff::CRTPInterface<SpaceInterface<Traits>, Traits>
 {
@@ -77,6 +69,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
+  typedef typename Traits::CommunicatorType CommunicatorType;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = Traits::dimRange;
@@ -130,6 +123,18 @@ public:
     return this->as_imp(*this).base_function_set(entity);
   }
 
+  CommunicatorType& communicator() const
+  {
+    CHECK_CRTP(this->as_imp(*this).communicator());
+    return this->as_imp(*this).communicator();
+  }
+
+  template <class ConstraintsType>
+  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
+  {
+    local_constraints(*this, entity, ret);
+  }
+
   template <class ConstraintsType, class T>
   void local_constraints(const SpaceInterface<T>& ansatz_space, const EntityType& entity, ConstraintsType& ret) const
   {
@@ -154,12 +159,6 @@ public:
    * \defgroup provided ´´These methods are provided by the interface for convenience.''
    * @{
    **/
-
-  template <class ConstraintsType>
-  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
-  {
-    local_constraints(*this, entity, ret);
-  }
 
   PatternType compute_pattern() const
   {
@@ -436,6 +435,19 @@ public:
 protected:
   mutable std::vector<typename BaseFunctionSetType::RangeType> tmp_basis_values_;
 }; // class SpaceInterface
+
+
+template <class Traits, int codim = 0>
+typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template begin<codim>();
+}
+
+template <class Traits, int codim = 0>
+typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface<Traits>& space)
+{
+  return space.grid_view()->template end<codim>();
+}
 
 
 } // namespace GDT

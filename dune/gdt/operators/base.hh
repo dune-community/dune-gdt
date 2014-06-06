@@ -22,12 +22,12 @@ class MatrixBased : public AssemblableOperatorInterface<Traits>
 
 public:
   using typename BaseType::GridViewType;
-  using typename BaseType::SourceSpaceType;
+  typedef typename BaseType::SourceSpaceType SourceSpaceType;
   using typename BaseType::RangeSpaceType;
   using typename BaseType::MatrixType;
 
 private:
-  typedef Stuff::LA::Solver<MatrixType> LinearSolverType;
+  typedef Stuff::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
 
 public:
   MatrixBased(MatrixType& mtrx, const SourceSpaceType& source_sp, const RangeSpaceType& range_sp,
@@ -111,7 +111,7 @@ public:
                      const Stuff::Common::ConfigTree& opts)
   {
     assemble();
-    LinearSolverType(matrix).apply(range.as_imp(), source.as_imp(), opts);
+    LinearSolverType(matrix, source_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
   } // ... apply_inverse(...)
 
 private:

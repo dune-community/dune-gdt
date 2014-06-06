@@ -11,7 +11,9 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 #define ENABLE_ALUGRID 1
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #else
 #error "This test requires alugrid!"
 #endif
@@ -144,10 +146,11 @@ typedef
     typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, false>::Type AluConform2dLeafGridPartType;
 
 typedef testing::
-    Types<std::pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
-                    Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 2>>,
-          std::pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
-                    Dune::GDT::Spaces::RaviartThomas::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>>
+    Types</*std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >,
+                                   Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 2 > >
+                      ,*/ std::
+              pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
+                   Dune::GDT::Spaces::RaviartThomas::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>>
         SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+

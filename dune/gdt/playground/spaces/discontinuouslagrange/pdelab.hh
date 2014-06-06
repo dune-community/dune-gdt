@@ -3,35 +3,32 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
-#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
+#ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
+#define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH
+
+#include "config.h"
 
 #include <memory>
-#include <type_traits>
-
-#include <dune/geometry/genericgeometry/topologytypes.hh>
-
-#include <dune/grid/common/capabilities.hh>
 
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/parallel/communicator.hh>
-#include <dune/stuff/common/parallel/helper.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
+
+#include <dune/geometry/genericgeometry/topologytypes.hh>
+
+#include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_ISTL
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/istl/owneroverlapcopy.hh>
-#include <dune/istl/paamg/pinfo.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#include <dune/stuff/la/solver/istl_amg.hh>
 #endif
 
 #if HAVE_DUNE_PDELAB
 #include <dune/stuff/common/disable_warnings.hh>
-#include <dune/pdelab/finiteelementmap/pkfem.hh>
-#include <dune/pdelab/finiteelementmap/qkfem.hh>
+#include <dune/pdelab/finiteelementmap/qkdg.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #include <dune/pdelab/constraints/conforming.hh>
 #include <dune/pdelab/backend/istl/parallelhelper.hh>
@@ -40,64 +37,17 @@
 
 #include <dune/stuff/la/container/istl.hh>
 
-#include "../../mapper/pdelab.hh"
-#include "../../basefunctionset/pdelab.hh"
+#include "../../../mapper/pdelab.hh"
+#include "../../../basefunctionset/pdelab.hh"
 
-#include "base.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
-
 namespace GDT {
 namespace Spaces {
-namespace ContinuousLagrange {
+namespace DiscontinuousLagrange {
 
 #if HAVE_DUNE_PDELAB
-
-
-template <class ViewImp,
-          bool is_parallel = DS::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
-struct CommunicationChooser
-{
-  typedef DS::SequentialCommunication Type;
-
-  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
-  {
-    return std::make_shared<Type>();
-  }
-
-  template <class SpaceBackend>
-  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
-  {
-    return false;
-  }
-}; // struct CommunicationChooser
-
-
-#if HAVE_MPI
-
-
-template <class ViewImp>
-struct CommunicationChooser<ViewImp, true>
-{
-  typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
-
-  static std::shared_ptr<Type> create(const ViewImp& gridView)
-  {
-    return std::make_shared<Type>(gridView.comm());
-  }
-
-  template <class Space>
-  static bool prepare(const Space& space, Type& communicator)
-  {
-    Stuff::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
-    PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
-        .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-    return true;
-  }
-}; // struct CommunicationChooser< ..., true >
-
-
-#endif // HAVE_MPI
 
 
 // forward, to be used in the traits and to allow for specialization
@@ -105,7 +55,7 @@ template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int range
 class PdelabBased
 {
   static_assert((Dune::AlwaysFalse<GridViewImp>::value), "Untested for this combination of dimensions!");
-};
+}; // class PdelabBased
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
@@ -136,12 +86,12 @@ private:
   template <class G>
   struct FeMap<G, true, true, false>
   {
-    typedef PDELab::PkLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    static_assert(Dune::AlwaysFalse<G>::value, "Not yet implemented for simplicial grids!");
   };
   template <class G>
   struct FeMap<G, true, false, true>
   {
-    typedef PDELab::QkLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
@@ -160,21 +110,21 @@ public:
                                          dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
-
-  typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
-
+#if HAVE_MPI && HAVE_DUNE_ISTL
+  typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> CommunicatorType;
+#else
+  typedef double CommunicatorType;
+#endif
 private:
   friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
-}; // class SpaceWrappedFemContinuousLagrangeTraits
+}; // class PdelabBasedTraits
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                            GridViewImp::dimension, RangeFieldImp, 1, 1>
+    : public SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>>
 {
-  typedef Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>> BaseType;
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -196,6 +146,9 @@ public:
 
 private:
   typedef typename Traits::FEMapType FEMapType;
+#if HAVE_MPI && HAVE_DUNE_ISTL
+  typedef PDELab::istl::ParallelHelper<BackendType> ParallelHelperType;
+#endif
 
 public:
   typedef typename BaseType::IntersectionType IntersectionType;
@@ -205,11 +158,16 @@ public:
 
   PdelabBased(const std::shared_ptr<const GridViewType>& gV)
     : gridView_(gV)
-    , fe_map_(std::make_shared<FEMapType>(*(gridView_)))
+    , fe_map_(std::make_shared<FEMapType>())
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*gridView_), *fe_map_))
     , mapper_(std::make_shared<MapperType>(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
+#if HAVE_MPI && HAVE_DUNE_ISTL
+    , parallel_helper_(std::make_shared<ParallelHelperType>(*backend_, 0))
+    , communicator_(std::make_shared<CommunicatorType>(gridView_->comm()))
     , communicator_prepared_(false)
+#else // HAVE_MPI && HAVE_DUNE_ISTL
+    , communicator_(0.0)
+#endif
   {
   }
 
@@ -218,26 +176,44 @@ public:
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
+#if HAVE_MPI && HAVE_DUNE_ISTL
+    , parallel_helper_(other.parallel_helper_)
     , communicator_(other.communicator_)
     , communicator_prepared_(other.communicator_prepared_)
+#else // HAVE_MPI && HAVE_DUNE_ISTL
+    , communicator_(other.communicator_)
+#endif // HAVE_MPI && HAVE_DUNE_ISTL
   {
   }
 
   ThisType& operator=(const ThisType& other)
   {
     if (this != &other) {
-      gridView_              = other.gridView_;
-      fe_map_                = other.fe_map_;
-      backend_               = other.backend_;
-      mapper_                = other.mapper_;
+      gridView_ = other.gridView_;
+      fe_map_   = other.fe_map_;
+      backend_  = other.backend_;
+      mapper_   = other.mapper_;
+#if HAVE_MPI && HAVE_DUNE_ISTL
+      parallel_helper_       = other.parallel_helper_;
       communicator_          = other.communicator_;
       communicator_prepared_ = other.communicator_prepared_;
+#else // HAVE_MPI && HAVE_DUNE_ISTL
+      communicator_ = other.communicator_;
+#endif // HAVE_MPI && HAVE_DUNE_ISTL
     }
     return *this;
   }
 
   ~PdelabBased()
   {
+  }
+
+  using BaseType::compute_pattern;
+
+  template <class G, class S>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  {
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
   const std::shared_ptr<const GridViewType>& grid_view() const
@@ -260,21 +236,35 @@ public:
     return BaseFunctionSetType(*backend_, entity);
   }
 
+#if HAVE_MPI && HAVE_DUNE_ISTL
   CommunicatorType& communicator() const
   {
     if (!communicator_prepared_) {
-      communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
+      Stuff::LA::IstlRowMajorSparseMatrix<RangeFieldType> istl_matrix;
+      parallel_helper_->createIndexSetAndProjectForAMG(istl_matrix.backend(), *communicator_);
+      communicator_prepared_ = true;
     }
     return *communicator_;
   } // ... communicator(...)
+#else // HAVE_MPI && HAVE_DUNE_ISTL
+  CommunicatorType& communicator() const
+  {
+    return communicator_;
+  }
+#endif // HAVE_MPI && HAVE_DUNE_ISTL
 
 private:
   std::shared_ptr<const GridViewType> gridView_;
   std::shared_ptr<const FEMapType> fe_map_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;
+#if HAVE_MPI && HAVE_DUNE_ISTL
+  mutable std::shared_ptr<ParallelHelperType> parallel_helper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
+#else // HAVE_MPI && HAVE_DUNE_ISTL
+  mutable double communicator_;
+#endif // HAVE_MPI && HAVE_DUNE_ISTL
 }; // class PdelabBased< ..., 1 >
 
 
@@ -290,9 +280,9 @@ class PdelabBased
 
 #endif // HAVE_DUNE_PDELAB
 
-} // namespace ContinuousLagrange
+} // namespace DiscontinuousLagrange
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
+#endif // DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_PDELAB_HH

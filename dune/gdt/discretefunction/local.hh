@@ -110,7 +110,7 @@ public:
   void add(const size_t ii, const ScalarType& val)
   {
     assert(ii < indices_.size());
-    vector_.add(indices_[ii], val);
+    vector_.add_to_entry(indices_[ii], val);
   }
 
 private:
