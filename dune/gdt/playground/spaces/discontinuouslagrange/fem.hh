@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
 #define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
 
-#include "config.h"
-
 #include <memory>
 #include <type_traits>
 
