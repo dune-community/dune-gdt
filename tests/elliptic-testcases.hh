@@ -9,6 +9,13 @@
 #include <iostream>
 #include <memory>
 
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/grid/io/file/dgfparser.hh>
+# if HAVE_ALUGRID
+#   include <dune/grid/alugrid.hh>
+# endif
+#include <dune/stuff/common/reenable_warnings.hh>
+
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>
@@ -42,14 +49,14 @@ public:
 #endif
     level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
     for (size_t rr = 0; rr < num_refinements; ++rr) {
-      grid_->globalRefine(GridType::refineStepsForHalf);
+      grid_->globalRefine(Dune::DGFGridInfo< GridType >::refineStepsForHalf());
       levels_.push_back(grid_->maxLevel());
 #if HAVE_DUNE_FEM
       level_grid_parts_.emplace_back(new GridPartType(*grid_, grid_->maxLevel()));
 #endif
       level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
     }
-    grid_->globalRefine(GridType::refineStepsForHalf);
+    grid_->globalRefine(Dune::DGFGridInfo< GridType >::refineStepsForHalf());
 #if HAVE_DUNE_FEM
     reference_grid_part_ = std::make_shared< GridPartType >(*grid_, grid_->maxLevel());
 #endif
@@ -309,11 +316,22 @@ public:
 private:
   static std::shared_ptr< GridType > create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-    auto grid_provider = std::unique_ptr< GridProviderType >(new GridProviderType(-1, 1, 4));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(2);
-    return grid;
+    if (std::is_same< GridType, Dune::SGrid< 2, 2 > >::value) {
+      return Dune::Stuff::Grid::Providers::Cube< GridType >(-1, 1, 8).grid();
+#if HAVE_ALUGRID
+    } else if (std::is_same< GridType, Dune::ALUConformGrid< 2, 2 > >::value
+        || std::is_same< GridType, Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > >::value) {
+      Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(-1, 1, 4);
+      auto grid = grid_provider.grid();
+      grid->globalRefine(2);
+      return grid;
+#endif // HAVE_ALUGRID
+    } else {
+      Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(-1, 1, 4);
+      auto grid = grid_provider.grid();
+      grid->globalRefine(1);
+      return grid;
+    }
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;

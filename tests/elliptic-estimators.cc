@@ -11,7 +11,9 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
-# include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #else
 # error This test requires ALUGrid!
 #endif
@@ -45,8 +47,8 @@ std::vector< double > truncate_vector(const std::vector< double >& in, const siz
 typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
-                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
-                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
+//                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
+//                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 

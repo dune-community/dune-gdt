@@ -7,12 +7,16 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
-# include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#  include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif
-#include <dune/grid/sgrid.hh>
-#include <dune/grid/yaspgrid.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/grid/sgrid.hh>
+# include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/grid/provider/cube.hh>
+# include <dune/stuff/grid/provider/cube.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -42,27 +46,33 @@ YASPGRID_TYPES(2)
 YASPGRID_TYPES(3)
 #undef YASPGRID_TYPES
 
+
 #if HAVE_ALUGRID
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type   AluConform2dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, false >::Type  AluConform2dLevelGridPartType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming >  AluConform2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type  AluConform2dLeafGridPartType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, false >::Type AluConform2dLevelGridPartType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, true >::Type   AluConform2dLeafGridViewType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, true >::Type  AluConform2dLevelGridViewType;
-typedef Dune::ALUSimplexGrid< 2, 2 > AluSimplex2dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type   AluSimplex2dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, false >::Type  AluSimplex2dLevelGridPartType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::nonconforming > AluSimplex2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type  AluSimplex2dLeafGridPartType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, false >::Type AluSimplex2dLevelGridPartType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, true >::Type   AluSimplex2dLeafGridViewType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, true >::Type  AluSimplex2dLevelGridViewType;
-typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type   AluSimplex3dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, false >::Type  AluSimplex3dLevelGridPartType;
+typedef Dune::ALUGrid< 3, 3, Dune::simplex, Dune::nonconforming > AluSimplex3dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type  AluSimplex3dLeafGridPartType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, false >::Type AluSimplex3dLevelGridPartType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, true >::Type   AluSimplex3dLeafGridViewType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, true >::Type  AluSimplex3dLevelGridViewType;
-typedef Dune::ALUCubeGrid< 3, 3 > AluCube3dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::cube, Dune::nonconforming > AluCube2dGridType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube2dGridType, false >::Type  AluCube2dLeafGridPartType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube2dGridType, false >::Type AluCube2dLevelGridPartType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube2dGridType, true >::Type   AluCube2dLeafGridViewType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube2dGridType, true >::Type  AluCube2dLevelGridViewType;
+typedef Dune::ALUGrid< 3, 3, Dune::cube, Dune::nonconforming > AluCube3dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, false >::Type  AluCube3dLeafGridPartType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, false >::Type AluCube3dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, true >::Type  AluCube3dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, true >::Type AluCube3dLevelGridViewType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, true >::Type   AluCube3dLeafGridViewType;
+typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, true >::Type  AluCube3dLevelGridViewType;
 #endif
 
 

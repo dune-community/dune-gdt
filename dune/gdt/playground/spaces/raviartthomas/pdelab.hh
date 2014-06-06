@@ -17,8 +17,10 @@
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_PDELAB
-# include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
-# include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
+#   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/float_cmp.hh>
@@ -97,6 +99,7 @@ public:
     BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view = true;
+  typedef double CommunicatorType;
 private:
   friend class PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
 }; // class PdelabBasedTraits
@@ -133,6 +136,7 @@ public:
     , fe_map_(std::make_shared< FEMapType >(*(grid_view_)))
     , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*grid_view_), *fe_map_))
     , mapper_(std::make_shared< MapperType >(*backend_))
+    , communicator_(0.0)
   {}
 
   PdelabBased(const ThisType& other)
@@ -140,6 +144,7 @@ public:
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
+    , communicator_(0.0)
   {}
 
   ThisType& operator=(const ThisType& other)
@@ -275,11 +280,17 @@ public:
     return local_DoF_index_of_intersection;
   } // ... local_DoF_indices(...)
 
+  double& communicator() const
+  {
+    return communicator_;
+  }
+
 private:
   std::shared_ptr< const GridViewType > grid_view_;
   std::shared_ptr< const FEMapType > fe_map_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
+  mutable double communicator_;
 }; // class PdelabBased< ..., 0, ..., 1 >
 
 

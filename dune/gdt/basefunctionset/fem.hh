@@ -13,7 +13,7 @@
 #include <dune/common/fmatrix.hh>
 
 #if HAVE_DUNE_FEM
-# include <dune/fem/space/basefunctions/basefunctionsetinterface.hh>
+# include <dune/fem/space/basisfunctionset/default.hh>
 # include <dune/fem/space/common/discretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM
 
@@ -29,46 +29,46 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class FemBaseFunctionSetTraits, class EntityImp,
+template< class ShapeFunctionSetImp, class EntityImp,
           class DomainFieldImp, int domainDim,
           class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapper
 {
-  static_assert(Dune::AlwaysFalse< FemBaseFunctionSetTraits >::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse< ShapeFunctionSetImp >::value, "Untested for these dimensions!");
 };
 
 
-template< class FemBaseFunctionSetTraits, class EntityImp,
+template< class ShapeFunctionSetImp, class EntityImp,
           class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+          class RangeFieldImp, int rangeDim, int rangeDimCols >
 class FemWrapperTraits
 {
 public:
   typedef FemWrapper
-      < FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols >
+      < ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols >
     derived_type;
-  typedef typename Dune::Fem::BaseFunctionSetInterface< FemBaseFunctionSetTraits >::BaseFunctionSetType BackendType;
+  typedef typename Dune::Fem::DefaultBasisFunctionSet< EntityImp, ShapeFunctionSetImp > BackendType;
   typedef EntityImp EntityType;
 };
 
 
-template< class FemBaseFunctionSetTraits, class EntityImp,
+template< class ShapeFunctionSetImp, class EntityImp,
           class DomainFieldImp, int domainDim,
           class RangeFieldImp, int rangeDim >
-class FemWrapper< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
-  : public BaseFunctionSetInterface< FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp,
+class FemWrapper< ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
+  : public BaseFunctionSetInterface< FemWrapperTraits< ShapeFunctionSetImp, EntityImp,
                                                        DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >,
                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
 {
   typedef FemWrapper
-      < FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
+      < ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
   typedef BaseFunctionSetInterface
-      < FemWrapperTraits< FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >,
+      < FemWrapperTraits< ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >,
         DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
     BaseType;
 public:
   typedef FemWrapperTraits
-      < FemBaseFunctionSetTraits, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
+      < ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
   typedef typename Traits::BackendType  BackendType;
   typedef typename Traits::EntityType   EntityType;
 
@@ -84,13 +84,11 @@ public:
   template< class S >
   FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface< S >& femSpace, const EntityType& ent)
     : BaseType(ent)
-    , order_(femSpace.order())
-    , backend_(new BackendType(femSpace.baseFunctionSet(this->entity())))
+    , backend_(new BackendType(femSpace.basisFunctionSet(this->entity())))
   {}
 
   FemWrapper(ThisType&& source)
     : BaseType(source.entity())
-    , order_(std::move(source.order_))
     , backend_(std::move(source.backend_))
   {}
 
@@ -103,34 +101,34 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const DS_OVERRIDE
+  virtual size_t size() const DS_OVERRIDE DS_FINAL
   {
     return backend_->size();
   }
 
-  virtual size_t order() const DS_OVERRIDE
+  virtual size_t order() const DS_OVERRIDE DS_FINAL
   {
-    return order_;
+    assert(backend_->order() >= 0);
+    return backend_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const DS_OVERRIDE
+  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const DS_OVERRIDE DS_FINAL
   {
-    assert(ret.size() >= backend_->size());
+    assert(ret.size() >= size());
     backend_->evaluateAll(xx, ret);
   }
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const DS_OVERRIDE
+  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const DS_OVERRIDE DS_FINAL
   {
-    assert(ret.size() >= backend_->size());
-    backend_->jacobianAll(xx, this->entity().geometry().jacobianInverseTransposed(xx), ret);
+    assert(ret.size() >= size());
+    backend_->jacobianAll(xx, ret);
   }
 
   using BaseType::jacobian;
 
 private:
-  const size_t order_;
   std::unique_ptr< const BackendType > backend_;
 }; // class FemWrapper
 
@@ -138,7 +136,7 @@ private:
 #else // HAVE_DUNE_FEM
 
 
-template< class FemBaseFunctionSetTraits, class EntityImp,
+template< class ShapeFunctionSetImp, class EntityImp,
           class DomainFieldImp, int domainDim,
           class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapper

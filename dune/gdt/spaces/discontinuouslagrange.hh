@@ -16,7 +16,7 @@
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
-#include "discontinuouslagrange/fem-localfunctions.hh"
+#include "../playground/spaces/discontinuouslagrange/fem.hh"
 
 
 namespace Dune {
@@ -42,7 +42,7 @@ private:
   template< class G, int p, class R, int r, int rC >
   struct SpaceChooser< G, p, R, r, rC, GDT::ChooseSpaceBackend::fem_localfunctions >
   {
-    typedef GDT::Spaces::DiscontinuousLagrange::FemLocalfunctionsBased< GridLayerType, p, R, r > Type;
+    typedef GDT::Spaces::DiscontinuousLagrange::FemBased< GridLayerType, p, R, r > Type;
   };
 
   typedef Stuff::Grid::ConstProviderInterface< GridType > GridProviderType;

@@ -45,6 +45,7 @@ public:
                                        , RangeFieldType, dimRange, dimRangeCols > BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool         needs_grid_view = true;
+  typedef double CommunicatorType;
 }; // class DefaultTraits
 
 
@@ -76,11 +77,13 @@ public:
     : grid_view_(gv)
     , mapper_(std::make_shared< MapperType >(*grid_view_))
     , backend_(1)
+    , communicator_(0.0)
   {}
 
   Default(const ThisType& other)
     : grid_view_(other.grid_view_)
     , mapper_(other.mapper_)
+    , communicator_(0.0)
   {}
 
   Default& operator=(const ThisType& other)
@@ -122,10 +125,16 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
+  double& communicator() const
+  {
+    return communicator_;
+  }
+
 private:
   std::shared_ptr< const GridViewType > grid_view_;
   std::shared_ptr< const MapperType > mapper_;
   const BackendType backend_;
+  mutable double communicator_;
 }; // class Default< ..., 1, 1 >
 
 

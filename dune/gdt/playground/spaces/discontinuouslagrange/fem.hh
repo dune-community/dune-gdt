@@ -3,8 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
-#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
+#ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
+#define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
+
+#include "config.h"
 
 #include <memory>
 #include <type_traits>
@@ -12,22 +14,20 @@
 #include <dune/common/typetraits.hh>
 
 #if HAVE_DUNE_FEM
-# include <dune/fem/space/common/functionspace.hh>
 # include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/fem/space/lagrange/space.hh>
+#   include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
 
-#include "../../mapper/fem.hh"
-#include "../../basefunctionset/fem.hh"
+#include "../../../mapper/fem.hh"
+#include "../../../basefunctionset/fem.hh"
 
-#include "base.hh"
-#include "../constraints.hh"
+#include "../../../spaces/interface.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Spaces {
-namespace ContinuousLagrange {
+namespace DiscontinuousLagrange {
 
 #if HAVE_DUNE_FEM
 
@@ -59,8 +59,9 @@ public:
 private:
   typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, dimRange > FunctionSpaceType;
 public:
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
-  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType, 1 > MapperType;
+  typedef Dune::Fem::LagrangeDiscontinuousGalerkinSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
+  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize >
+      MapperType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper
       < typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType, dimDomain,
@@ -68,18 +69,16 @@ public:
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view = false;
   typedef double CommunicatorType;
-}; // class SpaceWrappedFemContinuousLagrangeTraits
+}; // class SpaceWrappedFemDiscontinuousLagrangeTraits
 
 
-// untested for the vector-valued case, especially Spaces::ContinuousLagrangeBase
+// untested for the vector-valued case
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public Spaces::ContinuousLagrangeBase< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-                                      , GridPartImp::dimension, RangeFieldImp, 1, 1 >
+    : public SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
 {
-  typedef Spaces::ContinuousLagrangeBase< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-                                     , GridPartImp::dimension, RangeFieldImp, 1, 1 >  BaseType;
   typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >               ThisType;
+  typedef SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > > BaseType;
 public:
   typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >         Traits;
 
@@ -128,6 +127,14 @@ public:
 
   ~FemBased() {}
 
+  using BaseType::compute_pattern;
+
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  {
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+  }
+
   const std::shared_ptr< const GridPartType >& grid_part() const
   {
     return gridPart_;
@@ -161,7 +168,7 @@ public:
 private:
   std::shared_ptr< const GridPartType > gridPart_;
   std::shared_ptr< const GridViewType > gridView_;
-  std::shared_ptr< BackendType > backend_;
+  std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
   mutable double communicator_;
 }; // class FemBased< ..., 1 >
@@ -179,9 +186,9 @@ class FemBased
 
 #endif // HAVE_DUNE_FEM
 
-} // namespace ContinuousLagrange
+} // namespace DiscontinuousLagrange
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_HH
+#endif // DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH

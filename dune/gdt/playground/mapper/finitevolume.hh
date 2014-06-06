@@ -80,7 +80,13 @@ public:
 
   using InterfaceType::globalIndices;
 
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const EntityType& entity, const size_t&
+                   #ifndef NDEBUG
+                     localIndex
+                   #else
+                     /*localIndex*/
+                   #endif
+                     ) const
   {
     assert(localIndex == 0);
     return backend_.index(entity);

@@ -13,7 +13,9 @@
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/common/exceptions.hh>
 
-#include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
