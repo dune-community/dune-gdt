@@ -9,16 +9,16 @@
 #include <memory>
 #include <type_traits>
 
+#include <dune/geometry/genericgeometry/topologytypes.hh>
+
+#include <dune/grid/common/capabilities.hh>
+
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/parallel/communicator.hh>
 #include <dune/stuff/common/parallel/helper.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-
-#include <dune/geometry/genericgeometry/topologytypes.hh>
-
-#include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_ISTL
 #include <dune/stuff/common/disable_warnings.hh>
@@ -58,6 +58,27 @@ template <class ViewImp,
           bool is_parallel = DS::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
 struct CommunicationChooser
 {
+  typedef DS::SequentialCommunication Type;
+
+  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
+  {
+    return std::make_shared<Type>();
+  }
+
+  template <class SpaceBackend>
+  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
+  {
+    return false;
+  }
+}; // struct CommunicationChooser
+
+
+#if HAVE_MPI
+
+
+template <class ViewImp>
+struct CommunicationChooser<ViewImp, true>
+{
   typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
 
   static std::shared_ptr<Type> create(const ViewImp& gridView)
@@ -73,25 +94,10 @@ struct CommunicationChooser
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
     return true;
   }
-}; // struct CommunicationChooser
+}; // struct CommunicationChooser< ..., true >
 
 
-template <class ViewImp>
-struct CommunicationChooser<ViewImp, false>
-{
-  typedef DS::SequentialCommunication Type;
-
-  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
-  {
-    return std::make_shared<Type>();
-  }
-
-  template <class SpaceBackend>
-  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
-  {
-    return false;
-  }
-}; // struct CommunicationChooser< ..., false >
+#endif // HAVE_MPI
 
 
 // forward, to be used in the traits and to allow for specialization
