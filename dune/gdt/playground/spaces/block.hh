@@ -39,6 +39,7 @@ public:
   typedef typename LocalSpaceType::BackendType BackendType;
   typedef Mapper::Block<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
+  typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
   typedef typename MsGridType::GlobalGridViewType GridViewType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
   static const unsigned int dimRange     = LocalSpaceType::dimRange;
