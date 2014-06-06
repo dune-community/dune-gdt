@@ -43,11 +43,7 @@ struct Oswald_Interpolation_Operator
   typedef typename SpaceType::GridViewType          GridViewType;
   typedef typename GridViewType::Grid               GridType;
   typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-//  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
-//  typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const unsigned int                   dimDomain = SpaceType::dimDomain;
-//  typedef typename SpaceType::RangeFieldType  RangeFieldType;
-//  static const unsigned int                   dimRange = SpaceType::dimRange;
 
   void produces_correct_results() const
   {
@@ -76,12 +72,12 @@ struct Oswald_Interpolation_Operator
       for (size_t local_DoF = 0; local_DoF < local_source_DoF_vector.size(); ++local_DoF)
         local_source_DoF_vector.set(local_DoF, value);
     }
-    source.visualize("source", false);
+//    source.visualize("source", false);
     VectorType range_vector(space.mapper().size());
     DiscreteFunctionType range(space, range_vector);
     Operators::OswaldInterpolation< typename SpaceType::GridViewType > oswald_operator(*(space.grid_view()));
     oswald_operator.apply(source, range);
-    range.visualize("range", false);
+//    range.visualize("range", false);
   } // ... produces_correct_results()
 }; // struct Oswald_Interpolation_Operator
 
