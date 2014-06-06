@@ -364,8 +364,6 @@ public:
              DiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<RGP, 1, FieldType, 1, 1>, RV>& range) const
   {
     typedef Spaces::DiscontinuousLagrange::FemBased<RGP, 1, FieldType, 1, 1> SpaceType;
-    static const unsigned int polOrder = 1;
-
     // data structures we need
     // * a map from a global vertex index to global DoF indices
     //   given a vertex, one obtains a set of all global DoF ids, which are associated with this vertex
@@ -400,23 +398,22 @@ public:
         size_t failures        = 0;
         size_t local_DoF_index = 0;
         for (size_t ii = 0; ii < basis.size(); ++ii) {
-          if (Stuff::Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
+          if (std::abs(basis_values[ii][0] - 1.0) < 1e-14) {
             local_DoF_index = ii;
             ++ones;
-          } else if (Stuff::Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(0)))
+          } else if (std::abs(basis_values[ii][0] - 0.0) < 1e-14)
             ++zeros;
           else
             ++failures;
         }
-        //        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
-        //          std::stringstream ss;
-        //          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices =
-        //          "
-        //             << num_vertices << ", entity " << grid_view_.indexSet().index(entity)
-        //             << ", vertex " << local_vertex_id << ": [ " << vertex << "], ";
-        //          Stuff::Common::print(basis_values, "basis_values", ss);
-        //          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, ss.str());
-        //        }
+        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
+          std::stringstream ss;
+          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
+             << ", num_vertices = " << num_vertices << ", entity " << grid_view_.indexSet().index(entity) << ", vertex "
+             << local_vertex_id << ": [ " << vertex << "], ";
+          Stuff::Common::print(basis_values, "basis_values", ss);
+          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, ss.str());
+        }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index                           = source.space().mapper().mapToGlobal(entity, local_DoF_index);
         global_DoF_id_to_global_vertex_id_map[global_DoF_index] = global_vertex_id;
