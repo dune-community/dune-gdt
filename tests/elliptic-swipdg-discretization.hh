@@ -676,7 +676,7 @@ public:
         else if (type == estimator_ESV07_id())
           return {4.50e-01, 2.08e-01, 9.92e-02, 4.86e-02};
         else if (type == efficiency_ESV07_id())
-          return {1.37, 1.28, 1.23, 1.21};
+          return {1.37, 1.28, 1.24, 1.22};
         //          return {1.21, 1.21, 1.21, 1.21};
         //        else if (type == residual_estimator_ESV10_id())
         //          return {0.0, 0.0, 0.0, 0.0};
