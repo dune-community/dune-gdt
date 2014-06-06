@@ -101,6 +101,24 @@ public:
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
 
+  template <class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR>
+  inline void
+  apply(const ConstDiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPS, pS, R, r, rC>>, VS>&
+            source,
+        DiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPR, pR, R, r, rC>>, VR>& range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+  template <class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR>
+  inline void
+  apply(const ConstDiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPS, pS, R, r, rC>>, VS>&
+            source,
+        DiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<GPR, pR, R, r, rC>, VR>& range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
 private:
   template <class SourceFunctionType, class RangeFunctionType>
   void prolong_onto_dg_fem_localfunctions_wrapper(const SourceFunctionType& source, RangeFunctionType& range) const
@@ -357,6 +375,26 @@ private:
             class VR>
   inline void redirect_to_appropriate_operator(
       const ConstDiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<GPS, pS, RS, rS, rCS>, VS>& source,
+      DiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<GPR, pR, RR, rR, rCR>, VR>& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template <class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR,
+            class VR>
+  inline void redirect_to_appropriate_operator(
+      const ConstDiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPS, pS, RS, rS, rCS>>, VS>&
+          source,
+      DiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPR, pR, RR, rR, rCR>>, VR>& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
+  }
+
+  template <class GPS, int pS, class RS, int rS, int rCS, class VS, class GPR, int pR, class RR, int rR, int rCR,
+            class VR>
+  inline void redirect_to_appropriate_operator(
+      const ConstDiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GPS, pS, RS, rS, rCS>>, VS>&
+          source,
       DiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<GPR, pR, RR, rR, rCR>, VR>& range) const
   {
     l2_prolongation_operator_.apply(source, range);
