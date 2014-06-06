@@ -67,6 +67,8 @@ template <class LocalizableFunctionType>
 class Elliptic<LocalizableFunctionType, void>
     : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<LocalizableFunctionType, void>, 2>
 {
+  typedef typename LocalizableFunctionType::EntityType EntityType;
+
 public:
   typedef internal::EllipticTraits<LocalizableFunctionType, void> Traits;
 
@@ -75,7 +77,7 @@ public:
   {
   }
 
-  template <class EntityType>
+
   class LocalfunctionTuple
   {
     typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
@@ -84,8 +86,8 @@ public:
     typedef std::tuple<std::shared_ptr<LocalfunctionType>> Type;
   };
 
-  template <class EntityType>
-  typename LocalfunctionTuple<EntityType>::Type localFunctions(const EntityType& entity) const
+
+  typename LocalfunctionTuple::Type localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(inducingFunction_.local_function(entity));
   }
@@ -94,7 +96,7 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  size_t order(const typename LocalfunctionTuple<E>::Type& localFuncs,
+  size_t order(const typename LocalfunctionTuple::Type& localFuncs,
                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
   {
@@ -119,7 +121,7 @@ public:
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class E, class D, int d, class R, int rT, int rCT, int rA, int rCA>
-  void evaluate(const typename LocalfunctionTuple<E>::Type& localFuncs,
+  void evaluate(const typename LocalfunctionTuple::Type& localFuncs,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
