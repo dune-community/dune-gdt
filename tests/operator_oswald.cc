@@ -83,7 +83,7 @@ struct Oswald_Interpolation_Operator : public ::testing::Test
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
-typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
+typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 typedef
     typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, false>::Type AluConform2dLeafGridPartType;
 // typedef Dune::ALUSimplexGrid< 2, 2 > AluSimplex2dGridType;
