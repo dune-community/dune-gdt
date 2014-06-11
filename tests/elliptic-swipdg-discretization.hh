@@ -662,7 +662,7 @@ public:
 
   std::vector<double> expected_results(const std::string type) const
   {
-    if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUConformGrid<2, 2>>>::value) {
+    if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
           return {3.29e-01, 1.63e-01, 8.05e-02, 4.02e-02};
@@ -688,7 +688,9 @@ public:
           return BaseType::expected_results(type);
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same<TestCase, EllipticTestCase::LocalThermalBlock<Dune::ALUConformGrid<2, 2>>>::value) {
+    } else if (std::is_same<TestCase,
+                            EllipticTestCase::LocalThermalBlock<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::
+                   value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
           return {9.11e-02, 5.24e-02, 2.69e-02, 1.21e-02};
@@ -712,7 +714,9 @@ public:
           return BaseType::expected_results(type);
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same<TestCase, EllipticTestCase::Spe10Model1<Dune::ALUConformGrid<2, 2>>>::value) {
+    } else if (std::is_same<TestCase,
+                            EllipticTestCase::Spe10Model1<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::
+                   value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
           return {3.31e-02, 1.66e-02};
