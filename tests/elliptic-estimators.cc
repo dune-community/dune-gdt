@@ -44,7 +44,7 @@ std::vector< double > truncate_vector(const std::vector< double >& in, const siz
 } // ... truncate_vector(...)
 
 
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
 //                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
