@@ -11,6 +11,8 @@
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
+#include <dune/stuff/common/debug.hh>
+
 #include "../../mapper/interface.hh"
 
 namespace Dune {
@@ -80,13 +82,7 @@ public:
 
   using InterfaceType::globalIndices;
 
-  size_t mapToGlobal(const EntityType& entity, const size_t&
-                   #ifndef NDEBUG
-                     localIndex
-                   #else
-                     /*localIndex*/
-                   #endif
-                     ) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
   {
     assert(localIndex == 0);
     return backend_.index(entity);
