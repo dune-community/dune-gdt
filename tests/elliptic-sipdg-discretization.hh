@@ -379,7 +379,7 @@ public:
 
   std::vector< double > expected_results(const std::string type) const
   {
-    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.24e-01, 3.43e-02, 8.83e-03, 2.24e-03};
@@ -396,7 +396,7 @@ public:
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {6.80e-02, 3.87e-02, 1.11e-02, 2.47e-03};
@@ -413,7 +413,7 @@ public:
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::ER07< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    } else if (std::is_same< TestCase, EllipticTestCase::ER07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {8.43e-02, 2.26e-02, 5.75e-03};
@@ -430,7 +430,7 @@ public:
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {4.76e-02, 1.36e-02, 3.50e-03, 7.77e-04};
