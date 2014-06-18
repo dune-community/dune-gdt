@@ -21,14 +21,15 @@ namespace GDT {
 namespace Functionals {
 
 
-template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType>
+template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType,
+          class LocalEvaluationType                                              = LocalEvaluation::Product<FunctionType>>
 class L2Volume;
 
 
 namespace internal {
 
 
-template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
+template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp, class LocalEvaluationType>
 class L2VolumeTraits
 {
   static_assert(std::is_base_of<Stuff::LocalizableFunctionInterface<
@@ -41,7 +42,7 @@ class L2VolumeTraits
                 "SpaceImp has to be derived from SpaceInterface!");
 
 public:
-  typedef L2Volume<FunctionType, VectorImp, SpaceImp, GridViewImp> derived_type;
+  typedef L2Volume<FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType> derived_type;
   typedef VectorImp VectorType;
   typedef SpaceImp SpaceType;
   typedef GridViewImp GridViewType;
@@ -52,20 +53,20 @@ public:
 } // namespace internal
 
 
-template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
-class L2Volume
-    : public Functionals::VectorBased<internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>,
-      public SystemAssembler<SpaceImp, GridViewImp, SpaceImp>
+template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp, class LocalEvaluationType>
+class L2Volume : public Functionals::VectorBased<internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp,
+                                                                          GridViewImp, LocalEvaluationType>>,
+                 public SystemAssembler<SpaceImp, GridViewImp, SpaceImp>
 {
-  typedef Functionals::VectorBased<internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
-      FunctionalBaseType;
+  typedef Functionals::VectorBased<internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp,
+                                                            LocalEvaluationType>> FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
 
-  typedef LocalFunctional::Codim0Integral<LocalEvaluation::Product<FunctionType>> LocalFunctionalType;
+  typedef LocalFunctional::Codim0Integral<LocalEvaluationType> LocalFunctionalType;
   typedef LocalAssembler::Codim0Vector<LocalFunctionalType> LocalAssemblerType;
 
 public:
-  typedef internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp> Traits;
+  typedef internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType> Traits;
   typedef typename Traits::VectorType VectorType;
   typedef typename Traits::SpaceType SpaceType;
   typedef typename Traits::GridViewType GridViewType;
