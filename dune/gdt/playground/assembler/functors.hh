@@ -8,7 +8,7 @@
 
 #include <dune/stuff/grid/boundaryinfo.hh>
 
-#include "gridwalker.hh"
+#include "../../assembler/gridwalker.hh"
 
 namespace Dune {
 namespace GDT {
@@ -27,6 +27,7 @@ public:
 
   DirichletDetector(const Stuff::Grid::BoundaryInfoInterface<IntersectionType>& boundary_info)
     : boundary_info_(boundary_info)
+    , found_(0)
   {
   }
 
