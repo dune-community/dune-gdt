@@ -12,7 +12,7 @@
 #include <dune/stuff/common/exceptions.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
- #include <dune/grid/multiscale/default.hh>
+# include <dune/grid/multiscale/default.hh>
 #endif
 
 #include <dune/gdt/playground/mapper/block.hh>
