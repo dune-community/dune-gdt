@@ -21,8 +21,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class TestSpaceImp, class GridViewImp = typename TestSpaceImp::GridViewType,
-          class AnsatzSpaceImp                  = TestSpaceImp>
+template <class TestSpaceImp, class GridViewImp         = typename TestSpaceImp::GridViewType,
+          class AnsatzSpaceImp                          = TestSpaceImp,
+          template <class T> class LocalCodim0Assembler = LocalAssembler::Codim0Matrix>
 class SystemAssembler : public GridWalker<GridViewImp>
 {
   static_assert(std::is_base_of<SpaceInterface<typename TestSpaceImp::Traits>, TestSpaceImp>::value,
@@ -353,14 +354,14 @@ public:
   } // ... add(...)
 
   template <class L, class M>
-  void add(const LocalAssembler::Codim0Matrix<L>& local_assembler, Dune::Stuff::LA::MatrixInterface<M>& matrix,
+  void add(const LocalCodim0Assembler<L>& local_assembler, Dune::Stuff::LA::MatrixInterface<M>& matrix,
            const ApplyOn::WhichEntity<GridViewType>* where = new ApplyOn::AllEntities<GridViewType>())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast<MatrixType&>(matrix);
     assert(matrix_imp.rows() == test_space_.mapper().size());
     assert(matrix_imp.cols() == ansatz_space_.mapper().size());
-    typedef LocalVolumeMatrixAssemblerWrapper<LocalAssembler::Codim0Matrix<L>, MatrixType> WrapperType;
+    typedef LocalVolumeMatrixAssemblerWrapper<LocalCodim0Assembler<L>, MatrixType> WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
   } // ... add(...)
