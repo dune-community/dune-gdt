@@ -48,8 +48,9 @@ class EllipticCGTraits
 {
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionFactorType >::value,
                 "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionTensorType >::value,
-                "DiffusionTensorType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionTensorType >::value
+                || std::is_same< void, DiffusionTensorType>::value,
+                "DiffusionTensorType has to be void or derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
                 "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceImp::Traits >, SourceSpaceImp >::value,
@@ -64,31 +65,6 @@ public:
   typedef RangeSpaceImp   RangeSpaceType;
   typedef GridViewImp     GridViewType;
 }; // class EllipticCGTraits
-
-
-template< class DiffusionType
-        , class MatrixImp
-        , class SourceSpaceImp
-        , class RangeSpaceImp
-        , class GridViewImp >
-class EllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp >
-{
-  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionType >::value,
-                "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
-                "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceImp::Traits >, SourceSpaceImp >::value,
-                "SourceSpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceImp::Traits >, RangeSpaceImp >::value,
-                "RangeSpaceImp has to be derived from SpaceInterface!");
-public:
-  typedef EllipticCG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void > derived_type;
-  typedef MatrixImp       MatrixType;
-  typedef SourceSpaceImp  SourceSpaceType;
-  typedef RangeSpaceImp   RangeSpaceType;
-  typedef GridViewImp     GridViewType;
-}; // class EllipticCGTraits
-
 
 } // namespace internal
 
