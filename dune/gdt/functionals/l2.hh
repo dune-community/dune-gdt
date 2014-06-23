@@ -91,6 +91,16 @@ public:
     setup();
   }
 
+  L2Volume(const FunctionType& function, VectorType& vec, const SpaceType& spc,
+           const LocalFunctionalType localFunctional)
+    : FunctionalBaseType(vec, spc)
+    , AssemblerBaseType(spc)
+    , function_(function)
+    , local_functional_(localFunctional)
+    , local_assembler_(local_functional_)
+  {
+    setup();
+  }
   virtual void assemble() DS_OVERRIDE DS_FINAL
   {
     AssemblerBaseType::assemble();
