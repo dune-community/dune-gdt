@@ -23,8 +23,7 @@ namespace GDT {
 
 template< class TestSpaceImp,
           class GridViewImp = typename TestSpaceImp::GridViewType,
-          class AnsatzSpaceImp = TestSpaceImp,
-          template <class T> class LocalCodim0Assembler = LocalAssembler::Codim0Matrix>
+          class AnsatzSpaceImp = TestSpaceImp >
 class SystemAssembler
   : public GridWalker< GridViewImp >
 {
@@ -357,7 +356,7 @@ public:
   }  // ... add(...)
 
   template< class L, class M >
-  void add(const LocalCodim0Assembler< L >& local_assembler,
+  void add(const LocalAssembler::Codim0Matrix< L >& local_assembler,
            Dune::Stuff::LA::MatrixInterface< M >& matrix,
            const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
   {
@@ -365,7 +364,7 @@ public:
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
     assert(matrix_imp.rows() == test_space_.mapper().size());
     assert(matrix_imp.cols() == ansatz_space_.mapper().size());
-    typedef LocalVolumeMatrixAssemblerWrapper< LocalCodim0Assembler< L >, MatrixType > WrapperType;
+    typedef LocalVolumeMatrixAssemblerWrapper< LocalAssembler::Codim0Matrix< L >, MatrixType > WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
   }  // ... add(...)
 
