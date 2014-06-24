@@ -11,7 +11,9 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/geometry/genericreferenceelements.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/genericreferenceelements.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/exceptions.hh>
 

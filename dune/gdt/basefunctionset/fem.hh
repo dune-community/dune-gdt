@@ -9,11 +9,15 @@
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
-#include <dune/common/fvector.hh>
-#include <dune/common/fmatrix.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/fmatrix.hh>
+# include <dune/common/fvector.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #if HAVE_DUNE_FEM
-# include <dune/fem/space/basisfunctionset/default.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/fem/space/basisfunctionset/default.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 # include <dune/fem/space/common/discretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM
 

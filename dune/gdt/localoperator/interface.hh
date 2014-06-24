@@ -9,7 +9,9 @@
 #include <vector>
 
 #include <dune/common/bartonnackmanifcheck.hh>
-#include <dune/common/dynmatrix.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/dynmatrix.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/gdt/basefunctionset/interface.hh>
 

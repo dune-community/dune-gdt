@@ -14,10 +14,11 @@
 #include <dune/grid/common/capabilities.hh>
 
 #include <dune/common/typetraits.hh>
-#include <dune/common/fvector.hh>
+
 #include <dune/stuff/common/disable_warnings.hh>
-#include <dune/common/parallel/communicator.hh>
-#include <dune/stuff/common/parallel/helper.hh>
+# include <dune/common/fvector.hh>
+# include <dune/common/parallel/communicator.hh>
+# include <dune/stuff/common/parallel/helper.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #if HAVE_DUNE_ISTL

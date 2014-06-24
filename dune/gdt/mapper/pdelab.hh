@@ -12,7 +12,9 @@
 #include <dune/common/typetraits.hh>
 
 #if HAVE_DUNE_PDELAB
-# include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
 #endif
 
 #include "interface.hh"
