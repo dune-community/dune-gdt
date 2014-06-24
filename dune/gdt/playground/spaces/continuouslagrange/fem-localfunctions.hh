@@ -13,7 +13,9 @@
 #include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 
-#include <dune/geometry/referenceelements.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/referenceelements.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
@@ -30,9 +32,9 @@
 # include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-#include "../../mapper/fem.hh"
-#include "../../basefunctionset/fem-localfunctions.hh"
-#include "base.hh"
+#include <dune/gdt/mapper/fem.hh>
+#include <dune/gdt/basefunctionset/fem-localfunctions.hh>
+#include <dune/gdt/spaces/continuouslagrange/base.hh>
 
 namespace Dune {
 namespace GDT {
