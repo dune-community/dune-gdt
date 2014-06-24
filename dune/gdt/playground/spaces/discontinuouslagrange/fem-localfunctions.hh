@@ -26,10 +26,10 @@
 
 #include <dune/stuff/common/color.hh>
 
-#include "../../mapper/fem.hh"
-#include "../../basefunctionset/fem-localfunctions.hh"
-#include "../constraints.hh"
-#include "../interface.hh"
+#include <dune/gdt/mapper/fem.hh>
+#include <dune/gdt/basefunctionset/fem-localfunctions.hh>
+#include <dune/gdt/spaces/constraints.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
