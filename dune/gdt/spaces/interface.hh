@@ -10,10 +10,14 @@
 #include <type_traits>
 
 #include <dune/common/dynvector.hh>
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fvector.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/la/container/pattern.hh>

@@ -8,13 +8,17 @@
 
 #include <type_traits>
 
-#include <dune/common/fvector.hh>
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fmatrix.hh>
+#include <dune/common/fvector.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/common/static_assert.hh>
 
 #if HAVE_DUNE_PDELAB
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 #endif
 
 #include "interface.hh"

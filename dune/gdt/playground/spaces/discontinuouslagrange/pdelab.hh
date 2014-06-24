@@ -11,9 +11,10 @@
 #include <memory>
 
 #include <dune/common/typetraits.hh>
-#include <dune/common/fvector.hh>
+
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/parallel/communicator.hh>
+#include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>

@@ -9,7 +9,9 @@
 #include <tuple>
 #include <memory>
 
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/dynmatrix.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/functions/interfaces.hh>

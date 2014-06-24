@@ -12,9 +12,11 @@
 #include <type_traits>
 
 #include <dune/common/exceptions.hh>
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/grid/io/file/vtk.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
