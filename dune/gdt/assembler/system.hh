@@ -381,6 +381,18 @@ public:
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
   }  // ... add(...)
 
+  template< class Codim0Assembler, class V >
+  void add_codim0_assembler(const Codim0Assembler& local_assembler,
+           Dune::Stuff::LA::VectorInterface< V >& vector,
+           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+  {
+    typedef typename V::derived_type VectorType;
+    VectorType& vector_imp = static_cast< VectorType& >(vector);
+    assert(vector_imp.size() == test_space_.mapper().size());
+    typedef LocalVolumeVectorAssemblerWrapper< Codim0Assembler, VectorType > WrapperType;
+    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
+  }  // ... add(...)
+
   template< class L, class M >
   void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
            Dune::Stuff::LA::MatrixInterface< M >& matrix,
