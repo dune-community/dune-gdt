@@ -216,7 +216,8 @@ public:
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
         auto& columns = pattern.inner(globalRows[ii]);
         for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
-          columns.insert(globalCols[jj]);
+          if (std::find(columns.begin(), columns.end(), globalCols[jj])==columns.end())
+            columns.push_back(globalCols[jj]);
         }
       }
     } // walk the grid view
@@ -265,7 +266,8 @@ public:
       for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
         auto& columns = pattern.inner(global_rows[ii]);
         for (size_t jj = 0; jj < ansatz_base_entity.size(); ++jj) {
-          columns.insert(global_cols[jj]);
+          if (std::find(columns.begin(), columns.end(), global_cols[jj])==columns.end())
+            columns.push_back(global_cols[jj]);
         }
       }
       // walk the intersections
@@ -285,7 +287,8 @@ public:
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
             for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-              columns.insert(global_cols[jj]);
+              if (std::find(columns.begin(), columns.end(), global_cols[jj])==columns.end())
+                columns.push_back(global_cols[jj]);
             }
           }
         } // get the neighbour
@@ -343,7 +346,8 @@ public:
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
             auto& columns = pattern.inner(global_rows[ii]);
             for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-              columns.insert(global_cols[jj]);
+              if (std::find(columns.begin(), columns.end(), global_cols[jj])==columns.end())
+                columns.push_back(global_cols[jj]);
             }
           }
         } // get the neighbour
