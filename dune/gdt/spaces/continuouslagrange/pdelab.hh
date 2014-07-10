@@ -11,19 +11,14 @@
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
-#include <dune/grid/common/capabilities.hh>
-
 #include <dune/common/typetraits.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
 # include <dune/common/fvector.hh>
-# include <dune/common/parallel/communicator.hh>
-# include <dune/stuff/common/parallel/helper.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #if HAVE_DUNE_ISTL
 # include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/istl/owneroverlapcopy.hh>
 #   include <dune/istl/paamg/pinfo.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 # include <dune/stuff/la/solver/istl_amg.hh>
@@ -35,11 +30,10 @@
 #   include <dune/pdelab/finiteelementmap/qkfem.hh>
 #   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #   include <dune/pdelab/constraints/conforming.hh>
-#   include <dune/pdelab/backend/istl/parallelhelper.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/la/container/istl.hh>
+#include <dune/gdt/spaces/parallel.hh>
 
 #include "../../mapper/pdelab.hh"
 #include "../../basefunctionset/pdelab.hh"
@@ -53,52 +47,6 @@ namespace Spaces {
 namespace ContinuousLagrange {
 
 #if HAVE_DUNE_PDELAB
-
-
-template< class ViewImp,
-          bool is_parallel = DS::UseParallelCommunication< typename ViewImp::Grid::CollectiveCommunication >::value >
-struct CommunicationChooser
-{
-  typedef DS::SequentialCommunication Type;
-
-  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
-  {
-    return std::make_shared< Type >();
-  }
-
-  template< class SpaceBackend >
-  static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
-  {
-    return false;
-  }
-}; // struct CommunicationChooser
-
-
-#if HAVE_MPI
-
-
-template< class ViewImp >
-struct CommunicationChooser< ViewImp, true >
-{
-  typedef OwnerOverlapCopyCommunication< bigunsignedint< 96 >, int > Type;
-
-  static std::shared_ptr<Type> create(const ViewImp& gridView)
-  {
-    return std::make_shared< Type >(gridView.comm());
-  }
-
-  template< class Space >
-  static bool prepare(const Space& space, Type& communicator)
-  {
-    Stuff::LA::IstlRowMajorSparseMatrix< typename Space::RangeFieldType > matrix;
-    PDELab::istl::ParallelHelper< typename Space::BackendType >(space.backend(), 0)
-        .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-    return true;
-  }
-}; // struct CommunicationChooser< ..., true >
-
-
-#endif // HAVE_MPI
 
 
 // forward, to be used in the traits and to allow for specialization
