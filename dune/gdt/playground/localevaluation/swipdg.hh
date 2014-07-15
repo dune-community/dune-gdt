@@ -184,8 +184,8 @@ public:
     const R weight_plus  = delta_minus / (delta_plus + delta_minus);
     const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // compute diffusion value (should be factor * tensor, but this is the same)
-    const TensorType diffusion_value_en = local_diffusion_tensor_en * local_diffusion_factor_en[0];
-    const TensorType diffusion_value_ne = local_diffusion_tensor_ne * local_diffusion_factor_ne[0];
+    const TensorType diffusion_value_en = local_diffusion_tensor_en * local_diffusion_factor_en;
+    const TensorType diffusion_value_ne = local_diffusion_tensor_ne * local_diffusion_factor_ne;
     // evaluate bases
     // * entity
     //   * test
