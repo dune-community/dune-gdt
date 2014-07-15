@@ -218,12 +218,12 @@ public:
       mapper().globalIndices(entity, globalRows);
       ansatz_space.mapper().globalIndices(entity, globalCols);
       for (size_t ii = 0; ii < testBase.size(); ++ii) {
-        auto& columns = pattern.inner(globalRows[ii]);
         for (size_t jj = 0; jj < ansatzBase.size(); ++jj) {
-          columns.insert(globalCols[jj]);
+          pattern.insert(globalRows[ii], globalCols[jj]);
         }
       }
     } // walk the grid view
+    pattern.sort();
     return pattern;
   } // ... compute_volume_pattern(...)
 
@@ -267,9 +267,8 @@ public:
       ansatz_space.mapper().globalIndices(entity, global_cols);
       // compute entity/entity
       for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-        auto& columns = pattern.inner(global_rows[ii]);
         for (size_t jj = 0; jj < ansatz_base_entity.size(); ++jj) {
-          columns.insert(global_cols[jj]);
+          pattern.insert(global_rows[ii], global_cols[jj]);
         }
       }
       // walk the intersections
@@ -286,14 +285,14 @@ public:
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-            auto& columns = pattern.inner(global_rows[ii]);
             for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-              columns.insert(global_cols[jj]);
+              pattern.insert(global_rows[ii], global_cols[jj]);
             }
           }
         } // get the neighbour
       } // walk the intersections
     } // walk the grid view
+    pattern.sort();
     return pattern;
   } // ... compute_face_and_volume_pattern(...)
 
@@ -343,14 +342,14 @@ public:
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
           // compute entity/neighbour
           for (size_t ii = 0; ii < test_base_entity.size(); ++ii) {
-            auto& columns = pattern.inner(global_rows[ii]);
             for (size_t jj = 0; jj < ansatz_base_neighbour.size(); ++jj) {
-              columns.insert(global_cols[jj]);
+              pattern.insert(global_rows[ii], global_cols[jj]);
             }
           }
         } // get the neighbour
       } // walk the intersections
     } // walk the grid view
+    pattern.sort();
     return pattern;
   } // ... compute_face_pattern(...)
 
