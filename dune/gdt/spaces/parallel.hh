@@ -2,6 +2,8 @@
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//
+// Contributors: Tobias Leibner
 
 #ifndef DUNE_GDT_SPACES_PARALLEL_HH
 #define DUNE_GDT_SPACES_PARALLEL_HH
@@ -26,7 +28,6 @@
 #include <dune/stuff/common/parallel/helper.hh>
 
 namespace Dune {
-
 namespace GDT {
 namespace Spaces {
 
