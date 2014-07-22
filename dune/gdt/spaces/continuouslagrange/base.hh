@@ -11,8 +11,11 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/dynvector.hh>
 
+#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
+#include <dune/geometry/referenceelements.hh>
+#else
 #include <dune/geometry/genericreferenceelements.hh>
-
+#endif
 #include <dune/stuff/common/exceptions.hh>
 
 #include "../interface.hh"
