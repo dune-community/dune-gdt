@@ -26,11 +26,20 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
-#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
-#include <dune/gdt/playground/spaces/block.hh>
+
 
 namespace Dune {
 namespace GDT {
+
+namespace Spaces {
+namespace DiscontinuousLagrange {
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
+class FemBased;
+}
+template <class SpaceImp>
+class Block;
+}
+
 namespace Operators {
 
 

@@ -55,14 +55,14 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim0Integral(const UnaryEvaluationImp eval)
-    : evaluation_(eval)
+  template <class... Args>
+  explicit Codim0Integral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
   {
   }
 
-  template <class... Args>
-  Codim0Integral(Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
+  Codim0Integral(const UnaryEvaluationImp eval)
+    : evaluation_(eval)
   {
   }
 
@@ -119,7 +119,6 @@ private:
 
   const UnaryEvaluationImp evaluation_;
 }; // class Codim0Integral
-
 
 } // namespace LocalFunctional
 } // namespace GDT
