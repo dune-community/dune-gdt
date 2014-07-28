@@ -9,6 +9,7 @@
 #include <dune/common/exceptions.hh>
 
 #if ENABLE_ALUGRID
+#include <dune/grid/alugrid.hh>
 
 #include <tuple>
 
@@ -25,7 +26,7 @@
 #include "elliptic-cg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
 
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
 // +-----------------------------------------------------------------------+
 // | Global options. Can be used to disable output or enable slow solvers. |

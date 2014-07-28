@@ -21,11 +21,11 @@
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
 
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
-//                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
-//                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
+                      , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
+                      , EllipticTestCase::Spe10Model1< AluConform2dGridType >
                       > AluConform2dTestCases;
 
 

@@ -21,7 +21,6 @@
 #   include <dune/grid/alugrid.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 
-
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/float_cmp.hh>
@@ -35,7 +34,7 @@
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
 
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
@@ -73,10 +72,12 @@ struct EllipticSIPDGDiscretization
 {
   void produces_correct_results() const
   {
-    if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > > >::value) {
+    if (std::is_same< TestCase,
+        EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       std::cerr
           << Dune::Stuff::Common::colorStringRed("EllipticSIPDGDiscretization does not work for "
-                                                 "EllipticTestCase::Spe10Model1< Dune::ALUConformGrid< 2, 2 > >!")
+                                                 "EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, "
+                                                 "Dune::conforming > >!")
           << std::endl;
     } else {
       const TestCase test_case;

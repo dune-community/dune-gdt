@@ -12,10 +12,13 @@
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/common/crtp.hh>
 
+#include <dune/gdt/products/base.hh>
+
 #include "../localoperator/codim0.hh"
 #include "../localevaluation/elliptic.hh"
 
 #include "interfaces.hh"
+
 
 namespace Dune {
 namespace GDT {

@@ -6,11 +6,11 @@
 #ifndef DUNE_GDT_SPACES_BLOCK_HH
 #define DUNE_GDT_SPACES_BLOCK_HH
 
-#if HAVE_DUNE_GRID_MULTISCALE
-
 #include <dune/stuff/common/exceptions.hh>
 
-#include <dune/grid/multiscale/default.hh>
+#if HAVE_DUNE_GRID_MULTISCALE
+# include <dune/grid/multiscale/default.hh>
+#endif
 
 #include <dune/gdt/playground/mapper/block.hh>
 
@@ -19,6 +19,8 @@
 namespace Dune {
 namespace GDT {
 namespace Spaces {
+
+#if HAVE_DUNE_GRID_MULTISCALE
 
 
 template< class LocalSpaceImp >
@@ -159,9 +161,17 @@ private:
 }; // class Block
 
 
+#else // HAVE_DUNE_GRID_MULTISCALE
+
+
+template< class LocalSpaceImp >
+class Block { static_assert(Dune::AlwaysFalse< LocalSpaceImp >::value, "You are missing dune-grid-multiscale!"); };
+
+
+#endif // HAVE_DUNE_GRID_MULTISCALE
+
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif
 #endif // DUNE_GDT_SPACES_BLOCK_HH

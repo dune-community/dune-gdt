@@ -10,7 +10,9 @@
 #include <vector>
 #include <limits>
 
-#include <dune/common/dynmatrix.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/dynmatrix.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -19,7 +21,9 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 
-#include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/grid/search.hh>
 

@@ -11,9 +11,13 @@
 #include <type_traits>
 #include <limits>
 
-#include <dune/common/densematrix.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/densematrix.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/matrix.hh>
 #include <dune/stuff/functions/interfaces.hh>

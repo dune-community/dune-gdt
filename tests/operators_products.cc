@@ -10,10 +10,13 @@
 
 #if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
 # define ENABLE_ALUGRID 1
-# include <dune/grid/alugrid.hh>
-#endif
-#include <dune/grid/sgrid.hh>
-#include <dune/grid/yaspgrid.hh>
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/grid/alugrid.hh>
+#   include <dune/grid/sgrid.hh>
+#   include <dune/grid/yaspgrid.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
+#endif // HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
+
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/float_cmp.hh>
@@ -848,16 +851,16 @@ YASPGRID_TYPES(3)
 #undef YASPGRID_TYPES
 
 #if HAVE_ALUGRID
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type   AluConform2dLeafGridPartType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, false >::Type  AluConform2dLevelGridPartType;
-typedef Dune::ALUSimplexGrid< 2, 2 > AluSimplex2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::nonconforming > AluSimplex2dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type   AluSimplex2dLeafGridPartType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, false >::Type  AluSimplex2dLevelGridPartType;
-typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
+typedef Dune::ALUGrid< 3, 3, Dune::simplex, Dune::nonconforming > AluSimplex3dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type   AluSimplex3dLeafGridPartType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, false >::Type  AluSimplex3dLevelGridPartType;
-typedef Dune::ALUCubeGrid< 3, 3 > AluCube3dGridType;
+typedef Dune::ALUGrid< 3, 3, Dune::cube, Dune::nonconforming > AluCube3dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, false >::Type  AluCube3dLeafGridPartType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, false >::Type AluCube3dLevelGridPartType;
 #endif

@@ -77,11 +77,11 @@ struct Oswald_Interpolation_Operator
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
-typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type   AluConform2dLeafGridPartType;
-//typedef Dune::ALUSimplexGrid< 2, 2 > AluSimplex2dGridType;
+//typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::nonconforming > AluSimplex2dGridType;
 //typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type   AluSimplex2dLeafGridPartType;
-//typedef Dune::ALUSimplexGrid< 3, 3 > AluSimplex3dGridType;
+//typedef Dune::ALUGrid< 3, 3, Dune::simplex, Dune::nonconforming > AluSimplex3dGridType;
 //typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type   AluSimplex3dLeafGridPartType;
 
 typedef testing::Types< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >
