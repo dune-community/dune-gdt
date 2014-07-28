@@ -402,6 +402,7 @@ int main(int argc, char** argv)
 }
 
 #else // ENABLE_ALUGRID
+#warning "nothing tested in stuff-la-solver.cc because alugrid is missing"
 int main(int, char**)
 {
   return 0;
