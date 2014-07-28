@@ -70,8 +70,8 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
     using namespace Dune::GDT;
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid_ptr             = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_ptr);
+    auto& grid_ptr            = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_ptr);
     const SpaceType space(grid_part_view);
     // walk the grid to create a map of all vertices
     std::map<std::vector<DomainFieldType>, std::pair<std::set<size_t>, size_t>> vertex_to_indices_map;

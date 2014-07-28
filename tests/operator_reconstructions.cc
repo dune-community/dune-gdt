@@ -33,10 +33,6 @@
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
 
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
-
 // +----------------------------------------------------------------------------+
 // | 1st we define all the test structs that do something at the end of the day |
 // +----------------------------------------------------------------------------+
@@ -70,7 +66,7 @@ public:
     using namespace GDT;
 
     GridProviderType grid_provider(0.0, 1.0, 4);
-    auto grid = grid_provider.grid();
+    auto& grid = grid_provider.grid();
     grid->globalRefine(1);
 
     typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;

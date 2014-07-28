@@ -26,10 +26,6 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
-
 typedef Dune::Stuff::LA::CommonDenseVector<double> VectorType;
 
 // +----------------------------------------------------------------------------+
@@ -51,7 +47,7 @@ struct Oswald_Interpolation_Operator : public ::testing::Test
     // prepare
     const size_t num_partitions = 2;
     GridProviderType grid_provider(0.0, 1.0, num_partitions);
-    auto grid = grid_provider.grid();
+    auto& grid = grid_provider.grid();
     grid->globalRefine(1);
     const auto grid_part_view = SpaceTools::GridPartView<SpaceType>::create_leaf(*grid);
     const SpaceType space(grid_part_view);
