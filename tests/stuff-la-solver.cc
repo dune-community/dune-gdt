@@ -8,12 +8,7 @@
 
 #include <dune/common/exceptions.hh>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
-#include <dune/grid/alugrid.hh>
-#else
-#error This test requires ALUGrid!
-#endif
+#if ENABLE_ALUGRID
 
 #include <tuple>
 
@@ -29,10 +24,6 @@
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
-
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
 
 typedef Dune::ALUConformGrid<2, 2> AluConform2dGridType;
 
@@ -418,3 +409,10 @@ int main(int argc, char** argv)
     std::abort();
   } // try
 }
+
+#else // ENABLE_ALUGRID
+int main(int, char**)
+{
+  return 0;
+}
+#endif // ENABLE_ALUGRID
