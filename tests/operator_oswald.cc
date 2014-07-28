@@ -8,14 +8,10 @@
 
 #include <memory>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
+#if ENABLE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#else
-#error "This test requires alugrid!"
-#endif
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -126,3 +122,11 @@ int main(int argc, char** argv)
     std::abort();
   } // try
 }
+
+#else // ENABLE_ALUGRID
+#warning "nothing tested in operator_oswald.cc because alugrid is missing"
+int main(int, char**)
+{
+  return 0;
+}
+#endif // ENABLE_ALUGRID
