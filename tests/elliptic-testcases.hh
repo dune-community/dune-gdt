@@ -322,13 +322,13 @@ private:
     } else if (std::is_same< GridType, Dune::ALUConformGrid< 2, 2 > >::value
         || std::is_same< GridType, Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > >::value) {
       Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(-1, 1, 4);
-      auto grid = grid_provider.grid();
+      auto& grid = grid_provider.grid();
       grid->globalRefine(2);
       return grid;
 #endif // HAVE_ALUGRID
     } else {
       Dune::Stuff::Grid::Providers::Cube< GridType > grid_provider(-1, 1, 4);
-      auto grid = grid_provider.grid();
+      auto& grid = grid_provider.grid();
       grid->globalRefine(1);
       return grid;
     }

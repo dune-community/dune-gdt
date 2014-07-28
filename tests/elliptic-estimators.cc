@@ -25,25 +25,6 @@
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
 
-
-class errors_are_not_as_expected
-  : public Dune::Exception
-{};
-
-std::vector< double > truncate_vector(const std::vector< double >& in, const size_t size)
-{
-  assert(size <= in.size());
-  if (size == in.size())
-    return in;
-  else {
-    std::vector< double > ret(size);
-    for (size_t ii = 0; ii < size; ++ii)
-      ret[ii] = in[ii];
-    return ret;
-  }
-} // ... truncate_vector(...)
-
-
 typedef Dune::ALUConformGrid< 2, 2 > AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >

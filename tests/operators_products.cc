@@ -33,11 +33,7 @@
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/operators/prolongations.hh>
 
-class errors_are_not_as_expected
-  : public Dune::Exception
-{};
-
-typedef Dune::Stuff::LA::EigenDenseVector< double > VectorType;
+typedef Dune::Stuff::LA::IstlDenseVector< double > VectorType;
 
 // +----------------------------------------------------------------------------+
 // | 1st we define all the test structs that do something at the end of the day |
@@ -82,8 +78,8 @@ struct ProductBase
     static_assert(std::is_same< D_FieldType, D_FieldType >::value, "");
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const FunctionType function("x", "1.0", 0, "function", {{"1.0", "1.0", "1.0"}});
     ProductType product(*(space.grid_view()));
@@ -140,8 +136,8 @@ struct LocalizableProduct
     static_assert(std::is_same< D_FieldType, D_FieldType >::value, "");
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const FunctionType function("x", "1.0", 0, "function", {{"1.0", "1.0", "1.0"}});
     ProductType product(*(space.grid_view()), function, function);
@@ -184,8 +180,8 @@ struct AssemblableProduct
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     // static tests
     // * of the derived type
@@ -268,8 +264,8 @@ struct L2ProductOperator
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const ProductType l2_product_operator(*(space.grid_view()));
     // test 1 (constant)
@@ -324,8 +320,8 @@ struct L2LocalizableProduct
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     // test 1 (constant)
     const FunctionType function_1("x", "1.0", 0);
@@ -386,8 +382,8 @@ struct L2AssemblableProduct
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const ProjectionOperatorType projection_operator(*(space.grid_view()));
     VectorType vector(space.mapper().size());
@@ -454,8 +450,8 @@ struct H1SemiProductOperator
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const ProductType h1_semi_product_operator(*(space.grid_view()));
     // test 1 (constant)
@@ -512,8 +508,8 @@ struct H1SemiLocalizableProduct
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     // test 1 (constant)
     const FunctionType function_1("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}});
@@ -576,8 +572,8 @@ struct H1SemiAssemblableProduct
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const ProjectionOperatorType projection_operator(*(space.grid_view()));
     VectorType vector(space.mapper().size());
@@ -649,8 +645,8 @@ struct ProjectionOperatorBase
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
@@ -711,8 +707,8 @@ struct DirichletProjectionOperator
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 1u); // this has to be 1, otherwise the projection does not equal
-    auto grid = grid_provider.grid();             // x[0] any more!
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    auto& grid = grid_provider.grid();             // x[0] any more!
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     DomainType dirichlet_normal(0);
     dirichlet_normal[0] = DomainFieldType(1);
@@ -760,12 +756,12 @@ struct ProlongationOperatorBase
   {
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 2u);
-    auto grid = grid_provider.grid();
-    grid->globalRefine(1);
-    const auto coarse_grid_part_view = Dune::GDT::SpaceTools::GridPartView< CoarseSpaceType >::create_level(*grid, 0);
-    assert(grid->maxLevel() > 0);
-    const auto fine_grid_part_view = Dune::GDT::SpaceTools::GridPartView< FineSpaceType >::create_level(*grid,
-                                                                                                        grid->maxLevel());
+    auto& grid = grid_provider.grid();
+    grid.globalRefine(1);
+    const auto coarse_grid_part_view = Dune::GDT::SpaceTools::GridPartView< CoarseSpaceType >::create_level(grid, 0);
+    assert(grid.maxLevel() > 0);
+    const auto fine_grid_part_view = Dune::GDT::SpaceTools::GridPartView< FineSpaceType >::create_level(grid,
+                                                                                                        grid.maxLevel());
     assert(fine_grid_part_view->indexSet().size(0) > coarse_grid_part_view->indexSet().size(0));
     // first, project an anlytical function onto the coarse grid
     const FunctionType function("x", "x[0]", 1, "function");
