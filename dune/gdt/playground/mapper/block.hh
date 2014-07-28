@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_MAPPER_BLOCK_HH
 #define DUNE_GDT_MAPPER_BLOCK_HH
 
-#include <dune/common/static_assert.hh>
+#include <type_traits>
 
 #include <dune/stuff/common/exceptions.hh>
 

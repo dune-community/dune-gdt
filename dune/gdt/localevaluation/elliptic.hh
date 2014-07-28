@@ -13,7 +13,7 @@
 
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
-#include <dune/common/static_assert.hh>
+#include <type_traits>
 
 #include <dune/stuff/functions/interfaces.hh>
 

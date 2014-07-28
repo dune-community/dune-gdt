@@ -60,7 +60,7 @@ public:
   {}
 
   template< class... Args >
-  Codim1Integral(Args&& ...args)
+  explicit Codim1Integral(Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
   {}
 
