@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <limits>
 
-#include <dune/common/static_assert.hh>
+#include <type_traits>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 #include <dune/geometry/referenceelements.hh>
