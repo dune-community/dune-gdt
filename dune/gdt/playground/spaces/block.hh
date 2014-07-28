@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACES_BLOCK_HH
 #define DUNE_GDT_SPACES_BLOCK_HH
 
+#if HAVE_DUNE_GRID_MULTISCALE
+
 #include <dune/stuff/common/exceptions.hh>
 
 #include <dune/grid/multiscale/default.hh>
@@ -161,4 +163,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif
 #endif // DUNE_GDT_SPACES_BLOCK_HH
