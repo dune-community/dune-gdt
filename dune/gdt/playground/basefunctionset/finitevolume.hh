@@ -9,8 +9,10 @@
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
-#include <dune/common/fvector.hh>
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fmatrix.hh>
+#include <dune/common/fvector.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/common/matrix.hh>
