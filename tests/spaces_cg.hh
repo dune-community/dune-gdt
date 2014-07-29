@@ -1,3 +1,6 @@
+#ifndef DUNE_GDT_TEST_SPACES_CG
+#define DUNE_GDT_TEST_SPACES_CG
+
 // This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
@@ -214,73 +217,5 @@ struct P1Q1_Continuous_Lagrange
 #endif //HAVE_ALUGRID
 
 
-typedef testing::Types<
-#if HAVE_DUNE_FEM
-                        P1_CONTINUOUS_LAGRANGE_SPACES_FEM
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_FEM
-# if HAVE_ALUGRID
-                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-# endif
-# if HAVE_DUNE_PDELAB
-                      ,
-# endif
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-                        P1_CONTINUOUS_LAGRANGE_SPACES_PDELAB
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_PDELAB
-# if HAVE_ALUGRID
-                      , P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-# endif
-#endif // HAVE_DUNE_PDELAB
-                      > P1Q1_Continuous_Lagrange_Spaces;
 
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
-{
-  this->fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, mapper_fulfills_interface)
-{
-  this->mapper_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, basefunctionset_fulfills_interface)
-{
-  this->basefunctionset_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_continuous_interface)
-{
-  this->fulfills_continuous_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
-{
-  this->maps_correctly();
-}
-
-
-int main(int argc, char** argv)
-{
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error:\n" << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
-} // ... main(...)
+#endif DUNE_GDT_TEST_SPACES_CG
