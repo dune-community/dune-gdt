@@ -45,8 +45,8 @@ struct Oswald_Interpolation_Operator
     const size_t num_partitions = 2;
     GridProviderType grid_provider(0.0, 1.0, num_partitions);
     auto& grid = grid_provider.grid();
-    grid->globalRefine(1);
-    const auto grid_part_view = SpaceTools::GridPartView< SpaceType >::create_leaf(*grid);
+    grid.globalRefine(1);
+    const auto grid_part_view = SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
     const SpaceType space(grid_part_view);
     typedef DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
     VectorType source_vector(space.mapper().size());
