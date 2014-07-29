@@ -64,12 +64,12 @@ public:
 
     GridProviderType grid_provider(0.0, 1.0, 4);
     auto& grid = grid_provider.grid();
-    grid->globalRefine(1);
+    grid.globalRefine(1);
 
     typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {{"x[1]", "x[0]"}});
 
-    const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(*grid));
+    const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(grid));
     VectorType range_vector(range_space.mapper().size());
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
