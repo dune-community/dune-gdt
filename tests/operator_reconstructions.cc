@@ -164,20 +164,9 @@ TYPED_TEST(Darcy_Operator, produces_correct_results)
 
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "\nDune reported error: " << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << "\n" << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
-} // ... main(...)
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #else // ENABLE_ALUGRID
 #warning "nothing tested in operator-reconstructions.cc because alugrid is missing"

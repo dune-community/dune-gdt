@@ -42,17 +42,6 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
 
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error:\n" << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
-} // ... main(...)
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
+}
