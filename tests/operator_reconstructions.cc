@@ -9,14 +9,11 @@
 #include <memory>
 #include <utility>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
+#if ENABLE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#else
-#error "This test requires alugrid!"
-#endif
+
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -32,10 +29,6 @@
 #include <dune/gdt/operators/projections.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
-
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
 
 // +----------------------------------------------------------------------------+
 // | 1st we define all the test structs that do something at the end of the day |
@@ -70,13 +63,13 @@ public:
     using namespace GDT;
 
     GridProviderType grid_provider(0.0, 1.0, 4);
-    auto grid = grid_provider.grid();
-    grid->globalRefine(1);
+    auto& grid = grid_provider.grid();
+    grid.globalRefine(1);
 
     typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {{"x[1]", "x[0]"}});
 
-    const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(*grid));
+    const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(grid));
     VectorType range_vector(range_space.mapper().size());
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
@@ -171,17 +164,14 @@ TYPED_TEST(Darcy_Operator, produces_correct_results)
 
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "\nDune reported error: " << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << "\n" << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
-} // ... main(...)
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
+}
+
+#else // ENABLE_ALUGRID
+#warning "nothing tested in operator-reconstructions.cc because alugrid is missing"
+int main(int, char**)
+{
+  return 0;
+}
+#endif // ENABLE_ALUGRID

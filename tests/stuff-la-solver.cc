@@ -8,14 +8,8 @@
 
 #include <dune/common/exceptions.hh>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
-#include <dune/stuff/common/disable_warnings.hh>
+#if ENABLE_ALUGRID
 #include <dune/grid/alugrid.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-#else
-#error This test requires ALUGrid!
-#endif
 
 #include <tuple>
 
@@ -31,10 +25,6 @@
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
-
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
 
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
@@ -406,17 +396,14 @@ TYPED_TEST(LargeEllipticSystems, produces_correct_results)
 
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "\nDune reported error: " << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << "\n" << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
 }
+
+#else // ENABLE_ALUGRID
+#warning "nothing tested in stuff-la-solver.cc because alugrid is missing"
+int main(int, char**)
+{
+  return 0;
+}
+#endif // ENABLE_ALUGRID

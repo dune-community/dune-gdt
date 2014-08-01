@@ -66,7 +66,7 @@ public:
   }
 
   template <class... Args>
-  Codim1CouplingIntegral(Args&&... args)
+  explicit Codim1CouplingIntegral(Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
   {
   }
@@ -223,7 +223,7 @@ public:
   }
 
   template <class... Args>
-  Codim1BoundaryIntegral(Args&&... args)
+  explicit Codim1BoundaryIntegral(Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
   {
   }

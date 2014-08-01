@@ -8,14 +8,10 @@
 
 #include <memory>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
+#if ENABLE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#else
-#error "This test requires alugrid!"
-#endif
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -25,10 +21,6 @@
 #include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
-
-class errors_are_not_as_expected : public Dune::Exception
-{
-};
 
 typedef Dune::Stuff::LA::CommonDenseVector<double> VectorType;
 
@@ -51,9 +43,9 @@ struct Oswald_Interpolation_Operator : public ::testing::Test
     // prepare
     const size_t num_partitions = 2;
     GridProviderType grid_provider(0.0, 1.0, num_partitions);
-    auto grid = grid_provider.grid();
-    grid->globalRefine(1);
-    const auto grid_part_view = SpaceTools::GridPartView<SpaceType>::create_leaf(*grid);
+    auto& grid = grid_provider.grid();
+    grid.globalRefine(1);
+    const auto grid_part_view = SpaceTools::GridPartView<SpaceType>::create_leaf(grid);
     const SpaceType space(grid_part_view);
     typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
     VectorType source_vector(space.mapper().size());
@@ -116,17 +108,14 @@ TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results)
 
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "\nDune reported error: " << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << "\n" << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
 }
+
+#else // ENABLE_ALUGRID
+#warning "nothing tested in operator_oswald.cc because alugrid is missing"
+int main(int, char**)
+{
+  return 0;
+}
+#endif // ENABLE_ALUGRID

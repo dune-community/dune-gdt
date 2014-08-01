@@ -31,6 +31,8 @@ namespace EllipticTestCase {
 template <class GridType>
 class Base
 {
+  typedef DSG::ProviderInterface<GridType> GridProviderType;
+
 public:
 #if HAVE_DUNE_FEM
   typedef typename Dune::GDT::SpaceTools::LevelGridPartView<GridType, false>::Type GridPartType;
@@ -40,27 +42,27 @@ public:
   typedef typename GridType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridType::dimension;
 
-  Base(std::shared_ptr<GridType> grd, size_t num_refinements)
-    : grid_(grd)
+  Base(std::unique_ptr<GridProviderType> grd_prv, size_t num_refinements)
+    : grid_provider_(std::move(grd_prv))
   {
-    levels_.push_back(grid_->maxLevel());
+    levels_.push_back(grid().maxLevel());
 #if HAVE_DUNE_FEM
-    level_grid_parts_.emplace_back(new GridPartType(*grid_, grid_->maxLevel()));
+    level_grid_parts_.emplace_back(new GridPartType(grid(), grid().maxLevel()));
 #endif
-    level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
+    level_grid_views_.emplace_back(new GridViewType(grid().levelGridView(grid().maxLevel())));
     for (size_t rr = 0; rr < num_refinements; ++rr) {
-      grid_->globalRefine(Dune::DGFGridInfo<GridType>::refineStepsForHalf());
-      levels_.push_back(grid_->maxLevel());
+      grid().globalRefine(Dune::DGFGridInfo<GridType>::refineStepsForHalf());
+      levels_.push_back(grid().maxLevel());
 #if HAVE_DUNE_FEM
-      level_grid_parts_.emplace_back(new GridPartType(*grid_, grid_->maxLevel()));
+      level_grid_parts_.emplace_back(new GridPartType(grid(), grid().maxLevel()));
 #endif
-      level_grid_views_.emplace_back(new GridViewType(grid_->levelGridView(grid_->maxLevel())));
+      level_grid_views_.emplace_back(new GridViewType(grid().levelGridView(grid().maxLevel())));
     }
-    grid_->globalRefine(Dune::DGFGridInfo<GridType>::refineStepsForHalf());
+    grid().globalRefine(Dune::DGFGridInfo<GridType>::refineStepsForHalf());
 #if HAVE_DUNE_FEM
-    reference_grid_part_ = std::make_shared<GridPartType>(*grid_, grid_->maxLevel());
+    reference_grid_part_ = std::make_shared<GridPartType>(grid(), grid().maxLevel());
 #endif
-    reference_grid_view_ = std::make_shared<GridViewType>(grid_->levelGridView(grid_->maxLevel()));
+    reference_grid_view_ = std::make_shared<GridViewType>(grid().levelGridView(grid().maxLevel()));
   }
 
   size_t num_levels() const
@@ -73,7 +75,7 @@ public:
   {
     assert(level < levels_.size());
     assert(level < level_grid_parts_.size());
-    assert(ssize_t(levels_[level]) < grid_->maxLevel());
+    assert(ssize_t(levels_[level]) < grid().maxLevel());
     return level_grid_parts_[level];
   }
 #endif // HAVE_DUNE_FEM
@@ -82,7 +84,7 @@ public:
   {
     assert(level < levels_.size());
     assert(level < level_grid_views_.size());
-    assert(ssize_t(levels_[level]) < grid_->maxLevel());
+    assert(ssize_t(levels_[level]) < grid().maxLevel());
     return level_grid_views_[level];
   }
 
@@ -99,7 +101,13 @@ public:
   }
 
 private:
-  std::shared_ptr<GridType> grid_;
+  GridType& grid()
+  {
+    return grid_provider_->grid();
+  }
+
+
+  std::unique_ptr<GridProviderType> grid_provider_;
   std::vector<size_t> levels_;
 #if HAVE_DUNE_FEM
   std::vector<std::shared_ptr<const GridPartType>> level_grid_parts_;
@@ -113,6 +121,7 @@ private:
 template <class GridType>
 class ER07 : public Base<GridType>
 {
+  typedef DSG::Providers::Cube<GridType> GridProviderType;
   typedef Base<GridType> BaseType;
 
 public:
@@ -122,7 +131,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -198,13 +207,12 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
+  static std::unique_ptr<GridProviderType> create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
-    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 16));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    auto grid_provider = DSC::make_unique<GridProviderType>(0, 1, 16);
+    auto& grid = grid_provider->grid();
+    grid.globalRefine(1);
+    return grid_provider;
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;
@@ -219,6 +227,7 @@ private:
 template <class GridType>
 class ESV07 : public Base<GridType>
 {
+  typedef DSG::Providers::Cube<GridType> GridProviderType;
   typedef Base<GridType> BaseType;
 
 public:
@@ -228,7 +237,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -305,23 +314,21 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
+  static std::unique_ptr<GridProviderType> create_initial_grid()
   {
     if (std::is_same<GridType, Dune::SGrid<2, 2>>::value) {
-      return Dune::Stuff::Grid::Providers::Cube<GridType>(-1, 1, 8).grid();
+      return DSC::make_unique<GridProviderType>(-1, 1, 8);
 #if HAVE_ALUGRID
     } else if (std::is_same<GridType, Dune::ALUConformGrid<2, 2>>::value
                || std::is_same<GridType, Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>::value) {
-      Dune::Stuff::Grid::Providers::Cube<GridType> grid_provider(-1, 1, 4);
-      auto grid = grid_provider.grid();
-      grid->globalRefine(2);
-      return grid;
+      auto grid_provider = DSC::make_unique<DSG::Providers::Cube<GridType>>(-1, 1, 4);
+      grid_provider->grid().globalRefine(2);
+      return grid_provider;
 #endif // HAVE_ALUGRID
     } else {
-      Dune::Stuff::Grid::Providers::Cube<GridType> grid_provider(-1, 1, 4);
-      auto grid = grid_provider.grid();
-      grid->globalRefine(1);
-      return grid;
+      auto grid_provider = DSC::make_unique<GridProviderType>(-1, 1, 4);
+      grid_provider->grid().globalRefine(1);
+      return grid_provider;
     }
   } // ... create_initial_grid(...)
 
@@ -337,6 +344,7 @@ private:
 template <class GridType>
 class LocalThermalBlock : public Base<GridType>
 {
+  typedef DSG::Providers::Cube<GridType> GridProviderType;
   typedef Base<GridType> BaseType;
 
 public:
@@ -346,7 +354,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -456,13 +464,11 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
+  static std::unique_ptr<GridProviderType> create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
-    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 6));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    auto grid_provider = DSC::make_unique<GridProviderType>(0, 1, 6);
+    grid_provider->grid().globalRefine(1);
+    return grid_provider;
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;
@@ -476,6 +482,7 @@ private:
 template <class GridType>
 class MixedBoundaryTypes : public Base<GridType>
 {
+  typedef DSG::Providers::Cube<GridType> GridProviderType;
   typedef Base<GridType> BaseType;
 
 public:
@@ -485,7 +492,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::Grid::BoundaryInfos::NormalBased<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef DSG::BoundaryInfos::NormalBased<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -561,13 +568,11 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
+  static std::unique_ptr<GridProviderType> create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
-    auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType(0, 1, 2));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    auto grid_provider = DSC::make_unique<GridProviderType>(0, 1, 2);
+    grid_provider->grid().globalRefine(1);
+    return grid_provider;
   } // ... create_initial_grid(...)
 
   static BoundaryInfoType create_boundary_info()
@@ -589,6 +594,7 @@ private:
 template <class GridType>
 class Spe10Model1 : public Base<GridType>
 {
+  typedef DSG::Providers::Cube<GridType> GridProviderType;
   typedef Base<GridType> BaseType;
 
 public:
@@ -598,7 +604,7 @@ public:
   static const unsigned int dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
   static const unsigned int dimRange = 1;
-  typedef Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
+  typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ConstantFunctionType;
@@ -675,13 +681,11 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
+  static std::unique_ptr<GridProviderType> create_initial_grid()
   {
-    typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
     auto grid_provider = std::unique_ptr<GridProviderType>(new GridProviderType({0.0, 0.0}, {5.0, 1.0}, {100u, 20u}));
-    auto grid = grid_provider->grid();
-    grid->globalRefine(1);
-    return grid;
+    grid_provider->grid().globalRefine(1);
+    return grid_provider;
   } // ... create_initial_grid(...)
 
   const BoundaryInfoType boundary_info_;

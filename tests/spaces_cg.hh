@@ -1,3 +1,6 @@
+#ifndef DUNE_GDT_TEST_SPACES_CG
+#define DUNE_GDT_TEST_SPACES_CG
+
 // This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
@@ -61,8 +64,8 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
     using namespace Dune::GDT;
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid_ptr             = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_ptr);
+    auto& grid_ptr            = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_ptr);
     const SpaceType space(grid_part_view);
     matches_signature(space);
     const auto entity_ptr                   = grid_part_view->template begin<0>();
@@ -90,8 +93,8 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
     using namespace Dune::GDT;
     // prepare
     GridProviderType grid_provider(0.0, 1.0, 4u);
-    auto grid_ptr             = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_ptr);
+    auto& grid_ptr            = grid_provider.grid();
+    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_ptr);
     const SpaceType space(grid_part_view);
     // walk the grid to create a map of all vertices
     std::map<std::vector<DomainFieldType>, std::set<size_t>> vertex_to_indices_map;
@@ -213,71 +216,4 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
 #endif // HAVE_ALUGRID
 
 
-typedef testing::Types<
-#if HAVE_DUNE_FEM
-    P1_CONTINUOUS_LAGRANGE_SPACES_FEM, Q1_CONTINUOUS_LAGRANGE_SPACES_FEM
-#if HAVE_ALUGRID
-    ,
-    P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM, Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-#endif
-#if HAVE_DUNE_PDELAB
-    ,
-#endif
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-    P1_CONTINUOUS_LAGRANGE_SPACES_PDELAB, Q1_CONTINUOUS_LAGRANGE_SPACES_PDELAB
-#if HAVE_ALUGRID
-    ,
-    P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB, Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-#endif
-#endif // HAVE_DUNE_PDELAB
-    > P1Q1_Continuous_Lagrange_Spaces;
-
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
-{
-  this->fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, mapper_fulfills_interface)
-{
-  this->mapper_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, basefunctionset_fulfills_interface)
-{
-  this->basefunctionset_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_continuous_interface)
-{
-  this->fulfills_continuous_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
-{
-  this->maps_correctly();
-}
-
-
-int main(int argc, char** argv)
-{
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error:\n" << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
-} // ... main(...)
+#endif DUNE_GDT_TEST_SPACES_CG
