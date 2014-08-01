@@ -18,7 +18,7 @@
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/la/solver.hh>
-#include <dune/stuff/common/configtree.hh>
+#include <dune/stuff/common/parameter/configcontainer.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -163,7 +163,7 @@ public:
     return derived_type::invert_options();
   }
 
-  static Stuff::Common::ConfigTree invert_options(const std::string& type)
+  static Stuff::Common::ConfigContainer invert_options(const std::string& type)
   {
     return derived_type::invert_options(type);
   }
@@ -183,7 +183,7 @@ public:
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const Stuff::Common::ConfigTree& opts)
+                     const Stuff::Common::ConfigContainer& opts)
   {
     CHECK_CRTP(this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts));
     return this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts);
@@ -205,7 +205,7 @@ public:
 
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
-                     ConstDiscreteFunction<RangeSpaceType, S>& source, const Stuff::Common::ConfigTree& opts)
+                     ConstDiscreteFunction<RangeSpaceType, S>& source, const Stuff::Common::ConfigContainer& opts)
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }
