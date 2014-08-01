@@ -9,14 +9,10 @@
 
 #include <dune/common/exceptions.hh>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-# define ENABLE_ALUGRID 1
+#if ENABLE_ALUGRID
 # include <dune/stuff/common/disable_warnings.hh>
 #   include <dune/grid/alugrid.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
-#else
-# error This test requires ALUGrid!
-#endif
 
 #include "elliptic-testcases.hh"
 #include "elliptic-swipdg-discretization.hh"
@@ -24,25 +20,6 @@
 // change this to toggle test_output
 std::ostream& test_out = std::cout;
 //std::ostream& test_out = DSC_LOG.devnull();
-
-
-class errors_are_not_as_expected
-  : public Dune::Exception
-{};
-
-std::vector< double > truncate_vector(const std::vector< double >& in, const size_t size)
-{
-  assert(size <= in.size());
-  if (size == in.size())
-    return in;
-  else {
-    std::vector< double > ret(size);
-    for (size_t ii = 0; ii < size; ++ii)
-      ret[ii] = in[ii];
-    return ret;
-  }
-} // ... truncate_vector(...)
-
 
 typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
@@ -82,20 +59,16 @@ TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
   this->produces_correct_results();
 }
 
-
 int main(int argc, char** argv)
 {
-  try {
-    test_init(argc, argv);
-    return RUN_ALL_TESTS();
-  } catch (Dune::Exception& e) {
-    std::cerr << "Dune reported error: " << e.what() << std::endl;
-    std::abort();
-  } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    std::abort();
-  } catch (...) {
-    std::cerr << "Unknown exception thrown!" << std::endl;
-    std::abort();
-  } // try
+  test_init(argc, argv);
+  return RUN_ALL_TESTS();
 }
+
+#else // ENABLE_ALUGRID
+#warning "nothing tested in elliptic-estimators.cc because alugrid is missing"
+int main(int, char**)
+{
+  return 0;
+}
+#endif //ENABLE_ALUGRID

@@ -83,16 +83,16 @@ template< class SpaceType >
 class SpaceTestBase
 {
   typedef typename SpaceType::GridViewType::Grid GridType;
+  typedef DSG::Providers::Cube< GridType > ProviderType;
 public:
   ~SpaceTestBase() {}
 
   SpaceTestBase()
+   : grid_provider_(0.0, 1.0, 3u)
   {
     using namespace Dune;
     using namespace GDT;
-    Stuff::Grid::Providers::Cube< GridType > grid_provider(0.0, 1.0, 3u);
-    grid_ = grid_provider.grid();
-    const auto grid_part_view = SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_);
+    const auto grid_part_view = SpaceTools::GridPartView< SpaceType >::create_leaf(grid_provider_.grid());
     space_ = std::unique_ptr< SpaceType >(new SpaceType(grid_part_view));
   }
 
@@ -104,7 +104,6 @@ public:
     using namespace Dune;
     using namespace GDT;
     using namespace Stuff;
-    if (!grid_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     if (!space_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
@@ -263,7 +262,6 @@ public:
     using namespace Dune;
     using namespace GDT;
     using namespace Stuff;
-    if (!grid_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     if (!space_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
@@ -334,7 +332,6 @@ public:
     using namespace Dune;
     using namespace GDT;
     using namespace Stuff;
-    if (!grid_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     if (!space_) DUNE_THROW_COLORFULLY(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
@@ -404,6 +401,6 @@ public:
   } // ... basefunctionset_fulfills_interface()
 
 protected:
-  std::shared_ptr< GridType > grid_;
+  ProviderType grid_provider_;
   std::unique_ptr< const SpaceType > space_;
 }; // struct SpaceTestBase

@@ -12,9 +12,12 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+# include <dune/geometry/referenceelements.hh>
+#else
 # include <dune/geometry/genericreferenceelements.hh>
+#endif
 #include <dune/stuff/common/reenable_warnings.hh>
-
 #include <dune/stuff/common/exceptions.hh>
 
 #include "../interface.hh"
@@ -39,7 +42,7 @@ class ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 >
   typedef SpaceInterface< ImpTraits > BaseType;
   typedef ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
 
-  static const constexpr RangeFieldImp compare_tolerance_ = 1e-13;
+  static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
 public:
   typedef ImpTraits Traits;
 
