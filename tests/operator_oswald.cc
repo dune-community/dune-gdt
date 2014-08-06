@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#if ENABLE_ALUGRID
+#if HAVE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
   return RUN_ALL_TESTS();
 }
 
-#else // ENABLE_ALUGRID
+#else // HAVE_ALUGRID
 #warning "nothing tested in operator_oswald.cc because alugrid is missing"
 int main(int, char**)
 {

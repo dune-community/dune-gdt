@@ -216,4 +216,4 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
 #endif // HAVE_ALUGRID
 
 
-#endif DUNE_GDT_TEST_SPACES_CG
+#endif // DUNE_GDT_TEST_SPACES_CG

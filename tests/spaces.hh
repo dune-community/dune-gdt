@@ -5,12 +5,12 @@
 
 #include <type_traits>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
+#if HAVE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif
+
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
