@@ -81,7 +81,7 @@ if(CMAKE_WITH_AUTOTOOLS)
   )
 
   add_subdirectory(doc)
-  add_subdirectory(tests)
+  add_subdirectory(test)
 
   ADD_EXECUTABLE( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable "say_hello.cc" ${COMMON_HEADER} )
   TARGET_LINK_LIBRARIES( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable ${COMMON_LIBS} )
@@ -135,7 +135,7 @@ else(CMAKE_WITH_AUTOTOOLS)
   endforeach(i ${SUBDIRS})
 
   add_subdirectory(cmake/modules)
-  add_subdirectory(tests EXCLUDE_FROM_ALL)
+  add_subdirectory(test EXCLUDE_FROM_ALL)
 
   # finalize the dune project, e.g., generate config.h etc.
   finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
