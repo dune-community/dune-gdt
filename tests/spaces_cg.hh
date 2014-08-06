@@ -218,4 +218,4 @@ struct P1Q1_Continuous_Lagrange
 
 
 
-#endif DUNE_GDT_TEST_SPACES_CG
+#endif // DUNE_GDT_TEST_SPACES_CG
