@@ -9,7 +9,7 @@
 
 #include <dune/common/exceptions.hh>
 
-#if ENABLE_ALUGRID
+#if HAVE_ALUGRID
 # include <dune/stuff/common/disable_warnings.hh>
 #   include <dune/grid/alugrid.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
@@ -17,16 +17,13 @@
 #include "elliptic-testcases.hh"
 #include "elliptic-swipdg-discretization.hh"
 
-// change this to toggle test_output
-std::ostream& test_out = std::cout;
-//std::ostream& test_out = DSC_LOG.devnull();
 
 typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
 typedef testing::Types< EllipticTestCase::ESV07< AluConform2dGridType >
                       , EllipticTestCase::LocalThermalBlock< AluConform2dGridType >
                       , EllipticTestCase::Spe10Model1< AluConform2dGridType >
-                      > AluConform2dTestCases;
+                      > EstimatorAluConform2dTestCases;
 
 
 template< class TestCase >
@@ -54,7 +51,7 @@ struct EllipticSWIPDGDiscretization
 }; // struct EllipticSWIPDGDiscretization
 
 
-TYPED_TEST_CASE(EllipticSWIPDGDiscretization, AluConform2dTestCases);
+TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EstimatorAluConform2dTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
   this->produces_correct_results();
 }
@@ -65,7 +62,7 @@ int main(int argc, char** argv)
   return RUN_ALL_TESTS();
 }
 
-#else // ENABLE_ALUGRID
+#else // HAVE_ALUGRID
 #warning "nothing tested in elliptic-estimators.cc because alugrid is missing"
 int main(int, char**)
 {

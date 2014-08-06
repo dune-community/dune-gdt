@@ -8,7 +8,7 @@
 
 #include <dune/common/exceptions.hh>
 
-#if ENABLE_ALUGRID
+#if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
 
 #include <tuple>
@@ -31,10 +31,6 @@ typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming> AluConform2dGridTy
 // +-----------------------------------------------------------------------+
 // | Global options. Can be used to disable output or enable slow solvers. |
 // +-----------------------------------------------------------------------+
-
-// change this to toggle output
-std::ostream& test_out = std::cout;
-//std::ostream& test_out = DSC_LOG.devnull();
 
 // change this to test all solvers (even really slow ones)
 const bool test_all_solvers = false;
@@ -354,13 +350,17 @@ struct LargeEllipticSystems
 
 
 typedef testing::Types< ALU_CONFORM_2D_COMMONDENSE_TEST_CASES
+#if HAVE_EIGEN
                       , ALU_CONFORM_2D_EIGENDENSE_TEST_CASES
                       , ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+#endif
                       , ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
                       > Small_TestCases;
 
-typedef testing::Types< ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
-                      , ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
+typedef testing::Types<ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
+#if HAVE_EIGEN
+                      , ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+#endif
                       > Large_TestCases;
 
 //typedef testing::Types< ISTL_EIGEN_COMPARISON
@@ -391,10 +391,10 @@ int main(int argc, char** argv)
   return RUN_ALL_TESTS();
 }
 
-#else // ENABLE_ALUGRID
+#else // HAVE_ALUGRID
 #warning "nothing tested in stuff-la-solver.cc because alugrid is missing"
 int main(int, char**)
 {
   return 0;
 }
-#endif //ENABLE_ALUGRID
+#endif //HAVE_ALUGRID
