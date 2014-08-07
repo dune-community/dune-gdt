@@ -205,7 +205,7 @@ struct SmallEllipticSystems : public ::testing::Test, EllipticDiscretizations
 
 
 template <class TestTuple>
-struct LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
+struct DISABLED_LargeEllipticSystems : public ::testing::Test, EllipticDiscretizations
 {
   typedef typename std::tuple_element<0, TestTuple>::type TestCase;
   typedef typename std::tuple_element<1, TestTuple>::type MatrixType;
@@ -389,8 +389,8 @@ TYPED_TEST(SmallEllipticSystems, produces_correct_results)
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(LargeEllipticSystems, Large_TestCases);
-TYPED_TEST(LargeEllipticSystems, produces_correct_results)
+TYPED_TEST_CASE(DISABLED_LargeEllipticSystems, Large_TestCases);
+TYPED_TEST(DISABLED_LargeEllipticSystems, produces_correct_results)
 {
   this->produces_correct_results();
 }
