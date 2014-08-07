@@ -203,7 +203,7 @@ struct SmallEllipticSystems
 
 
 template< class TestTuple >
-struct LargeEllipticSystems
+struct DISABLED_LargeEllipticSystems
   : public ::testing::Test
   , EllipticDiscretizations
 {
@@ -375,8 +375,8 @@ TYPED_TEST(SmallEllipticSystems, produces_correct_results) {
   this->produces_correct_results();
 }
 
-TYPED_TEST_CASE(LargeEllipticSystems, Large_TestCases);
-TYPED_TEST(LargeEllipticSystems, produces_correct_results) {
+TYPED_TEST_CASE(DISABLED_LargeEllipticSystems, Large_TestCases);
+TYPED_TEST(DISABLED_LargeEllipticSystems, produces_correct_results) {
   this->produces_correct_results();
 }
 
