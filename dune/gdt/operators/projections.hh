@@ -202,6 +202,13 @@ public:
     apply_global_l2_projection_(source, range);
   }
 
+  template< class GP, int p, class V>
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
+             DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GP, p, FieldType, 1, 1 >, V >& range) const
+  {
+    apply_global_l2_projection_(source, range);
+  }
+
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, dimDomain, 1 >& source,
              DiscreteFunction< Spaces::RaviartThomas::PdelabBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
@@ -374,6 +381,15 @@ private:
                                                   < GP, p, RR, rR, rCR >, V >& range) const
   {
     lagrange_operator_.apply(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    l2_operator_.apply(source, range);
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
