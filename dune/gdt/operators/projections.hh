@@ -395,6 +395,14 @@ private:
   const L2Projection<GridViewType> l2_operator_;
 }; // Projection
 
+template <class SourceType, class RangeType>
+void apply_projection(const SourceType& source, RangeType& range)
+{
+  auto& view = range.space().grid_view();
+  Projection<typename std::remove_reference<decltype(*view)>::type, typename RangeType::SpaceType::RangeFieldType>(
+      *view)
+      .apply(source, range);
+}
 
 // forward, to be used in the traits
 template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double>
@@ -579,6 +587,14 @@ private:
   const BoundaryInfoType& boundary_info_;
 }; // class DirichletProjection
 
+template <class SourceType, class RangeSpaceType, class V>
+void apply_dirichlet_projection(
+    const DSG::BoundaryInfoInterface<typename RangeSpaceType::GridViewType::Intersection>& boundary_info,
+    const SourceType& source, DiscreteFunction<RangeSpaceType, V>& range)
+{
+  auto& view = range.space().grid_view();
+  DirichletProjection<typename std::remove_reference<decltype(*view)>::type>(*view, boundary_info).apply(source, range);
+}
 
 } // namespace Operators
 } // namespace GDT
