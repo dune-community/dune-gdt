@@ -41,6 +41,7 @@ struct ProjectionOperatorBase
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
                             "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+    Dune::GDT::Operators::apply_projection(function, discrete_function);
   }
 }; // ProjectionOperatorType
 
@@ -108,6 +109,7 @@ struct DirichletProjectionOperator
     if (l2_error > RangeFieldType(1e-15))
       DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
                             "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+    Dune::GDT::Operators::apply_dirichlet_projection(boundary_info, function, discrete_function);
   }
 }; // DirichletProjectionOperator
 
