@@ -398,7 +398,7 @@ private:
       const size_t num_vertices = entity.template count< dimDomain >();
       const auto basis = source.space().base_function_set(entity);
       if (basis.size() != size_t(num_vertices))
-        DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
+        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       //loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
@@ -409,7 +409,7 @@ private:
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
         if (basis_values.size() != size_t(num_vertices))
-          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+          DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones = 0;
         size_t zeros = 0;
         size_t failures = 0;
@@ -429,7 +429,7 @@ private:
              << num_vertices << ", entity " << grid_view_.indexSet().index(entity)
              << ", vertex " << local_vertex_id << ": [ " << vertex << "], ";
           Stuff::Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, ss.str());
+          DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_index);

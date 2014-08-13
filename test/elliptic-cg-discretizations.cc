@@ -25,7 +25,7 @@ struct EllipticCGDiscretization
         std::stringstream ss;
         Dune::Stuff::Common::print(errors[norm],                        "errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(eoc_study.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
+        DUNE_THROW(errors_are_not_as_expected, ss.str());
       }
   }
 }; // EllipticCGDiscretization

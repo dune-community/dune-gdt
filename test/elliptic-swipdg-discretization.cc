@@ -25,7 +25,7 @@ struct EllipticSWIPDGDiscretization
         std::stringstream ss;
         Dune::Stuff::Common::print(errors_1[norm],                        "errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
+        DUNE_THROW(errors_are_not_as_expected, ss.str());
       }
     test_out << std::endl;
     EllipticSWIPDG::EocStudy< TestCase, 2 > eoc_study_2(test_case);
@@ -37,7 +37,7 @@ struct EllipticSWIPDGDiscretization
         std::stringstream ss;
         Dune::Stuff::Common::print(errors_2[norm],                        "errors           (" + norm + ")", ss);
         Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW_COLORFULLY(errors_are_not_as_expected, ss.str());
+        DUNE_THROW(errors_are_not_as_expected, ss.str());
       }
   }
 };

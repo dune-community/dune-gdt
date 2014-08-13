@@ -88,13 +88,13 @@ public:
     const RangeFieldType l2_error = l2_product.induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     if (l2_error > l2_error_expected)
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, l2_error << " vs. " << l2_error_expected);
+      DUNE_THROW(errors_are_not_as_expected, l2_error << " vs. " << l2_error_expected);
 
     const Products::H1SemiGeneric< GridViewType > h1_semi_product(*(range_space.grid_view()));
     const RangeFieldType h1_error = h1_semi_product.induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
     if (h1_error > h1_error_expected)
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, h1_error << " vs. " << h1_error_expected);
+      DUNE_THROW(errors_are_not_as_expected, h1_error << " vs. " << h1_error_expected);
   } // ... produces_correct_results()
 
 private:
@@ -111,7 +111,7 @@ private:
       else if (type == "h1")
         return 3.12e-15;
       else
-        DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, type);
+        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
     } else if (std::is_base_of< Dune::GDT::Spaces::RaviartThomas::PdelabBased< GPV, 0, RangeFieldType, dimDomain >
                               , RangeSpaceType >::value) {
       typedef Dune::GDT::Spaces::FiniteVolume::Default< GV, RangeFieldType, dimDomain > FvSpaceType;
@@ -127,9 +127,9 @@ private:
       else if (type == "h1")
         return h1_semi_product.induced_norm(desired_output - fv_desired_output);
       else
-        DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, type);
+        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
     } else
-      DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error, type);
+      DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
   } // ... expected_result_(...)
 }; // class Darcy_Operator
 
