@@ -13,7 +13,7 @@
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-
+#endif // HAVE_ALUGRID
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -133,18 +133,27 @@ private:
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
+#if HAVE_ALUGRID
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
+
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, true>::Type AluConform2dLeafGridViewType;
 typedef
     typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, false>::Type AluConform2dLeafGridPartType;
 
-typedef testing::
-    Types</*std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >,
-                                   Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 2 > >
-                      ,*/ std::
-              pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,
-                   Dune::GDT::Spaces::RaviartThomas::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>>
-        SpaceTypes;
+#define ALU_CONFORM_2D_TYPES                                                                                           \
+  /*std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 2 > > \
+  ,*/ std::  \
+      pair<Dune::GDT::Spaces::ContinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>,                \
+           Dune::GDT::Spaces::RaviartThomas::PdelabBased<AluConform2dLeafGridViewType, 0, double, 2>>
+
+#endif // HAVE_ALUGRID
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+    ALU_CONFORM_2D_TYPES
+#endif // HAVE_ALUGRID
+    > SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine all test structs with their appropriate arguments to create the tests |
@@ -162,16 +171,4 @@ TYPED_TEST(Darcy_Operator, produces_correct_results)
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
-
-#else // HAVE_ALUGRID
-#warning "nothing tested in operator-reconstructions.cc because alugrid is missing"
-int main(int, char**)
-{
-  return 0;
-}
-#endif // ENABLE_ALUGRID
+#include <dune/stuff/test/test_main.hh>

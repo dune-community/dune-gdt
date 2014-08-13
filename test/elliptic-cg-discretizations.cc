@@ -30,22 +30,11 @@ struct EllipticCGDiscretization : public ::testing::Test
 }; // EllipticCGDiscretization
 
 
-TYPED_TEST_CASE(EllipticCGDiscretization, AluConform2dTestCases);
+TYPED_TEST_CASE(EllipticCGDiscretization, EllipticTestCases);
 TYPED_TEST(EllipticCGDiscretization, produces_correct_results)
 {
   this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
 
-//#else // HAVE_ALUGRID
-//#warning "nothing tested in elliptic-discretizations.cc because alugrid is missing"
-// int main(int, char**)
-//{
-//  return 0;
-//}
-//#endif //ENABLE_ALUGRID
+#include <dune/stuff/test/test_main.hh>

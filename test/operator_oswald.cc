@@ -12,6 +12,7 @@
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
+#endif // HAVE_ALUGRID
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -75,7 +76,10 @@ struct Oswald_Interpolation_Operator : public ::testing::Test
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
+#if HAVE_ALUGRID
+
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
+
 typedef
     typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, false>::Type AluConform2dLeafGridPartType;
 // typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::nonconforming > AluSimplex2dGridType;
@@ -85,14 +89,22 @@ typedef
 // typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type
 // AluSimplex3dLeafGridPartType;
 
-typedef testing::Types<Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>>
-    SpaceTypes;
+#define ALU_CONFORM_2D_TYPES                                                                                           \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluConform2dLeafGridPartType, 1, double, 1>
+
+#endif // HAVE_ALUGRID
+
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+    ALU_CONFORM_2D_TYPES
+#endif
+    > SpaceTypes;
 
 // +--------------------------------------------------------------------------------------+
 // | 3rd we combine all test structs with their appropriate arguments to create the tests |
 // | (comment out the following lines if you do not want a test to be run)                |
 // +--------------------------------------------------------------------------------------+
-
 
 TYPED_TEST_CASE(Oswald_Interpolation_Operator, SpaceTypes);
 TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results)
@@ -100,22 +112,9 @@ TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results)
   this->produces_correct_results();
 }
 
-
 // +--------------------------------------------------------------------------------------+
 // | 4th we run all the tests                                                             |
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
-
-#else // HAVE_ALUGRID
-#warning "nothing tested in operator_oswald.cc because alugrid is missing"
-int main(int, char**)
-{
-  return 0;
-}
-#endif // ENABLE_ALUGRID
+#include <dune/stuff/test/test_main.hh>

@@ -8,10 +8,11 @@
 
 #include <dune/common/exceptions.hh>
 
+#include <tuple>
+
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
-
-#include <tuple>
+#endif
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -25,8 +26,6 @@
 #include "elliptic-testcases.hh"
 #include "elliptic-cg-discretization.hh"
 #include "elliptic-swipdg-discretization.hh"
-
-typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 
 // +-----------------------------------------------------------------------+
 // | Global options. Can be used to disable output or enable slow solvers. |
@@ -248,6 +247,10 @@ struct DISABLED_LargeEllipticSystems : public ::testing::Test, EllipticDiscretiz
 // | 2nd we define all arguments the above test structs are to be compiled with |
 // +----------------------------------------------------------------------------+
 
+#if HAVE_ALUGRID
+
+typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
+
 #define ALU_CONFORM_2D_COMMONDENSE_TEST_CASES                                                                                                                                                                                                     \
   /*std::tuple< EllipticTestCase::ESV07< AluConform2dGridType >,*/                                                                                                                                                                                \
   /*Dune::Stuff::LA::CommonDenseMatrix< double >,*/                                                                                                                                                                                               \
@@ -360,21 +363,32 @@ struct DISABLED_LargeEllipticSystems : public ::testing::Test, EllipticDiscretiz
                  Dune::Stuff::LA::EigenRowMajorSparseMatrix<double>,                                                   \
                  Dune::Stuff::LA::EigenDenseVector<double>>
 
+#endif // HAVE_ALUGRID
 
-typedef testing::Types<ALU_CONFORM_2D_COMMONDENSE_TEST_CASES
-#if HAVE_EIGEN
-                       ,
-                       ALU_CONFORM_2D_EIGENDENSE_TEST_CASES, ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
-#endif
-                       ,
-                       ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES> Small_TestCases;
 
-typedef testing::Types<ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
+typedef testing::Types<
+#if HAVE_ALUGRID
+    ALU_CONFORM_2D_COMMONDENSE_TEST_CASES
 #if HAVE_EIGEN
-                       ,
-                       ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
-#endif
-                       > Large_TestCases;
+    ,
+    ALU_CONFORM_2D_EIGENDENSE_TEST_CASES, ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+#endif // HAVE_EIGEN
+#if HAVE_ISTL
+    ,
+    ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
+#endif // HAVE_ISTL
+#endif // HAVE_ALUGRID
+    > Small_TestCases;
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+    ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
+#if HAVE_EIGEN
+    ,
+    ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
+#endif // HAVE_EIGEN
+#endif // HAVE_ALUGRID
+    > Large_TestCases;
 
 // typedef testing::Types< ISTL_EIGEN_COMPARISON
 //                      > Large_TestCases;
@@ -400,16 +414,4 @@ TYPED_TEST(DISABLED_LargeEllipticSystems, produces_correct_results)
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
-
-#else // HAVE_ALUGRID
-#warning "nothing tested in stuff-la-solver.cc because alugrid is missing"
-int main(int, char**)
-{
-  return 0;
-}
-#endif // HAVE_ALUGRID
+#include <dune/stuff/test/test_main.hh>
