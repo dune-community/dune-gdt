@@ -101,14 +101,14 @@ public:
     return LinearSolverType::options();
   }
 
-  static Stuff::Common::ConfigTree invert_options(const std::string& type)
+  static Stuff::Common::Configuration invert_options(const std::string& type)
   {
     return LinearSolverType::options(type);
   }
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const Stuff::Common::ConfigTree& opts)
+                     const Stuff::Common::Configuration& opts)
   {
     assemble();
     LinearSolverType(matrix, source_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
