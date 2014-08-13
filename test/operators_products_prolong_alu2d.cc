@@ -54,11 +54,19 @@
   , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > >
 
-typedef testing::Types< LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_TWO
+#endif // HAVE_ALUGRID
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_TWO
+#endif
                       > ProlongationOperatorSpaceTypes;
 
 
-typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_TWO
+typedef testing::Types<
+#if HAVE_ALUGRID
+                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_TWO
+#endif
                       > LagrangeProlongationOperatorSpaceTypes;
 
 
@@ -76,10 +84,5 @@ TYPED_TEST(ProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
 
-#endif
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+#include <dune/stuff/test/test_main.hh>

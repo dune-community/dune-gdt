@@ -131,11 +131,11 @@ struct DirichletProjectionOperator
   , Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLeafGridPartType, 2, double, 1 > \
   , Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLeafGridPartType, 2, double, 1 >
 
-#if HAVE_ALUGRID
 typedef testing::Types<
+#if HAVE_ALUGRID
                         L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
+#endif
                       > L2ProjectionOperatorSpaceTypes;
-#endif // HAVE_ALUGRID
 
 #define LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES \
     Dune::GDT::Spaces::ContinuousLagrange::FemBased< S1dLeafGridPartType, 1, double, 1 > \
@@ -184,13 +184,10 @@ typedef testing::Types<
 #undef LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
 
 
-
-#if HAVE_ALUGRID
 TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
 TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
  this->produces_correct_results();
 }
-#endif // HAVE_ALUGRID
 
 TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
 TYPED_TEST(LagrangeProjectionOperator, produces_correct_results) {
@@ -207,8 +204,5 @@ TYPED_TEST(DirichletProjectionOperator, produces_correct_results) {
  this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

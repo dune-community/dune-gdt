@@ -33,19 +33,28 @@
 , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
             Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
+#endif // HAVE_ALUGRID
+
 
 typedef testing::Types<
+#if HAVE_ALUGRID
                         L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+#endif
                       > L2ProlongationOperatorSpaceTypes;
 
 
-typedef testing::Types< LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
-                      , L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID >
-ProlongationOperatorSpaceTypes;
+typedef testing::Types<
+#if HAVE_ALUGRID
+                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
+                      , L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+#endif // HAVE_ALUGRID
+                      > ProlongationOperatorSpaceTypes;
 
 
 typedef testing::Types<
+#if HAVE_ALUGRID
                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
+#endif
                       > LagrangeProlongationOperatorSpaceTypes;
 
 #undef L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
@@ -68,10 +77,6 @@ TYPED_TEST_CASE(ProlongationOperator, ProlongationOperatorSpaceTypes);
 TYPED_TEST(ProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
-#endif // HAVE_ALUGRID
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

@@ -47,8 +47,5 @@ TYPED_TEST(P1Q1_Discontinuous_Lagrange, maps_correctly)
   this->maps_correctly();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

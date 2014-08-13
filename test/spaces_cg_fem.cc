@@ -5,11 +5,11 @@
 
 #include "spaces_cg.hh"
 
-#if HAVE_DUNE_FEM
-
 typedef testing::Types<
+#if HAVE_DUNE_FEM
                         P1_CONTINUOUS_LAGRANGE_SPACES_FEM
                       , Q1_CONTINUOUS_LAGRANGE_SPACES_FEM
+#endif // HAVE_DUNE_FEM
                       > P1Q1_Continuous_Lagrange_Spaces;
 
 
@@ -43,10 +43,5 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
   this->maps_correctly();
 }
 
-#endif // HAVE_DUNE_FEM
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+#include <dune/stuff/test/test_main.hh>

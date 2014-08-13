@@ -52,14 +52,11 @@ struct EllipticSIPDGDiscretization
   }
 }; // EllipticSIPDGDiscretization
 
-TYPED_TEST_CASE(EllipticSIPDGDiscretization, AluConform2dTestCases);
+
+TYPED_TEST_CASE(EllipticSIPDGDiscretization, EllipticTestCases);
 TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results) {
   this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
 
+#include <dune/stuff/test/test_main.hh>
