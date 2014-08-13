@@ -96,10 +96,10 @@ public:
     assert(integrand_order < std::numeric_limits<int>::max());
     const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(integrand_order));
     // check matrices
-    Dune::Stuff::Common::clear(entityEntityRet);
-    Dune::Stuff::Common::clear(neighborNeighborRet);
-    Dune::Stuff::Common::clear(entityNeighborRet);
-    Dune::Stuff::Common::clear(neighborEntityRet);
+    entityEntityRet *= 0.0;
+    neighborNeighborRet *= 0.0;
+    entityNeighborRet *= 0.0;
+    neighborEntityRet *= 0.0;
     const size_t rowsEn = entityTestBase.size();
     const size_t colsEn = entityAnsatzBase.size();
     const size_t rowsNe = neighborTestBase.size();
@@ -249,7 +249,7 @@ public:
     assert(integrand_order < std::numeric_limits<int>::max());
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
     // check matrix and tmp storage
-    Dune::Stuff::Common::clear(ret);
+    ret *= 0.0;
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
     assert(ret.rows() >= rows);

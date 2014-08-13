@@ -176,7 +176,7 @@ public:
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      Stuff::Common::clear(ret[ii]);
+      ret[ii] *= 0.0;
       ret[ii][ii] = RangeFieldType(1);
     }
   } // ... evaluate(...)
@@ -187,7 +187,7 @@ public:
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii)
-      Stuff::Common::clear(ret[ii]);
+      ret[ii] *= 0.0;
   } // ... jacobian(...)
 
   using BaseType::jacobian;

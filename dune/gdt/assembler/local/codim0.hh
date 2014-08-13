@@ -86,7 +86,7 @@ public:
     assert(tmpIndicesContainer.size() >= 2);
     // get and clear matrix
     Dune::DynamicMatrix<R>& localMatrix = tmpLocalMatricesContainer[0][0];
-    Dune::Stuff::Common::clear(localMatrix);
+    localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // apply local operator (result is in localMatrix)
     localOperator_.apply(
@@ -174,7 +174,7 @@ public:
     assert(tmpLocalVectorContainer[1].size() >= localFunctional_.numTmpObjectsRequired());
     // get and clear vector
     auto& localVector = tmpLocalVectorContainer[0][0];
-    Dune::Stuff::Common::clear(localVector);
+    localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorContainer[1];
     // apply local functional (result is in localVector)
     localFunctional_.apply(testSpace.base_function_set(entity), localVector, tmpFunctionalVectors);

@@ -185,10 +185,10 @@ public:
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
     // clear ret
-    Stuff::Common::clear(entityEntityRet);
-    Stuff::Common::clear(neighborNeighborRet);
-    Stuff::Common::clear(entityNeighborRet);
-    Stuff::Common::clear(neighborEntityRet);
+    entityEntityRet *= 0.0;
+    neighborNeighborRet *= 0.0;
+    entityNeighborRet *= 0.0;
+    neighborEntityRet *= 0.0;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
@@ -415,7 +415,7 @@ public:
                 Dune::DynamicMatrix<R>& ret) const
   {
     // clear ret
-    Stuff::Common::clear(ret);
+    ret *= 0.0;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::DomainType DomainType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::RangeType RangeType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, 2, R, 1, 1>::JacobianRangeType JacobianRangeType;
@@ -590,7 +590,7 @@ public:
                 Dune::DynamicVector<R>& ret) const
   {
     // clear ret
-    Stuff::Common::clear(ret);
+    ret *= 0.0;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::DomainType DomainType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::RangeType RangeType;
     typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, 1, 1>::JacobianRangeType JacobianRangeType;
