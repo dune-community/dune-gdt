@@ -94,7 +94,7 @@ struct EllipticDiscretizations
         // exclude some solvers that take too long to test
         if (test_all_solvers || !(option == "qr.sparse" || option == "bicgstab.identity"
                                   || option == "bicgstab.diagonal" || option.substr(0, 3) == "cg.")) {
-          const Stuff::Common::ConfigTree config = linear_solver.options(option);
+          const Stuff::Common::Configuration config = linear_solver.options(option);
           // print delimiter after every 3rd row
           if (printed_rows == 3) {
             test_out << delimiter.str() << std::endl;
