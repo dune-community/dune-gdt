@@ -224,7 +224,7 @@ private:
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::MatrixType LocalMatrixType;
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::VectorType LocalVectorType;
     // clear
-    Stuff::Common::clear(range.vector());
+    range.vector() *= 0.0;
     // walk the grid
     RangeType source_value(0);
     std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs(), RangeType(0));

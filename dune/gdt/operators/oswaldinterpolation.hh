@@ -136,7 +136,7 @@ public:
     if (!prepared_) {
       num_local_DoFs_per_global_DoF_ = std::vector< size_t >(range_.space().mapper().size(), 0);
       vertex_to_dof_id_map_ = std::vector< std::set< size_t > >(grid_view_.indexSet().size(dimDomain));
-      Stuff::Common::clear(range_.vector());
+      range_.vector() *= 0.0;
       prepared_ = true;
     }
   } // ... prepare()
