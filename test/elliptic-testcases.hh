@@ -737,6 +737,6 @@ typedef testing::Types<EllipticTestCase::ESV07<AluConform2dGridType>,
                        EllipticTestCase::ER07<AluConform2dGridType>,
                        EllipticTestCase::MixedBoundaryTypes<AluConform2dGridType>,
                        EllipticTestCase::Spe10Model1<AluConform2dGridType>> AluConform2dTestCases;
-#endif
+#endif // HAVE_ALUGRID
 
 #endif // DUNE_GDT_TEST_ELLIPTIC_HH

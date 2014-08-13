@@ -1,10 +1,10 @@
-#ifndef DUNE_GDT_TEST_OPERATOR_PRODUCTS
-#define DUNE_GDT_TEST_OPERATOR_PRODUCTS
-
 // This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_TEST_OPERATOR_PRODUCTS
+#define DUNE_GDT_TEST_OPERATOR_PRODUCTS
 
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
@@ -18,7 +18,6 @@
 #include <dune/grid/yaspgrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_ALUGRID
-
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/float_cmp.hh>

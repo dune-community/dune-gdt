@@ -2,7 +2,9 @@
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-#include <config.h>
+
+#include <dune/stuff/test/test_common.hh>
+
 #include "elliptic-cg-discretization.hh"
 
 
