@@ -91,16 +91,16 @@ struct ProductBase
     // * of the derived type
     const D_GridViewType& d_gp = product.grid_view();
     if (&d_gp != &(*(space.grid_view())))
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
     D_FieldType d_a = product.apply2(function, function);
     // * of the derived type as the interface
     InterfaceType& i_product   = static_cast<InterfaceType&>(product);
     const I_GridViewType& i_gp = i_product.grid_view();
     if (&i_gp != &d_gp)
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
     I_FieldType i_a = i_product.apply2(function, function);
     if (Dune::Stuff::Common::FloatCmp::ne(i_a, d_a))
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
   }
 }; // struct ProductBase
 

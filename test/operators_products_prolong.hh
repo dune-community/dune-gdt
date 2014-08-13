@@ -53,9 +53,9 @@ struct ProlongationOperatorBase
         function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
     if (coarse_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error,
-                            "This should not happen, those operators were tested above!\n" << coarse_l2_error << " vs. "
-                                                                                           << RangeFieldType(1e-15));
+      DUNE_THROW(Dune::Stuff::Exceptions::internal_error,
+                 "This should not happen, those operators were tested above!\n" << coarse_l2_error << " vs. "
+                                                                                << RangeFieldType(1e-15));
     // now we prolong the discrete function from the coarse to the fine grid part
     const FineSpaceType fine_space(fine_grid_part_view);
     VectorType fine_vector(fine_space.mapper().size());
@@ -69,7 +69,7 @@ struct ProlongationOperatorBase
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
     if (fine_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // ProlongationOperatorBase
 

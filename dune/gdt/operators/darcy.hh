@@ -236,7 +236,7 @@ public:
           assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... apply(...)

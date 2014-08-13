@@ -542,7 +542,7 @@ public:
                new ApplyOn::AllIntersections<GridViewType>())
   {
     if (&other == this)
-      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
+      DUNE_THROW(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
     codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
     codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
   } // ... add(...)
@@ -551,7 +551,7 @@ public:
            const ApplyOn::WhichEntity<GridViewType>* which_entities = new ApplyOn::AllEntities<GridViewType>())
   {
     if (&other == this)
-      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
+      DUNE_THROW(Stuff::Exceptions::internal_error, "Do not add a GridWalker to itself!");
     codim0_functors_.emplace_back(new GridWalkerWrapper(other, which_entities));
     codim1_functors_.emplace_back(new GridWalkerWrapper(other, which_intersections));
   } // ... add(...)

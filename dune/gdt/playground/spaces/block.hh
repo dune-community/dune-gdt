@@ -83,13 +83,13 @@ public:
     , mapper_(std::make_shared<MapperType>(ms_grid_, local_spaces_))
   {
     if (local_spaces_.size() != ms_grid_->size())
-      DUNE_THROW_COLORFULLY(Stuff::Exceptions::shapes_do_not_match,
-                            "You have to provide a local space for each subdomain of the multiscale grid!\n"
-                                << "  Size of the given multiscale grid: "
-                                << ms_grid_->size()
-                                << "\n"
-                                << "  Number of local spaces given: "
-                                << local_spaces_.size());
+      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+                 "You have to provide a local space for each subdomain of the multiscale grid!\n"
+                     << "  Size of the given multiscale grid: "
+                     << ms_grid_->size()
+                     << "\n"
+                     << "  Number of local spaces given: "
+                     << local_spaces_.size());
   } // Block(...)
 
   const std::shared_ptr<const MsGridType>& ms_grid() const
@@ -126,13 +126,13 @@ public:
   template <class ConstraintsType>
   void local_constraints(const EntityType& /*entity*/, ConstraintsType& /*ret*/) const
   {
-    DUNE_THROW_COLORFULLY(NotImplemented, "I am not sure yet how to implement this!");
+    DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
   }
 
   template <class G, class S>
   PatternType compute_pattern(const GridView<G>& /*local_grid_view*/, const SpaceInterface<S>& /*ansatz_space*/) const
   {
-    DUNE_THROW_COLORFULLY(NotImplemented, "I am not sure yet how to implement this!");
+    DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
   }
 
 private:
@@ -143,20 +143,19 @@ private:
     const auto result              = ms_grid_->entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
     if (result == ms_grid_->entityToSubdomainMap()->end())
-      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
-                            "Entity " << global_entity_index
-                                      << " of the global grid view was not found in the multiscale grid!");
+      DUNE_THROW(Stuff::Exceptions::internal_error,
+                 "Entity " << global_entity_index << " of the global grid view was not found in the multiscale grid!");
 #endif // NDEBUG
     const size_t subdomain = result->second;
 #ifndef NDEBUG
     if (subdomain >= ms_grid_->size())
-      DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
-                            "The multiscale grid is corrupted!\nIt reports Entity " << global_entity_index
-                                                                                    << " to be in subdomain "
-                                                                                    << subdomain
-                                                                                    << " while only having "
-                                                                                    << ms_grid_->size()
-                                                                                    << " subdomains!");
+      DUNE_THROW(Stuff::Exceptions::internal_error,
+                 "The multiscale grid is corrupted!\nIt reports Entity " << global_entity_index
+                                                                         << " to be in subdomain "
+                                                                         << subdomain
+                                                                         << " while only having "
+                                                                         << ms_grid_->size()
+                                                                         << " subdomains!");
 #endif // NDEBUG
     assert(subdomain < local_spaces_.size());
     return subdomain;

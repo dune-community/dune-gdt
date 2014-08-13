@@ -78,7 +78,7 @@ public:
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
-      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
+      DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
     // get the basis and reference element
     const auto basis              = this->base_function_set(entity);
@@ -118,7 +118,7 @@ public:
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
-      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
+      DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     // check
     assert(this->grid_view()->indexSet().contains(entity));
     // prepare
@@ -190,7 +190,7 @@ private:
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
-      DUNE_THROW_COLORFULLY(NotImplemented, "Does not work for higher dimensions");
+      DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
     typedef DirichletConstraints<Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>, set_row> SetRow;
     const std::set<size_t> localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.gridBoundary());

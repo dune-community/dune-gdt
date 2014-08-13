@@ -30,7 +30,7 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
       }
     const std::string failure = ss.str();
     if (!failure.empty())
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, "\n" << failure);
+      DUNE_THROW(errors_are_not_as_expected, "\n" << failure);
   } // ... produces_correct_results()
 }; // struct EllipticSWIPDGDiscretization
 
