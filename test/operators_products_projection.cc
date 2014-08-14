@@ -1,3 +1,8 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
 #include "operators_products.hh"
 
 // +-------------------------------------+
@@ -39,8 +44,8 @@ struct ProjectionOperatorBase
     const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
-                            "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW(errors_are_not_as_expected, "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+    Dune::GDT::Operators::apply_projection(function, discrete_function);
   }
 }; // ProjectionOperatorType
 
@@ -107,8 +112,8 @@ struct DirichletProjectionOperator : public ::testing::Test
     const Dune::GDT::Products::L2<GridViewType> l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     if (l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
-                            "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW(errors_are_not_as_expected, "They really ain't!\n" << l2_error << " vs. " << RangeFieldType(1e-15));
+    Dune::GDT::Operators::apply_dirichlet_projection(boundary_info, function, discrete_function);
   }
 }; // DirichletProjectionOperator
 
@@ -125,9 +130,11 @@ struct DirichletProjectionOperator : public ::testing::Test
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex2dLeafGridPartType, 2, double, 1>,                  \
       Dune::GDT::Spaces::DiscontinuousLagrange::FemBased<AluSimplex3dLeafGridPartType, 2, double, 1>
 
+typedef testing::Types<
 #if HAVE_ALUGRID
-typedef testing::Types<L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID> L2ProjectionOperatorSpaceTypes;
-#endif // HAVE_ALUGRID
+    L2_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
+#endif
+    > L2ProjectionOperatorSpaceTypes;
 
 #define LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES                                                                       \
   Dune::GDT::Spaces::ContinuousLagrange::FemBased<S1dLeafGridPartType, 1, double, 1>,                                  \
@@ -175,13 +182,11 @@ typedef testing::Types<LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES
 #undef LAGRANGE_PROJECTION_OPERATOR_SPACE_TYPES_ALUGRID
 
 
-#if HAVE_ALUGRID
 TYPED_TEST_CASE(L2ProjectionOperator, L2ProjectionOperatorSpaceTypes);
 TYPED_TEST(L2ProjectionOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
-#endif // HAVE_ALUGRID
 
 TYPED_TEST_CASE(LagrangeProjectionOperator, LagrangeProjectionOperatorSpaceTypes);
 TYPED_TEST(LagrangeProjectionOperator, produces_correct_results)
@@ -201,8 +206,5 @@ TYPED_TEST(DirichletProjectionOperator, produces_correct_results)
   this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

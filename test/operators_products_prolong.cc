@@ -1,3 +1,8 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
 #include "operators_products_prolong.hh"
 
 typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES> ProlongationOperatorSpaceTypes;
@@ -21,8 +26,5 @@ TYPED_TEST(ProlongationOperator, produces_correct_results)
   this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

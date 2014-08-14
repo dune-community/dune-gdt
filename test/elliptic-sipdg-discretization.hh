@@ -41,15 +41,18 @@
 
 #include "elliptic-testcases.hh"
 
+#if HAVE_EIGEN
+static auto constexpr matrix_tag = Dune::Stuff::LA::ChooseBackend::eigen_sparse;
+#else
+static auto constexpr matrix_tag = Dune::Stuff::LA::ChooseBackend::istl_sparse;
+#endif
 
 namespace EllipticSIPDG {
 
 
 template <class GridPartType, int polynomialOrder,
-          class MatrixImp =
-              typename Dune::Stuff::LA::Container<double, Dune::Stuff::LA::ChooseBackend::eigen_sparse>::MatrixType,
-          class VectorImp =
-              typename Dune::Stuff::LA::Container<double, Dune::Stuff::LA::ChooseBackend::eigen_sparse>::VectorType>
+          class MatrixImp = typename Dune::Stuff::LA::Container<double, matrix_tag>::MatrixType,
+          class VectorImp = typename Dune::Stuff::LA::Container<double, matrix_tag>::VectorType>
 class Discretization
 {
 public:

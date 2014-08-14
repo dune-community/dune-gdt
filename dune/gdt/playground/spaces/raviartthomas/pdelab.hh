@@ -239,13 +239,13 @@ public:
       }
       // make sure there was only one candidate
       if (zeros != 1 || nonzeros != (num_intersections - 1))
-        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
-                              "This must not happen for RTN0 in 2d!\n"
-                                  << "  zeros    = "
-                                  << zeros
-                                  << "\n"
-                                  << "  nonzeros = "
-                                  << nonzeros);
+        DUNE_THROW(Stuff::Exceptions::internal_error,
+                   "This must not happen for RTN0 in 2d!\n"
+                       << "  zeros    = "
+                       << zeros
+                       << "\n"
+                       << "  nonzeros = "
+                       << nonzeros);
     } // walk the vertices
     // so from here on we have the local DoF index that corresponds to each vertex vv in local_DoF_index_of_vertex[vv]
     // now we need to find the intersection opposite to this vertex
@@ -282,13 +282,13 @@ public:
       } // walk the vertices of this entity
       // make sure there was only one candidate
       if (found != 1 || missed != (num_intersections - 1))
-        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
-                              "This must not happen for RTN0 in 2d!\n"
-                                  << "  found  = "
-                                  << found
-                                  << "\n"
-                                  << "  missed = "
-                                  << missed);
+        DUNE_THROW(Stuff::Exceptions::internal_error,
+                   "This must not happen for RTN0 in 2d!\n"
+                       << "  found  = "
+                       << found
+                       << "\n"
+                       << "  missed = "
+                       << missed);
       ++intersection_counter;
     } // walk the intersection
     assert(intersection_counter == num_intersections);

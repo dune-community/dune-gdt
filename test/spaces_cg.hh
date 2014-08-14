@@ -1,10 +1,10 @@
-#ifndef DUNE_GDT_TEST_SPACES_CG
-#define DUNE_GDT_TEST_SPACES_CG
-
 // This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_TEST_SPACES_CG
+#define DUNE_GDT_TEST_SPACES_CG
 
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
@@ -73,9 +73,8 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
     const auto basis                        = space.base_function_set(entity);
     std::vector<DomainType> lagrange_points = space.lagrange_points(entity);
     if (lagrange_points.size() != basis.size())
-      DUNE_THROW_COLORFULLY(
-          Exceptions::internal_error,
-          "lagrange_points.size() = " << lagrange_points.size() << ", basis.size() = " << basis.size());
+      DUNE_THROW(Exceptions::internal_error,
+                 "lagrange_points.size() = " << lagrange_points.size() << ", basis.size() = " << basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
     typedef typename SpaceType::RangeFieldType RangeFieldType;
     Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
@@ -113,14 +112,14 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
       const int num_vertices = entity.template count<dimDomain>();
       const auto basis = space.base_function_set(entity);
       if (basis.size() != size_t(num_vertices))
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis.size() = " << basis.size());
+        DUNE_THROW(Exceptions::internal_error, "basis.size() = " << basis.size());
       for (int cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
         if (basis_values.size() != size_t(num_vertices))
-          DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+          DUNE_THROW(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones            = 0;
         size_t zeros           = 0;
         size_t failures        = 0;
@@ -140,7 +139,7 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
              << ", num_vertices = " << num_vertices << ", entity " << grid_part_view->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW_COLORFULLY(Exceptions::internal_error, ss.str());
+          DUNE_THROW(Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
@@ -152,18 +151,17 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
     for (const auto& entry : vertex_to_indices_map) {
       const auto vertex_ids = entry.second;
       if (vertex_ids.size() != 1)
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error, vertex_ids.size());
+        DUNE_THROW(Exceptions::internal_error, vertex_ids.size());
       global_DoF_indices.insert(*(vertex_ids.begin()));
     }
     if (vertex_to_indices_map.size() != global_DoF_indices.size())
-      DUNE_THROW_COLORFULLY(Exceptions::internal_error,
-                            "vertex_to_indices_map.size() = " << vertex_to_indices_map.size()
-                                                              << ", global_DoF_indices.size() = "
-                                                              << global_DoF_indices.size());
+      DUNE_THROW(Exceptions::internal_error,
+                 "vertex_to_indices_map.size() = " << vertex_to_indices_map.size() << ", global_DoF_indices.size() = "
+                                                   << global_DoF_indices.size());
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
       if (global_DoF_id != count)
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
+        DUNE_THROW(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
       ++count;
     }
   } // ... maps_correctly()
@@ -216,4 +214,4 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
 #endif // HAVE_ALUGRID
 
 
-#endif DUNE_GDT_TEST_SPACES_CG
+#endif // DUNE_GDT_TEST_SPACES_CG

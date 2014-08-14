@@ -1,25 +1,23 @@
-#ifndef DUNE_GDT_TEST_OPERATOR_PRODUCTS
-#define DUNE_GDT_TEST_OPERATOR_PRODUCTS
-
 // This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_TEST_OPERATOR_PRODUCTS
+#define DUNE_GDT_TEST_OPERATOR_PRODUCTS
 
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
 
 #include <memory>
 
-#if HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-#define ENABLE_ALUGRID 1
+#if HAVE_ALUGRID
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/alugrid.hh>
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#endif // HAVE_ALUGRID_SERIAL_H || HAVE_ALUGRID_PARALLEL_H
-
+#endif // HAVE_ALUGRID
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/float_cmp.hh>
@@ -93,16 +91,16 @@ struct ProductBase
     // * of the derived type
     const D_GridViewType& d_gp = product.grid_view();
     if (&d_gp != &(*(space.grid_view())))
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
     D_FieldType d_a = product.apply2(function, function);
     // * of the derived type as the interface
     InterfaceType& i_product   = static_cast<InterfaceType&>(product);
     const I_GridViewType& i_gp = i_product.grid_view();
     if (&i_gp != &d_gp)
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
     I_FieldType i_a = i_product.apply2(function, function);
     if (Dune::Stuff::Common::FloatCmp::ne(i_a, d_a))
-      DUNE_THROW_COLORFULLY(Dune::Exception, "");
+      DUNE_THROW(Dune::Exception, "");
   }
 }; // struct ProductBase
 

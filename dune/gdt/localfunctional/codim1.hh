@@ -87,7 +87,7 @@ public:
     assert(integrand_order < std::numeric_limits<int>::max());
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
     // check vector and tmp storage
-    Dune::Stuff::Common::clear(ret);
+    ret *= 0.0;
     const size_t size = testBase.size();
     assert(ret.size() >= size);
     assert(tmpLocalVectors.size() >= numTmpObjectsRequired_);
