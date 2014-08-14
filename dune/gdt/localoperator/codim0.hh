@@ -114,7 +114,7 @@ public:
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
-    Dune::Stuff::Common::clear(ret);
+    ret *= 0.0;
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);

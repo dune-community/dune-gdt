@@ -90,10 +90,10 @@ public:
     Dune::DynamicMatrix< R >& localNeighborNeighborMatrix = tmpLocalMatricesContainer[0][1];
     Dune::DynamicMatrix< R >& localEntityNeighborMatrix = tmpLocalMatricesContainer[0][2];
     Dune::DynamicMatrix< R >& localNeighborEntityMatrix = tmpLocalMatricesContainer[0][3];
-    Dune::Stuff::Common::clear(localEntityEntityMatrix);
-    Dune::Stuff::Common::clear(localNeighborNeighborMatrix);
-    Dune::Stuff::Common::clear(localEntityNeighborMatrix);
-    Dune::Stuff::Common::clear(localNeighborEntityMatrix);
+    localEntityEntityMatrix *= 0.0;
+    localNeighborNeighborMatrix *= 0.0;
+    localEntityNeighborMatrix *= 0.0;
+    localNeighborEntityMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
 #ifdef DUNE_STUFF_PROFILER_ENABLED
     DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
@@ -256,7 +256,7 @@ public:
     assert(tmpIndicesContainer.size() >= 2);
     // get and clear matrix
     Dune::DynamicMatrix< R >& localMatrix = tmpLocalMatricesContainer[0][0];
-    Dune::Stuff::Common::clear(localMatrix);
+    localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entity
     const auto entityPtr = intersection.inside();
@@ -348,7 +348,7 @@ public:
     assert(tmpLocalVectorsContainer[1].size() >= localFunctional_.numTmpObjectsRequired());
     // get and clear vector
     Dune::DynamicVector< R >& localVector = tmpLocalVectorsContainer[0][0];
-    Dune::Stuff::Common::clear(localVector);
+    localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorsContainer[1];
     // get entity
     const auto entityPtr = intersection.inside();

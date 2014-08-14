@@ -1,12 +1,19 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
 #include "spaces_cg.hh"
 
-#if HAVE_DUNE_FEM
-# if HAVE_ALUGRID
 
 typedef testing::Types<
+#if HAVE_DUNE_PDELAB
+# if HAVE_ALUGRID
+                       P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
+                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
+# endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_PDELAB
 
-                       P1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q1_CONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
                       > P1Q1_Continuous_Lagrange_Spaces;
 
 
@@ -40,11 +47,5 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
   this->maps_correctly();
 }
 
-# endif
-#endif // HAVE_DUNE_FEM
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+#include <dune/stuff/test/test_main.hh>

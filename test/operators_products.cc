@@ -1,3 +1,8 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
 #include "operators_products.hh"
 
 template< class SpaceType >
@@ -29,7 +34,7 @@ struct L2ProductOperator
     auto l2_product = l2_product_operator.apply2(function_1, function_1);
     RangeFieldType error = l2_product - RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0)
                             << " (difference: " << std::scientific << error << ")");
     // test 2 (linear)
@@ -37,7 +42,7 @@ struct L2ProductOperator
     l2_product = l2_product_operator.apply2(function_2, function_2);
     error = l2_product - RangeFieldType(1.0/3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
                             << " (difference: " << std::scientific << error << ")");
     // test 3 (quadratic)
@@ -45,7 +50,7 @@ struct L2ProductOperator
     l2_product = l2_product_operator.apply2(function_3, function_3);
     error = l2_product - RangeFieldType(1.0/5.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
                             << " (difference: " << std::scientific << error << ")");
   }
@@ -86,7 +91,7 @@ struct H1SemiProductOperator
     auto h1_semi_product = h1_semi_product_operator.apply2(function_1, function_1);
     RangeFieldType error = h1_semi_product - dimDomain * RangeFieldType(1.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
                             << " (difference: " << std::scientific << error << ")");
     // test 2 (linear)
@@ -95,7 +100,7 @@ struct H1SemiProductOperator
     h1_semi_product = h1_semi_product_operator.apply2(function_2, function_2);
     error = h1_semi_product - dimDomain * RangeFieldType(1.0/3.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/3.0)
                             << " (difference: " << std::scientific << error << ")");
     // test 3 (quadratic)
@@ -104,7 +109,7 @@ struct H1SemiProductOperator
     h1_semi_product = h1_semi_product_operator.apply2(function_3, function_3);
     error = h1_semi_product - dimDomain * RangeFieldType(1.0/5.0);
     if (error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected,
+      DUNE_THROW(errors_are_not_as_expected,
                             "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/5.0)
                             << " (difference: " << std::scientific << error << ")");
   }
@@ -136,8 +141,5 @@ TYPED_TEST(H1SemiProductOperator, produces_correct_results) {
   this->produces_correct_results();
 }
 
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+
+#include <dune/stuff/test/test_main.hh>

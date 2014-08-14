@@ -198,7 +198,7 @@ public:
   virtual void evaluate(const DomainType& xx, RangeType& ret) const DS_OVERRIDE
   {
     assert(this->is_a_valid_point(xx));
-    Dune::Stuff::Common::clear(ret);
+    ret *= 0.0;
     assert(localVector_->size() == tmpBaseValues_.size());
     base_->evaluate(xx, tmpBaseValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {

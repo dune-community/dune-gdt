@@ -1,7 +1,10 @@
-﻿// This file is part of the dune-gdt project:
+// This file is part of the dune-gdt project:
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_SPACES_DG_COMMON_HH
+#define DUNE_GDT_SPACES_DG_COMMON_HH
 
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/test_common.hh>
@@ -98,14 +101,14 @@ struct P1Q1_Discontinuous_Lagrange
       const int num_vertices = entity.template count< dimDomain >();
       const auto basis = space.base_function_set(entity);
       if (basis.size() != size_t(num_vertices))
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis.size() = " << basis.size());
+        DUNE_THROW(Exceptions::internal_error, "basis.size() = " << basis.size());
       for (int cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
         if (basis_values.size() != size_t(num_vertices))
-          DUNE_THROW_COLORFULLY(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+          DUNE_THROW(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones = 0;
         size_t zeros = 0;
         size_t failures = 0;
@@ -125,7 +128,7 @@ struct P1Q1_Discontinuous_Lagrange
              << num_vertices << ", entity " << grid_part_view ->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW_COLORFULLY(Exceptions::internal_error, ss.str());
+          DUNE_THROW(Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
@@ -142,7 +145,7 @@ struct P1Q1_Discontinuous_Lagrange
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
       if (global_DoF_id != count)
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
+        DUNE_THROW(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
       ++count;
     }
     for (const auto& entry : vertex_to_indices_map) {
@@ -151,7 +154,7 @@ struct P1Q1_Discontinuous_Lagrange
       size_t number_of_associated_DoF_ids = vertex_ids.size();
       size_t number_of_adjacent_entitys = entry.second.second;
       if (number_of_associated_DoF_ids != number_of_adjacent_entitys)
-        DUNE_THROW_COLORFULLY(Exceptions::internal_error,
+        DUNE_THROW(Exceptions::internal_error,
                               "Vertex has only " << number_of_associated_DoF_ids << "associated DoF_ids, should have "
                               << number_of_adjacent_entitys);
     }
@@ -257,117 +260,4 @@ struct P1Q1_Discontinuous_Lagrange
 #endif //HAVE_DUNE_PDELAB
 
 
-typedef testing::Types<
-#if HAVE_DUNE_FEM
-                        Q1_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-# if HAVE_ALUGRID
-                      , P1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-# endif // HAVE_ALUGRID
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-                      , Q1_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
-# if HAVE_ALUGRID
-                      , Q1_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-# endif
-#endif // HAVE_DUNE_PDELAB
-                      > P1Q1_Spaces;
-
-typedef testing::Types<
-#if HAVE_DUNE_FEM
-                        Q2_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-# if HAVE_ALUGRID
-                      , P2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-# endif // HAVE_ALUGRID
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-                      , Q2_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
-# if HAVE_ALUGRID
-                      , Q2_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-# endif
-#endif // HAVE_DUNE_PDELAB
-                      > P2Q2_Spaces;
-
-typedef testing::Types<
-#if HAVE_DUNE_FEM
-                        Q3_DISCONTINUOUS_LAGRANGE_SPACES_FEM
-# if HAVE_ALUGRID
-                      , P3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-                      , Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_FEM
-# endif // HAVE_ALUGRID
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-                      , Q3_DISCONTINUOUS_LAGRANGE_SPACES_PDELAB
-# if HAVE_ALUGRID
-                      , Q3_DISCONTINUOUS_LAGRANGE_SPACES_ALUGRID_PDELAB
-# endif
-#endif // HAVE_DUNE_PDELAB
-                      > P3Q3_Spaces;
-
-
-TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
-TYPED_TEST(P1Q1_Space, fulfills_interface)
-{
-  this->fulfills_interface();
-}
-
-TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
-TYPED_TEST(P2Q2_Space, fulfills_interface)
-{
-  this->fulfills_interface();
-}
-
-TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
-TYPED_TEST(P3Q3_Space, fulfills_interface)
-{
-  this->fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
-TYPED_TEST(P1Q1_Space, mapper_fulfills_interface)
-{
-  this->mapper_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
-TYPED_TEST(P2Q2_Space, mapper_fulfills_interface)
-{
-  this->mapper_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
-TYPED_TEST(P3Q3_Space, mapper_fulfills_interface)
-{
-  this->mapper_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
-TYPED_TEST(P1Q1_Space, basefunctionset_fulfills_interface)
-{
-  this->basefunctionset_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
-TYPED_TEST(P2Q2_Space, basefunctionset_fulfills_interface)
-{
-  this->basefunctionset_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
-TYPED_TEST(P3Q3_Space, basefunctionset_fulfills_interface)
-{
-  this->basefunctionset_fulfills_interface();
-}
-
-TYPED_TEST_CASE(P1Q1_Discontinuous_Lagrange, P1Q1_Spaces);
-TYPED_TEST(P1Q1_Discontinuous_Lagrange, maps_correctly)
-{
-  this->maps_correctly();
-}
-
-int main(int argc, char** argv)
-{
-  test_init(argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif // DUNE_GDT_SPACES_DG_COMMON_HH

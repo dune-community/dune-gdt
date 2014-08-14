@@ -23,6 +23,33 @@
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/spe10.hh>
 
+#define DUNE_STUFF_FUNCTIONS_DISABLE_CHECKS
+
+// This one has to come first (includes the config.h)!
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/stuff/test/test_common.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
+
+#ifdef HAVE_FASP
+# undef HAVE_FASP
+#endif
+
+#include <dune/common/exceptions.hh>
+
+#if HAVE_ALUGRID
+# include <dune/stuff/common/disable_warnings.hh>
+#   include <dune/grid/alugrid.hh>
+# include <dune/stuff/common/reenable_warnings.hh>
+#endif
+
+#include <dune/stuff/common/color.hh>
+#include <dune/stuff/common/print.hh>
+#include <dune/stuff/common/float_cmp.hh>
+
+// change this to toggle output
+std::ostream& test_out = std::cout;
+//std::ostream& test_out = DSC_LOG.devnull();
+
 #include <dune/gdt/spaces/tools.hh>
 
 namespace EllipticTestCase {
@@ -101,6 +128,7 @@ public:
 
 private:
   GridType& grid() { return grid_provider_->grid(); }
+  const GridType& grid() const { return grid_provider_->grid(); }
 
 
   std::unique_ptr<GridProviderType> grid_provider_;
@@ -683,5 +711,36 @@ private:
 
 
 } // namespace EllipticTestCase
+
+
+#if HAVE_ALUGRID
+
+typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
+
+#define ALU_CONFORM_2D_ESTIMATOR_TESTCASES \
+    EllipticTestCase::ESV07< AluConform2dGridType > \
+  , EllipticTestCase::LocalThermalBlock< AluConform2dGridType > \
+  , EllipticTestCase::Spe10Model1< AluConform2dGridType >
+
+#define ALU_CONFORM_2D_TESTCASES \
+    ALU_CONFORM_2D_ESTIMATOR_TESTCASES \
+  , EllipticTestCase::ER07< AluConform2dGridType > \
+  , EllipticTestCase::MixedBoundaryTypes< AluConform2dGridType > \
+
+#endif // HAVE_ALUGRID
+
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+                        ALU_CONFORM_2D_ESTIMATOR_TESTCASES
+#endif
+                      > EllipticEstimatorTestCases;
+
+typedef testing::Types<
+#if HAVE_ALUGRID
+                        ALU_CONFORM_2D_TESTCASES
+#endif
+                      > EllipticTestCases;
+
 
 #endif // DUNE_GDT_TEST_ELLIPTIC_HH

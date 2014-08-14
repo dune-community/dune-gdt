@@ -202,6 +202,13 @@ public:
     apply_global_l2_projection_(source, range);
   }
 
+  template< class GP, int p, class V>
+  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
+             DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GP, p, FieldType, 1, 1 >, V >& range) const
+  {
+    apply_global_l2_projection_(source, range);
+  }
+
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, dimDomain, 1 >& source,
              DiscreteFunction< Spaces::RaviartThomas::PdelabBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
@@ -217,7 +224,7 @@ private:
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::MatrixType LocalMatrixType;
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::VectorType LocalVectorType;
     // clear
-    Stuff::Common::clear(range.vector());
+    range.vector() *= 0.0;
     // walk the grid
     RangeType source_value(0);
     std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs(), RangeType(0));
@@ -379,6 +386,15 @@ private:
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
   inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
                                                   source,
+                                               DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
                                                DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased
                                                   < GP, p, RR, rR, rCR >, V >& range) const
   {
@@ -398,6 +414,12 @@ private:
   const L2Projection< GridViewType > l2_operator_;
 }; // Projection
 
+template< class SourceType, class RangeType >
+void apply_projection(const SourceType& source, RangeType& range) {
+  auto& view = range.space().grid_view();
+  Projection<typename std::remove_reference<decltype(*view)>::type,
+      typename RangeType::SpaceType::RangeFieldType>(*view).apply(source, range);
+}
 
 // forward, to be used in the traits
 template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double >
@@ -578,6 +600,13 @@ private:
   const BoundaryInfoType& boundary_info_;
 }; // class DirichletProjection
 
+template< class SourceType, class RangeSpaceType, class V >
+void apply_dirichlet_projection(
+    const DSG::BoundaryInfoInterface< typename RangeSpaceType::GridViewType::Intersection>& boundary_info,
+    const SourceType& source, DiscreteFunction<RangeSpaceType, V>& range) {
+  auto& view = range.space().grid_view();
+  DirichletProjection<typename std::remove_reference<decltype(*view)>::type>(*view, boundary_info).apply(source, range);
+}
 
 } // namespace Operators
 } // namespace GDT

@@ -230,7 +230,7 @@ public:
       }
       // make sure there was only one candidate
       if (zeros != 1 || nonzeros != (num_intersections - 1))
-        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
+        DUNE_THROW(Stuff::Exceptions::internal_error,
                               "This must not happen for RTN0 in 2d!\n"
                               << "  zeros    = " << zeros << "\n"
                               << "  nonzeros = " << nonzeros);
@@ -272,7 +272,7 @@ public:
       } // walk the vertices of this entity
       // make sure there was only one candidate
       if (found != 1 || missed != (num_intersections - 1))
-        DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error,
+        DUNE_THROW(Stuff::Exceptions::internal_error,
                               "This must not happen for RTN0 in 2d!\n"
                               << "  found  = " << found << "\n"
                               << "  missed = " << missed);

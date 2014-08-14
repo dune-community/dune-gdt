@@ -197,7 +197,7 @@ public:
           // and make sure we are the first to do so
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW_COLORFULLY(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... apply(...)

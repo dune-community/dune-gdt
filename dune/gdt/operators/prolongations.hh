@@ -145,7 +145,7 @@ private:
     typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_dense_backend >::VectorType
         LocalVectorType;
     // clear
-    Stuff::Common::clear(range.vector());
+    range.vector() *= 0.0;
     // create search in the source grid part
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;

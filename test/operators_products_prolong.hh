@@ -1,3 +1,11 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH
+#define DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH
+
 #include "operators_products.hh"
 
 // +---------------------------------------+
@@ -45,7 +53,7 @@ struct ProlongationOperatorBase
         coarse_difference(function, coarse_discrete_function);
     const auto coarse_l2_error = std::sqrt(coarse_l2_product_operator.apply2(coarse_difference, coarse_difference));
     if (coarse_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(Dune::Stuff::Exceptions::internal_error,
+      DUNE_THROW(Dune::Stuff::Exceptions::internal_error,
                             "This should not happen, those operators were tested above!\n"
                             << coarse_l2_error << " vs. " << RangeFieldType(1e-15));
     // now we prolong the discrete function from the coarse to the fine grid part
@@ -61,7 +69,7 @@ struct ProlongationOperatorBase
         fine_difference(function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
     if (fine_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW_COLORFULLY(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
+      DUNE_THROW(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
   }
 }; // ProlongationOperatorBase
 
@@ -111,6 +119,4 @@ struct ProlongationOperator
   , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp3dLevelGridPartType, 1, double, 1 >, \
                Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp3dLevelGridPartType, 1, double, 1 > >
 
-
-
-
+#endif // DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH
