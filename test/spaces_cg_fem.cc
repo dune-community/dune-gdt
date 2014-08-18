@@ -44,4 +44,4 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
 }
 
 
-#include <dune/stuff/test/test_main.hh>
+#include <dune/stuff/test/test_main.cxx>

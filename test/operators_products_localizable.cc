@@ -216,4 +216,4 @@ TYPED_TEST(H1SemiLocalizableProduct, produces_correct_results) {
 
 
 
-#include <dune/stuff/test/test_main.hh>
+#include <dune/stuff/test/test_main.cxx>
