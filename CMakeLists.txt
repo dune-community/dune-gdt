@@ -43,9 +43,9 @@ if(CMAKE_WITH_AUTOTOOLS)
   include(GridUtils)
 
   # we need eigen
-  if( NOT EIGEN_FOUND )
+  if( NOT EIGEN3_FOUND )
     message( FATAL_ERROR "eigen3 not found, set PKG_CONFIGK_PATH to include eigen3.pc!" )
-  endif( NOT EIGEN_FOUND )
+  endif( NOT EIGEN3_FOUND )
 
   # we would like to have fasp
   #include(FindFASP)
