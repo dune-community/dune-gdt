@@ -87,4 +87,4 @@ TYPED_TEST(ProlongationOperator, produces_correct_results)
 }
 
 
-#include <dune/stuff/test/test_main.hh>
+#include <dune/stuff/test/test_main.cxx>

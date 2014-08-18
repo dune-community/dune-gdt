@@ -117,4 +117,4 @@ TYPED_TEST(Oswald_Interpolation_Operator, produces_correct_results)
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
 
-#include <dune/stuff/test/test_main.hh>
+#include <dune/stuff/test/test_main.cxx>
