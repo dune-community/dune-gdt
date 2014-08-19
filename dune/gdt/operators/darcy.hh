@@ -8,14 +8,14 @@
 
 #include <limits>
 
+#include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/quadraturerules.hh>
+#include <dune/stuff/common/reenable_warnings.hh>
+
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/common/exceptions.hh>
-
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
@@ -83,16 +83,8 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
              DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
   {
-#if HAVE_EIGEN
-    typedef Stuff::LA::EigenRowMajorSparseMatrix< FieldType > MatrixType;
-    typedef Stuff::LA::EigenDenseVector< FieldType >          VectorType;
-#elif HAVE_DUNE_ISTL
-    typedef Stuff::LA::IstlRowMajorSparseMatrix< FieldType >  MatrixType;
-    typedef Stuff::LA::IstlDenseVector< FieldType >           VectorType;
-#else
-    typedef Stuff::LA::CommonDenseMatrix< FieldType > MatrixType;
-    typedef Stuff::LA::CommonDenseVector< FieldType > VectorType;
-#endif
+    typedef typename Stuff::LA::Container< FieldType >::MatrixType MatrixType;
+    typedef typename Stuff::LA::Container< FieldType >::VectorType VectorType;
     MatrixType lhs(range.space().mapper().size(),
                    range.space().mapper().size(),
                    range.space().compute_volume_pattern());
