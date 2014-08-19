@@ -49,13 +49,7 @@ class Darcy_Operator
   static const unsigned int             dimDomain = SourceSpaceType::dimDomain;
   typedef double RangeFieldType;
 
-#if HAVE_EIGEN
-    typedef Dune::Stuff::LA::EigenDenseVector< RangeFieldType >   VectorType;
-#elif HAVE_DUNE_ISTL
-    typedef Dune::Stuff::LA::IstlDenseVector< RangeFieldType >    VectorType;
-#else
-    typedef Dune::Stuff::LA::CommonDenseVector< RangeFieldType >  VectorType;
-#endif
+  typedef typename Dune::Stuff::LA::Container< RangeFieldType >::VectorType VectorType;
 
 public:
   void produces_correct_results() const
