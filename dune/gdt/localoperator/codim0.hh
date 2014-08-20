@@ -141,7 +141,7 @@ public:
 private:
   const BinaryEvaluationType& evaluation() const
   {
-    return static_cast< const BinaryEvaluationType& >(evaluation_);
+    return evaluation_;
   }
 
   const BinaryEvaluationImp evaluation_;
