@@ -48,13 +48,7 @@ class Darcy_Operator : public ::testing::Test
   static const unsigned int dimDomain = SourceSpaceType::dimDomain;
   typedef double RangeFieldType;
 
-#if HAVE_EIGEN
-  typedef Dune::Stuff::LA::EigenDenseVector<RangeFieldType> VectorType;
-#elif HAVE_DUNE_ISTL
-  typedef Dune::Stuff::LA::IstlDenseVector<RangeFieldType> VectorType;
-#else
-  typedef Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
-#endif
+  typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;
 
 public:
   void produces_correct_results() const
@@ -171,4 +165,4 @@ TYPED_TEST(Darcy_Operator, produces_correct_results)
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
 
-#include <dune/stuff/test/test_main.hh>
+#include <dune/stuff/test/test_main.cxx>

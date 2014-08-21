@@ -180,7 +180,7 @@ public:
 private:
   const QuaternaryEvaluationType& evaluation() const
   {
-    return static_cast<const QuaternaryEvaluationType&>(evaluation_);
+    return evaluation_;
   }
 
   const QuaternaryEvaluationImp evaluation_;
@@ -281,7 +281,7 @@ public:
 private:
   const BinaryEvaluationType& evaluation() const
   {
-    return static_cast<const BinaryEvaluationType&>(evaluation_);
+    return evaluation_;
   }
 
   const BinaryEvaluationImp evaluation_;
