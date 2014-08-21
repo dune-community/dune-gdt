@@ -146,115 +146,12 @@ private:
 }; // class ConstDiscreteFunction
 
 
-namespace internal {
-
-
-template< class VectorType >
-class RefProvider
-{
-public:
-  virtual ~RefProvider() {}
-
-  virtual VectorType& ref() = 0;
-};
-
-
-template< class VectorType >
-class RefProviderByRef
-  : public RefProvider< VectorType >
-{
-public:
-  RefProviderByRef(VectorType& vec)
-    : vector_(vec)
-  {}
-
-  virtual ~RefProviderByRef() {}
-
-  virtual VectorType& ref() DS_OVERRIDE DS_FINAL
-  {
-    return vector_;
-  }
-
-private:
-  VectorType& vector_;
-};
-
-
-template< class VectorType >
-class RefProviderByPtr
-  : public RefProvider< VectorType >
-{
-public:
-  RefProviderByPtr(const size_t sz)
-    : vector_(new VectorType(sz))
-  {}
-
-  virtual ~RefProviderByPtr() {}
-
-  virtual VectorType& ref() DS_OVERRIDE DS_FINAL
-  {
-    return *vector_;
-  }
-
-private:
-  std::unique_ptr< VectorType > vector_;
-};
-
-
-template< class VectorType >
-class VectorProvider
-{
-public:
-  VectorProvider(VectorType& ref)
-    : ref_provider_(Stuff::Common::make_unique< RefProviderByRef< VectorType > >(ref))
-  {}
-
-  VectorProvider(const size_t sz)
-    : ref_provider_(Stuff::Common::make_unique< RefProviderByPtr< VectorType > >(sz))
-  {}
-
-  VectorProvider(const VectorProvider< VectorType >& other)
-    : ref_provider_(Stuff::Common::make_unique< RefProviderByPtr< VectorType > >(other.vector_ref().size()))
-  {
-    vector_ref() = other.vector_ref();
-  }
-
-  VectorProvider(VectorProvider< VectorType >&& source)
-    : ref_provider_(std::move(source.ref_provider_))
-  {}
-
-  VectorProvider< VectorType >& operator=(const VectorProvider< VectorType >& other)
-  {
-    if (this != &other) {
-      vector_ref() = other.vector_ref();
-    }
-    return *this;
-  }
-
-  VectorType& vector_ref()
-  {
-    return ref_provider_->ref();
-  }
-
-  const VectorType& vector_ref() const
-  {
-    return ref_provider_->ref();
-  }
-
-private:
-  std::unique_ptr< RefProvider< VectorType > > ref_provider_;
-};
-
-
-} // namespace internal
-
-
 template< class SpaceImp, class VectorImp >
 class DiscreteFunction
-  : internal::VectorProvider< VectorImp >
+  : Stuff::Common::StorageProvider< VectorImp >
   , public ConstDiscreteFunction< SpaceImp, VectorImp >
 {
-  typedef internal::VectorProvider< VectorImp > VectorProviderBaseType;
+  typedef Stuff::Common::StorageProvider< VectorImp > VectorProviderBaseType;
   typedef ConstDiscreteFunction< SpaceImp, VectorImp >  BaseType;
   typedef DiscreteFunction< SpaceImp, VectorImp >       ThisType;
 public:
@@ -265,27 +162,24 @@ public:
 
   typedef LocalDiscreteFunction< SpaceType, VectorType > LocalDiscreteFunctionType;
 
-  DiscreteFunction(const SpaceType& sp,
-                   VectorType& vec,
-                   const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "dune.gdt.discretefunction")
     : VectorProviderBaseType(vec)
-    , BaseType(sp, VectorProviderBaseType::vector_ref(), nm)
+    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
   {}
 
-  DiscreteFunction(const SpaceType& sp,
-                   const std::string nm = "dune.gdt.discretefunction")
-    : VectorProviderBaseType(sp.mapper().size())
-    , BaseType(sp, VectorProviderBaseType::vector_ref(), nm)
+  DiscreteFunction(const SpaceType& sp, const std::string nm = "dune.gdt.discretefunction")
+    : VectorProviderBaseType(new VectorType(sp.mapper().size()))
+    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
   {}
 
   DiscreteFunction(const ThisType& other)
-    : VectorProviderBaseType(other)
-    , BaseType(other.space(), VectorProviderBaseType::vector_ref(), other.name())
+    : VectorProviderBaseType(new VectorType(other.vector()))
+    , BaseType(other.space(), VectorProviderBaseType::storage_access(), other.name())
   {}
 
   DiscreteFunction(ThisType&& source)
-    : VectorProviderBaseType(source)
-    , BaseType(source.space(), VectorProviderBaseType::vector_ref(), source.name())
+    : VectorProviderBaseType(new VectorType(source.vector()))
+    , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
   {}
 
   ~DiscreteFunction() {}
@@ -301,7 +195,7 @@ public:
 
   VectorType& vector()
   {
-    return this->vector_ref();
+    return this->storage_access();
   }
 
   using BaseType::local_discrete_function;
@@ -309,7 +203,7 @@ public:
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
     assert(space_.grid_view()->indexSet().contains(entity));
-    return LocalDiscreteFunctionType(space_, this->vector_ref(), entity);
+    return LocalDiscreteFunctionType(space_, this->storage_access(), entity);
   }
 
 private:

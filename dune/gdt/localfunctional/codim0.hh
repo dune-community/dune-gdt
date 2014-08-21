@@ -115,7 +115,7 @@ public:
 private:
   const UnaryEvaluationType& evaluation() const
   {
-    return static_cast< const UnaryEvaluationType& >(evaluation_);
+    return evaluation_;
   }
 
   const UnaryEvaluationImp evaluation_;
