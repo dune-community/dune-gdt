@@ -26,9 +26,6 @@ AC_DEFINE([HAVE_DUNE_GDT], [1], [We are always here.])
 
 AC_CONFIG_FILES([
   Makefile
-  doc/Makefile
-  doc/doxygen/Makefile
-  doc/doxygen/Doxyfile
   m4/Makefile
   dune-gdt.pc
 ])
