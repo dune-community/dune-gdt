@@ -3,7 +3,11 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#include <dune/stuff/test/test_common.hh>
+#ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
+# define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#endif
+
+#include <dune/stuff/test/main.hxx>
 
 #include "elliptic-cg-discretization.hh"
 
@@ -12,29 +16,22 @@ template< class TestCase >
 struct EllipticCGDiscretization
   : public ::testing::Test
 {
-  void produces_correct_results() const
+  void eoc_study() const
   {
-    const TestCase test_case;
-    test_case.print_header(test_out);
-    test_out << std::endl;
-    EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
-    auto errors = eoc_study.run(test_out);
-    for (const auto& norm : eoc_study.provided_norms())
-      if (!Dune::Stuff::Common::FloatCmp::lt(errors[norm],
-                                             truncate_vector(eoc_study.expected_results(norm), errors[norm].size()))) {
-        std::stringstream ss;
-        Dune::Stuff::Common::print(errors[norm],                        "errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(eoc_study.expected_results(norm), "   expected results (" + norm + ")", ss);
-        DUNE_THROW(errors_are_not_as_expected, ss.str());
-      }
-  }
+    try {
+      const TestCase test_case;
+      test_case.print_header(DSC_LOG_INFO);
+      DSC_LOG_INFO << std::endl;
+      EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
+      Dune::Stuff::Test::check_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing& ee) {
+      DSC_LOG_INFO << ee.what() << std::endl;
+    }
+  } // ... eoc_study(...)
 }; // EllipticCGDiscretization
 
 
 TYPED_TEST_CASE(EllipticCGDiscretization, EllipticTestCases);
-TYPED_TEST(EllipticCGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
+TYPED_TEST(EllipticCGDiscretization, eoc_study) {
+  this->eoc_study();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>
