@@ -6,8 +6,16 @@
 #ifndef DUNE_GDT_TEST_ELLIPTIC_HH
 #define DUNE_GDT_TEST_ELLIPTIC_HH
 
+#define DUNE_STUFF_FUNCTIONS_DISABLE_CHECKS 1
+
+#ifdef HAVE_FASP
+#undef HAVE_FASP
+#endif
+
 #include <iostream>
 #include <memory>
+
+#include <dune/common/exceptions.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/io/file/dgfparser.hh>
@@ -22,35 +30,14 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/spe10.hh>
-
-#define DUNE_STUFF_FUNCTIONS_DISABLE_CHECKS
-
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/common/disable_warnings.hh>
-#include <dune/stuff/test/test_common.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-
-#ifdef HAVE_FASP
-#undef HAVE_FASP
-#endif
-
-#include <dune/common/exceptions.hh>
-
-#if HAVE_ALUGRID
-#include <dune/stuff/common/disable_warnings.hh>
-#include <dune/grid/alugrid.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-#endif
-
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/float_cmp.hh>
 
-// change this to toggle output
-std::ostream& test_out = std::cout;
-// std::ostream& test_out = DSC_LOG.devnull();
-
 #include <dune/gdt/spaces/tools.hh>
+
+std::ostream& DUNE_DEPRECATED_MSG(
+    "Use DSC_LOG_INFO instead and toggle DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING") test_out = std::cout;
 
 namespace EllipticTestCase {
 
