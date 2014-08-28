@@ -379,9 +379,9 @@ public:
                    value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {7.93e-02, 4.16e-02, 1.20e-02, 2.73e-03};
+          return {7.92e-02, 4.15e-02, 1.19e-02, 2.72e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.52e-01, 3.03e-01, 1.64e-01, 7.52e-02};
+          return {3.51e-01, 3.02e-01, 1.63e-01, 7.51e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -390,9 +390,9 @@ public:
                             EllipticTestCase::ER07<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {1.49e-01, 3.83e-02, 9.66e-03};
+          return {1.48e-01, 3.82e-02, 9.65e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.60e-01, 1.85e-01, 9.25e-02};
+          return {3.59e-01, 1.84e-01, 9.24e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -402,9 +402,9 @@ public:
                                 MixedBoundaryTypes<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {8.32e-02, 2.23e-02, 5.53e-03, 1.20e-03};
+          return {8.31e-02, 2.22e-02, 5.52e-03, 1.19e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.12e-01, 1.65e-01, 8.24e-02, 3.76e-02};
+          return {3.11e-01, 1.64e-01, 8.23e-02, 3.75e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
