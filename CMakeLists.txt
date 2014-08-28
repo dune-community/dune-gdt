@@ -75,7 +75,6 @@ if(CMAKE_WITH_AUTOTOOLS)
       ${FASPLIB}
   )
 
-  add_subdirectory(doc)
   add_subdirectory(test)
 
   ADD_EXECUTABLE( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable "say_hello.cc" ${COMMON_HEADER} )
@@ -106,7 +105,6 @@ else(CMAKE_WITH_AUTOTOOLS)
       ${FASPLIB}
   )
 
-  add_subdirectory(doc)
   add_subdirectory(m4)
   add_subdirectory(cmake/modules)
   add_subdirectory(test EXCLUDE_FROM_ALL)
