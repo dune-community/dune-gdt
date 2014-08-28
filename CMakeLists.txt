@@ -97,6 +97,11 @@ else(CMAKE_WITH_AUTOTOOLS)
 
   file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/*.hh" )
   set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
+  # add header of dependent modules for header listing
+  foreach(_mod ${ALL_DEPENDENCIES})
+    file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/../${_mod}/*.hh")
+    list(APPEND COMMON_HEADER ${HEADER_LIST})
+  endforeach(_mod DEPENDENCIES)
   set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 
   set( COMMON_LIBS
