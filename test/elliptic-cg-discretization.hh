@@ -362,7 +362,7 @@ public:
       ++current_level_;
   }
 
-  std::vector<double> expected_results(const std::string type) const
+  virtual std::vector<double> expected_results(const std::string type) const
   {
     if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
