@@ -56,13 +56,20 @@
 #include "elliptic-testcases.hh"
 
 
+#if HAVE_EIGEN
+static auto constexpr la_backend = Dune::Stuff::LA::ChooseBackend::eigen_sparse;
+#else
+static auto constexpr la_backend = Dune::Stuff::LA::default_sparse_backend;
+#endif
+
+
 namespace EllipticSWIPDG {
 
 
 template< class GridPartType,
           int polynomialOrder,
-          class MatrixImp = typename Dune::Stuff::LA::Container< double >::MatrixType,
-          class VectorImp = typename Dune::Stuff::LA::Container< double >::VectorType >
+          class MatrixImp = typename Dune::Stuff::LA::Container< double, la_backend >::MatrixType,
+          class VectorImp = typename Dune::Stuff::LA::Container< double, la_backend >::VectorType >
 class Discretization
 {
 public:
@@ -433,16 +440,16 @@ public:
                EllipticTestCase::LocalThermalBlock< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {5.85e-02, 2.00e-02, 5.55e-03, 1.30e-03};
+          return {5.57e-02, 1.99e-02, 5.54e-03, 1.29e-03};
         else if (type.compare("H1_semi") == 0)
-          return {4.33e-01, 2.94e-01, 1.51e-01, 6.55e-02};
+          return {4.32e-01, 2.93e-01, 1.50e-01, 6.54e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {1.19e-02, 2.12e-03, 3.90e-04, 7.77e-05};
+          return {1.18e-02, 2.11e-03, 3.89e-04, 7.76e-05};
         else if (type.compare("H1_semi") == 0)
-          return {1.70e-01, 5.97e-02, 1.95e-02, 6.05e-03};
+          return {1.69e-01, 5.96e-02, 1.94e-02, 6.04e-03};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -451,16 +458,16 @@ public:
                EllipticTestCase::ER07< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {6.10e-02, 1.66e-02, 4.23e-03};
+          return {6.09e-02, 1.65e-02, 4.22e-03};
         else if (type.compare("H1_semi") == 0)
-          return {2.99e-01, 1.47e-01, 7.26e-02};
+          return {2.98e-01, 1.46e-01, 7.25e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {6.43e-03, 8.24e-04, 1.05e-04};
+          return {6.42e-03, 8.23e-04, 1.04e-04};
         else if (type.compare("H1_semi") == 0)
-          return {5.41e-02, 1.42e-02, 3.56e-03};
+          return {5.40e-02, 1.41e-02, 3.55e-03};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -469,16 +476,16 @@ public:
                EllipticTestCase::MixedBoundaryTypes< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {4.03e-02, 1.13e-02, 2.84e-03, 6.34e-04};
+          return {4.02e-02, 1.12e-02, 2.83e-03, 6.33e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.70e-01, 1.40e-01, 6.88e-02, 3.09e-02};
+          return {2.69e-01, 1.39e-01, 6.87e-02, 3.08e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {3.59e-03, 6.26e-04, 1.22e-04, 2.69e-05};
+          return {3.58e-03, 6.25e-04, 1.21e-04, 2.68e-05};
         else if (type.compare("H1_semi") == 0)
-          return {4.82e-02, 1.80e-02, 7.20e-03, 2.86e-03};
+          return {4.81e-02, 1.79e-02, 7.19e-03, 2.85e-03};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -487,16 +494,16 @@ public:
                EllipticTestCase::Spe10Model1< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {7.23e-02, 2.60e-02};
+          return {7.22e-02, 2.59e-02};
         else if (type.compare("H1_semi") == 0)
-          return {5.29e-01, 3.49e-01};
+          return {5.28e-01, 3.48e-01};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {2.09e-02, 3.75e-03};
+          return {2.08e-02, 3.74e-03};
         else if (type.compare("H1_semi") == 0)
-          return {2.57e-01, 8.48e-02};
+          return {2.56e-01, 8.47e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
