@@ -425,7 +425,7 @@ public:
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   } // ... expected_results(...)
 
-  virtual std::map<std::string, std::vector<double>> run(std::ostream& out = std::cout)
+  std::map<std::string, std::vector<double>> run(std::ostream& out = std::cout)
   {
     return BaseType::run(true, out);
   }
