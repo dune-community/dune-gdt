@@ -3,7 +3,11 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#include <dune/stuff/test/test_common.hh>
+#ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
+#define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#endif
+
+#include <dune/stuff/test/main.hxx>
 
 #include "elliptic-sipdg-discretization.hh"
 
@@ -11,50 +15,32 @@
 template <class TestCase>
 struct EllipticSIPDGDiscretization : public ::testing::Test
 {
-  void produces_correct_results() const
+  template <int polOrder>
+  void eoc_study() const
   {
     if (std::is_same<TestCase,
-                     EllipticTestCase::Spe10Model1<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
-      std::cerr << Dune::Stuff::Common::colorStringRed(
-                       "EllipticSIPDGDiscretization does not work for "
-                       "EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, "
-                       "Dune::conforming > >!")
-                << std::endl;
-    } else {
+                     EllipticTestCase::Spe10Model1<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value)
+      DSC_LOG_INFO << DSC::colorStringRed("EllipticSIPDGDiscretization does not work for "
+                                          "EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, "
+                                          "Dune::conforming > >!")
+                   << std::endl;
+    else {
       const TestCase test_case;
-      test_case.print_header(test_out);
-      test_out << std::endl;
-      EllipticSIPDG::EocStudy<TestCase, 1> eoc_study_1(test_case);
-      auto errors_1 = eoc_study_1.run(test_out);
-      for (const auto& norm : eoc_study_1.provided_norms())
-        if (!Dune::Stuff::Common::FloatCmp::lt(
-                errors_1[norm], truncate_vector(eoc_study_1.expected_results(norm), errors_1[norm].size()))) {
-          std::stringstream ss;
-          Dune::Stuff::Common::print(errors_1[norm], "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_1.expected_results(norm), "   expected results (" + norm + ")", ss);
-          DUNE_THROW(errors_are_not_as_expected, ss.str());
-        }
-      test_out << std::endl;
-      EllipticSIPDG::EocStudy<TestCase, 2> eoc_study_2(test_case);
-      auto errors_2 = eoc_study_2.run(test_out);
-      for (const auto& norm : eoc_study_2.provided_norms())
-        if (!Dune::Stuff::Common::FloatCmp::lt(
-                errors_2[norm], truncate_vector(eoc_study_2.expected_results(norm), errors_2[norm].size()))) {
-          std::stringstream ss;
-          Dune::Stuff::Common::print(errors_2[norm], "errors           (" + norm + ")", ss);
-          Dune::Stuff::Common::print(eoc_study_2.expected_results(norm), "   expected results (" + norm + ")", ss);
-          DUNE_THROW(errors_are_not_as_expected, ss.str());
-        }
+      test_case.print_header(DSC_LOG_INFO);
+      DSC_LOG_INFO << std::endl;
+      EllipticSIPDG::EocStudy<TestCase, polOrder> eoc_study(test_case);
+      Dune::Stuff::Test::check_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
     }
-  }
+  } // ... eoc_study(...)
 }; // EllipticSIPDGDiscretization
 
 
 TYPED_TEST_CASE(EllipticSIPDGDiscretization, EllipticTestCases);
-TYPED_TEST(EllipticSIPDGDiscretization, produces_correct_results)
+TYPED_TEST(EllipticSIPDGDiscretization, eoc_study_polorder_1)
 {
-  this->produces_correct_results();
+  this->template eoc_study<1>();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>
+TYPED_TEST(EllipticSIPDGDiscretization, eoc_study_polorder_2)
+{
+  this->template eoc_study<2>();
+}
