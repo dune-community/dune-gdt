@@ -90,7 +90,7 @@ public:
     }
   } // ... prepare()
 
-  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
+  FieldType compute_locally(const EntityType& entity)
   {
     assert(prepared_);
     assert(tmp_storage_);
@@ -106,8 +106,13 @@ public:
     local_operator().apply(*local_range_ptr, *local_source_ptr, local_operator_result, tmp_matrices);
     assert(local_operator_result.rows() == 1);
     assert(local_operator_result.cols() == 1);
-    result_ += local_operator_result[0][0];
-  } // ... apply_local(...)
+    return local_operator_result[0][0];
+  } // ... compute_locally(...)
+
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
+  {
+    result_ += compute_locally(entity);
+  }
 
   virtual void finalize() DS_OVERRIDE
   {
