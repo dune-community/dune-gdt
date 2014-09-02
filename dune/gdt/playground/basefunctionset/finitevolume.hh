@@ -14,9 +14,6 @@
 #include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/stuff/common/vector.hh>
-#include <dune/stuff/common/matrix.hh>
-
 #include "../../basefunctionset/interface.hh"
 
 namespace Dune {

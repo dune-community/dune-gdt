@@ -15,8 +15,6 @@
 
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/matrix.hh>
-#include <dune/stuff/common/vector.hh>
 
 #include "interface.hh"
 

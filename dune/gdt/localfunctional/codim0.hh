@@ -17,7 +17,6 @@
 #include <dune/geometry/quadraturerules.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/stuff/common/vector.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "../localevaluation/interface.hh"

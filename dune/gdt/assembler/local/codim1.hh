@@ -8,7 +8,6 @@
 
 #include <vector>
 
-#include <dune/stuff/common/matrix.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #ifdef DUNE_STUFF_PROFILER_ENABLED

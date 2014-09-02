@@ -75,7 +75,6 @@ if(CMAKE_WITH_AUTOTOOLS)
       ${FASPLIB}
   )
 
-  add_subdirectory(doc)
   add_subdirectory(test)
 
   ADD_EXECUTABLE( this_needs_to_be_here_to_have_header_listing_until_we_have_a_real_executable "say_hello.cc" ${COMMON_HEADER} )
@@ -98,19 +97,13 @@ else(CMAKE_WITH_AUTOTOOLS)
 
   file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/*.hh" )
   set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
+  # add header of dependent modules for header listing
+  foreach(_mod ${ALL_DEPENDENCIES})
+    file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/../${_mod}/*.hh")
+    list(APPEND COMMON_HEADER ${HEADER_LIST})
+  endforeach(_mod DEPENDENCIES)
   set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 
-  set( COMMON_LIBS
-      ${DUNE_DEFAULT_LIBS}
-      ${GRIDLIBS}
-      ${FASPLIB}
-  )
-
-  add_subdirectory(doc)
-  add_subdirectory(m4)
-  add_subdirectory(cmake/modules)
-  add_subdirectory(test EXCLUDE_FROM_ALL)
-  
   #disable most warnings from dependent modules
   foreach(_mod ${ALL_DEPENDENCIES})
     dune_module_to_uppercase(_upper_case "${_mod}")
@@ -120,6 +113,16 @@ else(CMAKE_WITH_AUTOTOOLS)
       endforeach( _idir )
     endif(${_mod}_INCLUDE_DIRS)
   endforeach(_mod DEPENDENCIES)
+
+  set( COMMON_LIBS
+      ${DUNE_DEFAULT_LIBS}
+      ${GRIDLIBS}
+      ${FASPLIB}
+  )
+
+  add_subdirectory(m4)
+  add_subdirectory(cmake/modules)
+  add_subdirectory(test EXCLUDE_FROM_ALL)
 
   # finalize the dune project, e.g., generate config.h etc.
   finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
