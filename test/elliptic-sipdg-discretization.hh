@@ -44,7 +44,7 @@
 #if HAVE_EIGEN
 static auto constexpr matrix_tag = Dune::Stuff::LA::ChooseBackend::eigen_sparse;
 #else
-static auto constexpr matrix_tag = Dune::Stuff::LA::ChooseBackend::istl_sparse;
+static auto constexpr matrix_tag = Dune::Stuff::LA::default_sparse_backend;
 #endif
 
 namespace EllipticSIPDG {

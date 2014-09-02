@@ -13,7 +13,6 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/matrix.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localoperator/interface.hh>

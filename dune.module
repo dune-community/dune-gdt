@@ -7,4 +7,4 @@ Module: dune-gdt
 Version: 0.2-dev
 Maintainer: felix.schindler@wwu.de
 Depends: dune-common (>= 2.2) dune-stuff (>= 2.2)
-Suggests: dune-fem (>= 1.3) dune-fem-localfunctions dune-pdelab dune-grid-multiscale
+Suggests: dune-fem (>= 1.3) dune-pdelab dune-grid-multiscale

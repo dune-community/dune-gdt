@@ -83,12 +83,30 @@ public:
     static_assert((Dune::AlwaysFalse< E >::value), "Not implemented for this combination of source and range!");
   }
 
-  template< class GP, class R, int r, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
-             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, 1, R, r, 1 >, V >& range) const
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    apply_p(source, range);
+  }
+
+  template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
+  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
+                                                  source,
+                                               DiscreteFunction< Spaces::ContinuousLagrange::FemBased
+                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  {
+    apply_p(source, range);
+  }
+
+private:
+  template< class R, int r, class V, class SpaceType >
+  void apply_p(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
+             DiscreteFunction< SpaceType, V >& range) const
   {
     // checks
-    typedef Spaces::ContinuousLagrange::FemBased< GP, 1, R, r, 1 > SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     // set all dofs to infinity
     const auto infinity = std::numeric_limits< R >::infinity();
@@ -107,7 +125,6 @@ public:
     } // walk the grid
   } // ... apply(... Spaces::ContinuousLagrange::FemBased< GP, 1, R, r, 1 > ...)
 
-private:
   template< class LagrangePointsType, class LocalSourceType, class LocalRangeVectorType >
   void apply_local(const LagrangePointsType& lagrange_points,
                    const LocalSourceType& local_source,
@@ -389,7 +406,7 @@ private:
                                                DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased
                                                   < GP, p, RR, rR, rCR >, V >& range) const
   {
-    l2_operator_.apply(source, range);
+    lagrange_operator_.apply(source, range);
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
