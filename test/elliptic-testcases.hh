@@ -636,7 +636,7 @@ public:
         << "||  (see http://www.spe.org/web/csp/datasets/set01.htm)   ||\n"
         << "|+--------------------------------------------------------+|\n"
         << "||  domain = [0, 5] x [0, 1]                              ||\n"
-        << "||  diffusion: spe10 model 1                              ||\n"
+        << "||  diffusion: spe10 model 1 scalar data                  ||\n"
         << "||  force     = 1                                         ||\n"
         << "||  dirichlet = 0                                         ||\n"
         << "||  reference solution: discrete solution on finest grid  ||\n"

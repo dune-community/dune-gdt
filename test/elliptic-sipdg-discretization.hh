@@ -404,16 +404,16 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {6.80e-02, 3.87e-02, 1.11e-02, 2.47e-03};
+          return {6.79e-02, 3.86e-02, 1.10e-02, 2.46e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.48e-01, 3.00e-01, 1.63e-01, 7.47e-02};
+          return {3.47e-01, 2.99e-01, 1.62e-01, 7.46e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {2.48e-02, 3.72e-03, 6.29e-04, 1.22e-04};
+          return {2.47e-02, 3.71e-03, 6.28e-04, 1.21e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.09e-01, 6.94e-02, 2.21e-02, 6.91e-03};
+          return {2.08e-01, 6.93e-02, 2.20e-02, 6.90e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -421,16 +421,16 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::ER07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {8.43e-02, 2.26e-02, 5.75e-03};
+          return {8.42e-02, 2.25e-02, 5.74e-03};
         else if (type.compare("H1_semi") == 0)
-          return {3.07e-01, 1.56e-01, 7.75e-02};
+          return {3.06e-01, 1.55e-01, 7.74e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {7.28e-03, 9.41e-04, 1.20e-04};
+          return {7.28e-03, 9.40e-04, 1.19e-04};
         else if (type.compare("H1_semi") == 0)
-          return {4.97e-02, 1.28e-02, 3.21e-03};
+          return {4.95e-02, 1.27e-02, 3.20e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -438,16 +438,16 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::MixedBoundaryTypes< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {4.76e-02, 1.36e-02, 3.50e-03, 7.77e-04};
+          return {4.75e-02, 1.35e-02, 3.49e-03, 7.76e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.74e-01, 1.45e-01, 7.16e-02, 3.23e-02};
+          return {2.73e-01, 1.44e-01, 7.15e-02, 3.22e-02};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {3.96e-03, 7.11e-04, 1.44e-04, 3.24e-05};
+          return {3.95e-03, 7.10e-04, 1.43e-04, 3.24e-05};
         else if (type.compare("H1_semi") == 0)
-          return {4.90e-02, 1.83e-02, 7.39e-03, 2.97e-03};
+          return {4.89e-02, 1.82e-02, 7.38e-03, 2.96e-03};
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
