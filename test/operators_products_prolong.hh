@@ -68,8 +68,7 @@ struct ProlongationOperatorBase
     const Dune::Stuff::Functions::Difference<FunctionType, FineDiscreteFunctionType> fine_difference(
         function, fine_discrete_function);
     const auto fine_l2_error = std::sqrt(fine_l2_product_operator.apply2(fine_difference, fine_difference));
-    if (fine_l2_error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected, "\n" << fine_l2_error << " vs. " << RangeFieldType(1e-15));
+    EXPECT_LE(fine_l2_error, RangeFieldType(1e-15));
   }
 }; // ProlongationOperatorBase
 

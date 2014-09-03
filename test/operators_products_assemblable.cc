@@ -132,34 +132,25 @@ struct L2AssemblableProduct : public ::testing::Test
     projection_operator.apply(function_1, discrete_function);
     auto l2_product      = product.apply2(discrete_function.vector(), discrete_function.vector());
     RangeFieldType error = l2_product - RangeFieldType(1.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15)) << "Error is not as expected!\n" << l2_product << " vs. "
+                                            << RangeFieldType(1.0) << " (difference: " << std::scientific << error
+                                            << ")";
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     projection_operator.apply(function_2, discrete_function);
     l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = l2_product - RangeFieldType(1.0 / 3.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 3.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15)) << "Error is not as expected!\n" << l2_product << " vs. "
+                                            << RangeFieldType(1.0 / 3.0) << " (difference: " << std::scientific << error
+                                            << ")";
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     projection_operator.apply(function_3, discrete_function);
     l2_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = l2_product - RangeFieldType(1.0 / 5.0);
-    if (error > RangeFieldType(1e-2)) // <- since the space can be linear only we make quite some projection error
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-2)) // <- since the space can be linear only we make quite some projection error
+        << "Error is not as expected!\n" << l2_product << " vs. " << RangeFieldType(1.0 / 5.0)
+        << " (difference: " << std::scientific << error << ")";
   } // ... produces_correct_results()
 
   void fulfills_interface() const
@@ -208,12 +199,9 @@ struct H1SemiAssemblableProduct : public ::testing::Test
     projection_operator.apply(function_1, discrete_function);
     auto h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     RangeFieldType error = h1_semi_product - RangeFieldType(1.0);
-    if (error > RangeFieldType(1e-14)) // <- this is not as above (b.c. of the projection)
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-14)) // <- this is not as above (b.c. of the projection)
+        << "Errors are not as expected!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0)
+        << " (difference: " << std::scientific << error << ")";
     // test 2 (linear)
     const FunctionType function_2(
         "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}}); // <- this is not as
@@ -222,12 +210,9 @@ struct H1SemiAssemblableProduct : public ::testing::Test
     projection_operator.apply(function_2, discrete_function);
     h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = h1_semi_product - RangeFieldType(1.0 / 3.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0 / 3.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15)) << "Errors are not as expected!\n" << h1_semi_product << " vs. "
+                                            << RangeFieldType(1.0 / 3.0) << " (difference: " << std::scientific << error
+                                            << ")";
     // test 3 (quadratic)
     const FunctionType function_3("x",
                                   "(1.0/3.0) * x[0] * x[0] * x[0]",
@@ -237,12 +222,9 @@ struct H1SemiAssemblableProduct : public ::testing::Test
     projection_operator.apply(function_3, discrete_function);
     h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = h1_semi_product - RangeFieldType(1.0 / 5.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                 "They really ain't!\n" << h1_semi_product << " vs. " << RangeFieldType(1.0 / 5.0) << " (difference: "
-                                        << std::scientific
-                                        << error
-                                        << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15)) << "Errors are not as expected!\n" << h1_semi_product << " vs. "
+                                            << RangeFieldType(1.0 / 5.0) << " (difference: " << std::scientific << error
+                                            << ")";
   } // ... produces_correct_results()
 
   void fulfills_interface() const
