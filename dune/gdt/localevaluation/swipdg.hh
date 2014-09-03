@@ -500,8 +500,19 @@ public:
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
-    return redirect_order(*localFunction, testBase, ansatzBase);
+    return order(*localFunction, testBase, ansatzBase);
   }
+
+  /**
+   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
+   */
+  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+  {
+      return localFunction.order() + testBase.order() + ansatzBase.order();
+  } // size_t order(...)
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
@@ -515,23 +526,11 @@ public:
                 Dune::DynamicMatrix< R >& ret) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
-    redirect_evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
+    evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-private:
-  /**
-   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
-   */
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
-  {
-      return localFunction.order() + testBase.order() + ansatzBase.order();
-  } // size_t redirect_order(...)
-
   template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunction*/,
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunction*/,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
                 const IntersectionType& /*intersection*/,
@@ -539,10 +538,10 @@ private:
                 Dune::DynamicMatrix< R >& /*ret*/) const
   {
     static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
-  } // void redirect_evaluate(...) const
+  } // void evaluate(...) const
 
   template< class IntersectionType, class R >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& localFunction,
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& localFunction,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& testBase,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& ansatzBase,
                 const IntersectionType& intersection,
@@ -594,8 +593,9 @@ private:
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
-  } // void redirect_evaluate(...) const
+  } // void evaluate(...) const
 
+private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
 }; // class BoundaryLHS
