@@ -54,16 +54,15 @@ template< class LocalizableFunctionImp >
 class EllipticTraits< LocalizableFunctionImp, void >
 {
   static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                 "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
- public:
-   typedef LocalizableFunctionImp                                LocalizableFunctionType;
-   typedef Elliptic< LocalizableFunctionType, void > derived_type;
-   typedef typename LocalizableFunctionType::EntityType          EntityType;
-   typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-
+                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+public:
+  typedef LocalizableFunctionImp                                LocalizableFunctionType;
+  typedef Elliptic< LocalizableFunctionType, void >             derived_type;
+  typedef typename LocalizableFunctionType::EntityType          EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
+  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
 };
 } // namespace internal
 
@@ -73,7 +72,7 @@ class EllipticTraits< LocalizableFunctionImp, void >
  */
 template< class LocalizableFunctionImp >
 class Elliptic< LocalizableFunctionImp, void >
-  : public LocalEvaluation::Codim0Interface< internal::EllipticTraits< LocalizableFunctionImp, void >, 2 >
+    : public LocalEvaluation::Codim0Interface< internal::EllipticTraits< LocalizableFunctionImp, void >, 2 >
 {
 public:
   typedef internal::EllipticTraits< LocalizableFunctionImp, void > Traits;
@@ -154,8 +153,8 @@ private:
    */
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     return localFunction.order()
         + std::max(ssize_t(testBase.order()) - 1, ssize_t(0))
@@ -164,10 +163,10 @@ private:
 
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunction*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
-                const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
-                Dune::DynamicMatrix< R >& /*ret*/) const
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
+                         const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
+                         Dune::DynamicMatrix< R >& /*ret*/) const
   {
     static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
   } // ... redirect_evaluate< ... >(...)
@@ -178,10 +177,10 @@ private:
    */
   template< class R, int r >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& ansatzBase,
-                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
-                Dune::DynamicMatrix< R >& ret) const
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& testBase,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& ansatzBase,
+                         const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
+                         Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local function
