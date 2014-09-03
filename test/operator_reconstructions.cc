@@ -81,14 +81,12 @@ public:
     const Products::L2< GridViewType > l2_product(*(range_space.grid_view()));
     const RangeFieldType l2_error = l2_product.induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
-    if (l2_error > l2_error_expected)
-      DUNE_THROW(errors_are_not_as_expected, l2_error << " vs. " << l2_error_expected);
+    EXPECT_LE(l2_error, l2_error_expected);
 
     const Products::H1SemiGeneric< GridViewType > h1_semi_product(*(range_space.grid_view()));
     const RangeFieldType h1_error = h1_semi_product.induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
-    if (h1_error > h1_error_expected)
-      DUNE_THROW(errors_are_not_as_expected, h1_error << " vs. " << h1_error_expected);
+    EXPECT_LE(h1_error, h1_error_expected);
   } // ... produces_correct_results()
 
 private:

@@ -35,26 +35,23 @@ struct L2ProductOperator
     const FunctionType function_1("x", "1.0", 0);
     auto l2_product = l2_product_operator.apply2(function_1, function_1);
     RangeFieldType error = l2_product - RangeFieldType(1.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << l2_product << " vs. " << RangeFieldType(1.0)
+        << " (difference: " << std::scientific << error << ")";
     // test 2 (linear)
     const FunctionType function_2("x", "x[0] - 1.0", 1);
     l2_product = l2_product_operator.apply2(function_2, function_2);
     error = l2_product - RangeFieldType(1.0/3.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << l2_product << " vs. " << RangeFieldType(1.0/3.0)
+        << " (difference: " << std::scientific << error << ")";
     // test 3 (quadratic)
     const FunctionType function_3("x", "x[0]*x[0]", 2);
     l2_product = l2_product_operator.apply2(function_3, function_3);
     error = l2_product - RangeFieldType(1.0/5.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << l2_product << " vs. " << RangeFieldType(1.0/5.0)
+        << " (difference: " << std::scientific << error << ")";
   }
 
   void fulfills_interface() const
@@ -92,28 +89,25 @@ struct H1SemiProductOperator
     const FunctionType function_1("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}});
     auto h1_semi_product = h1_semi_product_operator.apply2(function_1, function_1);
     RangeFieldType error = h1_semi_product - dimDomain * RangeFieldType(1.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0)
+        << " (difference: " << std::scientific << error << ")";
     // test 2 (linear)
     const FunctionType function_2("x", "fake_value", 2, "affine gradient",
-                                  {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}});
+    {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}});
     h1_semi_product = h1_semi_product_operator.apply2(function_2, function_2);
     error = h1_semi_product - dimDomain * RangeFieldType(1.0/3.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/3.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/3.0)
+        << " (difference: " << std::scientific << error << ")";
     // test 3 (quadratic)
     const FunctionType function_3("x", "fake_value", 3, ", quadratic gradient",
-                                  {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}});
+    {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}});
     h1_semi_product = h1_semi_product_operator.apply2(function_3, function_3);
     error = h1_semi_product - dimDomain * RangeFieldType(1.0/5.0);
-    if (error > RangeFieldType(1e-15))
-      DUNE_THROW(errors_are_not_as_expected,
-                            "They really ain't!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/5.0)
-                            << " (difference: " << std::scientific << error << ")");
+    EXPECT_LE(error, RangeFieldType(1e-15))
+        << "Errors are not as expected!\n" << h1_semi_product << " vs. " << dimDomain * RangeFieldType(1.0/5.0)
+        << " (difference: " << std::scientific << error << ")";
   }
 
   void fulfills_interface() const
