@@ -6,9 +6,6 @@
 #ifndef DUNE_GDT_SPACES_DG_COMMON_HH
 #define DUNE_GDT_SPACES_DG_COMMON_HH
 
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/test/test_common.hh>
-
 // Then this one (otherwise we get alugrid problems)!
 #include "spaces.hh"
 

@@ -3,7 +3,7 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#include <dune/stuff/test/test_common.hh>
+#include <dune/stuff/test/main.hxx>
 
 #undef HAVE_FASP
 
@@ -40,6 +40,3 @@ TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticEstimatorTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
   this->produces_correct_results();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>
