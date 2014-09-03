@@ -6,9 +6,6 @@
 #ifndef DUNE_GDT_TEST_OPERATOR_PRODUCTS
 #define DUNE_GDT_TEST_OPERATOR_PRODUCTS
 
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/test/test_common.hh>
-
 #include <memory>
 
 #if HAVE_ALUGRID

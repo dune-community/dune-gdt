@@ -4,7 +4,7 @@
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
 // This one has to come first (includes the config.h)!
-#include <dune/stuff/test/test_common.hh>
+#include <dune/stuff/test/main.hxx>
 
 #include <dune/common/exceptions.hh>
 
@@ -397,5 +397,3 @@ TYPED_TEST(DISABLED_LargeEllipticSystems, produces_correct_results) {
 // | 4th we run all the tests                                                             |
 // | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
 // +--------------------------------------------------------------------------------------+
-
-#include <dune/stuff/test/test_main.cxx>
