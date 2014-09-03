@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#include <dune/stuff/test/main.hxx>
+
 #include "operators_products.hh"
 
 template <class SpaceType>
@@ -157,6 +159,3 @@ TYPED_TEST(H1SemiProductOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>
