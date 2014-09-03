@@ -23,7 +23,7 @@ struct EllipticCGDiscretization
       test_case.print_header(DSC_LOG_INFO);
       DSC_LOG_INFO << std::endl;
       EllipticCG::EocStudy< TestCase, 1 > eoc_study(test_case);
-      Dune::Stuff::Test::check_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
     } catch (Dune::Stuff::Exceptions::spe10_data_file_missing& ee) {
       DSC_LOG_INFO << ee.what() << std::endl;
     }
