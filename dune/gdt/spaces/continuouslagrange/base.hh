@@ -10,6 +10,7 @@
 
 #include <dune/common/typetraits.hh>
 #include <dune/common/dynvector.hh>
+#include <dune/common/version.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
