@@ -22,7 +22,7 @@ struct EllipticSIWPDGDiscretization : public ::testing::Test
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
     EllipticSWIPDG::EocStudy<TestCase, polOrder> eoc_study(test_case);
-    Dune::Stuff::Test::check_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study(...)
 }; // EllipticSIWPDGDiscretization
 
