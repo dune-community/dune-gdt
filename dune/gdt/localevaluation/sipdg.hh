@@ -52,7 +52,7 @@ public:
  */
 template< class LocalizableFunctionImp >
 class Inner
-  : public LocalEvaluation::Codim1Interface< InnerTraits< LocalizableFunctionImp >, 4 >
+    : public LocalEvaluation::Codim1Interface< InnerTraits< LocalizableFunctionImp >, 4 >
 {
 public:
   typedef InnerTraits< LocalizableFunctionImp >     Traits;
@@ -104,9 +104,9 @@ public:
                       const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& testBaseNeighbor,
                       const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& ansatzBaseNeighbor)
   {
-      return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
-          + std::max(testBaseEntity.order(), testBaseNeighbor.order())
-          + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
+    return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
+        + std::max(testBaseEntity.order(), testBaseNeighbor.order())
+        + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
   /**
@@ -337,13 +337,12 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-
 };
 
 
 template< class LocalizableFunctionImp >
 class BoundaryLHS
-  : public LocalEvaluation::Codim1Interface< BoundaryLHSTraits< LocalizableFunctionImp >, 2 >
+    : public LocalEvaluation::Codim1Interface< BoundaryLHSTraits< LocalizableFunctionImp >, 2 >
 {
 public:
   typedef BoundaryLHSTraits< LocalizableFunctionImp > Traits;
@@ -397,30 +396,30 @@ private:
    */
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
   {
-      return localFunction.order() + testBase.order() + ansatzBase.order();
+    return localFunction.order() + testBase.order() + ansatzBase.order();
   }
 
   template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunction*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
-                const IntersectionType& /*intersection*/,
-                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
-                Dune::DynamicMatrix< R >& /*ret*/) const
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
+                         const IntersectionType& /*intersection*/,
+                         const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
+                         Dune::DynamicMatrix< R >& /*ret*/) const
   {
     static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
   }
 
   template< class IntersectionType, class R >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& localFunction,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& ansatzBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector< DomainFieldType, 1 >& localPoint,
-                Dune::DynamicMatrix< R >& ret) const
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& testBase,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& ansatzBase,
+                         const IntersectionType& intersection,
+                         const Dune::FieldVector< DomainFieldType, 1 >& localPoint,
+                         Dune::DynamicMatrix< R >& ret) const
   {
     // clear ret
     ret *= 0.0;
@@ -515,7 +514,7 @@ public:
   typedef typename LocalizableDiffusionFunctionType::LocalfunctionType  LocalDiffusionFunctionType;
   typedef typename LocalizableDirichletFunctionType::LocalfunctionType  LocalDirichletFunctionType;
   typedef std::tuple< std::shared_ptr< LocalDiffusionFunctionType >,
-                      std::shared_ptr< LocalDirichletFunctionType > >   LocalfunctionTupleType;
+  std::shared_ptr< LocalDirichletFunctionType > >   LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
@@ -524,7 +523,7 @@ public:
 
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
 class BoundaryRHS
-  : public LocalEvaluation::Codim1Interface< BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >, 1 >
+    : public LocalEvaluation::Codim1Interface< BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >, 1 >
 {
 public:
   typedef BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp > Traits;
@@ -581,34 +580,34 @@ private:
    */
   template< class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
   static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLF, rCLF >& localDiffusion,
-                      const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLR, rCLR >& localDirichlet,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase)
+                               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLR, rCLR >& localDirichlet,
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase)
   {
-      const size_t testOrder = testBase.order();
-      const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
-      const size_t diffusionOrder = localDiffusion.order();
-      const size_t dirichletOrder = localDirichlet.order();
-      return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
+    const size_t testOrder = testBase.order();
+    const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
+    const size_t diffusionOrder = localDiffusion.order();
+    const size_t dirichletOrder = localDirichlet.order();
+    return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
   } // static int order(...)
 
   template< class IntersectionType, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT, int rCT >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF >& /*localDiffusion*/,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLDR, rCLDR >& /*localDirichlet*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
-                const IntersectionType& /*intersection*/,
-                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
-                Dune::DynamicVector< R >& /*ret*/) const
+                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLDR, rCLDR >& /*localDirichlet*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                         const IntersectionType& /*intersection*/,
+                         const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
+                         Dune::DynamicVector< R >& /*ret*/) const
   {
     static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
   } // void redirect_evaluate(...) const
 
   template< class IntersectionType, class R >
   void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDiffusion,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDirichlet,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
-                Dune::DynamicVector< R >& ret) const
+                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDirichlet,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
+                         const IntersectionType& intersection,
+                         const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
+                         Dune::DynamicVector< R >& ret) const
   {
     // clear ret
     ret *= 0.0;
