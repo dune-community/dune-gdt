@@ -305,7 +305,7 @@ public:
  *  \brief  Interface for quaternary codim 1 evaluations.
  */
 template <class Traits>
-class Codim1Interface<Traits, 4>
+class Codim1Interface<Traits, 4> : public Stuff::CRTPInterface<Codim1Interface<Traits, 4>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -330,18 +330,18 @@ public:
                const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& testBaseNeighbor,
                const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatzBaseNeighbor) const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().order(localFunctionsEntity,
-                                                 localFunctionsNeighbor,
-                                                 testBaseEntity,
-                                                 ansatzBaseEntity,
-                                                 testBaseNeighbor,
-                                                 ansatzBaseNeighbor));
-    return asImp().order(localFunctionsEntity,
-                         localFunctionsNeighbor,
-                         testBaseEntity,
-                         ansatzBaseEntity,
-                         testBaseNeighbor,
-                         ansatzBaseNeighbor);
+    CHECK_CRTP(this->as_imp(*this).order(localFunctionsEntity,
+                                         localFunctionsNeighbor,
+                                         testBaseEntity,
+                                         ansatzBaseEntity,
+                                         testBaseNeighbor,
+                                         ansatzBaseNeighbor));
+    return this->as_imp(*this).order(localFunctionsEntity,
+                                     localFunctionsNeighbor,
+                                     testBaseEntity,
+                                     ansatzBaseEntity,
+                                     testBaseNeighbor,
+                                     ansatzBaseNeighbor);
   }
 
   /**
@@ -369,23 +369,18 @@ public:
                 Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().evaluate(localFunctionsEntity,
-                                                             localFunctionsNeighbor,
-                                                             testBaseEntity,
-                                                             ansatzBaseEntity,
-                                                             testBaseNeighbor,
-                                                             ansatzBaseNeighbor,
-                                                             intersection,
-                                                             localPoint,
-                                                             entityEntityRet,
-                                                             neighborNeighborRet,
-                                                             entityNeighborRet,
-                                                             neighborEntityRet));
-  }
-
-  const derived_type& asImp() const
-  {
-    return static_cast<const derived_type&>(*this);
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctionsEntity,
+                                                     localFunctionsNeighbor,
+                                                     testBaseEntity,
+                                                     ansatzBaseEntity,
+                                                     testBaseNeighbor,
+                                                     ansatzBaseNeighbor,
+                                                     intersection,
+                                                     localPoint,
+                                                     entityEntityRet,
+                                                     neighborNeighborRet,
+                                                     entityNeighborRet,
+                                                     neighborEntityRet));
   }
 }; // class class Codim1Interface< Traits, 4 >
 
