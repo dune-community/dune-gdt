@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#include <dune/stuff/test/main.hxx>
+
 #include "operators_products_prolong.hh"
 
 typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES> ProlongationOperatorSpaceTypes;
@@ -25,6 +27,3 @@ TYPED_TEST(ProlongationOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>

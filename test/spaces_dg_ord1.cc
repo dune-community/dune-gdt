@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#include <dune/stuff/test/main.hxx>
+
 #include "spaces_dg_common.hh"
 
 typedef testing::Types<
@@ -48,6 +50,3 @@ TYPED_TEST(P1Q1_Discontinuous_Lagrange, maps_correctly)
 {
   this->maps_correctly();
 }
-
-
-#include <dune/stuff/test/test_main.cxx>
