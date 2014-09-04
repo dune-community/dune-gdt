@@ -38,7 +38,7 @@ class Codim0Interface
  */
 template< class Traits >
 class Codim0Interface< Traits, 1 >
-    : public Stuff::CRTPInterface< Codim0Interface< Traits, 1 >, Traits >
+  : public Stuff::CRTPInterface< Codim0Interface< Traits, 1 >, Traits >
 {
 public:
   typedef typename Traits::derived_type           derived_type;
@@ -60,8 +60,8 @@ public:
    *  \tparam rC  dimRangeRows of the testBase
    */
   template< class R, int r, int rC >
-  size_t order(const LocalfunctionTupleType& localFunctions,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
+  size_t order(const LocalfunctionTupleType& localFunctions, const Stuff::LocalfunctionSetInterface< EntityType,
+               DomainFieldType, dimDomain, R, r, rC >& testBase) const
   {
     CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase));
     return this->as_imp(*this).order(localFunctions, testBase);
@@ -90,7 +90,7 @@ public:
  **/
 template< class Traits >
 class Codim0Interface< Traits, 2 >
-    : public Stuff::CRTPInterface< Codim0Interface< Traits, 2 >, Traits >
+  : public Stuff::CRTPInterface< Codim0Interface< Traits, 2 >, Traits >
 {
 public:
   typedef typename Traits::derived_type           derived_type;
@@ -107,8 +107,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   size_t order(const LocalfunctionTupleType& localFunctions,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
+                                                       rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
+                                                       rCA >& ansatzBase) const
   {
     CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase, ansatzBase));
     return this->as_imp(*this).order(localFunctions, testBase, ansatzBase);
@@ -123,8 +125,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
+                                                        rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
+                                                        rCA >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -167,7 +171,8 @@ public:
    */
   template< class R, int r, int rC >
   size_t order(const LocalfunctionTupleType& localFunctions,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r,
+                                                       rC >& testBase) const
   {
     CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase));
     return this->as_imp(*this).order(localFunctions, testBase);
@@ -190,7 +195,7 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, intersection, localPoint, ret));
   }
-}; // class class Codim1Interface< Traits, 1 >
+}; // class Codim1Interface< Traits, 1 >
 
 
 /**
@@ -198,7 +203,7 @@ public:
  */
 template< class Traits >
 class Codim1Interface< Traits, 2 >
-    : public Stuff::CRTPInterface< Codim1Interface< Traits, 2 >, Traits >
+  : public Stuff::CRTPInterface< Codim1Interface< Traits, 2 >, Traits >
 {
 public:
   typedef typename Traits::derived_type           derived_type;
@@ -215,8 +220,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   size_t order(const LocalfunctionTupleType& localFunctions,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
+                                                       rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
+                                                       rCA >& ansatzBase) const
   {
     CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase, ansatzBase));
     return this->as_imp(*this).order(localFunctions, testBase, ansatzBase);
@@ -232,15 +239,18 @@ public:
    */
   template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
+                                                        rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
+                                                        rCA >& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint,
+                                                     ret));
   }
-}; // class class Codim1Interface< Traits, 2 >
+}; // class Codim1Interface< Traits, 2 >
 
 
 /**
