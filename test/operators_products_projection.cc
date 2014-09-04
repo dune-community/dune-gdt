@@ -104,11 +104,11 @@ struct DirichletProjectionOperator
     DiscreteFunctionType discrete_function(space, vector, "discrete function");
     // project
     const Dune::GDT::Operators::DirichletProjection< GridViewType > projection_operator(*(space.grid_view()),
-                                                                                       boundary_info);
+                                                                                        boundary_info);
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Functions::Difference< FunctionType, DiscreteFunctionType > difference(function,
-                                                                                             discrete_function);
+                                                                                              discrete_function);
     const Dune::GDT::Products::L2< GridViewType > l2_product_operator(*(space.grid_view()));
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     EXPECT_LE(l2_error, RangeFieldType(1e-15));

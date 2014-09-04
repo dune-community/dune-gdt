@@ -203,7 +203,7 @@ struct H1SemiAssemblableProduct
         << " (difference: " << std::scientific << error << ")";
     // test 2 (linear)
     const FunctionType function_2("x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient",
-    {{"x[0] - 1.0", "0.0", "0.0"}}); // <- this is not as above (b.c. of the projection)
+                                  {{"x[0] - 1.0", "0.0", "0.0"}}); // <- this is not as above (b.c. of the projection)
     projection_operator.apply(function_2, discrete_function);
     h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = h1_semi_product - RangeFieldType(1.0/3.0);
@@ -212,7 +212,7 @@ struct H1SemiAssemblableProduct
         << " (difference: " << std::scientific << error << ")";
     // test 3 (quadratic)
     const FunctionType function_3("x", "(1.0/3.0) * x[0] * x[0] * x[0]", 3, ", quadratic gradient",
-    {{"x[0]*x[0]", "0.0", "0.0"}}); // <- this is not as above (b.c. of the projection)
+                                  {{"x[0]*x[0]", "0.0", "0.0"}}); // <- this is not as above (b.c. of the projection)
     projection_operator.apply(function_3, discrete_function);
     h1_semi_product = product.apply2(discrete_function.vector(), discrete_function.vector());
     error = h1_semi_product - RangeFieldType(1.0/5.0);
