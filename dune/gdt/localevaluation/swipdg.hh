@@ -35,15 +35,15 @@ namespace SWIPDG {
 
 
 // forwards
-template <class DiffusionFactorType, class DiffusionTensorType = void>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class Inner;
 
 
-template <class DiffusionFactorType, class DiffusionTensorType = void>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class BoundaryLHS;
 
 
-template <class DiffusionFactorType, class DirichletType, class DiffusionTensorType = void>
+template <class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp = void>
 class BoundaryRHS;
 
 
@@ -111,27 +111,33 @@ static inline double boundary_sigma(const size_t pol_order)
 } // ... boundary_sigma(...)
 
 
-template <class DiffusionFactorType, class DiffusionTensorType>
+template <class DiffusionFactorImp, class DiffusionTensorImp>
 class InnerTraits
 {
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
-                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionTensorType>::value,
-                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorImp>::value,
+                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionTensorImp>::value,
+                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
 
 public:
-  typedef Inner<DiffusionFactorType, DiffusionTensorType> derived_type;
+  typedef Inner<DiffusionFactorImp, DiffusionTensorImp> derived_type;
 };
 
 
-template <class LocalizableFunctionType>
-class InnerTraits<LocalizableFunctionType, void>
+template <class LocalizableFunctionImp>
+class InnerTraits<LocalizableFunctionImp, void>
 {
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
-                "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
 
 public:
-  typedef Inner<LocalizableFunctionType, void> derived_type;
+  typedef Inner<LocalizableFunctionImp, void> derived_type;
+  typedef LocalizableFunctionImp LocalizableFunctionType;
+  typedef typename LocalizableFunctionType::EntityType EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType DomainFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+  typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
+  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
 };
 
 
@@ -165,18 +171,18 @@ public:
 };
 
 
-template <class DiffusionFactorType, class DirichletType, class DiffusionTensorType>
+template <class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp>
 class BoundaryRHSTraits
 {
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
-                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DirichletType>::value,
-                "DirichletType has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionTensorType>::value,
-                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorImp>::value,
+                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DirichletImp>::value,
+                "DirichletImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionTensorImp>::value,
+                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
 
 public:
-  typedef BoundaryRHS<DiffusionFactorType, DirichletType, DiffusionTensorType> derived_type;
+  typedef BoundaryRHS<DiffusionFactorImp, DirichletImp, DiffusionTensorImp> derived_type;
 };
 
 
