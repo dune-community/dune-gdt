@@ -185,7 +185,7 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, intersection, localPoint, ret));
   }
-}; // class class Codim1Interface< Traits, 1 >
+}; // class Codim1Interface< Traits, 1 >
 
 
 /**
@@ -235,7 +235,7 @@ public:
     CHECK_AND_CALL_CRTP(
         this->as_imp(*this).evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, ret));
   }
-}; // class class Codim1Interface< Traits, 2 >
+}; // class Codim1Interface< Traits, 2 >
 
 
 /**

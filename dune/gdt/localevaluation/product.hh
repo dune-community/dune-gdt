@@ -73,7 +73,7 @@ public:
     return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
-  template <class E, class D, int d, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  template <class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
   void
   evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunction*/,
            const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
