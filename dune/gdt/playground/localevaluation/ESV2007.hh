@@ -41,16 +41,19 @@ class DiffusiveFluxEstimateTraits
                 "DiffusiveFluxImp has to be derived from Stuff::IsLocalizableFunction.");
   static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
                 "DiffusionTensorImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_same< typename DiffusionFactorImp::EntityType, typename DiffusiveFluxImp::EntityType >::value,
-                "EntityImps have to agree!");
-  static_assert(std::is_same< typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType >::value,
-                "EntityImps have to agree!");
+  static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusiveFluxImp::EntityType >::value &&
+                std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusionTensorImp::EntityType >::value,
+                "EntityTypes have to agree!");
   static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
-                typename DiffusiveFluxImp::DomainFieldType >::value, "DomainFieldTypes have to agree!");
-  static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
-                typename DiffusionTensorImp::DomainFieldType >::value, "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusiveFluxImp::dimDomain, "Dimensions of domains have to agree");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions of domains have to agree");
+                              typename DiffusiveFluxImp::DomainFieldType >::value &&
+                std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DiffusionTensorImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(DiffusionFactorImp::dimDomain == DiffusiveFluxImp::dimDomain &&
+                DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
+                "Dimensions of domains have to agree");
 public:
   typedef DiffusiveFluxEstimate< DiffusionFactorImp, DiffusiveFluxImp, DiffusionTensorImp > derived_type;
 
@@ -80,11 +83,11 @@ class DiffusiveFluxEstimateTraits< DiffusionImp, DiffusiveFluxImp, void >
   static_assert(std::is_same< typename DiffusionImp::EntityType, typename DiffusiveFluxImp::EntityType >::value,
                 "EntityImps have to agree!");
   static_assert(std::is_same< typename DiffusionImp::DomainFieldType,
-                typename DiffusiveFluxImp::DomainFieldType >::value, "DomainFieldTypes have to agree!");
+                              typename DiffusiveFluxImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
   static_assert(DiffusionImp::dimDomain == DiffusiveFluxImp::dimDomain, "Dimensions of domains have to agree");
 public:
   typedef DiffusiveFluxEstimate< DiffusionImp, DiffusiveFluxImp >     derived_type;
-
   typedef DiffusionImp                                                LocalizableDiffusionType;
   typedef DiffusiveFluxImp                                            LocalizableDiffusiveFluxType;
   typedef typename LocalizableDiffusionType::LocalfunctionType        LocalDiffusionType;
@@ -102,8 +105,8 @@ public:
 
 template< class DiffusionImp, class DiffusiveFluxImp >
 class DiffusiveFluxEstimate< DiffusionImp, DiffusiveFluxImp, void >
-  : public LocalEvaluation::Codim0Interface< internal::DiffusiveFluxEstimateTraits< DiffusionImp, DiffusiveFluxImp >
-                                           , 2 >
+  : public LocalEvaluation::Codim0Interface
+         < internal::DiffusiveFluxEstimateTraits< DiffusionImp, DiffusiveFluxImp >, 2 >
 {
 public:
   typedef internal::DiffusiveFluxEstimateTraits< DiffusionImp, DiffusiveFluxImp > Traits;
@@ -196,8 +199,8 @@ private:
                                 const Dune::FieldVector< DomainFieldType, dimDomain >& local_point,
                                 Dune::DynamicMatrix< R >& ret)
   {
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       dimDomain, R, 1 >::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, 1 >::JacobianRangeType JacobianRangeType;
     JacobianRangeType left_sum(0);
     JacobianRangeType right_sum(0);
     // evaluate local functions

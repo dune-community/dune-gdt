@@ -43,10 +43,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   size_t order(const LocalfunctionTupleType& local_functions_tuple,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, rA, rCA >& ansatzBase) const
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     const auto local_diffusion_factor = std::get< 0 >(local_functions_tuple);
     const auto local_diffusion_tensor = std::get< 1 >(local_functions_tuple);
@@ -58,10 +58,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, rA, rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -72,14 +72,14 @@ public:
 
 private:
   template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
-  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                  , R, rDF, rCDF >& local_diffusion_factor,
-               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                  , R, rDT, rCDT >& local_diffusion_tensor,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, rA, rCA >& ansatzBase) const
+  size_t order(const Stuff::LocalfunctionInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& local_diffusion_factor,
+               const Stuff::LocalfunctionInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rDT, rCDT >& local_diffusion_tensor,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     return local_diffusion_factor.order()
         + local_diffusion_tensor.order()
@@ -88,14 +88,14 @@ private:
   } // ... order(...)
 
   template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, rDF, rCDF >& /*local_diffusion_factor*/,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, rDT, rCDT >& /*local_diffusion_tensor*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, rT, rCT >& /*testBase*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, rA, rCA >& /*ansatzBase*/,
+  void evaluate(const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*local_diffusion_factor*/,
+                const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rDT, rCDT >& /*local_diffusion_tensor*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
                 Dune::DynamicMatrix< R >& /*ret*/) const
   {
@@ -103,19 +103,19 @@ private:
   } // ... evaluate< ... >(...)
 
   template< class R, int r >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 1, 1 >& local_diffusion_factor,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 1, 1 >& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, r, 1 >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, r, 1 >& ansatzBase,
+  void evaluate(const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& local_diffusion_factor,
+                const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& local_diffusion_tensor,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, r, 1 >& testBase,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, r, 1 >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, r, 1 >::JacobianRangeType   JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType   JacobianRangeType;
     // evaluate local functions
     const auto local_diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     const auto local_diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
@@ -140,14 +140,14 @@ private:
   } // ... evaluate< ..., 1, 1 >(...)
 
   template< class R >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 1, 1 >& local_diffusion_factor,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 2, 2 >& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, 1, 1 >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, 1, 1 >& ansatzBase,
+  void evaluate(const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& local_diffusion_factor,
+                const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 2, 2 >& local_diffusion_tensor,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -155,14 +155,14 @@ private:
   }
 
   template< class R >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 1, 1 >& local_diffusion_factor,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                   , R, 3, 3 >& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, 1, 1 >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                      , R, 1, 1 >& ansatzBase,
+  void evaluate(const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& local_diffusion_factor,
+                const Stuff::LocalfunctionInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 3, 3 >& local_diffusion_tensor,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -170,19 +170,19 @@ private:
   }
 
   template< class R >
-  void evaluate_matrix_valued_(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                                  , R, 1, 1 >& local_diffusion_factor,
-                               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                                  , R, dimDomain, dimDomain >& local_diffusion_tensor,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                                     , R, 1, 1 >& testBase,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                                     , R, 1, 1 >& ansatzBase,
+  void evaluate_matrix_valued_(const Stuff::LocalfunctionInterface
+                                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& local_diffusion_factor,
+                               const Stuff::LocalfunctionInterface
+                                   < EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain >& local_diffusion_tensor,
+                               const Stuff::LocalfunctionSetInterface
+                                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
+                               const Stuff::LocalfunctionSetInterface
+                                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& ansatzBase,
                                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                                Dune::DynamicMatrix< R >& ret) const
   {
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, 1, 1 >::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType   JacobianRangeType;
     // evaluate local functions
     const auto local_diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     auto local_diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
