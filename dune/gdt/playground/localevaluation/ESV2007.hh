@@ -127,10 +127,10 @@ public:
   }
 
   template <class R, int rT, int rCT, int rA, int rCA>
-  static size_t
+  size_t
   order(const LocalfunctionTupleType localFuncs,
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase)
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
   {
     const auto local_diffusion      = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
@@ -138,11 +138,10 @@ public:
   } // ... order(...)
 
   template <class R, int rT, int rCT, int rA, int rCA>
-  static void
-  evaluate(const LocalfunctionTupleType localFuncs,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const LocalfunctionTupleType localFuncs,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
+                const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion      = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
@@ -151,11 +150,11 @@ public:
 
 private:
   template <class R, int rLD, int rCLD, int rLDF, int rCLDF, int rT, int rCT, int rA, int rCA>
-  static size_t redirect_order(
+  size_t redirect_order(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& local_diffusion,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base)
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
   {
     // TODO: there is no way to guess the order of local_diffusion^-1, so we take local_diffusion.order()
     return local_diffusion.order()
@@ -166,24 +165,24 @@ private:
   } // ... redirect_order(...)
 
   template <class R, int rLD, int rCLD, int rLDF, int rCLDF, int rT, int rCT, int rA, int rCA>
-  static void redirect_evaluate(
+  void redirect_evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& /*local_diffusion*/,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF,
                                           rCLDF>& /*local_diffusive_flux*/,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*test_base*/,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatz_base*/,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/)
+      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/) const
   {
     static_assert(AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   } // ... redirect_evaluate(...)
 
   template <class R>
-  static void redirect_evaluate(
+  void redirect_evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret)
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>::JacobianRangeType
         JacobianRangeType;
@@ -257,10 +256,10 @@ public:
   }
 
   template <class R, int rT, int rCT, int rA, int rCA>
-  static size_t
+  size_t
   order(const LocalfunctionTupleType localFuncs,
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase)
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
@@ -270,11 +269,10 @@ public:
   } // ... order(...)
 
   template <class R, int rT, int rCT, int rA, int rCA>
-  static void
-  evaluate(const LocalfunctionTupleType localFuncs,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret)
+  void evaluate(const LocalfunctionTupleType localFuncs,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
+                const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
@@ -290,13 +288,13 @@ public:
 
 private:
   template <class R, int rLD, int rCLD, int rLDT, int rCLDT, int rLDF, int rCLDF, int rT, int rCT, int rA, int rCA>
-  static size_t redirect_order(
+  size_t redirect_order(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& local_diffusion_factor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT, rCLDT>&
           local_diffusion_tensor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base)
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
   {
     // TODO: there is no way to guess the order of (local_diffusion_factor * local_diffusion_tensor)^-1,
     //       so we take local_diffusion_factor.order() + local_diffusion_tensor.order()
@@ -309,7 +307,7 @@ private:
   } // ... redirect_order(...)
 
   template <class R, int rLD, int rCLD, int rLDT, int rCLDT, int rLDF, int rCLDF, int rT, int rCT, int rA, int rCA>
-  static void redirect_evaluate(
+  void redirect_evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD,
                                           rCLD>& /*local_diffusion_factor*/,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT,
@@ -318,20 +316,20 @@ private:
                                           rCLDF>& /*local_diffusive_flux*/,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*test_base*/,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatz_base*/,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/)
+      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/) const
   {
     static_assert(AlwaysFalse<R>::value, "Not implemented for these dimensions!");
   } // ... redirect_evaluate(...)
 
   template <class R>
-  static void redirect_evaluate(
+  void redirect_evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
           local_diffusion_tensor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret)
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
     typedef FieldVector<R, dimDomain> DomainType;
     DomainType left_sum(0);
