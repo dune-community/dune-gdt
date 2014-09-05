@@ -118,8 +118,25 @@ class InnerTraits
                 "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
   static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
                 "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusionTensorImp::EntityType >::value,
+                "EntityTypes have to agree!");
+  static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DiffusionTensorImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
+                "Dimensions of domains have to agree");
 public:
-  typedef Inner< DiffusionFactorImp, DiffusionTensorImp > derived_type;
+  typedef Inner< DiffusionFactorImp, DiffusionTensorImp >                     derived_type;
+  typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
+  typedef DiffusionTensorImp                                                  LocalizableDiffusionTensorFunctionType;
+  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType  LocalDiffusionFactorFunctionType;
+  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType  LocalDiffusionTensorFunctionType;
+  typedef std::tuple< std::shared_ptr< LocalDiffusionFactorFunctionType >,
+                      std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
+  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
+  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 };
 
 
@@ -146,8 +163,25 @@ class BoundaryLHSTraits
                 "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
   static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
                 "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusionTensorImp::EntityType >::value,
+                "EntityTypes have to agree!");
+  static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DiffusionTensorImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
+                "Dimensions of domains have to agree");
 public:
-  typedef BoundaryLHS< DiffusionFactorImp, DiffusionTensorImp > derived_type;
+  typedef BoundaryLHS< DiffusionFactorImp, DiffusionTensorImp >               derived_type;
+  typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
+  typedef DiffusionTensorImp                                                  LocalizableDiffusionTensorFunctionType;
+  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType  LocalDiffusionFactorFunctionType;
+  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType  LocalDiffusionTensorFunctionType;
+  typedef std::tuple< std::shared_ptr< LocalDiffusionFactorFunctionType >,
+                      std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
+  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
+  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 };
 
 
@@ -176,8 +210,33 @@ class BoundaryRHSTraits
                 "DirichletImp has to be tagged as Stuff::IsLocalizableFunction!");
   static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
                 "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusionTensorImp::EntityType >::value &&
+                std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DirichletImp::EntityType >::value,
+                "EntityTypes have to agree!");
+  static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DiffusionTensorImp::DomainFieldType >::value &&
+                std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DirichletImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain &&
+                DiffusionFactorImp::dimDomain == DirichletImp::dimDomain,
+                "Dimensions of domains have to agree");
 public:
   typedef BoundaryRHS< DiffusionFactorImp, DirichletImp, DiffusionTensorImp > derived_type;
+  typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
+  typedef DirichletImp                                                        LocalizableDirichletFunctionType;
+  typedef DiffusionTensorImp                                                  LocalizableDiffusionTensorFunctionType;
+  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType      LocalDiffusionFactorFunctionType;
+  typedef typename LocalizableDirichletFunctionType::LocalfunctionType            LocalDirichletFunctionType;
+  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType      LocalDiffusionTensorFunctionType;
+  typedef std::tuple< std::shared_ptr< LocalDiffusionFactorFunctionType >,
+                      std::shared_ptr< LocalDiffusionTensorFunctionType >,
+                      std::shared_ptr< LocalDirichletFunctionType > >             LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFactorFunctionType::EntityType             EntityType;
+  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType        DomainFieldType;
+  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 };
 
 
