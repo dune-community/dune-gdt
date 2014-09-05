@@ -584,7 +584,7 @@ private:
     const size_t diffusionOrder    = localDiffusion.order();
     const size_t dirichletOrder = localDirichlet.order();
     return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-  } // static size_t redirect_order(...)
+  } // size_t redirect_order(...)
 
   template <class IntersectionType, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT, int rCT>
   void redirect_evaluate(
