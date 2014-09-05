@@ -537,8 +537,7 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  BoundaryLHS(const LocalizableFunctionType& inducingFunction,
-              const double beta = internal::default_beta(LocalizableFunctionType::dimDomain))
+  BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {
@@ -677,7 +676,7 @@ public:
   static const unsigned int dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = internal::default_beta(LocalizableDiffusionFunctionType::dimDomain))
+              const double beta = internal::default_beta(dimDomain))
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
