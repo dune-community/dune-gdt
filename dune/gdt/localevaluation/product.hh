@@ -74,12 +74,12 @@ public:
   }
 
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                     rCL >& /*localFunction*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& /*testBase*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& /*ansatzBase*/,
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                   , R, rL, rCL >& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& /*ansatzBase*/,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
                 Dune::DynamicMatrix< R >& /*ret*/) const
   {
@@ -87,10 +87,10 @@ public:
   } // ... evaluate(...)
 
   template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                     rCL >& /*localFunction*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& /*testBase*/,
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                   , R, rL, rCL >& /*localFunction*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& /*testBase*/,
                 const IntersectionType& /*intersection*/,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1>& /*localPoint*/,
                 Dune::DynamicVector< R >& /*ret*/) const
@@ -108,8 +108,8 @@ public:
    */
   template< class R, int rT, int rCT >
   size_t order(const LocalfunctionTupleType& localFuncs,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                       rCT >& testBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, rT, rCT >& testBase) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return redirect_order(*localFunction, testBase);
@@ -142,10 +142,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   size_t order(const LocalfunctionTupleType& localFuncs,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                       rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                       rCA >& ansatzBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, rA, rCA >& ansatzBase) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return redirect_order(*localFunction, testBase, ansatzBase);
@@ -156,10 +156,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFuncs,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -193,10 +193,10 @@ public:
 
 private:
   template< class R, int rL, int rCL, int rT, int rCT >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                              rCL >& /*localFunction*/,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                 rCT >& /*testBase*/,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rL, rCL >& /*localFunction*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, rT, rCT >& /*testBase*/,
                          const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
                          Dune::DynamicVector< R >& /*ret*/) const
   {
@@ -209,10 +209,10 @@ private:
    * \return localFunction.order() + testBase.order()
    */
   template< class R, int rL, int rCL, int rT, int rCT >
-  size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                             rCL >& localFunction,
-                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                rCT >& testBase) const
+  size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                           , R, rL, rCL >& localFunction,
+                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                              , R, rT, rCT >& testBase) const
   {
     return localFunction.order() + testBase.order();
   } // size_t redirect_order(...)
@@ -222,10 +222,10 @@ private:
    *  \brief computes a scalar product evaluation.
    */
   template< class R >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                              1 >& localFunction,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                                 1 >& testBase,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, 1, 1 >& localFunction,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, 1, 1 >& testBase,
                          const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                          Dune::DynamicVector< R >& ret) const
   {
@@ -250,12 +250,12 @@ private:
    *  \return localFunction.order() + testBase.order() + ansatzBase.order()
    */
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                             rCL >& localFunction,
-                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                rCT >& testBase,
-                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                                rCA >& ansatzBase) const
+  size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                           , R, rL, rCL >& localFunction,
+                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                              , R, rT, rCT >& testBase,
+                        const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                              , R, rA, rCA >& ansatzBase) const
   {
     return localFunction.order() + testBase.order() + ansatzBase.order();
   } // ... redirect_order(...)
@@ -264,12 +264,12 @@ private:
    *  \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
    */
   template< class R, int r >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                              1 >& localFunction,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r,
-                                                                 1 >& testBase,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r,
-                                                                 1 >& ansatzBase,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, 1, 1 >& localFunction,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, r, 1 >& testBase,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, r, 1 >& ansatzBase,
                          const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                          Dune::DynamicMatrix< R >& ret) const
   {
@@ -278,8 +278,8 @@ private:
     // evaluate bases
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r,
-                                                       1 >::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, r, 1 >::RangeType RangeType;
     std::vector< RangeType > testValues(rows, RangeType(0));
     std::vector< RangeType > ansatzValues(cols, RangeType(0));
     testBase.evaluate(localPoint, testValues);
@@ -303,10 +303,10 @@ private:
    * \addtogroup codim2_1
    */
   template< class IntersectionType, class R >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                              1 >& localFunction,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                                 1 >& testBase,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, 1, 1 >& localFunction,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, 1, 1 >& testBase,
                          const IntersectionType& intersection,
                          const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                          Dune::DynamicVector< R >& ret) const
