@@ -82,16 +82,16 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class R, int rT, int rCT, int rA, int rCA >
-  static size_t order(const LocalfunctionTupleType& localFunctionsEntity,
-                      const LocalfunctionTupleType& localFunctionsNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rT, rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rA, rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rT, rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rA, rCA >& ansatzBaseNeighbor)
+  size_t order(const LocalfunctionTupleType& localFunctionsEntity,
+               const LocalfunctionTupleType& localFunctionsNeighbor,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBaseEntity,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBaseEntity,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBaseNeighbor,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBaseNeighbor) const
   {
     const auto localFunctionEntity = std::get< 0 >(localFunctionsEntity);
     const auto localFunctionNeighbor = std::get< 0 >(localFunctionsNeighbor);
@@ -135,18 +135,18 @@ public:
 
 private:
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                         , R, rL, rCL >& localFunctionEntity,
-                      const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                         , R, rL, rCL >& localFunctionNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rT, rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rA, rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rT, rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rA, rCA >& ansatzBaseNeighbor)
+  size_t order(const Stuff::LocalfunctionInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunctionEntity,
+               const Stuff::LocalfunctionInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunctionNeighbor,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBaseEntity,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBaseEntity,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBaseNeighbor,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBaseNeighbor) const
   {
     return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
          + std::max(testBaseEntity.order(), testBaseNeighbor.order())
@@ -380,11 +380,11 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class R, int rT, int rCT, int rA, int rCA >
-  static size_t order(const LocalfunctionTupleType localFuncs,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rT, rCT >& testBase,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, rA, rCA >& ansatzBase)
+  size_t order(const LocalfunctionTupleType localFuncs,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return redirect_order(*localFunction, testBase, ansatzBase);
@@ -412,12 +412,12 @@ private:
    * \return localFunction.order() + testBase.order() + ansatzBase.order();
    */
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                                  , R, rL, rCL >& localFunction,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                                     , R, rT, rCT >& testBase,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                                     , R, rA, rCA >& ansatzBase)
+  size_t redirect_order(const Stuff::LocalfunctionInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
+                        const Stuff::LocalfunctionSetInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                        const Stuff::LocalfunctionSetInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     return localFunction.order() + testBase.order() + ansatzBase.order();
   }
@@ -578,9 +578,9 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template< class R, int r, int rC >
-  static size_t order(const LocalfunctionTupleType localFuncs,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                            , R, r, rC >& testBase)
+  size_t order(const LocalfunctionTupleType localFuncs,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
   {
     const auto localDiffusion = std::get< 0 >(localFuncs);
     const auto localDirichlet = std::get< 1 >(localFuncs);
@@ -607,12 +607,12 @@ private:
    *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
    */
   template< class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
-  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                                  , R, rLF, rCLF >& localDiffusion,
-                               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                                  , R, rLR, rCLR >& localDirichlet,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                                     , R, rT, rCT >& testBase)
+  size_t redirect_order(const Stuff::LocalfunctionInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rLF, rCLF >& localDiffusion,
+                        const Stuff::LocalfunctionInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rLR, rCLR >& localDirichlet,
+                        const Stuff::LocalfunctionSetInterface
+                            < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase) const
   {
     const size_t testOrder = testBase.order();
     const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
