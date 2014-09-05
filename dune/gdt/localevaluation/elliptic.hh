@@ -27,7 +27,7 @@ namespace LocalEvaluation {
 
 
 // forwards
-template< class DiffusionFactorType, class DiffusionTensorType = void >
+template< class DiffusionFactorImp, class DiffusionTensorImp = void >
 class Elliptic;
 
 
@@ -37,16 +37,32 @@ namespace internal {
 /**
  *  \brief  Traits for the Elliptic evaluation.
  */
-template< class DiffusionFactorType, class DiffusionTensorType >
+template< class DiffusionFactorImp, class DiffusionTensorImp >
 class EllipticTraits
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionFactorType >::value,
-                "DiffusionFactorType has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionTensorType >::value,
-                "DiffusionTensorType has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
+                              typename DiffusionTensorImp::EntityType >::value,
+                "EntityTypes have to agree!");
+  static_assert(std::is_same< typename DiffusionFactorImp::DomainFieldType,
+                              typename DiffusionTensorImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
+                "Dimensions of domains have to agree");
 public:
-  typedef Elliptic< DiffusionFactorType, DiffusionTensorType > derived_type;
-
+  typedef Elliptic< DiffusionFactorImp, DiffusionTensorImp >                  derived_type;
+  typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
+  typedef DiffusionTensorImp                                                  LocalizableDiffusionTensorFunctionType;
+  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType  LocalDiffusionFactorFunctionType;
+  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType  LocalDiffusionTensorFunctionType;
+  typedef std::tuple< std::shared_ptr< LocalDiffusionFactorFunctionType >,
+                      std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
+  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
+  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 };
 
 
