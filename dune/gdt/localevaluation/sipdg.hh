@@ -84,14 +84,14 @@ public:
   template< class R, int rT, int rCT, int rA, int rCA >
   static size_t order(const LocalfunctionTupleType& localFunctionsEntity,
                       const LocalfunctionTupleType& localFunctionsNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                              rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                              rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                              rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                              rCA >& ansatzBaseNeighbor)
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rT, rCT >& testBaseEntity,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rA, rCA >& ansatzBaseEntity,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rT, rCT >& testBaseNeighbor,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rA, rCA >& ansatzBaseNeighbor)
   {
     const auto localFunctionEntity = std::get< 0 >(localFunctionsEntity);
     const auto localFunctionNeighbor = std::get< 0 >(localFunctionsNeighbor);
@@ -106,14 +106,14 @@ public:
   template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
                 const LocalfunctionTupleType& localFunctionsNeighbor,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& testBaseEntity,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& ansatzBaseEntity,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& testBaseNeighbor,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& ansatzBaseNeighbor,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& testBaseEntity,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& testBaseNeighbor,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& ansatzBaseNeighbor,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& entityEntityRet,
@@ -135,18 +135,18 @@ public:
 
 private:
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                           rCL >& localFunctionEntity,
-                      const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                           rCL >& localFunctionNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                              rCT >& testBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                              rCA >& ansatzBaseEntity,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                              rCT >& testBaseNeighbor,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                              rCA >& ansatzBaseNeighbor)
+  static size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                         , R, rL, rCL >& localFunctionEntity,
+                      const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                         , R, rL, rCL >& localFunctionNeighbor,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rT, rCT >& testBaseEntity,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rA, rCA >& ansatzBaseEntity,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rT, rCT >& testBaseNeighbor,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rA, rCA >& ansatzBaseNeighbor)
   {
     return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
          + std::max(testBaseEntity.order(), testBaseNeighbor.order())
@@ -154,18 +154,18 @@ private:
   }
 
   template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                     rCL >& /*localFunctionEntity*/,
-                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                     rCL >& /*localFunctionNeighbor*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& /*testBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& /*ansatzBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& /*testBaseNeighbor*/,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& /*ansatzBaseNeighbor*/,
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                   , R, rL, rCL >& /*localFunctionEntity*/,
+                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                   , R, rL, rCL >& /*localFunctionNeighbor*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& /*testBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& /*ansatzBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& /*testBaseNeighbor*/,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& /*ansatzBaseNeighbor*/,
                 const IntersectionType& /*intersection*/,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
                 Dune::DynamicMatrix< R >& /*entityEntityRet*/,
@@ -200,12 +200,12 @@ private:
     neighborNeighborRet *= 0.0;
     entityNeighborRet *= 0.0;
     neighborEntityRet *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::DomainType         DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::DomainType         DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::RangeType          RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::JacobianRangeType  JacobianRangeType;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
     const DomainType localPointEn = intersection.geometryInInside().global(localPoint);
     const DomainType localPointNe = intersection.geometryInOutside().global(localPoint);
@@ -381,10 +381,10 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   static size_t order(const LocalfunctionTupleType localFuncs,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                              rCT >& testBase,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                              rCA >& ansatzBase)
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rT, rCT >& testBase,
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rA, rCA >& ansatzBase)
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return redirect_order(*localFunction, testBase, ansatzBase);
@@ -395,10 +395,10 @@ public:
    */
   template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType localFuncs,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                        rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                        rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                      , R, rA, rCA >& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
@@ -412,23 +412,23 @@ private:
    * \return localFunction.order() + testBase.order() + ansatzBase.order();
    */
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                                    rCL >& localFunction,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                       rCT >& testBase,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                                       rCA >& ansatzBase)
+  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                                  , R, rL, rCL >& localFunction,
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                                     , R, rT, rCT >& testBase,
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                                     , R, rA, rCA >& ansatzBase)
   {
     return localFunction.order() + testBase.order() + ansatzBase.order();
   }
 
   template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL,
-                                                              rCL >& /*localFunction*/,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                 rCT >& /*testBase*/,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA,
-                                                                 rCA >& /*ansatzBase*/,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rL, rCL >& /*localFunction*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, rT, rCT >& /*testBase*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, rA, rCA >& /*ansatzBase*/,
                          const IntersectionType& /*intersection*/,
                          const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
                          Dune::DynamicMatrix< R >& /*ret*/) const
@@ -446,12 +446,12 @@ private:
   {
     // clear ret
     ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::DomainType         DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::DomainType         DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::RangeType          RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2
+                                                     , R, 1, 1 >::JacobianRangeType  JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
@@ -526,10 +526,10 @@ class BoundaryRHSTraits
   static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDirichletFunctionImp >::value,
                 "LocalizableDirichletFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
   static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::EntityType,
-                typename LocalizableDirichletFunctionImp::EntityType >::value,
+                              typename LocalizableDirichletFunctionImp::EntityType >::value,
                 "EntityTypes have to agree!");
   static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::DomainFieldType,
-                typename LocalizableDirichletFunctionImp::DomainFieldType >::value,
+                              typename LocalizableDirichletFunctionImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(LocalizableDiffusionFunctionImp::dimDomain == LocalizableDirichletFunctionImp::dimDomain,
                 "Dimensions of domains have to agree");
@@ -579,8 +579,8 @@ public:
    */
   template< class R, int r, int rC >
   static size_t order(const LocalfunctionTupleType localFuncs,
-                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r,
-                                                              rC >& testBase)
+                      const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, r, rC >& testBase)
   {
     const auto localDiffusion = std::get< 0 >(localFuncs);
     const auto localDirichlet = std::get< 1 >(localFuncs);
@@ -607,12 +607,12 @@ private:
    *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
    */
   template< class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
-  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLF,
-                                                                    rCLF >& localDiffusion,
-                               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLR,
-                                                                    rCLR >& localDirichlet,
-                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                       rCT >& testBase)
+  static size_t redirect_order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                                  , R, rLF, rCLF >& localDiffusion,
+                               const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                                  , R, rLR, rCLR >& localDirichlet,
+                               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                                     , R, rT, rCT >& testBase)
   {
     const size_t testOrder = testBase.order();
     const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
@@ -622,12 +622,12 @@ private:
   } // static size_t redirect_order(...)
 
   template< class IntersectionType, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT, int rCT >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLDF,
-                                                              rCLDF >& /*localDiffusion*/,
-                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rLDR,
-                                                              rCLDR >& /*localDirichlet*/,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT,
-                                                                 rCT >& /*testBase*/,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rLDF, rCLDF >& /*localDiffusion*/,
+                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, rLDR, rCLDR >& /*localDirichlet*/,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, rT, rCT >& /*testBase*/,
                          const IntersectionType& /*intersection*/,
                          const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
                          Dune::DynamicVector< R >& /*ret*/) const
@@ -636,24 +636,24 @@ private:
   } // void redirect_evaluate(...) const
 
   template< class IntersectionType, class R >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                              1 >& localDiffusion,
-                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                              1 >& localDirichlet,
-                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1,
-                                                                 1 >& testBase,
+  void redirect_evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, 1, 1 >& localDiffusion,
+                         const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
+                                                            , R, 1, 1 >& localDirichlet,
+                         const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                               , R, 1, 1 >& testBase,
                          const IntersectionType& intersection,
                          const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                          Dune::DynamicVector< R >& ret) const
   {
     // clear ret
     ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       dimDomain, R, 1, 1 >::DomainType         DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       dimDomain, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType,
-                                                       dimDomain, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, 1, 1 >::DomainType         DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, 1, 1 >::RangeType          RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
+                                                     , R, 1, 1 >::JacobianRangeType  JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
