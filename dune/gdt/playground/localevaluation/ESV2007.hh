@@ -64,8 +64,8 @@ public:
   typedef typename LocalizableDiffusionFactorType::LocalfunctionType LocalDiffusionFactorType;
   typedef typename LocalizableDiffusiveFluxType::LocalfunctionType LocalDiffusiveFluxType;
   typedef typename LocalizableDiffusionTensorType::LocalfunctionType LocalDiffusionTensorType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorType>, std::shared_ptr<LocalDiffusiveFluxType>,
-                     std::shared_ptr<LocalDiffusionTensorType>> LocalfunctionTupleType;
+  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorType>, std::shared_ptr<LocalDiffusionTensorType>,
+                     std::shared_ptr<LocalDiffusiveFluxType>> LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorType::dimDomain;
