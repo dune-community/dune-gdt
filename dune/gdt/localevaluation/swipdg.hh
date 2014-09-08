@@ -353,7 +353,6 @@ public:
              neighborEntityRet);
   }
 
-//private:
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunctionEntity,
@@ -427,12 +426,12 @@ public:
     neighborNeighborRet *= 0.0;
     entityNeighborRet *= 0.0;
     neighborEntityRet *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::DomainType         DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::DomainType
+        DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::RangeType
+        RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::JacobianRangeType
+        JacobianRangeType;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
     const DomainType localPointEn = intersection.geometryInInside().global(localPoint);
     const DomainType localPointNe = intersection.geometryInOutside().global(localPoint);
@@ -643,12 +642,12 @@ public:
   {
     // clear ret
     ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::DomainType         DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::RangeType          RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, 2, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::DomainType
+        DomainType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::RangeType
+        RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, 2, R, 1, 1 >::JacobianRangeType
+        JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
@@ -800,11 +799,11 @@ private:
     // clear ret
     ret *= 0.0;
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::DomainType         DomainType;
+        < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::DomainType        DomainType;
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::RangeType          RangeType;
+        < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::RangeType         RangeType;
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType  JacobianRangeType;
+        < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);

@@ -199,8 +199,8 @@ private:
                          const Dune::FieldVector< DomainFieldType, dimDomain >& local_point,
                          Dune::DynamicMatrix< R >& ret) const
   {
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, 1 >::JacobianRangeType JacobianRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1 >::JacobianRangeType
+        JacobianRangeType;
     JacobianRangeType left_sum(0);
     JacobianRangeType right_sum(0);
     // evaluate local functions

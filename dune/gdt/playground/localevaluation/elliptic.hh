@@ -115,7 +115,7 @@ private:
                 Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType   JacobianRangeType;
+        < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local functions
     const auto local_diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     const auto local_diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
@@ -182,7 +182,7 @@ private:
                                Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType   JacobianRangeType;
+        < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local functions
     const auto local_diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     auto local_diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);

@@ -212,7 +212,7 @@ private:
                          Dune::DynamicMatrix< R >& ret) const
   {
     typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType   JacobianRangeType;
+        < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType JacobianRangeType;
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
@@ -244,10 +244,10 @@ private:
                                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                                Dune::DynamicMatrix< R >& ret) const
   {
-    typedef typename Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain
-                                                  , R, dimDomain, dimDomain >::RangeType    DiffusionRangeType;
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain
-                                                     , R, 1, 1 >::JacobianRangeType         JacobianRangeType;
+    typedef typename Stuff::LocalfunctionInterface
+        < EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain >::RangeType DiffusionRangeType;
+    typedef typename Stuff::LocalfunctionSetInterface
+        < EntityType, DomainFieldType, dimDomain, R, 1, 1 >::JacobianRangeType         JacobianRangeType;
     // evaluate local function
     const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient

@@ -278,8 +278,8 @@ private:
     // evaluate bases
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
-    typedef typename Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, r, 1 >::RangeType RangeType;
+    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >::RangeType
+        RangeType;
     std::vector< RangeType > testValues(rows, RangeType(0));
     std::vector< RangeType > ansatzValues(cols, RangeType(0));
     testBase.evaluate(localPoint, testValues);
