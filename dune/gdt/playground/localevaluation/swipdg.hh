@@ -102,7 +102,6 @@ public:
              neighborEntityRet);
   }
 
-private:
   template <class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA>
   size_t
   order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>&
@@ -293,6 +292,7 @@ private:
     } // loop over all neighbor test basis functions
   } // void evaluate< ..., 1, 1 >(...) const
 
+private:
   const LocalizableDiffusionFactorFunctionType& diffusion_factor_;
   const LocalizableDiffusionTensorFunctionType& diffusion_tensor_;
   const double beta_;
@@ -355,7 +355,6 @@ public:
     evaluate(*local_diffusion_factor, *local_diffusion_tensor, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-private:
   template <class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA>
   size_t
   order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>& localDiffusionFactor,
@@ -446,6 +445,7 @@ private:
     } // loop over all test basis functions
   } // void evaluate(...) const
 
+private:
   const LocalizableDiffusionFactorFunctionType& diffusion_factor_;
   const LocalizableDiffusionTensorFunctionType& diffusion_tensor_;
   const double beta_;
