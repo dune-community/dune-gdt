@@ -350,7 +350,6 @@ public:
              neighborEntityRet);
   }
 
-  // private:
   template <class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
   size_t
   order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunctionEntity,
