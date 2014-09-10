@@ -73,17 +73,11 @@ class FemWrapper< ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, Ran
 public:
   typedef FemWrapperTraits
       < ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
-  typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::EntityType   EntityType;
-
-  typedef DomainFieldImp                                  DomainFieldType;
-  static const unsigned int                               dimDomain = domainDim;
-  typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
-  typedef RangeFieldImp                                 RangeFieldType;
-  static const unsigned int                             dimRange = rangeDim;
-  static const unsigned int                             dimRangeCols = 1;
-  typedef Dune::FieldVector< RangeFieldType, dimRange > RangeType;
-  typedef Dune::FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
+  typedef typename Traits::BackendType BackendType;
+  typedef typename BaseType::EntityType        EntityType;
+  typedef typename BaseType::DomainType        DomainType;
+  typedef typename BaseType::RangeType         RangeType;
+  typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
   template< class S >
   FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface< S >& femSpace, const EntityType& ent)
