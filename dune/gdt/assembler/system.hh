@@ -12,6 +12,10 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
+#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) //&& HAVE_TBB //EXADUNE
+#include <dune/grid/utility/partitioning/seedlist.hh>
+#endif
+
 #include "local/codim0.hh"
 #include "local/codim1.hh"
 #include "gridwalker.hh"
@@ -441,6 +445,36 @@ public:
   {
     this->walk(clear_stack);
   }
+
+#if 1 // HAVE_TBB
+  void tbb_assemble(const bool clear_stack = true)
+  {
+    struct IndexSetPartitioner
+    {
+      typedef typename GridViewType::IndexSet IndexSetType;
+      IndexSetPartitioner(const IndexSetType& index_set)
+        : index_set_(index_set)
+      {
+      }
+
+      std::size_t partition(const EntityType& e) const
+      {
+        return index_set_.index(e);
+      }
+
+      std::size_t partitions() const
+      {
+        return index_set_.size(0);
+      }
+
+    private:
+      const IndexSetType& index_set_;
+    };
+    IndexSetPartitioner partioner(this->grid_view_.indexSet());
+    SeedListPartitioning<typename GridViewType::Grid, 0> partitioning(this->grid_view_, partioner);
+    this->tbb_walk(partitioning, clear_stack);
+  }
+#endif
 
 private:
   const TestSpaceType& test_space_;

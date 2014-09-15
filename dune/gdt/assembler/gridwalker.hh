@@ -14,6 +14,12 @@
 #include <dune/stuff/grid/entity.hh>
 #include <dune/stuff/grid/intersection.hh>
 
+#if 1 // HAVE_TBB
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
+#include <tbb/tbb_stddef.h>
+#endif
+
 namespace Dune {
 namespace GDT {
 namespace Functor {
@@ -616,33 +622,7 @@ public:
 
     // only do something, if we have to
     if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
-      // walk the grid
-      const auto entity_it_end = grid_view_.template end<0>();
-      for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-        const EntityType& entity = *entity_it;
-
-        // apply codim0 functors
-        apply_local(entity);
-
-        // only walk the intersections, if there are codim1 functors present
-        if (codim1_functors_.size() > 0) {
-          // walk the intersections
-          const auto intersection_it_end = grid_view_.iend(entity);
-          for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
-               ++intersection_it) {
-            const auto& intersection = *intersection_it;
-
-            // apply codim1 functors
-            if (intersection.neighbor()) {
-              const auto neighbor_ptr = intersection.outside();
-              const auto& neighbor = *neighbor_ptr;
-              apply_local(intersection, entity, neighbor);
-            } else
-              apply_local(intersection, entity, entity);
-
-          } // walk the intersections
-        } // only walk the intersections, if there are codim1 functors present
-      } // walk the grid
+      walk_range(DSC::viewRange(grid_view_));
     } // only do something, if we have to
 
     // finalize functors
@@ -653,7 +633,84 @@ public:
       clear();
   } // ... walk(...)
 
+#if 1 // HAVE_TBB
+  template <class PartioningType>
+  void tbb_walk(PartioningType& partitioning, const bool clear_stack = true)
+  {
+    // prepare functors
+    prepare();
+
+    // only do something, if we have to
+    if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
+      tbb::blocked_range<std::size_t> range(0, partitioning.partitions());
+      struct Body
+      {
+        Body(ThisType& walker, PartioningType& partitioning)
+          : walker_(walker)
+          , partitioning_(partitioning)
+        {
+        }
+        Body(Body& other, tbb::split split)
+          : walker_(other.walker_)
+          , partitioning_(other.partitioning_)
+        {
+        }
+
+        void operator()(const tbb::blocked_range<std::size_t>& range)
+        {
+          // for all partitions in tbb-range
+          for (std::size_t p = range.begin(); p != range.end(); ++p)
+            walker_.walk_range(partitioning_.partition(p));
+        }
+        void join(Body& /*other*/)
+        {
+        }
+
+        ThisType& walker_;
+        PartioningType& partitioning_;
+      };
+      Body body(*this, partitioning);
+      tbb::parallel_reduce(range, body);
+    } // only do something, if we have to
+
+    // finalize functors
+    finalize();
+
+    // clear the stack of functors
+    if (clear_stack)
+      clear();
+  } // ... walk(...)
+#endif
+
 protected:
+  template <class EntityRange>
+  void walk_range(const EntityRange& entity_range)
+  {
+    for (const EntityType& entity : entity_range) {
+      // apply codim0 functors
+      apply_local(entity);
+
+      // only walk the intersections, if there are codim1 functors present
+      if (codim1_functors_.size() > 0) {
+        // walk the intersections
+        const auto intersection_it_end = grid_view_.iend(entity);
+        for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
+             ++intersection_it) {
+          const auto& intersection = *intersection_it;
+
+          // apply codim1 functors
+          if (intersection.neighbor()) {
+            const auto neighbor_ptr = intersection.outside();
+            const auto& neighbor = *neighbor_ptr;
+            apply_local(intersection, entity, neighbor);
+          } else
+            apply_local(intersection, entity, entity);
+
+        } // walk the intersections
+      } // only walk the intersections, if there are codim1 functors present
+    }
+  }
+
   const GridViewType& grid_view_;
   std::vector<std::unique_ptr<Codim0Object>> codim0_functors_;
   std::vector<std::unique_ptr<Codim1Object>> codim1_functors_;
