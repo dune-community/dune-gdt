@@ -1,7 +1,8 @@
-#ifndef WALKER_WRAPPER_HH
-#define WALKER_WRAPPER_HH
+#ifndef DUNE_GDT_ASSEMBLER_WALKER_WRAPPER_HH
+#define DUNE_GDT_ASSEMBLER_WALKER_WRAPPER_HH
 
 #include <dune/gdt/assembler/apply_on.hh>
+#include <dune/gdt/assembler/functors.hh>
 
 namespace Dune {
 namespace GDT {
@@ -172,4 +173,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // WALKER_WRAPPER_HH
+#endif // DUNE_GDT_ASSEMBLER_WALKER_WRAPPER_HH

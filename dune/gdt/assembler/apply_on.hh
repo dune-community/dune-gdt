@@ -102,7 +102,8 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& /*intersection*/) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/,
+                        const IntersectionType& /*intersection*/) const DS_OVERRIDE DS_FINAL
   {
     return true;
   }
@@ -126,7 +127,8 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/,
+                        const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return intersection.neighbor() && !intersection.boundary();
   }
@@ -173,7 +175,8 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/,
+                        const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return intersection.boundary();
   }
@@ -193,7 +196,8 @@ public:
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/,
+                        const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return boundary_info_.dirichlet(intersection);
   }
@@ -216,7 +220,8 @@ public:
     : boundary_info_(boundary_info)
   {}
 
-  virtual bool apply_on(const GridViewType& /*grid_view*/, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& /*grid_view*/,
+                        const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
     return boundary_info_.neumann(intersection);
   }
