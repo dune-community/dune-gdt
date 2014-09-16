@@ -1,6 +1,9 @@
 #ifndef DUNE_GDT_ASSEMBLER_FUNCTORS_HH
 #define DUNE_GDT_ASSEMBLER_FUNCTORS_HH
 
+#include <dune/stuff/grid/entity.hh>
+#include <dune/stuff/grid/intersection.hh>
+
 namespace Dune {
 namespace GDT {
 namespace Functor {
