@@ -90,7 +90,7 @@ public:
 
 private:
   template <class ConstraintsType, class MatrixType>
-  class LocalMatrixConstraintsWrapper : public BaseType::Codim0Object
+  class LocalMatrixConstraintsWrapper : public Codim0Object<GridViewType>
   {
   public:
     LocalMatrixConstraintsWrapper(const TestSpaceType& t_space, const AnsatzSpaceType& a_space,
@@ -134,7 +134,7 @@ private:
 
 
   template <class ConstraintsType, class VectorType>
-  class LocalVectorConstraintsWrapper : public BaseType::Codim0Object
+  class LocalVectorConstraintsWrapper : public Codim0Object<GridViewType>
   {
   public:
     LocalVectorConstraintsWrapper(const TestSpaceType& t_space, const ApplyOn::WhichEntity<GridViewType>* where,
@@ -172,7 +172,8 @@ private:
 
 
   template <class LocalVolumeMatrixAssembler, class MatrixType>
-  class LocalVolumeMatrixAssemblerWrapper : public BaseType::Codim0Object, TmpStorageProvider::Matrices<RangeFieldType>
+  class LocalVolumeMatrixAssemblerWrapper : public Codim0Object<GridViewType>,
+                                            TmpStorageProvider::Matrices<RangeFieldType>
   {
     typedef TmpStorageProvider::Matrices<RangeFieldType> TmpMatricesProvider;
 
@@ -214,7 +215,8 @@ private:
 
 
   template <class LocalFaceMatrixAssembler, class MatrixType>
-  class LocalFaceMatrixAssemblerWrapper : public BaseType::Codim1Object, TmpStorageProvider::Matrices<RangeFieldType>
+  class LocalFaceMatrixAssemblerWrapper : public Codim1Object<GridViewType>,
+                                          TmpStorageProvider::Matrices<RangeFieldType>
   {
     typedef TmpStorageProvider::Matrices<RangeFieldType> TmpMatricesProvider;
 
@@ -257,7 +259,8 @@ private:
 
 
   template <class LocalVolumeVectorAssembler, class VectorType>
-  class LocalVolumeVectorAssemblerWrapper : public BaseType::Codim0Object, TmpStorageProvider::Vectors<RangeFieldType>
+  class LocalVolumeVectorAssemblerWrapper : public Codim0Object<GridViewType>,
+                                            TmpStorageProvider::Vectors<RangeFieldType>
   {
     typedef TmpStorageProvider::Vectors<RangeFieldType> TmpVectorsProvider;
 
@@ -295,7 +298,7 @@ private:
 
 
   template <class LocalFaceVectorAssembler, class VectorType>
-  class LocalFaceVectorAssemblerWrapper : public BaseType::Codim1Object, TmpStorageProvider::Vectors<RangeFieldType>
+  class LocalFaceVectorAssemblerWrapper : public Codim1Object<GridViewType>, TmpStorageProvider::Vectors<RangeFieldType>
   {
     typedef TmpStorageProvider::Vectors<RangeFieldType> TmpVectorsProvider;
 
