@@ -168,8 +168,8 @@ public:
   typedef typename Traits::GridViewType GridViewType;
 
   L2Face(const FunctionType& function, VectorType& vec, const SpaceType& spc, const GridViewType& grd_vw,
-         const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
-             new GDT::ApplyOn::AllIntersections<GridViewType>())
+         const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
+             new Stuff::Grid::ApplyOn::AllIntersections<GridViewType>())
     : FunctionalBaseType(vec, spc, grd_vw)
     , AssemblerBaseType(spc, grd_vw)
     , function_(function)
@@ -180,8 +180,8 @@ public:
   }
 
   L2Face(const FunctionType& function, VectorType& vec, const SpaceType& spc,
-         const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
-             new GDT::ApplyOn::AllIntersections<GridViewType>())
+         const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* which_intersections =
+             new Stuff::Grid::ApplyOn::AllIntersections<GridViewType>())
     : FunctionalBaseType(vec, spc)
     , AssemblerBaseType(spc)
     , function_(function)
@@ -197,7 +197,7 @@ public:
   }
 
 private:
-  void setup(const GDT::ApplyOn::WhichIntersection<GridViewType>* which_intersections)
+  void setup(const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* which_intersections)
   {
     this->add(local_assembler_, this->vector(), which_intersections);
   }

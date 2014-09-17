@@ -13,8 +13,8 @@
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/print.hh>
+#include <dune/stuff/grid/walker.hh>
 
-#include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/block.hh>
@@ -64,9 +64,9 @@ private:
 template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
 class OswaldInterpolationLocalizable
   : public LocalizableOperatorInterface< OswaldInterpolationLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
-  , public Functor::Codim0And1< GridViewImp >
+  , public Stuff::Grid::Functor::Codim0And1< GridViewImp >
 {
-  typedef Functor::Codim0And1< GridViewImp > FunctorType;
+  typedef Stuff::Grid::Functor::Codim0And1< GridViewImp > FunctorType;
 public:
   typedef OswaldInterpolationLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > Traits;
 
@@ -125,7 +125,7 @@ public:
   {
     if (!applied_) {
       GridWalker< GridViewType > grid_walker(grid_view_);
-      grid_walker.add(*this, new ApplyOn::BoundaryIntersections< GridViewType >());
+      grid_walker.add(*this, new Stuff::Grid::ApplyOn::BoundaryIntersections< GridViewType >());
       grid_walker.walk();
       applied_ = true;
     }

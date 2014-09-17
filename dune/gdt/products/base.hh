@@ -6,7 +6,8 @@
 #ifndef DUNE_GDT_PRODUCTS_BASE_HH
 #define DUNE_GDT_PRODUCTS_BASE_HH
 
-#include <dune/gdt/assembler/system.hh>
+#include <dune/stuff/grid/walker.hh>
+
 #include <dune/gdt/assembler/tmp-storage.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 
@@ -22,7 +23,7 @@ namespace Products {
  */
 template <class Traits>
 class LocalizableBase : public LocalizableProductInterface<Traits>,
-                        public Functor::Codim0<typename Traits::GridViewType>
+                        public Stuff::Grid::Functor::Codim0<typename Traits::GridViewType>
 {
   typedef LocalizableProductInterface<Traits> InterfaceType;
 
@@ -130,7 +131,7 @@ public:
   FieldType apply2()
   {
     if (!finalized_) {
-      GridWalker<GridViewType> grid_walker(grid_view_);
+      Stuff::Grid::Walker<GridViewType> grid_walker(grid_view_);
       grid_walker.add(*this);
       grid_walker.walk();
     }
@@ -153,7 +154,7 @@ private:
  */
 template <class Traits>
 class AssemblableBase : public AssemblableProductInterface<Traits>,
-                        public Functor::Codim0<typename Traits::GridViewType>
+                        public Stuff::Grid::Functor::Codim0<typename Traits::GridViewType>
 {
   typedef AssemblableProductInterface<Traits> InterfaceType;
 
@@ -265,7 +266,7 @@ public:
   void assemble()
   {
     if (!assembled_) {
-      GridWalker<GridViewType> grid_walker(grid_view_);
+      Stuff::Grid::Walker<GridViewType> grid_walker(grid_view_);
       grid_walker.add(*this);
       grid_walker.walk();
       assembled_ = true;
