@@ -8,13 +8,6 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_INTERFACE_HH
 #define DUNE_GDT_BASEFUNCTIONSET_INTERFACE_HH
 
-#include <vector>
-
-#include <dune/stuff/common/disable_warnings.hh>
-#include <dune/common/fmatrix.hh>
-#include <dune/common/fvector.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/crtp.hh>
 
@@ -22,30 +15,22 @@ namespace Dune {
 namespace GDT {
 
 
-template <class Traits, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class BaseFunctionSetInterface
-    : public Stuff::LocalfunctionSetInterface<typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp,
-                                              rangeDim, rangeDimCols>,
-      public Stuff::CRTPInterface<BaseFunctionSetInterface<Traits, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                                           rangeDimCols>,
-                                  Traits>
+/**
+ *  \brief  The purpose of this interface is just to be used for template matching and to allow for access to the
+ *          backend. All other functionality is enforced by Stuff::LocalfunctionSetInterface.
+ *
+ *          \see Stuff::LocalfunctionSetInterface for the template parameters D, d, R, r and rC.
+ */
+template <class Traits, class D, int d, class R, int r, int rC = 1>
+class BaseFunctionSetInterface : public Stuff::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
+                                 public Stuff::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
 {
-  typedef Stuff::LocalfunctionSetInterface<typename Traits::EntityType, DomainFieldImp, domainDim, RangeFieldImp,
-                                           rangeDim, rangeDimCols> BaseType;
+  typedef Stuff::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
 
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
-
-  using typename BaseType::DomainFieldType;
-  using BaseType::dimDomain;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
 
   BaseFunctionSetInterface(const EntityType& ent)
     : BaseType(ent)
