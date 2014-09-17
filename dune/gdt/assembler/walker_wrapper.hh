@@ -7,6 +7,7 @@
 namespace Dune {
 namespace GDT {
 
+
 template <class GridViewType>
 class Codim0Object
   : public Functor::Codim0< GridViewType >
@@ -16,6 +17,7 @@ public:
   ~ Codim0Object() {}
   virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const = 0;
 };
+
 
 template<class GridViewType, class Codim0FunctorType>
 class Codim0FunctorWrapper
@@ -55,6 +57,7 @@ private:
   Codim0FunctorType& wrapped_functor_;
   std::unique_ptr< const ApplyOn::WhichEntity< GridViewType > > where_;
 }; // class Codim0FunctorWrapper
+
 
 template <class GridViewType>
 class Codim1Object
@@ -107,6 +110,7 @@ private:
   Codim1FunctorType& wrapped_functor_;
   std::unique_ptr< const ApplyOn::WhichIntersection< GridViewType > > where_;
 }; // class Codim1FunctorWrapper
+
 
 template<class GridViewType, class WalkerType>
 class GridWalkerWrapper
@@ -169,6 +173,39 @@ private:
   std::unique_ptr< const ApplyOn::WhichEntity< GridViewType > > which_entities_;
   std::unique_ptr< const ApplyOn::WhichIntersection< GridViewType > > which_intersections_;
 }; // class GridWalkerWrapper
+
+
+template<class GridViewType >
+class Codim0LambdaWrapper
+  : public Codim0Object< GridViewType >
+{
+  typedef Codim0Object< GridViewType > BaseType;
+public:
+  typedef typename BaseType::EntityType            EntityType;
+  typedef std::function< void(const EntityType&) > LambdaType;
+
+  Codim0LambdaWrapper(LambdaType lambda, const ApplyOn::WhichEntity< GridViewType >* where)
+    : lambda_(lambda)
+    , where_(where)
+  {}
+
+  virtual ~Codim0LambdaWrapper() {}
+
+  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const DS_OVERRIDE DS_FINAL
+  {
+    return where_->apply_on(grid_view, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
+  {
+    lambda_(entity);
+  }
+
+private:
+  LambdaType lambda_;
+  std::unique_ptr< const ApplyOn::WhichEntity< GridViewType > > where_;
+}; // class Codim0LambdaWrapper
+
 
 } // namespace GDT
 } // namespace Dune
