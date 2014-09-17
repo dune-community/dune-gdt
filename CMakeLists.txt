@@ -121,6 +121,7 @@ else(CMAKE_WITH_AUTOTOOLS)
   )
 
   add_subdirectory(m4)
+  add_subdirectory(doc)
   add_subdirectory(cmake/modules)
   add_subdirectory(test EXCLUDE_FROM_ALL)
 
