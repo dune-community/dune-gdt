@@ -373,10 +373,10 @@ typedef testing::Types<
     ,
     ALU_CONFORM_2D_EIGENDENSE_TEST_CASES, ALU_CONFORM_2D_EIGENSPARSE_TEST_CASES
 #endif // HAVE_EIGEN
-#if HAVE_ISTL
+#if HAVE_DUNE_ISTL
     ,
     ALU_CONFORM_2D_ISTLSPARSE_TEST_CASES
-#endif // HAVE_ISTL
+#endif
 #endif // HAVE_ALUGRID
     > Small_TestCases;
 
