@@ -42,9 +42,9 @@ public:
   {
     t_space_.local_constraints(a_space_, entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
-      const size_t row = constraints_.globalRow(ii);
+      const size_t row = constraints_.global_row(ii);
       for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
-        matrix_.set_entry(row, constraints_.globalCol(jj), constraints_.value(ii, jj));
+        matrix_.set_entry(row, constraints_.global_col(jj), constraints_.value(ii, jj));
       }
     }
   } // ... apply_local(...)
@@ -86,7 +86,7 @@ public:
   {
     t_space_.local_constraints(entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
-      vector_.set_entry(constraints_.globalRow(ii), typename AssemblerType::TestSpaceType::RangeFieldType(0));
+      vector_.set_entry(constraints_.global_row(ii), typename AssemblerType::TestSpaceType::RangeFieldType(0));
     }
   }
 
