@@ -6,6 +6,11 @@
 
 namespace Dune {
 namespace GDT {
+namespace internal {
+
+
+/** \defgroup movetostuff ``These classes should move to dune-stuff alongside the gridwalker asap!´´ */
+/* \{ */
 
 
 template <class GridViewType>
@@ -207,6 +212,10 @@ private:
 }; // class Codim0LambdaWrapper
 
 
+/* \} */ // movetostuff
+
+
+} // namespace internal
 } // namespace GDT
 } // namespace Dune
 
