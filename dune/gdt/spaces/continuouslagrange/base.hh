@@ -171,18 +171,19 @@ private:
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1) DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
-    const std::set< size_t > localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.gridBoundary());
+    const std::set< size_t > localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
       const size_t numCols = this->mapper().numDofs(entity);
-      ret.setSize(numRows, numCols);
+      ret.set_size(numRows, numCols);
       this->mapper().globalIndices(entity, tmpMappedRows_);
       other.mapper().globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
       for (const size_t& localDirichletDofIndex : localDirichletDofs) {
+        ret.global_row(localRow) = tmpMappedRows_[localDirichletDofIndex];
         for (size_t jj = 0; jj < ret.cols(); ++jj) {
-          ret.globalCol(jj) = tmpMappedCols_[jj];
+          ret.global_col(jj) = tmpMappedCols_[jj];
           if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
             ret.value(localRow, jj) = set_row ? RangeFieldType(1) : RangeFieldType(0);
           else
@@ -191,7 +192,7 @@ private:
         ++localRow;
       }
     } else {
-      ret.setSize(0, 0);
+      ret.set_size(0, 0);
     }
   } // ... compute_local_constraints(..., Dirichlet< ..., true >)
 
