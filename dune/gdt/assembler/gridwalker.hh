@@ -21,9 +21,8 @@
 # include <tbb/tbb_stddef.h>
 #endif
 
-#include <dune/gdt/assembler/apply_on.hh>
 #include <dune/gdt/assembler/functors.hh>
-#include <dune/gdt/assembler/walker_wrapper.hh>
+#include <dune/gdt/assembler/wrapper.hh>
 
 namespace Dune {
 namespace GDT {
