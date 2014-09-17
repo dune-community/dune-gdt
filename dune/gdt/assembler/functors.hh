@@ -104,9 +104,10 @@ template< class GridViewImp >
 class AllEntities
   : public WhichEntity< GridViewImp >
 {
+  typedef WhichEntity< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
+  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::EntityType   EntityType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& /*entity*/) const DS_OVERRIDE DS_FINAL
   {
@@ -122,9 +123,10 @@ template< class GridViewImp >
 class BoundaryEntities
   : public WhichEntity< GridViewImp >
 {
+  typedef WhichEntity< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Entity< GridViewType >::Type EntityType;
+  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::EntityType   EntityType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/, const EntityType& entity) const DS_OVERRIDE DS_FINAL
   {
@@ -165,9 +167,10 @@ template< class GridViewImp >
 class AllIntersections
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/,
                         const IntersectionType& /*intersection*/) const DS_OVERRIDE DS_FINAL
@@ -190,9 +193,10 @@ template< class GridViewImp >
 class InnerIntersections
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/,
                         const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
@@ -216,9 +220,10 @@ template< class GridViewImp >
 class InnerIntersectionsPrimally
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
 
   virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
   {
@@ -238,9 +243,10 @@ template< class GridViewImp >
 class BoundaryIntersections
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
 
   virtual bool apply_on(const GridViewType& /*grid_view*/,
                         const IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
@@ -254,10 +260,11 @@ template< class GridViewImp >
 class DirichletIntersections
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >   BoundaryInfoType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
 
   DirichletIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
@@ -278,10 +285,11 @@ template< class GridViewImp >
 class NeumannIntersections
   : public WhichIntersection< GridViewImp >
 {
+  typedef WhichIntersection< GridViewImp > BaseType;
 public:
-  typedef GridViewImp GridViewType;
-  typedef typename Stuff::Grid::Intersection< GridViewType >::Type IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >   BoundaryInfoType;
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::IntersectionType IntersectionType;
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
 
   NeumannIntersections(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
