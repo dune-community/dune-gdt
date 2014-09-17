@@ -164,25 +164,6 @@ public:
   } // ... local_dirichlet_DoFs(...)
 
 private:
-  template <class C, bool set_row>
-  struct DirichletConstraints;
-  template <class C>
-  struct DirichletConstraints<C, true>
-  {
-    static RangeFieldType value()
-    {
-      return RangeFieldType(1);
-    }
-  };
-  template <class C>
-  struct DirichletConstraints<C, false>
-  {
-    static RangeFieldType value()
-    {
-      return RangeFieldType(0);
-    }
-  };
-
   template <class T, bool set_row>
   void compute_local_constraints(const SpaceInterface<T>& other, const EntityType& entity,
                                  Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>& ret) const
@@ -192,7 +173,6 @@ private:
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
-    typedef DirichletConstraints<Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>, set_row> SetRow;
     const std::set<size_t> localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.gridBoundary());
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
@@ -202,14 +182,11 @@ private:
       other.mapper().globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
-      for (auto localDirichletDofIt = localDirichletDofs.begin(); localDirichletDofIt != localDirichletDofs.end();
-           ++localDirichletDofIt) {
-        const size_t& localDirichletDofIndex = *localDirichletDofIt;
-        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
+      for (const size_t& localDirichletDofIndex : localDirichletDofs) {
         for (size_t jj = 0; jj < ret.cols(); ++jj) {
           ret.globalCol(jj) = tmpMappedCols_[jj];
           if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
-            ret.value(localRow, jj) = SetRow::value();
+            ret.value(localRow, jj) = set_row ? RangeFieldType(1) : RangeFieldType(0);
           else
             ret.value(localRow, jj) = zero;
         }
@@ -221,6 +198,8 @@ private:
   } // ... compute_local_constraints(..., Dirichlet< ..., true >)
 
 public:
+  using BaseType::local_constraints;
+
   template <bool set>
   void local_constraints(const EntityType& entity,
                          Constraints::Dirichlet<IntersectionType, RangeFieldType, set>& ret) const
