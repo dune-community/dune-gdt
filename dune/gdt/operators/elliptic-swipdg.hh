@@ -160,10 +160,10 @@ public:
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
     this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
     this->add(dirichlet_boundary_assembler_,
               this->matrix(),
-              new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
   } // EllipticSWIPDG(...)
 
   EllipticSWIPDG(const DiffusionType& diffusion,
@@ -184,10 +184,10 @@ public:
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
     this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
     this->add(dirichlet_boundary_assembler_,
               this->matrix(),
-              new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
   } // EllipticSWIPDG(...)
 
   EllipticSWIPDG(const DiffusionType& diffusion,
@@ -207,10 +207,10 @@ public:
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
     this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
     this->add(dirichlet_boundary_assembler_,
               this->matrix(),
-              new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
   } // EllipticSWIPDG(...)
 
   virtual ~EllipticSWIPDG() {}

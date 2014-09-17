@@ -129,8 +129,8 @@ public:
       SystemAssembler< SpaceType > grid_walker(space_);
       grid_walker.add(elliptic_operator);
       grid_walker.add(force_functional);
-      grid_walker.add(neumann_functional, new ApplyOn::NeumannIntersections< GridViewType >(boundary_info_));
-      grid_walker.add(dirichlet_projection_operator, new ApplyOn::BoundaryEntities< GridViewType >());
+      grid_walker.add(neumann_functional, new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(boundary_info_));
+      grid_walker.add(dirichlet_projection_operator, new Stuff::Grid::ApplyOn::BoundaryEntities< GridViewType >());
       grid_walker.walk();
       // substract the operators action on the dirichlet values
       auto tmp = rhs_vector_.copy();

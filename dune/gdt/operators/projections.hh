@@ -20,8 +20,8 @@
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
+#include <dune/stuff/grid/walker.hh>
 
-#include <dune/gdt/assembler/gridwalker.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/continuouslagrange/base.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
@@ -475,7 +475,7 @@ public:
 template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
 class DirichletProjectionLocalizable
   : public LocalizableOperatorInterface< DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
-  , public Functor::Codim0< GridViewImp >
+  , public Stuff::Grid::Functor::Codim0< GridViewImp >
 {
 public:
   typedef DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > Traits;
@@ -538,8 +538,8 @@ public:
 
   void apply()
   {
-    GridWalker< GridViewType > grid_walker(grid_view_);
-    grid_walker.add(*this, new ApplyOn::BoundaryEntities< GridViewType >());
+    Stuff::Grid::Walker< GridViewType > grid_walker(grid_view_);
+    grid_walker.add(*this, new Stuff::Grid::ApplyOn::BoundaryEntities< GridViewType >());
     grid_walker.walk();
   }
 

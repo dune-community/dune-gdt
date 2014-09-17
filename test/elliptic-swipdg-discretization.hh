@@ -155,7 +155,7 @@ public:
       const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
       systemAssembler.add(couplingMatrixAssembler,
                           system_matrix_,
-                          new ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+                          new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
       // dirichlet boundary face terms
       // * lhs
       typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SWIPDG::BoundaryLHS< FunctionType > >
@@ -164,7 +164,7 @@ public:
       const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
       systemAssembler.add(dirichletMatrixAssembler,
                           system_matrix_,
-                          new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+                          new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
       // * rhs
       typedef LocalFunctional::Codim1Integral< LocalEvaluation::SWIPDG::BoundaryRHS< FunctionType, FunctionType > >
           DirichletFunctionalType;
@@ -174,7 +174,7 @@ public:
       const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
       systemAssembler.add(dirichletVectorAssembler,
                           rhs_vector_,
-                          new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+                          new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
       // neumann boundary face terms
       // * rhs
       typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
@@ -182,7 +182,7 @@ public:
       const LocalAssembler::Codim1Vector< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
       systemAssembler.add(neumannVectorAssembler,
                           rhs_vector_,
-                          new ApplyOn::NeumannIntersections< GridViewType >(boundary_info_));
+                          new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(boundary_info_));
       // do all the work
       systemAssembler.assemble();
       is_assembled_ = true;

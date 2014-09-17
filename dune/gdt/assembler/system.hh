@@ -9,18 +9,18 @@
 #include <type_traits>
 #include <memory>
 
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/constraints.hh>
-#include <dune/stuff/common/parallel/partitioner.hh>
-
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //&& HAVE_TBB //EXADUNE
 # include <dune/grid/utility/partitioning/seedlist.hh>
 #endif
 
+#include <dune/stuff/grid/walker.hh>
+#include <dune/stuff/common/parallel/partitioner.hh>
+
+#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/constraints.hh>
+
 #include "local/codim0.hh"
 #include "local/codim1.hh"
-#include "gridwalker.hh"
-#include "tmp-storage.hh"
 #include "wrapper.hh"
 
 namespace Dune {
@@ -31,13 +31,13 @@ template< class TestSpaceImp,
           class GridViewImp = typename TestSpaceImp::GridViewType,
           class AnsatzSpaceImp = TestSpaceImp >
 class SystemAssembler
-  : public GridWalker< GridViewImp >
+  : public Stuff::Grid::Walker< GridViewImp >
 {
   static_assert(std::is_base_of< SpaceInterface< typename TestSpaceImp::Traits >, TestSpaceImp >::value,
                 "TestSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceImp::Traits >, AnsatzSpaceImp >::value,
                 "AnsatzSpaceImp has to be derived from SpaceInterface!");
-  typedef GridWalker< GridViewImp > BaseType;
+  typedef Stuff::Grid::Walker< GridViewImp > BaseType;
   typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp> ThisType;
 public:
   typedef TestSpaceImp    TestSpaceType;
@@ -46,12 +46,7 @@ public:
   typedef typename BaseType::GridViewType     GridViewType;
   typedef typename BaseType::EntityType       EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
-  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-private:
-  typedef typename TestSpaceType::RangeFieldType RangeFieldType;
-
-public:
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridViewType& grid_view)
     : BaseType(grid_view)
     , test_space_(test)
@@ -88,13 +83,11 @@ public:
 
   using BaseType::add;
 
-private:
-
-public:
   template< class ConstraintsType, class M >
   void add(ConstraintsType& constraints,
-           Dune::Stuff::LA::MatrixInterface< M >& matrix,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+           Stuff::LA::MatrixInterface< M >& matrix,
+           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -106,8 +99,9 @@ public:
 
   template< class ConstraintsType, class V >
   void add(ConstraintsType& constraints,
-           Dune::Stuff::LA::VectorInterface< V >& vector,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+           Stuff::LA::VectorInterface< V >& vector,
+           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -118,8 +112,9 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim0Matrix< L >& local_assembler,
-           Dune::Stuff::LA::MatrixInterface< M >& matrix,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+           Stuff::LA::MatrixInterface< M >& matrix,
+           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >*
+              where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -133,8 +128,9 @@ public:
 
   template< class Codim0Assembler, class M >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
-           Dune::Stuff::LA::MatrixInterface< M >& matrix,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+                            Stuff::LA::MatrixInterface< M >& matrix,
+                            const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+                                = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -147,8 +143,9 @@ public:
 
   template< class Codim0Assembler, class V >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
-           Dune::Stuff::LA::VectorInterface< V >& vector,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+                            Stuff::LA::VectorInterface< V >& vector,
+                            const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+                                = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -159,8 +156,9 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
-           Dune::Stuff::LA::MatrixInterface< M >& matrix,
-           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
+           Stuff::LA::MatrixInterface< M >& matrix,
+           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -174,8 +172,9 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim1BoundaryMatrix< L >& local_assembler,
-           Dune::Stuff::LA::MatrixInterface< M >& matrix,
-           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
+           Stuff::LA::MatrixInterface< M >& matrix,
+           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -189,8 +188,9 @@ public:
 
   template< class L, class V >
   void add(const LocalAssembler::Codim0Vector< L >& local_assembler,
-           Dune::Stuff::LA::VectorInterface< V >& vector,
-           const ApplyOn::WhichEntity< GridViewType >* where = new ApplyOn::AllEntities< GridViewType >())
+           Stuff::LA::VectorInterface< V >& vector,
+           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -202,8 +202,9 @@ public:
 
   template< class L, class V >
   void add(const LocalAssembler::Codim1Vector< L >& local_assembler,
-           Dune::Stuff::LA::VectorInterface< V >& vector,
-           const ApplyOn::WhichIntersection< GridViewType >* where = new ApplyOn::AllIntersections< GridViewType >())
+           Stuff::LA::VectorInterface< V >& vector,
+           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+              = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -218,11 +219,11 @@ public:
     this->walk(clear_stack);
   }
 
-#if 1 //HAVE_TBB
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //&& HAVE_TBB //EXADUNE
   void tbb_assemble(const bool clear_stack = true)
   {
-    Stuff::IndexSetPartitioner<GridViewType> partioner(this->grid_view_.indexSet());
-    SeedListPartitioning<typename GridViewType::Grid, 0> partitioning(this->grid_view_, partioner);
+    Stuff::IndexSetPartitioner< GridViewType > partioner(this->grid_view_.indexSet());
+    SeedListPartitioning< typename GridViewType::Grid, 0 > partitioning(this->grid_view_, partioner);
     this->tbb_walk(partitioning, clear_stack);
   }
 #endif
