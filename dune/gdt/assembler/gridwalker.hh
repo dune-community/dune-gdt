@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <type_traits>
+#include <functional>
 
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/entity.hh>
@@ -50,6 +51,12 @@ public:
   const GridViewType& grid_view() const
   {
     return grid_view_;
+  }
+
+  void add(std::function<void(const EntityType&)> lambda,
+           const ApplyOn::WhichEntity<GridViewType>* where = new ApplyOn::AllEntities<GridViewType>())
+  {
+    codim0_functors_.emplace_back(new Codim0LambdaWrapper<GridViewType>(lambda, where));
   }
 
   void add(Functor::Codim0<GridViewType>& functor,
