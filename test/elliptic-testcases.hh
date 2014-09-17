@@ -628,7 +628,7 @@ public:
       ConstantFunctionType;
   typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       ExpressionFunctionType;
-  typedef Dune::Stuff::Functions::Spe10Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::Stuff::Functions::Spe10::Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       Spe10Model1FunctionType;
   typedef Spe10Model1FunctionType DiffusionType;
   typedef ConstantFunctionType ForceType;
