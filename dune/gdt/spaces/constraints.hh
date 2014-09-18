@@ -19,23 +19,43 @@ namespace GDT {
 namespace Spaces {
 
 
-template< class ValueImp >
+template< class Traits, class ValueImp = double >
 class ConstraintsInterface
+  : public Stuff::CRTPInterface< ConstraintsInterface< Traits, ValueImp >, Traits >
 {
 public:
-  typedef ValueImp ValueType;
+  typedef typename Traits::derived_type derived_type;
+  typedef ValueImp                      ValueType;
 
-  virtual ~ConstraintsInterface() {}
+  inline size_t rows() const
+  {
+    CHECK_CRTP(this->as_imp(*this).rows());
+    return this->as_imp(*this).rows();
+  }
 
-  virtual size_t rows() const = 0;
+  inline size_t cols() const
+  {
+    CHECK_CRTP(this->as_imp(*this).cols());
+    return this->as_imp(*this).cols();
+  }
 
-  virtual size_t cols() const = 0;
+  inline size_t global_row(const size_t ii) const
+  {
+    CHECK_CRTP(this->as_imp(*this).global_row(ii));
+    return this->as_imp(*this).global_row(ii);
+  }
 
-  virtual size_t global_row(const size_t ii) const = 0;
+  inline size_t global_col(const size_t jj) const
+  {
+    CHECK_CRTP(this->as_imp(*this).global_col(jj));
+    return this->as_imp(*this).global_col(jj);
+  }
 
-  virtual size_t global_col(const size_t jj) const = 0;
-
-  virtual ValueType value(const size_t ii, const size_t jj) const = 0;
+  inline ValueType value(const size_t ii, const size_t jj) const
+  {
+    CHECK_CRT(this->as_imp(*this).value(ii, jj));
+    return this->as_imp(*this).value(ii, jj);
+  }
 }; // class ConstraintsInterface
 
 
@@ -43,12 +63,13 @@ namespace Constraints {
 namespace internal {
 
 
-template< class ValueImp >
+template< class DerivedTraits, class ValueImp >
 class Default
-  : public ConstraintsInterface< ValueImp >
+  : public ConstraintsInterface< DerivedTraits, ValueImp >
 {
-  typedef ConstraintsInterface< ValueImp > BaseType;
+  typedef ConstraintsInterface< DerivedTraits, ValueImp > BaseType;
 public:
+  typedef DerivedTraits                Traits;
   typedef typename BaseType::ValueType ValueType;
 
 private:
@@ -64,14 +85,12 @@ public:
     , values_(rows_, cols_)
   {}
 
-  virtual ~Default() {}
-
-  virtual size_t rows() const DS_OVERRIDE
+  size_t rows() const
   {
     return rows_;
   }
 
-  virtual size_t cols() const DS_OVERRIDE
+  size_t cols() const
   {
     return cols_;
   }
@@ -101,7 +120,7 @@ public:
     return global_rows_[ii];
   }
 
-  virtual size_t global_row(const size_t ii) const DS_OVERRIDE
+  size_t global_row(const size_t ii) const
   {
     assert(ii < rows_);
     return global_rows_[ii];
@@ -113,7 +132,7 @@ public:
     return global_cols_[jj];
   }
 
-  virtual size_t global_col(const size_t jj) const
+  size_t global_col(const size_t jj) const
   {
     assert(jj < cols_);
     return global_cols_[jj];
@@ -126,7 +145,7 @@ public:
     return values_[ii][jj];
   }
 
-  virtual ValueType value(const size_t ii, const size_t jj) const DS_OVERRIDE
+  ValueType value(const size_t ii, const size_t jj) const
   {
     assert(ii < rows_);
     assert(jj < cols_);
@@ -146,19 +165,35 @@ private:
 
 
 template< class IntersectionType, class ValueImp = double, bool setRow = true >
-class Dirichlet
-  : public internal::Default< ValueImp >
+class Dirichlet;
+
+
+namespace internal {
+
+
+template< class IntersectionType, class ValueImp, bool setRow >
+class DirichletTraits
 {
 public:
-  typedef internal::Default< ValueImp > BaseType;
+  typedef Dirichlet< IntersectionType, ValueImp, setRow > derived_type;
+};
+
+
+} // namespace internal
+
+
+template< class IntersectionType, class ValueImp, bool setRow >
+class Dirichlet
+  : public internal::Default< internal::DirichletTraits< IntersectionType, ValueImp, setRow >, ValueImp >
+{
+  typedef internal::Default< internal::DirichletTraits< IntersectionType, ValueImp, setRow >, ValueImp > BaseType;
+public:
   typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
 
-  Dirichlet(const BoundaryInfoType& bound_info, const size_t rws, const size_t cls)
+  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls)
     : BaseType(rws, cls)
-    , boundary_info_(bound_info)
+    , boundary_info_(bnd_info)
   {}
-
-  virtual ~Dirichlet() {}
 
   const BoundaryInfoType& boundary_info() const
   {
