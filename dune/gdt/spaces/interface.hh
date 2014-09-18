@@ -65,7 +65,7 @@ struct ChooseGridPartView< ChooseSpaceBackend::fem >
 
 template< class Traits >
 class SpaceInterface
-  : protected Stuff::CRTPInterface< SpaceInterface< Traits >, Traits >
+  : public Stuff::CRTPInterface< SpaceInterface< Traits >, Traits >
 {
 public:
   typedef typename Traits::derived_type         derived_type;
@@ -105,41 +105,52 @@ public:
 
   const std::shared_ptr< const GridViewType >& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
+    CHECK_CRTP(this->as_imp().grid_view());
+    return this->as_imp().grid_view();
   }
 
   const BackendType& backend() const
   {
-    CHECK_CRTP(this->as_imp(*this).backend());
-    return this->as_imp(*this).backend();
+    CHECK_CRTP(this->as_imp().backend());
+    return this->as_imp().backend();
   }
 
   const MapperType& mapper() const
   {
-    CHECK_CRTP(this->as_imp(*this).mapper());
-    return this->as_imp(*this).mapper();
+    CHECK_CRTP(this->as_imp().mapper());
+    return this->as_imp().mapper();
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    CHECK_CRTP(this->as_imp(*this).base_function_set(entity));
-    return this->as_imp(*this).base_function_set(entity);
+    CHECK_CRTP(this->as_imp().base_function_set(entity));
+    return this->as_imp().base_function_set(entity);
   }
 
   CommunicatorType& communicator() const
   {
-    CHECK_CRTP(this->as_imp(*this).communicator());
-    return this->as_imp(*this).communicator();
+    CHECK_CRTP(this->as_imp().communicator());
+    return this->as_imp().communicator();
   }
 
+  /**
+   *  \brief Computes local constraints.
+   *
+   *  \note  Any derived class has to implement this method, even if it does not support any kind of constraints!
+   *         In that case just provide exactly the following method:\code
+template< class S, class ConstraintsType >
+void local_constraints(const SpaceInterface< S >&, const EntityType&, ConstraintsType&) const
+{
+  static_assert(AlwaysFalse< S >::value, "Not implemented for these constraints!");
+}
+\endcode
+   */
   template< class S, class C >
   void local_constraints(const SpaceInterface< S >& ansatz_space,
                          const EntityType& entity,
                          Spaces::ConstraintsInterface< C, RangeFieldType >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(ansatz_space, entity, ret));
-    this->as_imp(*this).local_constraints(ansatz_space, entity, ret);
+    CHECK_AND_CALL_CRTP(this->as_imp().local_constraints(ansatz_space.as_imp(), entity, ret.as_imp()));
   }
 
   template< class C >
@@ -155,8 +166,8 @@ public:
   template< class G, class S >
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
   {
-    CHECK_CRTP(this->as_imp(*this).compute_pattern(local_grid_view, ansatz_space));
-    return this->as_imp(*this).compute_pattern(local_grid_view, ansatz_space);
+    CHECK_CRTP(this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp()));
+    return this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp());
   }
   /* @} */
 
@@ -204,7 +215,8 @@ public:
    *          ansatz space (cols/inner)
    */
   template< class G, class S >
-  PatternType compute_volume_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  PatternType compute_volume_pattern(const GridView< G >& local_grid_view,
+                                     const SpaceInterface< S >& ansatz_space) const
   {
     PatternType pattern(mapper().size());
     Dune::DynamicVector< size_t > globalRows(mapper().maxNumDofs(), 0);
