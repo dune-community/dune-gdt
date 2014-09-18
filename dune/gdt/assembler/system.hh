@@ -35,12 +35,15 @@ class SystemAssembler : public Stuff::Grid::Walker<GridViewImp>
                 "TestSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename AnsatzSpaceImp::Traits>, AnsatzSpaceImp>::value,
                 "AnsatzSpaceImp has to be derived from SpaceInterface!");
+  static_assert(std::is_same<typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType>::value,
+                "Types do not match!");
   typedef Stuff::Grid::Walker<GridViewImp> BaseType;
   typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp> ThisType;
 
 public:
   typedef TestSpaceImp TestSpaceType;
   typedef AnsatzSpaceImp AnsatzSpaceType;
+  typedef typename TestSpaceType::RangeFieldType RangeFieldType;
 
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
@@ -89,16 +92,19 @@ public:
 
   using BaseType::add;
 
-  template <class ConstraintsType, class M>
-  void add(ConstraintsType& constraints, Stuff::LA::MatrixInterface<M>& matrix,
+  template <class C, class M>
+  void add(Spaces::ConstraintsInterface<C, RangeFieldType>& constraints, Stuff::LA::MatrixInterface<M>& matrix,
            const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities<GridViewType>())
   {
-    typedef typename M::derived_type MatrixType;
-    MatrixType& matrix_imp = static_cast<MatrixType&>(matrix);
-    assert(matrix_imp.rows() == test_space_.mapper().size());
-    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
-    typedef internal::LocalMatrixConstraintsWrapper<ThisType, ConstraintsType, MatrixType> WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, constraints, matrix_imp));
+    assert(matrix.rows() == test_space_.mapper().size());
+    assert(matrix.cols() == ansatz_space_.mapper().size());
+    typedef internal::LocalMatrixConstraintsWrapper<TestSpaceType,
+                                                    AnsatzSpaceType,
+                                                    GridViewType,
+                                                    typename C::derived_type,
+                                                    typename M::derived_type> WrapperType;
+    this->codim0_functors_.emplace_back(
+        new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp(), matrix.as_imp()));
   } // ... add(...)
 
   template <class ConstraintsType, class V>
