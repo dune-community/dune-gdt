@@ -110,45 +110,43 @@ public:
     }
     if (changed)
       values_.resize(global_rows_.size(), global_cols_.size(), 0);
-    assert(global_rows_.size() == rows_);
-    assert(global_cols_.size() == cols_);
   } // ... set_size(...)
 
   size_t& global_row(const size_t ii)
   {
-    assert(ii < rows_);
+    assert(ii < std::min(rows_, global_rows_.size()));
     return global_rows_[ii];
   }
 
   size_t global_row(const size_t ii) const
   {
-    assert(ii < rows_);
+    assert(ii < std::min(rows_, global_rows_.size()));
     return global_rows_[ii];
   }
 
   size_t& global_col(const size_t jj)
   {
-    assert(jj < cols_);
+    assert(jj < std::min(cols_, global_cols_.size()));
     return global_cols_[jj];
   }
 
   size_t global_col(const size_t jj) const
   {
-    assert(jj < cols_);
+    assert(jj < std::min(cols_, global_cols_.size()));
     return global_cols_[jj];
   }
 
   ValueType& value(const size_t ii, const size_t jj)
   {
-    assert(ii < rows_);
-    assert(jj < cols_);
+    assert(ii < std::min(rows_, global_rows_.size()));
+    assert(jj < std::min(cols_, global_cols_.size()));
     return values_[ii][jj];
   }
 
   ValueType value(const size_t ii, const size_t jj) const
   {
-    assert(ii < rows_);
-    assert(jj < cols_);
+    assert(ii < std::min(rows_, global_rows_.size()));
+    assert(jj < std::min(cols_, global_cols_.size()));
     return values_[ii][jj];
   }
 
