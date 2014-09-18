@@ -12,12 +12,14 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-# include <dune/geometry/referenceelements.hh>
-#else
-# include <dune/geometry/genericreferenceelements.hh>
-#endif
+# if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#   include <dune/geometry/referenceelements.hh>
+# else
+#   include <dune/geometry/genericreferenceelements.hh>
+# endif
+# include <dune/common/typetraits.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
+
 #include <dune/stuff/common/exceptions.hh>
 
 #include "../interface.hh"
@@ -199,11 +201,12 @@ private:
 public:
   using BaseType::local_constraints;
 
-  template< bool set >
-  void local_constraints(const EntityType& entity,
-                         Constraints::Dirichlet< IntersectionType, RangeFieldType, set >& ret) const
+  template< class C, class R >
+  void local_constraints(const ThisType& /*other*/,
+                         const EntityType& /*entity*/,
+                         ConstraintsInterface< C, R >& /*ret*/) const
   {
-    local_constraints(*this, entity, ret);
+    static_assert(AlwaysFalse< C >::value, "Not implemented for arbitrary constraints!");
   }
 
   virtual void local_constraints(const ThisType& other,
