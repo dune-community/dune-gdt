@@ -62,10 +62,10 @@ template <class AssemblerType, class ConstraintsType, class VectorType>
 class LocalVectorConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
 public:
-  LocalVectorConstraintsWrapper(const typename AssemblerType::TestSpaceType& t_space,
+  LocalVectorConstraintsWrapper(const typename AssemblerType::TestSpaceType& test_space,
                                 const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>* where,
                                 ConstraintsType& constraints, VectorType& vector)
-    : t_space_(t_space)
+    : test_space_(test_space)
     , where_(where)
     , constraints_(constraints)
     , vector_(vector)
@@ -84,14 +84,14 @@ public:
 
   virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    t_space_.local_constraints(entity, constraints_);
+    test_space_.local_constraints(entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
       vector_.set_entry(constraints_.global_row(ii), typename AssemblerType::TestSpaceType::RangeFieldType(0));
     }
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& t_space_;
+  const typename AssemblerType::TestSpaceType& test_space_;
   std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>> where_;
   ConstraintsType& constraints_;
   VectorType& vector_;
@@ -107,13 +107,14 @@ class LocalVolumeMatrixAssemblerWrapper
 
 public:
   LocalVolumeMatrixAssemblerWrapper(
-      const typename AssemblerType::TestSpaceType& t_space, const typename AssemblerType::AnsatzSpaceType& a_space,
+      const typename AssemblerType::TestSpaceType& test_space,
+      const typename AssemblerType::AnsatzSpaceType& ansatz_space,
       const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>* where,
       const LocalVolumeMatrixAssembler& localAssembler, MatrixType& matrix)
-    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), t_space.mapper().maxNumDofs(),
-                          a_space.mapper().maxNumDofs())
-    , t_space_(t_space)
-    , a_space_(a_space)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), test_space.mapper().maxNumDofs(),
+                          ansatz_space.mapper().maxNumDofs())
+    , test_space_(test_space)
+    , ansatz_space_(ansatz_space)
     , where_(where)
     , localMatrixAssembler_(localAssembler)
     , matrix_(matrix)
@@ -132,12 +133,12 @@ public:
 
   virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    localMatrixAssembler_.assembleLocal(t_space_, a_space_, entity, matrix_, this->matrices(), this->indices());
+    localMatrixAssembler_.assembleLocal(test_space_, ansatz_space_, entity, matrix_, this->matrices(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& t_space_;
-  const typename AssemblerType::AnsatzSpaceType& a_space_;
+  const typename AssemblerType::TestSpaceType& test_space_;
+  const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
   std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>> where_;
   const LocalVolumeMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
@@ -153,13 +154,14 @@ class LocalFaceMatrixAssemblerWrapper
 
 public:
   LocalFaceMatrixAssemblerWrapper(
-      const typename AssemblerType::TestSpaceType& t_space, const typename AssemblerType::AnsatzSpaceType& a_space,
+      const typename AssemblerType::TestSpaceType& test_space,
+      const typename AssemblerType::AnsatzSpaceType& ansatz_space,
       const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>* where,
       const LocalFaceMatrixAssembler& localAssembler, MatrixType& matrix)
-    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), t_space.mapper().maxNumDofs(),
-                          a_space.mapper().maxNumDofs())
-    , t_space_(t_space)
-    , a_space_(a_space)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), test_space.mapper().maxNumDofs(),
+                          ansatz_space.mapper().maxNumDofs())
+    , test_space_(test_space)
+    , ansatz_space_(ansatz_space)
     , where_(where)
     , localMatrixAssembler_(localAssembler)
     , matrix_(matrix)
@@ -180,12 +182,13 @@ public:
                            const typename AssemblerType::EntityType& /*inside_entity*/,
                            const typename AssemblerType::EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
   {
-    localMatrixAssembler_.assembleLocal(t_space_, a_space_, intersection, matrix_, this->matrices(), this->indices());
+    localMatrixAssembler_.assembleLocal(
+        test_space_, ansatz_space_, intersection, matrix_, this->matrices(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& t_space_;
-  const typename AssemblerType::AnsatzSpaceType& a_space_;
+  const typename AssemblerType::TestSpaceType& test_space_;
+  const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
   std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>> where_;
   const LocalFaceMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
