@@ -132,24 +132,18 @@ public:
     return this->as_imp(*this).communicator();
   }
 
-  template <class ConstraintsType>
-  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
-  {
-    local_constraints(*this, entity, ret);
-  }
-
-  template <class T, class ConstraintsType>
-  void local_constraints(const SpaceInterface<T>& ansatz_space, const EntityType& entity, ConstraintsType& ret) const
+  template <class S, class C>
+  void local_constraints(const SpaceInterface<S>& ansatz_space, const EntityType& entity,
+                         Spaces::ConstraintsInterface<C, RangeFieldType>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(ansatz_space, entity, ret));
     this->as_imp(*this).local_constraints(ansatz_space, entity, ret);
   }
 
-  template <class T, class C>
-  void local_constraints(const SpaceInterface<T>& /*ansatz_space*/, const EntityType& /*entity*/,
-                         Spaces::ConstraintsInterface<C>& /*ret*/) const
+  template <class C>
+  void local_constraints(const EntityType& entity, Spaces::ConstraintsInterface<C, RangeFieldType>& ret) const
   {
-    static_assert(AlwaysFalse<T>::value, "Not implemented for arbitrary constraints!");
+    local_constraints(*this, entity, ret);
   }
 
   /**
