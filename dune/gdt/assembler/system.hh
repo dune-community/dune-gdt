@@ -37,8 +37,8 @@ class SystemAssembler
                 "TestSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceImp::Traits >, AnsatzSpaceImp >::value,
                 "AnsatzSpaceImp has to be derived from SpaceInterface!");
-  typedef Stuff::Grid::Walker< GridViewImp > BaseType;
-  typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp> ThisType;
+  typedef Stuff::Grid::Walker< GridViewImp >                          BaseType;
+  typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp > ThisType;
 public:
   typedef TestSpaceImp    TestSpaceType;
   typedef AnsatzSpaceImp  AnsatzSpaceType;
@@ -46,6 +46,9 @@ public:
   typedef typename BaseType::GridViewType     GridViewType;
   typedef typename BaseType::EntityType       EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
+
+  typedef Stuff::Grid::ApplyOn::WhichEntity< GridViewType >       ApplyOnWhichEntity;
+  typedef Stuff::Grid::ApplyOn::WhichIntersection< GridViewType > ApplyOnWhichIntersection;
 
   SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridViewType& grid_view)
     : BaseType(grid_view)
@@ -86,8 +89,7 @@ public:
   template< class ConstraintsType, class M >
   void add(ConstraintsType& constraints,
            Stuff::LA::MatrixInterface< M >& matrix,
-           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
-              = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
+           const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -100,8 +102,7 @@ public:
   template< class ConstraintsType, class V >
   void add(ConstraintsType& constraints,
            Stuff::LA::VectorInterface< V >& vector,
-           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
-              = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
+           const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -113,8 +114,7 @@ public:
   template< class L, class M >
   void add(const LocalAssembler::Codim0Matrix< L >& local_assembler,
            Stuff::LA::MatrixInterface< M >& matrix,
-           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >*
-              where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
+           const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -129,8 +129,7 @@ public:
   template< class Codim0Assembler, class M >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
                             Stuff::LA::MatrixInterface< M >& matrix,
-                            const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
-                                = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
+                            const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = static_cast< MatrixType& >(matrix);
@@ -144,8 +143,7 @@ public:
   template< class Codim0Assembler, class V >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
                             Stuff::LA::VectorInterface< V >& vector,
-                            const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
-                                = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
+                            const ApplyOnWhichEntity* where = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
@@ -157,7 +155,7 @@ public:
   template< class L, class M >
   void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
            Stuff::LA::MatrixInterface< M >& matrix,
-           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+           const ApplyOnWhichIntersection* where
               = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
@@ -173,7 +171,7 @@ public:
   template< class L, class M >
   void add(const LocalAssembler::Codim1BoundaryMatrix< L >& local_assembler,
            Stuff::LA::MatrixInterface< M >& matrix,
-           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+           const ApplyOnWhichIntersection* where
               = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
@@ -189,7 +187,7 @@ public:
   template< class L, class V >
   void add(const LocalAssembler::Codim0Vector< L >& local_assembler,
            Stuff::LA::VectorInterface< V >& vector,
-           const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where
+           const ApplyOnWhichEntity* where
               = new Stuff::Grid::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
@@ -203,7 +201,7 @@ public:
   template< class L, class V >
   void add(const LocalAssembler::Codim1Vector< L >& local_assembler,
            Stuff::LA::VectorInterface< V >& vector,
-           const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* where
+           const ApplyOnWhichIntersection* where
               = new Stuff::Grid::ApplyOn::AllIntersections< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
