@@ -9,12 +9,11 @@
 #include <memory>
 #include <type_traits>
 
+#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/dynvector.hh>
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fvector.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/common/static_assert.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
@@ -133,17 +132,18 @@ public:
     return this->as_imp(*this).communicator();
   }
 
-  template <class ConstraintsType>
-  void local_constraints(const EntityType& entity, ConstraintsType& ret) const
-  {
-    local_constraints(*this, entity, ret);
-  }
-
-  template <class ConstraintsType, class T>
-  void local_constraints(const SpaceInterface<T>& ansatz_space, const EntityType& entity, ConstraintsType& ret) const
+  template <class S, class C>
+  void local_constraints(const SpaceInterface<S>& ansatz_space, const EntityType& entity,
+                         Spaces::ConstraintsInterface<C, RangeFieldType>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).local_constraints(ansatz_space, entity, ret));
     this->as_imp(*this).local_constraints(ansatz_space, entity, ret);
+  }
+
+  template <class C>
+  void local_constraints(const EntityType& entity, Spaces::ConstraintsInterface<C, RangeFieldType>& ret) const
+  {
+    local_constraints(*this, entity, ret);
   }
 
   /**

@@ -6,7 +6,8 @@
 #ifndef DUNE_GDT_PRODUCTS_BASE_HH
 #define DUNE_GDT_PRODUCTS_BASE_HH
 
-#include <dune/gdt/assembler/system.hh>
+#include <dune/stuff/grid/walker.hh>
+
 #include <dune/gdt/assembler/tmp-storage.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 
@@ -22,7 +23,7 @@ namespace Products {
  */
 template <class Traits>
 class LocalizableBase : public LocalizableProductInterface<Traits>,
-                        public Functor::Codim0<typename Traits::GridViewType>
+                        public Stuff::Grid::Functor::Codim0<typename Traits::GridViewType>
 {
   typedef LocalizableProductInterface<Traits> InterfaceType;
 
@@ -90,7 +91,7 @@ public:
     if (!prepared_) {
       tmp_storage_ = std::unique_ptr<TmpMatricesProviderType>(
           new TmpMatricesProviderType({1, local_operator().numTmpObjectsRequired()}, 1, 1));
-      result_ *= 0.0;
+      result_   = FieldType(0.0);
       prepared_ = true;
     }
   } // ... prepare()
@@ -116,21 +117,22 @@ public:
 
   virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
-    result_ += compute_locally(entity);
+    result_ = result_ + compute_locally(entity);
   }
 
   virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
-      result_    = grid_view_.comm().sum(result_);
-      finalized_ = true;
+      FieldType tmp = result_;
+      result_       = grid_view_.comm().sum(tmp);
+      finalized_    = true;
     }
   }
 
   FieldType apply2()
   {
     if (!finalized_) {
-      GridWalker<GridViewType> grid_walker(grid_view_);
+      Stuff::Grid::Walker<GridViewType> grid_walker(grid_view_);
       grid_walker.add(*this);
       grid_walker.walk();
     }
@@ -144,7 +146,7 @@ private:
   std::unique_ptr<TmpMatricesProviderType> tmp_storage_;
   bool prepared_;
   bool finalized_;
-  FieldType result_;
+  std::atomic<FieldType> result_;
 }; // class LocalizableBase
 
 
@@ -153,7 +155,7 @@ private:
  */
 template <class Traits>
 class AssemblableBase : public AssemblableProductInterface<Traits>,
-                        public Functor::Codim0<typename Traits::GridViewType>
+                        public Stuff::Grid::Functor::Codim0<typename Traits::GridViewType>
 {
   typedef AssemblableProductInterface<Traits> InterfaceType;
 
@@ -265,7 +267,7 @@ public:
   void assemble()
   {
     if (!assembled_) {
-      GridWalker<GridViewType> grid_walker(grid_view_);
+      Stuff::Grid::Walker<GridViewType> grid_walker(grid_view_);
       grid_walker.add(*this);
       grid_walker.walk();
       assembled_ = true;

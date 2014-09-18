@@ -122,8 +122,7 @@ public:
 
   virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const DS_OVERRIDE
   {
-    return std::unique_ptr<ConstLocalDiscreteFunctionType>(
-        new ConstLocalDiscreteFunctionType(local_discrete_function(entity)));
+    return DSC::make_unique<ConstLocalDiscreteFunctionType>(local_discrete_function(entity));
   }
 
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
