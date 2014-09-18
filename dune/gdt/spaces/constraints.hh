@@ -29,32 +29,32 @@ public:
 
   inline size_t rows() const
   {
-    CHECK_CRTP(this->as_imp(*this).rows());
-    return this->as_imp(*this).rows();
+    CHECK_CRTP(this->as_imp().rows());
+    return this->as_imp().rows();
   }
 
   inline size_t cols() const
   {
-    CHECK_CRTP(this->as_imp(*this).cols());
-    return this->as_imp(*this).cols();
+    CHECK_CRTP(this->as_imp().cols());
+    return this->as_imp().cols();
   }
 
   inline size_t global_row(const size_t ii) const
   {
-    CHECK_CRTP(this->as_imp(*this).global_row(ii));
-    return this->as_imp(*this).global_row(ii);
+    CHECK_CRTP(this->as_imp().global_row(ii));
+    return this->as_imp().global_row(ii);
   }
 
   inline size_t global_col(const size_t jj) const
   {
-    CHECK_CRTP(this->as_imp(*this).global_col(jj));
-    return this->as_imp(*this).global_col(jj);
+    CHECK_CRTP(this->as_imp().global_col(jj));
+    return this->as_imp().global_col(jj);
   }
 
   inline ValueType value(const size_t ii, const size_t jj) const
   {
-    CHECK_CRT(this->as_imp(*this).value(ii, jj));
-    return this->as_imp(*this).value(ii, jj);
+    CHECK_CRTP(this->as_imp().value(ii, jj));
+    return this->as_imp().value(ii, jj);
   }
 }; // class ConstraintsInterface
 
