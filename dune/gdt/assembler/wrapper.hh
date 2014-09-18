@@ -1,10 +1,19 @@
 #ifndef DUNE_GDT_ASSEMBLER_WRAPPER_HH
 #define DUNE_GDT_ASSEMBLER_WRAPPER_HH
 
+#include <type_traits>
+
+#include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
+#include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/grid/walker/wrapper.hh>
 
+#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/constraints.hh>
+
+#include "local/codim0.hh"
+#include "local/codim1.hh"
 #include "tmp-storage.hh"
 
 namespace Dune {
@@ -12,18 +21,27 @@ namespace GDT {
 namespace internal {
 
 
-template< class AssemblerType, class ConstraintsType, class MatrixType >
+template< class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType, class MatrixType >
 class LocalMatrixConstraintsWrapper
-  : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+  : public Stuff::Grid::internal::Codim0Object< GridViewType >
 {
+  static_assert(std::is_base_of< SpaceInterface< typename TestSpaceType::Traits >, TestSpaceType >::value, "");
+  static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceType::Traits >, AnsatzSpaceType >::value, "");
+  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixType::Traits >, MatrixType >::value, "");
+  static_assert(std::is_base_of< Spaces::ConstraintsInterface< typename ConstraintsType::Traits,
+                                                               typename ConstraintsType::ValueType >,
+                                 ConstraintsType >::value, "");
+  typedef Stuff::Grid::internal::Codim0Object< GridViewType > BaseType;
 public:
-  LocalMatrixConstraintsWrapper(const typename AssemblerType::TestSpaceType& t_space,
-                                const typename AssemblerType::AnsatzSpaceType& a_space,
-                                const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType >* where,
+  typedef typename BaseType::EntityType EntityType;
+
+  LocalMatrixConstraintsWrapper(const TestSpaceType& test_space,
+                                const AnsatzSpaceType& ansatz_space,
+                                const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where,
                                 ConstraintsType& constraints,
                                 MatrixType& matrix)
-    : t_space_(t_space)
-    , a_space_(a_space)
+    : test_space_(test_space)
+    , ansatz_space_(ansatz_space)
     , where_(where)
     , constraints_(constraints)
     , matrix_(matrix)
@@ -31,15 +49,14 @@ public:
 
   virtual ~LocalMatrixConstraintsWrapper() {}
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    t_space_.local_constraints(a_space_, entity, constraints_);
+    test_space_.local_constraints(ansatz_space_, entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
       const size_t row = constraints_.global_row(ii);
       for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
@@ -49,9 +66,9 @@ public:
   } // ... apply_local(...)
 
 private:
-  const typename AssemblerType::TestSpaceType& t_space_;
-  const typename AssemblerType::AnsatzSpaceType& a_space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
+  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
   ConstraintsType& constraints_;
   MatrixType& matrix_;
 }; // class LocalMatrixConstraintsWrapper
