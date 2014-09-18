@@ -162,35 +162,36 @@ private:
 } // namespace internal
 
 
-template <class IntersectionType, class ValueImp = double, bool setRow = true>
+template <class IntersectionType, class ValueImp = double>
 class Dirichlet;
 
 
 namespace internal {
 
 
-template <class IntersectionType, class ValueImp, bool setRow>
+template <class IntersectionType, class ValueImp>
 class DirichletTraits
 {
 public:
-  typedef Dirichlet<IntersectionType, ValueImp, setRow> derived_type;
+  typedef Dirichlet<IntersectionType, ValueImp> derived_type;
 };
 
 
 } // namespace internal
 
 
-template <class IntersectionType, class ValueImp, bool setRow>
-class Dirichlet : public internal::Default<internal::DirichletTraits<IntersectionType, ValueImp, setRow>, ValueImp>
+template <class IntersectionType, class ValueImp>
+class Dirichlet : public internal::Default<internal::DirichletTraits<IntersectionType, ValueImp>, ValueImp>
 {
-  typedef internal::Default<internal::DirichletTraits<IntersectionType, ValueImp, setRow>, ValueImp> BaseType;
+  typedef internal::Default<internal::DirichletTraits<IntersectionType, ValueImp>, ValueImp> BaseType;
 
 public:
   typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
 
-  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls)
+  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls, const bool set_row = true)
     : BaseType(rws, cls)
     , boundary_info_(bnd_info)
+    , set_row_(set_row)
   {
   }
 
@@ -199,8 +200,14 @@ public:
     return boundary_info_;
   }
 
+  bool set_row() const
+  {
+    return set_row_;
+  }
+
 private:
   const BoundaryInfoType& boundary_info_;
+  const bool set_row_;
 }; // class Dirichlet
 
 
