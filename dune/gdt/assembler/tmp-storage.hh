@@ -12,6 +12,7 @@
 # include <dune/common/dynmatrix.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #include <dune/common/dynvector.hh>
+#include <dune/stuff/common/parallel/threadmanager.hh>
 
 namespace Dune {
 namespace GDT {
@@ -21,22 +22,20 @@ namespace TmpStorageProvider {
 template< class FieldType = double >
 class Matrices
 {
-  static size_t safely_get(const std::vector< size_t >& vec, const size_t ii)
-  {
-    assert(ii < vec.size());
-    return vec[ii];
-  } // ... safely_get(...)
-
 public:
   typedef DynamicMatrix< FieldType > LocalMatrixType;
+protected:
+  typedef std::vector< std::vector< LocalMatrixType > > LocalMatrixContainerType;
+
+public:
 
   Matrices(const std::vector< size_t >& num_tmp_objects,
            const size_t max_rows,
            const size_t max_cols)
-    : matrices_({ std::vector< LocalMatrixType >(safely_get(num_tmp_objects, 0),
+    : matrices_(LocalMatrixContainerType({std::vector< LocalMatrixType >(num_tmp_objects.at(0),
                                                  LocalMatrixType(max_rows, max_cols, FieldType(0)))
-                , std::vector< LocalMatrixType >(safely_get(num_tmp_objects, 1),
-                                                 LocalMatrixType(max_rows, max_cols, FieldType(0))) })
+                , std::vector< LocalMatrixType >(num_tmp_objects.at(1),
+                                                 LocalMatrixType(max_rows, max_cols, FieldType(0))) } ))
     , indices_(4, Dune::DynamicVector< size_t >(std::max(max_rows, max_cols)))
   {}
 
@@ -44,38 +43,34 @@ public:
 
   std::vector< std::vector< LocalMatrixType > >& matrices()
   {
-    return matrices_;
+    return *matrices_;
   }
 
   std::vector< Dune::DynamicVector< size_t > >& indices()
   {
-    return indices_;
+    return *indices_;
   }
 
 protected:
-  std::vector< std::vector< LocalMatrixType > > matrices_;
-  std::vector< DynamicVector< size_t > > indices_;
+  DS::PerThreadValue< LocalMatrixContainerType > matrices_;
+  DS::PerThreadValue< std::vector< DynamicVector< size_t > > > indices_;
 }; // class Matrices
 
 
 template< class FieldType = double >
 class Vectors
 {
-  static size_t safely_get(const std::vector< size_t >& vec, const size_t ii)
-  {
-    assert(ii < vec.size());
-    return vec[ii];
-  } // ... safely_get(...)
-
 public:
   typedef DynamicVector< FieldType > LocalVectorType;
+protected:
+  typedef std::vector< std::vector< LocalVectorType > > LocalVectorContainerType;
 
   Vectors(const std::vector< size_t >& num_tmp_objects,
           const size_t max_size)
-    : vectors_({ std::vector< LocalVectorType >(safely_get(num_tmp_objects, 0),
+    : vectors_(LocalVectorContainerType({ std::vector< LocalVectorType >(num_tmp_objects.at(0),
                                                 LocalVectorType(max_size, FieldType(0)))
-               , std::vector< LocalVectorType >(safely_get(num_tmp_objects, 1),
-                                                LocalVectorType(max_size, FieldType(0))) })
+               , std::vector< LocalVectorType >(num_tmp_objects.at(1),
+                                                LocalVectorType(max_size, FieldType(0))) } ))
     , indices_(max_size)
   {}
 
@@ -83,17 +78,17 @@ public:
 
   std::vector< std::vector< LocalVectorType > >& vectors()
   {
-    return vectors_;
+    return *vectors_;
   }
 
   Dune::DynamicVector< size_t >& indices()
   {
-    return indices_;
+    return *indices_;
   }
 
 protected:
-  std::vector< std::vector< LocalVectorType > > vectors_;
-  Dune::DynamicVector< size_t > indices_;
+  DS::PerThreadValue< std::vector< std::vector< LocalVectorType > > > vectors_;
+  DS::PerThreadValue< Dune::DynamicVector< size_t > > indices_;
 }; // class Vectors
 
 

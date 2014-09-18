@@ -100,7 +100,7 @@ public:
 private:
   void setup()
   {
-    this->add(local_assembler_, this->vector(), new ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+    this->add(local_assembler_, this->vector(), new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
   }
 
   const DiffusionFactorType& diffusion_factor_;

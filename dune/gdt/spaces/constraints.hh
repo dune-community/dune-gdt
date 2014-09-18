@@ -6,142 +6,207 @@
 #ifndef DUNE_GDT_SPACES_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_CONSTRAINTS_HH
 
-#include <dune/common/dynvector.hh>
 #include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/dynvector.hh>
 # include <dune/common/dynmatrix.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/common/crtp.hh>
 
 namespace Dune {
 namespace GDT {
-namespace Constraints {
+namespace Spaces {
 
 
-template< class RangeFieldImp = double >
-class LocalDefault
+template< class Traits, class ValueImp = double >
+class ConstraintsInterface
+  : public Stuff::CRTPInterface< ConstraintsInterface< Traits, ValueImp >, Traits >
 {
 public:
-  typedef RangeFieldImp RangeFieldType;
+  typedef typename Traits::derived_type derived_type;
+  typedef ValueImp                      ValueType;
+
+  inline size_t rows() const
+  {
+    CHECK_CRTP(this->as_imp(*this).rows());
+    return this->as_imp(*this).rows();
+  }
+
+  inline size_t cols() const
+  {
+    CHECK_CRTP(this->as_imp(*this).cols());
+    return this->as_imp(*this).cols();
+  }
+
+  inline size_t global_row(const size_t ii) const
+  {
+    CHECK_CRTP(this->as_imp(*this).global_row(ii));
+    return this->as_imp(*this).global_row(ii);
+  }
+
+  inline size_t global_col(const size_t jj) const
+  {
+    CHECK_CRTP(this->as_imp(*this).global_col(jj));
+    return this->as_imp(*this).global_col(jj);
+  }
+
+  inline ValueType value(const size_t ii, const size_t jj) const
+  {
+    CHECK_CRT(this->as_imp(*this).value(ii, jj));
+    return this->as_imp(*this).value(ii, jj);
+  }
+}; // class ConstraintsInterface
+
+
+namespace Constraints {
+namespace internal {
+
+
+template< class DerivedTraits, class ValueImp >
+class Default
+  : public ConstraintsInterface< DerivedTraits, ValueImp >
+{
+  typedef ConstraintsInterface< DerivedTraits, ValueImp > BaseType;
+public:
+  typedef DerivedTraits                Traits;
+  typedef typename BaseType::ValueType ValueType;
 
 private:
-  typedef Dune::DynamicVector< size_t >         IndicesType;
-  typedef Dune::DynamicMatrix< RangeFieldType > ValuesType;
+  typedef DynamicVector< size_t >    IndicesType;
+  typedef DynamicMatrix< ValueType > ValuesType;
 
 public:
-  LocalDefault(const size_t numRows,
-               const size_t numCols)
-    : rows_(numRows)
-    , cols_(numCols)
-    , globalRows_(rows_)
-    , globalCols_(cols_)
+  Default(const size_t rws, const size_t cls)
+    : rows_(rws)
+    , cols_(cls)
+    , global_rows_(rows_)
+    , global_cols_(cols_)
     , values_(rows_, cols_)
   {}
 
-  virtual ~LocalDefault() {}
-
-  virtual size_t rows() const
+  size_t rows() const
   {
     return rows_;
   }
 
-  virtual size_t cols() const
+  size_t cols() const
   {
     return cols_;
   }
 
-  void setSize(const size_t rr, const size_t cc)
+  void set_size(const size_t rr, const size_t cc)
   {
     rows_ = rr;
     cols_ = cc;
     bool changed = false;
-    if (rows_ > globalRows_.size()) {
-      globalRows_.resize(rows_, 0);
+    if (rows_ > global_rows_.size()) {
+      global_rows_.resize(rows_, 0);
       changed = true;
     }
-    if (cols_ > globalCols_.size()) {
-      globalCols_.resize(cols_, 0);
+    if (cols_ > global_cols_.size()) {
+      global_cols_.resize(cols_, 0);
       changed = true;
     }
     if (changed)
-      values_.resize(globalRows_.size(), globalCols_.size(), 0);
-  } // ... setSize(...)
+      values_.resize(global_rows_.size(), global_cols_.size(), 0);
+    assert(global_rows_.size() == rows_);
+    assert(global_cols_.size() == cols_);
+  } // ... set_size(...)
 
-  virtual size_t& globalRow(const size_t ii)
+  size_t& global_row(const size_t ii)
   {
-    assert(ii < std::min(rows_, globalRows_.size()));
-    return globalRows_[ii];
+    assert(ii < rows_);
+    return global_rows_[ii];
   }
 
-  virtual const size_t& globalRow(const size_t ii) const
+  size_t global_row(const size_t ii) const
   {
-    assert(ii < std::min(rows_, globalRows_.size()));
-    return globalRows_[ii];
+    assert(ii < rows_);
+    return global_rows_[ii];
   }
 
-  virtual size_t& globalCol(const size_t jj)
+  size_t& global_col(const size_t jj)
   {
-    assert(jj < std::min(cols_, globalCols_.size()));
-    return globalCols_[jj];
+    assert(jj < cols_);
+    return global_cols_[jj];
   }
 
-  virtual const size_t& globalCol(const size_t jj) const
+  size_t global_col(const size_t jj) const
   {
-    assert(jj < std::min(cols_, globalCols_.size()));
-    return globalCols_[jj];
+    assert(jj < cols_);
+    return global_cols_[jj];
   }
 
-  virtual RangeFieldType& value(const size_t ii, const size_t jj)
+  ValueType& value(const size_t ii, const size_t jj)
   {
-    assert(ii < std::min(rows_, globalRows_.size()));
-    assert(jj < std::min(cols_, globalCols_.size()));
+    assert(ii < rows_);
+    assert(jj < cols_);
     return values_[ii][jj];
   }
 
-  virtual const RangeFieldType& value(const size_t ii, const size_t jj) const
+  ValueType value(const size_t ii, const size_t jj) const
   {
-    assert(ii < std::min(rows_, globalRows_.size()));
-    assert(jj < std::min(cols_, globalCols_.size()));
+    assert(ii < rows_);
+    assert(jj < cols_);
     return values_[ii][jj];
   }
 
 private:
   size_t rows_;
   size_t cols_;
-  IndicesType globalRows_;
-  IndicesType globalCols_;
+  IndicesType global_rows_;
+  IndicesType global_cols_;
   ValuesType values_;
-}; // class LocalDefault
+}; // class Default
 
 
-template< class IntersectionType, class RangeFieldImp = double, bool setRow = true >
-class Dirichlet
-  : public LocalDefault< RangeFieldImp >
+} // namespace internal
+
+
+template< class IntersectionType, class ValueImp = double, bool setRow = true >
+class Dirichlet;
+
+
+namespace internal {
+
+
+template< class IntersectionType, class ValueImp, bool setRow >
+class DirichletTraits
 {
 public:
-  typedef LocalDefault< RangeFieldImp > BaseType;
-  typedef Dune::Stuff::Grid::BoundaryInfoInterface< IntersectionType > GridBoundaryType;
+  typedef Dirichlet< IntersectionType, ValueImp, setRow > derived_type;
+};
 
-  Dirichlet(const GridBoundaryType& gB,
-            const size_t numRows,
-            const size_t numCols)
-    : BaseType(numRows, numCols)
-    , gridBoundary_(gB)
+
+} // namespace internal
+
+
+template< class IntersectionType, class ValueImp, bool setRow >
+class Dirichlet
+  : public internal::Default< internal::DirichletTraits< IntersectionType, ValueImp, setRow >, ValueImp >
+{
+  typedef internal::Default< internal::DirichletTraits< IntersectionType, ValueImp, setRow >, ValueImp > BaseType;
+public:
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
+
+  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls)
+    : BaseType(rws, cls)
+    , boundary_info_(bnd_info)
   {}
 
-  ~Dirichlet() {}
-
-  const GridBoundaryType& gridBoundary() const
+  const BoundaryInfoType& boundary_info() const
   {
-    return gridBoundary_;
+    return boundary_info_;
   }
 
 private:
-  const GridBoundaryType& gridBoundary_;
+  const BoundaryInfoType& boundary_info_;
 }; // class Dirichlet
 
 
 } // namespace Constraints
+} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

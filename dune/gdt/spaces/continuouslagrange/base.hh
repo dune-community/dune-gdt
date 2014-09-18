@@ -13,12 +13,14 @@
 #include <dune/common/version.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-# include <dune/geometry/referenceelements.hh>
-#else
-# include <dune/geometry/genericreferenceelements.hh>
-#endif
+# if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#   include <dune/geometry/referenceelements.hh>
+# else
+#   include <dune/geometry/genericreferenceelements.hh>
+# endif
+# include <dune/common/typetraits.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
+
 #include <dune/stuff/common/exceptions.hh>
 
 #include "../interface.hh"
@@ -163,13 +165,6 @@ public:
   } // ... local_dirichlet_DoFs(...)
 
 private:
-  template< class C, bool set_row >
-  struct DirichletConstraints;
-  template< class C >
-  struct DirichletConstraints< C, true >  { static RangeFieldType value() { return RangeFieldType(1); } };
-  template< class C >
-  struct DirichletConstraints< C, false > { static RangeFieldType value() { return RangeFieldType(0); } };
-
   template< class T, bool set_row >
   void compute_local_constraints(const SpaceInterface< T >& other,
                                  const EntityType& entity,
@@ -179,42 +174,40 @@ private:
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1) DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
-    typedef DirichletConstraints
-        < Constraints::Dirichlet< IntersectionType, RangeFieldType, set_row >, set_row > SetRow;
-    const std::set< size_t > localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.gridBoundary());
+    const std::set< size_t > localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
     const size_t numRows = localDirichletDofs.size();
     if (numRows > 0) {
       const size_t numCols = this->mapper().numDofs(entity);
-      ret.setSize(numRows, numCols);
+      ret.set_size(numRows, numCols);
       this->mapper().globalIndices(entity, tmpMappedRows_);
       other.mapper().globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
       const RangeFieldType zero(0);
-      for (auto localDirichletDofIt = localDirichletDofs.begin();
-           localDirichletDofIt != localDirichletDofs.end();
-           ++localDirichletDofIt) {
-        const size_t& localDirichletDofIndex = * localDirichletDofIt;
-        ret.globalRow(localRow) = tmpMappedRows_[localDirichletDofIndex];
+      for (const size_t& localDirichletDofIndex : localDirichletDofs) {
+        ret.global_row(localRow) = tmpMappedRows_[localDirichletDofIndex];
         for (size_t jj = 0; jj < ret.cols(); ++jj) {
-          ret.globalCol(jj) = tmpMappedCols_[jj];
+          ret.global_col(jj) = tmpMappedCols_[jj];
           if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
-            ret.value(localRow, jj) = SetRow::value();
+            ret.value(localRow, jj) = set_row ? RangeFieldType(1) : RangeFieldType(0);
           else
             ret.value(localRow, jj) = zero;
         }
         ++localRow;
       }
     } else {
-      ret.setSize(0, 0);
+      ret.set_size(0, 0);
     }
   } // ... compute_local_constraints(..., Dirichlet< ..., true >)
 
 public:
-  template< bool set >
-  void local_constraints(const EntityType& entity,
-                         Constraints::Dirichlet< IntersectionType, RangeFieldType, set >& ret) const
+  using BaseType::local_constraints;
+
+  template< class C, class R >
+  void local_constraints(const ThisType& /*other*/,
+                         const EntityType& /*entity*/,
+                         ConstraintsInterface< C, R >& /*ret*/) const
   {
-    local_constraints(*this, entity, ret);
+    static_assert(AlwaysFalse< C >::value, "Not implemented for arbitrary constraints!");
   }
 
   virtual void local_constraints(const ThisType& other,
