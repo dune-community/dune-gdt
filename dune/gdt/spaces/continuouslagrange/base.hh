@@ -166,10 +166,18 @@ public:
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs(...)
 
-private:
-  template <class T, bool set_row>
-  void compute_local_constraints(const SpaceInterface<T>& other, const EntityType& entity,
-                                 Constraints::Dirichlet<IntersectionType, RangeFieldType, set_row>& ret) const
+  using BaseType::local_constraints;
+
+  template <class S, class ConstraintsType>
+  void local_constraints(const SpaceInterface<S>& /*other*/, const EntityType& /*entity*/,
+                         ConstraintsType& /*ret*/) const
+  {
+    static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
+  }
+
+  template <class S>
+  void local_constraints(const SpaceInterface<S>& other, const EntityType& entity,
+                         Constraints::Dirichlet<IntersectionType, RangeFieldType>& ret) const
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -184,44 +192,21 @@ private:
       this->mapper().globalIndices(entity, tmpMappedRows_);
       other.mapper().globalIndices(entity, tmpMappedCols_);
       size_t localRow = 0;
-      const RangeFieldType zero(0);
       for (const size_t& localDirichletDofIndex : localDirichletDofs) {
         ret.global_row(localRow) = tmpMappedRows_[localDirichletDofIndex];
         for (size_t jj = 0; jj < ret.cols(); ++jj) {
           ret.global_col(jj) = tmpMappedCols_[jj];
           if (tmpMappedCols_[jj] == tmpMappedRows_[localDirichletDofIndex])
-            ret.value(localRow, jj) = set_row ? RangeFieldType(1) : RangeFieldType(0);
+            ret.value(localRow, jj) = ret.set_row() ? 1 : 0;
           else
-            ret.value(localRow, jj) = zero;
+            ret.value(localRow, jj) = 0;
         }
         ++localRow;
       }
     } else {
       ret.set_size(0, 0);
     }
-  } // ... compute_local_constraints(..., Dirichlet< ..., true >)
-
-public:
-  using BaseType::local_constraints;
-
-  template <class C, class R>
-  void local_constraints(const ThisType& /*other*/, const EntityType& /*entity*/,
-                         ConstraintsInterface<C, R>& /*ret*/) const
-  {
-    static_assert(AlwaysFalse<C>::value, "Not implemented for arbitrary constraints!");
-  }
-
-  virtual void local_constraints(const ThisType& other, const EntityType& entity,
-                                 Constraints::Dirichlet<IntersectionType, RangeFieldType, true>& ret) const
-  {
-    compute_local_constraints(other, entity, ret);
-  }
-
-  virtual void local_constraints(const ThisType& other, const EntityType& entity,
-                                 Constraints::Dirichlet<IntersectionType, RangeFieldType, false>& ret) const
-  {
-    compute_local_constraints(other, entity, ret);
-  }
+  } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
 
 protected:
   mutable Dune::DynamicVector<size_t> tmpMappedRows_;
