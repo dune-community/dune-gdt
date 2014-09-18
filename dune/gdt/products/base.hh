@@ -86,7 +86,7 @@ public:
     if (!prepared_) {
       tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(
         {1, local_operator().numTmpObjectsRequired()}, 1, 1));
-      result_ *= 0.0;
+      result_ = FieldType(0.0);
       prepared_ = true;
     }
   } // ... prepare()
@@ -112,13 +112,14 @@ public:
 
   virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
-    result_ += compute_locally(entity);
+    result_ = result_ + compute_locally(entity);
   }
 
   virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
-      result_ = grid_view_.comm().sum(result_);
+      FieldType tmp = result_;
+      result_ = grid_view_.comm().sum(tmp);
       finalized_ = true;
     }
   }
@@ -140,7 +141,7 @@ private:
   std::unique_ptr< TmpMatricesProviderType > tmp_storage_;
   bool prepared_;
   bool finalized_;
-  FieldType result_;
+  std::atomic<FieldType> result_;
 }; // class LocalizableBase
 
 
