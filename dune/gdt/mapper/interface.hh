@@ -39,29 +39,25 @@ public:
     return this->as_imp(*this).maxNumDofs();
   }
 
-  template <class EntityType>
-  size_t numDofs(const EntityType& entity) const
+  size_t numDofs(const typename Traits::EntityType& entity) const
   {
     CHECK_CRTP(this->as_imp(*this).numDofs(entity));
     return this->as_imp(*this).numDofs(entity);
   }
 
-  template <class EntityType>
-  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
   }
 
-  template <class EntityType>
-  Dune::DynamicVector<size_t> globalIndices(const EntityType& entity) const
+  Dune::DynamicVector<size_t> globalIndices(const typename Traits::EntityType& entity) const
   {
     Dune::DynamicVector<size_t> ret(numDofs(entity), 0);
     globalIndices(entity, ret);
     return ret;
   }
 
-  template <class EntityType>
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
   {
     CHECK_CRTP(this->as_imp(*this).mapToGlobal(entity, localIndex));
     return this->as_imp(*this).mapToGlobal(entity, localIndex);

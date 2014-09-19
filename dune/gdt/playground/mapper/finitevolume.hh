@@ -35,6 +35,7 @@ public:
   typedef GridViewImp GridViewType;
   typedef FiniteVolume<GridViewType, rangeDim, rangeDimCols> derived_type;
   typedef typename GridViewImp::IndexSet BackendType;
+  typedef typename GridViewType::template Codim<0>::Entity EntityType;
 };
 
 
@@ -48,7 +49,7 @@ public:
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
 
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename Traits::EntityType EntityType;
 
   FiniteVolume(const GridViewType& grid_view)
     : backend_(grid_view.indexSet())

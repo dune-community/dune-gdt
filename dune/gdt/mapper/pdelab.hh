@@ -37,6 +37,7 @@ class SimplePdelabWrapperTraits
 public:
   typedef SimplePdelabWrapper<PdelabSpaceImp> derived_type;
   typedef PdelabSpaceImp BackendType;
+  typedef typename BackendType::Element EntityType;
 };
 
 
@@ -81,8 +82,7 @@ public:
     return backend_.maxLocalSize();
   }
 
-  template <class EntityType>
-  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     lfs_.bind(entity);
     // some checks
