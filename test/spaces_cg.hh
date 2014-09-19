@@ -76,8 +76,9 @@ struct P1Q1_Continuous_Lagrange : public ::testing::Test, public ::SpaceTestBase
     typedef typename SpaceType::RangeFieldType RangeFieldType;
     Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
     std::set<size_t> local_dirichlet_DoFs = space.local_dirichlet_DoFs(entity, boundary_info);
-    Constraints::Dirichlet<IntersectionType, RangeFieldType, true> dirichlet_constraints_a(boundary_info, 0, 0);
-    Constraints::Dirichlet<IntersectionType, RangeFieldType, false> dirichlet_constraints_b(boundary_info, 0, 0);
+    Spaces::Constraints::Dirichlet<IntersectionType, RangeFieldType> dirichlet_constraints_a(boundary_info, 0, 0);
+    Spaces::Constraints::Dirichlet<IntersectionType, RangeFieldType> dirichlet_constraints_b(
+        boundary_info, 0, 0, false);
     space.local_constraints(entity, dirichlet_constraints_a);
     space.local_constraints(entity, dirichlet_constraints_b);
   }
