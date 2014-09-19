@@ -12,7 +12,7 @@
 #include <dune/stuff/common/disable_warnings.hh>
 # include <dune/common/dynvector.hh>
 # include <dune/common/fvector.hh>
-# include <dune/common/static_assert.hh>
+# include <dune/stuff/common/type_utils.hh>
 
 # include <dune/grid/common/gridview.hh>
 # include <dune/grid/io/file/vtk/vtkwriter.hh>

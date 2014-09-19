@@ -35,6 +35,7 @@ class FemDofWrapperTraits
 public:
   typedef FemDofWrapper< FemDofMapperImp, block_size >       derived_type;
   typedef Fem::NonBlockMapper< FemDofMapperImp, block_size > BackendType;
+  typedef typename BackendType::ElementType EntityType;
 };
 
 
