@@ -44,6 +44,7 @@ class FemDofWrapperTraits< FemDofMapperImp, 1 >
 public:
   typedef FemDofWrapper< FemDofMapperImp, 1 > derived_type;
   typedef FemDofMapperImp                     BackendType;
+  typedef typename BackendType::ElementType EntityType;
 };
 
 
@@ -70,8 +71,7 @@ public:
     return backend_.size();
   }
 
-  template< class EntityType >
-  size_t numDofs(const EntityType& entity) const
+  size_t numDofs(const typename Traits::EntityType& entity) const
   {
     return backend_.numDofs(entity);
   }
@@ -99,8 +99,7 @@ private:
   };
 
 public:
-  template< class EntityType >
-  void globalIndices(const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
+  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector< size_t >& ret) const
   {
     // some checks
     const size_t numLocalDofs = numDofs(entity);
@@ -116,8 +115,7 @@ public:
   /**
    *  \attention  This method is implemented using globalIndices() and thus not optimal!
    */
-  template< class EntityType >
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
   {
     const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);
@@ -154,8 +152,7 @@ public:
     return backend_.size();
   }
 
-  template< class EntityType >
-  size_t numDofs(const EntityType& entity) const
+  size_t numDofs(const typename Traits::EntityType& entity) const
   {
     return backend_.numDofs(entity);
   }
@@ -183,8 +180,7 @@ private:
   };
 
 public:
-  template< class EntityType >
-  void globalIndices(const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
+  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector< size_t >& ret) const
   {
     // some checks
     const size_t numLocalDofs = numDofs(entity);
@@ -200,8 +196,7 @@ public:
   /**
    *  \attention  This method is implemented using globalIndices() and thus not optimal!
    */
-  template< class EntityType >
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
   {
     const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);
