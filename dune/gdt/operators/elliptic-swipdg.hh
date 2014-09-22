@@ -99,10 +99,12 @@ public:
 
 template< class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp >
 class EllipticSWIPDG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
-  : public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp
+  : Stuff::Common::StorageProvider< MatrixImp >
+  , public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp
                                                                  , RangeSpaceImp, GridViewImp, void > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
+  typedef Stuff::Common::StorageProvider< MatrixImp > StorageProvider;
   typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
   typedef Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp
                                                                 , SourceSpaceImp, RangeSpaceImp
@@ -148,7 +150,8 @@ public:
                  const RangeSpaceType& range_space,
                  const GridViewType& grid_view,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space, range_space, grid_view)
+    : StorageProvider(matrix)
+    , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
     , diffusion_(diffusion)
     , boundary_info_(boundary_info)
@@ -159,12 +162,29 @@ public:
     , dirichlet_boundary_operator_(diffusion_, beta)
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
-    this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
-    this->add(dirichlet_boundary_assembler_,
-              this->matrix(),
-              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
-  } // EllipticSWIPDG(...)
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionType& diffusion,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const RangeSpaceType& range_space,
+                 const GridViewType& grid_view,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageProvider(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space, grid_view)))
+    , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
+    , AssemblerBaseType(range_space, grid_view, source_space)
+    , diffusion_(diffusion)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
 
   EllipticSWIPDG(const DiffusionType& diffusion,
                  const BoundaryInfoType& boundary_info,
@@ -172,7 +192,8 @@ public:
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space, range_space)
+    : StorageProvider(matrix)
+    , OperatorBaseType(this->storage_access(), source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
     , diffusion_(diffusion)
     , boundary_info_(boundary_info)
@@ -183,19 +204,36 @@ public:
     , dirichlet_boundary_operator_(diffusion_, beta)
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
-    this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
-    this->add(dirichlet_boundary_assembler_,
-              this->matrix(),
-              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
-  } // EllipticSWIPDG(...)
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionType& diffusion,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const RangeSpaceType& range_space,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageProvider(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space)))
+    , OperatorBaseType(this->storage_access(), source_space, range_space)
+    , AssemblerBaseType(range_space, source_space)
+    , diffusion_(diffusion)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
 
   EllipticSWIPDG(const DiffusionType& diffusion,
                  const BoundaryInfoType& boundary_info,
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space)
+    : StorageProvider(matrix)
+    , OperatorBaseType(this->storage_access(), source_space)
     , AssemblerBaseType(source_space)
     , diffusion_(diffusion)
     , boundary_info_(boundary_info)
@@ -206,12 +244,27 @@ public:
     , dirichlet_boundary_operator_(diffusion_, beta)
     , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
   {
-    this->add(volume_assembler_, this->matrix());
-    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
-    this->add(dirichlet_boundary_assembler_,
-              this->matrix(),
-              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
-  } // EllipticSWIPDG(...)
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionType& diffusion,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageProvider(new MatrixType(source_space.mapper().size(), source_space.mapper().size(), pattern(source_space)))
+    , OperatorBaseType(this->storage_access(), source_space)
+    , AssemblerBaseType(source_space)
+    , diffusion_(diffusion)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
 
   virtual ~EllipticSWIPDG() {}
 
@@ -221,6 +274,15 @@ public:
   }
 
 private:
+  void setup()
+  {
+    this->add(volume_assembler_, this->matrix());
+    this->add(coupling_assembler_, this->matrix(), new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(dirichlet_boundary_assembler_,
+              this->matrix(),
+              new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
+  } // ... setup(...)
+
   const DiffusionType& diffusion_;
   const BoundaryInfoType& boundary_info_;
   const VolumeOperatorType volume_operator_;

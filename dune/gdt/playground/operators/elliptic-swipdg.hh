@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_SWIPDG_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_SWIPDG_HH
 
+#include <dune/stuff/common/memory.hh>
+
 #include <dune/gdt/playground/localevaluation/elliptic.hh>
 #include <dune/gdt/playground/localevaluation/swipdg.hh>
 #include <dune/gdt/operators/elliptic-swipdg.hh>
@@ -22,10 +24,12 @@ template< class DiffusionFactorType
         , class GridViewImp
         , class DiffusionTensorType >
 class EllipticSWIPDG
-  : public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionFactorType, MatrixImp, SourceSpaceImp
+  : Stuff::Common::StorageProvider< MatrixImp >
+  , public Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionFactorType, MatrixImp, SourceSpaceImp
                                                                  , RangeSpaceImp, GridViewImp, DiffusionTensorType > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
+  typedef Stuff::Common::StorageProvider< MatrixImp > StorageBaseType;
   typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
   typedef Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionFactorType, MatrixImp
                                                                 , SourceSpaceImp, RangeSpaceImp
@@ -76,7 +80,31 @@ public:
                  const RangeSpaceType& range_space,
                  const GridViewType& grid_view,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space, range_space, grid_view)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
+    , AssemblerBaseType(range_space, grid_view, source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_factor_, diffusion_tensor_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionFactorType& diffusion_factor,
+                 const DiffusionTensorType& diffusion_tensor,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const RangeSpaceType& range_space,
+                 const GridViewType& grid_view,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space, grid_view)))
+    , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -98,7 +126,30 @@ public:
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space, range_space)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->storage_access(), source_space, range_space)
+    , AssemblerBaseType(range_space, source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_factor_, diffusion_tensor_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionFactorType& diffusion_factor,
+                 const DiffusionTensorType& diffusion_tensor,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const RangeSpaceType& range_space,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space)))
+    , OperatorBaseType(this->storage_access(), source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -119,7 +170,29 @@ public:
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
                  const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
-    : OperatorBaseType(matrix, source_space)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->storage_access(), source_space)
+    , AssemblerBaseType(source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , boundary_info_(boundary_info)
+    , volume_operator_(diffusion_factor_, diffusion_tensor_)
+    , volume_assembler_(volume_operator_)
+    , coupling_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , coupling_assembler_(coupling_operator_)
+    , dirichlet_boundary_operator_(diffusion_factor_, diffusion_tensor_, beta)
+    , dirichlet_boundary_assembler_(dirichlet_boundary_operator_)
+  {
+    setup();
+  }
+
+  EllipticSWIPDG(const DiffusionFactorType& diffusion_factor,
+                 const DiffusionTensorType& diffusion_tensor,
+                 const BoundaryInfoType& boundary_info,
+                 const SourceSpaceType& source_space,
+                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+    : StorageBaseType(new MatrixType(source_space.mapper().size(), source_space.mapper().size(), pattern(source_space)))
+    , OperatorBaseType(this->storage_access(), source_space)
     , AssemblerBaseType(source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
