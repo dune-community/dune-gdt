@@ -21,13 +21,13 @@ class Inner
   : public LocalEvaluation::Codim1Interface< internal::InnerTraits< DiffusionFactorImp, DiffusionTensorImp >, 4 >
 {
 public:
-  typedef internal::InnerTraits< DiffusionFactorImp, DiffusionTensorImp >     Traits;
-  typedef typename Traits::LocalizableDiffusionFactorFunctionType             LocalizableDiffusionFactorFunctionType;
-  typedef typename Traits::LocalizableDiffusionTensorFunctionType             LocalizableDiffusionTensorFunctionType;
-  typedef typename Traits::LocalfunctionTupleType                             LocalfunctionTupleType;
-  typedef typename Traits::EntityType                                         EntityType;
-  typedef typename Traits::DomainFieldType                                    DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  typedef internal::InnerTraits< DiffusionFactorImp, DiffusionTensorImp > Traits;
+  typedef typename Traits::LocalizableDiffusionFactorFunctionType         LocalizableDiffusionFactorFunctionType;
+  typedef typename Traits::LocalizableDiffusionTensorFunctionType         LocalizableDiffusionTensorFunctionType;
+  typedef typename Traits::LocalfunctionTupleType                         LocalfunctionTupleType;
+  typedef typename Traits::EntityType                                     EntityType;
+  typedef typename Traits::DomainFieldType                                DomainFieldType;
+  static const unsigned int                                               dimDomain = Traits::dimDomain;
 
   Inner(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
         const LocalizableDiffusionTensorFunctionType& inducingFunction,
@@ -206,10 +206,24 @@ public:
                                                            ansatzBaseNeighbor.order())));
     const R sigma = internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
+    //   the diffusion factor is supposed to be continuous
+#ifndef NDEBUG
+# ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+    if (Stuff::Common::FloatCmp::ne(local_diffusion_factor_en, local_diffusion_factor_ne))
+      std::cout << "\n" << Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
+                << " The diffusion factor is assumed to be continuous across intersections, but\n"
+                << "   localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
+                << "   localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
+                << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+# endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+#endif // NDEBUG
+    //   just to be sure we take the everage value here
+    //   this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     const R delta_plus  = unitOuterNormal * (local_diffusion_tensor_ne * unitOuterNormal);
     const R delta_minus = unitOuterNormal * (local_diffusion_tensor_en * unitOuterNormal);
     const R gamma = (delta_plus * delta_minus)/(delta_plus + delta_minus);
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R penalty = (local_diffusion_factor * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     const R weight_plus = delta_minus / (delta_plus + delta_minus);
     const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // compute diffusion value (should be factor * tensor, but this is the same)
@@ -436,7 +450,7 @@ public:
     const R sigma = internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
-    const R penalty = (sigma * gamma ) / std::pow(intersection.geometry().volume(), beta_);
+    const R penalty = (diffusion_factor_value * sigma * gamma ) / std::pow(intersection.geometry().volume(), beta_);
     // compute diffusion value (should be factor * tensor, but this is the same)
     const TensorType diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // evaluate bases
@@ -609,7 +623,7 @@ private:
     const R sigma = internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusionTensorValue * unitOuterNormal);
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R penalty = (diffusionFactorValue * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     // compute diffusion value (should be factor * tensor, but this is the same)
     const TensorType diffusionValue = diffusionTensorValue * diffusionFactorValue;
     // evaluate basis
