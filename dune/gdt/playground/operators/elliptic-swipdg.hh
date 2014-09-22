@@ -236,6 +236,34 @@ private:
 }; // class EllipticSWIPDG
 
 
+template< class DF, class DT, class M, class S >
+std::unique_ptr< EllipticSWIPDG< DF, M, S, S, typename S::GridViewType, DT > > make_elliptic_swipdg(const DF& diffusion_factor,
+                                                                                                    const DT& diffusion_tensor,
+                                                                                                    const Stuff::Grid::BoundaryInfoInterface< typename S::GridViewType::Intersection >& boundary_info,
+                                                                                                    const M& /*matrix*/,
+                                                                                                    const S& space)
+{
+  return Stuff::Common::make_unique< EllipticSWIPDG< DF, M, S, S, typename S::GridViewType, DT > >(diffusion_factor,
+                                                                                                   diffusion_tensor,
+                                                                                                   boundary_info,
+                                                                                                   space);
+} // ... make_elliptic_swipdg(...)
+
+template< class DF, class DT, class M, class S >
+std::unique_ptr< EllipticSWIPDG< DF, M, S, S, typename S::GridViewType, DT > > make_elliptic_swipdg(const DF& diffusion_factor,
+                                                                                                    const DT& diffusion_tensor,
+                                                                                                    const Stuff::Grid::BoundaryInfoInterface< typename S::GridViewType::Intersection >& boundary_info,
+                                                                                                    M& matrix,
+                                                                                                    const S& space)
+{
+  return Stuff::Common::make_unique< EllipticSWIPDG< DF, M, S, S, typename S::GridViewType, DT > >(diffusion_factor,
+                                                                                                   diffusion_tensor,
+                                                                                                   boundary_info,
+                                                                                                   matrix,
+                                                                                                   space);
+} // ... make_elliptic_swipdg(...)
+
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
