@@ -270,6 +270,27 @@ private:
 }; // class EllipticSWIPDG
 
 
+template <class DF, class M, class S>
+std::unique_ptr<EllipticSWIPDG<DF, M, S, S, typename S::GridViewType>>
+make_elliptic_swipdg(const DF& diffusion_factor,
+                     const Stuff::Grid::BoundaryInfoInterface<typename S::GridViewType::Intersection>& boundary_info,
+                     const M& /*matrix*/, const S& space)
+{
+  return Stuff::Common::make_unique<EllipticSWIPDG<DF, M, S, S, typename S::GridViewType>>(
+      diffusion_factor, boundary_info, space);
+} // ... make_elliptic_swipdg(...)
+
+template <class DF, class M, class S>
+std::unique_ptr<EllipticSWIPDG<DF, M, S, S, typename S::GridViewType>>
+make_elliptic_swipdg(const DF& diffusion_factor,
+                     const Stuff::Grid::BoundaryInfoInterface<typename S::GridViewType::Intersection>& boundary_info,
+                     M& matrix, const S& space)
+{
+  return Stuff::Common::make_unique<EllipticSWIPDG<DF, M, S, S, typename S::GridViewType>>(
+      diffusion_factor, boundary_info, matrix, space);
+} // ... make_elliptic_swipdg(...)
+
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
