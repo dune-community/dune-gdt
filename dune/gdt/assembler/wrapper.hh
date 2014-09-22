@@ -68,7 +68,7 @@ public:
 private:
   const TestSpaceType& test_space_;
   const AnsatzSpaceType& ansatz_space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
   ConstraintsType& constraints_;
   MatrixType& matrix_;
 }; // class LocalMatrixConstraintsWrapper
@@ -107,7 +107,7 @@ public:
 
 private:
   const typename AssemblerType::TestSpaceType& test_space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   ConstraintsType& constraints_;
   VectorType& vector_;
 }; // class LocalVectorConstraintsWrapper
@@ -151,7 +151,7 @@ public:
 private:
   const typename AssemblerType::TestSpaceType& test_space_;
   const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
 }; // class LocalVolumeMatrixAssemblerWrapper
@@ -197,7 +197,7 @@ public:
 private:
   const typename AssemblerType::TestSpaceType& test_space_;
   const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
 }; // class LocalFaceMatrixAssemblerWrapper
@@ -236,7 +236,7 @@ public:
 
 private:
   const typename AssemblerType::TestSpaceType& space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
 }; // class LocalVolumeVectorAssemblerWrapper
@@ -277,7 +277,7 @@ public:
 
 private:
   const typename AssemblerType::TestSpaceType& space_;
-  std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
 }; // class LocalFaceVectorAssemblerWrapper

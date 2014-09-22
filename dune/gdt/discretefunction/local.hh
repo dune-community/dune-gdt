@@ -55,7 +55,7 @@ public:
 private:
   const VectorType& vector_;
 protected:
-  mutable Dune::DynamicVector< size_t > indices_;
+  Dune::DynamicVector< size_t > indices_;
 
 private:
   template< class V >
