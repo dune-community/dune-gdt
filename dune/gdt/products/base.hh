@@ -48,6 +48,7 @@ public:
     , prepared_(false)
     , finalized_(false)
     , result_(0)
+    , finalized_result_(0)
   {}
 
   LocalizableBase(const GridViewType& grd_vw, const RangeType& rng)
@@ -58,6 +59,7 @@ public:
     , prepared_(false)
     , finalized_(false)
     , result_(0)
+    , finalized_result_(0)
   {}
 
   virtual ~LocalizableBase() {}
@@ -118,8 +120,8 @@ public:
   virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
-      FieldType tmp = result_.sum();
-      finalized_result_ = grid_view_.comm().sum(tmp);
+      finalized_result_ = result_.sum();
+      finalized_result_ = grid_view_.comm().sum(finalized_result_);
       finalized_ = true;
     }
   }
