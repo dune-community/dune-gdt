@@ -49,6 +49,7 @@ public:
     , prepared_(false)
     , finalized_(false)
     , result_(0)
+    , finalized_result_(0)
   {
   }
 
@@ -60,6 +61,7 @@ public:
     , prepared_(false)
     , finalized_(false)
     , result_(0)
+    , finalized_result_(0)
   {
   }
 
@@ -123,8 +125,8 @@ public:
   virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
-      FieldType tmp     = result_.sum();
-      finalized_result_ = grid_view_.comm().sum(tmp);
+      finalized_result_ = result_.sum();
+      finalized_result_ = grid_view_.comm().sum(finalized_result_);
       finalized_        = true;
     }
   }
