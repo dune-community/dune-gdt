@@ -117,15 +117,15 @@ public:
 
   virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
-    result_ = result_ + compute_locally(entity);
+    *result_ += compute_locally(entity);
   }
 
   virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
-      FieldType tmp = result_;
-      result_       = grid_view_.comm().sum(tmp);
-      finalized_    = true;
+      FieldType tmp     = result_.sum();
+      finalized_result_ = grid_view_.comm().sum(tmp);
+      finalized_        = true;
     }
   }
 
@@ -136,7 +136,7 @@ public:
       grid_walker.add(*this);
       grid_walker.walk();
     }
-    return result_;
+    return finalized_result_;
   }
 
 private:
@@ -146,7 +146,8 @@ private:
   std::unique_ptr<TmpMatricesProviderType> tmp_storage_;
   bool prepared_;
   bool finalized_;
-  std::atomic<FieldType> result_;
+  DS::PerThreadValue<FieldType> result_;
+  FieldType finalized_result_;
 }; // class LocalizableBase
 
 
