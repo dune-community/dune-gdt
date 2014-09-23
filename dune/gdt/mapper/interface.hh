@@ -9,6 +9,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/stuff/common/crtp.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 namespace Dune {
 namespace GDT {
