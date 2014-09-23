@@ -206,11 +206,11 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= 0.0;
-    assert(localVector_->size() == tmpBaseValues_.size());
-    base_->evaluate(xx, tmpBaseValues_);
+    assert(localVector_->size() == tmpBaseValues_->size());
+    base_->evaluate(xx, *tmpBaseValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseValues_[ii] *= localVector_->get(ii);
-      ret += tmpBaseValues_[ii];
+      (*tmpBaseValues_)[ii] *= localVector_->get(ii);
+      ret += (*tmpBaseValues_)[ii];
     }
   } // ... evaluate(...)
 
@@ -218,11 +218,11 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= RangeFieldType(0);
-    assert(localVector_->size() == tmpBaseJacobianValues_.size());
-    base_->jacobian(xx, tmpBaseJacobianValues_);
+    assert(localVector_->size() == tmpBaseJacobianValues_->size());
+    base_->jacobian(xx, *tmpBaseJacobianValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseJacobianValues_[ii] *= localVector_->get(ii);
-      ret += tmpBaseJacobianValues_[ii];
+      (*tmpBaseJacobianValues_)[ii] *= localVector_->get(ii);
+      ret += (*tmpBaseJacobianValues_)[ii];
     }
   } // ... jacobian(...)
 
@@ -235,8 +235,8 @@ protected:
   std::unique_ptr<const ConstLocalDoFVectorType> localVector_;
 
 private:
-  mutable std::vector<RangeType> tmpBaseValues_;
-  mutable std::vector<JacobianRangeType> tmpBaseJacobianValues_;
+  mutable DS::PerThreadValue<std::vector<RangeType>> tmpBaseValues_;
+  mutable DS::PerThreadValue<std::vector<JacobianRangeType>> tmpBaseJacobianValues_;
 }; // class ConstLocalDiscreteFunction
 
 
