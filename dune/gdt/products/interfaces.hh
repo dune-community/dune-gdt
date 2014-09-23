@@ -20,7 +20,7 @@ namespace GDT {
 
 
 template <class Traits>
-class ProductInterface : protected Stuff::CRTPInterface<ProductInterface<Traits>, Traits>
+class ProductInterface : public Stuff::CRTPInterface<ProductInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -49,7 +49,7 @@ public:
 
 
 template <class Traits>
-class LocalizableProductInterface : protected Stuff::CRTPInterface<LocalizableProductInterface<Traits>, Traits>
+class LocalizableProductInterface : public Stuff::CRTPInterface<LocalizableProductInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -106,7 +106,7 @@ public:
 
 
 template <class Traits>
-class AssemblableProductInterface : protected Stuff::CRTPInterface<AssemblableProductInterface<Traits>, Traits>
+class AssemblableProductInterface : public Stuff::CRTPInterface<AssemblableProductInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
