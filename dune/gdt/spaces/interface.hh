@@ -19,6 +19,7 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/crtp.hh>
+#include <dune/stuff/common/parallel/threadmanager.hh>
 #include <dune/stuff/la/container/pattern.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/common/float_cmp.hh>
@@ -451,7 +452,7 @@ public:
   /* @} */
 
 protected:
-  mutable std::vector< typename BaseFunctionSetType::RangeType > tmp_basis_values_;
+  mutable Stuff::PerThreadValue<std::vector< typename BaseFunctionSetType::RangeType >> tmp_basis_values_;
 }; // class SpaceInterface
 
 
