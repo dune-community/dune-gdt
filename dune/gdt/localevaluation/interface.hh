@@ -49,8 +49,8 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    CHECK_CRTP(this->as_imp(*this).localFunctions(entity));
-    return this->as_imp(*this).localFunctions(entity);
+    CHECK_CRTP(this->as_imp().localFunctions(entity));
+    return this->as_imp().localFunctions(entity);
   }
 
   /**
@@ -64,8 +64,8 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
   {
-    CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase));
-    return this->as_imp(*this).order(localFunctions, testBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions, testBase));
+    return this->as_imp().order(localFunctions, testBase);
   }
 
   /**
@@ -81,7 +81,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, localPoint, ret));
   }
 }; // class Codim0Interface< Traits, 1 >
 
@@ -113,8 +113,8 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
-    CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase, ansatzBase));
-    return this->as_imp(*this).order(localFunctions, testBase, ansatzBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions, testBase, ansatzBase));
+    return this->as_imp().order(localFunctions, testBase, ansatzBase);
   }
 
   /**
@@ -133,7 +133,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, ansatzBase, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, ansatzBase, localPoint, ret));
   }
 }; // class Codim0Interface< Traits, 2 >
 
@@ -175,8 +175,8 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
   {
-    CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase));
-    return this->as_imp(*this).order(localFunctions, testBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions, testBase));
+    return this->as_imp().order(localFunctions, testBase);
   }
 
   /**
@@ -194,7 +194,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, intersection, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, intersection, localPoint, ret));
   }
 }; // class Codim1Interface< Traits, 1 >
 
@@ -226,8 +226,8 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
-    CHECK_CRTP(this->as_imp(*this).order(localFunctions, testBase, ansatzBase));
-    return this->as_imp(*this).order(localFunctions, testBase, ansatzBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions, testBase, ansatzBase));
+    return this->as_imp().order(localFunctions, testBase, ansatzBase);
   }
 
   /**
@@ -248,7 +248,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint,
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint,
                                                      ret));
   }
 }; // class Codim1Interface< Traits, 2 >
@@ -286,10 +286,10 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBaseNeighbor) const
   {
-    CHECK_CRTP(this->as_imp(*this).order(localFunctionsEntity, localFunctionsNeighbor,
+    CHECK_CRTP(this->as_imp().order(localFunctionsEntity, localFunctionsNeighbor,
                                          testBaseEntity, ansatzBaseEntity,
                                          testBaseNeighbor, ansatzBaseNeighbor));
-    return this->as_imp(*this).order(localFunctionsEntity, localFunctionsNeighbor,
+    return this->as_imp().order(localFunctionsEntity, localFunctionsNeighbor,
                                      testBaseEntity, ansatzBaseEntity,
                                      testBaseNeighbor, ansatzBaseNeighbor);
   }
@@ -320,7 +320,7 @@ public:
                 Dune::DynamicMatrix< R >& entityNeighborRet,
                 Dune::DynamicMatrix< R >& neighborEntityRet) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).evaluate(localFunctionsEntity,
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsEntity,
                                                      localFunctionsNeighbor,
                                                      testBaseEntity, ansatzBaseEntity,
                                                      testBaseNeighbor, ansatzBaseNeighbor,
