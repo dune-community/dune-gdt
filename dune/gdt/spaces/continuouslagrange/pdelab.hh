@@ -211,6 +211,7 @@ public:
 
   CommunicatorType& communicator() const
   {
+    std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_) {
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     }
@@ -224,6 +225,7 @@ private:
   DS::PerThreadValue<std::shared_ptr<const MapperType>> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
+  mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >
 
 
