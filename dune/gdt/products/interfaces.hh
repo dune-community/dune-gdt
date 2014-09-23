@@ -29,15 +29,15 @@ public:
 
   const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
+    CHECK_CRTP(this->as_imp().grid_view());
+    return this->as_imp().grid_view();
   }
 
   template <class RangeType, class SourceType>
   FieldType apply2(const RangeType& range, const SourceType& source) const
   {
-    CHECK_CRTP(this->as_imp(*this).apply2(range, source));
-    return this->as_imp(*this).apply2(range, source);
+    CHECK_CRTP(this->as_imp().apply2(range, source));
+    return this->as_imp().apply2(range, source);
   }
 
   template <class RangeType>
@@ -81,26 +81,26 @@ private:
 public:
   const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
+    CHECK_CRTP(this->as_imp().grid_view());
+    return this->as_imp().grid_view();
   }
 
   const RangeType& range() const
   {
-    CHECK_CRTP(this->as_imp(*this).range());
-    return this->as_imp(*this).range();
+    CHECK_CRTP(this->as_imp().range());
+    return this->as_imp().range();
   }
 
   const SourceType& source() const
   {
-    CHECK_CRTP(this->as_imp(*this).source());
-    return this->as_imp(*this).source();
+    CHECK_CRTP(this->as_imp().source());
+    return this->as_imp().source();
   }
 
   FieldType apply2()
   {
-    CHECK_CRTP(this->as_imp(*this).apply2());
-    return this->as_imp(*this).apply2();
+    CHECK_CRTP(this->as_imp().apply2());
+    return this->as_imp().apply2();
   }
 }; // class LocalizableProductInterface
 
@@ -153,37 +153,37 @@ public:
 
   const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
+    CHECK_CRTP(this->as_imp().grid_view());
+    return this->as_imp().grid_view();
   }
 
   const RangeSpaceType& range_space() const
   {
-    CHECK_CRTP(this->as_imp(*this).range_space());
-    return this->as_imp(*this).range_space();
+    CHECK_CRTP(this->as_imp().range_space());
+    return this->as_imp().range_space();
   }
 
   const SourceSpaceType& source_space() const
   {
-    CHECK_CRTP(this->as_imp(*this).source_space());
-    return this->as_imp(*this).source_space();
+    CHECK_CRTP(this->as_imp().source_space());
+    return this->as_imp().source_space();
   }
 
   void assemble()
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).assemble());
+    CHECK_AND_CALL_CRTP(this->as_imp().assemble());
   }
 
   MatrixType& matrix()
   {
-    CHECK_CRTP(this->as_imp(*this).matrix());
-    return this->as_imp(*this).matrix();
+    CHECK_CRTP(this->as_imp().matrix());
+    return this->as_imp().matrix();
   }
 
   const MatrixType& matrix() const
   {
-    CHECK_CRTP(this->as_imp(*this).matrix());
-    return this->as_imp(*this).matrix();
+    CHECK_CRTP(this->as_imp().matrix());
+    return this->as_imp().matrix();
   }
 
   template <class R, class S>

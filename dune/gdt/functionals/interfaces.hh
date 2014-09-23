@@ -27,12 +27,13 @@ public:
   template <class SourceType>
   ScalarType apply(const SourceType& source) const
   {
-    CHECK_CRTP(this->as_imp(*this).apply(source));
-    return this->as_imp(*this).apply(source);
+    CHECK_CRTP(this->as_imp().apply(source));
+    return this->as_imp().apply(source);
   } // apply(...)
 }; // class FunctionalInterface
 
 
+//! \note derive from FunctionalInterface
 template <class Traits>
 class AssemblableFunctionalInterface : protected Stuff::CRTPInterface<AssemblableFunctionalInterface<Traits>, Traits>
 {
@@ -52,31 +53,31 @@ private:
 public:
   const GridViewType& grid_view() const
   {
-    CHECK_CRTP(this->as_imp(*this).grid_view());
-    return this->as_imp(*this).grid_view();
+    CHECK_CRTP(this->as_imp().grid_view());
+    return this->as_imp().grid_view();
   }
 
   const SpaceType& space() const
   {
-    CHECK_CRTP(this->as_imp(*this).space());
-    return this->as_imp(*this).space();
+    CHECK_CRTP(this->as_imp().space());
+    return this->as_imp().space();
   }
 
   void assemble()
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).assemble());
+    CHECK_AND_CALL_CRTP(this->as_imp().assemble());
   }
 
   VectorType& vector()
   {
-    CHECK_CRTP(this->as_imp(*this).vector());
-    return this->as_imp(*this).vector();
+    CHECK_CRTP(this->as_imp().vector());
+    return this->as_imp().vector();
   }
 
   const VectorType& vector() const
   {
-    CHECK_CRTP(this->as_imp(*this).vector());
-    return this->as_imp(*this).vector();
+    CHECK_CRTP(this->as_imp().vector());
+    return this->as_imp().vector();
   }
 
   template <class S>
