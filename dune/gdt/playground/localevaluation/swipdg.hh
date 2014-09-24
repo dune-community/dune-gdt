@@ -8,6 +8,12 @@
 
 #include <dune/stuff/common/fmatrix.hh>
 
+#ifndef NDEBUG
+# ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+#   include <dune/stuff/common/logging.hh>
+# endif
+#endif
+
 #include <dune/gdt/localevaluation/swipdg.hh>
 
 namespace Dune {
@@ -210,11 +216,12 @@ public:
 #ifndef NDEBUG
 # ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
     if (Stuff::Common::FloatCmp::ne(local_diffusion_factor_en, local_diffusion_factor_ne))
-      std::cout << "\n" << Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
-                << " The diffusion factor is assumed to be continuous across intersections, but\n"
-                << "   localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
-                << "   localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+      DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+          << "The diffusion factor is assumed to be continuous across intersections, but\n"
+          << "   localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
+          << "   localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
+          << "#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+          << "or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
 # endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
 #endif // NDEBUG
     //   just to be sure we take the everage value here
