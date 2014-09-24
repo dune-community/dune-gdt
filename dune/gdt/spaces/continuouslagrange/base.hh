@@ -84,30 +84,32 @@ public:
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view()->indexSet().contains(entity));
     // get the basis and reference element
-    const auto basis              = this->base_function_set(entity);
+    const auto basis = this->base_function_set(entity);
+    typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
+    std::vector<RangeType> tmp_basis_values(RangeType(0), basis.size());
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
     const int num_vertices = reference_element.size(dimDomain);
     assert(num_vertices >= 0);
     assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
     std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
-    if (this->tmp_basis_values_->size() < basis.size())
-      this->tmp_basis_values_->resize(basis.size());
+    if (tmp_basis_values.size() < basis.size())
+      tmp_basis_values.resize(basis.size());
     // loop over all vertices
     for (int ii = 0; ii < num_vertices; ++ii) {
       // get the local coordinate of the iith vertex
       const auto local_vertex = reference_element.position(ii, dimDomain);
       // evaluate the basefunctionset
-      basis.evaluate(local_vertex, *this->tmp_basis_values_);
+      basis.evaluate(local_vertex, tmp_basis_values);
       // find the basis function that evaluates to one here (has to be only one!)
       size_t ones     = 0;
       size_t zeros    = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
-        if (std::abs((*this->tmp_basis_values_)[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
+        if (std::abs((tmp_basis_values)[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
           local_vertices[jj] = local_vertex;
           ++ones;
-        } else if (std::abs((*this->tmp_basis_values_)[jj][0]) < compare_tolerance_)
+        } else if (std::abs((tmp_basis_values)[jj][0]) < compare_tolerance_)
           ++zeros;
         else
           ++failures;
@@ -144,19 +146,19 @@ public:
     } // loop over all intersections
     // find the corresponding basis functions
     const auto basis = this->base_function_set(entity);
-    if (this->tmp_basis_values_->size() < basis.size())
-      this->tmp_basis_values_->resize(basis.size());
+    typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
+    std::vector<RangeType> tmp_basis_values(RangeType(0), basis.size());
     for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
       // find the basis function that evaluates to one here (has to be only one!)
-      basis.evaluate(dirichlet_vertices[cc], *this->tmp_basis_values_);
+      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values);
       size_t ones     = 0;
       size_t zeros    = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
-        if (std::abs((*this->tmp_basis_values_)[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
+        if (std::abs(tmp_basis_values[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
           localDirichletDofs.insert(jj);
           ++ones;
-        } else if (std::abs((*this->tmp_basis_values_)[jj][0]) < compare_tolerance_)
+        } else if (std::abs(tmp_basis_values[jj][0]) < compare_tolerance_)
           ++zeros;
         else
           ++failures;
