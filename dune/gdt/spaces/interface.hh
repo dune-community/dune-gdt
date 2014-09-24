@@ -450,9 +450,6 @@ public:
   } // ... visualize(...)
 
   /* @} */
-
-protected:
-  mutable Stuff::PerThreadValue<std::vector< typename BaseFunctionSetType::RangeType >> tmp_basis_values_;
 }; // class SpaceInterface
 
 
