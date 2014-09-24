@@ -79,13 +79,13 @@ struct EllipticDiscretizations
       Dune::Timer timer;
       discretization.assemble();
 
-      test_out << Stuff::Common::whitespaceify(header.str(), '=') << std::endl;
-      test_out << discretization_id << ", polorder " << discretization.polOrder << ", system size "
-               << discretization.system_matrix().rows() << "x" << discretization.system_matrix().cols()
-               << ", assembly took " << std::setprecision(2) << std::fixed << timer.elapsed() << "s" << std::endl;
-      test_out << Stuff::Common::whitespaceify(header.str(), '-') << std::endl;
-      test_out << header.str() << std::endl;
-      test_out << delimiter.str() << std::endl;
+      DSC_LOG_INFO << Stuff::Common::whitespaceify(header.str(), '=') << std::endl;
+      DSC_LOG_INFO << discretization_id << ", polorder " << discretization.polOrder << ", system size "
+                   << discretization.system_matrix().rows() << "x" << discretization.system_matrix().cols()
+                   << ", assembly took " << std::setprecision(2) << std::fixed << timer.elapsed() << "s" << std::endl;
+      DSC_LOG_INFO << Stuff::Common::whitespaceify(header.str(), '-') << std::endl;
+      DSC_LOG_INFO << header.str() << std::endl;
+      DSC_LOG_INFO << delimiter.str() << std::endl;
 
       // loop over all available options
       size_t printed_rows = 0;
@@ -97,13 +97,13 @@ struct EllipticDiscretizations
           const Stuff::Common::Configuration config = linear_solver.options(option);
           // print delimiter after every 3rd row
           if (printed_rows == 3) {
-            test_out << delimiter.str() << std::endl;
+            DSC_LOG_INFO << delimiter.str() << std::endl;
             printed_rows = 0;
           }
           // print
-          test_out << " " << option << std::flush;
+          DSC_LOG_INFO << " " << option << std::flush;
           for (size_t ii = 0; ii < first_column_width - option.size(); ++ii)
-            test_out << " ";
+            DSC_LOG_INFO << " ";
           // solve the system
           timer.reset();
           std::stringstream error_msg;
@@ -125,10 +125,10 @@ struct EllipticDiscretizations
             success = false;
           }
           if (sec)
-            test_out << " | " << std::setw(8) << std::setprecision(2) << std::fixed << timer.elapsed();
+            DSC_LOG_INFO << " | " << std::setw(8) << std::setprecision(2) << std::fixed << timer.elapsed();
           else
-            test_out << " | " << std::setw(9) << std::setprecision(2) << std::fixed << 1000 * timer.elapsed();
-          test_out << " | ";
+            DSC_LOG_INFO << " | " << std::setw(9) << std::setprecision(2) << std::fixed << 1000 * timer.elapsed();
+          DSC_LOG_INFO << " | ";
           // test solution
           if (success) {
             discretization.system_matrix().mv(solution_vector, tmp_vector);
@@ -139,18 +139,18 @@ struct EllipticDiscretizations
             std::stringstream absolute_error;
             absolute_error << std::setw(9) << std::setprecision(2) << std::scientific << tmp_vector.sup_norm();
             if (tmp_vector.sup_norm() < threshhold)
-              test_out << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
-                                                     Stuff::Common::Colors::green);
+              DSC_LOG_INFO << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
+                                                         Stuff::Common::Colors::green);
             else if (tmp_vector.sup_norm() < std::exp(0.5 * std::log(threshhold)))
-              test_out << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
-                                                     Stuff::Common::Colors::brown);
+              DSC_LOG_INFO << Stuff::Common::colorString(Stuff::Common::toString(absolute_error.str()),
+                                                         Stuff::Common::Colors::brown);
             else
-              test_out << Stuff::Common::colorStringRed(Stuff::Common::toString(absolute_error.str()));
-            test_out << " | " << std::setw(8) << std::setprecision(2) << std::scientific
-                     << tmp_vector.sup_norm() / discretization.rhs_vector().sup_norm();
+              DSC_LOG_INFO << Stuff::Common::colorStringRed(Stuff::Common::toString(absolute_error.str()));
+            DSC_LOG_INFO << " | " << std::setw(8) << std::setprecision(2) << std::scientific
+                         << tmp_vector.sup_norm() / discretization.rhs_vector().sup_norm();
           } else
-            test_out << "                    ";
-          test_out << " | " << error_msg.str() << std::endl;
+            DSC_LOG_INFO << "                    ";
+          DSC_LOG_INFO << " | " << error_msg.str() << std::endl;
           ++printed_rows;
         }
       } // loop over all available options
@@ -174,9 +174,9 @@ struct SmallEllipticSystems : public ::testing::Test, EllipticDiscretizations
   {
     using namespace Dune;
 
-    test_out << " test case:   " << Stuff::Common::Typename<TestCase>::value() << std::endl;
-    test_out << " matrix type: " << Stuff::Common::Typename<MatrixType>::value() << std::endl;
-    test_out << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
+    DSC_LOG_INFO << " test case:   " << Stuff::Common::Typename<TestCase>::value() << std::endl;
+    DSC_LOG_INFO << " matrix type: " << Stuff::Common::Typename<MatrixType>::value() << std::endl;
+    DSC_LOG_INFO << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
 
     const TestCase test_case;
     const auto grid_view = test_case.level_grid_view(1);
@@ -217,9 +217,9 @@ struct DISABLED_LargeEllipticSystems : public ::testing::Test, EllipticDiscretiz
   {
     using namespace Dune;
 
-    test_out << " test case:   " << Stuff::Common::Typename<TestCase>::value() << std::endl;
-    test_out << " matrix type: " << Stuff::Common::Typename<MatrixType>::value() << std::endl;
-    test_out << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
+    DSC_LOG_INFO << " test case:   " << Stuff::Common::Typename<TestCase>::value() << std::endl;
+    DSC_LOG_INFO << " matrix type: " << Stuff::Common::Typename<MatrixType>::value() << std::endl;
+    DSC_LOG_INFO << " vector type: " << Stuff::Common::Typename<VectorType>::value() << std::endl;
 
     const TestCase test_case;
     const auto grid_view = test_case.reference_grid_view();

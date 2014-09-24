@@ -18,7 +18,7 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
   {
     const TestCase test_case;
     test_case.print_header(test_out);
-    test_out << std::endl;
+    DSC_LOG_INFO << std::endl;
     EllipticSWIPDG::EstimatorStudy<TestCase> estimator_study(test_case);
     auto results = estimator_study.run(test_out);
     std::stringstream ss;
