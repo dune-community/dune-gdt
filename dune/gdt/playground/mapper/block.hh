@@ -39,6 +39,7 @@ class BlockTraits
                 "LocalSpaceType has to be derived from SpaceInterface!");
 public:
   typedef Block< LocalSpaceType > derived_type;
+  typedef typename LocalSpaceType::EntityType EntityType;
   typedef typename LocalSpaceType::MapperType::BackendType BackendType;
 }; // class BlockTraits
 
@@ -53,7 +54,8 @@ class Block
   typedef MapperInterface< internal::BlockTraits< LocalSpaceImp > > BaseType;
 public:
   typedef internal::BlockTraits< LocalSpaceImp > Traits;
-  typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::BackendType           BackendType;
+  typedef typename Traits::EntityType            EntityType;
   typedef LocalSpaceImp LocalSpaceType;
 
   typedef grid::Multiscale::Default< typename LocalSpaceType::GridViewType::Grid > MsGridType;
@@ -180,19 +182,16 @@ public:
     return max_num_dofs_;
   }
 
-  template< class EntityType >
   size_t numDofs(const EntityType& entity) const
   {
     return Compute< LocalSpaceType, EntityType >::numDofs(*ms_grid_, local_spaces_, entity);
   }
 
-  template< class EntityType >
   void globalIndices(const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
   {
     Compute< LocalSpaceType, EntityType >::globalIndices(*ms_grid_, local_spaces_, global_start_indices_, entity, ret);
   }
 
-  template< class EntityType >
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     return Compute< LocalSpaceType, EntityType >::mapToGlobal(*ms_grid_,
