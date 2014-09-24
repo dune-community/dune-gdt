@@ -80,11 +80,7 @@ public:
     , communicator_(0.0)
   {}
 
-  Default(const ThisType& other)
-    : grid_view_(other.grid_view_)
-    , mapper_(other.mapper_)
-    , communicator_(0.0)
-  {}
+  Default(const ThisType& other) = default;
 
   Default& operator=(const ThisType& other)
   {

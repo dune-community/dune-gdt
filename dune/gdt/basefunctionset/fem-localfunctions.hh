@@ -70,11 +70,7 @@ public:
     , backend_(new BackendType(baseFunctionSetMap_.find(this->entity())))
   {}
 
-  FemLocalfunctionsWrapper(ThisType&& source)
-    : BaseType(source.entity())
-    , baseFunctionSetMap_(source.baseFunctionSetMap_)
-    , backend_(std::move(source.backend_))
-  {}
+  FemLocalfunctionsWrapper(ThisType&& source) = default;
 
   FemLocalfunctionsWrapper(const ThisType& /*other*/) = delete;
 

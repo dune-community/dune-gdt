@@ -138,13 +138,7 @@ public:
     , mapper_(new MapperType(backend_->mapper()))
   {}
 
-  FemLocalfunctionsBased(const ThisType& other)
-    : gridPart_(other.gridPart_)
-    , grid_view_(other.grid_view_)
-    , baseFunctionSetMap_(other.baseFunctionSetMap_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
-  {}
+  FemLocalfunctionsBased(const ThisType& other) = default;
 
   ThisType& operator=(const ThisType& other)
   {

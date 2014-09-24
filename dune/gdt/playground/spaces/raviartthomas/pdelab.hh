@@ -141,13 +141,7 @@ public:
     , communicator_(0.0)
   {}
 
-  PdelabBased(const ThisType& other)
-    : grid_view_(other.grid_view_)
-    , fe_map_(other.fe_map_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
-    , communicator_(0.0)
-  {}
+  PdelabBased(const ThisType& other) = default;
 
   ThisType& operator=(const ThisType& other)
   {

@@ -113,13 +113,7 @@ public:
     , communicator_prepared_(false)
   {}
 
-  FemBased(const ThisType& other)
-    : gridPart_(other.gridPart_)
-    , gridView_(other.gridView_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
-    , communicator_(other.communicator_)
-  {}
+  FemBased(const ThisType& other) = default;
 
   ThisType& operator=(const ThisType& other)
   {

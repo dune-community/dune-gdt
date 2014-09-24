@@ -66,10 +66,7 @@ public:
     , backend_(1)
   {}
 
-  FiniteVolume(ThisType&& source)
-    : BaseType(source.entity())
-    , backend_(1)
-  {}
+  FiniteVolume(ThisType&& source) = default;
 
   FiniteVolume(const ThisType& /*other*/) = delete;
 
@@ -138,10 +135,7 @@ public:
     , backend_(1)
   {}
 
-  FiniteVolume(ThisType&& source)
-    : BaseType(source.entity())
-    , backend_(1)
-  {}
+  FiniteVolume(ThisType&& source) = default;
 
   FiniteVolume(const ThisType& /*other*/) = delete;
 

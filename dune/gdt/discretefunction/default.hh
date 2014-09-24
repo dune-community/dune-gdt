@@ -75,17 +75,9 @@ public:
     assert(vector_.size() == space_.mapper().size() && "Given vector has wrong size!");
   }
 
-  ConstDiscreteFunction(const ThisType& other)
-    : space_(other.space_)
-    , vector_(other.vector_)
-    , name_(other.name_)
-  {}
+  ConstDiscreteFunction(const ThisType& other) = default;
 
-  ConstDiscreteFunction(ThisType&& source)
-    : space_(source.space_)
-    , vector_(source.vector_)
-    , name_(std::move(source.name_))
-  {}
+  ConstDiscreteFunction(ThisType&& source) = delete;
 
   virtual ~ConstDiscreteFunction() {}
 
@@ -176,6 +168,7 @@ public:
     , BaseType(other.space(), VectorProviderBaseType::storage_access(), other.name())
   {}
 
+  //! \todo is this intentionally c&p of the copy ctor?
   DiscreteFunction(ThisType&& source)
     : VectorProviderBaseType(new VectorType(source.vector()))
     , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
