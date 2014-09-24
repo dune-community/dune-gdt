@@ -48,7 +48,6 @@ public:
   typedef FiniteVolumeTraits<GridViewImp, 1, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
-
   typedef typename Traits::EntityType EntityType;
 
   FiniteVolume(const GridViewType& grid_view)
@@ -106,8 +105,7 @@ public:
   typedef FiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
-
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename Traits::EntityType EntityType;
 
   FiniteVolume(const GridViewType& grid_view)
     : backend_(grid_view.indexSet())

@@ -57,6 +57,7 @@ class FemDofWrapper : public MapperInterface<FemDofWrapperTraits<FemDofMapperImp
 public:
   typedef FemDofWrapperTraits<FemDofMapperImp, block_size> Traits;
   typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType EntityType;
 
   FemDofWrapper(FemDofMapperImp& femNonBlockMapper)
     : backend_(femNonBlockMapper)
@@ -73,7 +74,7 @@ public:
     return backend_.size();
   }
 
-  size_t numDofs(const typename Traits::EntityType& entity) const
+  size_t numDofs(const EntityType& entity) const
   {
     return backend_.numDofs(entity);
   }
@@ -103,7 +104,7 @@ private:
   };
 
 public:
-  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     // some checks
     const size_t numLocalDofs = numDofs(entity);
@@ -119,7 +120,7 @@ public:
   /**
    *  \attention  This method is implemented using globalIndices() and thus not optimal!
    */
-  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);
@@ -141,6 +142,7 @@ class FemDofWrapper<FemDofMapperImp, 1> : public MapperInterface<FemDofWrapperTr
 public:
   typedef FemDofWrapperTraits<FemDofMapperImp, 1> Traits;
   typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType EntityType;
 
   FemDofWrapper(const BackendType& femMapper)
     : backend_(femMapper)
@@ -157,7 +159,7 @@ public:
     return backend_.size();
   }
 
-  size_t numDofs(const typename Traits::EntityType& entity) const
+  size_t numDofs(const EntityType& entity) const
   {
     return backend_.numDofs(entity);
   }
@@ -187,7 +189,7 @@ private:
   };
 
 public:
-  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     // some checks
     const size_t numLocalDofs = numDofs(entity);
@@ -203,7 +205,7 @@ public:
   /**
    *  \attention  This method is implemented using globalIndices() and thus not optimal!
    */
-  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     const size_t numLocalDofs = numDofs(entity);
     assert(localIndex < numLocalDofs);

@@ -21,6 +21,7 @@ class MapperInterface : public Stuff::CRTPInterface<MapperInterface<Traits>, Tra
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType EntityType;
 
   const BackendType& backend() const
   {
@@ -40,13 +41,13 @@ public:
     return this->as_imp(*this).maxNumDofs();
   }
 
-  size_t numDofs(const typename Traits::EntityType& entity) const
+  size_t numDofs(const EntityType& entity) const
   {
     CHECK_CRTP(this->as_imp(*this).numDofs(entity));
     return this->as_imp(*this).numDofs(entity);
   }
 
-  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
   }
@@ -58,7 +59,7 @@ public:
     return ret;
   }
 
-  size_t mapToGlobal(const typename Traits::EntityType& entity, const size_t& localIndex) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     CHECK_CRTP(this->as_imp(*this).mapToGlobal(entity, localIndex));
     return this->as_imp(*this).mapToGlobal(entity, localIndex);
