@@ -169,15 +169,7 @@ public:
     assert(localVector_->size() == base_->size());
   }
 
-  ConstLocalDiscreteFunction(ThisType&& source)
-    : BaseType(source.entity())
-    , space_(source.space_)
-    , base_(std::move(source.base_))
-    , localVector_(std::move(source.localVector_))
-    , tmpBaseValues_(std::move(source.tmpBaseValues_))
-    , tmpBaseJacobianValues_(std::move(source.tmpBaseJacobianValues_))
-  {
-  }
+  ConstLocalDiscreteFunction(ThisType&& source) = default;
 
   ConstLocalDiscreteFunction(const ThisType& other) = delete;
 
@@ -275,11 +267,8 @@ public:
     assert(localVector_->size() == base_->size());
   }
 
-  LocalDiscreteFunction(ThisType&& source)
-    : BaseType(std::move(source)) // <- because of this
-    , localVector_(std::move(source.localVector_)) // <- I am not sure if this is valid -+^
-  {
-  }
+  //! previous comment questioned validity, defaulting this doesn't touch that question
+  LocalDiscreteFunction(ThisType&& source) = default;
 
   LocalDiscreteFunction(const ThisType& other) = delete;
 

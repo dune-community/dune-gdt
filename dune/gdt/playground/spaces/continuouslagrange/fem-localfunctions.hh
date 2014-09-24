@@ -152,16 +152,7 @@ public:
   {
   }
 
-  FemLocalfunctionsBased(const ThisType& other)
-    : gridPart_(other.gridPart_)
-    , gridView_(other.gridView_)
-    , baseFunctionSetMap_(other.baseFunctionSetMap_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
-    , tmp_global_indices_(mapper_->maxNumDofs())
-    , communicator_(0.0)
-  {
-  }
+  FemLocalfunctionsBased(const ThisType& other) = default;
 
   ThisType& operator=(const ThisType& other)
   {

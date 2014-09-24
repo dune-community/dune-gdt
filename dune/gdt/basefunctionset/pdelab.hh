@@ -106,14 +106,7 @@ public:
     backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
   } // PdelabWrapper(...)
 
-  PdelabWrapper(ThisType&& source)
-    : BaseType(source.entity())
-    , tmp_domain_(RangeFieldType(0))
-    , lfs_(std::move(source.lfs_))
-    , backend_(std::move(source.backend_))
-  {
-  }
-
+  PdelabWrapper(ThisType&& source) = default;
   PdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
@@ -240,17 +233,7 @@ public:
     tmp_jacobian_ranges_ = std::vector<JacobianRangeType>(backend_->size(), JacobianRangeType(0));
   } // PdelabWrapper(...)
 
-  PiolaTransformedPdelabWrapper(ThisType&& source)
-    : BaseType(source.entity())
-    , tmp_domain_(RangeFieldType(0))
-    , tmp_jacobian_transposed_(DomainFieldType(0))
-    , tmp_jacobian_inverse_transposed_(DomainFieldType(0))
-    , lfs_(std::move(source.lfs_))
-    , backend_(std::move(source.backend_))
-    , tmp_ranges_(std::vector<RangeType>(backend_->size(), RangeType(0)))
-    , tmp_jacobian_ranges_(std::vector<JacobianRangeType>(backend_->size(), JacobianRangeType(0)))
-  {
-  }
+  PiolaTransformedPdelabWrapper(ThisType&& source) = default;
 
   PiolaTransformedPdelabWrapper(const ThisType& /*other*/) = delete;
 

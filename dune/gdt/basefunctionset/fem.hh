@@ -81,11 +81,7 @@ public:
   {
   }
 
-  FemWrapper(ThisType&& source)
-    : BaseType(source.entity())
-    , backend_(std::move(source.backend_))
-  {
-  }
+  FemWrapper(ThisType&& source) = default;
 
   FemWrapper(const ThisType& /*other*/) = delete;
 
