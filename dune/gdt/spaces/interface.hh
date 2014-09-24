@@ -89,10 +89,10 @@ public:
   static const unsigned int                         dimDomain = GridViewType::dimension;
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
 
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::Intersection                 IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >    BoundaryInfoType;
-  typedef Dune::Stuff::LA::SparsityPatternDefault             PatternType;
+  typedef typename GridViewType::template Codim< 0 >::Entity     EntityType;
+  typedef typename GridViewType::Intersection                    IntersectionType;
+  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
+  typedef Dune::Stuff::LA::SparsityPatternDefault                PatternType;
 
   static const Stuff::Grid::ChoosePartView part_view_type = Traits::part_view_type;
 
