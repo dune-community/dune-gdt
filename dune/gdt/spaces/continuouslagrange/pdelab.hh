@@ -148,9 +148,9 @@ public:
 
   PdelabBased(const std::shared_ptr< const GridViewType >& gV)
     : gridView_(gV)
-    , fe_map_(std::make_shared< FEMapType >(*(gridView_)))
-    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*gridView_), *(*fe_map_)))
-    , mapper_(std::make_shared< MapperType >(*(*backend_)))
+    , fe_map_(*(gridView_))
+    , backend_(const_cast< GridViewType& >(*gridView_), fe_map_)
+    , mapper_(backend_)
     , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
     , communicator_prepared_(false)
   {}
@@ -186,17 +186,17 @@ public:
 
   const BackendType& backend() const
   {
-    return *(*backend_);
+    return backend_;
   }
 
   const MapperType& mapper() const
   {
-    return *(*mapper_);
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*(*backend_), entity);
+    return BaseFunctionSetType(backend_, entity);
   }
 
   CommunicatorType& communicator() const
@@ -210,9 +210,9 @@ public:
 
 private:
   std::shared_ptr< const GridViewType > gridView_;
-  DS::PerThreadValue<std::shared_ptr< const FEMapType >> fe_map_;
-  DS::PerThreadValue<std::shared_ptr< const BackendType >> backend_;
-  DS::PerThreadValue<std::shared_ptr< const MapperType >> mapper_;
+  const FEMapType fe_map_;
+  const BackendType backend_;
+  const MapperType mapper_;
   mutable std::shared_ptr< CommunicatorType > communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
