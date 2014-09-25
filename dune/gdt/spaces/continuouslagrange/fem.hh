@@ -109,9 +109,9 @@ public:
 
   FemBased(const std::shared_ptr<const GridPartType>& gridP)
     : gridPart_(gridP)
-    , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
-    , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
-    , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
+    , gridView_(std::make_shared<const GridViewType>(gridPart_->gridView()))
+    , backend_(const_cast<GridPartType&>(*(gridPart_)))
+    , mapper_(backend_.blockMapper())
     , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
     , communicator_prepared_(false)
   {
@@ -147,17 +147,17 @@ public:
 
   const BackendType& backend() const
   {
-    return *backend_;
+    return backend_;
   }
 
   const MapperType& mapper() const
   {
-    return *mapper_;
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*backend_, entity);
+    return BaseFunctionSetType(backend_, entity);
   }
 
   CommunicatorType& communicator() const
@@ -170,10 +170,10 @@ public:
   } // ... communicator(...)
 
 private:
-  std::shared_ptr<const GridPartType> gridPart_;
-  std::shared_ptr<const GridViewType> gridView_;
-  std::shared_ptr<BackendType> backend_;
-  std::shared_ptr<const MapperType> mapper_;
+  const std::shared_ptr<const GridPartType> gridPart_;
+  const std::shared_ptr<const GridViewType> gridView_;
+  const BackendType backend_;
+  const MapperType mapper_;
   mutable std::unique_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
