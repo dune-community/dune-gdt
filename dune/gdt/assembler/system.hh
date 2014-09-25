@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <memory>
 
+#include <dune/common/version.hh>
 #if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) //&& HAVE_TBB //EXADUNE
 #include <dune/grid/utility/partitioning/seedlist.hh>
 #endif

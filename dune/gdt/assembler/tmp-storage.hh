@@ -7,6 +7,7 @@
 #define DUNE_GDT_ASSEMBLER_TMP_STORAGE_HH
 
 #include <dune/stuff/common/tmp-storage.hh>
+#include <dune/stuff/aliases.hh>
 
 namespace Dune {
 namespace GDT {
