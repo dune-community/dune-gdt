@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PRODUCTS_L2_HH
-#define DUNE_GDT_PRODUCTS_L2_HH
+#ifndef DUNE_GDT_PRODUCTS_L2_WEIGHTED_HH
+#define DUNE_GDT_PRODUCTS_L2_WEIGHTED_HH
 
 #include <type_traits>
 
@@ -25,15 +25,16 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
-template< class GridViewImp, class RangeImp, class SourceImp >
-class L2Localizable
-  : public LocalizableBase< internal::L2LocalizableTraits< GridViewImp, RangeImp, SourceImp > >
-  , public internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType >
+template< class GridViewImp, class FunctionImp, class RangeImp, class SourceImp >
+class WeightedL2Localizable
+  : public Products::LocalizableBase< internal::WeightedL2LocalizableTraits< GridViewImp, FunctionImp, RangeImp, SourceImp > >
+  , public internal::WeightedL2Base< GridViewImp, FunctionImp >
 {
-  typedef Products::LocalizableBase< internal::L2LocalizableTraits< GridViewImp, RangeImp, SourceImp > > LocalizableBaseType;
-  typedef internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType > L2BaseType;
+  typedef Products::LocalizableBase< internal::WeightedL2LocalizableTraits< GridViewImp, FunctionImp, RangeImp, SourceImp > >
+    LocalizableBaseType;
+  typedef internal::WeightedL2Base< GridViewImp, FunctionImp > WeightedL2BaseType;
 public:
-  typedef internal::L2LocalizableTraits< GridViewImp, RangeImp, SourceImp > Traits;
+  typedef internal::WeightedL2LocalizableTraits< GridViewImp, FunctionImp, RangeImp, SourceImp > Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType    RangeType;
   typedef typename Traits::SourceType   SourceType;
@@ -41,15 +42,21 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  L2Localizable(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
-                const size_t over_integrate = 0)
+  WeightedL2Localizable(const GridViewType& grd_vw,
+                        const FunctionImp& function,
+                        const RangeType& rng,
+                        const SourceType& src,
+                        const size_t over_integrate = 0)
     : LocalizableBaseType(grd_vw, rng, src)
-    , L2BaseType(over_integrate)
+    , WeightedL2BaseType(function, over_integrate)
   {}
 
-  L2Localizable(const GridViewType& grd_vw, const RangeType& rng, const size_t over_integrate = 0)
+  WeightedL2Localizable(const GridViewType& grd_vw,
+                        const FunctionImp& function,
+                        const RangeType& rng,
+                        const size_t over_integrate = 0)
     : LocalizableBaseType(grd_vw, rng, rng)
-    , L2BaseType(over_integrate)
+    , WeightedL2BaseType(function, over_integrate)
   {}
 
 private:
@@ -57,19 +64,19 @@ private:
   {
     return this->local_operator_;
   }
-}; // class L2Localizable
+}; // class WeightedL2Localizable
 
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-class L2Assemblable
-  : public AssemblableBase< internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
-  , public internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType >
+template< class MatrixImp, class FunctionImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
+class WeightedL2Assemblable
+  : public Products::AssemblableBase< internal::WeightedL2AssemblableTraits< MatrixImp, FunctionImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  , public internal::WeightedL2Base< GridViewImp, FunctionImp >
 {
-  typedef Products::AssemblableBase< internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+  typedef Products::AssemblableBase< internal::WeightedL2AssemblableTraits< MatrixImp, FunctionImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
     AssemblableBaseType;
-  typedef internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType > L2BaseType;
+  typedef internal::WeightedL2Base< GridViewImp, FunctionImp > WeightedL2BaseType;
 public:
-  typedef internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > Traits;
+  typedef internal::WeightedL2AssemblableTraits< MatrixImp, FunctionImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > Traits;
   typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
@@ -87,28 +94,31 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  L2Assemblable(MatrixType& mtrx,
-                const RangeSpaceType& rng_scp,
-                const GridViewType& grd_vw,
-                const SourceSpaceType& src_scp,
-                const size_t over_integrate = 0)
-    : AssemblableBaseType(mtrx, rng_scp, grd_vw, src_scp)
-    , L2BaseType(over_integrate)
+  WeightedL2Assemblable(MatrixType& matrix,
+                        const FunctionImp& function,
+                        const RangeSpaceType& range_space,
+                        const GridViewType& grid_view,
+                        const SourceSpaceType& source_space,
+                        const size_t over_integrate = 0)
+    : AssemblableBaseType(matrix, range_space, grid_view, source_space)
+    , WeightedL2BaseType(function, over_integrate)
   {}
 
-  L2Assemblable(MatrixType& mtrx,
-                const RangeSpaceType& rng_scp,
-                const GridViewType& grd_vw,
-                const size_t over_integrate = 0)
-    : AssemblableBaseType(mtrx, rng_scp, grd_vw, rng_scp)
-    , L2BaseType(over_integrate)
+  WeightedL2Assemblable(MatrixType& matrix,
+                        const FunctionImp& function,
+                        const RangeSpaceType& range_space,
+                        const GridViewType& grid_view,
+                        const size_t over_integrate = 0)
+    : AssemblableBaseType(matrix, range_space, grid_view, range_space)
+    , WeightedL2BaseType(function, over_integrate)
   {}
 
-  L2Assemblable(MatrixType& matrix,
-                const RangeSpaceType& range_space,
-                const size_t over_integrate = 0)
+  WeightedL2Assemblable(MatrixType& matrix,
+                        const FunctionImp& function,
+                        const RangeSpaceType& range_space,
+                        const size_t over_integrate = 0)
     : AssemblableBaseType(matrix, range_space, *(range_space.grid_view()), range_space)
-    , L2BaseType(over_integrate)
+    , WeightedL2BaseType(function, over_integrate)
   {}
 
 private:
@@ -116,15 +126,15 @@ private:
   {
     return this->local_operator_;
   }
-}; // class L2Assemblable
+}; // class WeightedL2Assemblable
 
 
-template< class GridViewImp, class FieldImp >
-class L2
-  : public ProductInterface< internal::L2Traits< GridViewImp, FieldImp > >
+template< class GridViewImp, class FunctionImp >
+class WeightedL2
+  : public ProductInterface< internal::WeightedL2Traits< GridViewImp, FunctionImp > >
 {
 public:
-  typedef internal::L2Traits< GridViewImp, FieldImp > Traits;
+  typedef internal::WeightedL2Traits< GridViewImp, FunctionImp > Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType    FieldType;
 
@@ -132,8 +142,9 @@ public:
   typedef typename GridViewType::ctype                        DomainFieldType;
   static const unsigned int                                   dimDomain = GridViewType::dimension;
 
-  L2(const GridViewType& grd_vw, const size_t over_integrate = 0)
+  WeightedL2(const GridViewType& grd_vw, const FunctionImp& function, const size_t over_integrate = 0)
     : grid_view_(grd_vw)
+    , function_(function)
     , over_integrate_(over_integrate)
   {}
 
@@ -157,19 +168,20 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > RangeType;
-    L2Localizable< GridViewType, RangeType, RangeType >
-        product_operator(grid_view_, range, source, over_integrate_);
+    WeightedL2Localizable< GridViewType, FunctionImp, RangeType, RangeType >
+        product_operator(grid_view_, function_, range, source, over_integrate_);
     return product_operator.apply2();
   } // ... apply2(...)
 
 private:
   const GridViewType& grid_view_;
+  const FunctionImp& function_;
   const size_t over_integrate_;
-}; // class L2
+}; // class WeightedL2
 
 
 } // namespace Products
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PRODUCTS_L2_HH
+#endif // DUNE_GDT_PRODUCTS_L2_WEIGHTED_HH
