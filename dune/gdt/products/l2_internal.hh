@@ -42,7 +42,7 @@ class WeightedL2;
 
 // forward
 template< class GridViewImp, class RangeImp, class SourceImp = RangeImp >
-class L2Localizable;
+struct L2Localizable;
 
 // forward
 template< class MatrixImp
@@ -98,7 +98,7 @@ protected:
 }; // class WeightedL2Base
 
 
-template< class GridViewImp, class FieldImp >
+template< class GridViewImp, class FieldImp = double>
 class L2BaseTraits
   : public WeightedL2BaseTraits< GridViewImp
                                , Stuff::Functions::Constant< typename GridViewImp::template Codim< 0 >::Entity
@@ -126,8 +126,9 @@ public:
     , local_operator_(over_integrate, function_)
   {}
 
-protected:
+private:
   const FunctionType function_;
+protected:
   const LocalOperatorType local_operator_;
 }; // class L2Base
 
@@ -167,14 +168,15 @@ public:
 }; // class WeightedL2Traits
 
 
-template< class GridViewImp, class RangeImp, class SourceImp >
+template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp >
 class L2LocalizableTraits
   : public internal::L2BaseTraits< GridViewImp, typename RangeImp::RangeFieldType >
 {
   static_assert(std::is_same< typename RangeImp::RangeFieldType, typename SourceImp::RangeFieldType >::value,
                 "Types do not match!");
+  typedef L2LocalizableTraits<GridViewImp, RangeImp, SourceImp, DerivedImp> ThisType;
 public:
-  typedef L2Localizable< GridViewImp, RangeImp, SourceImp > derived_type;
+  typedef DerivedImp derived_type;
   typedef RangeImp    RangeType;
   typedef SourceImp   SourceType;
   typedef typename RangeImp::RangeFieldType FieldType;

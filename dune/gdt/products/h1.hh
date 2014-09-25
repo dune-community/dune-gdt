@@ -13,6 +13,8 @@
 #include <dune/stuff/common/crtp.hh>
 
 #include <dune/gdt/products/base.hh>
+#include <dune/gdt/products/l2_internal.hh>
+#include <dune/gdt/products/l2.hh>
 
 #include "../localoperator/codim0.hh"
 #include "../localevaluation/elliptic.hh"
@@ -24,16 +26,6 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
-
-// forward, to be used in the traits
-template< class GridViewImp, class FieldImp >
-class H1SemiBase;
-
-
-template< class GridViewImp, class RangeImp, class SourceImp = RangeImp, class FieldImp = double >
-class H1SemiLocalizable;
-
-
 template< class MatrixImp
         , class RangeSpaceImp
         , class GridViewImp = typename RangeSpaceImp::GridViewType
@@ -42,91 +34,28 @@ class H1SemiAssemblable;
 
 
 template< class GridViewImp, class FieldImp = double >
-class H1SemiTraits
-{
-public:
-  typedef GridViewImp GridViewType;
-protected:
-  typedef Stuff::Functions::Constant<  typename GridViewType::template Codim< 0 >::Entity,
-                                       typename GridViewType::ctype,
-                                       GridViewType::dimension, FieldImp, 1 >  FunctionType;
-public:
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< FunctionType > > LocalOperatorType;
-private:
-  friend class H1SemiBase< GridViewImp, FieldImp >;
-};
-
+using H1SemiTraits = internal::L2BaseTraits<GridViewImp, FieldImp>;
 
 template< class GridViewImp, class FieldImp >
-class H1SemiBase
-{
-  typedef typename H1SemiTraits< GridViewImp, FieldImp >::FunctionType       FunctionType;
-  typedef typename H1SemiTraits< GridViewImp, FieldImp >::LocalOperatorType  LocalOperatorType;
+using H1SemiBase = internal::L2Base<GridViewImp, FieldImp>;
 
-public:
-  H1SemiBase(const size_t over_integrate = 0)
-    : function_(1)
-    , local_operator_(over_integrate, function_)
+template< class GridViewImp, class RangeImp, class SourceImp>
+struct H1SemiLocalizable;
+
+template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp >
+using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp, DerivedImp>;
+
+template< class GridViewImp, class RangeImp, class SourceImp >
+struct H1SemiLocalizable
+    : public LocalizableForward<GridViewImp, RangeImp, SourceImp, H1SemiLocalizable<GridViewImp, RangeImp, SourceImp>,
+                           H1SemiLocalizableTraits> {
+  typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, H1SemiLocalizable<GridViewImp, RangeImp, SourceImp>,
+                        H1SemiLocalizableTraits> BaseType;
+  template <class... Args>
+  explicit H1SemiLocalizable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
   {}
-
-private:
-  const FunctionType function_;
-protected:
-  const LocalOperatorType local_operator_;
-}; // class H1SemiBase
-
-
-template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
-class H1SemiLocalizableTraits
-  : public H1SemiTraits< GridViewImp, FieldImp >
-{
-public:
-  typedef H1SemiLocalizable< GridViewImp, RangeImp, SourceImp, FieldImp > derived_type;
-  typedef RangeImp    RangeType;
-  typedef SourceImp   SourceType;
-  typedef FieldImp    FieldType;
-private:
-  friend class H1SemiLocalizable< GridViewImp, RangeImp, SourceImp, FieldImp >;
 };
-
-
-template< class GridViewImp, class RangeImp, class SourceImp, class FieldImp >
-class H1SemiLocalizable
-  : public Products::LocalizableBase< H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > >
-  , public H1SemiBase< GridViewImp, FieldImp >
-{
-  typedef Products::LocalizableBase< H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > >
-      LocalizableBaseType;
-  typedef H1SemiBase< GridViewImp, FieldImp > H1SemiBaseType;
-public:
-  typedef H1SemiLocalizableTraits< GridViewImp, RangeImp, SourceImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::RangeType    RangeType;
-  typedef typename Traits::SourceType   SourceType;
-private:
-  typedef typename Traits::LocalOperatorType LocalOperatorType;
-
-public:
-  H1SemiLocalizable(const GridViewType& grd_vw,
-                    const RangeType& rng,
-                    const SourceType& src,
-                    const size_t over_integrate = 0)
-    : LocalizableBaseType(grd_vw, rng, src)
-    , H1SemiBaseType(over_integrate)
-  {}
-
-  H1SemiLocalizable(const GridViewType& grd_vw, const RangeType& rng, const size_t over_integrate = 0)
-    : LocalizableBaseType(grd_vw, rng)
-    , H1SemiBaseType(over_integrate)
-  {}
-
-private:
-  virtual const LocalOperatorType& local_operator() const DS_OVERRIDE DS_FINAL
-  {
-    return this->local_operator_;
-  }
-}; // class H1SemiLocalizable
-
 
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
 class H1SemiAssemblableTraits
@@ -251,7 +180,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > FunctionType;
-    H1SemiLocalizable< GridViewType, FunctionType, FunctionType, FieldType >
+    H1SemiLocalizable< GridViewType, FunctionType, FunctionType >
         product_operator(grid_view_, range, source, over_integrate_);
     return product_operator.apply2();
   } // ... apply2(...)
