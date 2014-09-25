@@ -25,16 +25,19 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
-template <class GridViewImp, class RangeImp, class SourceImp>
-class L2Localizable : public LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>>,
-                      public internal::L2Base<GridViewImp, typename RangeImp::RangeFieldType>
+template <class GridViewImp, class RangeImp, class SourceImp, class AliasedType,
+          template <class, class, class, class> class TraitsTemplate>
+class LocalizableForward : public LocalizableBase<TraitsTemplate<GridViewImp, RangeImp, SourceImp, AliasedType>>,
+                           public internal::L2Base<GridViewImp, typename RangeImp::RangeFieldType>
 {
-  typedef Products::LocalizableBase<internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp>>
-      LocalizableBaseType;
+public:
+  typedef TraitsTemplate<GridViewImp, RangeImp, SourceImp, AliasedType> Traits;
+
+private:
+  typedef Products::LocalizableBase<Traits> LocalizableBaseType;
   typedef internal::L2Base<GridViewImp, typename RangeImp::RangeFieldType> L2BaseType;
 
 public:
-  typedef internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::SourceType SourceType;
@@ -43,14 +46,14 @@ private:
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
 public:
-  L2Localizable(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
-                const size_t over_integrate = 0)
+  LocalizableForward(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
+                     const size_t over_integrate = 0)
     : LocalizableBaseType(grd_vw, rng, src)
     , L2BaseType(over_integrate)
   {
   }
 
-  L2Localizable(const GridViewType& grd_vw, const RangeType& rng, const size_t over_integrate = 0)
+  LocalizableForward(const GridViewType& grd_vw, const RangeType& rng, const size_t over_integrate = 0)
     : LocalizableBaseType(grd_vw, rng, rng)
     , L2BaseType(over_integrate)
   {
@@ -63,6 +66,19 @@ private:
   }
 }; // class L2Localizable
 
+template <class GridViewImp, class RangeImp, class SourceImp>
+struct L2Localizable
+    : public LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
+                                internal::L2LocalizableTraits>
+{
+  typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
+                             internal::L2LocalizableTraits> BaseType;
+  template <class... Args>
+  explicit L2Localizable(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+};
 
 template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp>
 class L2Assemblable
