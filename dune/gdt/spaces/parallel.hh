@@ -38,9 +38,9 @@ struct CommunicationChooser
 {
   typedef Dune::Stuff::SequentialCommunication Type;
 
-  static std::shared_ptr<Type> create(const ViewImp& /*gridView*/)
+  static Type* create(const ViewImp& /*gridView*/)
   {
-    return std::make_shared<Type>();
+    return new Type;
   }
 
   template <class SpaceBackend>
@@ -59,9 +59,9 @@ struct CommunicationChooser<ViewImp, true>
 {
   typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
 
-  static std::shared_ptr<Type> create(const ViewImp& gridView)
+  static Type* create(const ViewImp& gridView)
   {
-    return std::make_shared<Type>(gridView.comm());
+    return new Type(gridView.comm());
   }
 
   template <class Space>

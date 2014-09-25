@@ -46,7 +46,7 @@ namespace GDT {
 namespace Spaces {
 namespace ContinuousLagrange {
 
-#if HAVE_DUNE_PDELAB
+#if 1 // HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
@@ -215,7 +215,7 @@ private:
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >
