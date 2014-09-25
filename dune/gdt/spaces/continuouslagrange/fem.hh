@@ -167,7 +167,7 @@ private:
   std::shared_ptr< const GridViewType > gridView_;
   std::shared_ptr< BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;
-  mutable std::shared_ptr< CommunicatorType > communicator_;
+  mutable std::unique_ptr< CommunicatorType > communicator_;
   mutable bool communicator_prepared_;
 }; // class FemBased< ..., 1 >
 
