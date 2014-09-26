@@ -98,7 +98,8 @@ public:
     }
   } // ... prepare()
 
-  FieldType compute_locally(const EntityType& entity)
+private:
+  FieldType compute_locally(const EntityType& entity) const
   {
     assert(prepared_);
     assert(tmp_storage_);
@@ -117,6 +118,7 @@ public:
     return local_operator_result[0][0];
   } // ... compute_locally(...)
 
+public:
   virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
     *result_ += compute_locally(entity);
@@ -179,6 +181,10 @@ public:
   using typename InterfaceType::EntityType;
 
   using InterfaceType::pattern;
+
+  virtual ~AssemblableBase()
+  {
+  }
 
   AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw,
                   const SourceSpaceType& src_spc)
