@@ -109,31 +109,45 @@ public:
 
   FemBased(const std::shared_ptr<const GridPartType>& gridP)
     : gridPart_(gridP)
-    , gridView_(std::make_shared<const GridViewType>(gridPart_->gridView()))
-    , backend_(const_cast<GridPartType&>(*(gridPart_)))
-    , mapper_(backend_.blockMapper())
+    , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
+    , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
+    , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
     , communicator_prepared_(false)
   {
   }
 
-  FemBased(const ThisType& other) = default;
-
-  ThisType& operator=(const ThisType& other)
-  {
-    if (this != &other) {
-      gridPart_     = other.gridPart_;
-      gridView_     = other.gridView_;
-      backend_      = other.backend_;
-      mapper_       = other.mapper_;
-      communicator_ = other.communicator_;
-    }
-    return *this;
-  }
-
-  ~FemBased()
+  /**
+   * \brief Copy ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  FemBased(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , gridView_(other.gridView_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , communicator_(other.communicator_)
+    , communicator_prepared_(other.communicator_prepared_)
   {
   }
+
+  /**
+   * \brief Move ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  FemBased(ThisType&& source)
+    : gridPart_(source.gridPart_)
+    , gridView_(source.gridView_)
+    , backend_(source.backend_)
+    , mapper_(source.mapper_)
+    , communicator_(source.communicator_)
+    , communicator_prepared_(source.communicator_prepared_)
+  {
+  }
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   const std::shared_ptr<const GridPartType>& grid_part() const
   {
@@ -147,17 +161,17 @@ public:
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(backend_, entity);
+    return BaseFunctionSetType(*backend_, entity);
   }
 
   CommunicatorType& communicator() const
@@ -172,9 +186,9 @@ public:
 private:
   const std::shared_ptr<const GridPartType> gridPart_;
   const std::shared_ptr<const GridViewType> gridView_;
-  const BackendType backend_;
-  const MapperType mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  const std::shared_ptr<const BackendType> backend_;
+  const std::shared_ptr<const MapperType> mapper_;
+  mutable std::shared_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class FemBased< ..., 1 >
