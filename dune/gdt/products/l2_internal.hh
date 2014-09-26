@@ -37,10 +37,6 @@ class WeightedL2Assemblable;
 template <class GridViewImp, class FunctionImp>
 class WeightedL2;
 
-// forward
-template <class GridViewImp, class FieldImp = double>
-class L2;
-
 //! Internal stuff that is usually not of interest to the user.
 namespace internal {
 
@@ -182,11 +178,11 @@ struct L2AssemblableTraits
 }; // class L2AssemblableTraits
 
 
-template <class GridViewImp, class FieldImp>
-class L2Traits
+template <class GridViewImp, class FieldImp, class DerivedImp>
+struct DerivedType
 {
 public:
-  typedef L2<GridViewImp, FieldImp> derived_type;
+  typedef DerivedImp derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 }; // class L2Traits
