@@ -29,13 +29,17 @@ TYPED_TEST(P1Q1_Space, fulfills_interface)
   this->fulfills_interface();
 }
 
+TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
+TYPED_TEST(P1Q1_Space, copy_and_move_ctor)
+{
+  this->copy_and_move_ctor();
+}
 
 TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
 TYPED_TEST(P1Q1_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
 }
-
 
 TYPED_TEST_CASE(P1Q1_Space, P1Q1_Spaces);
 TYPED_TEST(P1Q1_Space, basefunctionset_fulfills_interface)
