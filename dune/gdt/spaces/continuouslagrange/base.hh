@@ -208,7 +208,6 @@ public:
       ret.set_size(0, 0);
     }
   } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
-
 }; // class ContinuousLagrangeBase
 
 

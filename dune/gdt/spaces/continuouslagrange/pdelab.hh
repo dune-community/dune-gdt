@@ -9,29 +9,24 @@
 #include <memory>
 #include <type_traits>
 
-#include <dune/geometry/genericgeometry/topologytypes.hh>
-
-#include <dune/common/typetraits.hh>
-
 #include <dune/stuff/common/disable_warnings.hh>
+# include <dune/common/typetraits.hh>
 # include <dune/common/fvector.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
-#if HAVE_DUNE_ISTL
-# include <dune/stuff/common/disable_warnings.hh>
+# include <dune/geometry/genericgeometry/topologytypes.hh>
+
+# if HAVE_DUNE_ISTL
 #   include <dune/istl/paamg/pinfo.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
-# include <dune/stuff/la/solver/istl_amg.hh>
-#endif
+#   include <dune/stuff/la/solver/istl_amg.hh>
+# endif
 
-#if HAVE_DUNE_PDELAB
-# include <dune/stuff/common/disable_warnings.hh>
+# if HAVE_DUNE_PDELAB
 #   include <dune/pdelab/finiteelementmap/pkfem.hh>
 #   include <dune/pdelab/finiteelementmap/qkfem.hh>
 #   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #   include <dune/pdelab/constraints/conforming.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
-#endif // HAVE_DUNE_PDELAB
+# endif // HAVE_DUNE_PDELAB
+#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -46,7 +41,7 @@ namespace GDT {
 namespace Spaces {
 namespace ContinuousLagrange {
 
-#if 1 // HAVE_DUNE_PDELAB
+#if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
@@ -148,29 +143,42 @@ public:
 
   PdelabBased(const std::shared_ptr< const GridViewType >& gV)
     : gridView_(gV)
-    , fe_map_(*(gridView_))
-    , backend_(const_cast< GridViewType& >(*gridView_), fe_map_)
-    , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
+    , fe_map_(std::make_shared< FEMapType >(*gridView_))
+    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*gridView_), *fe_map_))
+    , mapper_(std::make_shared< MapperType >(*backend_))
+    , communicator_(CommunicationChooser< GridViewImp >::create(*gridView_))
     , communicator_prepared_(false)
   {}
 
-  PdelabBased(const ThisType& other) = delete;
+  /**
+   * \brief Copy ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  PdelabBased(const ThisType& other)
+    : gridView_(other.gridView_)
+    , fe_map_(other.fe_map_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , communicator_(other.communicator_)
+    , communicator_prepared_(other.communicator_prepared_)
+  {}
 
-  ThisType& operator=(const ThisType& other)
-  {
-    if (this != &other) {
-      gridView_ = other.gridView_;
-      fe_map_ = other.fe_map_;
-      backend_ = other.backend_;
-      mapper_ = other.mapper_;
-      communicator_ = other.communicator_;
-      communicator_prepared_ = other.communicator_prepared_;
-    }
-    return *this;
-  }
+  /**
+   * \brief Move ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  PdelabBased(ThisType&& source)
+    : gridView_(source.gridView_)
+    , fe_map_(source.fe_map_)
+    , backend_(source.backend_)
+    , mapper_(source.mapper_)
+    , communicator_(source.communicator_)
+    , communicator_prepared_(source.communicator_prepared_)
+  {}
 
-  ~PdelabBased() {}
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   const std::shared_ptr< const GridViewType >& grid_view() const
   {
@@ -179,22 +187,22 @@ public:
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *backend_;
   }
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(backend_, entity);
+    return BaseFunctionSetType(*backend_, entity);
   }
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> gg(communicator_mutex_);
+    std::lock_guard< std::mutex > gg(communicator_mutex_);
     if (!communicator_prepared_) {
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     }
@@ -202,11 +210,11 @@ public:
   } // ... communicator(...)
 
 private:
-  std::shared_ptr< const GridViewType > gridView_;
-  const FEMapType fe_map_;
-  const BackendType backend_;
-  const MapperType mapper_;
-  mutable std::unique_ptr< CommunicatorType > communicator_;
+  const std::shared_ptr< const GridViewType > gridView_;
+  const std::shared_ptr< const FEMapType > fe_map_;
+  const std::shared_ptr< const BackendType > backend_;
+  const std::shared_ptr< const MapperType > mapper_;
+  mutable std::shared_ptr< CommunicatorType > communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >

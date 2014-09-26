@@ -56,14 +56,14 @@ private:
 public:
   typedef typename SpaceChooser< GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type >::Type Type;
 
-  static Type* create(const std::shared_ptr< const GridLayerType > grid_layer)
+  static Type create(const std::shared_ptr< const GridLayerType > grid_layer)
   {
-    return new Type(grid_layer);
+    return Type(grid_layer);
   }
 
-  static Type* create(const GridProviderType& grid_provider, const int level = 0)
+  static Type create(const GridProviderType& grid_provider, const int level = 0)
   {
-    return new Type(grid_provider.template layer< layer_type, part_view_type >(level));
+    return Type(grid_provider.template layer< layer_type, part_view_type >(level));
   }
 
 #if HAVE_DUNE_GRID_MULTISCALE
