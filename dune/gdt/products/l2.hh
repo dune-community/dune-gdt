@@ -26,12 +26,12 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
-template <class GridViewImp, class RangeImp, class SourceImp>
+template <class GridViewImp, class RangeImp, class SourceImp = RangeImp>
 using L2Localizable =
     GenericLocalizable<GridViewImp, RangeImp, SourceImp, internal::L2LocalizableTraits, LocalEvaluation::Product>;
 
-template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp>
-using L2Assemblable = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp = RangeSpaceImp>
+using L2Assemblable                                                                     = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                                          internal::L2AssemblableTraits, LocalEvaluation::Product>;
 
 template <class GridViewImp, class FieldImp = double>
