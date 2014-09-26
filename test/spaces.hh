@@ -5,18 +5,14 @@
 
 #include <type_traits>
 
-#if HAVE_ALUGRID
-#include <dune/stuff/common/disable_warnings.hh>
-#include <dune/grid/alugrid.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-#endif
-
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
+#if HAVE_ALUGRID
+#include <dune/grid/alugrid.hh>
+#endif
 
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -201,30 +197,18 @@ public:
     D_PatternType d_pattern_face_view                        = space_->compute_face_pattern(*d_grid_view);
     D_PatternType d_pattern_face_other                       = space_->compute_face_pattern(*space_);
     D_PatternType d_pattern_face_view_other = space_->compute_face_pattern(*d_grid_view, *space_);
-    if (d_pattern != d_pattern_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern != d_pattern_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern != d_pattern_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_volume != d_pattern_volume_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_volume != d_pattern_volume_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_volume != d_pattern_volume_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face_volume != d_pattern_face_volume_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face_volume != d_pattern_face_volume_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face_volume != d_pattern_face_volume_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face != d_pattern_face_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face != d_pattern_face_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (d_pattern_face != d_pattern_face_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
+    EXPECT_EQ(d_pattern, d_pattern_other);
+    EXPECT_EQ(d_pattern, d_pattern_view);
+    EXPECT_EQ(d_pattern, d_pattern_view_other);
+    EXPECT_EQ(d_pattern_volume, d_pattern_volume_other);
+    EXPECT_EQ(d_pattern_volume, d_pattern_volume_view);
+    EXPECT_EQ(d_pattern_volume, d_pattern_volume_view_other);
+    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_view);
+    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_other);
+    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_view_other);
+    EXPECT_EQ(d_pattern_face, d_pattern_face_other);
+    EXPECT_EQ(d_pattern_face, d_pattern_face_view);
+    EXPECT_EQ(d_pattern_face, d_pattern_face_view_other);
     // * as the interface
     const InterfaceType& i_space                             = static_cast<const InterfaceType&>(*space_);
     const I_BackendType& i_backend                           = i_space.backend();
@@ -247,45 +231,26 @@ public:
     I_PatternType i_pattern_face_view                        = i_space.compute_face_pattern(*i_grid_view);
     I_PatternType i_pattern_face_other                       = i_space.compute_face_pattern(i_space);
     I_PatternType i_pattern_face_view_other = i_space.compute_face_pattern(*i_grid_view, i_space);
-    if (&i_backend != &d_backend)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (&i_mapper != &d_mapper)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (&i_grid_view != &d_grid_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern != d_pattern)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_other != d_pattern_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_view != d_pattern_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_view_other != d_pattern_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_volume != d_pattern_volume)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_volume_other != d_pattern_volume_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_volume_view != d_pattern_volume_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_volume_view_other != d_pattern_volume_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_volume != d_pattern_face_volume)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_volume_other != d_pattern_face_volume_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_volume_view != d_pattern_face_volume_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_volume_view_other != d_pattern_face_volume_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face != d_pattern_face)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_other != d_pattern_face_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_view != d_pattern_face_view)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_pattern_face_view_other != d_pattern_face_view_other)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
+    EXPECT_EQ(&i_backend, &d_backend);
+    EXPECT_EQ(&i_mapper, &d_mapper);
+    EXPECT_EQ(&i_grid_view, &d_grid_view);
     EXPECT_EQ(&i_comm, &d_comm);
+    EXPECT_EQ(i_pattern, d_pattern);
+    EXPECT_EQ(i_pattern_other, d_pattern_other);
+    EXPECT_EQ(i_pattern_view, d_pattern_view);
+    EXPECT_EQ(i_pattern_view_other, d_pattern_view_other);
+    EXPECT_EQ(i_pattern_volume, d_pattern_volume);
+    EXPECT_EQ(i_pattern_volume_other, d_pattern_volume_other);
+    EXPECT_EQ(i_pattern_volume_view, d_pattern_volume_view);
+    EXPECT_EQ(i_pattern_volume_view_other, d_pattern_volume_view_other);
+    EXPECT_EQ(i_pattern_face_volume, d_pattern_face_volume);
+    EXPECT_EQ(i_pattern_face_volume_other, d_pattern_face_volume_other);
+    EXPECT_EQ(i_pattern_face_volume_view, d_pattern_face_volume_view);
+    EXPECT_EQ(i_pattern_face_volume_view_other, d_pattern_face_volume_view_other);
+    EXPECT_EQ(i_pattern_face, d_pattern_face);
+    EXPECT_EQ(i_pattern_face_other, d_pattern_face_other);
+    EXPECT_EQ(i_pattern_face_view, d_pattern_face_view);
+    EXPECT_EQ(i_pattern_face_view_other, d_pattern_face_view_other);
     // walk the grid
     const auto entity_it_end = d_grid_view->template end<0>();
     for (auto entity_it = d_grid_view->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -293,12 +258,10 @@ public:
       // * s the derived type
       D_BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
       size_t d_bfs_size = d_base_function_set.size();
-      if (d_bfs_size != d_mapper.numDofs(entity))
-        DUNE_THROW(Exceptions::index_out_of_range, d_bfs_size << " vs. " << d_mapper.numDofs(entity));
+      EXPECT_EQ(d_bfs_size, d_mapper.numDofs(entity));
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
       size_t i_bfs_size = i_base_function_set.size();
-      if (d_bfs_size != i_bfs_size)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
+      EXPECT_EQ(d_bfs_size, i_bfs_size);
     } // walk the grid
   } // ... fulfills_interface()
 
@@ -341,12 +304,9 @@ public:
     const D_BackendType& i_backend = i_mapper.backend();
     size_t i_size                  = i_mapper.size();
     size_t i_maxNumDofs = i_mapper.maxNumDofs();
-    if (&i_backend != &d_backend)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_size != d_size)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
-    if (i_maxNumDofs != d_maxNumDofs)
-      DUNE_THROW(Exceptions::CRTP_check_failed, "");
+    EXPECT_EQ(&i_backend, &d_backend);
+    EXPECT_EQ(i_size, d_size);
+    EXPECT_EQ(i_maxNumDofs, d_maxNumDofs);
     //   walk the grid
     const auto entity_it_end = space_->grid_view()->template end<0>();
     for (auto entity_it = space_->grid_view()->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -358,29 +318,23 @@ public:
       if (d_globalIndices.size() > d_numDofs)
         DUNE_THROW(Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
       DynamicVector<size_t> d_globalIndices_return = d_mapper.globalIndices(entity);
-      if (d_globalIndices_return != d_globalIndices)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
+      EXPECT_EQ(d_globalIndices_return, d_globalIndices);
       // * as the interface
       size_t i_numDofs = i_mapper.numDofs(entity);
       DynamicVector<size_t> i_globalIndices(i_numDofs, 0);
       i_mapper.globalIndices(entity, i_globalIndices);
       DynamicVector<size_t> i_globalIndices_return = i_mapper.globalIndices(entity);
-      if (i_numDofs != d_numDofs)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
-      if (i_globalIndices != d_globalIndices)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
-      if (i_globalIndices_return != d_globalIndices_return)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
+      EXPECT_EQ(i_numDofs, d_numDofs);
+      EXPECT_EQ(i_globalIndices, d_globalIndices);
+      EXPECT_EQ(i_globalIndices_return, d_globalIndices_return);
       //   walk the local DoFs
       for (size_t ii = 0; ii < d_numDofs; ++ii) {
         // * as the derived type
         size_t d_mapToGlobal = d_mapper.mapToGlobal(entity, ii);
-        if (d_mapToGlobal != d_globalIndices[ii])
-          DUNE_THROW(Exceptions::index_out_of_range, d_mapToGlobal << " vs. " << d_globalIndices[ii]);
+        EXPECT_EQ(d_mapToGlobal, d_globalIndices[ii]);
         // * as the interface
         size_t i_mapToGlobal = i_mapper.mapToGlobal(entity, ii);
-        if (i_mapToGlobal != d_mapToGlobal)
-          DUNE_THROW(Exceptions::CRTP_check_failed, "");
+        EXPECT_EQ(i_mapToGlobal, d_mapToGlobal);
       } //   walk the local DoFs
     } //   walk the grid
   } // ... mapper_fulfills_interface()
@@ -455,17 +409,14 @@ public:
       BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
       const D_BackendType& d_backend          = d_base_function_set.backend();
       size_t d_order = d_base_function_set.order();
-      if (d_order != SpaceType::polOrder)
-        DUNE_THROW(Exceptions::internal_error, d_order << " vs. " << SpaceType::polOrder);
+      EXPECT_EQ(d_order, int(SpaceType::polOrder));
       //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
       const I_BackendType& i_backend = i_base_function_set.backend();
-      if (&d_backend != &i_backend)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
+      EXPECT_EQ(&d_backend, &i_backend);
       size_t i_order = i_base_function_set.order();
-      if (i_order != d_order)
-        DUNE_THROW(Exceptions::CRTP_check_failed, "");
+      EXPECT_EQ(i_order, d_order);
     } // walk the grid
   } // ... basefunctionset_fulfills_interface()
 

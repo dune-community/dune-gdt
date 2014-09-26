@@ -92,15 +92,13 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
       const auto& entity     = *entity_it;
       const int num_vertices = entity.template count<dimDomain>();
       const auto basis = space.base_function_set(entity);
-      if (basis.size() != size_t(num_vertices))
-        DUNE_THROW(Exceptions::internal_error, "basis.size() = " << basis.size());
+      EXPECT_EQ(basis.size(), size_t(num_vertices));
       for (int cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
-        if (basis_values.size() != size_t(num_vertices))
-          DUNE_THROW(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+        EXPECT_EQ(basis_values.size(), size_t(num_vertices));
         size_t ones            = 0;
         size_t zeros           = 0;
         size_t failures        = 0;
@@ -120,7 +118,7 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
              << ", num_vertices = " << num_vertices << ", entity " << grid_part_view->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW(Exceptions::internal_error, ss.str());
+          EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
@@ -136,19 +134,14 @@ struct P1Q1_Discontinuous_Lagrange : public ::testing::Test, public ::SpaceTestB
     }
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
-      if (global_DoF_id != count)
-        DUNE_THROW(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
+      EXPECT_EQ(global_DoF_id, count);
       ++count;
     }
     for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_coordinates       = entry.first;
       const auto vertex_ids               = entry.second.first;
       size_t number_of_associated_DoF_ids = vertex_ids.size();
       size_t number_of_adjacent_entitys = entry.second.second;
-      if (number_of_associated_DoF_ids != number_of_adjacent_entitys)
-        DUNE_THROW(Exceptions::internal_error,
-                   "Vertex has only " << number_of_associated_DoF_ids << "associated DoF_ids, should have "
-                                      << number_of_adjacent_entitys);
+      EXPECT_EQ(number_of_associated_DoF_ids, number_of_adjacent_entitys);
     }
 
   } // ... maps_correctly()
