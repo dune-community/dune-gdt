@@ -32,6 +32,12 @@ TYPED_TEST(P2Q2_Space, fulfills_interface)
 }
 
 TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
+TYPED_TEST(P2Q2_Space, copy_and_move_ctor)
+{
+  this->copy_and_move_ctor();
+}
+
+TYPED_TEST_CASE(P2Q2_Space, P2Q2_Spaces);
 TYPED_TEST(P2Q2_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();

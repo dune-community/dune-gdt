@@ -33,6 +33,12 @@ TYPED_TEST(P3Q3_Space, fulfills_interface)
 }
 
 TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
+TYPED_TEST(P3Q3_Space, copy_and_move_ctor)
+{
+  this->copy_and_move_ctor();
+}
+
+TYPED_TEST_CASE(P3Q3_Space, P3Q3_Spaces);
 TYPED_TEST(P3Q3_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
