@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACE_FINITEVOLUME_HH
 #define DUNE_GDT_SPACE_FINITEVOLUME_HH
 
+#include <dune/gdt/spaces/parallel.hh>
+
 #include "../../mapper/finitevolume.hh"
 #include "../../basefunctionset/finitevolume.hh"
 #include "../../../spaces/interface.hh"
@@ -33,8 +35,8 @@ class DefaultTraits
 public:
   typedef Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   static const int polOrder = 0;
-  typedef double BackendType;
   typedef GridViewImp GridViewType;
+  typedef typename GridViewType::IndexSet BackendType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef RangeFieldImp RangeFieldType;
   static const unsigned int dimRange     = rangeDim;
@@ -45,7 +47,8 @@ public:
                                         dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
-  typedef double CommunicatorType;
+  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DefaultTraits
 
 
@@ -71,31 +74,26 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
   Default(const std::shared_ptr<const GridViewType>& gv)
     : grid_view_(gv)
     , mapper_(std::make_shared<MapperType>(*grid_view_))
-    , backend_(1)
-    , communicator_(0.0)
+    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
+    , communicator_prepared_(false)
   {
   }
 
   Default(const ThisType& other) = default;
 
-  Default& operator=(const ThisType& other)
-  {
-    if (this != &other) {
-      grid_view_ = other.grid_view_;
-      mapper_    = other.mapper_;
-    }
-    return *this;
-  }
+  Default(ThisType&& source) = default;
 
-  ~Default()
-  {
-  }
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   const std::shared_ptr<const GridViewType>& grid_view() const
   {
@@ -104,7 +102,7 @@ public:
 
   const BackendType& backend() const
   {
-    return backend_;
+    return grid_view_->indexSet();
   }
 
   const MapperType& mapper() const
@@ -125,16 +123,16 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
-  double& communicator() const
+  CommunicatorType& communicator() const
   {
-    return communicator_;
+    // no need to prepare the communicator, since we are not pdelab based
+    return *communicator_;
   }
 
 private:
-  std::shared_ptr<const GridViewType> grid_view_;
-  std::shared_ptr<const MapperType> mapper_;
-  const BackendType backend_;
-  mutable double communicator_;
+  const std::shared_ptr<const GridViewType> grid_view_;
+  const std::shared_ptr<const MapperType> mapper_;
+  mutable std::shared_ptr<CommunicatorType> communicator_;
 }; // class Default< ..., 1, 1 >
 
 

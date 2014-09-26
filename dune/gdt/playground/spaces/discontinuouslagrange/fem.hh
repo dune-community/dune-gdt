@@ -10,12 +10,15 @@
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
+#include <dune/common/unused.hh>
 
 #if HAVE_DUNE_FEM
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
+
+#include <dune/gdt/spaces/parallel.hh>
 
 #include "../../../mapper/fem.hh"
 #include "../../../basefunctionset/fem.hh"
@@ -68,8 +71,9 @@ public:
                                       dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
-  typedef double CommunicatorType;
-}; // class SpaceWrappedFemDiscontinuousLagrangeTraits
+  typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
+  typedef typename CommunicationChooserType::Type CommunicatorType;
+}; // class FemBasedTraits
 
 
 // untested for the vector-valued case
@@ -96,6 +100,8 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
@@ -104,26 +110,17 @@ public:
     , gridView_(std::make_shared<GridViewType>(gridPart_->gridView()))
     , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
     , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
-    , communicator_(0.0)
+    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
   {
   }
 
   FemBased(const ThisType& other) = default;
 
-  ThisType& operator=(const ThisType& other)
-  {
-    if (this != &other) {
-      gridPart_ = other.gridPart_;
-      gridView_ = other.gridView_;
-      backend_  = other.backend_;
-      mapper_   = other.mapper_;
-    }
-    return *this;
-  }
+  FemBased(ThisType&& source) = default;
 
-  ~FemBased()
-  {
-  }
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   using BaseType::compute_pattern;
 
@@ -158,17 +155,18 @@ public:
     return BaseFunctionSetType(*backend_, entity);
   }
 
-  double& communicator() const
+  CommunicatorType& communicator() const
   {
-    return communicator_;
+    // no need to prepare the communicator, since we are not pdelab based
+    return *communicator_;
   }
 
 private:
-  std::shared_ptr<const GridPartType> gridPart_;
-  std::shared_ptr<const GridViewType> gridView_;
-  std::shared_ptr<const BackendType> backend_;
-  std::shared_ptr<const MapperType> mapper_;
-  mutable double communicator_;
+  const std::shared_ptr<const GridPartType> gridPart_;
+  const std::shared_ptr<const GridViewType> gridView_;
+  const std::shared_ptr<const BackendType> backend_;
+  const std::shared_ptr<const MapperType> mapper_;
+  mutable std::shared_ptr<CommunicatorType> communicator_;
 }; // class FemBased< ..., 1 >
 
 

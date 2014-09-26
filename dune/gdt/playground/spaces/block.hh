@@ -62,6 +62,7 @@ template <class LocalSpaceImp>
 class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>>
 {
   typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>> BaseType;
+  typedef Block<LocalSpaceImp> ThisType;
 
 public:
   typedef internal::BlockTraits<LocalSpaceImp> Traits;
@@ -73,11 +74,12 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
+  typedef typename BaseType::CommunicatorType CommunicatorType;
 
   typedef grid::Multiscale::Default<typename GridViewType::Grid> MsGridType;
 
-  Block(const std::shared_ptr<const MsGridType> ms_grid,
-        const std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces)
+  Block(const std::shared_ptr<const MsGridType>& ms_grid,
+        const std::vector<std::shared_ptr<const LocalSpaceType>>& local_spaces)
     : ms_grid_(ms_grid)
     , local_spaces_(local_spaces)
     , mapper_(std::make_shared<MapperType>(ms_grid_, local_spaces_))
@@ -91,6 +93,14 @@ public:
                      << "  Number of local spaces given: "
                      << local_spaces_.size());
   } // Block(...)
+
+  Block(const ThisType& other) = default;
+
+  Block(ThisType&& source) = default;
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   const std::shared_ptr<const MsGridType>& ms_grid() const
   {
@@ -133,6 +143,13 @@ public:
   PatternType compute_pattern(const GridView<G>& /*local_grid_view*/, const SpaceInterface<S>& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
+    return PatternType();
+  }
+
+  CommunicatorType& communicator() const
+  {
+    DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
+    return local_spaces_[0]->communicator();
   }
 
 private:
@@ -161,9 +178,9 @@ private:
     return subdomain;
   } // ... find_block_of_(...)
 
-  std::shared_ptr<const MsGridType> ms_grid_;
-  std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces_;
-  std::shared_ptr<const MapperType> mapper_;
+  const std::shared_ptr<const MsGridType> ms_grid_;
+  const std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces_;
+  const std::shared_ptr<const MapperType> mapper_;
 }; // class Block
 
 

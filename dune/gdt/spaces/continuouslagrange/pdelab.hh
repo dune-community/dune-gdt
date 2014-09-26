@@ -136,7 +136,8 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::CommunicatorType CommunicatorType;
+  typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
+  typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
@@ -211,10 +212,9 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> gg(communicator_mutex_);
-    if (!communicator_prepared_) {
-      communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
-    }
+    std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
+    if (!communicator_prepared_)
+      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 

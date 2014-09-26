@@ -10,7 +10,6 @@
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
-#include <dune/gdt/spaces/parallel.hh>
 
 #if HAVE_DUNE_FEM
 #include <dune/stuff/common/disable_warnings.hh>
@@ -18,6 +17,8 @@
 #include <dune/fem/space/lagrange/space.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
+
+#include <dune/gdt/spaces/parallel.hh>
 
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem.hh"
@@ -103,7 +104,7 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
@@ -113,37 +114,12 @@ public:
     , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(*(gridPart_))))
     , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
-    , communicator_prepared_(false)
   {
   }
 
-  /**
-   * \brief Copy ctor.
-   * \note  Manually implemented bc of the std::mutex.
-   */
-  FemBased(const ThisType& other)
-    : gridPart_(other.gridPart_)
-    , gridView_(other.gridView_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
-    , communicator_(other.communicator_)
-    , communicator_prepared_(other.communicator_prepared_)
-  {
-  }
+  FemBased(const ThisType& other) = default;
 
-  /**
-   * \brief Move ctor.
-   * \note  Manually implemented bc of the std::mutex.
-   */
-  FemBased(ThisType&& source)
-    : gridPart_(source.gridPart_)
-    , gridView_(source.gridView_)
-    , backend_(source.backend_)
-    , mapper_(source.mapper_)
-    , communicator_(source.communicator_)
-    , communicator_prepared_(source.communicator_prepared_)
-  {
-  }
+  FemBased(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -176,12 +152,9 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> gg(communicator_mutex_);
-    if (!communicator_prepared_) {
-      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
-    }
+    // no need to prepare the communicator, since we are not pdelab based
     return *communicator_;
-  } // ... communicator(...)
+  }
 
 private:
   const std::shared_ptr<const GridPartType> gridPart_;
@@ -189,8 +162,6 @@ private:
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
-  mutable bool communicator_prepared_;
-  mutable std::mutex communicator_mutex_;
 }; // class FemBased< ..., 1 >
 
 
