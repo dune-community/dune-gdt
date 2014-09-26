@@ -140,6 +140,7 @@ public:
     typedef typename SpaceType::IntersectionType D_IntersectionType;
     typedef typename SpaceType::PatternType D_PatternType;
     typedef typename SpaceType::BoundaryInfoType D_BoundaryInfoType;
+    typedef typename SpaceType::CommunicatorType D_CommunicatorType;
     static const bool d_needs_grid_view = SpaceType::needs_grid_view;
     // * as the interface
     typedef SpaceInterface<Traits> InterfaceType;
@@ -158,6 +159,7 @@ public:
     typedef typename InterfaceType::IntersectionType I_IntersectionType;
     typedef typename InterfaceType::PatternType I_PatternType;
     typedef typename InterfaceType::BoundaryInfoType I_BoundaryInfoType;
+    typedef typename InterfaceType::CommunicatorType I_CommunicatorType;
     static const bool i_needs_grid_view = InterfaceType::needs_grid_view;
     static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
     static_assert(std::is_same<derived_type, SpaceType>::value, "Types do not match!");
@@ -171,6 +173,7 @@ public:
     static_assert(std::is_same<I_IntersectionType, D_IntersectionType>::value, "Types do not match!");
     static_assert(std::is_same<I_PatternType, D_PatternType>::value, "Types do not match!");
     static_assert(std::is_same<I_BoundaryInfoType, D_BoundaryInfoType>::value, "Types do not match!");
+    static_assert(std::is_same<I_CommunicatorType, D_CommunicatorType>::value, "Types do not match!");
     static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
     static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
     static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
@@ -181,6 +184,7 @@ public:
     const D_BackendType& d_backend                           = space_->backend();
     const D_MapperType& d_mapper                             = space_->mapper();
     const std::shared_ptr<const D_GridViewType>& d_grid_view = space_->grid_view();
+    D_CommunicatorType& d_comm                               = space_->communicator();
     D_PatternType d_pattern                                  = space_->compute_pattern();
     D_PatternType d_pattern_view                             = space_->compute_pattern(*d_grid_view);
     D_PatternType d_pattern_other                            = space_->compute_pattern(*space_);
@@ -226,6 +230,7 @@ public:
     const I_BackendType& i_backend                           = i_space.backend();
     const D_MapperType& i_mapper                             = i_space.mapper();
     const std::shared_ptr<const I_GridViewType>& i_grid_view = i_space.grid_view();
+    I_CommunicatorType& i_comm                               = i_space.communicator();
     I_PatternType i_pattern                                  = i_space.compute_pattern();
     I_PatternType i_pattern_view                             = i_space.compute_pattern(*i_grid_view);
     I_PatternType i_pattern_other                            = i_space.compute_pattern(i_space);
@@ -280,6 +285,7 @@ public:
       DUNE_THROW(Exceptions::CRTP_check_failed, "");
     if (i_pattern_face_view_other != d_pattern_face_view_other)
       DUNE_THROW(Exceptions::CRTP_check_failed, "");
+    EXPECT_EQ(&i_comm, &d_comm);
     // walk the grid
     const auto entity_it_end = d_grid_view->template end<0>();
     for (auto entity_it = d_grid_view->template begin<0>(); entity_it != entity_it_end; ++entity_it) {
