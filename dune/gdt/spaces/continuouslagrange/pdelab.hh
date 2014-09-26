@@ -114,7 +114,7 @@ public:
 
 private:
   friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
-}; // class SpaceWrappedFemContinuousLagrangeTraits
+}; // class PdelabBasedTraits
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
