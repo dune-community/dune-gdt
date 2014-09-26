@@ -90,7 +90,8 @@ private:
                               == GenericGeometry::CubeTopology< dimDomain >::type::id);
   typedef typename FeMap< GridType, single_geom_, simplicial_, cubic_ >::Type FEMapType;
 public:
-  typedef PDELab::GridFunctionSpace< GridViewType, FEMapType, PDELab::OverlappingConformingDirichletConstraints > BackendType;
+  typedef PDELab::GridFunctionSpace< GridViewType, FEMapType, PDELab::OverlappingConformingDirichletConstraints >
+      BackendType;
   typedef Mapper::SimplePdelabWrapper< BackendType > MapperType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef BaseFunctionSet::PdelabWrapper
@@ -98,7 +99,8 @@ public:
     BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view = true;
-  typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
+  typedef CommunicationChooser< GridViewType >    CommunicationChooserType;
+  typedef typename CommunicationChooserType::Type CommunicatorType;
 private:
   friend class PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >;
 }; // class PdelabBasedTraits
@@ -125,7 +127,8 @@ public:
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
-  typedef typename Traits::CommunicatorType     CommunicatorType;
+  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::CommunicatorType         CommunicatorType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
@@ -145,22 +148,35 @@ public:
     , communicator_prepared_(false)
   {}
 
-  PdelabBased(const ThisType& other) = default;
+  /**
+   * \brief Copy ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  PdelabBased(const ThisType& other)
+    : gridView_(other.gridView_)
+    , fe_map_(other.fe_map_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , communicator_(other.communicator_)
+    , communicator_prepared_(other.communicator_prepared_)
+  {}
 
-  ThisType& operator=(const ThisType& other)
-  {
-    if (this != &other) {
-      gridView_ = other.gridView_;
-      fe_map_ = other.fe_map_;
-      backend_ = other.backend_;
-      mapper_ = other.mapper_;
-      communicator_ = other.communicator_;
-      communicator_prepared_ = other.communicator_prepared_;
-    }
-    return *this;
-  }
+  /**
+   * \brief Move ctor.
+   * \note  Manually implemented bc of the std::mutex.
+   */
+  PdelabBased(ThisType&& source)
+    : gridView_(source.gridView_)
+    , fe_map_(source.fe_map_)
+    , backend_(source.backend_)
+    , mapper_(source.mapper_)
+    , communicator_(source.communicator_)
+    , communicator_prepared_(source.communicator_prepared_)
+  {}
 
-  ~PdelabBased() {}
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   using BaseType::compute_pattern;
 
@@ -192,19 +208,20 @@ public:
 
   CommunicatorType& communicator() const
   {
-    if (!communicator_prepared_) {
+    std::lock_guard< std::mutex > DUNE_UNUSED(gg)(communicator_mutex_);
+    if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
-    }
     return *communicator_;
   } // ... communicator(...)
 
 private:
-  std::shared_ptr< const GridViewType > gridView_;
-  std::shared_ptr< const FEMapType > fe_map_;
-  std::shared_ptr< const BackendType > backend_;
-  std::shared_ptr< const MapperType > mapper_;
+  const std::shared_ptr< const GridViewType > gridView_;
+  const std::shared_ptr< const FEMapType > fe_map_;
+  const std::shared_ptr< const BackendType > backend_;
+  const std::shared_ptr< const MapperType > mapper_;
   mutable std::shared_ptr< CommunicatorType > communicator_;
   mutable bool communicator_prepared_;
+  mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >
 
 

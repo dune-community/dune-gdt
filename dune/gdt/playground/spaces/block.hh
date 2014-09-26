@@ -62,6 +62,7 @@ class Block
   : public SpaceInterface< internal::BlockTraits< LocalSpaceImp > >
 {
   typedef SpaceInterface< internal::BlockTraits< LocalSpaceImp > > BaseType;
+  typedef Block< LocalSpaceImp >                                   ThisType;
 public:
   typedef internal::BlockTraits< LocalSpaceImp > Traits;
   typedef typename Traits::BackendType         BackendType;
@@ -72,21 +73,30 @@ public:
   typedef typename BaseType::PatternType  PatternType;
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;
+  typedef typename BaseType::CommunicatorType CommunicatorType;
 
   typedef grid::Multiscale::Default< typename GridViewType::Grid > MsGridType;
 
-  Block(const std::shared_ptr< const MsGridType > ms_grid,
-        const std::vector< std::shared_ptr< const LocalSpaceType > > local_spaces)
+  Block(const std::shared_ptr< const MsGridType >& ms_grid,
+        const std::vector< std::shared_ptr< const LocalSpaceType > >& local_spaces)
     : ms_grid_(ms_grid)
     , local_spaces_(local_spaces)
     , mapper_(std::make_shared< MapperType >(ms_grid_, local_spaces_))
   {
     if (local_spaces_.size() != ms_grid_->size())
       DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
-                            "You have to provide a local space for each subdomain of the multiscale grid!\n"
-                            << "  Size of the given multiscale grid: " << ms_grid_->size() << "\n"
-                            << "  Number of local spaces given: " << local_spaces_.size());
+                 "You have to provide a local space for each subdomain of the multiscale grid!\n"
+                 << "  Size of the given multiscale grid: " << ms_grid_->size() << "\n"
+                 << "  Number of local spaces given: " << local_spaces_.size());
   } // Block(...)
+
+  Block(const ThisType& other) = default;
+
+  Block(ThisType&& source) = default;
+
+  ThisType& operator=(const ThisType& other) = delete;
+
+  ThisType& operator=(ThisType&& source) = delete;
 
   const std::shared_ptr< const MsGridType >& ms_grid() const
   {
@@ -129,6 +139,13 @@ public:
   PatternType compute_pattern(const GridView< G >& /*local_grid_view*/, const SpaceInterface< S >& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
+    return PatternType();
+  }
+
+  CommunicatorType& communicator() const
+  {
+    DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
+    return local_spaces_[0]->communicator();
   }
 
 private:
@@ -155,9 +172,9 @@ private:
     return subdomain;
   } // ... find_block_of_(...)
 
-  std::shared_ptr< const MsGridType > ms_grid_;
-  std::vector< std::shared_ptr< const LocalSpaceType > > local_spaces_;
-  std::shared_ptr< const MapperType > mapper_;
+  const std::shared_ptr< const MsGridType > ms_grid_;
+  const std::vector< std::shared_ptr< const LocalSpaceType > > local_spaces_;
+  const std::shared_ptr< const MapperType > mapper_;
 }; // class Block
 
 
