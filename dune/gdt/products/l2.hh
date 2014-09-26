@@ -161,20 +161,21 @@ struct L2Assemblable
   {}
 };
 
-template< class GridViewImp, class FieldImp >
-class L2
-  : public ProductInterface< internal::L2Traits< GridViewImp, FieldImp > >
+template< class GridViewImp, class FieldImp, template<class, class, class> class OperatorTemplate>
+class ProductForward
+  : public ProductInterface< internal::DerivedType<GridViewImp, FieldImp, ProductForward<GridViewImp, FieldImp, OperatorTemplate > > >
 {
 public:
-  typedef internal::L2Traits< GridViewImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::FieldType    FieldType;
+  typedef internal::DerivedType<GridViewImp, FieldImp,
+                                ProductForward<GridViewImp, FieldImp, OperatorTemplate > > Traits;
+  typedef GridViewImp GridViewType;
+  typedef FieldImp FieldType;
 
   typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
   typedef typename GridViewType::ctype                        DomainFieldType;
   static const unsigned int                                   dimDomain = GridViewType::dimension;
 
-  L2(const GridViewType& grd_vw, const size_t over_integrate = 0)
+  ProductForward(const GridViewType& grd_vw, const size_t over_integrate = 0)
     : grid_view_(grd_vw)
     , over_integrate_(over_integrate)
   {}
@@ -199,7 +200,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface
         < EntityType, DomainFieldType, dimDomain, FieldType, dimRangeRows, dimRangeCols > RangeType;
-    L2Localizable< GridViewType, RangeType, RangeType >
+    OperatorTemplate< GridViewType, RangeType, RangeType >
         product_operator(grid_view_, range, source, over_integrate_);
     return product_operator.apply2();
   } // ... apply2(...)
@@ -209,6 +210,8 @@ private:
   const size_t over_integrate_;
 }; // class L2
 
+template< class GridViewImp, class FieldImp = double>
+using L2 = ProductForward<GridViewImp, FieldImp, L2Localizable>;
 
 } // namespace Products
 } // namespace GDT
