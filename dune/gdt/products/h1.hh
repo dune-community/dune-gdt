@@ -34,7 +34,7 @@ template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp,
 using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp,
                                                               DerivedImp, LocalEvaluationType>;
 
-template< class GridViewImp, class RangeImp, class SourceImp >
+template< class GridViewImp, class RangeImp, class SourceImp = RangeImp>
 using H1SemiLocalizable = GenericLocalizable<GridViewImp, RangeImp, SourceImp, H1SemiLocalizableTraits, H1Evaluation>;
 
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,
@@ -45,7 +45,7 @@ using H1SemiAssemblableTraits = internal::L2AssemblableTraits<MatrixImp, RangeSp
  * \todo actual doc
  * \note this cannot be an alias because of the self-injection to base
  **/
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp = RangeSpaceImp>
 using H1SemiAssemblable = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                                              H1SemiAssemblableTraits, H1Evaluation>;
 
