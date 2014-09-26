@@ -26,16 +26,17 @@ namespace GDT {
 namespace Products {
 
 template< class GridViewImp, class RangeImp, class SourceImp, class AliasedType,
-          template <class, class, class, class> class TraitsTemplate >
+          template <class, class, class, class, template <class> class> class TraitsTemplate,
+          template <class> class LocalEvaluationTemplate>
 class LocalizableForward
-  : public LocalizableBase< TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType > >
-  , public internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType >
+  : public LocalizableBase< TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType, LocalEvaluationTemplate > >
+  , public internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType, LocalEvaluationTemplate >
 {
 public:
-  typedef TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType > Traits;
+  typedef TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType, LocalEvaluationTemplate > Traits;
 private:
   typedef Products::LocalizableBase< Traits > LocalizableBaseType;
-  typedef internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType > L2BaseType;
+  typedef internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType, LocalEvaluationTemplate> L2BaseType;
 public:
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeType    RangeType;
@@ -69,9 +70,9 @@ private:
 template< class GridViewImp, class RangeImp, class SourceImp >
 struct L2Localizable
     : public LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
-                           internal::L2LocalizableTraits> {
+                           internal::L2LocalizableTraits, LocalEvaluation::Product> {
   typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
-                        internal::L2LocalizableTraits> BaseType;
+                        internal::L2LocalizableTraits, LocalEvaluation::Product> BaseType;
   template <class... Args>
   explicit L2Localizable(Args&& ...args)
     : BaseType(std::forward< Args >(args)...)
@@ -79,17 +80,20 @@ struct L2Localizable
 };
 
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class AliasedType,
-          template <class, class, class, class, class> class TraitsTemplate >
+          template <class, class, class, class, class, template <class> class > class TraitsTemplate,
+          template <class> class LocalEvaluationTemplate>
 class AssemblableForward
-  : public AssemblableBase< TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, AliasedType > >
-  , public internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType >
+  : public AssemblableBase< TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp,
+                                            SourceSpaceImp, AliasedType, LocalEvaluationTemplate > >
+  , public internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType, LocalEvaluationTemplate >
 {
 public:
-  typedef TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, AliasedType> Traits;
+  typedef TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                          AliasedType, LocalEvaluationTemplate> Traits;
 private:
   typedef Products::AssemblableBase< Traits >
     AssemblableBaseType;
-  typedef internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType > L2BaseType;
+  typedef internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType, LocalEvaluationTemplate> L2BaseType;
 public:
   typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
@@ -147,10 +151,10 @@ template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceS
 struct L2Assemblable
     : public AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                                 L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                           internal::L2AssemblableTraits> {
+                           internal::L2AssemblableTraits, LocalEvaluation::Product> {
   typedef AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                              L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                             internal::L2AssemblableTraits> BaseType;
+                             internal::L2AssemblableTraits, LocalEvaluation::Product> BaseType;
   template <class... Args>
   explicit L2Assemblable(Args&& ...args)
     : BaseType(std::forward< Args >(args)...)

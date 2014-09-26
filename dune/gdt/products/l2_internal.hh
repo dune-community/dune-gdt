@@ -52,11 +52,12 @@ template< class GridViewImp, class FunctionImp >
 class WeightedL2Base;
 
 // forward
-template< class GridViewImp, class FieldImp = double >
+template< class GridViewImp, class FieldImp, template <class> class LocalEvaluationTemplate >
 class L2Base;
 
 
-template< class GridViewImp, class FunctionImp >
+template< class GridViewImp, class FunctionImp,
+          template <class> class LocalEvaluationTemplate = LocalEvaluation::Product >
 class WeightedL2BaseTraits
 {
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, FunctionImp >::value,
@@ -68,7 +69,7 @@ class WeightedL2BaseTraits
   static_assert(FunctionImp::dimDomain == GridViewImp::dimension, "Dimensions do not match!");
 public:
   typedef GridViewImp GridViewType;
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Product< FunctionImp > > LocalOperatorType;
+  typedef LocalOperator::Codim0Integral< LocalEvaluationTemplate< FunctionImp > > LocalOperatorType;
 }; // class WeightedL2BaseTraits
 
 
@@ -87,25 +88,24 @@ protected:
 }; // class WeightedL2Base
 
 
-template< class GridViewImp, class FieldImp = double>
-class L2BaseTraits
+template< class GridViewImp, class FieldImp, template <class> class LocalEvaluationTemplate >
+struct L2BaseTraits
   : public WeightedL2BaseTraits< GridViewImp
                                , Stuff::Functions::Constant< typename GridViewImp::template Codim< 0 >::Entity
                                                            , typename GridViewImp::ctype
-                                                           , GridViewImp::dimension, FieldImp, 1 > >
+                                                           , GridViewImp::dimension, FieldImp, 1 >,
+                                 LocalEvaluationTemplate>
 {
   typedef Stuff::Functions::Constant< typename GridViewImp::template Codim< 0 >::Entity
                                     , typename GridViewImp::ctype
                                     , GridViewImp::dimension, FieldImp, 1 > FunctionType;
-private:
-  friend class L2Base< GridViewImp, FieldImp >;
 }; // class L2BaseTraits
 
 
-template< class GridViewImp, class FieldImp >
+template< class GridViewImp, class FieldImp, template <class> class LocalEvaluationTemplate >
 class L2Base
 {
-  typedef L2BaseTraits< GridViewImp, FieldImp > Traits;
+  typedef L2BaseTraits< GridViewImp, FieldImp, LocalEvaluationTemplate> Traits;
   typedef typename Traits::FunctionType FunctionType;
   typedef typename Traits::LocalOperatorType LocalOperatorType;
 
@@ -157,13 +157,13 @@ public:
 }; // class WeightedL2Traits
 
 
-template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp >
+template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp,
+          template <class> class LocalEvaluationTemplate >
 class L2LocalizableTraits
-  : public internal::L2BaseTraits< GridViewImp, typename RangeImp::RangeFieldType >
+  : public internal::L2BaseTraits< GridViewImp, typename RangeImp::RangeFieldType, LocalEvaluationTemplate >
 {
   static_assert(std::is_same< typename RangeImp::RangeFieldType, typename SourceImp::RangeFieldType >::value,
                 "Types do not match!");
-  typedef L2LocalizableTraits<GridViewImp, RangeImp, SourceImp, DerivedImp> ThisType;
 public:
   typedef DerivedImp derived_type;
   typedef RangeImp    RangeType;
@@ -172,9 +172,10 @@ public:
 }; // class L2LocalizableTraits
 
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class DerivedImp >
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class DerivedImp,
+          template <class> class LocalEvaluationTemplate = LocalEvaluation::Product>
 struct L2AssemblableTraits
-    : public internal::L2BaseTraits< GridViewImp, typename RangeSpaceImp::RangeFieldType >
+    : public internal::L2BaseTraits< GridViewImp, typename RangeSpaceImp::RangeFieldType, LocalEvaluationTemplate >
 {
   typedef DerivedImp derived_type;
   typedef MatrixImp       MatrixType;

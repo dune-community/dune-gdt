@@ -26,17 +26,21 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
+template <class FunctionImp>
+using H1Evaluation = LocalEvaluation::Elliptic<FunctionImp, void/* = DiffusionTensorImp*/>;
 template< class GridViewImp, class FieldImp = double >
-using H1SemiTraits = internal::L2BaseTraits<GridViewImp, FieldImp>;
+using H1SemiTraits = internal::L2BaseTraits<GridViewImp, FieldImp, H1Evaluation>;
 
 template< class GridViewImp, class FieldImp >
-using H1SemiBase = internal::L2Base<GridViewImp, FieldImp>;
+using H1SemiBase = internal::L2Base<GridViewImp, FieldImp, H1Evaluation>;
 
 template< class GridViewImp, class RangeImp, class SourceImp>
 struct H1SemiLocalizable;
 
-template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp >
-using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp, DerivedImp>;
+template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp,
+          template <class> class LocalEvaluationType>
+using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp,
+                                                              DerivedImp, LocalEvaluationType>;
 
 /**
  * \todo actual doc
@@ -45,18 +49,19 @@ using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, Range
 template< class GridViewImp, class RangeImp, class SourceImp >
 struct H1SemiLocalizable
     : public LocalizableForward<GridViewImp, RangeImp, SourceImp, H1SemiLocalizable<GridViewImp, RangeImp, SourceImp>,
-                           H1SemiLocalizableTraits> {
+                           H1SemiLocalizableTraits, H1Evaluation> {
   typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, H1SemiLocalizable<GridViewImp, RangeImp, SourceImp>,
-                        H1SemiLocalizableTraits> BaseType;
+                        H1SemiLocalizableTraits, H1Evaluation> BaseType;
   template <class... Args>
   explicit H1SemiLocalizable(Args&& ...args)
     : BaseType(std::forward< Args >(args)...)
   {}
 };
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,class DerivedImp >
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,
+          class DerivedImp, template <class> class LocalEvaluationTemplate >
 using H1SemiAssemblableTraits = internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp,
-                                                              SourceSpaceImp, DerivedImp>;
+                                                              SourceSpaceImp, DerivedImp, LocalEvaluationTemplate>;
 /**
  * \todo actual doc
  * \note this cannot be an alias because of the self-injection to base
@@ -65,10 +70,10 @@ template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceS
 struct H1SemiAssemblable
     : public AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                                 H1SemiAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                                H1SemiAssemblableTraits> {
+                                H1SemiAssemblableTraits, H1Evaluation> {
   typedef AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                              H1SemiAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                             H1SemiAssemblableTraits> BaseType;
+                             H1SemiAssemblableTraits, H1Evaluation> BaseType;
   template <class... Args>
   explicit H1SemiAssemblable(Args&& ...args)
     : BaseType(std::forward< Args >(args)...)
