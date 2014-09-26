@@ -25,15 +25,18 @@ namespace Dune {
 namespace GDT {
 namespace Products {
 
-template< class GridViewImp, class RangeImp, class SourceImp, class AliasedType,
+template< class GridViewImp, class RangeImp, class SourceImp,
           template <class, class, class, class, template <class> class> class TraitsTemplate,
           template <class> class LocalEvaluationTemplate>
 class LocalizableForward
-  : public LocalizableBase< TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType, LocalEvaluationTemplate > >
+  : public LocalizableBase< TraitsTemplate< GridViewImp, RangeImp, SourceImp,
+                   LocalizableForward<GridViewImp, RangeImp, SourceImp, TraitsTemplate, LocalEvaluationTemplate>
+                 , LocalEvaluationTemplate > >
   , public internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType, LocalEvaluationTemplate >
 {
+  typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, TraitsTemplate, LocalEvaluationTemplate> ThisType;
 public:
-  typedef TraitsTemplate< GridViewImp, RangeImp, SourceImp, AliasedType, LocalEvaluationTemplate > Traits;
+  typedef TraitsTemplate< GridViewImp, RangeImp, SourceImp, ThisType, LocalEvaluationTemplate > Traits;
 private:
   typedef Products::LocalizableBase< Traits > LocalizableBaseType;
   typedef internal::L2Base< GridViewImp, typename RangeImp::RangeFieldType, LocalEvaluationTemplate> L2BaseType;
@@ -63,33 +66,25 @@ private:
   }
 }; // class L2Localizable
 
-/**
- * \todo actual doc
- * \note this cannot be an alias because of the self-injection to base
- **/
 template< class GridViewImp, class RangeImp, class SourceImp >
-struct L2Localizable
-    : public LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
-                           internal::L2LocalizableTraits, LocalEvaluation::Product> {
-  typedef LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
-                        internal::L2LocalizableTraits, LocalEvaluation::Product> BaseType;
-  template <class... Args>
-  explicit L2Localizable(Args&& ...args)
-    : BaseType(std::forward< Args >(args)...)
-  {}
-};
+using L2Localizable = LocalizableForward<GridViewImp, RangeImp, SourceImp,
+                                         internal::L2LocalizableTraits, LocalEvaluation::Product>;
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class AliasedType,
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,
           template <class, class, class, class, class, template <class> class > class TraitsTemplate,
           template <class> class LocalEvaluationTemplate>
 class AssemblableForward
-  : public AssemblableBase< TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp,
-                                            SourceSpaceImp, AliasedType, LocalEvaluationTemplate > >
+  : public AssemblableBase< TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                                           AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp,
+                                           SourceSpaceImp, TraitsTemplate, LocalEvaluationTemplate>,
+                                           LocalEvaluationTemplate > >
   , public internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType, LocalEvaluationTemplate >
 {
+  typedef AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp,
+                            SourceSpaceImp, TraitsTemplate, LocalEvaluationTemplate> ThisType;
 public:
   typedef TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                          AliasedType, LocalEvaluationTemplate> Traits;
+                          ThisType, LocalEvaluationTemplate> Traits;
 private:
   typedef Products::AssemblableBase< Traits >
     AssemblableBaseType;
@@ -148,18 +143,8 @@ private:
  * \note this cannot be an alias because of the self-injection to base
  **/
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-struct L2Assemblable
-    : public AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                           internal::L2AssemblableTraits, LocalEvaluation::Product> {
-  typedef AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                             L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
-                             internal::L2AssemblableTraits, LocalEvaluation::Product> BaseType;
-  template <class... Args>
-  explicit L2Assemblable(Args&& ...args)
-    : BaseType(std::forward< Args >(args)...)
-  {}
-};
+using L2Assemblable = AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                                         internal::L2AssemblableTraits, LocalEvaluation::Product>;
 
 template< class GridViewImp, class FieldImp, template<class, class, class> class OperatorTemplate>
 class ProductForward
