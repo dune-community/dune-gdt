@@ -6,7 +6,6 @@
 #ifndef DUNE_GDT_TEST_SPACES_CG
 #define DUNE_GDT_TEST_SPACES_CG
 
-// Then this one (otherwise we get alugrid problems)!
 #include "spaces.hh"
 
 #if !HAVE_DUNE_FEM && !HAVE_DUNE_PDELAB
@@ -71,10 +70,7 @@ struct P1Q1_Continuous_Lagrange
     const auto& entity = *entity_ptr;
     const auto basis = space.base_function_set(entity);
     std::vector< DomainType > lagrange_points = space.lagrange_points(entity);
-    if (lagrange_points.size() != basis.size())
-      DUNE_THROW(Exceptions::internal_error,
-                            "lagrange_points.size() = " << lagrange_points.size() << ", basis.size() = "
-                            << basis.size());
+    EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
     typedef typename SpaceType::RangeFieldType RangeFieldType;
     Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
@@ -111,15 +107,13 @@ struct P1Q1_Continuous_Lagrange
       const auto& entity = *entity_it;
       const int num_vertices = entity.template count< dimDomain >();
       const auto basis = space.base_function_set(entity);
-      if (basis.size() != size_t(num_vertices))
-        DUNE_THROW(Exceptions::internal_error, "basis.size() = " << basis.size());
+      EXPECT_EQ(basis.size(), size_t(num_vertices));
       for (int cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
-        if (basis_values.size() != size_t(num_vertices))
-          DUNE_THROW(Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+        EXPECT_EQ(basis_values.size(), size_t(num_vertices));
         size_t ones = 0;
         size_t zeros = 0;
         size_t failures = 0;
@@ -139,7 +133,7 @@ struct P1Q1_Continuous_Lagrange
              << num_vertices << ", entity " << grid_part_view ->indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW(Exceptions::internal_error, ss.str());
+          EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = space.mapper().mapToGlobal(entity, local_DoF_index);
@@ -150,18 +144,13 @@ struct P1Q1_Continuous_Lagrange
     std::set< size_t > global_DoF_indices;
     for (const auto& entry : vertex_to_indices_map) {
       const auto vertex_ids = entry.second;
-      if (vertex_ids.size() != 1)
-        DUNE_THROW(Exceptions::internal_error, vertex_ids.size());
+      EXPECT_EQ(vertex_ids.size(), 1);
       global_DoF_indices.insert(*(vertex_ids.begin()));
     }
-    if (vertex_to_indices_map.size() != global_DoF_indices.size())
-      DUNE_THROW(Exceptions::internal_error,
-                            "vertex_to_indices_map.size() = " << vertex_to_indices_map.size()
-                            << ", global_DoF_indices.size() = " << global_DoF_indices.size());
+    EXPECT_EQ(vertex_to_indices_map.size(), global_DoF_indices.size());
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
-      if (global_DoF_id != count)
-        DUNE_THROW(Exceptions::internal_error, "count = " << count << ", global_DoF_id = " << global_DoF_id);
+      EXPECT_EQ(global_DoF_id, count);
       ++count;
     }
   } // ... maps_correctly()
