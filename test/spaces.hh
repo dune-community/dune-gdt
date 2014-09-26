@@ -254,6 +254,11 @@ public:
     } // walk the grid
   } // ... fulfills_interface()
 
+  void copy_and_move_ctor() const
+  {
+    auto DUNE_UNUSED(tmp) = copy_and_move();
+  }
+
   /**
     * \brief Checks the spaces mapper for it's interface compliance.
     */
@@ -401,6 +406,11 @@ public:
   } // ... basefunctionset_fulfills_interface()
 
 protected:
+  SpaceType copy_and_move() const
+  {
+    return SpaceType(*space_);
+  }
+
   ProviderType grid_provider_;
   std::unique_ptr< const SpaceType > space_;
 }; // struct SpaceTestBase

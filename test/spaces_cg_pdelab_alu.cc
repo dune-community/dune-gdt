@@ -26,6 +26,12 @@ TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
 }
 
 TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
+TYPED_TEST(P1Q1_Continuous_Lagrange, copy_and_move_ctor)
+{
+  this->copy_and_move_ctor();
+}
+
+TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
 TYPED_TEST(P1Q1_Continuous_Lagrange, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
