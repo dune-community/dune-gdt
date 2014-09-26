@@ -83,15 +83,13 @@ public:
     // get the basis and reference element
     const auto basis = this->base_function_set(entity);
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
-    std::vector< RangeType > tmp_basis_values(RangeType(0), basis.size());
+    std::vector< RangeType > tmp_basis_values(basis.size(), RangeType(0));
     const auto& reference_element = ReferenceElements< DomainFieldType, dimDomain >::general(entity.type());
     const int num_vertices = reference_element.size(dimDomain);
     assert(num_vertices >= 0);
     assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
     std::vector< DomainType > local_vertices(num_vertices, DomainType(0));
-    if (tmp_basis_values.size() < basis.size())
-      tmp_basis_values.resize(basis.size());
     // loop over all vertices
     for (int ii = 0; ii < num_vertices; ++ii) {
       // get the local coordinate of the iith vertex
@@ -145,7 +143,7 @@ public:
     // find the corresponding basis functions
     const auto basis = this->base_function_set(entity);
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
-    std::vector< RangeType > tmp_basis_values(RangeType(0), basis.size());
+    std::vector< RangeType > tmp_basis_values(basis.size(), RangeType(0));
     for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
       // find the basis function that evaluates to one here (has to be only one!)
       basis.evaluate(dirichlet_vertices[cc], tmp_basis_values);
