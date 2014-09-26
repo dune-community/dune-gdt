@@ -14,7 +14,7 @@
 
 #include <dune/gdt/products/base.hh>
 #include <dune/gdt/products/l2_internal.hh>
-#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/generic.hh>
 
 #include "../localoperator/codim0.hh"
 #include "../localevaluation/elliptic.hh"
@@ -35,7 +35,7 @@ using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, Range
                                                               DerivedImp, LocalEvaluationType>;
 
 template< class GridViewImp, class RangeImp, class SourceImp >
-using H1SemiLocalizable = LocalizableForward<GridViewImp, RangeImp, SourceImp, H1SemiLocalizableTraits, H1Evaluation>;
+using H1SemiLocalizable = GenericLocalizable<GridViewImp, RangeImp, SourceImp, H1SemiLocalizableTraits, H1Evaluation>;
 
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,
           class DerivedImp, template <class> class LocalEvaluationTemplate >
@@ -46,11 +46,11 @@ using H1SemiAssemblableTraits = internal::L2AssemblableTraits<MatrixImp, RangeSp
  * \note this cannot be an alias because of the self-injection to base
  **/
 template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-using H1SemiAssemblable = AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+using H1SemiAssemblable = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
                                              H1SemiAssemblableTraits, H1Evaluation>;
 
 template< class GridViewImp, class FieldImp = double>
-using H1SemiGeneric = ProductForward<GridViewImp, FieldImp, H1SemiLocalizable>;
+using H1SemiGeneric = GenericProduct<GridViewImp, FieldImp, H1SemiLocalizable>;
 
 } // namespace Products
 } // namespace GDT
