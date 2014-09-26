@@ -62,6 +62,10 @@ private:
   }
 }; // class L2Localizable
 
+/**
+ * \todo actual doc
+ * \note this cannot be an alias because of the self-injection to base
+ **/
 template< class GridViewImp, class RangeImp, class SourceImp >
 struct L2Localizable
     : public LocalizableForward<GridViewImp, RangeImp, SourceImp, L2Localizable<GridViewImp, RangeImp, SourceImp>,
@@ -74,16 +78,19 @@ struct L2Localizable
   {}
 };
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-class L2Assemblable
-  : public AssemblableBase< internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class AliasedType,
+          template <class, class, class, class, class> class TraitsTemplate >
+class AssemblableForward
+  : public AssemblableBase< TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, AliasedType > >
   , public internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType >
 {
-  typedef Products::AssemblableBase< internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > >
+public:
+  typedef TraitsTemplate< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, AliasedType> Traits;
+private:
+  typedef Products::AssemblableBase< Traits >
     AssemblableBaseType;
   typedef internal::L2Base< GridViewImp, typename RangeSpaceImp::RangeFieldType > L2BaseType;
 public:
-  typedef internal::L2AssemblableTraits< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > Traits;
   typedef typename Traits::GridViewType     GridViewType;
   typedef typename Traits::RangeSpaceType   RangeSpaceType;
   typedef typename Traits::SourceSpaceType  SourceSpaceType;
@@ -101,7 +108,7 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  L2Assemblable(MatrixType& mtrx,
+  AssemblableForward(MatrixType& mtrx,
                 const RangeSpaceType& rng_scp,
                 const GridViewType& grd_vw,
                 const SourceSpaceType& src_scp,
@@ -110,7 +117,7 @@ public:
     , L2BaseType(over_integrate)
   {}
 
-  L2Assemblable(MatrixType& mtrx,
+  AssemblableForward(MatrixType& mtrx,
                 const RangeSpaceType& rng_scp,
                 const GridViewType& grd_vw,
                 const size_t over_integrate = 0)
@@ -118,7 +125,7 @@ public:
     , L2BaseType(over_integrate)
   {}
 
-  L2Assemblable(MatrixType& matrix,
+  AssemblableForward(MatrixType& matrix,
                 const RangeSpaceType& range_space,
                 const size_t over_integrate = 0)
     : AssemblableBaseType(matrix, range_space, *(range_space.grid_view()), range_space)
@@ -130,8 +137,25 @@ private:
   {
     return this->local_operator_;
   }
-}; // class L2Assemblable
+}; // class AssemblableForward
 
+/**
+ * \todo actual doc
+ * \note this cannot be an alias because of the self-injection to base
+ **/
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
+struct L2Assemblable
+    : public AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                                L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
+                           internal::L2AssemblableTraits> {
+  typedef AssemblableForward<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                             L2Assemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp>,
+                             internal::L2AssemblableTraits> BaseType;
+  template <class... Args>
+  explicit L2Assemblable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
 
 template< class GridViewImp, class FieldImp >
 class L2

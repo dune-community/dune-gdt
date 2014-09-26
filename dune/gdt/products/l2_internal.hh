@@ -41,17 +41,6 @@ template< class GridViewImp, class FunctionImp >
 class WeightedL2;
 
 // forward
-template< class GridViewImp, class RangeImp, class SourceImp = RangeImp >
-struct L2Localizable;
-
-// forward
-template< class MatrixImp
-        , class RangeSpaceImp
-        , class GridViewImp = typename RangeSpaceImp::GridViewType
-        , class SourceSpaceImp = RangeSpaceImp >
-class L2Assemblable;
-
-// forward
 template< class GridViewImp, class FieldImp = double >
 class L2;
 
@@ -183,12 +172,11 @@ public:
 }; // class L2LocalizableTraits
 
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp >
-class L2AssemblableTraits
-  : public internal::L2BaseTraits< GridViewImp, typename RangeSpaceImp::RangeFieldType >
+template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class DerivedImp >
+struct L2AssemblableTraits
+    : public internal::L2BaseTraits< GridViewImp, typename RangeSpaceImp::RangeFieldType >
 {
-public:
-  typedef L2Assemblable< MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp > derived_type;
+  typedef DerivedImp derived_type;
   typedef MatrixImp       MatrixType;
   typedef RangeSpaceImp   RangeSpaceType;
   typedef SourceSpaceImp  SourceSpaceType;
