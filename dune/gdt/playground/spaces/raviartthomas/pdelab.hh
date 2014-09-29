@@ -13,17 +13,13 @@
 #include <type_traits>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/geometry/referenceelements.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/geometry/referenceelements.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_PDELAB
-# include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
-#   include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
+# include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
+# include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/float_cmp.hh>
@@ -58,12 +54,12 @@ class PdelabBasedTraits
 public:
   typedef PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   typedef GridViewImp GridViewType;
-  static const int    polOrder = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static_assert(polOrder == 0, "Untested!");
   static_assert(rangeDim == GridViewType::dimension, "Untested!");
   static_assert(rangeDimCols == 1, "Untested!");
 private:
-  typedef typename GridViewType::ctype  DomainFieldType;
+  typedef typename GridViewType::ctype DomainFieldType;
 public:
   static const unsigned int             dimDomain = GridViewType::dimension;
   typedef RangeFieldImp                 RangeFieldType;
@@ -115,7 +111,8 @@ template< class GridViewImp, class RangeFieldImp, int rangeDim >
 class PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >
   : public SpaceInterface< PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 > >
 {
-  typedef PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 > ThisType;
+  typedef SpaceInterface< PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 > > BaseType;
+  typedef PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >                         ThisType;
 public:
   typedef PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 > Traits;
 
@@ -144,7 +141,7 @@ public:
     , fe_map_(std::make_shared< FEMapType >(*(grid_view_)))
     , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*grid_view_), *fe_map_))
     , mapper_(std::make_shared< MapperType >(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(*grid_view_))
     , communicator_prepared_(false)
   {}
 
