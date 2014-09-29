@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <dune/common/version.hh>
+
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //&& HAVE_TBB //EXADUNE
 # include <dune/grid/utility/partitioning/seedlist.hh>
 #endif
@@ -40,7 +41,7 @@ class SystemAssembler
                 "AnsatzSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_same< typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType >::value,
                 "Types do not match!");
-  typedef DSG::Walker< GridViewImp >                          BaseType;
+  typedef DSG::Walker< GridViewImp >                                  BaseType;
   typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp > ThisType;
 public:
   typedef TestSpaceImp                           TestSpaceType;
