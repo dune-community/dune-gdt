@@ -545,7 +545,7 @@ protected:
       Products::L2< GridViewType > l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      Products::H1SemiGeneric< GridViewType > h1_product_operator(grid_view);
+      Products::H1Semi< GridViewType > h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
@@ -594,7 +594,7 @@ class EstimatorStudy
   static std::string estimator_ESV10_id() {          return "eta (ESV10)"; }
   static std::string efficiency_ESV10_id() {         return "efficiency (ESV10)"; }
 
-  static const size_t over_integrate = 2;
+  const size_t over_integrate = 2;
 
 public:
   EstimatorStudy(const TestCase& test)
@@ -765,9 +765,9 @@ private:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Functions::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      const GDT::Products::Elliptic< typename TestCase::DiffusionType, GridViewType >
-          elliptic_product(test_.diffusion(), *(test_.level_grid_view(current_level_)));
-      return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+      const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
+          elliptic_product(*(test_.level_grid_view(current_level_)), test_.diffusion(), over_integrate);
+      return std::sqrt(elliptic_product.apply2(difference, difference));
     } else {
       if (!reference_solution_computed_)
         this->compute_reference_solution();
@@ -776,9 +776,9 @@ private:
       assert(current_solution_vector_);
       const VectorType difference_vector = (*reference_solution_vector_) - (*current_solution_vector_);
       const ConstDiscreteFunctionType difference(reference_discretization_->space(), difference_vector);
-      const GDT::Products::Elliptic< typename TestCase::DiffusionType, GridViewType >
-          elliptic_product(test_.diffusion(), *(test_.reference_grid_view()));
-      return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+      const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
+          elliptic_product(*(test_.reference_grid_view()), test_.diffusion(), over_integrate);
+      return std::sqrt(elliptic_product.apply2(difference, difference));
     }
   } // ... compute_energy_norm(...)
 
@@ -802,9 +802,9 @@ private:
     const Stuff::Functions::Difference< ConstDiscreteFunctionType, DiscreteFunctionType >
         difference(discrete_solution, oswald_interpolation);
 
-    const Products::Elliptic< typename TestCase::DiffusionType, GridViewType >
-        elliptic_product(test_.diffusion(), grid_view);
-    return std::sqrt(elliptic_product.apply2(difference, difference, over_integrate));
+    const Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
+        elliptic_product(grid_view, test_.diffusion(), over_integrate);
+    return std::sqrt(elliptic_product.apply2(difference, difference));
   } // ... compute_nonconformity_estimator(...)
 
   double compute_residual_estimator_ESV07()
