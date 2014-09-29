@@ -19,6 +19,10 @@ namespace Dune {
 namespace GDT {
 
 
+/**
+ * \brief Interface for all products (that are neither localizable or assemblable).
+ * \todo  Add more documentation.
+ */
 template <class Traits>
 class ProductInterface : public Stuff::CRTPInterface<ProductInterface<Traits>, Traits>
 {
@@ -48,6 +52,10 @@ public:
 }; // class ProductInterface
 
 
+/**
+ * \brief Interface for all localizable products.
+ * \todo  Add more documentatin, especially about the notion of localibale.
+ */
 template <class Traits>
 class LocalizableProductInterface : public Stuff::CRTPInterface<LocalizableProductInterface<Traits>, Traits>
 {
@@ -105,6 +113,10 @@ public:
 }; // class LocalizableProductInterface
 
 
+/**
+ * \brief Interface for all assemblable products.
+ * \todo  Add more documentatin, especially about the notion of assemblebla.
+ */
 template <class Traits>
 class AssemblableProductInterface : public Stuff::CRTPInterface<AssemblableProductInterface<Traits>, Traits>
 {
@@ -143,6 +155,11 @@ public:
   static PatternType pattern(const RangeSpaceType& range_space, const SourceSpaceType& source_space)
   {
     return pattern(range_space, source_space, *(range_space.grid_view()));
+  }
+
+  static PatternType pattern(const RangeSpaceType& range_space, const GridViewType& grid_view)
+  {
+    return pattern(range_space, range_space, grid_view);
   }
 
   static PatternType pattern(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
