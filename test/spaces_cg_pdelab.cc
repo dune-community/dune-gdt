@@ -6,47 +6,72 @@
 #include <dune/stuff/test/main.hxx>
 
 #include "spaces_cg.hh"
+#include "spaces_cg_pdelab.hh"
 
-
-typedef testing::Types<
 #if HAVE_DUNE_PDELAB
-    P1_CONTINUOUS_LAGRANGE_SPACES_PDELAB, Q1_CONTINUOUS_LAGRANGE_SPACES_PDELAB
-#endif // HAVE_DUNE_PDELAB
-    > P1Q1_Continuous_Lagrange_Spaces;
 
+typedef testing::Types<SPACES_CG_PDELAB(1)
+#if HAVE_ALUGRID
+                           ,
+                       SPACES_CG_PDELAB_ALUGRID(1)
+#endif
+                       > CG_Spaces_Pdelab;
 
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_interface)
+TYPED_TEST_CASE(CG_Space, CG_Spaces_Pdelab);
+TYPED_TEST(CG_Space, fulfills_interface)
 {
   this->fulfills_interface();
 }
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, copy_and_move_ctor)
+TYPED_TEST(CG_Space, copy_and_move_ctor)
 {
   this->copy_and_move_ctor();
 }
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, mapper_fulfills_interface)
+TYPED_TEST(CG_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
 }
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, basefunctionset_fulfills_interface)
+TYPED_TEST(CG_Space, basefunctionset_fulfills_interface)
 {
   this->basefunctionset_fulfills_interface();
 }
 
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, fulfills_continuous_interface)
+
+typedef testing::Types<SPACES_CG_PDELAB(1)
+#if HAVE_ALUGRID
+                           ,
+                       SPACES_CG_PDELAB_ALUGRID(1)
+#endif
+                       > P1Q1_CG_Spaces_Pdelab;
+
+TYPED_TEST_CASE(P1Q1_CG_Space, P1Q1_CG_Spaces_Pdelab);
+TYPED_TEST(P1Q1_CG_Space, fulfills_continuous_interface)
 {
   this->fulfills_continuous_interface();
 }
-
-TYPED_TEST_CASE(P1Q1_Continuous_Lagrange, P1Q1_Continuous_Lagrange_Spaces);
-TYPED_TEST(P1Q1_Continuous_Lagrange, maps_correctly)
+TYPED_TEST(P1Q1_CG_Space, maps_correctly)
 {
   this->maps_correctly();
 }
+
+#else // HAVE_DUNE_PDELAB
+
+TEST(DISABLED_CG_Space, fulfills_interface)
+{
+}
+TEST(DISABLED_CG_Space, copy_and_move_ctor)
+{
+}
+TEST(DISABLED_CG_Space, mapper_fulfills_interface)
+{
+}
+TEST(DISABLED_CG_Space, basefunctionset_fulfills_interface)
+{
+}
+TEST(DISABLED_P1Q1_CG_Space, fulfills_continuous_interface)
+{
+}
+TEST(DISABLED_P1Q1_CG_Space, maps_correctly)
+{
+}
+
+#endif // HAVE_DUNE_PDELAB
