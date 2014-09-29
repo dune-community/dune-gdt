@@ -13,17 +13,13 @@
 #include <type_traits>
 
 #include <dune/geometry/genericgeometry/topologytypes.hh>
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/geometry/referenceelements.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_PDELAB
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/pdelab/finiteelementmap/raviartthomasfem.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/float_cmp.hh>
@@ -119,6 +115,7 @@ template <class GridViewImp, class RangeFieldImp, int rangeDim>
 class PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
     : public SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>>
 {
+  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>> BaseType;
   typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
@@ -149,7 +146,7 @@ public:
     , fe_map_(std::make_shared<FEMapType>(*(grid_view_)))
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*grid_view_), *fe_map_))
     , mapper_(std::make_shared<MapperType>(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(*grid_view_))
     , communicator_prepared_(false)
   {
   }
