@@ -28,6 +28,7 @@
 
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/timedlogging.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 #include <dune/gdt/basefunctionset/pdelab.hh>
@@ -130,6 +131,7 @@ public:
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
   typedef typename BaseType::EntityType         EntityType;
+  typedef typename BaseType::PatternType        PatternType;
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
   typedef typename Traits::CommunicatorType         CommunicatorType;
 
@@ -303,6 +305,26 @@ public:
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
+
+  using BaseType::compute_pattern;
+
+  template< class G, class S >
+  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  {
+    DSC::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn() << "Returning largest possible pattern!"
+                                                                          << std::endl;
+    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+  }
+
+  using BaseType::local_constraints;
+
+  template< class S, class C >
+  void local_constraints(const SpaceInterface< S >& /*ansatz_space*/,
+                         const EntityType& /*entity*/,
+                         Spaces::ConstraintsInterface< C, RangeFieldType >& /*ret*/) const
+  {
+    DUNE_THROW(NotImplemented, "There are no constraints implemented!");
+  }
 
 private:
   const std::shared_ptr< const GridViewType > grid_view_;
