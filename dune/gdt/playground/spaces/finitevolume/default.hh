@@ -81,8 +81,7 @@ public:
   Default(const std::shared_ptr< const GridViewType >& gv)
     : grid_view_(gv)
     , mapper_(std::make_shared< MapperType >(*grid_view_))
-    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
-    , communicator_prepared_(false)
+    , communicator_(CommunicationChooserType::create(*grid_view_))
   {}
 
   Default(const ThisType& other) = default;
