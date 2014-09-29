@@ -5,17 +5,14 @@
 
 enable_testing()
 
-#HEADERCHECK( ${gdt} )
-#DEPENDENCYCHECK( ${gdt} )
-
 BEGIN_TESTCASES()
 
-foreach( test ${testnames} )
+foreach (test ${testnames})
   IF(NOT CMAKE_WITH_AUTOTOOLS)
     add_dune_mpi_flags(${test})
     add_dune_alugrid_flags(${test})
   ENDIF(NOT CMAKE_WITH_AUTOTOOLS)
   TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
-endforeach( test ${testnames} )
+endforeach (test ${testnames})
 
 END_TESTCASES()
