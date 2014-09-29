@@ -486,7 +486,7 @@ private:
       Products::L2<GridViewType> l2_product_operator(grid_view);
       return std::sqrt(l2_product_operator.apply2(function, function));
     } else if (type.compare("H1_semi") == 0) {
-      Products::H1SemiGeneric<GridViewType> h1_product_operator(grid_view);
+      Products::H1Semi<GridViewType> h1_product_operator(grid_view);
       return std::sqrt(h1_product_operator.apply2(function, function));
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
