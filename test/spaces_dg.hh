@@ -3,32 +3,22 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_SPACES_CG
-#define DUNE_GDT_TEST_SPACES_CG
-
-#include "spaces.hh"
-
-#include <dune/common/typetraits.hh>
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/common/fvector.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#ifndef DUNE_GDT_SPACES_DG_COMMON_HH
+#define DUNE_GDT_SPACES_DG_COMMON_HH
 
 #include <dune/stuff/common/print.hh>
 
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
-#include <dune/gdt/mapper/interface.hh>
-#include <dune/gdt/basefunctionset/interface.hh>
+#include "spaces.hh"
 
 
 template< class SpaceType >
-class CG_Space
+class DG_Space
   : public SpaceBase< SpaceType >
 {};
 
 
 template< class SpaceType >
-struct P1Q1_CG_Space
+struct P1Q1_DG_Space
   : public SpaceBase< SpaceType >
 {
   typedef typename SpaceType::GridViewType          GridViewType;
@@ -46,47 +36,19 @@ struct P1Q1_CG_Space
     return ret;
   }
 
-  template< class T, int d, class R, int r, int rC >
-  void matches_signature(const Dune::GDT::Spaces::ContinuousLagrangeBase< T, d, R, r, rC >& /*space*/)
-  {
-    static_assert(std::is_same< typename SpaceType::Traits, T >::value, "");
-    static_assert(std::is_same< typename SpaceType::RangeFieldType, R >::value, "");
-    static_assert(d == SpaceType::dimDomain, "");
-    static_assert(r == SpaceType::dimRange, "");
-    static_assert(rC == SpaceType::dimRangeCols, "");
-  }
-
-  void fulfills_continuous_interface()
-  {
-    using namespace Dune::Stuff;
-    matches_signature(this->space_);
-    const auto entity_ptr = this->space_.grid_view()->template begin< 0 >();
-    const auto& entity = *entity_ptr;
-    const auto basis = this->space_.base_function_set(entity);
-    std::vector< DomainType > lagrange_points = this->space_.lagrange_points(entity);
-    EXPECT_EQ(lagrange_points.size(), basis.size());
-    typedef typename SpaceType::IntersectionType IntersectionType;
-    typedef typename SpaceType::RangeFieldType RangeFieldType;
-    Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
-    std::set< size_t > local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
-    Spaces::Constraints::Dirichlet< IntersectionType, RangeFieldType> dirichlet_constraints_a(boundary_info, 0, 0);
-    Spaces::Constraints::Dirichlet< IntersectionType, RangeFieldType> dirichlet_constraints_b(boundary_info, 0, 0, false);
-    this->space_.local_constraints(entity, dirichlet_constraints_a);
-    this->space_.local_constraints(entity, dirichlet_constraints_b);
-  }
-
   void maps_correctly()
   {
     using namespace Dune::Stuff;
     // walk the grid to create a map of all vertices
-    std::map< std::vector< DomainFieldType >, std::set< size_t > > vertex_to_indices_map;
+    std::map< std::vector< DomainFieldType >, std::pair< std::set< size_t >, size_t > > vertex_to_indices_map;
     const auto entity_end_it = this->space_.grid_view()->template end< 0 >();
     for (auto entity_it = this->space_.grid_view()->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (int cc = 0; cc < entity.template count< dimDomain >(); ++cc) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
-        vertex_to_indices_map[convert_vector(vertex)] = std::set< size_t >();
+        vertex_to_indices_map[convert_vector(vertex)].first = std::set< size_t >();
+        ++vertex_to_indices_map[convert_vector(vertex)].second;
       }
     }
     // walk the grid again to find all DoF ids
@@ -109,7 +71,7 @@ struct P1Q1_CG_Space
           if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
             local_DoF_index = ii;
             ++ones;
-          } else if (Common::FloatCmp::eq(basis_values[ii][0] + 1.0, typename SpaceType::RangeFieldType(1)))
+          } else if (Common::FloatCmp::eq(basis_values[ii][0] + 1, typename SpaceType::RangeFieldType(1)))
             ++zeros;
           else
             ++failures;
@@ -124,24 +86,29 @@ struct P1Q1_CG_Space
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = this->space_.mapper().mapToGlobal(entity, local_DoF_index);
-        vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
+        vertex_to_indices_map[convert_vector(vertex)].first.insert(global_DoF_index);
       }
     }
-    // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive
+    // check that each vertex has the appropiate number of associated DoF ids and that the numbering is consecutive
     std::set< size_t > global_DoF_indices;
     for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_ids = entry.second;
-      EXPECT_EQ(vertex_ids.size(), 1);
-      global_DoF_indices.insert(*(vertex_ids.begin()));
+      const auto vertex_ids = entry.second.first;
+      for (auto vertex_ids_it = vertex_ids.begin(); vertex_ids_it != vertex_ids.end(); ++vertex_ids_it)
+        global_DoF_indices.insert(*vertex_ids_it);
     }
-    EXPECT_EQ(vertex_to_indices_map.size(), global_DoF_indices.size());
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
       EXPECT_EQ(global_DoF_id, count);
       ++count;
     }
+    for (const auto& entry : vertex_to_indices_map) {
+      const auto vertex_ids = entry.second.first;
+      size_t number_of_associated_DoF_ids = vertex_ids.size();
+      size_t number_of_adjacent_entitys = entry.second.second;
+      EXPECT_EQ(number_of_associated_DoF_ids, number_of_adjacent_entitys);
+    }
   } // ... maps_correctly()
-}; // struct P1Q1_CG_Space
+}; // struct P1Q1_DG_Space
 
 
-#endif // DUNE_GDT_TEST_SPACES_CG
+#endif // DUNE_GDT_SPACES_DG_COMMON_HH

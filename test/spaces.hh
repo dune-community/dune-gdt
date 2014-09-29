@@ -3,104 +3,46 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#include <type_traits>
-
-#include <dune/grid/sgrid.hh>
-#include <dune/grid/yaspgrid.hh>
-#if HAVE_ALUGRID
-# include <dune/grid/alugrid.hh>
+#ifndef DUNE_GDT_TEST_SPACES_RT_CHECK
+# define DUNE_GDT_TEST_SPACES_RT_CHECK 0
 #endif
+
+#include <type_traits>
 
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
+#include "grids.hh"
 
-#define SGRID_TYPES(dim) \
-  typedef Dune::SGrid< dim, dim > S ## dim ## dGridType; \
-  typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S ## dim ## dGridType, false >::Type  S ## dim ## dLeafGridPartType; \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView< S ## dim ## dGridType, false >::Type S ## dim ## dLevelGridPartType; \
-  typedef typename Dune::GDT::SpaceTools::LeafGridPartView< S ## dim ## dGridType, true >::Type  S ## dim ## dLeafGridViewType; \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView< S ## dim ## dGridType, true >::Type S ## dim ## dLevelGridViewType;
-SGRID_TYPES(1)
-SGRID_TYPES(2)
-SGRID_TYPES(3)
-#undef SGRID_TYPES
-
-#define YASPGRID_TYPES(dim) \
-  typedef Dune::YaspGrid< dim > Yasp ## dim ## dGridType; \
-  typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp ## dim ## dGridType, false >::Type   Yasp ## dim ## dLeafGridPartType; \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView< Yasp ## dim ## dGridType, false >::Type  Yasp ## dim ## dLevelGridPartType; \
-  typedef typename Dune::GDT::SpaceTools::LeafGridPartView< Yasp ## dim ## dGridType, true >::Type   Yasp ## dim ## dLeafGridViewType; \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView< Yasp ## dim ## dGridType, true >::Type  Yasp ## dim ## dLevelGridViewType;
-YASPGRID_TYPES(1)
-YASPGRID_TYPES(2)
-YASPGRID_TYPES(3)
-#undef YASPGRID_TYPES
-
-
-#if HAVE_ALUGRID
-typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming >  AluConform2dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type  AluConform2dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, false >::Type AluConform2dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, true >::Type   AluConform2dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluConform2dGridType, true >::Type  AluConform2dLevelGridViewType;
-typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::nonconforming > AluSimplex2dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, false >::Type  AluSimplex2dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, false >::Type AluSimplex2dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex2dGridType, true >::Type   AluSimplex2dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex2dGridType, true >::Type  AluSimplex2dLevelGridViewType;
-typedef Dune::ALUGrid< 3, 3, Dune::simplex, Dune::nonconforming > AluSimplex3dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, false >::Type  AluSimplex3dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, false >::Type AluSimplex3dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluSimplex3dGridType, true >::Type   AluSimplex3dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluSimplex3dGridType, true >::Type  AluSimplex3dLevelGridViewType;
-typedef Dune::ALUGrid< 2, 2, Dune::cube, Dune::nonconforming > AluCube2dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube2dGridType, false >::Type  AluCube2dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube2dGridType, false >::Type AluCube2dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube2dGridType, true >::Type   AluCube2dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube2dGridType, true >::Type  AluCube2dLevelGridViewType;
-typedef Dune::ALUGrid< 3, 3, Dune::cube, Dune::nonconforming > AluCube3dGridType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, false >::Type  AluCube3dLeafGridPartType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, false >::Type AluCube3dLevelGridPartType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluCube3dGridType, true >::Type   AluCube3dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LevelGridPartView< AluCube3dGridType, true >::Type  AluCube3dLevelGridViewType;
-#endif
-
+using namespace Dune;
+using namespace GDT;
 
 /**
   * \brief Checks any space derived from SpaceInterface for it's interface compliance, especially concerning CRTP.
   */
 template< class SpaceType >
-class SpaceTestBase
+class SpaceBase
+  : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType::Grid GridType;
   typedef DSG::Providers::Cube< GridType > ProviderType;
 public:
-  ~SpaceTestBase() {}
 
-  SpaceTestBase()
+  SpaceBase()
    : grid_provider_(0.0, 1.0, 3u)
-  {
-    using namespace Dune;
-    using namespace GDT;
-    const auto grid_part_view = SpaceTools::GridPartView< SpaceType >::create_leaf(grid_provider_.grid());
-    space_ = std::unique_ptr< SpaceType >(new SpaceType(grid_part_view));
-  }
+   , space_(grid_provider_.template leaf< SpaceType::part_view_type >())
+  {}
 
   /**
     * \brief Checks the space for it's interface compliance.
     */
   void fulfills_interface() const
   {
-    using namespace Dune;
-    using namespace GDT;
     using namespace Stuff;
-    if (!space_) DUNE_THROW(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
     typedef typename SpaceType::Traits              Traits;
@@ -160,26 +102,26 @@ public:
     static_assert(d_needs_grid_view == i_needs_grid_view, "Information do not match!");
     // dynamic checks
     // * as the derived_type
-    const D_BackendType& d_backend = space_->backend();
-    const D_MapperType& d_mapper = space_->mapper();
-    const std::shared_ptr< const D_GridViewType >& d_grid_view = space_->grid_view();
-    D_CommunicatorType& d_comm = space_->communicator();
-    D_PatternType d_pattern            = space_->compute_pattern();
-    D_PatternType d_pattern_view       = space_->compute_pattern(*d_grid_view);
-    D_PatternType d_pattern_other      = space_->compute_pattern(*space_);
-    D_PatternType d_pattern_view_other = space_->compute_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_volume            = space_->compute_volume_pattern();
-    D_PatternType d_pattern_volume_view       = space_->compute_volume_pattern(*d_grid_view);
-    D_PatternType d_pattern_volume_other      = space_->compute_volume_pattern(*space_);
-    D_PatternType d_pattern_volume_view_other = space_->compute_volume_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_face_volume            = space_->compute_face_and_volume_pattern();
-    D_PatternType d_pattern_face_volume_view       = space_->compute_face_and_volume_pattern(*d_grid_view);
-    D_PatternType d_pattern_face_volume_other      = space_->compute_face_and_volume_pattern(*space_);
-    D_PatternType d_pattern_face_volume_view_other = space_->compute_face_and_volume_pattern(*d_grid_view, *space_);
-    D_PatternType d_pattern_face            = space_->compute_face_pattern();
-    D_PatternType d_pattern_face_view       = space_->compute_face_pattern(*d_grid_view);
-    D_PatternType d_pattern_face_other      = space_->compute_face_pattern(*space_);
-    D_PatternType d_pattern_face_view_other = space_->compute_face_pattern(*d_grid_view, *space_);
+    const D_BackendType& d_backend = space_.backend();
+    const D_MapperType& d_mapper = space_.mapper();
+    const std::shared_ptr< const D_GridViewType >& d_grid_view = space_.grid_view();
+    D_CommunicatorType& d_comm = space_.communicator();
+    D_PatternType d_pattern            = space_.compute_pattern();
+    D_PatternType d_pattern_view       = space_.compute_pattern(*d_grid_view);
+    D_PatternType d_pattern_other      = space_.compute_pattern(space_);
+    D_PatternType d_pattern_view_other = space_.compute_pattern(*d_grid_view, space_);
+    D_PatternType d_pattern_volume            = space_.compute_volume_pattern();
+    D_PatternType d_pattern_volume_view       = space_.compute_volume_pattern(*d_grid_view);
+    D_PatternType d_pattern_volume_other      = space_.compute_volume_pattern(space_);
+    D_PatternType d_pattern_volume_view_other = space_.compute_volume_pattern(*d_grid_view, space_);
+    D_PatternType d_pattern_face_volume            = space_.compute_face_and_volume_pattern();
+    D_PatternType d_pattern_face_volume_view       = space_.compute_face_and_volume_pattern(*d_grid_view);
+    D_PatternType d_pattern_face_volume_other      = space_.compute_face_and_volume_pattern(space_);
+    D_PatternType d_pattern_face_volume_view_other = space_.compute_face_and_volume_pattern(*d_grid_view, space_);
+    D_PatternType d_pattern_face            = space_.compute_face_pattern();
+    D_PatternType d_pattern_face_view       = space_.compute_face_pattern(*d_grid_view);
+    D_PatternType d_pattern_face_other      = space_.compute_face_pattern(space_);
+    D_PatternType d_pattern_face_view_other = space_.compute_face_pattern(*d_grid_view, space_);
     EXPECT_EQ(d_pattern, d_pattern_other);
     EXPECT_EQ(d_pattern, d_pattern_view);
     EXPECT_EQ(d_pattern, d_pattern_view_other);
@@ -193,9 +135,9 @@ public:
     EXPECT_EQ(d_pattern_face, d_pattern_face_view);
     EXPECT_EQ(d_pattern_face, d_pattern_face_view_other);
     // * as the interface
-    const InterfaceType& i_space = static_cast< const InterfaceType& >(*space_);
+    const InterfaceType& i_space = static_cast< const InterfaceType& >(space_);
     const I_BackendType& i_backend = i_space.backend();
-    const D_MapperType& i_mapper = i_space.mapper();
+    const I_MapperType& i_mapper = i_space.mapper();
     const std::shared_ptr< const I_GridViewType >& i_grid_view = i_space.grid_view();
     I_CommunicatorType& i_comm = i_space.communicator();
     I_PatternType i_pattern            = i_space.compute_pattern();
@@ -238,10 +180,11 @@ public:
     const auto entity_it_end = d_grid_view->template end< 0 >();
     for (auto entity_it = d_grid_view->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const D_EntityType& entity = *entity_it;
-      // * s the derived type
-      D_BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
+      // * as the derived type
+      D_BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
       size_t d_bfs_size = d_base_function_set.size();
       EXPECT_EQ(d_bfs_size, d_mapper.numDofs(entity));
+      // * as the interface type
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
       size_t i_bfs_size = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
@@ -258,10 +201,7 @@ public:
     */
   void mapper_fulfills_interface() const
   {
-    using namespace Dune;
-    using namespace GDT;
     using namespace Stuff;
-    if (!space_) DUNE_THROW(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
     typedef typename SpaceType::MapperType  MapperType;
@@ -277,7 +217,7 @@ public:
     static_assert(std::is_same< I_BackendType, D_BackendType >::value, "Types do not match!");
     // dynamic checks
     // * as the derived type
-    const MapperType& d_mapper = space_->mapper();
+    const MapperType& d_mapper = space_.mapper();
     const D_BackendType& d_backend = d_mapper.backend();
     size_t d_size = d_mapper.size();
     size_t d_maxNumDofs = d_mapper.maxNumDofs();
@@ -290,8 +230,8 @@ public:
     EXPECT_EQ(i_size, d_size);
     EXPECT_EQ(i_maxNumDofs, d_maxNumDofs);
     //   walk the grid
-    const auto entity_it_end = space_->grid_view()->template end< 0 >();
-    for (auto entity_it = space_->grid_view()->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = space_.grid_view()->template end< 0 >();
+    for (auto entity_it = space_.grid_view()->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       // * as the derived type
       size_t d_numDofs = d_mapper.numDofs(entity);
@@ -327,10 +267,7 @@ public:
     */
   void basefunctionset_fulfills_interface() const
   {
-    using namespace Dune;
-    using namespace GDT;
     using namespace Stuff;
-    if (!space_) DUNE_THROW(Exceptions::internal_error, "");
     // static checks
     // * as the derived type
     typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
@@ -379,14 +316,19 @@ public:
     static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
     // dynamic checks
     // walk the grid
-    const auto entity_end_it = space_->grid_view()->template end< 0 >();
-    for (auto entity_it = space_->grid_view()->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
+    const auto entity_end_it = space_.grid_view()->template end< 0 >();
+    for (auto entity_it = space_.grid_view()->template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       // * as the derived type
-      BaseFunctionSetType d_base_function_set = space_->base_function_set(entity);
+      BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
       const D_BackendType& d_backend = d_base_function_set.backend();
       size_t d_order = d_base_function_set.order();
+#if DUNE_GDT_TEST_SPACES_RT_CHECK
+      EXPECT_GE(d_order, int(SpaceType::polOrder)); // <- normaly we would expect equality here, but the raviart
+                                                    //    thomas space of order 0 reports order 1 here
+#else
       EXPECT_EQ(d_order, int(SpaceType::polOrder));
+#endif
       //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast< InterfaceType& >(d_base_function_set);
@@ -400,9 +342,9 @@ public:
 protected:
   SpaceType copy_and_move() const
   {
-    return SpaceType(*space_);
+    return SpaceType(space_);
   }
 
   ProviderType grid_provider_;
-  std::unique_ptr< const SpaceType > space_;
-}; // struct SpaceTestBase
+  SpaceType space_;
+}; // struct SpaceBase
