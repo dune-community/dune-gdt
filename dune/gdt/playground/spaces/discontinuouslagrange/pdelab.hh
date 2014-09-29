@@ -56,7 +56,8 @@ public:
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
   static const int polOrder = polynomialOrder;
-  static_assert(polOrder >= 1, "Wrong polOrder given!");
+  // using this space for the QuadraticSpaces in test/products_l2weighted.cc results in a test failure
+  static_assert(polOrder == 1, "This space is known to fail for higher polynomial orders!");
 
 private:
   typedef typename GridViewType::ctype DomainFieldType;
