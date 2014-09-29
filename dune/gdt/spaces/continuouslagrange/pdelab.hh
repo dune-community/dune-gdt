@@ -130,7 +130,7 @@ public:
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
-  typedef CommunicationChooser< GridViewType, false > CommunicationChooserType;
+  typedef CommunicationChooser< GridViewType > CommunicationChooserType;
   typedef typename CommunicationChooserType::Type     CommunicatorType;
 
 private:
