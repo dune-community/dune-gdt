@@ -8,7 +8,7 @@
 // this one has to come first
 #include <dune/stuff/test/main.hxx>
 
-#include "spaces_fv.hh"
+#include "spaces_fv_default.hh"
 #include "spaces_dg_fem.hh"
 #include "spaces_cg_pdelab.hh"
 
