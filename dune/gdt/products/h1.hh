@@ -6,51 +6,76 @@
 #ifndef DUNE_GDT_PRODUCTS_H1_HH
 #define DUNE_GDT_PRODUCTS_H1_HH
 
-#include <type_traits>
-
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/common/crtp.hh>
-
-#include <dune/gdt/products/base.hh>
-#include <dune/gdt/products/l2_internal.hh>
-#include <dune/gdt/products/generic.hh>
-
-#include "../localoperator/codim0.hh"
-#include "../localevaluation/elliptic.hh"
-
-#include "interfaces.hh"
-
+#include "h1-internal.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Products {
 
-template <class FunctionImp>
-using H1Evaluation = LocalEvaluation::Elliptic<FunctionImp, void/* = DiffusionTensorImp*/>;
 
-template< class GridViewImp, class RangeImp, class SourceImp, class DerivedImp,
-          template <class> class LocalEvaluationType>
-using H1SemiLocalizableTraits = internal::L2LocalizableTraits<GridViewImp, RangeImp, SourceImp,
-                                                              DerivedImp, LocalEvaluationType>;
-
-template< class GridViewImp, class RangeImp, class SourceImp = RangeImp>
-using H1SemiLocalizable = GenericLocalizable<GridViewImp, RangeImp, SourceImp, H1SemiLocalizableTraits, H1Evaluation>;
-
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp,
-          class DerivedImp, template <class> class LocalEvaluationTemplate >
-using H1SemiAssemblableTraits = internal::L2AssemblableTraits<MatrixImp, RangeSpaceImp, GridViewImp,
-                                                              SourceSpaceImp, DerivedImp, LocalEvaluationTemplate>;
 /**
- * \todo actual doc
- * \note this cannot be an alias because of the self-injection to base
- **/
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp = RangeSpaceImp>
-using H1SemiAssemblable = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                             H1SemiAssemblableTraits, H1Evaluation>;
+ * \brief A localizable semi H1 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa LocalizableBase first and then \sa
+ *        internal::H1SemiBase.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GridView, class Range, class Source = Range, class FieldType = double >
+class H1SemiLocalizable
+  : public LocalizableBase< internal::H1SemiBase< GridView, FieldType >, Range, Source >
+{
+  typedef LocalizableBase< internal::H1SemiBase< GridView, FieldType >, Range, Source > BaseType;
 
-template< class GridViewImp, class FieldImp = double>
-using H1SemiGeneric = GenericProduct<GridViewImp, FieldImp, H1SemiLocalizable>;
+public:
+  template< class... Args >
+  H1SemiLocalizable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief An assemblable semi H1 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa AssemblableBase first and then \sa
+ *        internal::H1SemiBase.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class Matrix, class RangeSpace, class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace, class FieldType = double >
+class H1SemiAssemblable
+  : public AssemblableBase< internal::H1SemiBase< GridView, FieldType >, Matrix, RangeSpace, SourceSpace >
+{
+  typedef AssemblableBase< internal::H1SemiBase< GridView, FieldType >, Matrix, RangeSpace, SourceSpace > BaseType;
+
+public:
+  template< class... Args >
+  H1SemiAssemblable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief A semi H1 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
+ *        internal::H1SemiBase.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GridView, class FieldType = double >
+class H1Semi
+  : public GenericBase< internal::H1SemiBase< GridView, FieldType > >
+{
+  typedef GenericBase< internal::H1SemiBase< GridView, FieldType > > BaseType;
+
+public:
+  template< class... Args >
+  H1Semi(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
 
 } // namespace Products
 } // namespace GDT

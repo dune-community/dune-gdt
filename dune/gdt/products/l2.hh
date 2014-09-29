@@ -6,36 +6,139 @@
 #ifndef DUNE_GDT_PRODUCTS_L2_HH
 #define DUNE_GDT_PRODUCTS_L2_HH
 
-#include <type_traits>
-
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/grid/common/gridview.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
-
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/common/crtp.hh>
-
-#include <dune/gdt/products/l2_internal.hh>
-#include <dune/gdt/products/generic.hh>
-#include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/localevaluation/product.hh>
-#include <dune/gdt/products/base.hh>
+#include "base.hh"
+#include "l2-internal.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Products {
 
-template< class GridViewImp, class RangeImp, class SourceImp = RangeImp>
-using L2Localizable = GenericLocalizable<GridViewImp, RangeImp, SourceImp,
-                                         internal::L2LocalizableTraits, LocalEvaluation::Product>;
 
-template< class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp = RangeSpaceImp>
-using L2Assemblable = GenericAssemblable<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                         internal::L2AssemblableTraits, LocalEvaluation::Product>;
+/**
+ * \brief A localizable weighted L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa LocalizableBase first and then \sa
+ *        internal::WeightedL2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GV, class F, class R, class S = R, class FieldType = double >
+class WeightedL2Localizable
+  : public LocalizableBase< internal::WeightedL2Base< GV, F, FieldType >, R, S >
+{
+  typedef LocalizableBase< internal::WeightedL2Base< GV, F, FieldType >, R, S > BaseType;
 
-template< class GridViewImp, class FieldImp = double>
-using L2 = GenericProduct<GridViewImp, FieldImp, L2Localizable>;
+public:
+  template< class... Args >
+  WeightedL2Localizable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief An assemblable weighted L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa AssemblableBase first and then \sa
+ *        internal::WeightedL2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class M, class F, class R, class GV = typename R::GridViewType, class S = R, class FieldType = double >
+class WeightedL2Assemblable
+  : public AssemblableBase< internal::WeightedL2Base< GV, F, FieldType >, M, R, S >
+{
+  typedef AssemblableBase< internal::WeightedL2Base< GV, F, FieldType >, M, R, S > BaseType;
+
+public:
+  template< class... Args >
+  WeightedL2Assemblable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief A weighted L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
+ *        internal::WeightedL2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GV, class F, class FieldType = double >
+class WeightedL2
+  : public GenericBase< internal::WeightedL2Base< GV, F, FieldType > >
+{
+  typedef GenericBase< internal::WeightedL2Base< GV, F, FieldType > > BaseType;
+
+public:
+  template< class... Args >
+  WeightedL2(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief A localizable L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa LocalizableBase first and then \sa
+ *        internal::L2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GV, class R, class S = R, class FieldType = double >
+class L2Localizable
+  : public LocalizableBase< internal::L2Base< GV, FieldType >, R, S >
+{
+  typedef LocalizableBase< internal::L2Base< GV, FieldType >, R, S > BaseType;
+
+public:
+  template< class... Args >
+  L2Localizable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief An assemblable L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa AssemblableBase first and then \sa
+ *        internal::L2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class M, class R, class GV = typename R::GridViewType , class S = R, class FieldType = double >
+class L2Assemblable
+  : public AssemblableBase< internal::L2Base< GV, FieldType >, M, R, S >
+{
+  typedef AssemblableBase< internal::L2Base< GV, FieldType >, M, R, S > BaseType;
+
+public:
+  template< class... Args >
+  L2Assemblable(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
+
+/**
+ * \brief An L2 product.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
+ *        internal::L2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template< class GV, class FieldType = double >
+class L2
+  : public GenericBase< internal::L2Base< GV, FieldType > >
+{
+  typedef GenericBase< internal::L2Base< GV, FieldType > > BaseType;
+
+public:
+  template< class... Args >
+  L2(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+};
+
 
 } // namespace Products
 } // namespace GDT
