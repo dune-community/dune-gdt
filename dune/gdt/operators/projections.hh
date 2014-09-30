@@ -27,6 +27,7 @@
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
 #include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/discontinuouslagrange/pdelab.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/playground/spaces/finitevolume/default.hh>
 
@@ -199,6 +200,16 @@ public:
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
   } // ... apply(... Spaces::DiscontinuousLagrange::FemBased< ..., 1 > ...)
+
+  template <class GP, int p, class R, int r, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
+             DiscreteFunction<Spaces::DiscontinuousLagrange::PdelabBased<GP, p, R, r, 1>, V>& range) const
+  {
+    // checks
+    typedef Spaces::DiscontinuousLagrange::PdelabBased<GP, p, R, r, 1> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
+    apply_local_l2_projection_(source, range);
+  }
 
   template <class E, class D, int d, class R, int r, class GV, class V>
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, 1>& source,
@@ -407,6 +418,14 @@ private:
   inline void redirect_to_appropriate_operator(
       const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
       DiscreteFunction<Spaces::DiscontinuousLagrange::FemBased<GP, p, RR, rR, rCR>, V>& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  inline void redirect_to_appropriate_operator(
+      const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
+      DiscreteFunction<Spaces::DiscontinuousLagrange::PdelabBased<GP, p, RR, rR, rCR>, V>& range) const
   {
     l2_operator_.apply(source, range);
   }
