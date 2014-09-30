@@ -55,9 +55,6 @@ TYPED_TEST(P1Q1_CG_Space, maps_correctly)
 TEST(DISABLED_CG_Space, fulfills_interface)
 {
 }
-TEST(DISABLED_CG_Space, copy_and_move_ctor)
-{
-}
 TEST(DISABLED_CG_Space, mapper_fulfills_interface)
 {
 }

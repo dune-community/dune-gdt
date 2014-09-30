@@ -738,11 +738,15 @@ typedef testing::Types<
 #endif
     > EllipticEstimatorTestCases;
 
+typedef Dune::SGrid<2, 2, double> S2dGridType;
+
 typedef testing::Types<
 #if HAVE_ALUGRID
-    ALU_CONFORM_2D_TESTCASES
+    ALU_CONFORM_2D_TESTCASES,
 #endif
-    > EllipticTestCases;
+    EllipticTestCase::ESV07<S2dGridType>, EllipticTestCase::LocalThermalBlock<S2dGridType>,
+    EllipticTestCase::Spe10Model1<S2dGridType>, EllipticTestCase::ER07<S2dGridType>,
+    EllipticTestCase::MixedBoundaryTypes<S2dGridType>> EllipticTestCases;
 
 
 #endif // DUNE_GDT_TEST_ELLIPTIC_HH

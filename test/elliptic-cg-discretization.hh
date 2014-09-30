@@ -364,6 +364,7 @@ public:
 
   virtual std::vector<double> expected_results(const std::string type) const
   {
+#if HAVE_ALUGRID
     if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
@@ -423,6 +424,9 @@ public:
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
+#else // HAVE_ALUGRID
+    return std::vector<double>();
+#endif
   } // ... expected_results(...)
 
   std::map<std::string, std::vector<double>> run(std::ostream& out = std::cout)

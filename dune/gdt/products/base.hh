@@ -113,7 +113,7 @@ public:
     if (!prepared_) {
       tmp_storage_ = std::unique_ptr<TmpMatricesProviderType>(
           new TmpMatricesProviderType({1, this->local_operator_.numTmpObjectsRequired()}, 1, 1));
-      result_   = FieldType(0.0);
+      *result_  = FieldType(0.0);
       prepared_ = true;
     }
   } // ... prepare()

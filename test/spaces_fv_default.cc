@@ -22,10 +22,6 @@ TYPED_TEST(FV_Space, fulfills_interface)
 {
   this->fulfills_interface();
 }
-TYPED_TEST(FV_Space, copy_and_move_ctor)
-{
-  this->copy_and_move_ctor();
-}
 TYPED_TEST(FV_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();

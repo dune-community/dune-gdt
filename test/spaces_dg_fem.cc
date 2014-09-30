@@ -23,10 +23,6 @@ TYPED_TEST(DG_Space, fulfills_interface)
 {
   this->fulfills_interface();
 }
-TYPED_TEST(DG_Space, copy_and_move_ctor)
-{
-  this->copy_and_move_ctor();
-}
 TYPED_TEST(DG_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
@@ -53,9 +49,6 @@ TYPED_TEST(P1Q1_DG_Space, maps_correctly)
 #else // HAVE_DUNE_FEM
 
 TEST(DISABLED_SpaceBase, fulfills_interface)
-{
-}
-TEST(DISABLED_SpaceBase, copy_and_move_ctor)
 {
 }
 TEST(DISABLED_SpaceBase, mapper_fulfills_interface)
