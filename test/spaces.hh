@@ -340,11 +340,6 @@ public:
   } // ... basefunctionset_fulfills_interface()
 
 protected:
-  SpaceType copy_and_move() const
-  {
-    return SpaceType(space_);
-  }
-
   ProviderType grid_provider_;
   SpaceType space_;
 }; // struct SpaceBase
