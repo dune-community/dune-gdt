@@ -94,6 +94,8 @@ public:
     static_assert(std::is_same<I_PatternType, D_PatternType>::value, "Types do not match!");
     static_assert(std::is_same<I_BoundaryInfoType, D_BoundaryInfoType>::value, "Types do not match!");
     static_assert(std::is_same<I_CommunicatorType, D_CommunicatorType>::value, "Types do not match!");
+    static_assert(std::is_move_constructible<SpaceType>::value, "SpaceType isn't move constructible");
+    static_assert(std::is_copy_constructible<SpaceType>::value, "SpaceType isn't copy constructible");
     static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
     static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
     static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
@@ -189,11 +191,6 @@ public:
       EXPECT_EQ(d_bfs_size, i_bfs_size);
     } // walk the grid
   } // ... fulfills_interface()
-
-  void copy_and_move_ctor() const
-  {
-    auto DUNE_UNUSED(tmp) = copy_and_move();
-  }
 
   /**
     * \brief Checks the spaces mapper for it's interface compliance.
