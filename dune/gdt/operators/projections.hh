@@ -295,6 +295,10 @@ private:
     } // walk the grid
   } // ... apply_local_l2_projection_(...)
 
+  /**
+   * \todo This implementation is not optimal: the MatrixType and VectorType used here do not have to match at all the
+   *       VectorType used in RangeFunctionType!
+   */
   template <class SourceType, class RangeFunctionType>
   void apply_global_l2_projection_(const SourceType& source, RangeFunctionType& range) const
   {
