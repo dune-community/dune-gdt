@@ -21,14 +21,14 @@
 
 #if HAVE_ALUGRID
 
-#define SPACE_RT_PDELAB_ALUSIMPLEXGRID(dd)                                                                             \
-  Spaces::RaviartThomas::PdelabBased<AluSimplex##dd##dLeafGridViewType, 0, double, dd>
+#define SPACE_RT_PDELAB_ALUCONFORMGRID(dd)                                                                             \
+  Spaces::RaviartThomas::PdelabBased<AluConform##dd##dLeafGridViewType, 0, double, dd>
 
 #define SPACE_RT_PDELAB_ALUCUBEGRID(dd)                                                                                \
   Spaces::RaviartThomas::PdelabBased<AluCube##dd##dLeafGridViewType, 0, double, dd>
 
 #define SPACES_RT_PDELAB_ALUGRID                                                                                       \
-  SPACE_RT_PDELAB_ALUSIMPLEXGRID(2)                                                                                    \
+  SPACE_RT_PDELAB_ALUCONFORMGRID(2)                                                                                    \
   , SPACE_RT_PDELAB_ALUCUBEGRID(2), SPACE_RT_PDELAB_ALUCUBEGRID(3)
 
 #endif // HAVE_ALUGRID

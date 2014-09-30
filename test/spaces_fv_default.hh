@@ -25,14 +25,14 @@
 
 #if HAVE_ALUGRID
 
-#define SPACE_FV_ALUSIMPLEXGRID(dd, rr) Spaces::FiniteVolume::Default<AluSimplex##dd##dLeafGridViewType, double, rr>
+#define SPACE_FV_ALUCONFORMGRID(dd, rr) Spaces::FiniteVolume::Default<AluConform##dd##dLeafGridViewType, double, rr>
 
 #define SPACE_FV_ALUCUBEGRID(dd, rr) Spaces::FiniteVolume::Default<AluCube##dd##dLeafGridViewType, double, rr>
 
 #define SPACES_FV_ALUGRID                                                                                              \
-  SPACE_FV_ALUSIMPLEXGRID(2, 1)                                                                                        \
-  , SPACE_FV_ALUSIMPLEXGRID(2, 2), SPACE_FV_ALUSIMPLEXGRID(2, 3), SPACE_FV_ALUSIMPLEXGRID(3, 1),                       \
-      SPACE_FV_ALUSIMPLEXGRID(3, 2), SPACE_FV_ALUSIMPLEXGRID(3, 3), SPACE_FV_ALUCUBEGRID(2, 1),                        \
+  SPACE_FV_ALUCONFORMGRID(2, 1)                                                                                        \
+  , SPACE_FV_ALUCONFORMGRID(2, 2), SPACE_FV_ALUCONFORMGRID(2, 3), SPACE_FV_ALUCONFORMGRID(3, 1),                       \
+      SPACE_FV_ALUCONFORMGRID(3, 2), SPACE_FV_ALUCONFORMGRID(3, 3), SPACE_FV_ALUCUBEGRID(2, 1),                        \
       SPACE_FV_ALUCUBEGRID(2, 2), SPACE_FV_ALUCUBEGRID(2, 3), SPACE_FV_ALUCUBEGRID(3, 1), SPACE_FV_ALUCUBEGRID(3, 2),  \
       SPACE_FV_ALUCUBEGRID(3, 3)
 

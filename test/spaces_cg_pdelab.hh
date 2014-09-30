@@ -28,15 +28,15 @@
 #if HAVE_ALUGRID
 
 
-#define SPACE_CG_PDELAB_ALUSIMPLEXGRID(dd, rr, pp)                                                                     \
-  Spaces::ContinuousLagrange::PdelabBased<AluSimplex##dd##dLeafGridViewType, pp, double, rr>
+#define SPACE_CG_PDELAB_ALUCONFORMGRID(dd, rr, pp)                                                                     \
+  Spaces::ContinuousLagrange::PdelabBased<AluConform##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACE_CG_PDELAB_ALUCUBEGRID(dd, rr, pp)                                                                        \
   Spaces::ContinuousLagrange::PdelabBased<AluCube##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACES_CG_PDELAB_ALUGRID(pp)                                                                                   \
-  SPACE_CG_PDELAB_ALUSIMPLEXGRID(2, 1, pp)                                                                             \
-  , SPACE_CG_PDELAB_ALUSIMPLEXGRID(3, 1, pp), SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp),                                   \
+  SPACE_CG_PDELAB_ALUCONFORMGRID(2, 1, pp)                                                                             \
+  , SPACE_CG_PDELAB_ALUCONFORMGRID(3, 1, pp), SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp),                                   \
       SPACE_CG_PDELAB_ALUCUBEGRID(3, 1, pp)
 
 
