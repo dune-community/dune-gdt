@@ -21,9 +21,7 @@ TYPED_TEST_CASE(CG_Space, CG_Spaces_Pdelab);
 TYPED_TEST(CG_Space, fulfills_interface) {
   this->fulfills_interface();
 }
-TYPED_TEST(CG_Space, copy_and_move_ctor) {
-  this->copy_and_move_ctor();
-}
+
 TYPED_TEST(CG_Space, mapper_fulfills_interface) {
   this->mapper_fulfills_interface();
 }
