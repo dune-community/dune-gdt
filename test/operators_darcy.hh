@@ -3,39 +3,30 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#ifndef DUNE_GDT_TEST_OPERATORS_DARCY_HH
+#define DUNE_GDT_TEST_OPERATORS_DARCY_HH
 
-#include <memory>
-#include <utility>
-
-#if HAVE_ALUGRID
-# include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/grid/alugrid.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
-#endif // HAVE_ALUGRID
-
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/la/container.hh>
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/combined.hh>
+#include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/playground/spaces/finitevolume/default.hh>
-#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/darcy.hh>
 #include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/playground/spaces/finitevolume/default.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
+#include <dune/gdt/spaces/tools.hh>
 
-// +----------------------------------------------------------------------------+
-// | 1st we define all the test structs that do something at the end of the day |
-// +----------------------------------------------------------------------------+
+using namespace Dune;
+using namespace GDT;
 
+
+/**
+ * \note This test assumes that Operators::L2Projection, Products::L2 and Products::H1Semi work correctly.
+ */
 template< class SpaceTypes >
-class Darcy_Operator
+struct DarcyOperator
   : public ::testing::Test
 {
   typedef typename SpaceTypes::first_type SourceSpaceType;
@@ -51,11 +42,8 @@ class Darcy_Operator
 
   typedef typename Dune::Stuff::LA::Container< RangeFieldType >::VectorType VectorType;
 
-public:
   void produces_correct_results() const
   {
-    using namespace Dune;
-    using namespace GDT;
 
     GridProviderType grid_provider(0.0, 1.0, 4);
     auto& grid = grid_provider.grid();
@@ -83,20 +71,19 @@ public:
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     EXPECT_LE(l2_error, l2_error_expected);
 
-    const Products::H1SemiGeneric< GridViewType > h1_semi_product(*(range_space.grid_view()));
+    const Products::H1Semi< GridViewType > h1_semi_product(*(range_space.grid_view()));
     const RangeFieldType h1_error = h1_semi_product.induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
     EXPECT_LE(h1_error, h1_error_expected);
   } // ... produces_correct_results()
 
-private:
   template< class FunctionType, class GV >
   RangeFieldType expected_result_(const std::string type,
                                   const FunctionType& desired_output,
                                   const std::shared_ptr< const GV >& grid_view_ptr) const
   {
-    typedef typename Dune::GDT::SpaceTools::LeafGridPartView< GridType, RangeSpaceType::needs_grid_view >::Type GPV;
-    if (std::is_base_of< Dune::GDT::Spaces::ContinuousLagrange::FemBased< GPV, 1, RangeFieldType, dimDomain >
+    typedef typename SpaceTools::LeafGridPartView< GridType, RangeSpaceType::needs_grid_view >::Type GPV;
+    if (std::is_base_of< Spaces::ContinuousLagrange::FemBased< GPV, 1, RangeFieldType, dimDomain >
                        , RangeSpaceType >::value) {
       if (type == "l2")
         return 2.18e-16;
@@ -104,16 +91,16 @@ private:
         return 3.12e-15;
       else
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
-    } else if (std::is_base_of< Dune::GDT::Spaces::RaviartThomas::PdelabBased< GPV, 0, RangeFieldType, dimDomain >
+    } else if (std::is_base_of< Spaces::RaviartThomas::PdelabBased< GPV, 0, RangeFieldType, dimDomain >
                               , RangeSpaceType >::value) {
-      typedef Dune::GDT::Spaces::FiniteVolume::Default< GV, RangeFieldType, dimDomain > FvSpaceType;
+      typedef Spaces::FiniteVolume::Default< GV, RangeFieldType, dimDomain > FvSpaceType;
       const FvSpaceType fv_space(grid_view_ptr);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
-      Dune::GDT::DiscreteFunction< FvSpaceType, VectorType > fv_desired_output(fv_space, fv_desired_output_vector);
-      const Dune::GDT::Operators::L2Projection< GV > l2_projection(*grid_view_ptr);
+      DiscreteFunction< FvSpaceType, VectorType > fv_desired_output(fv_space, fv_desired_output_vector);
+      const Operators::L2Projection< GV > l2_projection(*grid_view_ptr);
       l2_projection.apply(desired_output, fv_desired_output);
-      const Dune::GDT::Products::L2< GV > l2_product(*grid_view_ptr);
-      const Dune::GDT::Products::H1SemiGeneric< GV > h1_semi_product(*grid_view_ptr);
+      const Products::L2< GV > l2_product(*grid_view_ptr);
+      const Products::H1Semi< GV > h1_semi_product(*grid_view_ptr);
       if (type == "l2")
         return 2.0 * l2_product.induced_norm(desired_output - fv_desired_output);
       else if (type == "h1")
@@ -123,45 +110,8 @@ private:
     } else
       DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
   } // ... expected_result_(...)
-}; // class Darcy_Operator
+}; // struct DarcyOperator
 
-// +----------------------------------------------------------------------------+
-// | 2nd we define all arguments the above test structs are to be compiled with |
-// +----------------------------------------------------------------------------+
 
-#if HAVE_ALUGRID
-typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, true >::Type
-  AluConform2dLeafGridViewType;
-typedef typename Dune::GDT::SpaceTools::LeafGridPartView< AluConform2dGridType, false >::Type
-  AluConform2dLeafGridPartType;
-
-#define ALU_CONFORM_2D_TYPES \
-    /*std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 2 > > \
-  ,*/ std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLeafGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::RaviartThomas::PdelabBased< AluConform2dLeafGridViewType, 0, double, 2 > >
-
-#endif // HAVE_ALUGRID
-
-typedef testing::Types<
-#if HAVE_ALUGRID
-                        ALU_CONFORM_2D_TYPES
-#endif // HAVE_ALUGRID
-                      > SpaceTypes;
-
-// +--------------------------------------------------------------------------------------+
-// | 3rd we combine all test structs with their appropriate arguments to create the tests |
-// | (comment out the following lines if you do not want a test to run)                   |
-// +--------------------------------------------------------------------------------------+
-
-TYPED_TEST_CASE(Darcy_Operator, SpaceTypes);
-TYPED_TEST(Darcy_Operator, produces_correct_results) {
-  this->produces_correct_results();
-}
-
-// +--------------------------------------------------------------------------------------+
-// | 4th we run all the tests                                                             |
-// | (run the resulting executable with '--gtest_catch_exceptions=0' to see an exception) |
-// +--------------------------------------------------------------------------------------+
+#endif // DUNE_GDT_TEST_OPERATORS_DARCY_HH
