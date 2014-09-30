@@ -31,15 +31,15 @@
 # if HAVE_ALUGRID
 
 
-#define SPACE_DG_FEM_ALUSIMPLEXGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex ## dd ## dLeafGridPartType, pp, double, rr >
+#define SPACE_DG_FEM_ALUCONFORMGRID(dd, rr, pp) \
+  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACE_DG_FEM_ALUCUBEGRID(dd, rr, pp) \
   Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluCube ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACES_DG_FEM_ALUGRID(pp) \
-    SPACE_DG_FEM_ALUSIMPLEXGRID(2, 1, pp) \
-  , SPACE_DG_FEM_ALUSIMPLEXGRID(3, 1, pp) \
+    SPACE_DG_FEM_ALUCONFORMGRID(2, 1, pp) \
+  , SPACE_DG_FEM_ALUCONFORMGRID(3, 1, pp) \
   , SPACE_DG_FEM_ALUCUBEGRID(2, 1, pp) \
   , SPACE_DG_FEM_ALUCUBEGRID(3, 1, pp)
 

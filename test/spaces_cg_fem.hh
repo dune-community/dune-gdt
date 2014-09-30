@@ -31,15 +31,15 @@
 # if HAVE_ALUGRID
 
 
-#define SPACE_CG_FEM_ALUSIMPLEXGRID(dd, rr, pp) \
-  Spaces::ContinuousLagrange::FemBased< AluSimplex ## dd ## dLeafGridPartType, pp, double, rr >
+#define SPACE_CG_FEM_ALUCONFORMGRID(dd, rr, pp) \
+  Spaces::ContinuousLagrange::FemBased< AluConform ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACE_CG_FEM_ALUCUBEGRID(dd, rr, pp) \
   Spaces::ContinuousLagrange::FemBased< AluCube ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACES_CG_FEM_ALUGRID(pp) \
-    SPACE_CG_FEM_ALUSIMPLEXGRID(2, 1, pp) \
-  , SPACE_CG_FEM_ALUSIMPLEXGRID(3, 1, pp) \
+    SPACE_CG_FEM_ALUCONFORMGRID(2, 1, pp) \
+  , SPACE_CG_FEM_ALUCONFORMGRID(3, 1, pp) \
   , SPACE_CG_FEM_ALUCUBEGRID(2, 1, pp) \
   , SPACE_CG_FEM_ALUCUBEGRID(3, 1, pp)
 
