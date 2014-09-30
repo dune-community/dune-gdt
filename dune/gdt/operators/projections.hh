@@ -214,7 +214,7 @@ public:
 
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
-             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
+             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, p, FieldType, 1, 1 >, V >& range) const
   {
     apply_global_l2_projection_(source, range);
   }
