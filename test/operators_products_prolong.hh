@@ -6,7 +6,11 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH
 #define DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH
 
-#include "operators_products.hh"
+#include "operators_products_prolong.hh"
+
+#include <dune/stuff/grid/provider.hh>
+#include <dune/stuff/functions/expression.hh>
+#include <dune/gdt/spaces/tools.hh>
 
 // +---------------------------------------+
 // |  * to test the prolongation operators |
