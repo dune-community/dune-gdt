@@ -30,6 +30,7 @@
 #include <dune/gdt/playground/spaces/discontinuouslagrange/pdelab.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
 #include <dune/gdt/playground/spaces/finitevolume/default.hh>
+#include <dune/gdt/playground/spaces/block.hh>
 
 #include "interfaces.hh"
 
@@ -200,6 +201,20 @@ public:
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
   } // ... apply(... Spaces::DiscontinuousLagrange::FemBased< ..., 1 > ...)
+
+#if HAVE_DUNE_GRID_MULTISCALE
+
+  template <class GP, int p, class R, int r, class V>
+  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
+             DiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GP, p, R, r, 1>>, V>& range) const
+  {
+    // checks
+    typedef Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GP, p, R, r, 1>> SpaceType;
+    static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
+    apply_local_l2_projection_(source, range);
+  }
+
+#endif // HAVE_DUNE_GRID_MULTISCALE
 
   template <class GP, int p, class R, int r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
@@ -425,6 +440,18 @@ private:
   {
     l2_operator_.apply(source, range);
   }
+
+#if HAVE_DUNE_GRID_MULTISCALE
+
+  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  inline void redirect_to_appropriate_operator(
+      const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
+      DiscreteFunction<Spaces::Block<Spaces::DiscontinuousLagrange::FemBased<GP, p, RR, rR, rCR>>, V>& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+#endif // HAVE_DUNE_GRID_MULTISCALE
 
   template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
   inline void redirect_to_appropriate_operator(
