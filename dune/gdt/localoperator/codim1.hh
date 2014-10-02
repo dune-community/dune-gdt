@@ -11,6 +11,8 @@
 #include <type_traits>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/densematrix.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
@@ -59,14 +61,24 @@ private:
   static const size_t numTmpObjectsRequired_ = 4;
 
 public:
-  Codim1CouplingIntegral(const QuaternaryEvaluationImp eval)
-    : evaluation_(eval)
+  template <class... Args>
+  Codim1CouplingIntegral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(0)
   {
   }
 
   template <class... Args>
-  explicit Codim1CouplingIntegral(Args&&... args)
+  Codim1CouplingIntegral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  template <class... Args>
+  Codim1CouplingIntegral(const int over_integrate, Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
   }
 
@@ -90,8 +102,10 @@ public:
     const auto& neighbor        = neighborTestBase.entity();
     const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
     // quadrature
-    const size_t integrand_order = evaluation().order(
-        localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase);
+    const size_t integrand_order =
+        evaluation().order(
+            localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase)
+        + over_integrate_;
     assert(integrand_order < std::numeric_limits<int>::max());
     const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(integrand_order));
     // check matrices
@@ -183,6 +197,7 @@ private:
   }
 
   const QuaternaryEvaluationImp evaluation_;
+  const size_t over_integrate_;
 }; // class Codim1CouplingIntegral
 
 
@@ -216,14 +231,24 @@ private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim1BoundaryIntegral(const BinaryEvaluationImp eval)
-    : evaluation_(eval)
+  template <class... Args>
+  Codim1BoundaryIntegral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(0)
   {
   }
 
   template <class... Args>
-  explicit Codim1BoundaryIntegral(Args&&... args)
+  Codim1BoundaryIntegral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  template <class... Args>
+  Codim1BoundaryIntegral(const int over_integrate, Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
   }
 
@@ -244,7 +269,7 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, testBase, ansatzBase);
+    const size_t integrand_order = evaluation().order(localFunctions, testBase, ansatzBase) + over_integrate_;
     assert(integrand_order < std::numeric_limits<int>::max());
     const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
     // check matrix and tmp storage
@@ -284,6 +309,7 @@ private:
   }
 
   const BinaryEvaluationImp evaluation_;
+  const size_t over_integrate_;
 }; // class Codim1BoundaryIntegral
 
 
