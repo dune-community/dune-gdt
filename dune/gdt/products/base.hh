@@ -162,7 +162,7 @@ private:
   std::unique_ptr< TmpMatricesProviderType > tmp_storage_;
   bool prepared_;
   bool finalized_;
-  DS::PerThreadValue<FieldType> result_;
+  DS::PerThreadValue< FieldType > result_;
   FieldType finalized_result_;
 }; // class LocalizableBase
 
