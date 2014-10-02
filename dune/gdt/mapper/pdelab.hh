@@ -74,8 +74,8 @@ public:
   template <class EntityType>
   size_t numDofs(const EntityType& entity) const
   {
-    lfs_->bind(entity);
-    return lfs_->size();
+    lfs_.bind(entity);
+    return lfs_.size();
   } // ... numDofs(...)
 
   size_t maxNumDofs() const
@@ -85,7 +85,7 @@ public:
 
   void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    lfs_->bind(entity);
+    lfs_.bind(entity);
     // some checks
     const size_t numLocalDofs = numDofs(entity);
     if (ret.size() < numLocalDofs)
@@ -100,14 +100,14 @@ public:
   template <class EntityType>
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    lfs_->bind(entity);
-    assert(localIndex < lfs_->size());
-    return lfs_->dofIndex(localIndex).entityIndex()[1];
+    lfs_.bind(entity);
+    assert(localIndex < lfs_.size());
+    return lfs_.dofIndex(localIndex).entityIndex()[1];
   } // ... mapToGlobal(...)
 
 private:
   const BackendType& backend_;
-  mutable Stuff::PerThreadValue<PdeLabLFSType> lfs_;
+  mutable PdeLabLFSType lfs_;
 }; // class SimplePdelabWrapper
 
 
