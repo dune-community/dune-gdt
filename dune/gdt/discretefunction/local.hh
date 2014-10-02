@@ -163,8 +163,6 @@ public:
     , space_(space)
     , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
     , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
-    , tmpBaseValues_(base_->size(), RangeType(0))
-    , tmpBaseJacobianValues_(base_->size(), JacobianRangeType(0))
   {
     assert(localVector_->size() == base_->size());
   }
@@ -198,11 +196,12 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= 0.0;
-    assert(localVector_->size() == tmpBaseValues_->size());
-    base_->evaluate(xx, *tmpBaseValues_);
+    std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
+    assert(localVector_->size() == tmpBaseValues.size());
+    base_->evaluate(xx, tmpBaseValues);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      (*tmpBaseValues_)[ii] *= localVector_->get(ii);
-      ret += (*tmpBaseValues_)[ii];
+      tmpBaseValues[ii] *= localVector_->get(ii);
+      ret += tmpBaseValues[ii];
     }
   } // ... evaluate(...)
 
@@ -210,11 +209,12 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= RangeFieldType(0);
-    assert(localVector_->size() == tmpBaseJacobianValues_->size());
-    base_->jacobian(xx, *tmpBaseJacobianValues_);
+    std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
+    assert(localVector_->size() == tmpBaseJacobianValues.size());
+    base_->jacobian(xx, tmpBaseJacobianValues);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      (*tmpBaseJacobianValues_)[ii] *= localVector_->get(ii);
-      ret += (*tmpBaseJacobianValues_)[ii];
+      tmpBaseJacobianValues[ii] *= localVector_->get(ii);
+      ret += tmpBaseJacobianValues[ii];
     }
   } // ... jacobian(...)
 
@@ -225,10 +225,6 @@ protected:
   const SpaceType& space_;
   std::unique_ptr<const BaseFunctionSetType> base_;
   std::unique_ptr<const ConstLocalDoFVectorType> localVector_;
-
-private:
-  mutable DS::PerThreadValue<std::vector<RangeType>> tmpBaseValues_;
-  mutable DS::PerThreadValue<std::vector<JacobianRangeType>> tmpBaseJacobianValues_;
 }; // class ConstLocalDiscreteFunction
 
 
