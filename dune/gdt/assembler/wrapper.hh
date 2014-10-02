@@ -66,8 +66,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const DS::PerThreadValue<TestSpaceType> test_space_;
-  const DS::PerThreadValue<AnsatzSpaceType> ansatz_space_;
+  const DS::PerThreadValue<const TestSpaceType> test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
   ConstraintsType& constraints_;
   MatrixType& matrix_;
@@ -106,7 +106,7 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
+  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType> test_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   ConstraintsType& constraints_;
   VectorType& vector_;
@@ -149,8 +149,8 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
-  const DS::PerThreadValue<typename AssemblerType::AnsatzSpaceType> ansatz_space_;
+  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType> test_space_;
+  const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
@@ -195,8 +195,8 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
-  const DS::PerThreadValue<typename AssemblerType::AnsatzSpaceType> ansatz_space_;
+  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType> test_space_;
+  const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
@@ -235,7 +235,7 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> space_;
+  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType> space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
@@ -276,7 +276,7 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> space_;
+  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType> space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
