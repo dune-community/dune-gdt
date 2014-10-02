@@ -56,7 +56,7 @@ public:
 
   virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    test_space_.local_constraints(ansatz_space_, entity, constraints_);
+    test_space_->local_constraints(*ansatz_space_, entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
       const size_t row = constraints_.global_row(ii);
       for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
@@ -66,8 +66,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const TestSpaceType& test_space_;
-  const AnsatzSpaceType& ansatz_space_;
+  const DS::PerThreadValue<TestSpaceType> test_space_;
+  const DS::PerThreadValue<AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
   ConstraintsType& constraints_;
   MatrixType& matrix_;
@@ -99,14 +99,14 @@ public:
 
   virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    test_space_.local_constraints(entity, constraints_);
+    test_space_->local_constraints(entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
       vector_.set_entry(constraints_.global_row(ii), typename AssemblerType::TestSpaceType::RangeFieldType(0));
     }
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& test_space_;
+  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   ConstraintsType& constraints_;
   VectorType& vector_;
@@ -145,12 +145,12 @@ public:
 
   virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    localMatrixAssembler_.assembleLocal(test_space_, ansatz_space_, entity, matrix_, this->matrices(), this->indices());
+    localMatrixAssembler_.assembleLocal(*test_space_, *ansatz_space_, entity, matrix_, this->matrices(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& test_space_;
-  const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
+  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
+  const DS::PerThreadValue<typename AssemblerType::AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
@@ -191,12 +191,12 @@ public:
                            const typename AssemblerType::EntityType& /*inside_entity*/,
                            const typename AssemblerType::EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
   {
-    localMatrixAssembler_.assembleLocal(test_space_, ansatz_space_, intersection, matrix_, this->matrices(), this->indices());
+    localMatrixAssembler_.assembleLocal(*test_space_, *ansatz_space_, intersection, matrix_, this->matrices(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& test_space_;
-  const typename AssemblerType::AnsatzSpaceType& ansatz_space_;
+  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> test_space_;
+  const DS::PerThreadValue<typename AssemblerType::AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
@@ -231,11 +231,11 @@ public:
 
   virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
   {
-    localVectorAssembler_.assembleLocal(space_, entity, vector_, this->vectors(), this->indices());
+    localVectorAssembler_.assembleLocal(*space_, entity, vector_, this->vectors(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& space_;
+  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
   const LocalVolumeVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
@@ -272,11 +272,11 @@ public:
                            const typename AssemblerType::EntityType& /*inside_entity*/,
                            const typename AssemblerType::EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
   {
-    localVectorAssembler_.assembleLocal(space_, intersection, vector_, this->vectors(), this->indices());
+    localVectorAssembler_.assembleLocal(*space_, intersection, vector_, this->vectors(), this->indices());
   }
 
 private:
-  const typename AssemblerType::TestSpaceType& space_;
+  const DS::PerThreadValue<typename AssemblerType::TestSpaceType> space_;
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
