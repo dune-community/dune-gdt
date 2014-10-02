@@ -8,12 +8,6 @@
 
 #include <dune/stuff/common/fmatrix.hh>
 
-#ifndef NDEBUG
-# ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-#   include <dune/stuff/common/logging.hh>
-# endif
-#endif
-
 #include <dune/gdt/localevaluation/swipdg.hh>
 
 namespace Dune {
@@ -132,34 +126,6 @@ public:
         + std::max(testBaseEntity.order(), testBaseNeighbor.order())
         + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   } // size_t order(...)
-
-  template< class IntersectionType, class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
-  void evaluate(const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*localDiffusionFactorEntity*/,
-                const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rDT, rCDT >& /*localDiffusionTensorEntity*/,
-                const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*localDiffusionFactorNeighbor*/,
-                const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rDT, rCDT >& /*localDiffusionTensorNeighbor*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBaseNeighbor*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBaseNeighbor*/,
-                const IntersectionType& /*intersection*/,
-                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
-                Dune::DynamicMatrix< R >& /*entityEntityRet*/,
-                Dune::DynamicMatrix< R >& /*neighborNeighborRet*/,
-                Dune::DynamicMatrix< R >& /*entityNeighborRet*/,
-                Dune::DynamicMatrix< R >& /*neighborEntityRet*/) const
-  {
-    static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
-  } // void evaluate< ... >(...) const
-
   template< class R, class IntersectionType >
   void evaluate(const Stuff::LocalfunctionInterface
                     < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDiffusionFactorEntity,
@@ -216,12 +182,12 @@ public:
 #ifndef NDEBUG
 # ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
     if (Stuff::Common::FloatCmp::ne(local_diffusion_factor_en, local_diffusion_factor_ne))
-      DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+      DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
           << "The diffusion factor is assumed to be continuous across intersections, but\n"
-          << "   localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
-          << "   localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
-          << "#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
-          << "or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
+          << "    localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
+          << "    localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
+          << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+          << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
 # endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
 #endif // NDEBUG
     //   just to be sure we take the everage value here
@@ -264,14 +230,10 @@ public:
     ansatzBaseNeighbor.evaluate(localPointNe, ansatzValuesNe);
     ansatzBaseNeighbor.jacobian(localPointNe, ansatzGradientsNe);
     // compute the evaluations
-    assert(entityEntityRet.rows() >= rowsEn);
-    assert(entityEntityRet.cols() >= colsEn);
-    assert(entityNeighborRet.rows() >= rowsEn);
-    assert(entityNeighborRet.cols() >= colsNe);
-    assert(neighborEntityRet.rows() >= rowsNe);
-    assert(neighborEntityRet.cols() >= colsEn);
-    assert(neighborNeighborRet.rows() >= rowsNe);
-    assert(neighborNeighborRet.cols() >= colsNe);
+    assert(entityEntityRet.rows()     >= rowsEn && entityEntityRet.cols()     >= colsEn);
+    assert(entityNeighborRet.rows()   >= rowsEn && entityNeighborRet.cols()   >= colsNe);
+    assert(neighborEntityRet.rows()   >= rowsNe && neighborEntityRet.cols()   >= colsEn);
+    assert(neighborNeighborRet.rows() >= rowsNe && neighborNeighborRet.cols() >= colsNe);
     // loop over all entity test basis functions
     for (size_t ii = 0; ii < rowsEn; ++ii) {
       auto& entityEntityRetRow = entityEntityRet[ii];
