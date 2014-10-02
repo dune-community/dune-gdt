@@ -9,11 +9,13 @@
 #include <tuple>
 #include <type_traits>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/densematrix.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/stuff/common/color.hh>
+#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
+#include <dune/stuff/common/logging.hh>
+#endif
+#endif
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "interface.hh"
@@ -53,7 +55,7 @@ namespace internal {
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double default_beta(const int dimDomain)
+static inline double default_beta(const size_t dimDomain)
 {
   return 1.0 / (dimDomain - 1.0);
 }
@@ -74,9 +76,10 @@ static inline double inner_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
-              << " a polynomial order of " << pol_order << " is untested!" << std::endl
-              << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+    DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
 #endif
 #endif
     sigma *= 50.0;
@@ -100,9 +103,10 @@ static inline double boundary_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundaryrhs):")
-              << " a polynomial order of " << pol_order << " is untested!" << std::endl
-              << "  (#define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
+    DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
 #endif
 #endif
     sigma *= 100.0;
@@ -383,7 +387,7 @@ public:
   }
 
   /**
-   *  \brief  Computes the ipdg fluxes in a primal setting.
+   *  \brief  Computes the swipdg fluxes in a primal setting.
    *  \tparam IntersectionType Type of the codim 1 Intersection
    *  \tparam R         RangeFieldType
    */
