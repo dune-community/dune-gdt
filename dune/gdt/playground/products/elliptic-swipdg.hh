@@ -17,6 +17,7 @@
 #include <dune/stuff/la/container/pattern.hh>
 
 #include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/playground/localevaluation/swipdg.hh>
 #include <dune/gdt/products/interfaces.hh>
@@ -35,6 +36,15 @@ template< class GridViewImp,
           class FieldImp,
           class DiffusionTensorImp >
 class EllipticSWIPDGPenaltyLocalizable;
+
+
+template< class DiffusionFactorImp,
+          class MatrixImp,
+          class RangeSpaceImp,
+          class GridViewImp,
+          class SourceSpaceImp,
+          class DiffusionTensorImp >
+class EllipticSWIPDGPenaltyAssemblable;
 
 
 namespace internal {
@@ -56,6 +66,24 @@ public:
   typedef SourceImp   SourceType;
   typedef FieldImp    FieldType;
 }; // class EllipticSWIPDGPenaltyLocalizableTraits
+
+
+template< class DiffusionFactorImp,
+          class MatrixImp,
+          class RangeSpaceImp,
+          class GridViewImp,
+          class SourceSpaceImp,
+          class DiffusionTensorImp >
+class EllipticSWIPDGPenaltyAssemblableTraits
+{
+public:
+  typedef EllipticSWIPDGPenaltyAssemblable
+      < DiffusionFactorImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, DiffusionTensorImp > derived_type;
+  typedef GridViewImp    GridViewType;
+  typedef RangeSpaceImp  RangeSpaceType;
+  typedef SourceSpaceImp SourceSpaceType;
+  typedef MatrixImp      MatrixType;
+}; // class EllipticSWIPDGPenaltyAssemblableTraits
 
 
 } // namespace internal
@@ -247,6 +275,121 @@ private:
   DS::PerThreadValue< FieldType > result_;
   FieldType finalized_result_;
 }; // class EllipticSWIPDGPenaltyLocalizable
+
+
+template< class DiffusionFactorImp,
+          class MatrixImp,
+          class RangeSpaceImp,
+          class GridViewImp = typename RangeSpaceImp::GridViewType,
+          class SourceSpaceImp = RangeSpaceImp,
+          class DiffusionTensorImp = void >
+class EllipticSWIPDGPenaltyAssemblable
+  : DSC::StorageProvider< MatrixImp >
+  , public AssemblableProductInterface< internal::EllipticSWIPDGPenaltyAssemblableTraits
+        < DiffusionFactorImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, DiffusionTensorImp > >
+  , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
+{
+  typedef DSC::StorageProvider< MatrixImp >                                                 StorageBaseType;
+  typedef AssemblableProductInterface< internal::EllipticSWIPDGPenaltyAssemblableTraits
+      < DiffusionFactorImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, DiffusionTensorImp > >
+                                                                                            ProductBaseType;
+  typedef SystemAssembler < RangeSpaceImp, GridViewImp, SourceSpaceImp >                    AssemblerBaseType;
+public:
+  typedef internal::EllipticSWIPDGPenaltyAssemblableTraits
+      < DiffusionFactorImp, MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, DiffusionTensorImp > Traits;
+  typedef typename AssemblerBaseType::GridViewType     GridViewType;
+  typedef typename ProductBaseType::RangeSpaceType     RangeSpaceType;
+  typedef typename ProductBaseType::SourceSpaceType    SourceSpaceType;
+  typedef typename ProductBaseType::FieldType          FieldType;
+  typedef typename ProductBaseType::MatrixType         MatrixType;
+  typedef typename AssemblerBaseType::EntityType       EntityType;
+  typedef typename AssemblerBaseType::IntersectionType IntersectionType;
+  typedef DiffusionFactorImp DiffusionFactorType;
+  typedef DiffusionTensorImp DiffusionTensorType;
+
+  typedef LocalOperator::Codim1CouplingIntegral
+      < LocalEvaluation::SWIPDG::InnerPenalty< DiffusionFactorType, DiffusionTensorType > >       CouplingOperatorType;
+  typedef LocalOperator::Codim1BoundaryIntegral
+      < LocalEvaluation::SWIPDG::BoundaryLHSPenalty< DiffusionFactorType, DiffusionTensorType > > BoundaryOperatorType;
+  typedef LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >                            CouplingAssemblerType;
+  typedef LocalAssembler::Codim1BoundaryMatrix< BoundaryOperatorType >                            BoundaryAssemblerType;
+
+  using ProductBaseType::pattern;
+
+  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
+                                                   const SourceSpaceType& source_space,
+                                                   const GridViewType& grid_view)
+  {
+    return range_space.compute_face_and_volume_pattern(grid_view, source_space);
+  }
+
+  EllipticSWIPDGPenaltyAssemblable(const RangeSpaceType& rng_spc,
+                                   const GridViewType& grd_vw,
+                                   const SourceSpaceType& src_spc,
+                                   const DiffusionFactorImp& diffusion_factor,
+                                   const DiffusionTensorImp& diffusion_tensor,
+                                   const size_t over_integrate = 0)
+    : StorageBaseType(new MatrixType(rng_spc.mapper().size(), src_spc.mapper().size(), pattern(rng_spc, src_spc, grd_vw)))
+    , AssemblerBaseType(rng_spc, src_spc, grd_vw)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , coupling_operator_(over_integrate, diffusion_factor_, diffusion_tensor_)
+    , boundary_operator_(over_integrate, diffusion_factor_, diffusion_tensor_)
+    , coupling_assembler_(coupling_operator_)
+    , boundary_assembler_(boundary_operator_)
+    , assembled_(false)
+  {
+    setup();
+  }
+
+  const GridViewType& grid_view() const
+  {
+    return AssemblerBaseType::grid_view();
+  }
+
+  const RangeSpaceType& range_space() const
+  {
+    return AssemblerBaseType::test_space();
+  }
+
+  const SourceSpaceType& source_space() const
+  {
+    return AssemblerBaseType::ansatz_space();
+  }
+
+  MatrixType& matrix()
+  {
+    return StorageBaseType::storage_access();
+  }
+
+  const MatrixType& matrix() const
+  {
+    return StorageBaseType::storage_access();
+  }
+
+  void assemble()
+  {
+    if (!assembled_) {
+      AssemblerBaseType::assemble();
+      assembled_ = true;
+    }
+  } // ... assemble()
+
+private:
+  void setup()
+  {
+    this->add(coupling_assembler_, matrix(), new DSG::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(boundary_assembler_, matrix(), new DSG::ApplyOn::BoundaryIntersections< GridViewType >());
+  }
+
+  const DiffusionFactorType& diffusion_factor_;
+  const DiffusionTensorType& diffusion_tensor_;
+  const CouplingOperatorType coupling_operator_;
+  const BoundaryOperatorType boundary_operator_;
+  const CouplingAssemblerType coupling_assembler_;
+  const BoundaryAssemblerType boundary_assembler_;
+  bool assembled_;
+}; // class EllipticSWIPDGPenaltyAssemblable
 
 
 } // namespace Products
