@@ -24,24 +24,14 @@ namespace LocalAssembler {
 
 
 template <class LocalOperatorImp>
-class Codim1CouplingMatrix;
-
-
-template <class LocalOperatorImp>
-class Codim1CouplingMatrixTraits
-{
-public:
-  typedef Codim1CouplingMatrix<LocalOperatorImp> derived_type;
-  typedef LocalOperator::Codim1CouplingInterface<typename LocalOperatorImp::Traits> LocalOperatorType;
-};
-
-
-template <class LocalOperatorImp>
 class Codim1CouplingMatrix
 {
+  static_assert(std::is_base_of<LocalOperator::Codim1CouplingInterface<typename LocalOperatorImp::Traits>,
+                                LocalOperatorImp>::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1CouplingInterface!");
+
 public:
-  typedef Codim1CouplingMatrixTraits<LocalOperatorImp> Traits;
-  typedef typename Traits::LocalOperatorType LocalOperatorType;
+  typedef LocalOperatorImp LocalOperatorType;
 
   Codim1CouplingMatrix(const LocalOperatorType& op)
     : localOperator_(op)
@@ -204,24 +194,14 @@ private:
 
 
 template <class LocalOperatorImp>
-class Codim1BoundaryMatrix;
-
-
-template <class LocalOperatorImp>
-class Codim1BoundaryMatrixTraits
-{
-public:
-  typedef Codim1BoundaryMatrix<LocalOperatorImp> derived_type;
-  typedef LocalOperator::Codim1BoundaryInterface<typename LocalOperatorImp::Traits> LocalOperatorType;
-};
-
-
-template <class LocalOperatorImp>
 class Codim1BoundaryMatrix
 {
+  static_assert(std::is_base_of<LocalOperator::Codim1BoundaryInterface<typename LocalOperatorImp::Traits>,
+                                LocalOperatorImp>::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1BoundaryInterface!");
+
 public:
-  typedef Codim1BoundaryMatrixTraits<LocalOperatorImp> Traits;
-  typedef typename Traits::LocalOperatorType LocalOperatorType;
+  typedef LocalOperatorImp LocalOperatorType;
 
   Codim1BoundaryMatrix(const LocalOperatorType& op)
     : localOperator_(op)
@@ -299,24 +279,14 @@ private:
 
 
 template <class LocalFunctionalImp>
-class Codim1Vector;
-
-
-template <class LocalFunctionalImp>
-class Codim1VectorTraits
-{
-public:
-  typedef Codim1Vector<LocalFunctionalImp> derived_type;
-  typedef LocalFunctional::Codim1Interface<typename LocalFunctionalImp::Traits> LocalFunctionalType;
-};
-
-
-template <class LocalFunctionalImp>
 class Codim1Vector
 {
+  static_assert(
+      std::is_base_of<LocalFunctional::Codim1Interface<typename LocalFunctionalImp::Traits>, LocalFunctionalImp>::value,
+      "LocalFunctionalImp has to be derived from LocalFunctional::Codim1Interface!");
+
 public:
-  typedef Codim1VectorTraits<LocalFunctionalImp> Traits;
-  typedef typename Traits::LocalFunctionalType LocalFunctionalType;
+  typedef LocalFunctionalImp LocalFunctionalType;
 
   Codim1Vector(const LocalFunctionalType& fu)
     : localFunctional_(fu)
