@@ -24,26 +24,14 @@ namespace GDT {
 namespace LocalAssembler {
 
 
-// forward, to be used in the traits
-template< class LocalOperatorImp >
-class Codim0Matrix;
-
-
-template< class LocalOperatorImp >
-class Codim0MatrixTraits
-{
-public:
-  typedef Codim0Matrix< LocalOperatorImp > derived_type;
-  typedef LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits > LocalOperatorType;
-}; // class LocalAssemblerCodim0MatrixTraits
-
-
 template< class LocalOperatorImp >
 class Codim0Matrix
 {
+  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
 public:
-  typedef Codim0MatrixTraits< LocalOperatorImp > Traits;
-  typedef typename Traits::LocalOperatorType LocalOperatorType;
+  typedef LocalOperatorImp LocalOperatorType;
 
   Codim0Matrix(const LocalOperatorType& op)
     : localOperator_(op)
@@ -113,29 +101,17 @@ public:
 
 private:
   const LocalOperatorType& localOperator_;
-}; // class LocalAssemblerCodim0Matrix
-
-
-// forward, to be used in the traits
-template< class LocalOperatorImp >
-class Codim0Vector;
-
-
-template< class LocalFunctionalImp >
-class Codim0VectorTraits
-{
-public:
-  typedef Codim0Vector< LocalFunctionalImp > derived_type;
-  typedef LocalFunctional::Codim0Interface< typename LocalFunctionalImp::Traits > LocalFunctionalType;
-}; // class LocalAssemblerCodim0MatrixTraits
+}; // class Codim0Matrix
 
 
 template< class LocalFunctionalImp >
 class Codim0Vector
 {
+  static_assert(std::is_base_of< LocalFunctional::Codim0Interface< typename LocalFunctionalImp::Traits >,
+                                 LocalFunctionalImp >::value,
+                "LocalFunctionalImp has to be derived from LocalFunctional::Codim0Interface!");
 public:
-  typedef Codim0VectorTraits< LocalFunctionalImp > Traits;
-  typedef typename Traits::LocalFunctionalType LocalFunctionalType;
+  typedef LocalFunctionalImp LocalFunctionalType;
 
   Codim0Vector(const LocalFunctionalType& func)
     : localFunctional_(func)
