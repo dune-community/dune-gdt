@@ -22,8 +22,6 @@
 #include <dune/gdt/products/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
-#include "base-internal.hh"
-
 namespace Dune {
 namespace GDT {
 namespace Products {
@@ -32,7 +30,7 @@ namespace Products {
 // forward, needed for the traits
 template <class GridViewImp, class DiffusionFactorImp, class RangeImp, class SourceImp, class FieldImp,
           class DiffusionTensorImp>
-class EllipticSWIPDGPenalty;
+class EllipticSWIPDGPenaltyLocalizable;
 
 
 namespace internal {
@@ -40,16 +38,16 @@ namespace internal {
 
 template <class GridViewImp, class DiffusionFactorImp, class RangeImp, class SourceImp, class FieldImp,
           class DiffusionTensorImp>
-class EllipticSWIPDGPenaltyTraits
+class EllipticSWIPDGPenaltyLocalizableTraits
 {
 public:
-  typedef EllipticSWIPDGPenalty<GridViewImp, DiffusionFactorImp, RangeImp, SourceImp, FieldImp, DiffusionTensorImp>
-      derived_type;
+  typedef EllipticSWIPDGPenaltyLocalizable<GridViewImp, DiffusionFactorImp, RangeImp, SourceImp, FieldImp,
+                                           DiffusionTensorImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef RangeImp RangeType;
   typedef SourceImp SourceType;
   typedef FieldImp FieldType;
-}; // class EllipticSWIPDGPenaltyTraits
+}; // class EllipticSWIPDGPenaltyLocalizableTraits
 
 
 } // namespace internal
@@ -57,20 +55,22 @@ public:
 
 template <class GridViewImp, class DiffusionFactorImp, class RangeImp, class SourceImp = RangeImp,
           class FieldImp = double, class DiffusionTensorImp = void>
-class EllipticSWIPDGPenalty
-    : public LocalizableProductInterface<internal::EllipticSWIPDGPenaltyTraits<GridViewImp, DiffusionFactorImp,
-                                                                               RangeImp, SourceImp, FieldImp,
-                                                                               DiffusionTensorImp>>,
+class EllipticSWIPDGPenaltyLocalizable
+    : public LocalizableProductInterface<internal::EllipticSWIPDGPenaltyLocalizableTraits<GridViewImp,
+                                                                                          DiffusionFactorImp, RangeImp,
+                                                                                          SourceImp, FieldImp,
+                                                                                          DiffusionTensorImp>>,
       public Stuff::Grid::Functor::Codim1<GridViewImp>
 {
-  typedef LocalizableProductInterface<internal::EllipticSWIPDGPenaltyTraits<GridViewImp, DiffusionFactorImp, RangeImp,
-                                                                            SourceImp, FieldImp, DiffusionTensorImp>>
+  typedef LocalizableProductInterface<internal::EllipticSWIPDGPenaltyLocalizableTraits<GridViewImp, DiffusionFactorImp,
+                                                                                       RangeImp, SourceImp, FieldImp,
+                                                                                       DiffusionTensorImp>>
       ProductBaseType;
   typedef Stuff::Grid::Functor::Codim1<GridViewImp> FunctorBaseType;
 
 public:
-  typedef internal::EllipticSWIPDGPenaltyTraits<GridViewImp, DiffusionFactorImp, RangeImp, SourceImp, FieldImp,
-                                                DiffusionTensorImp> Traits;
+  typedef internal::EllipticSWIPDGPenaltyLocalizableTraits<GridViewImp, DiffusionFactorImp, RangeImp, SourceImp,
+                                                           FieldImp, DiffusionTensorImp> Traits;
 
   typedef typename FunctorBaseType::GridViewType GridViewType;
   typedef typename ProductBaseType::RangeType RangeType;
@@ -92,9 +92,9 @@ private:
   typedef DSC::TmpMatricesStorage<FieldType> TmpMatricesProviderType;
 
 public:
-  EllipticSWIPDGPenalty(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
-                        const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                        const size_t over_integrate = 0)
+  EllipticSWIPDGPenaltyLocalizable(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src,
+                                   const DiffusionFactorType& diffusion_factor,
+                                   const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
     : grid_view_(grd_vw)
     , range_(rng)
     , source_(src)
@@ -112,7 +112,7 @@ public:
   {
   }
 
-  virtual ~EllipticSWIPDGPenalty()
+  virtual ~EllipticSWIPDGPenaltyLocalizable()
   {
   }
 
@@ -231,7 +231,7 @@ private:
   bool finalized_;
   DS::PerThreadValue<FieldType> result_;
   FieldType finalized_result_;
-}; // class EllipticSWIPDGPenalty
+}; // class EllipticSWIPDGPenaltyLocalizable
 
 
 } // namespace Products
