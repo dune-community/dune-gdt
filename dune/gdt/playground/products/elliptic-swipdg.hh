@@ -160,6 +160,7 @@ public:
     const auto local_range_ptr_en  = this->range().local_function(inside_entity);
     const auto local_range_ptr_ne  = this->range().local_function(outside_entity);
     // apply local operator
+    FieldType ret = 0;
     if (inner_intersections_.apply_on(grid_view_, intersection)) {
       coupling_operator_.apply(*local_range_ptr_en,
                                *local_source_ptr_en,
@@ -179,7 +180,7 @@ public:
       assert(local_operator_result_en_ne.cols() == 1);
       assert(local_operator_result_ne_en.rows() == 1);
       assert(local_operator_result_ne_en.cols() == 1);
-      return local_operator_result_en_en[0][0] + local_operator_result_ne_ne[0][0] + local_operator_result_en_ne[0][0]
+      ret += local_operator_result_en_en[0][0] + local_operator_result_ne_ne[0][0] + local_operator_result_en_ne[0][0]
              + local_operator_result_ne_en[0][0];
     }
     if (boundary_intersections_.apply_on(grid_view_, intersection)) {
@@ -187,8 +188,9 @@ public:
           *local_range_ptr_en, *local_source_ptr_en, intersection, local_operator_result_en_en, tmp_matrices);
       assert(local_operator_result_en_en.rows() == 1);
       assert(local_operator_result_en_en.cols() == 1);
-      return local_operator_result_en_en[0][0];
+      ret += local_operator_result_en_en[0][0];
     }
+    return ret;
   } // ... compute_locally(...)
 
   virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
