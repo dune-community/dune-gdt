@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_PRODUCTS_BOUNDARYL2_HH
 #define DUNE_GDT_PRODUCTS_BOUNDARYL2_HH
 
-#include "../../products/base.hh"
+#include "base.hh"
 #include "boundaryl2-internal.hh"
 
 namespace Dune {

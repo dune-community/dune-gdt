@@ -10,7 +10,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/playground/products/boundaryl2.hh>
+#include <dune/gdt/products/boundaryl2.hh>
 
 #include "products.hh"
 
