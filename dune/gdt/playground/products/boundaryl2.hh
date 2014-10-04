@@ -35,6 +35,27 @@ public:
 };
 
 
+/**
+ * \brief An assemblable L2 product over the boundary of a domain.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa AssemblableBase first and then \sa
+ *        internal::BoundaryL2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template <class M, class R, class GV = typename R::GridViewType, class S = R, class FieldType = double>
+class BoundaryL2Assemblable : public AssemblableBase<internal::BoundaryL2Base<GV, FieldType>, M, R, S>
+{
+  typedef AssemblableBase<internal::BoundaryL2Base<GV, FieldType>, M, R, S> BaseType;
+
+public:
+  template <class... Args>
+  BoundaryL2Assemblable(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+};
+
+
 } // namespace Products
 } // namespace GDT
 } // namespace Dune
