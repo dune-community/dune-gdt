@@ -203,8 +203,8 @@ class Codim1BoundaryIntegral;
 template< class BinaryEvaluationImp >
 class Codim1BoundaryIntegralTraits
 {
-  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename BinaryEvaluationImp::Traits, 2 >,
-                                  BinaryEvaluationImp >::value,
+  static_assert(std::is_base_of< LocalEvaluation::Codim1Interface< typename BinaryEvaluationImp::Traits, 2 >,
+                                 BinaryEvaluationImp >::value,
                 "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
 public:
   typedef Codim1BoundaryIntegral< BinaryEvaluationImp > derived_type;
