@@ -81,4 +81,3 @@ TYPED_TEST(WeightedL2Product, linear_arguments) {
 TYPED_TEST(WeightedL2Product, quadratic_arguments) {
   this->quadratic_arguments();
 }
-
