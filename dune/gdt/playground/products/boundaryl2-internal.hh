@@ -33,7 +33,7 @@ class BoundaryL2Base
       public LocalOperatorProviderBase<GV>
 {
   typedef DSC::ConstStorageProvider<Stuff::Functions::Constant<
-      typename GV::template Codim<0>::Entity, typename GV::ctype, GV::dimension, FieldImp, 1>> StorageBaseType;
+      typename GV::template Codim<0>::Entity, typename GV::ctype, GV::dimension, FieldImp, 1>> FunctionProvider;
   typedef BoundaryL2Base<GV, FieldImp> ThisType;
   typedef Stuff::Functions::Constant<typename GV::template Codim<0>::Entity, typename GV::ctype, GV::dimension,
                                      FieldImp, 1> FunctionType;
@@ -47,13 +47,25 @@ public:
   static const bool has_boundary_operator = true;
 
   BoundaryL2Base(const size_t over_integrate = 0)
-    : StorageBaseType(new FunctionType(1))
-    , boundary_operator_(over_integrate, this->storage_access())
+    : FunctionProvider(new FunctionType(1))
+    , over_integrate_(over_integrate)
+    , boundary_operator_(over_integrate_, FunctionProvider::storage_access())
   {
   }
 
-  BoundaryL2Base(const ThisType& other) = default;
+  /**
+   * \note We need the manual copy ctor bc of the Stuff::Common::ConstStorageProvider
+   */
+  BoundaryL2Base(const ThisType& other)
+    : FunctionProvider(new FunctionType(1))
+    , over_integrate_(other.over_integrate_)
+    , boundary_operator_(other.over_integrate_, FunctionProvider::storage_access())
+  {
+  }
 
+private:
+  const size_t over_integrate_; //!< needed to provide manual copy ctor
+public:
   const BoundaryOperatorType boundary_operator_;
 }; // BoundaryL2Base
 

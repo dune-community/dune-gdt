@@ -56,6 +56,27 @@ public:
 };
 
 
+/**
+ * \brief An L2 product over the boundary of a domain.
+ *
+ *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
+ *        internal::L2Base.
+ * \todo  Add more documentation, especially a mathematical definition.
+ */
+template <class GV, class FieldType = double>
+class BoundaryL2 : public GenericBase<internal::BoundaryL2Base<GV, FieldType>>
+{
+  typedef GenericBase<internal::BoundaryL2Base<GV, FieldType>> BaseType;
+
+public:
+  template <class... Args>
+  BoundaryL2(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+};
+
+
 } // namespace Products
 } // namespace GDT
 } // namespace Dune
