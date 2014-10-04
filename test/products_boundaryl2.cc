@@ -29,3 +29,40 @@ TYPED_TEST(BoundaryL2LocalizableProduct, linear_arguments) {
 TYPED_TEST(BoundaryL2LocalizableProduct, quadratic_arguments) {
   this->quadratic_arguments();
 }
+
+
+#if HAVE_DUNE_FEM
+
+typedef testing::Types<
+                        SPACE_DG_FEM_SGRID(1, 1, 2)
+                      , SPACE_DG_FEM_SGRID(2, 1, 2)
+                      , SPACE_DG_FEM_SGRID(3, 1, 2)
+                      > QuadraticSpaces;
+
+TYPED_TEST_CASE(BoundaryL2AssemblableProduct, QuadraticSpaces);
+TYPED_TEST(BoundaryL2AssemblableProduct, fulfills_interface) {
+  this->fulfills_interface();
+}
+TYPED_TEST(BoundaryL2AssemblableProduct, constant_arguments) {
+  this->constant_arguments();
+}
+TYPED_TEST(BoundaryL2AssemblableProduct, linear_arguments) {
+  this->linear_arguments();
+}
+TYPED_TEST(BoundaryL2AssemblableProduct, quadratic_arguments) {
+  this->quadratic_arguments();
+}
+
+#else // HAVE_DUNE_FEM
+
+TYPED_TEST_CASE(BoundaryL2AssemblableProduct, ConstantSpaces);
+TYPED_TEST(BoundaryL2AssemblableProduct, fulfills_interface) {
+  this->fulfills_interface();
+}
+TYPED_TEST(BoundaryL2AssemblableProduct, constant_arguments) {
+  this->constant_arguments();
+}
+TEST(DISABLED_BoundaryL2AssemblableProduct, linear_arguments)    {}
+TEST(DISABLED_BoundaryL2AssemblableProduct, quadratic_arguments) {}
+
+#endif // HAVE_DUNE_FEM
