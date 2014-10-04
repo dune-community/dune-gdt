@@ -128,4 +128,26 @@ struct BoundaryL2AssemblableProduct : public BoundaryL2ProductBase<SpaceType>
 }; // struct BoundaryL2AssemblableProduct
 
 
+template <class SpaceType>
+struct BoundaryL2Product : public BoundaryL2ProductBase<SpaceType>
+{
+  typedef BoundaryL2ProductBase<SpaceType> BaseType;
+  typedef typename BaseType::RangeFieldType RangeFieldType;
+  typedef typename BaseType::FunctionType FunctionType;
+  typedef typename BaseType::GridViewType GridViewType;
+
+  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  {
+    const Products::BoundaryL2<GridViewType> product(*this->space_.grid_view());
+    return product.apply2(function, function);
+  } // ... compute(...)
+
+  void fulfills_interface() const
+  {
+    typedef Products::BoundaryL2<GridViewType> ProductType;
+    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(*this->space_.grid_view()));
+  }
+}; // struct BoundaryL2Product
+
+
 #endif // DUNE_GDT_TEST_PRODUCTS_BOUNDARYL2_HH
