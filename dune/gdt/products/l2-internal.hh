@@ -15,6 +15,8 @@
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localevaluation/product.hh>
 
+#include "base-internal.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Products {
@@ -28,8 +30,9 @@ namespace internal {
  */
 template< class GV, class FunctionImp, class FieldImp >
 class WeightedL2Base
+  : public LocalOperatorProviderBase< GV >
 {
-  static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, FunctionImp >::value,
+  static_assert(Stuff::is_localizable_function< FunctionImp >::value,
                 "FunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
   typedef WeightedL2Base< GV, FunctionImp, FieldImp > ThisType;
 protected:
@@ -37,19 +40,21 @@ protected:
 public:
   typedef GV GridViewType;
   typedef FieldImp FieldType;
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Product< FunctionType > > LocalOperatorType;
+  typedef LocalOperator::Codim0Integral< LocalEvaluation::Product< FunctionType > > VolumeOperatorType;
+
+  static const bool has_volume_operator = true;
 
   WeightedL2Base(const FunctionType& function, const size_t over_integrate = 0)
     : function_(function)
-    , local_operator_(over_integrate, function_)
+    , volume_operator_(over_integrate, function_)
   {}
 
   WeightedL2Base(const ThisType& other) = default;
 
 private:
   const FunctionType& function_;
-protected:
-  const LocalOperatorType local_operator_;
+public:
+  const VolumeOperatorType volume_operator_;
 }; // WeightedL2Base
 
 

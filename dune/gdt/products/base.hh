@@ -113,7 +113,7 @@ private:
  *        The purpose of this class is to facilitate the implementation of assembable products that are based on a
  *        local operator that is derived from LocalOperator::Codim0Interface by implementing as much as possible. All
  *        you have to do is to implement a class LocalOperatorProvider that provides the following:
- *        - a protected member local_operator_
+ *        - a protected member volume_operator_
  *        - a typedef GridViewType
  *        AssemblableBase derives from that provided class and forwards any additional ctor arguments to its ctor.
  *        Static checks of MatrixType, RangeSpaceType and SourceSpaceType are performed in
@@ -145,7 +145,7 @@ class AssemblableBase
                                                                         SourceSpaceImp > >  ProductBaseType;
   typedef SystemAssembler
       < RangeSpaceImp, typename LocalOperatorProvider::GridViewType, SourceSpaceImp >       AssemblerBaseType;
-  typedef LocalAssembler::Codim0Matrix< typename LocalOperatorProvider::LocalOperatorType > LocalAssemblerType;
+  typedef LocalAssembler::Codim0Matrix< typename LocalOperatorProvider::VolumeOperatorType > LocalAssemblerType;
 public:
   typedef internal::AssemblableBaseTraits
       < LocalOperatorProvider, MatrixImp, RangeSpaceImp, SourceSpaceImp > Traits;
@@ -173,7 +173,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(mtrx)
     , AssemblerBaseType(rng_spc, src_spc, grd_vw)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
@@ -187,7 +187,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(new MatrixType(rng_spc.mapper().size(), src_spc.mapper().size(), pattern(rng_spc, src_spc, grd_vw)))
     , AssemblerBaseType(rng_spc, src_spc, grd_vw)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
@@ -198,7 +198,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(mtrx)
     , AssemblerBaseType(rng_spc, grd_vw)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
@@ -209,7 +209,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc, grd_vw)))
     , AssemblerBaseType(rng_spc, grd_vw)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
@@ -220,7 +220,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(mtrx)
     , AssemblerBaseType(rng_spc)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
@@ -231,7 +231,7 @@ public:
     : LocalOperatorProvider(std::forward< Args >(args)...)
     , StorageBaseType(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc)))
     , AssemblerBaseType(rng_spc)
-    , local_assembler_(this->local_operator_)
+    , local_assembler_(this->volume_operator_)
     , assembled_(false)
   {
     setup();
