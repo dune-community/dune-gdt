@@ -226,12 +226,12 @@ public:
     return local_operator_result[0][0];
   } // ... compute_locally(...)
 
-  virtual void apply_local(const EntityType& entity)
+  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
   {
     *result_ += compute_locally(entity);
   }
 
-  virtual void finalize()
+  virtual void finalize() DS_OVERRIDE
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();
@@ -259,7 +259,7 @@ private:
 }; // class Codim0OperatorAccumulateFunctor
 
 
-  } // namespace LocalAssembler
+} // namespace LocalAssembler
 } // namespace GDT
 } // namespace Dune
 
