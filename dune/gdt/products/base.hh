@@ -11,9 +11,7 @@
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
-#include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/localoperator/interface.hh>
 
 #include "interfaces.hh"
 #include "base-internal.hh"
@@ -114,17 +112,19 @@ private:
 /**
  * \brief Base class for all assembable products.
  *
- *        The purpose of this class is to facilitate the implementation of assembable products that are based on a
- *        local operator that is derived from LocalOperator::Codim0Interface by implementing as much as possible. All
- *        you have to do is to implement a class LocalOperatorProvider that provides the following:
- *        - a protected member volume_operator_
- *        - a typedef GridViewType
- *        AssemblableBase derives from that provided class and forwards any additional ctor arguments to its ctor.
- *        Static checks of MatrixType, RangeSpaceType and SourceSpaceType are performed in
+ *        The purpose of this class is to facilitate the implementation of assembable products (that are based on
+ *        local operators) by implementing as much as possible. All you have to do is to implement a class
+ *        LocalOperatorProvider, derived from LocalOperatorProviderBase. See the documentation of
+ *        \sa LocalOperatorProviderBase for the requirements of your class, depending on the type of local operator you
+ *        want to use. We do not use the CRTP machinery here but trust you to implement what is necessarry. Any
+ *        additional ctor arguments given to AssemblableBase are forwarded to your implementation of
+ *        LocalOperatorProvider. Static checks of MatrixType, RangeSpaceType and SourceSpaceType are performed in
  *        internal::AssemblableBaseTraits. You can finally implement the product by deriving from this class and
  *        providing the appropriate LocalOperatorProvider. To get an idea see \sa Products::internal::WeightedL2Base in
- *        l2-internal.hh for an example of a LocalOperatorProvider and Products::WeightedL2Assemblable in l2.hh for an
- *        example of the final product.
+ *        weightedl2-internal.hh for an example of a LocalOperatorProvider and Products::WeightedL2Assemblable in
+ *        weightedl2.hh for an example of the final product.
+ * \note  If you want to know about the internal workings of this class, take a look at \sa
+ *        internal::AssemblableBaseHelper.
  * \note  This class proves an automatic creation of the matrix that is being assembled into. Thus each kind of ctor
  *        exists in two variants (one taking a matrix reference, one not). If you provide an external matrix you are
  *        responsible for the well being of the matrix:
@@ -134,18 +134,17 @@ private:
  */
 template <class LocalOperatorProvider, class MatrixImp, class RangeSpaceImp, class SourceSpaceImp>
 class AssemblableBase
-    : LocalOperatorProvider,
-      DSC::StorageProvider<MatrixImp>,
+    : DSC::StorageProvider<MatrixImp>,
       public AssemblableProductInterface<internal::AssemblableBaseTraits<LocalOperatorProvider, MatrixImp,
                                                                          RangeSpaceImp, SourceSpaceImp>>,
       public SystemAssembler<RangeSpaceImp, typename LocalOperatorProvider::GridViewType, SourceSpaceImp>
 {
-  typedef DSC::StorageProvider<MatrixImp> StorageBaseType;
+  typedef DSC::StorageProvider<MatrixImp> MatrixProvider;
   typedef AssemblableProductInterface<internal::AssemblableBaseTraits<LocalOperatorProvider, MatrixImp, RangeSpaceImp,
                                                                       SourceSpaceImp>> ProductBaseType;
   typedef SystemAssembler<RangeSpaceImp, typename LocalOperatorProvider::GridViewType, SourceSpaceImp>
       AssemblerBaseType;
-  typedef LocalAssembler::Codim0Matrix<typename LocalOperatorProvider::VolumeOperatorType> LocalAssemblerType;
+  typedef AssemblableBase<LocalOperatorProvider, MatrixImp, RangeSpaceImp, SourceSpaceImp> ThisType;
 
 public:
   typedef internal::AssemblableBaseTraits<LocalOperatorProvider, MatrixImp, RangeSpaceImp, SourceSpaceImp> Traits;
@@ -155,87 +154,82 @@ public:
   typedef typename ProductBaseType::MatrixType MatrixType;
   typedef typename ProductBaseType::FieldType FieldType;
 
+private:
+  typedef internal::AssemblableBaseHelper<ThisType, LocalOperatorProvider> HelperType;
+
+public:
   using ProductBaseType::pattern;
 
   static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
                                                    const SourceSpaceType& source_space, const GridViewType& grid_view)
   {
-    return range_space.compute_volume_pattern(grid_view, source_space);
+    return HelperType::pattern(range_space, source_space, grid_view);
   }
 
   template <class... Args>
   AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw,
                   const SourceSpaceType& src_spc, Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(mtrx)
+    : MatrixProvider(mtrx)
     , AssemblerBaseType(rng_spc, src_spc, grd_vw)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
   template <class... Args>
   AssemblableBase(const RangeSpaceType& rng_spc, const GridViewType& grd_vw, const SourceSpaceType& src_spc,
                   Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(
+    : MatrixProvider(
           new MatrixType(rng_spc.mapper().size(), src_spc.mapper().size(), pattern(rng_spc, src_spc, grd_vw)))
     , AssemblerBaseType(rng_spc, src_spc, grd_vw)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
   template <class... Args>
   AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc, const GridViewType& grd_vw, Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(mtrx)
+    : MatrixProvider(mtrx)
     , AssemblerBaseType(rng_spc, grd_vw)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
   template <class... Args>
   AssemblableBase(const RangeSpaceType& rng_spc, const GridViewType& grd_vw, Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc, grd_vw)))
+    : MatrixProvider(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc, grd_vw)))
     , AssemblerBaseType(rng_spc, grd_vw)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
   template <class... Args>
   AssemblableBase(MatrixType& mtrx, const RangeSpaceType& rng_spc, Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(mtrx)
+    : MatrixProvider(mtrx)
     , AssemblerBaseType(rng_spc)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
   template <class... Args>
   AssemblableBase(const RangeSpaceType& rng_spc, Args&&... args)
-    : LocalOperatorProvider(std::forward<Args>(args)...)
-    , StorageBaseType(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc)))
+    : MatrixProvider(new MatrixType(rng_spc.mapper().size(), rng_spc.mapper().size(), pattern(rng_spc)))
     , AssemblerBaseType(rng_spc)
-    , local_assembler_(this->volume_operator_)
+    , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, MatrixProvider::storage_access(), local_operators_)
     , assembled_(false)
   {
-    setup();
   }
 
-  const GridViewType& grid_view() const
-  {
-    return AssemblerBaseType::grid_view();
-  }
+  using AssemblerBaseType::grid_view;
 
   const RangeSpaceType& range_space() const
   {
@@ -249,12 +243,12 @@ public:
 
   MatrixType& matrix()
   {
-    return StorageBaseType::storage_access();
+    return MatrixProvider::storage_access();
   }
 
   const MatrixType& matrix() const
   {
-    return StorageBaseType::storage_access();
+    return MatrixProvider::storage_access();
   }
 
   void assemble()
@@ -266,12 +260,8 @@ public:
   } // ... assemble()
 
 private:
-  void setup()
-  {
-    this->add(local_assembler_, matrix());
-  }
-
-  const LocalAssemblerType local_assembler_;
+  const LocalOperatorProvider local_operators_;
+  HelperType helper_;
   bool assembled_;
 }; // class AssemblableBase
 
