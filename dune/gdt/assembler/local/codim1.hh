@@ -10,6 +10,7 @@
 
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/stuff/grid/walker/functors.hh>
 #ifdef DUNE_STUFF_PROFILER_ENABLED
 # include <dune/stuff/common/profiler.hh>
 #endif
@@ -338,6 +339,101 @@ public:
 private:
   const LocalFunctionalType& localFunctional_;
 }; // class Codim1Vector
+
+
+template< class GridViewImp, class LocalOperatorType, class TestFunctionType, class AnsatzFunctionType, class FieldType >
+class Codim1BoundaryOperatorAccumulateFunctor
+  : public Stuff::Grid::Functor::Codim1< GridViewImp >
+{
+  static_assert(std::is_base_of< LocalOperator::Codim1BoundaryInterface< typename LocalOperatorType::Traits >,
+                                 LocalOperatorType >::value,
+                "LocalOperatorType has to be derived from LocalOperator::Codim1BoundaryInterface!");
+  static_assert(Stuff::is_localizable_function< TestFunctionType >::value,
+                "TestFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(Stuff::is_localizable_function< AnsatzFunctionType >::value,
+                "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+
+  typedef Stuff::Grid::Functor::Codim1< GridViewImp > BaseType;
+  typedef DSC::TmpMatricesStorage< FieldType > TmpMatricesProviderType;
+public:
+  typedef typename BaseType::GridViewType     GridViewType;
+  typedef typename BaseType::EntityType       EntityType;
+  typedef typename BaseType::IntersectionType IntersectionType;
+
+  Codim1BoundaryOperatorAccumulateFunctor(const GridViewType& grd_vw,
+                                          const LocalOperatorType& local_op,
+                                          const TestFunctionType& test_function,
+                                          const AnsatzFunctionType& ansatz_function)
+    : grid_view_(grd_vw)
+    , local_operator_(local_op)
+    , test_function_(test_function)
+    , ansatz_function_(ansatz_function)
+    , result_(0)
+    , finalized_(false)
+  {
+    // can not use make_unique here, at least clang does not get it
+    tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(
+        {1, local_operator_.numTmpObjectsRequired()}, 1, 1));
+  }
+
+  virtual ~Codim1BoundaryOperatorAccumulateFunctor() = default;
+
+  FieldType compute_locally(const IntersectionType& intersection,
+                            const EntityType& inside_entity,
+                            const EntityType& /*outside_entity*/)
+  {
+    assert(tmp_storage_->matrices().size() >= 2);
+    assert(tmp_storage_->matrices()[0].size() >= 1);
+    auto& local_operator_result = tmp_storage_->matrices()[0][0];
+    auto& tmp_matrices          = tmp_storage_->matrices()[1];
+    // get the local functions
+    const auto local_test_function    = test_function_.local_function(inside_entity);
+    const auto local_ansatz_function = ansatz_function_.local_function(inside_entity);
+    // apply the local operator
+    this->local_operator_.apply(*local_test_function,
+                                *local_ansatz_function,
+                                intersection,
+                                local_operator_result,
+                                tmp_matrices);
+    assert(local_operator_result.rows() >= 1);
+    assert(local_operator_result.cols() >= 1);
+    return local_operator_result[0][0];
+  } // ... compute_locally(...)
+
+
+  virtual void apply_local(const IntersectionType& intersection,
+                           const EntityType& inside_entity,
+                           const EntityType& outside_entity) DS_OVERRIDE
+  {
+    *result_ += compute_locally(intersection, inside_entity, outside_entity);
+  }
+
+  virtual void finalize() DS_OVERRIDE
+  {
+    if (!finalized_) {
+      finalized_result_ = result_.sum();
+      finalized_result_ = grid_view_.comm().sum(finalized_result_);
+      finalized_ = true;
+    }
+  } // ... finalize(...)
+
+  FieldType result() const
+  {
+    if (!finalized_)
+      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
+    return finalized_result_;
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalOperatorType& local_operator_;
+  const TestFunctionType& test_function_;
+  const AnsatzFunctionType& ansatz_function_;
+  DS::PerThreadValue< FieldType > result_;
+  std::unique_ptr< TmpMatricesProviderType > tmp_storage_;
+  bool finalized_;
+  FieldType finalized_result_;
+}; // class Codim1BoundaryOperatorAccumulateFunctor
 
 
 } // namespace LocalAssembler
