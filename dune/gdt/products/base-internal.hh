@@ -246,8 +246,9 @@ class AssemblableBaseHelper
   struct Volume<LO, true>
   {
     // if you get an error here you have defined has_volume_operator to true but either do not provide
-    // VolumeOperatorType or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
+    // VolumeOperatorType
     typedef typename LocalOperatorProvider::VolumeOperatorType LocalOperatorType;
+    //                    or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
     typedef LocalAssembler::Codim0Matrix<LocalOperatorType> LocalAssemblerType;
 
     Volume(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
@@ -261,11 +262,41 @@ class AssemblableBaseHelper
     const LocalAssemblerType local_assembler_;
   }; // struct Volume< ..., true >
 
+  template <class LO, bool anthing = false>
+  struct Boundary
+  {
+    Boundary(AssemblableBaseType&, MatrixType&, const LocalOperatorProvider&)
+    {
+    }
+  }; // struct Boundary< ..., false >
+
+  template <class LO>
+  struct Boundary<LO, true>
+  {
+    // if you get an error here you have defined has_boundary_operator to true but either do not provide
+    // BoundaryOperatorType
+    typedef typename LocalOperatorProvider::BoundaryOperatorType LocalOperatorType;
+    //                      or your BoundaryOperatorType is not derived from LocalOperator::Codim1BoundaryInterface
+    typedef LocalAssembler::Codim1BoundaryMatrix<LocalOperatorType> LocalAssemblerType;
+
+    Boundary(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
+      : local_assembler_(local_operators.boundary_operator_) // <- if you get an error here you have defined
+    { //    has_boundary_operator to true but do not provide
+      //    boundary_operator_
+      base.add(local_assembler_,
+               matrix,
+               local_operators.boundary_intersections()); // <- if you get an error here you have defined
+    } //    has_boundary_operator to true but implemented the wrong
+    //    boundary_intersections()
+
+    const LocalAssemblerType local_assembler_;
+  }; // struct Boundary< ..., true >
+
 public:
   static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
                                                    const SourceSpaceType& source_space, const GridViewType& grid_view)
   {
-    if (LocalOperatorProvider::has_volume_operator)
+    if (LocalOperatorProvider::has_volume_operator || LocalOperatorProvider::has_boundary_operator)
       return range_space.compute_volume_pattern(grid_view, source_space);
     else
       return Stuff::LA::SparsityPatternDefault();
@@ -273,11 +304,13 @@ public:
 
   AssemblableBaseHelper(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
     : volume_helper_(base, matrix, local_operators)
+    , boundary_helper_(base, matrix, local_operators)
   {
   }
 
 private:
   Volume<LocalOperatorProvider, LocalOperatorProvider::has_volume_operator> volume_helper_;
+  Boundary<LocalOperatorProvider, LocalOperatorProvider::has_boundary_operator> boundary_helper_;
 }; // class AssemblableBaseHelper
 
 
