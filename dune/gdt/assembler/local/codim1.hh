@@ -11,9 +11,6 @@
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/walker/functors.hh>
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-# include <dune/stuff/common/profiler.hh>
-#endif
 
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
@@ -65,10 +62,6 @@ public:
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
                      std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
-#endif
     // check
     assert(tmpLocalMatricesContainer.size() >= 2);
     assert(tmpLocalMatricesContainer[0].size() >= numTmpObjectsRequired_);
@@ -84,17 +77,11 @@ public:
     localEntityNeighborMatrix *= 0.0;
     localNeighborEntityMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.1_check_and_clear");
-#endif
     // get entities
     const auto entityPtr = intersection.inside();
     const auto& entity = *entityPtr;
     const auto neighborPtr = intersection.outside();
     const auto& neighbor = *neighborPtr;
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
-#endif
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpaceEntity.base_function_set(entity), ansatzSpaceEntity.base_function_set(entity),
                          testSpaceNeighbor.base_function_set(neighbor), ansatzSpaceNeighbor.base_function_set(neighbor),
@@ -104,10 +91,6 @@ public:
                          localEntityNeighborMatrix,
                          localNeighborEntityMatrix,
                          tmpOperatorMatrices);
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.2_apply_local_operator");
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
-#endif
     // write local matrices to global
     const size_t rowsEn = testSpaceEntity.mapper().numDofs(entity);
     const size_t colsEn = ansatzSpaceEntity.mapper().numDofs(entity);
@@ -133,10 +116,6 @@ public:
     assert(localEntityNeighborMatrix.cols() >= colsNe);
     assert(localNeighborEntityMatrix.rows() >= rowsNe);
     assert(localNeighborEntityMatrix.cols() >= colsEn);
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.3_map_indices");
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
-#endif
     for (size_t ii = 0; ii < rowsEn; ++ii) {
       const auto& localEntityEntityMatrixRow = localEntityEntityMatrix[ii];
       const auto& localEntityNeighborMatrixRow = localEntityNeighborMatrix[ii];
@@ -163,10 +142,6 @@ public:
         neighborNeighborMatrix.add_to_entry(globalII, globalJJ, localNeighborNeighborMatrixRow[jj]);
       }
     }
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal.4_write_matrices");
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1CouplingMatrix.assembleLocal");
-#endif
   } // void assembleLocal(...) const
 
   template< class T, class A, class IntersectionType, class M, class R >
@@ -224,9 +199,6 @@ public:
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
                      std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
-#endif
     // check
     assert(tmpLocalMatricesContainer.size() >= 2);
     assert(tmpLocalMatricesContainer[0].size() >= numTmpObjectsRequired_);
@@ -262,9 +234,6 @@ public:
         systemMatrix.add_to_entry(globalII, globalJJ, localMatrixRow[jj]);
       }
     }
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-    DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1BoundaryMatrix.assembleLocal");
-#endif
   } // void assembleLocal(...) const
 
 private:
@@ -306,9 +275,6 @@ public:
                      std::vector< std::vector< Dune::DynamicVector< R > > >& tmpLocalVectorsContainer,
                      Dune::DynamicVector< size_t >& tmpIndicesContainer) const
   {
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.startTiming("GDT.LocalAssembler.Codim1Vector.assembleLocal");
-#endif
     // check
     assert(tmpLocalVectorsContainer.size() >= 2);
     assert(tmpLocalVectorsContainer[0].size() >= numTmpObjectsRequired_);
@@ -331,9 +297,6 @@ public:
       const size_t globalII = tmpIndicesContainer[ii];
       systemVector.add_to_entry(globalII, localVector[ii]);
     }
-#ifdef DUNE_STUFF_PROFILER_ENABLED
-      DSC_PROFILER.stopTiming("GDT.LocalAssembler.Codim1Vector.assembleLocal");
-#endif
   } // void assembleLocal(...) const
 
 private:
