@@ -12,6 +12,7 @@
 
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
@@ -212,6 +213,70 @@ private:
   Volume<   LocalOperatorProvider, LocalOperatorProvider::has_volume_operator >   volume_helper_;
   Boundary< LocalOperatorProvider, LocalOperatorProvider::has_boundary_operator > boundary_helper_;
 }; // class LocalizableBaseHelper
+
+
+/**
+ * \brief Helper class for \sa Products::AssemblableBase
+ *
+ *        This class manages the creation of the appropriate local assemblers needed to handle the local operators
+ *        provided by any class derived from \sa LocalOperatorProviderBase.
+ * \note  This class is usually not of interest to the average user.
+ */
+template< class AssemblableBaseType, class LocalOperatorProvider >
+class AssemblableBaseHelper
+{
+  typedef typename AssemblableBaseType::MatrixType      MatrixType;
+  typedef typename AssemblableBaseType::GridViewType    GridViewType;
+  typedef typename AssemblableBaseType::RangeSpaceType  RangeSpaceType;
+  typedef typename AssemblableBaseType::SourceSpaceType SourceSpaceType;
+  static_assert(std::is_base_of< LocalOperatorProviderBase< typename LocalOperatorProvider::GridViewType >,
+                                 LocalOperatorProvider >::value,
+                "LocalOperatorProvider has to be derived from LocalOperatorProviderBase!");
+  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixType::Traits >, MatrixType >::value,
+                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+
+  template< class LO, bool anthing = false >
+  struct Volume
+  {
+    Volume(AssemblableBaseType&, MatrixType&, const LocalOperatorProvider&) {}
+  }; // struct Volume< ..., false >
+
+  template< class LO >
+  struct Volume< LO, true >
+  {
+    // if you get an error here you have defined has_volume_operator to true but either do not provide
+    // VolumeOperatorType or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
+    typedef typename LocalOperatorProvider::VolumeOperatorType LocalOperatorType;
+    typedef LocalAssembler::Codim0Matrix< LocalOperatorType > LocalAssemblerType;
+
+    Volume(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
+      : local_assembler_(local_operators.volume_operator_) // <- if you get an error here you have defined
+    {                                                       //    has_volume_operator to true but do not provide
+                                                            //    volume_operator_
+      base.add(local_assembler_, matrix, local_operators.entities()); // <- if you get an error here you have defined
+    }                                                                 //    has_volume_operator to true but implemented
+                                                                      //    the wrong entities()
+
+    const LocalAssemblerType local_assembler_;
+  }; // struct Volume< ..., true >
+
+public:
+  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
+                                                   const SourceSpaceType& source_space,
+                                                   const GridViewType& grid_view)
+  {
+    if (LocalOperatorProvider::has_volume_operator)
+      return range_space.compute_volume_pattern(grid_view, source_space);
+    else return Stuff::LA::SparsityPatternDefault();
+  }
+
+  AssemblableBaseHelper(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
+    : volume_helper_(base, matrix, local_operators)
+  {}
+
+private:
+  Volume< LocalOperatorProvider, LocalOperatorProvider::has_volume_operator > volume_helper_;
+}; // class AssemblableBaseHelper
 
 
 /**
