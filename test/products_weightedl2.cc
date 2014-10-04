@@ -9,7 +9,7 @@
 #include "spaces_fv_default.hh"
 #include "spaces_dg_fem.hh"
 
-#include "products_l2weighted.hh"
+#include "products_weightedl2.hh"
 
 typedef testing::Types< SPACE_FV_SGRID(1, 1)
                       , SPACE_FV_SGRID(2, 1)
