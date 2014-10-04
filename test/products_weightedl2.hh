@@ -3,14 +3,14 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_PRODUCTS_WeightedL2_HH
-#define DUNE_GDT_TEST_PRODUCTS_WeightedL2_HH
+#ifndef DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
+#define DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
 
 #include <dune/stuff/la/container/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/weightedl2.hh>
 
 #include "products.hh"
 
@@ -151,4 +151,4 @@ struct WeightedL2Product : public WeightedL2ProductBase<SpaceType>
 }; // struct WeightedL2Product
 
 
-#endif // DUNE_GDT_TEST_PRODUCTS_WeightedL2_HH
+#endif // DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH

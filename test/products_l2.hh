@@ -6,7 +6,9 @@
 #ifndef DUNE_GDT_TEST_PRODUCTS_L2_HH
 #define DUNE_GDT_TEST_PRODUCTS_L2_HH
 
-#include "products_l2weighted.hh"
+#include <dune/gdt/products/l2.hh>
+
+#include "products_weightedl2.hh"
 
 
 template <class SpaceType>
