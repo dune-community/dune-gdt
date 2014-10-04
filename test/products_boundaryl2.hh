@@ -95,4 +95,37 @@ struct BoundaryL2LocalizableProduct : public BoundaryL2ProductBase<SpaceType>
 }; // struct BoundaryL2LocalizableProduct
 
 
+template <class SpaceType>
+struct BoundaryL2AssemblableProduct : public BoundaryL2ProductBase<SpaceType>
+{
+  typedef BoundaryL2ProductBase<SpaceType> BaseType;
+  typedef typename BaseType::RangeFieldType RangeFieldType;
+  typedef typename BaseType::FunctionType FunctionType;
+  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
+  typedef typename Dune::Stuff::LA::CommonDenseMatrix<RangeFieldType> MatrixType;
+  typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
+  typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
+
+  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  {
+    // create the product
+    Products::BoundaryL2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> product(this->space_);
+    product.assemble();
+    // project the function
+    DiscreteFunctionType discrete_function(this->space_);
+    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    // compute the product
+    return product.apply2(discrete_function, discrete_function);
+  } // ... compute(...)
+
+  void fulfills_interface() const
+  {
+    typedef Products::BoundaryL2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> ProductType;
+    ProductType product(this->space_);
+    AssemblableProductBase<SpaceType, ProductType, VectorType>::fulfills_interface(product);
+  }
+}; // struct BoundaryL2AssemblableProduct
+
+
 #endif // DUNE_GDT_TEST_PRODUCTS_BOUNDARYL2_HH
