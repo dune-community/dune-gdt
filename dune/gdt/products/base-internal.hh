@@ -107,10 +107,9 @@ class LocalizableBaseHelper
   template< class LO >
   struct Volume< LO, true >
   {
+    // if you get an error here you have defined has_volume_operator to true but either do not provide
+    // VolumeOperatorType or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
     typedef typename LocalOperatorProvider::VolumeOperatorType LocalOperatorType;
-    static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorType::Traits >,
-                                   LocalOperatorType >::value,
-                  "VolumeOperatorType has to be derived from LocalOperator::Codim0Interface!");
     typedef LocalAssembler::Codim0OperatorAccumulateFunctor
         < GridViewType, LocalOperatorType, RangeType, SourceType, FieldType > FunctorType;
 
@@ -119,13 +118,15 @@ class LocalizableBaseHelper
            const RangeType& range,
            const SourceType& source)
       : local_operators_(local_operators)
-      , functor_(grid_view, local_operators_.volume_operator_, range, source)
-    {}
+      , functor_(grid_view, local_operators_.volume_operator_, range, source) // <- if you get an error here you have
+    {}                                                                        //    defined has_volume_operator to true
+                                                                              //    but do not provide volume_operator_
 
     void add(WalkerType& grid_walker)
     {
-      grid_walker.add(functor_, local_operators_.entities());
-    }
+      grid_walker.add(functor_, local_operators_.entities()); // <- if you get an error here you have defined
+    }                                                         //    has_volume_operator to true but implemented the
+                                                              //    wrong entities()
 
     FieldType result() const
     {
