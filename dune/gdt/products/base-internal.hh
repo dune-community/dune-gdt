@@ -14,6 +14,7 @@
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -45,27 +46,44 @@ class GenericBase;
  *        - `GridViewType`
  *        - `FieldType`
  *        Depending on the type of local operator you want to use for the product (aka provide to LocalizableBase) you
- *        have to additionally implement:
- *        - if the local operator is derived from LocalOperator::Codim0Interface you have to provide the public type
+ *        have to additionally implement (you can have zero or one local operator per type each):
+ *        - if a local operator is derived from LocalOperator::Codim0Interface you have to provide the public type
  *          - `VolumeOperatorType`
  *          and you have to provide the public members
  *          - `static const bool has_volume_operator = true;`
  *          - `const VolumeOperatorType volume_operator_;
- *          If you want to restrict the entities your local operator will be applied on you have to additionally provide
+ *          If you want to restrict the entities the local operator will be applied on you have to additionally provide
  *          a method:
- *          - `DSG::ApplyOn::WhichEntity< GridViewType >* entities() const;`
+ *          - `DSG::ApplyOn::WhichEntity< GridViewType >* entities() const`
  *          See \sa Products::internal::WeightedL2Base in weightedl2-internal.hh for an example of a
- *          LocalOperatorProvider based on a codim 0 local operator.
+ *          LocalOperatorProvider based on a local codim 0 operator.
+ *        - if a local operator is derived from LocalOperator::Codim1BoundaryInterface you have to provide the public
+ *          type
+ *          - `BoundaryOperatorType`
+ *          and you have to provide the public members
+ *          - `static const bool has_boundary_operator = true;`
+ *          - `const BoundaryOperatorType boundary_operator_;`
+ *          If you want to restrict the intersections your the local operator will be applied on you have to
+ *          additionally provide a method
+ *          - `DSG::ApplyOn::WhichIntersections< GridViewType >* boundary_intersections() const`
+ *          See \sa Products::internal::BoundaryL2Base in boundaryl2-internal.hh for an example of a
+ *          LocalOperatorProvider based on a local codim 1 boundary operator.
  */
 template <class GridViewType>
 class LocalOperatorProviderBase
 {
 public:
-  static const bool has_volume_operator = false;
+  static const bool has_volume_operator   = false;
+  static const bool has_boundary_operator = false;
 
   DSG::ApplyOn::AllEntities<GridViewType>* entities() const
   {
     return new DSG::ApplyOn::AllEntities<GridViewType>();
+  }
+
+  DSG::ApplyOn::BoundaryIntersections<GridViewType>* boundary_intersections() const
+  {
+    return new DSG::ApplyOn::BoundaryIntersections<GridViewType>();
   }
 }; // class LocalOperatorProviderBase
 
@@ -140,21 +158,75 @@ class LocalizableBaseHelper
     FunctorType functor_;
   }; // struct Volume< ..., true >
 
+  template <class LO, bool anthing = false>
+  struct Boundary
+  {
+    Boundary(const GridViewType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
+    {
+    }
+
+    void add(WalkerType&)
+    {
+    }
+
+    FieldType result() const
+    {
+      return 0.0;
+    }
+  }; // struct Boundary< ..., false >
+
+  template <class LO>
+  struct Boundary<LO, true>
+  {
+    // if you get an error here you have defined has_boundary_operator to true but either do not provide
+    // BoundaryOperatorType or your BoundaryOperatorType is not derived from LocalOperator::Codim1BoundaryInterface
+    typedef typename LocalOperatorProvider::BoundaryOperatorType LocalOperatorType;
+    typedef LocalAssembler::Codim1BoundaryOperatorAccumulateFunctor<GridViewType, LocalOperatorType, RangeType,
+                                                                    SourceType, FieldType> FunctorType;
+
+    Boundary(const GridViewType& grid_view, const LocalOperatorProvider& local_operators, const RangeType& range,
+             const SourceType& source)
+      : local_operators_(local_operators)
+      , functor_(grid_view, local_operators_.boundary_operator_, range, source) // <- if you get an error here you have
+    {
+    } //    defined has_boundary_operator to
+    //    true but do not provide
+    //    boundary_operator_
+
+    void add(WalkerType& grid_walker)
+    {
+      grid_walker.add(functor_, local_operators_.boundary_intersections()); // <- if you get an error here you have
+    } //    defined has_boundary_operator to true
+    //    but implemented the wrong
+    //    boundary_intersections()
+
+    FieldType result() const
+    {
+      return functor_.result();
+    }
+
+    const LocalOperatorProvider& local_operators_;
+    FunctorType functor_;
+  }; // struct Boundary< ..., true >
+
 public:
   LocalizableBaseHelper(WalkerType& walker, const LocalOperatorProvider& local_operators, const RangeType& range,
                         const SourceType& source)
     : volume_helper_(walker.grid_view(), local_operators, range, source)
+    , boundary_helper_(walker.grid_view(), local_operators, range, source)
   {
     volume_helper_.add(walker);
+    boundary_helper_.add(walker);
   }
 
   FieldType result() const
   {
-    return volume_helper_.result();
+    return volume_helper_.result() + boundary_helper_.result();
   }
 
 private:
   Volume<LocalOperatorProvider, LocalOperatorProvider::has_volume_operator> volume_helper_;
+  Boundary<LocalOperatorProvider, LocalOperatorProvider::has_boundary_operator> boundary_helper_;
 }; // class LocalizableBaseHelper
 
 
