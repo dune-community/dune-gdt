@@ -12,7 +12,7 @@
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/localoperator/codim1.hh>
 
-#include "../../products/base-internal.hh"
+#include "base-internal.hh"
 
 namespace Dune {
 namespace GDT {
@@ -23,8 +23,8 @@ namespace internal {
 /**
  * \brief Base class for all L2 products over the boundary of a domain.
  *
- * \todo  The boundary integral is computed over all boundary intersections atm, but we might add an optional
- *        boundary info and integrate over dirichlet intersections only.
+ * \todo  The boundary integral is computed over all boundary intersections atm, but we could add an optional
+ *        boundary info and then integrate over dirichlet intersections only.
  */
 template< class GV, class FieldImp >
 class BoundaryL2Base
