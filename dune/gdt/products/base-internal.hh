@@ -11,7 +11,10 @@
 #include <dune/grid/common/gridview.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/grid/walker.hh>
 
+#include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -19,20 +22,138 @@ namespace GDT {
 namespace Products {
 
 
-// forwards
+// forward
 template< class LocalOperatorProvider, class RangeImp, class SourceImp >
 class LocalizableBase;
 
 
+// forward
 template< class LocalOperatorProvider, class MatrixImp, class RangeSpaceImp, class SourceSpaceImp >
 class AssemblableBase;
 
 
+// forward
 template< class LocalOperatorProvider >
 class GenericBase;
 
 
+/**
+ * \brief Base class for all local operator providers.
+ *
+ *        You have to derive a custom class LocalOperatorProvider from this class in order to use \sa LocalizableBase!
+ *        All classes derived from this class have to provide the following types:
+ *        - `GridViewType`
+ *        - `FieldType`
+ *        Depending on the type of local operator you want to use for the product (aka provide to LocalizableBase) you
+ *        have to additionally implement:
+ *        - if the local operator is derived from LocalOperator::Codim0Interface you have to provide the public type
+ *          - `VolumeOperatorType`
+ *          and you have to provide the public members
+ *          - `static const bool has_volume_operator = true;`
+ *          - `const VolumeOperatorType volume_operator_;
+ *          If you want to restrict the entities your local operator will be applied on you have to additionally provide
+ *          a method:
+ *          - `DSG::ApplyOn::WhichEntity< GridViewType >* entities() const;`
+ *          See \sa Products::internal::WeightedL2Base in l2-internal.hh for an example of a LocalOperatorProvider based
+ *          on a codim 0 local operator.
+ */
+template< class GridViewType >
+class LocalOperatorProviderBase
+{
+public:
+  static const bool has_volume_operator   = false;
+
+  DSG::ApplyOn::AllEntities< GridViewType >* entities() const
+  {
+    return new DSG::ApplyOn::AllEntities< GridViewType >();
+  }
+}; // class LocalOperatorProviderBase
+
+
 namespace internal {
+
+
+/**
+ * \brief Helper class for \sa Products::LocalizableBase
+ *
+ *        This class manages the creation of the appropriate functors needed to handle the local operators provided
+ *        by any class derived from \sa LocalOperatorProviderBase.
+ * \note  This class is usually not of interest to the average user.
+ */
+template< class LocalOperatorProvider, class RangeType, class SourceType >
+class LocalizableBaseHelper
+{
+  static_assert(std::is_base_of< LocalOperatorProviderBase< typename LocalOperatorProvider::GridViewType >,
+                                 LocalOperatorProvider >::value,
+                "LocalOperatorProvider has to be derived from LocalOperatorProviderBase!");
+
+  typedef typename LocalOperatorProvider::GridViewType GridViewType;
+  typedef typename LocalOperatorProvider::FieldType    FieldType;
+  typedef Stuff::Grid::Walker< GridViewType > WalkerType;
+
+  template< class LO, bool anthing = false >
+  struct Volume
+  {
+    Volume(const GridViewType&, const LocalOperatorProvider&, const RangeType&, const SourceType&) {}
+
+    void add(WalkerType&) {}
+
+    FieldType result() const
+    {
+      return 0.0;
+    }
+  }; // struct Volume< ..., false >
+
+  template< class LO >
+  struct Volume< LO, true >
+  {
+    typedef typename LocalOperatorProvider::VolumeOperatorType LocalOperatorType;
+    static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorType::Traits >,
+                                   LocalOperatorType >::value,
+                  "VolumeOperatorType has to be derived from LocalOperator::Codim0Interface!");
+    typedef LocalAssembler::Codim0OperatorAccumulateFunctor
+        < GridViewType, LocalOperatorType, RangeType, SourceType, FieldType > FunctorType;
+
+    Volume(const GridViewType& grid_view,
+           const LocalOperatorProvider& local_operators,
+           const RangeType& range,
+           const SourceType& source)
+      : local_operators_(local_operators)
+      , functor_(grid_view, local_operators_.volume_operator_, range, source)
+    {}
+
+    void add(WalkerType& grid_walker)
+    {
+      grid_walker.add(functor_, local_operators_.entities());
+    }
+
+    FieldType result() const
+    {
+      return functor_.result();
+    }
+
+    const LocalOperatorProvider& local_operators_;
+    FunctorType functor_;
+  }; // struct Volume< ..., true >
+
+public:
+  LocalizableBaseHelper(WalkerType& walker,
+                        const LocalOperatorProvider& local_operators,
+                        const RangeType& range,
+                        const SourceType& source)
+    : volume_helper_(walker.grid_view(), local_operators, range, source)
+  {
+    volume_helper_.add(walker);
+  }
+
+  FieldType result() const
+  {
+    return volume_helper_.result();
+  }
+
+private:
+  Volume< LocalOperatorProvider, LocalOperatorProvider::has_volume_operator > volume_helper_;
+}; // class LocalizableBaseHelper
 
 
 /**
@@ -95,7 +216,6 @@ private:
   static_assert(std::is_base_of< Dune::GridView< typename GridViewType::Traits >, GridViewType >::value,
                 "GridViewType has to be derived from GridView!");
 }; // class GenericBaseTraits
-
 
 
 } // namespace internal

@@ -26,71 +26,60 @@ namespace Products {
 /**
  * \brief Base class for all localizable products.
  *
- *        The purpose of this class is to facilitate the implementation of localizable products that are based on a
- *        local operator that is derived from LocalOperator::Codim0Interface by implementing as much as possible. All
- *        you have to do is to implement a class LocalOperatorProvider that provides the following:
- *        - a protected member local_operator_
- *        - a typedef GridViewType
- *        - a typedef FieldType
- *        LocalizableBase derives from that provided class and forwards any additional ctor arguments to its ctor.
- *        Static checks of GridViewType, RangeType and SourceType are performed in internal::LocalizableBaseTraits. You
- *        can finally implement the product by deriving from this class and providing the appropriate
- *        LocalOperatorProvider. To get an idea see \sa Products::internal::WeightedL2Base in l2-internal.hh for an
- *        example of a LocalOperatorProvider and Products::WeightedL2Localizable in l2.hh for an example of the final
- *        product.
+ *        The purpose of this class is to facilitate the implementation of localizable products (that are based on
+ *        local operators) by implementing as much as possible. All you have to do is to implement a class
+ *        LocalOperatorProvider, derived from LocalOperatorProviderBase. See the documentation of
+ *        \sa LocalOperatorProviderBase for the requirements of your class, depending on the type of local operator you
+ *        want to use. We do not use the CRTP machinery here but trust you to implement what is necessarry. Any
+ *        additional ctor arguments given to LocalizableBase are forwarded to your implementation of
+ *        LocalOperatorProvider. Static checks of GridViewType, RangeType and SourceType are performed in
+ *        internal::LocalizableBaseTraits. You can finally implement the product by deriving from this class and
+ *        providing the appropriate LocalOperatorProvider. To get an idea see \sa Products::internal::WeightedL2Base in
+ *        l2-internal.hh for an example of a LocalOperatorProvider and Products::WeightedL2Localizable in l2.hh for an
+ *        example of the final product.
+ * \note  If you want to know about the internal workings of this class, take a look at \sa
+ *        internal::LocalizableBaseHelper.
  */
 template< class LocalOperatorProvider, class RangeImp, class SourceImp >
 class LocalizableBase
-  : LocalOperatorProvider
-  , public LocalizableProductInterface< internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > >
-  , public Stuff::Grid::Functor::Codim0< typename LocalOperatorProvider::GridViewType >
+  : public LocalizableProductInterface< internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > >
+  , public Stuff::Grid::Walker< typename LocalOperatorProvider::GridViewType >
 {
   typedef LocalizableProductInterface
-      < internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > > BaseType;
+      < internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > > ProductBaseType;
+  typedef Stuff::Grid::Walker< typename LocalOperatorProvider::GridViewType >           WalkerBaseType;
 public:
   typedef internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > Traits;
 
-  typedef typename BaseType::GridViewType GridViewType;
-  typedef typename BaseType::RangeType    RangeType;
-  typedef typename BaseType::SourceType   SourceType;
-  typedef typename BaseType::FieldType    FieldType;
-  typedef typename BaseType::EntityType   EntityType;
+  typedef typename WalkerBaseType::GridViewType GridViewType;
+  typedef typename ProductBaseType::RangeType   RangeType;
+  typedef typename ProductBaseType::SourceType  SourceType;
+  typedef typename ProductBaseType::FieldType   FieldType;
 private:
-  typedef DSC::TmpMatricesStorage< FieldType > TmpMatricesProviderType;
+  typedef internal::LocalizableBaseHelper< LocalOperatorProvider, RangeType, SourceType > HelperType;
 
 public:
   template< class... Args >
   LocalizableBase(const GridViewType& grd_vw, const RangeType& rng, const SourceType& src, Args&& ...args)
-    : LocalOperatorProvider(std::forward< Args >(args)...)
-    , grid_view_(grd_vw)
+    : WalkerBaseType(grd_vw)
     , range_(rng)
     , source_(src)
-    , tmp_storage_(nullptr)
-    , prepared_(false)
-    , finalized_(false)
-    , result_(0)
-    , finalized_result_(0)
+    , local_operators_(std::forward< Args >(args)...)
+    , helper_(*this, local_operators_, range_, source_)
+    , walked_(false)
   {}
 
   template< class... Args >
   LocalizableBase(const GridViewType& grd_vw, const RangeType& rng, Args&& ...args)
-    : LocalOperatorProvider(std::forward< Args >(args)...)
-    , grid_view_(grd_vw)
+    : WalkerBaseType(grd_vw)
     , range_(rng)
-    , source_(range_)
-    , tmp_storage_(nullptr)
-    , prepared_(false)
-    , finalized_(false)
-    , result_(0)
-    , finalized_result_(0)
+    , source_(rng)
+    , local_operators_(std::forward< Args >(args)...)
+    , helper_(*this, local_operators_, range_, source_)
+    , walked_(false)
   {}
 
-  virtual ~LocalizableBase() {}
-
-  const GridViewType& grid_view() const
-  {
-    return grid_view_;
-  }
+  using WalkerBaseType::grid_view;
 
   const RangeType& range() const
   {
@@ -102,68 +91,19 @@ public:
     return source_;
   }
 
-  virtual void prepare() DS_OVERRIDE
-  {
-    if (!prepared_) {
-      tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(
-        {1, this->local_operator_.numTmpObjectsRequired()}, 1, 1));
-      *result_ = FieldType(0.0);
-      prepared_ = true;
-    }
-  } // ... prepare()
-
-  FieldType compute_locally(const EntityType& entity) const
-  {
-    assert(prepared_);
-    assert(tmp_storage_);
-    auto& tmp_storage = tmp_storage_->matrices();
-    assert(tmp_storage.size() >= 2);
-    assert(tmp_storage[0].size() >= 1);
-    auto& local_operator_result = tmp_storage[0][0];
-    auto& tmp_matrices = tmp_storage[1];
-    // get the local functions
-    const auto local_source_ptr = this->source().local_function(entity);
-    const auto local_range_ptr = this->range().local_function(entity);
-    // apply local operator
-    this->local_operator_.apply(*local_range_ptr, *local_source_ptr, local_operator_result, tmp_matrices);
-    assert(local_operator_result.rows() == 1);
-    assert(local_operator_result.cols() == 1);
-    return local_operator_result[0][0];
-  } // ... compute_locally(...)
-
-  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
-  {
-    *result_ += compute_locally(entity);
-  }
-
-  virtual void finalize() DS_OVERRIDE
-  {
-    if (!finalized_) {
-      finalized_result_ = result_.sum();
-      finalized_result_ = grid_view_.comm().sum(finalized_result_);
-      finalized_ = true;
-    }
-  }
-
   FieldType apply2()
   {
-    if (!finalized_) {
-      Stuff::Grid::Walker< GridViewType > grid_walker(grid_view_);
-      grid_walker.add(*this);
-      grid_walker.walk();
-    }
-    return finalized_result_;
-  }
+    if (!walked_)
+      this->walk();
+    return helper_.result();
+  } // ... apply2(...)
 
 private:
-  const GridViewType& grid_view_;
   const RangeType& range_;
   const SourceType& source_;
-  std::unique_ptr< TmpMatricesProviderType > tmp_storage_;
-  bool prepared_;
-  bool finalized_;
-  DS::PerThreadValue< FieldType > result_;
-  FieldType finalized_result_;
+  const LocalOperatorProvider local_operators_;
+  HelperType helper_;
+  bool walked_;
 }; // class LocalizableBase
 
 
