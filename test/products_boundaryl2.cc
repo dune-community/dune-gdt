@@ -66,3 +66,18 @@ TEST(DISABLED_BoundaryL2AssemblableProduct, linear_arguments)    {}
 TEST(DISABLED_BoundaryL2AssemblableProduct, quadratic_arguments) {}
 
 #endif // HAVE_DUNE_FEM
+
+
+TYPED_TEST_CASE(BoundaryL2Product, ConstantSpaces);
+TYPED_TEST(BoundaryL2Product, fulfills_interface) {
+  this->fulfills_interface();
+}
+TYPED_TEST(BoundaryL2Product, constant_arguments) {
+  this->constant_arguments();
+}
+TYPED_TEST(BoundaryL2Product, linear_arguments) {
+  this->linear_arguments();
+}
+TYPED_TEST(BoundaryL2Product, quadratic_arguments) {
+  this->quadratic_arguments();
+}
