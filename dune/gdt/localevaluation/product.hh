@@ -8,10 +8,8 @@
 
 #include <type_traits>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -73,34 +71,14 @@ public:
     return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
-  template <class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  void
-  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunction*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... evaluate(...)
-
-  template <class IntersectionType, class R, int rL, int rCL, int rT, int rCT>
-  void
-  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunction*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-           const IntersectionType& /*intersection*/,
-           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& /*localPoint*/,
-           Dune::DynamicVector<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... evaluate(...)
-
   /**
-   * \defgroup codim0_1 ´´Required by LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 1 >!``
+   * These are the methods required to fulfill the interfaces
    * \{
    */
 
   /**
-   * \brief extracts the local functions and calls the correct order() method
+   * \brief extracts the local function and calls the correct order() method
+   * \note  required by `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template <class R, int rT, int rCT>
   size_t
@@ -108,11 +86,12 @@ public:
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
   {
     const auto localFunction = std::get<0>(localFuncs);
-    return redirect_order(*localFunction, testBase);
-  } // ... order(...)
+    return order(*localFunction, testBase);
+  }
 
   /**
-   * \brief extracts the local functions and calls the correct evaluate() method
+   * \brief extracts the local function and calls the correct evaluate() method
+   * \note  required by `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template <class R, int rT, int rCT>
   void evaluate(const LocalfunctionTupleType& localFuncs,
@@ -120,20 +99,13 @@ public:
                 const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
   {
     const auto localFunction = std::get<0>(localFuncs);
-    redirect_evaluate(*localFunction, testBase, localPoint, ret);
-  } // ... evaluate(...)
+    evaluate(*localFunction, testBase, localPoint, ret);
+  }
 
   /**
-   * \}
-   */
-
-  /**
-   * \defgroup codim0_2 ´´Required by LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 2 >!``
-   * \{
-   */
-
-  /**
-   * \brief extracts the local functions and calls the correct order() method
+   * \brief extracts the local function and calls the correct order() method
+   * \note  required by
+   *        - `LocalEvaluation::Codim0Interface< ..., 2 >`
    */
   template <class R, int rT, int rCT, int rA, int rCA>
   size_t
@@ -142,11 +114,12 @@ public:
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
   {
     const auto localFunction = std::get<0>(localFuncs);
-    return redirect_order(*localFunction, testBase, ansatzBase);
-  } // ... order(...)
+    return order(*localFunction, testBase, ansatzBase);
+  }
 
   /**
-   * \brief extracts the local functions and calls the correct evaluate() method
+   * \brief extracts the local function and calls the correct evaluate() method
+   * \note  required by `LocalEvaluation::Codim0Interface< ..., 2 >`
    */
   template <class R, int rT, int rCT, int rA, int rCA>
   void evaluate(const LocalfunctionTupleType& localFuncs,
@@ -155,18 +128,13 @@ public:
                 const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     const auto localFunction = std::get<0>(localFuncs);
-    redirect_evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
-  } // ... evaluate(...)
+    evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
+  }
 
   /**
-   * \}
+   * \brief extracts the local function and calls the correct evaluate() method
+   * \note  required by `LocalEvaluation::Codim1Interface< ..., 1 >`
    */
-
-  /**
-   * \defgroup codim1_1 ´´Required by LocalEvaluation::Codim1Interface< ProductTraits< LocalizableFunctionImp >, 1 >!``
-   * \{
-   */
-
   template <class IntersectionType, class R, int r, int rC>
   void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
@@ -174,45 +142,37 @@ public:
                 const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
   {
     const auto localFunction = std::get<0>(localFuncs);
-    redirect_evaluate(*localFunction, testBase, intersection, localPoint, ret);
-  } // ... evaluate(...)
+    evaluate(*localFunction, testBase, intersection, localPoint, ret);
+  }
 
   /**
    * \}
+   * end of: These are the methods required to fulfill the interfaces
    */
-
-private:
-  template <class R, int rL, int rCL, int rT, int rCT>
-  void redirect_evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunction*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& /*localPoint*/, Dune::DynamicVector<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... redirect_evaluate(...)
 
   /**
-   * \addtogroup codim1_1
-   * \addtogroup codim2_1
-   * \return localFunction.order() + testBase.order()
+   * These are the methods that do the actual computations
+   * \{
+   */
+
+  /**
+   * \note implementation for `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template <class R, int rL, int rCL, int rT, int rCT>
-  size_t redirect_order(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
+  size_t
+  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
   {
     return localFunction.order() + testBase.order();
-  } // size_t redirect_order(...)
+  }
 
   /**
-   *  \addtogroup codim1_1
-   *  \brief computes a scalar product evaluation.
+   * \note implementation for `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template <class R>
-  void
-  redirect_evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
-                    const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
-                    const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
+  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
+                const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<R, 1> RangeType;
@@ -227,31 +187,31 @@ private:
     for (size_t ii = 0; ii < size; ++ii) {
       ret[ii] = functionValue * testValues[ii];
     }
-  } // ... redirect_evaluate(...)
+  } // ... evaluate(...)
 
   /**
-   *  \addtogroup codim1_2
-   *  \{
-   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
+   * \note implementation for
+   *       - `LocalEvaluation::Codim0Interface< ..., 2 >`
+   *       - `LocalEvaluation::Codim1Interface< ..., 2 >`
    */
   template <class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  size_t redirect_order(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
+  size_t
+  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
   {
     return localFunction.order() + testBase.order() + ansatzBase.order();
-  } // ... redirect_order(...)
+  }
 
   /**
-   *  \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
+   * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
+   * \note  implementation for `LocalEvaluation::Codim0Interface< ..., 2 >`
    */
   template <class R, int r>
-  void
-  redirect_evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
-                    const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
-                    const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
-                    const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
+  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
+                const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
@@ -273,22 +233,16 @@ private:
         retRow[jj] = functionValue * (testValues[ii] * ansatzValues[jj]);
       }
     }
-  } // ... redirect_evaluate(...)
+  } // ... evaluate(...)
 
   /**
-   * \}
-   */
-
-  /**
-   * \addtogroup codim2_1
+   * \note implementation for `LocalEvaluation::Codim1Interface< ..., 1 >`
    */
   template <class IntersectionType, class R>
-  void
-  redirect_evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
-                    const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
-                    const IntersectionType& intersection,
-                    const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-                    Dune::DynamicVector<R>& ret) const
+  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
   {
     // checks
     typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -305,8 +259,14 @@ private:
     for (size_t ii = 0; ii < size; ++ii) {
       ret[ii] = functionValue * testValues[ii];
     }
-  } // ... redirect_evaluate(...)
+  } // ... evaluate(...)
 
+  /**
+   * \}
+   * end of: These are the methods that do the actual computations
+   */
+
+private:
   const LocalizableFunctionType& inducingFunction_;
 }; // class Product
 
