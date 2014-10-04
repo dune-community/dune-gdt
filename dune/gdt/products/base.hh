@@ -35,8 +35,8 @@ namespace Products {
  *        LocalOperatorProvider. Static checks of GridViewType, RangeType and SourceType are performed in
  *        internal::LocalizableBaseTraits. You can finally implement the product by deriving from this class and
  *        providing the appropriate LocalOperatorProvider. To get an idea see \sa Products::internal::WeightedL2Base in
- *        l2-internal.hh for an example of a LocalOperatorProvider and Products::WeightedL2Localizable in l2.hh for an
- *        example of the final product.
+ *        weightedl2-internal.hh for an example of a LocalOperatorProvider and Products::WeightedL2Localizable in
+ *        weightedl2.hh for an example of the final product.
  * \note  If you want to know about the internal workings of this class, take a look at \sa
  *        internal::LocalizableBaseHelper.
  */

@@ -54,8 +54,8 @@ class GenericBase;
  *          If you want to restrict the entities your local operator will be applied on you have to additionally provide
  *          a method:
  *          - `DSG::ApplyOn::WhichEntity< GridViewType >* entities() const;`
- *          See \sa Products::internal::WeightedL2Base in l2-internal.hh for an example of a LocalOperatorProvider based
- *          on a codim 0 local operator.
+ *          See \sa Products::internal::WeightedL2Base in weightedl2-internal.hh for an example of a
+ *          LocalOperatorProvider based on a codim 0 local operator.
  */
 template< class GridViewType >
 class LocalOperatorProviderBase
