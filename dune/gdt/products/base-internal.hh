@@ -112,11 +112,7 @@ class LocalizableBaseHelper
   template <class LO, bool anthing = false>
   struct Volume
   {
-    Volume(const GridViewType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
-    {
-    }
-
-    void add(WalkerType&)
+    Volume(WalkerType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
     {
     }
 
@@ -130,22 +126,20 @@ class LocalizableBaseHelper
   struct Volume<LO, true>
   {
     // if you get an error here you have defined has_volume_operator to true but either do not provide
-    // VolumeOperatorType or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
+    // VolumeOperatorType
     typedef typename LocalOperatorProvider::VolumeOperatorType LocalOperatorType;
+    //                    or your VolumeOperatorType is not derived from LocalOperator::Codim0Interface
     typedef LocalAssembler::Codim0OperatorAccumulateFunctor<GridViewType, LocalOperatorType, RangeType, SourceType,
                                                             FieldType> FunctorType;
 
-    Volume(const GridViewType& grid_view, const LocalOperatorProvider& local_operators, const RangeType& range,
+    Volume(WalkerType& grid_walker, const LocalOperatorProvider& local_operators, const RangeType& range,
            const SourceType& source)
-      : local_operators_(local_operators)
-      , functor_(grid_view, local_operators_.volume_operator_, range, source) // <- if you get an error here you have
+      : functor_(grid_walker.grid_view(),
+                 local_operators.volume_operator_, // <- if you get an error here you have defined has_volume_operator
+                 range, //    to true but do not provide volume_operator_
+                 source)
     {
-    } //    defined has_volume_operator to true
-    //    but do not provide volume_operator_
-
-    void add(WalkerType& grid_walker)
-    {
-      grid_walker.add(functor_, local_operators_.entities()); // <- if you get an error here you have defined
+      grid_walker.add(functor_, local_operators.entities()); // <- if you get an error here you have defined
     } //    has_volume_operator to true but implemented the
     //    wrong entities()
 
@@ -154,18 +148,13 @@ class LocalizableBaseHelper
       return functor_.result();
     }
 
-    const LocalOperatorProvider& local_operators_;
     FunctorType functor_;
   }; // struct Volume< ..., true >
 
   template <class LO, bool anthing = false>
   struct Boundary
   {
-    Boundary(const GridViewType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
-    {
-    }
-
-    void add(WalkerType&)
+    Boundary(WalkerType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
     {
     }
 
@@ -179,25 +168,22 @@ class LocalizableBaseHelper
   struct Boundary<LO, true>
   {
     // if you get an error here you have defined has_boundary_operator to true but either do not provide
-    // BoundaryOperatorType or your BoundaryOperatorType is not derived from LocalOperator::Codim1BoundaryInterface
+    // BoundaryOperatorType
     typedef typename LocalOperatorProvider::BoundaryOperatorType LocalOperatorType;
+    //                      or your BoundaryOperatorType is not derived from LocalOperator::Codim1BoundaryInterface
     typedef LocalAssembler::Codim1BoundaryOperatorAccumulateFunctor<GridViewType, LocalOperatorType, RangeType,
                                                                     SourceType, FieldType> FunctorType;
 
-    Boundary(const GridViewType& grid_view, const LocalOperatorProvider& local_operators, const RangeType& range,
+    Boundary(WalkerType& walker, const LocalOperatorProvider& local_operators, const RangeType& range,
              const SourceType& source)
-      : local_operators_(local_operators)
-      , functor_(grid_view, local_operators_.boundary_operator_, range, source) // <- if you get an error here you have
+      : functor_(walker.grid_view(),
+                 local_operators.boundary_operator_, // <- if you get an error here you have defined
+                 range, //    has_boundary_operator to true but do not provide
+                 source) //    boundary_operator_
     {
-    } //    defined has_boundary_operator to
-    //    true but do not provide
-    //    boundary_operator_
-
-    void add(WalkerType& grid_walker)
-    {
-      grid_walker.add(functor_, local_operators_.boundary_intersections()); // <- if you get an error here you have
-    } //    defined has_boundary_operator to true
-    //    but implemented the wrong
+      walker.add(functor_, local_operators.boundary_intersections()); // <- if you get an error here you have defined
+    } //    has_boundary_operator to true but
+    //    implemented the wrong
     //    boundary_intersections()
 
     FieldType result() const
@@ -205,18 +191,15 @@ class LocalizableBaseHelper
       return functor_.result();
     }
 
-    const LocalOperatorProvider& local_operators_;
     FunctorType functor_;
   }; // struct Boundary< ..., true >
 
 public:
   LocalizableBaseHelper(WalkerType& walker, const LocalOperatorProvider& local_operators, const RangeType& range,
                         const SourceType& source)
-    : volume_helper_(walker.grid_view(), local_operators, range, source)
-    , boundary_helper_(walker.grid_view(), local_operators, range, source)
+    : volume_helper_(walker, local_operators, range, source)
+    , boundary_helper_(walker, local_operators, range, source)
   {
-    volume_helper_.add(walker);
-    boundary_helper_.add(walker);
   }
 
   FieldType result() const
