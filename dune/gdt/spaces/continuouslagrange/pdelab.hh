@@ -147,7 +147,7 @@ public:
     , fe_map_(gridView_)
     , backend_(const_cast< GridViewType& >(gridView_), fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser< GridViewImp >::create(*gridView_))
+    , communicator_(CommunicationChooser< GridViewImp >::create(gridView_))
     , communicator_prepared_(false)
   {}
 
@@ -160,7 +160,7 @@ public:
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
-    , communicator_(other.communicator_)
+    , communicator_(CommunicationChooser< GridViewImp >::create(gridView_))
     , communicator_prepared_(other.communicator_prepared_)
   {}
 
@@ -173,7 +173,7 @@ public:
     , fe_map_(source.fe_map_)
     , backend_(source.backend_)
     , mapper_(source.mapper_)
-    , communicator_(source.communicator_)
+    , communicator_(std::move(source.communicator_))
     , communicator_prepared_(source.communicator_prepared_)
   {}
 
@@ -214,7 +214,7 @@ private:
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
-  mutable std::shared_ptr< CommunicatorType > communicator_;
+  mutable std::unique_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >
