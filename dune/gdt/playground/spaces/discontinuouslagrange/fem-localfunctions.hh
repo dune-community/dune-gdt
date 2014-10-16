@@ -157,7 +157,7 @@ public:
     return gridPart_;
   }
 
-  const std::shared_ptr< const GridViewType >& grid_view() const
+  const GridViewType& grid_view() const
   {
     return gridView_;
   }
@@ -198,7 +198,7 @@ public:
 
 private:
   std::shared_ptr< const GridPartType > gridPart_;
-  std::shared_ptr< const GridViewType > gridView_;
+  const GridViewType& gridView_;
   std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
   std::shared_ptr< const BackendType > backend_;
   std::shared_ptr< const MapperType > mapper_;

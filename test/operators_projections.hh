@@ -45,18 +45,18 @@ struct ProjectionOperatorBase
     GridProviderType grid_provider(0.0, 1.0, 3u);
     auto& grid = grid_provider.grid();
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
-    const SpaceType space(grid_part_view);
+    const SpaceType space(*grid_part_view);
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
     DiscreteFunctionType discrete_function(space, vector, "discrete function");
     // project
-    const ProjectionOperatorType projection_operator(*(space.grid_view()));
+    const ProjectionOperatorType projection_operator(space.grid_view());
     projection_operator.apply(function, discrete_function);
     // measure error
     const Dune::Stuff::Functions::Difference< FunctionType, DiscreteFunctionType > difference(function,
                                                                                              discrete_function);
-    const Dune::GDT::Products::L2< GridViewType > l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Products::L2< GridViewType > l2_product_operator(space.grid_view());
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     EXPECT_LE(l2_error, RangeFieldType(1e-15));
   }
@@ -80,7 +80,7 @@ struct ProjectionOperator
     GridProviderType grid_provider(0.0, 1.0, 3u);
     auto& grid = grid_provider.grid();
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(grid);
-    const SpaceType space(grid_part_view);
+    const SpaceType space(*grid_part_view);
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
@@ -90,7 +90,7 @@ struct ProjectionOperator
     // measure error
     const Dune::Stuff::Functions::Difference< FunctionType, DiscreteFunctionType > difference(function,
                                                                                              discrete_function);
-    const Dune::GDT::Products::L2< GridViewType > l2_product_operator(*(space.grid_view()));
+    const Dune::GDT::Products::L2< GridViewType > l2_product_operator(space.grid_view());
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
     EXPECT_LE(l2_error, RangeFieldType(1e-15));
   }

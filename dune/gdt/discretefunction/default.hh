@@ -105,7 +105,7 @@ public:
 
   ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.grid_view()->indexSet().contains(entity));
+    assert(space_.grid_view().indexSet().contains(entity));
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
@@ -118,7 +118,7 @@ public:
                  const bool subsampling = (SpaceType::polOrder > 1),
                  VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    BaseType::template visualize< typename SpaceType::GridViewType >(*(space().grid_view()),
+    BaseType::template visualize< typename SpaceType::GridViewType >(space().grid_view(),
                                                                      filename,
                                                                      subsampling,
                                                                      vtk_output_type);
@@ -194,7 +194,7 @@ public:
 
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
-    assert(space_.grid_view()->indexSet().contains(entity));
+    assert(space_.grid_view().indexSet().contains(entity));
     return LocalDiscreteFunctionType(space_, this->storage_access(), entity);
   }
 

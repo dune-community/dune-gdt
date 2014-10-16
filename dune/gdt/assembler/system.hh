@@ -63,13 +63,13 @@ public:
   {}
 
   SystemAssembler(const TestSpaceType test, const AnsatzSpaceType ansatz)
-    : BaseType(*(test.grid_view()))
+    : BaseType(test.grid_view())
     , test_space_(test)
     , ansatz_space_(ansatz)
   {}
 
   SystemAssembler(const TestSpaceType test)
-    : BaseType(*(test.grid_view()))
+    : BaseType(test.grid_view())
     , test_space_(test)
     , ansatz_space_(test)
   {}

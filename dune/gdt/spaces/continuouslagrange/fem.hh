@@ -113,6 +113,14 @@ public:
     , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
   {}
 
+  FemBased(const GridViewType& gridView)
+    : gridPart_(std::make_shared<GridPartType>(gridView))
+    , gridView_(gridPart_->gridView())
+    , backend_(std::make_shared< BackendType >(const_cast< GridPartType& >(*(gridPart_))))
+    , mapper_(std::make_shared< MapperType >(backend_->blockMapper()))
+    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
+  {}
+
   FemBased(const ThisType& other) = default;
 
   FemBased(ThisType&& source) = default;
@@ -126,7 +134,7 @@ public:
     return gridPart_;
   }
 
-  const std::shared_ptr< const GridViewType >& grid_view() const
+  const GridViewType& grid_view() const
   {
     return gridView_;
   }
@@ -154,7 +162,7 @@ public:
 
 private:
   const std::shared_ptr< const GridPartType > gridPart_;
-  const std::shared_ptr< const GridViewType > gridView_;
+  const GridViewType& gridView_;
   const std::shared_ptr< const BackendType > backend_;
   const std::shared_ptr< const MapperType > mapper_;
   mutable std::shared_ptr< CommunicatorType > communicator_;

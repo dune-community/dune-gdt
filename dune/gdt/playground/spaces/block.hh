@@ -108,7 +108,7 @@ public:
     return local_spaces_;
   }
 
-  const std::shared_ptr< const GridViewType >& grid_view() const
+  const GridViewType& grid_view() const
   {
     return ms_grid_->globalGridView();
   }

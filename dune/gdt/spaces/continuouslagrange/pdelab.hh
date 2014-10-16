@@ -142,10 +142,10 @@ public:
   typedef typename BaseType::PatternType       PatternType;
   typedef typename BaseType::BoundaryInfoType  BoundaryInfoType;
 
-  PdelabBased(const std::shared_ptr< const GridViewType >& gV)
+  PdelabBased(const GridViewType& gV)
     : gridView_(gV)
-    , fe_map_(*gridView_)
-    , backend_(const_cast< GridViewType& >(*gridView_), fe_map_)
+    , fe_map_(gridView_)
+    , backend_(const_cast< GridViewType& >(gridView_), fe_map_)
     , mapper_(backend_)
     , communicator_(CommunicationChooser< GridViewImp >::create(*gridView_))
     , communicator_prepared_(false)
@@ -181,7 +181,7 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const std::shared_ptr< const GridViewType >& grid_view() const
+  const GridViewType& grid_view() const
   {
     return gridView_;
   }
@@ -210,7 +210,7 @@ public:
   } // ... communicator(...)
 
 private:
-  const std::shared_ptr< const GridViewType > gridView_;
+  const GridViewType& gridView_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;

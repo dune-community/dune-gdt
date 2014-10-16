@@ -35,7 +35,7 @@ public:
   VectorBased(VectorType& vec, const SpaceType& spc)
     : vector_(vec)
     , space_(spc)
-    , grid_view_(*(spc.grid_view()))
+    , grid_view_(spc.grid_view())
   {}
 
   virtual ~VectorBased() {}

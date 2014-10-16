@@ -157,7 +157,7 @@ public:
 
   static PatternType pattern(const RangeSpaceType& range_space, const SourceSpaceType& source_space)
   {
-    return pattern(range_space, source_space, *(range_space.grid_view()));
+    return pattern(range_space, source_space, range_space.grid_view());
   }
 
   static PatternType pattern(const RangeSpaceType& range_space, const GridViewType& grid_view)
