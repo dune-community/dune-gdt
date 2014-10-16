@@ -13,10 +13,11 @@
 
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //&& HAVE_TBB //EXADUNE
 # include <dune/grid/utility/partitioning/seedlist.hh>
+# include <dune/stuff/common/parallel/partitioner.hh>
 #endif
 
 #include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/common/parallel/partitioner.hh>
+#include <dune/stuff/common/parallel/helper.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
@@ -55,25 +56,25 @@ public:
   typedef DSG::ApplyOn::WhichEntity< GridViewType >       ApplyOnWhichEntity;
   typedef DSG::ApplyOn::WhichIntersection< GridViewType > ApplyOnWhichIntersection;
 
-  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz, const GridViewType& grid_view)
+  SystemAssembler(const TestSpaceType test, const AnsatzSpaceType ansatz, const GridViewType& grid_view)
     : BaseType(grid_view)
     , test_space_(test)
     , ansatz_space_(ansatz)
   {}
 
-  SystemAssembler(const TestSpaceType& test, const AnsatzSpaceType& ansatz)
+  SystemAssembler(const TestSpaceType test, const AnsatzSpaceType ansatz)
     : BaseType(*(test.grid_view()))
     , test_space_(test)
     , ansatz_space_(ansatz)
   {}
 
-  SystemAssembler(const TestSpaceType& test)
+  SystemAssembler(const TestSpaceType test)
     : BaseType(*(test.grid_view()))
     , test_space_(test)
-    , ansatz_space_(test_space_)
+    , ansatz_space_(test)
   {}
 
-  SystemAssembler(const TestSpaceType& test, const GridViewType& grid_view)
+  SystemAssembler(const TestSpaceType test, const GridViewType& grid_view)
     : BaseType(grid_view)
     , test_space_(test)
     , ansatz_space_(test_space_)
@@ -81,12 +82,12 @@ public:
 
   const TestSpaceType& test_space() const
   {
-    return test_space_;
+    return *test_space_;
   }
 
   const AnsatzSpaceType& ansatz_space() const
   {
-    return ansatz_space_;
+    return *ansatz_space_;
   }
 
   using BaseType::add;
@@ -96,8 +97,8 @@ public:
            Stuff::LA::MatrixInterface< M >& matrix,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
-    assert(matrix.rows() == test_space_.mapper().size());
-    assert(matrix.cols() == ansatz_space_.mapper().size());
+    assert(matrix.rows() == test_space_->mapper().size());
+    assert(matrix.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalMatrixConstraintsWrapper< TestSpaceType,
                                                      AnsatzSpaceType,
                                                      GridViewType,
@@ -117,7 +118,7 @@ public:
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = vector.as_imp();
-    assert(vector_imp.size() == test_space_.mapper().size());
+    assert(vector_imp.size() == test_space_->mapper().size());
     typedef internal::LocalVectorConstraintsWrapper< ThisType, ConstraintsType, VectorType > WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, constraints, vector_imp));
   } // ... add(...)
@@ -129,8 +130,8 @@ public:
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = matrix.as_imp();
-    assert(matrix_imp.rows() == test_space_.mapper().size());
-    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    assert(matrix_imp.rows() == test_space_->mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalVolumeMatrixAssemblerWrapper< ThisType, LocalAssembler::Codim0Matrix< L >, MatrixType >
         WrapperType;
     this->codim0_functors_.emplace_back(
@@ -144,8 +145,8 @@ public:
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = matrix.as_imp();
-    assert(matrix_imp.rows() == test_space_.mapper().size());
-    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    assert(matrix_imp.rows() == test_space_->mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalVolumeMatrixAssemblerWrapper< ThisType, Codim0Assembler, MatrixType > WrapperType;
     this->codim0_functors_.emplace_back(
           new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix_imp));
@@ -158,7 +159,7 @@ public:
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = vector.as_imp();
-    assert(vector_imp.size() == test_space_.mapper().size());
+    assert(vector_imp.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeVectorAssemblerWrapper< ThisType, Codim0Assembler, VectorType > WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
   } // ... add(...)
@@ -171,8 +172,8 @@ public:
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = matrix.as_imp();
-    assert(matrix_imp.rows() == test_space_.mapper().size());
-    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    assert(matrix_imp.rows() == test_space_->mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalFaceMatrixAssemblerWrapper< ThisType, LocalAssembler::Codim1CouplingMatrix< L >, MatrixType >
         WrapperType;
     this->codim1_functors_.emplace_back(
@@ -187,8 +188,8 @@ public:
   {
     typedef typename M::derived_type MatrixType;
     MatrixType& matrix_imp = matrix.as_imp();
-    assert(matrix_imp.rows() == test_space_.mapper().size());
-    assert(matrix_imp.cols() == ansatz_space_.mapper().size());
+    assert(matrix_imp.rows() == test_space_->mapper().size());
+    assert(matrix_imp.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalFaceMatrixAssemblerWrapper< ThisType, LocalAssembler::Codim1BoundaryMatrix< L >, MatrixType >
         WrapperType;
     this->codim1_functors_.emplace_back(
@@ -203,7 +204,7 @@ public:
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = vector.as_imp();
-    assert(vector_imp.size() == test_space_.mapper().size());
+    assert(vector_imp.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeVectorAssemblerWrapper< ThisType, LocalAssembler::Codim0Vector< L >, VectorType >
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
@@ -217,7 +218,7 @@ public:
   {
     typedef typename V::derived_type VectorType;
     VectorType& vector_imp = static_cast< VectorType& >(vector);
-    assert(vector_imp.size() == test_space_.mapper().size());
+    assert(vector_imp.size() == test_space_->mapper().size());
     typedef internal::LocalFaceVectorAssemblerWrapper< ThisType, LocalAssembler::Codim1Vector< L >, VectorType >
         WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
@@ -238,8 +239,8 @@ public:
 #endif
 
 private:
-  const TestSpaceType& test_space_;
-  const AnsatzSpaceType& ansatz_space_;
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
 }; // class SystemAssembler
 
 
