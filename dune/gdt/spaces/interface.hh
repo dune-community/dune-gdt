@@ -103,7 +103,7 @@ public:
    * @{
    **/
 
-  const std::shared_ptr<const GridViewType>& grid_view() const
+  const GridViewType& grid_view() const
   {
     CHECK_CRTP(this->as_imp().grid_view());
     return this->as_imp().grid_view();
@@ -184,7 +184,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
   template <class S>
   PatternType compute_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_pattern(*(grid_view()), ansatz_space);
+    return compute_pattern(grid_view(), ansatz_space);
   }
 
   template <class G>
@@ -201,7 +201,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
   template <class S>
   PatternType compute_volume_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_volume_pattern(*(grid_view()), ansatz_space);
+    return compute_volume_pattern(grid_view(), ansatz_space);
   }
 
   template <class G>
@@ -241,7 +241,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
 
   PatternType compute_face_and_volume_pattern() const
   {
-    return compute_face_and_volume_pattern(*(grid_view()), *this);
+    return compute_face_and_volume_pattern(grid_view(), *this);
   }
 
   template <class G>
@@ -253,7 +253,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
   template <class S>
   PatternType compute_face_and_volume_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_face_and_volume_pattern(*(grid_view()), ansatz_space);
+    return compute_face_and_volume_pattern(grid_view(), ansatz_space);
   }
 
   /**
@@ -310,7 +310,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
 
   PatternType compute_face_pattern() const
   {
-    return compute_face_pattern(*(grid_view()), *this);
+    return compute_face_pattern(grid_view(), *this);
   }
 
   template <class G>
@@ -322,7 +322,7 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
   template <class S>
   PatternType compute_face_pattern(const SpaceInterface<S>& ansatz_space) const
   {
-    return compute_face_pattern(*(grid_view()), ansatz_space);
+    return compute_face_pattern(grid_view(), ansatz_space);
   }
 
   template <class G, class S>
@@ -452,13 +452,13 @@ public:
 template <class Traits, int codim = 0>
 typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface<Traits>& space)
 {
-  return space.grid_view()->template begin<codim>();
+  return space.grid_view().template begin<codim>();
 }
 
 template <class Traits, int codim = 0>
 typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface<Traits>& space)
 {
-  return space.grid_view()->template end<codim>();
+  return space.grid_view().template end<codim>();
 }
 
 

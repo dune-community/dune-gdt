@@ -37,7 +37,8 @@ struct EllipticProductBase : public ::testing::Test
 
   EllipticProductBase()
     : grid_(GridProviderType(0.0, 1.0, 3u).grid_ptr())
-    , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_))
+    , leaf_view_(grid_->leafGridView())
+    , space_(leaf_view_)
     , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
     , unit_matrix_(Stuff::Functions::internal::unit_matrix<RangeFieldType, dimDomain>())
   {
@@ -74,6 +75,7 @@ struct EllipticProductBase : public ::testing::Test
   } // ... check(...)
 
   std::shared_ptr<GridType> grid_;
+  GridViewType leaf_view_;
   const SpaceType space_;
   const FunctionType one_;
   const TensorType unit_matrix_;
@@ -130,7 +132,7 @@ struct EllipticAssemblableProduct : public EllipticProductBase<SpaceType>
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)

@@ -144,12 +144,12 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-  PdelabBased(const std::shared_ptr<const GridViewType>& gV)
+  PdelabBased(const GridViewType& gV)
     : gridView_(gV)
     , fe_map_(std::make_shared<FEMapType>())
-    , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*gridView_), *fe_map_))
+    , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(gridView_), *fe_map_))
     , mapper_(std::make_shared<MapperType>(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(*gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
     , communicator_prepared_(false)
   {
   }
@@ -194,7 +194,7 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
-  const std::shared_ptr<const GridViewType>& grid_view() const
+  const GridViewType& grid_view() const
   {
     return gridView_;
   }
@@ -223,7 +223,7 @@ public:
   } // ... communicator(...)
 
 private:
-  const std::shared_ptr<const GridViewType> gridView_;
+  const GridViewType& gridView_;
   const std::shared_ptr<const FEMapType> fe_map_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;

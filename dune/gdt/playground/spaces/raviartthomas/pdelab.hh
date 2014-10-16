@@ -141,7 +141,7 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  PdelabBased(const std::shared_ptr<const GridViewType>& gV)
+  PdelabBased(const GridViewType& gV)
     : grid_view_(gV)
     , fe_map_(std::make_shared<FEMapType>(*(grid_view_)))
     , backend_(std::make_shared<BackendType>(const_cast<GridViewType&>(*grid_view_), *fe_map_))
@@ -183,7 +183,7 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const std::shared_ptr<const GridViewType>& grid_view() const
+  const GridViewType& grid_view() const
   {
     return grid_view_;
   }

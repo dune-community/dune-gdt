@@ -59,7 +59,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   {
     using namespace Dune::Stuff;
     matches_signature(this->space_);
-    const auto entity_ptr                   = this->space_.grid_view()->template begin<0>();
+    const auto entity_ptr                   = this->space_.grid_view().template begin<0>();
     const auto& entity                      = *entity_ptr;
     const auto basis                        = this->space_.base_function_set(entity);
     std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
@@ -80,8 +80,8 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     using namespace Dune::Stuff;
     // walk the grid to create a map of all vertices
     std::map<std::vector<DomainFieldType>, std::set<size_t>> vertex_to_indices_map;
-    const auto entity_end_it = this->space_.grid_view()->template end<0>();
-    for (auto entity_it = this->space_.grid_view()->template begin<0>(); entity_it != entity_end_it; ++entity_it) {
+    const auto entity_end_it = this->space_.grid_view().template end<0>();
+    for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (int cc = 0; cc < entity.template count<dimDomain>(); ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
@@ -90,7 +90,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
       }
     }
     // walk the grid again to find all DoF ids
-    for (auto entity_it = this->space_.grid_view()->template begin<0>(); entity_it != entity_end_it; ++entity_it) {
+    for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity     = *entity_it;
       const int num_vertices = entity.template count<dimDomain>();
       const auto basis = this->space_.base_function_set(entity);
@@ -117,7 +117,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
         if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
-             << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view()->indexSet().index(entity)
+             << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex << "], ";
           Common::print(basis_values, "basis_values", ss);
           EXPECT_TRUE(false) << ss.str();

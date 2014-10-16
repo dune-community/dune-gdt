@@ -477,8 +477,7 @@ template <class SourceType, class RangeType>
 void apply_projection(const SourceType& source, RangeType& range)
 {
   auto& view = range.space().grid_view();
-  Projection<typename std::remove_reference<decltype(*view)>::type, typename RangeType::SpaceType::RangeFieldType>(
-      *view)
+  Projection<typename std::remove_reference<decltype(view)>::type, typename RangeType::SpaceType::RangeFieldType>(view)
       .apply(source, range);
 }
 

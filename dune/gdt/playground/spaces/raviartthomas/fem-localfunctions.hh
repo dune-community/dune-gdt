@@ -160,7 +160,7 @@ public:
     return gridPart_;
   }
 
-  const std::shared_ptr<const GridViewType>& grid_view() const
+  const GridViewType& grid_view() const
   {
     return grid_view_;
   }

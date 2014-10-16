@@ -53,7 +53,7 @@ public:
     : matrix_(mtrx)
     , source_space_(source_sp)
     , range_space_(source_space_)
-    , grid_view_(*(source_space_.grid_view()))
+    , grid_view_(source_space_.grid_view())
     , assembled_(false)
   {
   }

@@ -297,7 +297,7 @@ private:
     // create search in the source grid part
     typedef typename SourceType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
-    EntitySearch entity_search(*(source.space().grid_view()));
+    EntitySearch entity_search(source.space().grid_view());
     // set all range dofs to infinity
     const auto infinity = std::numeric_limits<typename RangeType::RangeFieldType>::infinity();
     for (size_t ii = 0; ii < range.vector().size(); ++ii)

@@ -82,7 +82,7 @@ public:
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
-    assert(this->grid_view()->indexSet().contains(entity));
+    assert(this->grid_view().indexSet().contains(entity));
     // get the basis and reference element
     const auto basis = this->base_function_set(entity);
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
@@ -123,14 +123,14 @@ public:
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     // check
-    assert(this->grid_view()->indexSet().contains(entity));
+    assert(this->grid_view().indexSet().contains(entity));
     // prepare
     std::set<size_t> localDirichletDofs;
     std::vector<DomainType> dirichlet_vertices;
     // get all dirichlet vertices of this entity, therefore
     // * loop over all intersections
-    const auto intersection_it_end = this->grid_view()->iend(entity);
-    for (auto intersection_it = this->grid_view()->ibegin(entity); intersection_it != intersection_it_end;
+    const auto intersection_it_end = this->grid_view().iend(entity);
+    for (auto intersection_it = this->grid_view().ibegin(entity); intersection_it != intersection_it_end;
          ++intersection_it) {
       // only work on dirichlet ones
       const auto& intersection = *intersection_it;
@@ -183,7 +183,7 @@ public:
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
-    assert(this->grid_view()->indexSet().contains(entity));
+    assert(this->grid_view().indexSet().contains(entity));
     const std::set<size_t> localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
     const size_t numRows                      = localDirichletDofs.size();
     Dune::DynamicVector<size_t> tmpMappedRows;

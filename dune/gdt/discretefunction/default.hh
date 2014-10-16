@@ -106,7 +106,7 @@ public:
 
   ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.grid_view()->indexSet().contains(entity));
+    assert(space_.grid_view().indexSet().contains(entity));
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
@@ -119,7 +119,7 @@ public:
                  VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
-        *(space().grid_view()), filename, subsampling, vtk_output_type);
+        space().grid_view(), filename, subsampling, vtk_output_type);
   }
 
   bool dofs_valid() const
@@ -198,7 +198,7 @@ public:
 
   LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
   {
-    assert(space_.grid_view()->indexSet().contains(entity));
+    assert(space_.grid_view().indexSet().contains(entity));
     return LocalDiscreteFunctionType(space_, this->storage_access(), entity);
   }
 
