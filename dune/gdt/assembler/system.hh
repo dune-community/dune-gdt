@@ -239,8 +239,8 @@ public:
 #endif
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const DS::PerThreadValue<const TestSpaceType> test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
 }; // class SystemAssembler
 
 
