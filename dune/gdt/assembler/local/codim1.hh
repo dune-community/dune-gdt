@@ -477,7 +477,6 @@ public:
     return local_operator_result[0][0];
   } // ... compute_locally(...)
 
-
   virtual void apply_local(const IntersectionType& intersection,
                            const EntityType& inside_entity,
                            const EntityType& outside_entity) DS_OVERRIDE
