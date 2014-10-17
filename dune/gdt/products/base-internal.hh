@@ -172,6 +172,65 @@ class LocalizableBaseHelper
   }; // struct Volume< ..., true >
 
   template <class LO, bool anthing = false>
+  struct Coupling
+  {
+    Coupling(WalkerType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
+    {
+    }
+
+    FieldType compute_locally(const IntersectionType&, const EntityType&, const EntityType&)
+    {
+      return 0.0;
+    }
+
+    FieldType result() const
+    {
+      return 0.0;
+    }
+  }; // struct Coupling< ..., false >
+
+  template <class LO>
+  struct Coupling<LO, true>
+  {
+    // if you get an error here you have defined has_coupling_operator to true but either do not provide
+    // CouplingOperatorType
+    typedef typename LocalOperatorProvider::CouplingOperatorType LocalOperatorType;
+    //                      or your CouplingOperatorType is not derived from LocalOperator::Codim1CouplingInterface
+    typedef LocalAssembler::Codim1CouplingOperatorAccumulateFunctor<GridViewType, LocalOperatorType, RangeType,
+                                                                    SourceType, FieldType> FunctorType;
+
+    Coupling(WalkerType& walker, const LocalOperatorProvider& local_operators, const RangeType& range,
+             const SourceType& source)
+      : functor_(walker.grid_view(),
+                 local_operators.coupling_operator_, // <- if you get an error here you have defined
+                 range, //    has_coupling_operator to true but do not provide
+                 source) //    coupling_operator_
+      , grid_view_(walker.grid_view())
+      , intersections_(local_operators.coupling_intersections()) // <- if you get an error here you have defined
+    { //    has_coupling_operator to true but
+      walker.add(functor_, local_operators.coupling_intersections()); //    implemented the wrong
+    } //    coupling_intersections()
+
+    FieldType compute_locally(const IntersectionType& intersection, const EntityType& inside_entity,
+                              const EntityType& outside_entity)
+    {
+      if (intersections_->apply_on(grid_view_, intersection))
+        return functor_.compute_locally(intersection, inside_entity, outside_entity);
+      else
+        return 0.0;
+    }
+
+    FieldType result() const
+    {
+      return functor_.result();
+    }
+
+    FunctorType functor_;
+    const GridViewType& grid_view_;
+    const std::unique_ptr<DSG::ApplyOn::WhichIntersection<GridViewType>> intersections_;
+  }; // struct Coupling< ..., true >
+
+  template <class LO, bool anthing = false>
   struct Boundary
   {
     Boundary(WalkerType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
@@ -218,6 +277,7 @@ public:
   LocalizableBaseHelper(WalkerType& walker, const LocalOperatorProvider& local_operators, const RangeType& range,
                         const SourceType& source)
     : volume_helper_(walker, local_operators, range, source)
+    , coupling_helper_(walker, local_operators, range, source)
     , boundary_helper_(walker, local_operators, range, source)
   {
   }
@@ -229,6 +289,7 @@ public:
 
 private:
   Volume<LocalOperatorProvider, LocalOperatorProvider::has_volume_operator> volume_helper_;
+  Coupling<LocalOperatorProvider, LocalOperatorProvider::has_coupling_operator> coupling_helper_;
   Boundary<LocalOperatorProvider, LocalOperatorProvider::has_boundary_operator> boundary_helper_;
 }; // class LocalizableBaseHelper
 
