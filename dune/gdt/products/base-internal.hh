@@ -76,9 +76,10 @@ class GenericBase;
  *          and you have to provide the public members
  *          - `static const bool has_boundary_operator = true;`
  *          - `const BoundaryOperatorType boundary_operator_;`
- *          If you want to restrict the intersections your the local operator will be applied on you have to
- *          additionally provide a method
+ *          If you want to restrict the intersections the local operator will be applied on you have to additionally
+ *          provide a method
  *          - `DSG::ApplyOn::WhichIntersections< GridViewType >* boundary_intersections() const`
+ *          the default is DSG::ApplyOn::BoundaryIntersections.
  *          See \sa Products::internal::BoundaryL2Base in boundaryl2-internal.hh for an example of a
  *          LocalOperatorProvider based on a local codim 1 boundary operator.
  */
