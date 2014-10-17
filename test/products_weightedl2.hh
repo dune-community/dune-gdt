@@ -82,14 +82,14 @@ struct WeightedL2LocalizableProduct : public WeightedL2ProductBase<SpaceType>
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     return Products::WeightedL2Localizable<GridViewType, FunctionType, FunctionType, FunctionType>(
-               *(this->space_.grid_view()), function, function, this->one_)
+               this->space_.grid_view(), function, function, this->one_)
         .apply2();
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::WeightedL2Localizable<GridViewType, FunctionType, FunctionType, FunctionType> ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_, this->one_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_, this->one_);
     LocalizableProductBase<SpaceType, ProductType>::fulfills_interface(product);
   }
 }; // struct WeightedL2LocalizableProduct
@@ -115,7 +115,7 @@ struct WeightedL2AssemblableProduct : public WeightedL2ProductBase<SpaceType>
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)
@@ -139,14 +139,14 @@ struct WeightedL2Product : public WeightedL2ProductBase<SpaceType>
 
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
-    Products::WeightedL2<GridViewType, FunctionType> product(*this->space_.grid_view(), this->one_);
+    Products::WeightedL2<GridViewType, FunctionType> product(this->space_.grid_view(), this->one_);
     return product.apply2(function, function);
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::WeightedL2<GridViewType, FunctionType> ProductType;
-    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(*this->space_.grid_view(), this->one_));
+    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(this->space_.grid_view(), this->one_));
   }
 }; // struct WeightedL2Product
 

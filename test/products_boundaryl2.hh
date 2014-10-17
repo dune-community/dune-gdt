@@ -82,14 +82,14 @@ struct BoundaryL2LocalizableProduct : public BoundaryL2ProductBase<SpaceType>
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     return Products::BoundaryL2Localizable<GridViewType, FunctionType, FunctionType>(
-               *(this->space_.grid_view()), function, function)
+               this->space_.grid_view(), function, function)
         .apply2();
   }
 
   void fulfills_interface() const
   {
     typedef Products::BoundaryL2Localizable<GridViewType, FunctionType, FunctionType> ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_);
     LocalizableProductBase<SpaceType, ProductType>::fulfills_interface(product);
   }
 }; // struct BoundaryL2LocalizableProduct
@@ -114,7 +114,7 @@ struct BoundaryL2AssemblableProduct : public BoundaryL2ProductBase<SpaceType>
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)
@@ -138,14 +138,14 @@ struct BoundaryL2Product : public BoundaryL2ProductBase<SpaceType>
 
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
-    const Products::BoundaryL2<GridViewType> product(*this->space_.grid_view());
+    const Products::BoundaryL2<GridViewType> product(this->space_.grid_view());
     return product.apply2(function, function);
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::BoundaryL2<GridViewType> ProductType;
-    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(*this->space_.grid_view()));
+    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(this->space_.grid_view()));
   }
 }; // struct BoundaryL2Product
 

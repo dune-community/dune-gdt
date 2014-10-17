@@ -146,9 +146,9 @@ private:
     // create search in the source grid part
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch<SourceGridViewType> EntitySearch;
-    EntitySearch entity_search(*(source.space().grid_view()));
+    EntitySearch entity_search(source.space().grid_view());
     // guess the polynomial order of the source by hoping that they are the same for all entities
-    const size_t source_order = source.local_function(*(source.space().grid_view()->template begin<0>()))->order();
+    const size_t source_order = source.local_function(*source.space().grid_view().template begin<0>())->order();
     // walk the grid
     RangeType source_value(0);
     std::vector<RangeType> basis_values(range.space().mapper().maxNumDofs());

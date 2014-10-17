@@ -167,7 +167,7 @@ public:
     return *this;
   }
 
-  const std::shared_ptr<const GridPartType>& grid_part() const
+  const GridPartType& grid_part() const
   {
     return gridPart_;
   }
@@ -204,7 +204,7 @@ public:
 
 private:
   std::shared_ptr<const GridPartType> gridPart_;
-  const GridViewType& gridView_;
+  const GridViewType gridView_;
   std::shared_ptr<BaseFunctionSetMapType> baseFunctionSetMap_;
   std::shared_ptr<const BackendType> backend_;
   std::shared_ptr<const MapperType> mapper_;

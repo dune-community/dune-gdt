@@ -155,7 +155,7 @@ public:
     return *this;
   }
 
-  const std::shared_ptr<const GridPartType>& grid_part() const
+  const GridPartType& grid_part() const
   {
     return gridPart_;
   }

@@ -22,14 +22,14 @@ struct L2LocalizableProduct : public WeightedL2LocalizableProduct<SpaceType>
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     return Products::L2Localizable<GridViewType, FunctionType, FunctionType>(
-               *(this->space_.grid_view()), function, function)
+               this->space_.grid_view(), function, function)
         .apply2();
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::L2Localizable<GridViewType, FunctionType, FunctionType> ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_);
     LocalizableProductBase<SpaceType, ProductType>::fulfills_interface(product);
   }
 }; // struct L2LocalizableProduct
@@ -54,7 +54,7 @@ struct L2AssemblableProduct : public WeightedL2ProductBase<SpaceType>
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)
@@ -78,14 +78,14 @@ struct L2Product : public WeightedL2ProductBase<SpaceType>
 
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
-    Products::L2<GridViewType> product(*this->space_.grid_view());
+    Products::L2<GridViewType> product(this->space_.grid_view());
     return product.apply2(function, function);
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::L2<GridViewType> ProductType;
-    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(*this->space_.grid_view()));
+    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(this->space_.grid_view()));
   }
 }; // struct L2Product
 

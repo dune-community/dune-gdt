@@ -11,6 +11,12 @@
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/operators/prolongations.hh>
+#include <dune/stuff/la/container.hh>
+#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/h1.hh>
 
 // +---------------------------------------+
 // |  * to test the prolongation operators |
@@ -30,6 +36,7 @@ struct ProlongationOperatorBase
   static const unsigned int dimRange = FineSpaceType::dimRange;
   typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
+  typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;
 
   void produces_correct_results() const
   {
@@ -41,7 +48,7 @@ struct ProlongationOperatorBase
     assert(grid.maxLevel() > 0);
     const auto fine_grid_part_view =
         Dune::GDT::SpaceTools::GridPartView<FineSpaceType>::create_level(grid, grid.maxLevel());
-    assert(fine_grid_part_view->indexSet().size(0) > coarse_grid_part_view->indexSet().size(0));
+    assert(fine_grid_part_view.indexSet().size(0) > coarse_grid_part_view.indexSet().size(0));
     // first, project an anlytical function onto the coarse grid
     const FunctionType function("x", "x[0]", 1, "function");
     const CoarseSpaceType coarse_space(coarse_grid_part_view);

@@ -37,7 +37,7 @@ struct EllipticProductBase : public ::testing::Test
 
   EllipticProductBase()
     : grid_(GridProviderType(0.0, 1.0, 3u).grid_ptr())
-    , leaf_view_(grid_->leafGridView())
+    , leaf_view_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_))
     , space_(leaf_view_)
     , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
     , unit_matrix_(Stuff::Functions::internal::unit_matrix<RangeFieldType, dimDomain>())
@@ -75,7 +75,7 @@ struct EllipticProductBase : public ::testing::Test
   } // ... check(...)
 
   std::shared_ptr<GridType> grid_;
-  GridViewType leaf_view_;
+  typename Dune::GDT::SpaceTools::GridPartView<SpaceType>::LeafGridViewType leaf_view_;
   const SpaceType space_;
   const FunctionType one_;
   const TensorType unit_matrix_;
@@ -95,7 +95,7 @@ struct EllipticLocalizableProduct : public EllipticProductBase<SpaceType>
   {
     return Products::
         EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType, RangeFieldType, TensorType>(
-               *(this->space_.grid_view()), function, function, this->one_, this->unit_matrix_)
+               this->space_.grid_view(), function, function, this->one_, this->unit_matrix_)
             .apply2();
   } // ... compute(...)
 
@@ -104,7 +104,7 @@ struct EllipticLocalizableProduct : public EllipticProductBase<SpaceType>
     typedef Products::
         EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType, RangeFieldType, TensorType>
             ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_, this->one_, this->unit_matrix_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_, this->one_, this->unit_matrix_);
     LocalizableProductBase<SpaceType, ProductType>::fulfills_interface(product);
   }
 }; // struct EllipticLocalizableProduct
@@ -189,7 +189,7 @@ struct EllipticProduct : public EllipticProductBase<SpaceType>
   virtual RangeFieldType compute(const FunctionType& function) const
   {
     Products::Elliptic<GridViewType, FunctionType, RangeFieldType, TensorType> product(
-        *this->space_.grid_view(), this->one_, this->unit_matrix_);
+        this->space_.grid_view(), this->one_, this->unit_matrix_);
     return product.apply2(function, function);
   } // ... compute(...)
 
@@ -197,7 +197,7 @@ struct EllipticProduct : public EllipticProductBase<SpaceType>
   {
     typedef Products::Elliptic<GridViewType, FunctionType, RangeFieldType, TensorType> ProductType;
     ProductBase<SpaceType, ProductType>::fulfills_interface(
-        ProductType(*this->space_.grid_view(), this->one_, this->unit_matrix_));
+        ProductType(this->space_.grid_view(), this->one_, this->unit_matrix_));
   }
 }; // struct EllipticProduct
 
@@ -214,14 +214,14 @@ struct SimplifiedEllipticLocalizableProduct : public EllipticProductBase<SpaceTy
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     return Products::EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType>(
-               *(this->space_.grid_view()), function, function, this->one_)
+               this->space_.grid_view(), function, function, this->one_)
         .apply2();
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType> ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_, this->one_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_, this->one_);
     LocalizableProductBase<SpaceType, ProductType>::fulfills_interface(product);
   }
 }; // struct SimplifiedEllipticLocalizableProduct
@@ -247,7 +247,7 @@ struct SimplifiedEllipticAssemblableProduct : public EllipticAssemblableProduct<
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)
@@ -272,14 +272,14 @@ struct SimplifiedEllipticProduct : public EllipticProductBase<SpaceType>
 
   virtual RangeFieldType compute(const FunctionType& function) const
   {
-    Products::Elliptic<GridViewType, FunctionType> product(*this->space_.grid_view(), this->one_);
+    Products::Elliptic<GridViewType, FunctionType> product(this->space_.grid_view(), this->one_);
     return product.apply2(function, function);
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::Elliptic<GridViewType, FunctionType> ProductType;
-    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(*this->space_.grid_view(), this->one_));
+    ProductBase<SpaceType, ProductType>::fulfills_interface(ProductType(this->space_.grid_view(), this->one_));
   }
 }; // struct SimplifiedEllipticProduct
 

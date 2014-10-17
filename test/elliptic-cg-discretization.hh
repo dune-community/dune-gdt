@@ -70,7 +70,7 @@ public:
 
   Discretization(const std::shared_ptr<const GridViewType>& gp, const BoundaryInfoType& info, const FunctionType& diff,
                  const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
-    : space_(gp)
+    : space_(*gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)
@@ -116,7 +116,7 @@ public:
       typedef Operators::DirichletProjectionLocalizable<GridViewType, FunctionType, DiscreteFunctionType>
           DirichletProjectionOperator;
       DirichletProjectionOperator dirichlet_projection_operator(
-          *(space_.grid_view()), boundary_info_, dirichlet_, dirichlet_projection);
+          space_.grid_view(), boundary_info_, dirichlet_, dirichlet_projection);
       // assemble everything
       SystemAssembler<SpaceType> grid_walker(space_);
       grid_walker.add(elliptic_operator);

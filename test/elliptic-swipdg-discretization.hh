@@ -45,6 +45,7 @@
 #include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/products/l2.hh>
+#include <dune/gdt/products/weightedl2.hh>
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/products/elliptic.hh>
 #include <dune/gdt/operators/projections.hh>
@@ -97,7 +98,7 @@ public:
 
   Discretization(const std::shared_ptr<const GridPartType>& gp, const BoundaryInfoType& info, const FunctionType& diff,
                  const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
-    : space_(gp)
+    : space_(*gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)

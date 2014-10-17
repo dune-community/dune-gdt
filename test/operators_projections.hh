@@ -44,7 +44,7 @@ struct ProjectionOperatorBase : ::testing::Test
     GridProviderType grid_provider(0.0, 1.0, 3u);
     auto& grid                = grid_provider.grid();
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid);
-    const SpaceType space(*grid_part_view);
+    const SpaceType space(grid_part_view);
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
@@ -79,7 +79,7 @@ struct ProjectionOperator
     GridProviderType grid_provider(0.0, 1.0, 3u);
     auto& grid                = grid_provider.grid();
     const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid);
-    const SpaceType space(*grid_part_view);
+    const SpaceType space(grid_part_view);
     const FunctionType function("x", "x[0]", 1, "function");
     VectorType vector(space.mapper().size());
     typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
