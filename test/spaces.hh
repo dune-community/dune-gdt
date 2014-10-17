@@ -45,6 +45,7 @@ public:
   void fulfills_interface() const
   {
     using namespace Stuff;
+    SpaceType foop(space_);
     // static checks
     // * as the derived type
     typedef typename SpaceType::Traits              Traits;

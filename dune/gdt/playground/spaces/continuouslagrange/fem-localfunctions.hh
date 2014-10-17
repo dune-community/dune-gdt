@@ -136,12 +136,12 @@ private:
 
 public:
 
-  FemLocalfunctionsBased(std::shared_ptr< const GridPartType > gridP)
+  FemLocalfunctionsBased(GridPartType gridP)
     : gridPart_(gridP)
-    , gridView_(std::make_shared< GridViewType >(gridPart_->gridView()))
-    , baseFunctionSetMap_(new BaseFunctionSetMapType(*gridPart_))
-    , backend_(new BackendType(const_cast< GridPartType& >(*gridPart_), *baseFunctionSetMap_))
-    , mapper_(new MapperType(backend_->mapper()))
+    , gridView_(gridPart_.gridView()))
+    , baseFunctionSetMap_(gridPart_)
+    , backend_(const_cast< GridPartType& >(gridPart_), baseFunctionSetMap_)
+    , mapper_(backend_->mapper())
     , tmp_global_indices_(mapper_->maxNumDofs())
     , communicator_(0.0)
   {}
@@ -173,7 +173,7 @@ public:
 
   const BackendType& backend() const
   {
-    return *backend_;
+    return backend_;
   }
 
   bool continuous() const
@@ -183,12 +183,12 @@ public:
 
   const MapperType& mapper() const
   {
-    return *mapper_;
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*baseFunctionSetMap_, entity);
+    return BaseFunctionSetType(baseFunctionSetMap_, entity);
   }
 
   double& communicator() const
@@ -197,11 +197,11 @@ public:
   }
 
 private:
-  std::shared_ptr< const GridPartType > gridPart_;
+  const GridPartType gridPart_;
   const GridViewType gridView_;
-  std::shared_ptr< BaseFunctionSetMapType > baseFunctionSetMap_;
-  std::shared_ptr< const BackendType > backend_;
-  std::shared_ptr< const MapperType > mapper_;
+  BaseFunctionSetMapType baseFunctionSetMap_;
+  const BackendType backend_;
+  const MapperType mapper_;
   mutable Dune::DynamicVector< size_t > tmp_global_indices_;
   mutable double communicator_;
 }; // class FemLocalfunctionsBased< ..., 1, 1 >

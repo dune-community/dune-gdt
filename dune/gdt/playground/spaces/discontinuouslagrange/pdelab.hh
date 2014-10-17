@@ -141,11 +141,11 @@ public:
   typedef typename BaseType::BoundaryInfoType  BoundaryInfoType;
 
   PdelabBased(GridViewType gV)
-    : gridView_(gV)
-    , fe_map_(std::make_shared< FEMapType >())
-    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(gridView_), *fe_map_))
-    , mapper_(std::make_shared< MapperType >(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
+    : grid_view_(gV)
+    , fe_map_()
+    , backend_(const_cast< GridViewType& >(grid_view_), fe_map_)
+    , mapper_(backend_)
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {}
 
@@ -154,11 +154,11 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   PdelabBased(const ThisType& other)
-    : gridView_(other.gridView_)
+    : grid_view_(other.grid_view_)
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
-    , communicator_(other.communicator_)
+    , communicator_(DSC::make_unique<CommunicatorType>(*other.communicator_))
     , communicator_prepared_(other.communicator_prepared_)
   {}
 
@@ -167,11 +167,11 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   PdelabBased(ThisType&& source)
-    : gridView_(source.gridView_)
+    : grid_view_(source.grid_view_)
     , fe_map_(source.fe_map_)
     , backend_(source.backend_)
     , mapper_(source.mapper_)
-    , communicator_(source.communicator_)
+    , communicator_(std::move(source.communicator_))
     , communicator_prepared_(source.communicator_prepared_)
   {}
 
@@ -189,22 +189,22 @@ public:
 
   const GridViewType& grid_view() const
   {
-    return gridView_;
+    return grid_view_;
   }
 
   const BackendType& backend() const
   {
-    return *backend_;
+    return backend_;
   }
 
   const MapperType& mapper() const
   {
-    return *mapper_;
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return BaseFunctionSetType(*backend_, entity);
+    return BaseFunctionSetType(backend_, entity);
   }
 
   CommunicatorType& communicator() const
@@ -216,11 +216,11 @@ public:
   } // ... communicator(...)
 
 private:
-  const GridViewType gridView_;
-  const std::shared_ptr< const FEMapType > fe_map_;
-  const std::shared_ptr< const BackendType > backend_;
-  const std::shared_ptr< const MapperType > mapper_;
-  mutable std::shared_ptr< CommunicatorType > communicator_;
+  const GridViewType grid_view_;
+  const FEMapType fe_map_;
+  const BackendType backend_;
+  const MapperType mapper_;
+  mutable std::unique_ptr< CommunicatorType > communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class PdelabBased< ..., 1 >
