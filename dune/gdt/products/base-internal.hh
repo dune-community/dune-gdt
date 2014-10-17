@@ -392,6 +392,34 @@ class AssemblableBaseHelper
   }; // struct Volume< ..., true >
 
   template< class LO, bool anthing = false >
+  struct Coupling
+  {
+    Coupling(AssemblableBaseType&, MatrixType&, const LocalOperatorProvider&) {}
+  }; // struct Coupling< ..., false >
+
+  template< class LO >
+  struct Coupling< LO, true >
+  {
+    // if you get an error here you have defined has_coupling_operator to true but either do not provide
+    // CouplingOperatorType
+    typedef typename LocalOperatorProvider::CouplingOperatorType LocalOperatorType;
+    //                      or your CouplingOperatorType is not derived from LocalOperator::Codim1CouplingInterface
+    typedef LocalAssembler::Codim1CouplingMatrix< LocalOperatorType > LocalAssemblerType;
+
+    Coupling(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
+      : local_assembler_(local_operators.coupling_operator_) // <- if you get an error here you have defined
+    {                                                        //    has_coupling_operator to true but do not provide
+                                                             //    coupling_operator_
+      base.add(local_assembler_,
+               matrix,
+               local_operators.coupling_intersections()); // <- if you get an error here you have defined
+    }                                                     //    has_coupling_operator to true but implemented the wrong
+                                                          //    coupling_intersections()
+
+    const LocalAssemblerType local_assembler_;
+  }; // struct Coupling< ..., true >
+
+  template< class LO, bool anthing = false >
   struct Boundary
   {
     Boundary(AssemblableBaseType&, MatrixType&, const LocalOperatorProvider&) {}
@@ -431,11 +459,13 @@ public:
 
   AssemblableBaseHelper(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
     : volume_helper_(  base, matrix, local_operators)
+    , coupling_helper_(base, matrix, local_operators)
     , boundary_helper_(base, matrix, local_operators)
   {}
 
 private:
   Volume<   LocalOperatorProvider, LocalOperatorProvider::has_volume_operator >   volume_helper_;
+  Coupling< LocalOperatorProvider, LocalOperatorProvider::has_coupling_operator > coupling_helper_;
   Boundary< LocalOperatorProvider, LocalOperatorProvider::has_boundary_operator > boundary_helper_;
 }; // class AssemblableBaseHelper
 
