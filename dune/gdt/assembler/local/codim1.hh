@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/walker/functors.hh>
@@ -351,6 +352,9 @@ public:
   FieldType compute_locally(const IntersectionType& intersection, const EntityType& inside_entity,
                             const EntityType& outside_entity)
   {
+#ifndef NDEBUG
+    auto logger = DSC::TimedLogger().get("gdt.assembler.local.codim1couplingoperatoraccumulatefunctor");
+#endif
     auto& tmp_storage = tmp_storage_->matrices();
     assert(tmp_storage.size() >= 2);
     assert(tmp_storage[0].size() >= 4);
@@ -383,6 +387,12 @@ public:
     assert(local_operator_result_en_ne.cols() >= 1);
     assert(local_operator_result_ne_en.rows() >= 1);
     assert(local_operator_result_ne_en.cols() >= 1);
+#ifndef NDEBUG
+    logger.debug() << intersection.geometry().center() << ": "
+                   << local_operator_result_en_en[0][0] + local_operator_result_ne_ne[0][0]
+                          + local_operator_result_en_ne[0][0] + local_operator_result_ne_en[0][0]
+                   << std::endl;
+#endif
     return local_operator_result_en_en[0][0] + local_operator_result_ne_ne[0][0] + local_operator_result_en_ne[0][0]
            + local_operator_result_ne_en[0][0];
   } // ... compute_locally(...)
@@ -460,6 +470,9 @@ public:
   FieldType compute_locally(const IntersectionType& intersection, const EntityType& inside_entity,
                             const EntityType& /*outside_entity*/)
   {
+#ifndef NDEBUG
+    auto logger = DSC::TimedLogger().get("gdt.assembler.local.codim1boundaryoperatoraccumulatefunctor");
+#endif
     assert(tmp_storage_->matrices().size() >= 2);
     assert(tmp_storage_->matrices()[0].size() >= 1);
     auto& local_operator_result = tmp_storage_->matrices()[0][0];
@@ -472,6 +485,9 @@ public:
         *local_test_function, *local_ansatz_function, intersection, local_operator_result, tmp_matrices);
     assert(local_operator_result.rows() >= 1);
     assert(local_operator_result.cols() >= 1);
+#ifndef NDEBUG
+    logger.debug() << intersection.geometry().center() << ": " << local_operator_result[0][0] << std::endl;
+#endif
     return local_operator_result[0][0];
   } // ... compute_locally(...)
 
