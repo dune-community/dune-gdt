@@ -7,9 +7,13 @@
 
 #include "operators_products_prolong.hh"
 
-typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES> ProlongationOperatorSpaceTypes;
+typedef testing::Types<
+    //                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
+    > ProlongationOperatorSpaceTypes;
 
-typedef testing::Types<LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES> LagrangeProlongationOperatorSpaceTypes;
+typedef testing::Types<
+    //                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES
+    > LagrangeProlongationOperatorSpaceTypes;
 
 #undef L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #undef LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
