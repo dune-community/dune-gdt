@@ -58,6 +58,18 @@ class GenericBase;
  *          - `DSG::ApplyOn::WhichEntity< GridViewType >* entities() const`
  *          See \sa Products::internal::WeightedL2Base in weightedl2-internal.hh for an example of a
  *          LocalOperatorProvider based on a local codim 0 operator.
+ *        - if a local operator is derived from LocalOperator::Codim1CouplingInterface you have to provide the public
+ *          type
+ *          - `CouplingOperatorType'
+ *          and you have to provide the public members
+ *          - `static const bool has_coupling_operator = true;`
+ *          - `const CouplingOperatorType coupling_operator_;`
+ *          If you want to restrict the intersections the local operator will be applied on you have to additionally
+ *          provide a method
+ *          - `DSG::ApplyOn::WhichIntersections< GridViewType >* coupling_intersections() const`
+ *          the default is DSG::ApplyOn::InnerIntersectionsPrimally.
+ *          See \sa Products::internal::SwipdgPenaltyBase in swipdgpenalty-internal.hh for an example of a
+ *          LocalOperatorProvider based on a local codim 1 coupling operator
  *        - if a local operator is derived from LocalOperator::Codim1BoundaryInterface you have to provide the public
  *          type
  *          - `BoundaryOperatorType`
@@ -75,11 +87,17 @@ class LocalOperatorProviderBase
 {
 public:
   static const bool has_volume_operator   = false;
+  static const bool has_coupling_operator = false;
   static const bool has_boundary_operator = false;
 
   DSG::ApplyOn::AllEntities<GridViewType>* entities() const
   {
     return new DSG::ApplyOn::AllEntities<GridViewType>();
+  }
+
+  DSG::ApplyOn::InnerIntersectionsPrimally<GridViewType>* coupling_intersections() const
+  {
+    return new DSG::ApplyOn::InnerIntersectionsPrimally<GridViewType>();
   }
 
   DSG::ApplyOn::BoundaryIntersections<GridViewType>* boundary_intersections() const
