@@ -7,6 +7,8 @@
 #define DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 
 #include <dune/stuff/common/fmatrix.hh>
+#include <dune/stuff/common/print.hh>
+#include <dune/stuff/common/timedlogging.hh>
 
 #include <dune/gdt/localevaluation/swipdg.hh>
 
@@ -767,6 +769,9 @@ public:
            const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicMatrix<R>& ret) const
   {
+#ifndef NDEBUG
+    auto logger = DSC::TimedLogger().get("gdt.localevaluation.swipdg.boundarylhspenalty");
+#endif
     // clear ret
     ret *= 0.0;
     typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::DomainType
@@ -779,16 +784,33 @@ public:
     // get local point (which is in intersection coordinates) in entity coordinates
     const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
     const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+#ifndef NDEBUG
+    DSC::print(intersection.geometry().global(localPoint), "global(localPoint)", logger.debug());
+    DSC::print(localPointEntity, "localPointEntity", logger.debug(), "  ");
+    DSC::print(unitOuterNormal, "unitOuterNormal", logger.debug(), "  ");
+#endif // NDEBUG
     // evaluate local function
     typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     const auto diffusion_factor_value       = localDiffusionFactor.evaluate(localPointEntity);
     const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
+#ifndef NDEBUG
+    DSC::print(diffusion_factor_value, "diffusion_factor_value", logger.debug(), "  ");
+    DSC::print(diffusion_tensor_value, "diffusion_tensor_value", logger.debug(), "  ");
+#endif // NDEBUG
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
     const R sigma             = internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma   = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
     const R penalty = (diffusion_factor_value * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+#ifndef NDEBUG
+    logger.debug() << "  max_polorder = " << max_polorder << std::endl;
+    logger.debug() << "  sigma = " << sigma << std::endl;
+    logger.debug() << "  gamma = " << gamma << std::endl;
+    logger.debug() << "  intersection.geometry().volume() = " << intersection.geometry().volume() << std::endl;
+    logger.debug() << "  beta_ = " << beta_ << std::endl;
+    logger.debug() << "  penalty = " << penalty << std::endl;
+#endif // NDEBUG
     // evaluate bases
     // * test
     const size_t rows = testBase.size();
@@ -809,6 +831,11 @@ public:
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
+#ifndef NDEBUG
+    DSC::print(testValues, "testValues", logger.debug(), "  ");
+    DSC::print(ansatzValues, "ansatzValues", logger.debug(), "  ");
+    DSC::print(ret, "ret", logger.debug(), "  ");
+#endif // NDEBUG
   } // void evaluate(...) const
 
 private:
