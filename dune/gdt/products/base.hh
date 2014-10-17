@@ -49,10 +49,12 @@ class LocalizableBase
 public:
   typedef internal::LocalizableBaseTraits< LocalOperatorProvider, RangeImp, SourceImp > Traits;
 
-  typedef typename WalkerBaseType::GridViewType GridViewType;
-  typedef typename ProductBaseType::RangeType   RangeType;
-  typedef typename ProductBaseType::SourceType  SourceType;
-  typedef typename ProductBaseType::FieldType   FieldType;
+  typedef typename WalkerBaseType::GridViewType     GridViewType;
+  typedef typename WalkerBaseType::EntityType       EntityType;
+  typedef typename WalkerBaseType::IntersectionType IntersectionType;
+  typedef typename ProductBaseType::RangeType  RangeType;
+  typedef typename ProductBaseType::SourceType SourceType;
+  typedef typename ProductBaseType::FieldType  FieldType;
 private:
   typedef internal::LocalizableBaseHelper< LocalOperatorProvider, RangeType, SourceType > HelperType;
 
@@ -87,6 +89,28 @@ public:
   const SourceType& source() const
   {
     return source_;
+  }
+
+  /**
+   *       This method can be used to compute a local semi product on one entity, e.g. in the context of error
+   *       estimation.
+   * \note Calling this method should not alter the result obtained by apply2.
+   */
+  FieldType compute_locally(const EntityType& entity)
+  {
+    return helper_.compute_locally(entity);
+  }
+
+  /**
+   *       This method can be used to compute a local semi product on one intersection, e.g. in the context of error
+   *       estimation.
+   * \note Calling this method should not alter the result obtained by apply2.
+   */
+  FieldType compute_locally(const IntersectionType& intersection,
+                            const EntityType& inside_entity,
+                            const EntityType& outside_entity)
+  {
+    return helper_.compute_locally(intersection, inside_entity, outside_entity);
   }
 
   FieldType apply2()
