@@ -111,18 +111,35 @@ public:
   FemBased(GridPartType gridP)
     : gridPart_(gridP)
     , gridView_(gridPart_.gridView())
-    , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(gridPart_)))
-    , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
+    , backend_(std::make_shared<const BackendType>(const_cast<GridPartType&>(gridPart_)))
+    , mapper_(backend_->blockMapper())
     , communicator_(CommunicationChooserType::create(gridView_))
   {
   }
 
-  FemBased(const ThisType& other) = default;
+  //! explicitly defaulted ctor was still implcitly deleted although no non-static members have reference type
+  FemBased(const ThisType& other)
+    : gridPart_(other.gridPart_)
+    , gridView_(other.gridView_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , communicator_(DSC::make_unique<CommunicatorType>(*other.communicator_))
+  {
+    assert(communicator_);
+  }
 
-  FemBased(ThisType&& source) = default;
+  //! explicitly defaulted ctor was still implcitly deleted although no non-static members have reference type
+  FemBased(ThisType&& other)
+    : gridPart_(other.gridPart_)
+    , gridView_(other.gridView_)
+    , backend_(other.backend_)
+    , mapper_(other.mapper_)
+    , communicator_(std::move(other.communicator_))
+  {
+    assert(communicator_);
+  }
 
   ThisType& operator=(const ThisType& other) = delete;
-
   ThisType& operator=(ThisType&& source) = delete;
 
   const GridPartType& grid_part() const
@@ -142,7 +159,7 @@ public:
 
   const MapperType& mapper() const
   {
-    return *mapper_;
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
@@ -160,8 +177,8 @@ private:
   const GridPartType gridPart_;
   const GridViewType gridView_;
   const std::shared_ptr<const BackendType> backend_;
-  const std::shared_ptr<const MapperType> mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  const MapperType mapper_;
+  mutable std::unique_ptr<CommunicatorType> communicator_;
 }; // class FemBased< ..., 1 >
 
 

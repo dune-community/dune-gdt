@@ -79,9 +79,9 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  Default(const GridViewType& gv)
+  Default(GridViewType gv)
     : grid_view_(gv)
-    , mapper_(std::make_shared<MapperType>(grid_view_))
+    , mapper_(grid_view_)
     , communicator_(CommunicationChooserType::create(grid_view_))
   {
   }
@@ -106,7 +106,7 @@ public:
 
   const MapperType& mapper() const
   {
-    return *mapper_;
+    return mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
@@ -129,9 +129,9 @@ public:
   }
 
 private:
-  const GridViewType& grid_view_;
-  const std::shared_ptr<const MapperType> mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  const GridViewType grid_view_;
+  const MapperType mapper_;
+  mutable std::unique_ptr<CommunicatorType> communicator_;
 }; // class Default< ..., 1, 1 >
 
 
