@@ -187,7 +187,12 @@ public:
                                                    const SourceSpaceType& source_space,
                                                    const GridViewType& grid_view)
   {
-    return HelperType::pattern(range_space, source_space, grid_view);
+    if (LocalOperatorProvider::has_coupling_operator)
+      return range_space.compute_face_and_volume_pattern(grid_view, source_space);
+    else if (LocalOperatorProvider::has_volume_operator || LocalOperatorProvider::has_boundary_operator)
+      return range_space.compute_volume_pattern(grid_view, source_space);
+    else
+      return Stuff::LA::SparsityPatternDefault();
   }
 
   template< class... Args >

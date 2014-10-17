@@ -448,15 +448,6 @@ class AssemblableBaseHelper
   }; // struct Boundary< ..., true >
 
 public:
-  static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
-                                                   const SourceSpaceType& source_space,
-                                                   const GridViewType& grid_view)
-  {
-    if (LocalOperatorProvider::has_volume_operator || LocalOperatorProvider::has_boundary_operator)
-      return range_space.compute_volume_pattern(grid_view, source_space);
-    else return Stuff::LA::SparsityPatternDefault();
-  }
-
   AssemblableBaseHelper(AssemblableBaseType& base, MatrixType& matrix, const LocalOperatorProvider& local_operators)
     : volume_helper_(  base, matrix, local_operators)
     , coupling_helper_(base, matrix, local_operators)
