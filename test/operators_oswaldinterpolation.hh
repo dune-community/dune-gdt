@@ -43,8 +43,8 @@ struct Oswald_Interpolation_Operator
     typedef DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
     VectorType source_vector(space.mapper().size());
     DiscreteFunctionType source(space, source_vector);
-    for (auto entity_ptr = grid_part_view->template begin< 0 >();
-         entity_ptr != grid_part_view->template end< 0 >();
+    for (auto entity_ptr = grid_part_view.template begin< 0 >();
+         entity_ptr != grid_part_view.template end< 0 >();
          ++entity_ptr) {
       const auto& entity = *entity_ptr;
       const auto center = entity.geometry().center();
@@ -58,7 +58,7 @@ struct Oswald_Interpolation_Operator
     }
     VectorType range_vector(space.mapper().size());
     DiscreteFunctionType range(space, range_vector);
-    Operators::OswaldInterpolation< typename SpaceType::GridViewType > oswald_operator(*(space.grid_view()));
+    Operators::OswaldInterpolation< typename SpaceType::GridViewType > oswald_operator(space.grid_view());
     oswald_operator.apply(source, range);
   } // ... produces_correct_results()
 }; // struct Oswald_Interpolation_Operator

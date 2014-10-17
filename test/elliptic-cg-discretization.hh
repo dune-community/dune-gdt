@@ -76,7 +76,7 @@ public:
                  const FunctionType& forc,
                  const FunctionType& dir,
                  const FunctionType& neu)
-    : space_(gp)
+    : space_(*gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)
@@ -121,7 +121,7 @@ public:
       DiscreteFunctionType dirichlet_projection(space_, dirichlet_shift_vector_);
       typedef Operators::DirichletProjectionLocalizable< GridViewType, FunctionType, DiscreteFunctionType >
           DirichletProjectionOperator;
-      DirichletProjectionOperator dirichlet_projection_operator(*(space_.grid_view()),
+      DirichletProjectionOperator dirichlet_projection_operator(space_.grid_view(),
                                                                 boundary_info_,
                                                                 dirichlet_,
                                                                 dirichlet_projection);

@@ -136,12 +136,12 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  PdelabBased(const GridViewType& gV)
+  PdelabBased(GridViewType gV)
     : grid_view_(gV)
-    , fe_map_(std::make_shared< FEMapType >(*(grid_view_)))
-    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(*grid_view_), *fe_map_))
+    , fe_map_(std::make_shared< FEMapType >(grid_view_))
+    , backend_(std::make_shared< BackendType >(const_cast< GridViewType& >(grid_view_), *fe_map_))
     , mapper_(std::make_shared< MapperType >(*backend_))
-    , communicator_(CommunicationChooser<GridViewImp>::create(*grid_view_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {}
 
@@ -324,7 +324,7 @@ public:
   }
 
 private:
-  const std::shared_ptr< const GridViewType > grid_view_;
+  const GridViewType grid_view_;
   const std::shared_ptr< const FEMapType > fe_map_;
   const std::shared_ptr< const BackendType > backend_;
   const std::shared_ptr< const MapperType > mapper_;

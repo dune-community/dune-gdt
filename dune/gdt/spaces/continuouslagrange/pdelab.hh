@@ -142,7 +142,7 @@ public:
   typedef typename BaseType::PatternType       PatternType;
   typedef typename BaseType::BoundaryInfoType  BoundaryInfoType;
 
-  PdelabBased(const GridViewType& gV)
+  PdelabBased(GridViewType gV)
     : gridView_(gV)
     , fe_map_(gridView_)
     , backend_(const_cast< GridViewType& >(gridView_), fe_map_)
@@ -210,7 +210,7 @@ public:
   } // ... communicator(...)
 
 private:
-  const GridViewType& gridView_;
+  const GridViewType gridView_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;

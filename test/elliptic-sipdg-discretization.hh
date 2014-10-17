@@ -85,7 +85,7 @@ public:
                  const FunctionType& forc,
                  const FunctionType& dir,
                  const FunctionType& neu)
-    : space_(gp)
+    : space_(*gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)

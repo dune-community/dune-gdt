@@ -102,20 +102,12 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  FemBased(const std::shared_ptr< const GridPartType >& gridP)
+  FemBased(GridPartType gridP)
     : gridPart_(gridP)
-    , gridView_(gridPart_->gridView())
-    , backend_(std::make_shared< BackendType >(const_cast< GridPartType& >(*(gridPart_))))
+    , gridView_(gridPart_.gridView())
+    , backend_(std::make_shared< BackendType >(const_cast< GridPartType& >(gridPart_)))
     , mapper_(std::make_shared< MapperType >(backend_->blockMapper()))
-    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
-  {}
-
-  FemBased(const GridViewType& gridView)
-    : gridPart_(std::make_shared<GridPartType>(gridView))
-    , gridView_(gridPart_->gridView())
-    , backend_(std::make_shared< BackendType >(const_cast< GridPartType& >(*(gridPart_))))
-    , mapper_(std::make_shared< MapperType >(backend_->blockMapper()))
-    , communicator_(CommunicationChooserType::create(gridPart_->gridView()))
+    , communicator_(CommunicationChooserType::create(gridView_))
   {}
 
   FemBased(const ThisType& other) = default;
@@ -134,7 +126,7 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
-  const std::shared_ptr< const GridPartType >& grid_part() const
+  const GridPartType& grid_part() const
   {
     return gridPart_;
   }
@@ -166,8 +158,8 @@ public:
   }
 
 private:
-  const std::shared_ptr< const GridPartType > gridPart_;
-  const GridViewType& gridView_;
+  const GridPartType gridPart_;
+  const GridViewType gridView_;
   const std::shared_ptr< const BackendType > backend_;
   const std::shared_ptr< const MapperType > mapper_;
   mutable std::shared_ptr< CommunicatorType > communicator_;

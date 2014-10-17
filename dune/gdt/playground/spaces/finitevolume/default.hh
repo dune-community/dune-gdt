@@ -99,7 +99,7 @@ public:
 
   const BackendType& backend() const
   {
-    return grid_view_->indexSet();
+    return grid_view_.indexSet();
   }
 
   const MapperType& mapper() const

@@ -26,9 +26,9 @@ struct LeafGridPartView
 {
   typedef typename GridType::LeafGridView Type;
 
-  static std::shared_ptr< Type > create(GridType& grid)
+  static Type create(GridType& grid)
   {
-    return std::make_shared< Type >(grid.leafGridView());
+    return Type(grid.leafGridView());
   }
 }; // struct LeafGridPartView< ..., true >
 
@@ -38,11 +38,11 @@ struct LevelGridPartView
 {
   typedef typename GridType::LevelGridView Type;
 
-  static std::shared_ptr< Type > create(GridType& grid, const int level)
+  static Type create(GridType& grid, const int level)
   {
     assert(level >= 0);
     assert(level <= grid.maxLevel());
-    return std::make_shared< Type >(grid.levelGridView(level));
+    return Type(grid.levelGridView(level));
   }
 }; // struct LevelGridPartView< ..., true >
 
@@ -55,9 +55,9 @@ struct LeafGridPartView< GridType, false >
 {
   typedef Dune::Fem::LeafGridPart< GridType > Type;
 
-  static std::shared_ptr< Type > create(GridType& grid)
+  static Type create(GridType& grid)
   {
-    return std::make_shared< Type >(grid);
+    return Type(grid);
   }
 }; // struct LeafGridPartView< ..., false >
 
@@ -67,11 +67,11 @@ struct LevelGridPartView< GridType, false >
 {
   typedef Dune::Fem::LevelGridPart< GridType > Type;
 
-  static std::shared_ptr< Type > create(GridType& grid, const int level)
+  static Type create(GridType& grid, const int level)
   {
     assert(level >= 0);
     assert(level <= grid.maxLevel());
-    return std::make_shared< Type >(grid, level);
+    return Type(grid, level);
   }
 }; // struct LevelGridPartView< ..., false >
 
@@ -90,12 +90,12 @@ public:
   typedef typename LeafGridPartView<  GridType, needs_grid_view >::Type LeafGridViewType;
   typedef typename LevelGridPartView< GridType, needs_grid_view >::Type LevelGridViewType;
 
-  static std::shared_ptr< LeafGridViewType > create_leaf(GridType& grid)
+  static LeafGridViewType create_leaf(GridType& grid)
   {
     return LeafGridPartView< GridType, needs_grid_view >::create(grid);
   }
 
-  static std::shared_ptr< LevelGridViewType > create_level(GridType& grid, const int level)
+  static LevelGridViewType create_level(GridType& grid, const int level)
   {
     return LevelGridPartView< GridType, needs_grid_view >::create(grid, level);
   }
