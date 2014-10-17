@@ -129,11 +129,19 @@ class LocalizableBaseHelper
   typedef typename LocalOperatorProvider::FieldType FieldType;
   typedef Stuff::Grid::Walker<GridViewType> WalkerType;
 
+  typedef typename WalkerType::EntityType EntityType;
+  typedef typename WalkerType::IntersectionType IntersectionType;
+
   template <class LO, bool anthing = false>
   struct Volume
   {
     Volume(WalkerType&, const LocalOperatorProvider&, const RangeType&, const SourceType&)
     {
+    }
+
+    FieldType compute_locally(const EntityType&)
+    {
+      return 0.0;
     }
 
     FieldType result() const
@@ -158,10 +166,19 @@ class LocalizableBaseHelper
                  local_operators.volume_operator_, // <- if you get an error here you have defined has_volume_operator
                  range, //    to true but do not provide volume_operator_
                  source)
+      , grid_view_(grid_walker.grid_view())
+      , entities_(local_operators.entities()) // <- if you get an error here you have defined
+    { //    has_volume_operator to true but implemented the
+      grid_walker.add(functor_, local_operators.entities()); //    wrong entities()
+    }
+
+    FieldType compute_locally(const EntityType& entity)
     {
-      grid_walker.add(functor_, local_operators.entities()); // <- if you get an error here you have defined
-    } //    has_volume_operator to true but implemented the
-    //    wrong entities()
+      if (entities_->apply_on(grid_view_, entity))
+        return functor_.compute_locally(entity);
+      else
+        return 0.0;
+    }
 
     FieldType result() const
     {
@@ -169,6 +186,8 @@ class LocalizableBaseHelper
     }
 
     FunctorType functor_;
+    const GridViewType& grid_view_;
+    const std::unique_ptr<DSG::ApplyOn::AllEntities<GridViewType>> entities_;
   }; // struct Volume< ..., true >
 
   template <class LO, bool anthing = false>
@@ -237,6 +256,11 @@ class LocalizableBaseHelper
     {
     }
 
+    FieldType compute_locally(const IntersectionType&, const EntityType&, const EntityType&)
+    {
+      return 0.0;
+    }
+
     FieldType result() const
     {
       return 0.0;
@@ -259,11 +283,20 @@ class LocalizableBaseHelper
                  local_operators.boundary_operator_, // <- if you get an error here you have defined
                  range, //    has_boundary_operator to true but do not provide
                  source) //    boundary_operator_
+      , grid_view_(walker.grid_view())
+      , intersections_(local_operators.boundary_intersections()) // <- if you get an error here you have defined
+    { //    has_boundary_operator to true but
+      walker.add(functor_, local_operators.boundary_intersections()); //    implemented the wrong
+    } //    boundary_intersections()
+
+    FieldType compute_locally(const IntersectionType& intersection, const EntityType& inside_entity,
+                              const EntityType& outside_entity)
     {
-      walker.add(functor_, local_operators.boundary_intersections()); // <- if you get an error here you have defined
-    } //    has_boundary_operator to true but
-    //    implemented the wrong
-    //    boundary_intersections()
+      if (intersections_->apply_on(grid_view_, intersection))
+        return functor_.compute_locally(intersection, inside_entity, outside_entity);
+      else
+        return 0.0;
+    }
 
     FieldType result() const
     {
@@ -271,6 +304,8 @@ class LocalizableBaseHelper
     }
 
     FunctorType functor_;
+    const GridViewType& grid_view_;
+    const std::unique_ptr<DSG::ApplyOn::WhichIntersection<GridViewType>> intersections_;
   }; // struct Boundary< ..., true >
 
 public:
@@ -282,9 +317,21 @@ public:
   {
   }
 
+  FieldType compute_locally(const EntityType& entity)
+  {
+    return volume_helper_.compute_locally(entity);
+  }
+
+  FieldType compute_locally(const IntersectionType& intersection, const EntityType& inside_entity,
+                            const EntityType& outside_entity)
+  {
+    return coupling_helper_.compute_locally(intersection, inside_entity, outside_entity)
+           + boundary_helper_.compute_locally(intersection, inside_entity, outside_entity);
+  }
+
   FieldType result() const
   {
-    return volume_helper_.result() + boundary_helper_.result();
+    return volume_helper_.result() + coupling_helper_.result() + boundary_helper_.result();
   }
 
 private:
