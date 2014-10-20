@@ -81,7 +81,7 @@ struct WeightedL2LocalizableProduct
   typedef typename BaseType::FunctionType   FunctionType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE
   {
     return Products::WeightedL2Localizable< GridViewType, FunctionType, FunctionType, FunctionType >
         (this->space_.grid_view(), function, function, this->one_).apply2();
@@ -109,7 +109,7 @@ struct WeightedL2AssemblableProduct
   typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType > DiscreteFunctionType;
   typedef Dune::GDT::Operators::Projection< GridViewType > ProjectionOperatorType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE DS_FINAL
   {
     // create the product
     Products::WeightedL2Assemblable< MatrixType, FunctionType, SpaceType, GridViewType, SpaceType >
@@ -140,7 +140,7 @@ struct WeightedL2Product
   typedef typename BaseType::FunctionType    FunctionType;
   typedef typename BaseType::GridViewType    GridViewType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE DS_FINAL
   {
     Products::WeightedL2< GridViewType, FunctionType > product(this->space_.grid_view(), this->one_);
     return product.apply2(function, function);
