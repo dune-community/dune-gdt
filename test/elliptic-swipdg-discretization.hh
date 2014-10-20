@@ -665,11 +665,11 @@ public:
     if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {3.29e-01, 1.63e-01, 8.05e-02, 4.02e-02};
+          return {3.28e-01, 1.62e-01, 8.04e-02, 4.01e-02};
         else if (type == nonconformity_estimator_id())
           return {1.90e-1, 9.73e-2, 4.90e-2, 2.46e-2};
         else if (type == residual_estimator_ESV07_id())
-          return {7.24e-2, 1.83e-2, 4.55e-3, 1.15e-3};
+          return {7.23e-02, 1.82e-02, 4.54e-03, 1.14e-03};
         else if (type == diffusive_flux_estimator_id())
           return {3.55e-1, 1.76e-1, 8.73e-2, 4.35e-2};
 //          return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
@@ -691,17 +691,17 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {9.11e-02, 5.24e-02, 2.69e-02, 1.21e-02};
+          return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
         else if (type == nonconformity_estimator_id())
-          return {9.58e-02, 1.11e-01, 5.13e-02, 2.18e-02};
+          return {9.57e-02, 1.10e-01, 5.12e-02, 2.17e-02};
         else if (type == residual_estimator_ESV07_id())
-          return {1.00e-10, 1.00e-10, 1.00e-10, 1.00e-10};
+          return {0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00};
         else if (type == diffusive_flux_estimator_id())
-          return {1.13e-01, 6.55e-02, 3.55e-02, 1.91e-02};
+          return {1.12e-01, 6.54e-02, 3.54e-02, 1.90e-02};
 //        else if (type == estimator_ESV07_id())
 //          return {};
         else if (type == efficiency_ESV07_id())
-          return {1.63e+00, 2.46e+00, 2.33e+00, 2.41e+00};
+          return {1.62e+00, 2.45e+00, 2.32e+00, 2.40e+00};
 //        else if (type == residual_estimator_ESV10_id())
 //          return {};
 //        else if (type == estimator_ESV10_id())
