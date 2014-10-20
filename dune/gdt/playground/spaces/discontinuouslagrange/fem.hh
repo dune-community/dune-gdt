@@ -108,7 +108,7 @@ public:
   FemBased(GridPartType gridP)
     : gridPart_(gridP)
     , gridView_(gridPart_.gridView())
-    , backend_(std::make_shared<BackendType>(const_cast<GridPartType&>(gridPart_)))
+    , backend_(std::make_shared<BackendType>(gridPart_))
     , mapper_(std::make_shared<MapperType>(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(gridView_))
   {
@@ -162,7 +162,7 @@ public:
   }
 
 private:
-  const GridPartType gridPart_;
+  GridPartType gridPart_;
   const GridViewType gridView_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
