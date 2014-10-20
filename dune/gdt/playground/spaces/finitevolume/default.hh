@@ -86,7 +86,12 @@ public:
   {
   }
 
-  Default(const ThisType& other) = default;
+  Default(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , mapper_(other.mapper_)
+    , communicator_(CommunicationChooserType::create(grid_view_))
+  {
+  }
 
   Default(ThisType&& source) = default;
 
@@ -131,7 +136,7 @@ public:
 private:
   const GridViewType grid_view_;
   const MapperType mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  const std::unique_ptr<CommunicatorType> communicator_;
 }; // class Default< ..., 1, 1 >
 
 

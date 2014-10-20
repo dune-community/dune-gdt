@@ -156,16 +156,19 @@ public:
 
   /**
    * \brief Copy ctor.
-   * \note  Manually implemented bc of the std::mutex.
+   * \note  Manually implemented bc of the std::mutex + communicator_  unique_ptr
    */
   PdelabBased(const ThisType& other)
     : grid_view_(other.grid_view_)
     , fe_map_(other.fe_map_)
     , backend_(other.backend_)
     , mapper_(other.mapper_)
-    , communicator_(DSC::make_unique<CommunicatorType>(*other.communicator_))
-    , communicator_prepared_(other.communicator_prepared_)
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_prepared_(false)
   {
+    // make sure our new communicator is prepared if other's was
+    if (other.communicator_prepared_)
+      const auto& DUNE_UNUSED(comm) = this->communicator();
   }
 
   /**
