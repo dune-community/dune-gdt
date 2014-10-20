@@ -67,7 +67,7 @@ public:
   virtual void assemble() = 0;
 
   template <class S>
-  ScalarType apply(const Stuff::LA::VectorInterface<S>& source) const
+  ScalarType apply(const Stuff::LA::VectorInterface<S, ScalarType>& source) const
   {
     assemble();
     return vector_.dot(source.as_imp());
@@ -96,7 +96,7 @@ public:
   typedef typename ImpTraits::ScalarType ScalarType;
 
 private:
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits>, VectorType>::value,
+  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits, ScalarType>, VectorType>::value,
                 "VectorType has to be derived from Stuff::LA::VectorInterface!");
 }; // class AssemblableFaceBaseTraits
 

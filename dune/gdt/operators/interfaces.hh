@@ -46,7 +46,8 @@ public:
   }
 
   template <class S, class R>
-  FieldType apply2(const Stuff::LA::VectorInterface<S>& source, const Stuff::LA::VectorInterface<R>& range) const
+  FieldType apply2(const Stuff::LA::VectorInterface<S, FieldType>& source,
+                   const Stuff::LA::VectorInterface<R, FieldType>& range) const
   {
     auto tmp = range.copy();
     apply(source.as_imp(source), tmp);
@@ -146,7 +147,8 @@ public:
   using typename BaseType::PatternType;
 
   template <class S, class R>
-  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range)
+  void apply(const Stuff::LA::VectorInterface<S, DomainFieldType>& source,
+             Stuff::LA::VectorInterface<R, FieldType>& range)
   {
     CHECK_CRTP(this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range)));
     return this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range));
@@ -169,21 +171,22 @@ public:
   }
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source)
+  void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                     const Stuff::LA::VectorInterface<S, DomainFieldType>& source)
   {
     apply_inverse(range, source, invert_options()[0]);
   }
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const std::string& opt)
+  void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                     Stuff::LA::VectorInterface<S, DomainFieldType>& source, const std::string& opt)
   {
     apply_inverse(range, source, invert_options(opt));
   }
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const Stuff::Common::Configuration& opts)
+  void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                     Stuff::LA::VectorInterface<S, DomainFieldType>& source, const Stuff::Common::Configuration& opts)
   {
     CHECK_CRTP(this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts));
     return this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts);
@@ -211,7 +214,8 @@ public:
   }
 
   template <class R, class S, class P>
-  FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source,
+  FieldType apply2(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                   const Stuff::LA::VectorInterface<S, DomainFieldType>& source,
                    const AssemblableProductInterface<P>& product)
   {
     apply(source, range);
@@ -219,7 +223,8 @@ public:
   }
 
   template <class R, class S, class P>
-  FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source)
+  FieldType apply2(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                   const Stuff::LA::VectorInterface<S, DomainFieldType>& source)
   {
     this->assemble();
     auto tmp = range.copy();

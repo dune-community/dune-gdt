@@ -143,7 +143,7 @@ private:
                 "The GridViewType of RangeSpaceType and GridViewType have to match!");
   static_assert(std::is_same<typename SourceSpaceType::GridViewType, GridViewType>::value,
                 "The GridViewType of SourceSpaceType and GridViewType have to match!");
-  static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits>, MatrixType>::value,
+  static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits, FieldType>, MatrixType>::value,
                 "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
 
 public:
@@ -204,7 +204,8 @@ public:
   }
 
   template <class R, class S>
-  FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source)
+  FieldType apply2(const Stuff::LA::VectorInterface<R, FieldType>& range,
+                   const Stuff::LA::VectorInterface<S, DomainFieldType>& source)
   {
     assemble();
     assert(range.size() == matrix().rows());
@@ -222,7 +223,7 @@ public:
   }
 
   template <class R>
-  FieldType induced_norm(const Stuff::LA::VectorInterface<R>& range)
+  FieldType induced_norm(const Stuff::LA::VectorInterface<R, FieldType>& range)
   {
     return std::sqrt(apply2(range, range));
   }

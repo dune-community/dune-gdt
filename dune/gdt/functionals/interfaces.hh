@@ -47,7 +47,7 @@ public:
 private:
   static_assert(std::is_base_of<SpaceInterface<typename SpaceType::Traits>, SpaceType>::value,
                 "SpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits>, VectorType>::value,
+  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits, ScalarType>, VectorType>::value,
                 "VectorType has to be derived from Stuff::LA::VectorInterface!");
 
 public:
@@ -81,7 +81,7 @@ public:
   }
 
   template <class S>
-  ScalarType apply(const Stuff::LA::VectorInterface<S>& source) const
+  ScalarType apply(const Stuff::LA::VectorInterface<S, ScalarType>& source) const
   {
     typedef typename S::derived_type SourceType;
     assemble();
