@@ -5,6 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
+#if 0
 #include "operators_products_prolong.hh"
 
 #if HAVE_ALUGRID
@@ -85,3 +86,7 @@ TYPED_TEST_CASE(ProlongationOperator, ProlongationOperatorSpaceTypes);
 TYPED_TEST(ProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
+#endif // 0
+
+TEST(DISABLED_LagrangeProlongationOperator, produces_correct_results) {}
+TEST(DISABLED_ProlongationOperator, produces_correct_results) {}
