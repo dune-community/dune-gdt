@@ -33,6 +33,7 @@
 #include <dune/stuff/common/color.hh>
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/float_cmp.hh>
+#include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/tools.hh>
 
@@ -46,7 +47,7 @@ namespace EllipticTestCase {
 template< class GridType >
 class Base
 {
-  typedef DSG::ProviderInterface<GridType> GridProviderType;
+  typedef DSG::ProviderInterface< GridType > GridProviderType;
 public:
 #if HAVE_DUNE_FEM
   typedef typename Dune::GDT::SpaceTools::LevelGridPartView< GridType, false >::Type  GridPartType;
@@ -56,27 +57,27 @@ public:
   typedef typename GridType::ctype                        DomainFieldType;
   static const unsigned int                               dimDomain = GridType::dimension;
 
-  Base(std::unique_ptr< GridProviderType > grd_prv, size_t num_refinements)
+  Base(std::unique_ptr< GridProviderType >&& grd_prv, size_t num_refinements)
     : grid_provider_(std::move(grd_prv))
   {
     levels_.push_back(grid().maxLevel());
 #if HAVE_DUNE_FEM
-    level_grid_parts_.emplace_back(new GridPartType(grid(), grid().maxLevel()));
+    level_grid_parts_.emplace_back(grid(), grid().maxLevel());
 #endif
-    level_grid_views_.emplace_back(new GridViewType(grid().levelGridView(grid().maxLevel())));
+    level_grid_views_.emplace_back(grid().levelGridView(grid().maxLevel()));
     for (size_t rr = 0; rr < num_refinements; ++rr) {
       grid().globalRefine(Dune::DGFGridInfo< GridType >::refineStepsForHalf());
       levels_.push_back(grid().maxLevel());
 #if HAVE_DUNE_FEM
-      level_grid_parts_.emplace_back(new GridPartType(grid(), grid().maxLevel()));
+      level_grid_parts_.emplace_back(grid(), grid().maxLevel());
 #endif
-      level_grid_views_.emplace_back(new GridViewType(grid().levelGridView(grid().maxLevel())));
+      level_grid_views_.emplace_back(grid().levelGridView(grid().maxLevel()));
     }
     grid().globalRefine(Dune::DGFGridInfo< GridType >::refineStepsForHalf());
 #if HAVE_DUNE_FEM
-    reference_grid_part_ = std::make_shared< GridPartType >(grid(), grid().maxLevel());
+    reference_grid_part_ = DSC::make_unique< GridPartType >(grid(), grid().maxLevel());
 #endif
-    reference_grid_view_ = std::make_shared< GridViewType >(grid().levelGridView(grid().maxLevel()));
+    reference_grid_view_ = DSC::make_unique< GridViewType >(grid().levelGridView(grid().maxLevel()));
   }
 
   size_t num_levels() const
@@ -85,7 +86,7 @@ public:
   }
 
 #if HAVE_DUNE_FEM
-  const std::shared_ptr< const GridPartType >& level_grid_part(const size_t level) const
+  GridPartType level_grid_part(const size_t level) const
   {
     assert(level < levels_.size());
     assert(level < level_grid_parts_.size());
@@ -94,7 +95,7 @@ public:
   }
 #endif // HAVE_DUNE_FEM
 
-  const std::shared_ptr< const GridViewType >& level_grid_view(const size_t level) const
+  GridViewType level_grid_view(const size_t level) const
   {
     assert(level < levels_.size());
     assert(level < level_grid_views_.size());
@@ -103,15 +104,15 @@ public:
   }
 
 #if HAVE_DUNE_FEM
-  const std::shared_ptr< const GridPartType >& reference_grid_part() const
+  GridPartType reference_grid_part() const
   {
-    return reference_grid_part_;
+    return *reference_grid_part_;
   }
 #endif // HAVE_DUNE_FEM
 
-  const std::shared_ptr< const GridViewType >& reference_grid_view() const
+  GridViewType reference_grid_view() const
   {
-    return reference_grid_view_;
+    return *reference_grid_view_;
   }
 
 private:
@@ -119,14 +120,14 @@ private:
   const GridType& grid() const { return grid_provider_->grid(); }
 
 
-  std::unique_ptr<GridProviderType> grid_provider_;
+  std::unique_ptr< GridProviderType > grid_provider_;
   std::vector< size_t > levels_;
 #if HAVE_DUNE_FEM
-  std::vector< std::shared_ptr< const GridPartType > > level_grid_parts_;
-  std::shared_ptr< const GridPartType > reference_grid_part_;
+  std::vector< GridPartType > level_grid_parts_;
+  std::unique_ptr< GridPartType > reference_grid_part_;
 #endif
-  std::vector< std::shared_ptr< const GridViewType > > level_grid_views_;
-  std::shared_ptr< const GridViewType > reference_grid_view_;
+  std::vector< GridViewType > level_grid_views_;
+  std::unique_ptr< GridViewType > reference_grid_view_;
 }; // class Base
 
 
