@@ -5,6 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
+#if 0
 #include "operators_products_prolong.hh"
 
 #if HAVE_ALUGRID
@@ -40,23 +41,24 @@
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-    L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+                        L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif
-    > L2ProlongationOperatorSpaceTypes;
+                      > L2ProlongationOperatorSpaceTypes;
 
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-    LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE, L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
+                        LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
+                      , L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #endif // HAVE_ALUGRID
-    > ProlongationOperatorSpaceTypes;
+                      > ProlongationOperatorSpaceTypes;
 
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-    LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
+                       LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE
 #endif
-    > LagrangeProlongationOperatorSpaceTypes;
+                      > LagrangeProlongationOperatorSpaceTypes;
 
 #undef L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
 #undef LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID
@@ -64,20 +66,28 @@ typedef testing::Types<
 
 
 TYPED_TEST_CASE(L2ProlongationOperator, L2ProlongationOperatorSpaceTypes);
-TYPED_TEST(L2ProlongationOperator, produces_correct_results)
-{
+TYPED_TEST(L2ProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
 
 
 TYPED_TEST_CASE(LagrangeProlongationOperator, LagrangeProlongationOperatorSpaceTypes);
-TYPED_TEST(LagrangeProlongationOperator, produces_correct_results)
-{
+TYPED_TEST(LagrangeProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
 }
 
 TYPED_TEST_CASE(ProlongationOperator, ProlongationOperatorSpaceTypes);
-TYPED_TEST(ProlongationOperator, produces_correct_results)
-{
+TYPED_TEST(ProlongationOperator, produces_correct_results) {
   this->produces_correct_results();
+}
+#endif // 0
+
+TEST(DISABLED_L2ProlongationOperator, produces_correct_results)
+{
+}
+TEST(DISABLED_LagrangeProlongationOperator, produces_correct_results)
+{
+}
+TEST(DISABLED_ProlongationOperator, produces_correct_results)
+{
 }
