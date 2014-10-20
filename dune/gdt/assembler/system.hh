@@ -56,25 +56,25 @@ public:
   typedef DSG::ApplyOn::WhichEntity< GridViewType >       ApplyOnWhichEntity;
   typedef DSG::ApplyOn::WhichIntersection< GridViewType > ApplyOnWhichIntersection;
 
-  SystemAssembler(const TestSpaceType test, const AnsatzSpaceType ansatz, const GridViewType& grid_view)
+  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridViewType grid_view)
     : BaseType(grid_view)
     , test_space_(test)
     , ansatz_space_(ansatz)
   {}
 
-  SystemAssembler(const TestSpaceType test, const AnsatzSpaceType ansatz)
+  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
     : BaseType(test.grid_view())
     , test_space_(test)
     , ansatz_space_(ansatz)
   {}
 
-  SystemAssembler(const TestSpaceType test)
+  SystemAssembler(TestSpaceType test)
     : BaseType(test.grid_view())
     , test_space_(test)
     , ansatz_space_(test)
   {}
 
-  SystemAssembler(const TestSpaceType test, const GridViewType& grid_view)
+  SystemAssembler(TestSpaceType test, GridViewType grid_view)
     : BaseType(grid_view)
     , test_space_(test)
     , ansatz_space_(test_space_)
