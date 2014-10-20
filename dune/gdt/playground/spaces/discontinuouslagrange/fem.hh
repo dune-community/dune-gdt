@@ -103,11 +103,11 @@ public:
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
   FemBased(GridPartType gridP)
-    : gridPart_(gridP)
-    , gridView_(gridPart_.gridView())
-    , backend_(std::make_shared< BackendType >(gridPart_))
-    , mapper_(std::make_shared< MapperType >(backend_->blockMapper()))
-    , communicator_(CommunicationChooserType::create(gridView_))
+    : gridPart_(new GridPartType(gridP))
+    , gridView_(new GridViewType(gridPart_->gridView()))
+    , backend_(new BackendType(*gridPart_))
+    , mapper_(new MapperType(backend_->blockMapper()))
+    , communicator_(CommunicationChooserType::create(*gridView_))
   {}
 
   FemBased(const ThisType& other) = default;
@@ -128,12 +128,12 @@ public:
 
   const GridPartType& grid_part() const
   {
-    return gridPart_;
+    return *gridPart_;
   }
 
   const GridViewType& grid_view() const
   {
-    return gridView_;
+    return *gridView_;
   }
 
   const BackendType& backend() const
@@ -158,8 +158,8 @@ public:
   }
 
 private:
-  GridPartType gridPart_;
-  const GridViewType gridView_;
+  std::shared_ptr< GridPartType > gridPart_;
+  const std::shared_ptr< const GridViewType > gridView_;
   const std::shared_ptr< const BackendType > backend_;
   const std::shared_ptr< const MapperType > mapper_;
   mutable std::shared_ptr< CommunicatorType > communicator_;
