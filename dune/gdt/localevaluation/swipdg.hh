@@ -17,6 +17,7 @@
 #endif
 #endif
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/timedlogging.hh>
 
 #include "interface.hh"
 
