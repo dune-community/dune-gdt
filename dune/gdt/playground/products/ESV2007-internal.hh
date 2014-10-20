@@ -9,7 +9,7 @@
 #include <dune/gdt/playground/localevaluation/ESV2007.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 
-#include "../../products/base.hh"
+#include "../../products/base-internal.hh"
 
 namespace Dune {
 namespace GDT {
@@ -20,7 +20,7 @@ namespace internal {
 
 template <class DiffusionFactorType, class DiffusiveFluxType, class GV, class FieldImp,
           class DiffusionTensorType = void>
-class DiffusiveFluxEstimateBase
+class DiffusiveFluxEstimateBase : public LocalOperatorProviderBase<GV>
 {
   static_assert(std::is_base_of<Stuff::Tags::LocalizableFunction, DiffusionFactorType>::value,
                 "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
@@ -35,31 +35,25 @@ public:
   typedef FieldImp FieldType;
   typedef LocalOperator::
       Codim0Integral<LocalEvaluation::ESV2007::DiffusiveFluxEstimate<DiffusionFactorType, DiffusiveFluxType,
-                                                                     DiffusionTensorType>> LocalOperatorType;
+                                                                     DiffusionTensorType>> VolumeOperatorType;
+
+  static const bool has_volume_operator = true;
 
   DiffusiveFluxEstimateBase(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
                             const DiffusiveFluxType& diffusive_flux, const size_t over_integrate = 0)
-    : diffusion_factor_(diffusion_factor)
-    , diffusion_tensor_(diffusion_tensor)
-    , diffusive_flux_(diffusive_flux)
-    , local_operator_(over_integrate, diffusion_factor_, diffusion_tensor_, diffusive_flux_)
+    : volume_operator_(over_integrate, diffusion_factor, diffusion_tensor, diffusive_flux)
   {
   }
 
   DiffusiveFluxEstimateBase(const ThisType& other) = default;
 
-private:
-  const DiffusionFactorType& diffusion_factor_;
-  const DiffusionTensorType& diffusion_tensor_;
-  const DiffusiveFluxType& diffusive_flux_;
-
-protected:
-  const LocalOperatorType local_operator_;
+  const VolumeOperatorType volume_operator_;
 }; // class DiffusiveFluxEstimateBase
 
 
 template <class DiffusionImp, class DiffusiveFluxImp, class GV, class FieldImp>
 class DiffusiveFluxEstimateBase<DiffusionImp, DiffusiveFluxImp, GV, FieldImp, void>
+    : public LocalOperatorProviderBase<GV>
 {
   static_assert(std::is_base_of<Stuff::Tags::LocalizableFunction, DiffusionImp>::value,
                 "DiffusionImp has to be derived from Stuff::LocalizableFunctionInterface!");
@@ -76,24 +70,19 @@ public:
   typedef FieldImp FieldType;
   typedef LocalOperator::Codim0Integral<LocalEvaluation::ESV2007::DiffusiveFluxEstimate<DiffusionType,
                                                                                         DiffusiveFluxType>>
-      LocalOperatorType;
+      VolumeOperatorType;
+
+  static const bool has_volume_operator = true;
 
   DiffusiveFluxEstimateBase(const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux,
                             const size_t over_integrate = 0)
-    : diffusion_(diffusion)
-    , diffusive_flux_(diffusive_flux)
-    , local_operator_(over_integrate, diffusion_, diffusive_flux_)
+    : volume_operator_(over_integrate, diffusion, diffusive_flux)
   {
   }
 
   DiffusiveFluxEstimateBase(const ThisType& other) = default;
 
-private:
-  const DiffusionType& diffusion_;
-  const DiffusiveFluxType& diffusive_flux_;
-
-protected:
-  const LocalOperatorType local_operator_;
+  const VolumeOperatorType volume_operator_;
 }; // class DiffusiveFluxEstimateBase
 
 
