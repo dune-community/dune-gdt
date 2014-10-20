@@ -79,13 +79,13 @@ public:
   typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType >      DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction< SpaceType, VectorType > ConstDiscreteFunctionType;
 
-  Discretization(const std::shared_ptr< const GridPartType >& gp,
+  Discretization(const GridPartType& gp,
                  const BoundaryInfoType& info,
                  const FunctionType& diff,
                  const FunctionType& forc,
                  const FunctionType& dir,
                  const FunctionType& neu)
-    : space_(*gp)
+    : space_(gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)
@@ -278,7 +278,7 @@ public:
   virtual double norm_reference_solution(const std::string type) DS_OVERRIDE DS_FINAL
   {
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution(), type);
+      return compute_norm(test_.reference_grid_view(), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
@@ -287,23 +287,21 @@ public:
                                                          *reference_solution_vector_,
                                                          "reference solution");
       // compute norm
-      return compute_norm(*(test_.reference_grid_view()), reference_solution, type);
+      return compute_norm(test_.reference_grid_view(), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
   virtual size_t current_grid_size() const DS_OVERRIDE DS_FINAL
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return grid_part->grid().size(grid_part->level(), 0);
-  } // ... current_grid_size(...)
+    return test_.level_grid_part(current_level_).indexSet().size(0);
+  }
 
   virtual double current_grid_width() const DS_OVERRIDE DS_FINAL
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
-  } // ... current_grid_width(...)
+    return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
+  }
 
   virtual double compute_on_current_refinement() DS_OVERRIDE DS_FINAL
   {
@@ -335,7 +333,7 @@ public:
       DiscreteFunctionType reference_level_solution(reference_discretization_->space(),
                                                     *current_solution_vector_,
                                                     "solution on reference grid view");
-      const Operators::L2Prolongation< GridViewType > prolongation_operator(*reference_grid_view);
+      const Operators::L2Prolongation< GridViewType > prolongation_operator(reference_grid_view);
       prolongation_operator.apply(current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
@@ -361,7 +359,7 @@ public:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Functions::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      return compute_norm(*(test_.reference_grid_view()), difference, type);
+      return compute_norm(test_.reference_grid_view(), difference, type);
     } else {
       // get reference solution
       compute_reference_solution();
@@ -372,7 +370,7 @@ public:
                                                          "reference solution");
       typedef Dune::Stuff::Functions::Difference< ConstDiscreteFunctionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
-      return compute_norm(*(test_.reference_grid_view()), difference, type);
+      return compute_norm(test_.reference_grid_view(), difference, type);
     }
   } // ... current_error_norm(...)
 

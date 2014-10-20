@@ -34,7 +34,7 @@ public:
 
   SpaceBase()
    : grid_provider_(0.0, 1.0, 3u)
-   , space_(*grid_provider_.template leaf< SpaceType::part_view_type >())
+   , space_(grid_provider_.template leaf< SpaceType::part_view_type >())
   {}
 
   virtual ~SpaceBase() {}

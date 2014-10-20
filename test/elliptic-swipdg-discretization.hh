@@ -98,13 +98,13 @@ public:
   typedef Dune::GDT::DiscreteFunction< SpaceType, VectorType >      DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction< SpaceType, VectorType > ConstDiscreteFunctionType;
 
-  Discretization(const std::shared_ptr< const GridPartType >& gp,
+  Discretization(const GridPartType& gp,
                  const BoundaryInfoType& info,
                  const FunctionType& diff,
                  const FunctionType& forc,
                  const FunctionType& dir,
                  const FunctionType& neu)
-    : space_(*gp)
+    : space_(gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)
@@ -300,7 +300,7 @@ public:
   virtual double norm_reference_solution(const std::string type) DS_OVERRIDE
   {
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution(), type);
+      return compute_norm(test_.reference_grid_view(), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
@@ -309,23 +309,21 @@ public:
                                                          *reference_solution_vector_,
                                                          "reference solution");
       // compute norm
-      return compute_norm(*(test_.reference_grid_view()), reference_solution, type);
+      return compute_norm(test_.reference_grid_view(), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
   virtual size_t current_grid_size() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return grid_part->grid().size(grid_part->level(), 0);
-  } // ... current_grid_size(...)
+    return test_.level_grid_view(current_level_).indexSet().size(0);
+  }
 
   virtual double current_grid_width() const DS_OVERRIDE
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_part = test_.level_grid_part(current_level_);
-    return Dune::Fem::GridWidth::calcGridWidth(*grid_part);
-  } // ... current_grid_width(...)
+    return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
+  }
 
   virtual double compute_on_current_refinement() DS_OVERRIDE
   {
@@ -351,7 +349,7 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_view = test_.reference_grid_view();
-      const Operators::Prolongation< GridViewType > prolongation_operator(*reference_grid_view);
+      const Operators::Prolongation< GridViewType > prolongation_operator(reference_grid_view);
       assert(reference_discretization_);
       if (!current_solution_vector_)
         current_solution_vector_
@@ -384,7 +382,7 @@ public:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Functions::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
-      return compute_norm(*(test_.reference_grid_view()), difference, type);
+      return compute_norm(test_.reference_grid_view(), difference, type);
     } else {
       // get reference solution
       compute_reference_solution();
@@ -395,7 +393,7 @@ public:
                                                          "reference solution");
       typedef Dune::Stuff::Functions::Difference< ConstDiscreteFunctionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(reference_solution, current_solution);
-      return compute_norm(*(test_.reference_grid_view()), difference, type);
+      return compute_norm(test_.reference_grid_view(), difference, type);
     }
   } // ... current_error_norm(...)
 
@@ -766,8 +764,9 @@ private:
     if (test_.provides_exact_solution()) {
       typedef Dune::Stuff::Functions::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
+      auto grid_view = test_.level_grid_view(current_level_);
       const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
-          elliptic_product(*(test_.level_grid_view(current_level_)), test_.diffusion(), over_integrate);
+          elliptic_product(grid_view, test_.diffusion(), over_integrate);
       return std::sqrt(elliptic_product.apply2(difference, difference));
     } else {
       if (!reference_solution_computed_)
@@ -777,8 +776,9 @@ private:
       assert(current_solution_vector_);
       const VectorType difference_vector = (*reference_solution_vector_) - (*current_solution_vector_);
       const ConstDiscreteFunctionType difference(reference_discretization_->space(), difference_vector);
+      auto grid_view = test_.reference_grid_view();
       const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
-          elliptic_product(*(test_.reference_grid_view()), test_.diffusion(), over_integrate);
+          elliptic_product(grid_view, test_.diffusion(), over_integrate);
       return std::sqrt(elliptic_product.apply2(difference, difference));
     }
   } // ... compute_energy_norm(...)
@@ -791,7 +791,7 @@ private:
     BaseType::compute_on_current_refinement();
     assert(current_solution_vector_on_level_);
     const auto grid_part = test_.level_grid_part(current_level_);
-    const auto& grid_view = *(test_.level_grid_view(current_level_));
+    auto grid_view = test_.level_grid_view(current_level_);
     const DiscretizationType discretization(grid_part, test_.boundary_info(), test_.diffusion(), test_.force(),
                                             test_.dirichlet(), test_.neumann());
     const ConstDiscreteFunctionType discrete_solution(discretization.space(), *current_solution_vector_on_level_);
@@ -820,14 +820,14 @@ private:
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
 
-    Operators::Projection< GridViewType > projection_operator(*grid_view);
+    Operators::Projection< GridViewType > projection_operator(grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
     typedef typename Stuff::Functions::ESV2007Cutoff< typename TestCase::DiffusionType > CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
     const Products::WeightedL2< GridViewType, CutoffFunctionType >
-        weighted_l2_product(*grid_view, cutoff_function, 1);
+        weighted_l2_product(grid_view, cutoff_function, 1);
     return weighted_l2_product.induced_norm(test_.force() - p0_force);
   } // ... compute_residual_estimator_ESV07(...)
 
@@ -853,12 +853,12 @@ private:
 
     typedef typename TestCase::DiffusionType DiffusionType;
     const Operators::DiffusiveFluxReconstruction< GridViewType, DiffusionType >
-      diffusive_flux_reconstruction(*grid_view, test_.diffusion());
+      diffusive_flux_reconstruction(grid_view, test_.diffusion());
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
     GDT::Products::ESV2007::DiffusiveFluxEstimate< GridViewType, DiffusionType, RTN0DiscreteFunctionType
                                                 , ConstDiscreteFunctionType, ConstDiscreteFunctionType >
-      diffusive_flux_estimator_product(*grid_view, discrete_solution, discrete_solution,
+      diffusive_flux_estimator_product(grid_view, discrete_solution, discrete_solution,
                                        test_.diffusion(), diffusive_flux, 1);
     return std::sqrt(diffusive_flux_estimator_product.apply2());
   } // ... compute_diffusive_flux_estimator(...)
@@ -879,7 +879,7 @@ private:
 
     VectorType oswald_interpolation_vector(discretization.space().mapper().size());
     DiscreteFunctionType oswald_interpolation(discretization.space(), oswald_interpolation_vector);
-    const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(*grid_view);
+    const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
 
     typedef Spaces::FiniteVolume::Default< GridViewType, RangeFieldType, 1, 1 > P0SpaceType;
@@ -887,7 +887,7 @@ private:
     VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
-    Operators::Projection< GridViewType > projection_operator(*grid_view);
+    Operators::Projection< GridViewType > projection_operator(grid_view);
     projection_operator.apply(test_.force(), p0_force);
 
     typedef Spaces::RaviartThomas::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
@@ -898,7 +898,7 @@ private:
 
     typedef typename TestCase::DiffusionType DiffusionType;
     const Operators::DiffusiveFluxReconstruction< GridViewType, DiffusionType >
-      diffusive_flux_reconstruction(*grid_view, test_.diffusion());
+      diffusive_flux_reconstruction(grid_view, test_.diffusion());
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
     const LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >
@@ -922,8 +922,8 @@ private:
                                                                          local_eta_df_product.numTmpObjectsRequired()),
                                                                 DynamicMatrix< RangeFieldType >(1, 1, 0.0));
     DynamicMatrix< RangeFieldType > local_result_matrix(1, 1, 0.0);
-    const auto entity_it_end = grid_view->template end< 0 >();
-    for (auto entity_it = grid_view->template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_view.template end< 0 >();
+    for (auto entity_it = grid_view.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
 
       local_result_matrix *= 0.0;

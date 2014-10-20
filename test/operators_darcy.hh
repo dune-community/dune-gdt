@@ -57,8 +57,7 @@ struct DarcyOperator
     DiscreteFunction< RangeSpaceType, VectorType > range(range_space, range_vector);
 
     const FunctionType function("x", "-1.0", 0);
-    const Operators::Darcy< GridViewType, FunctionType > darcy_operator(*(range_space.grid_view()),
-                                                                                          function);
+    const Operators::Darcy< GridViewType, FunctionType > darcy_operator(range_space.grid_view(), function);
     darcy_operator.apply(source, range);
 
     const Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain >
@@ -66,12 +65,12 @@ struct DarcyOperator
                      "desired output",
                      {{"0.0", "1.0"}, {"1.0", "0.0"}});
 
-    const Products::L2< GridViewType > l2_product(*(range_space.grid_view()));
+    const Products::L2< GridViewType > l2_product(range_space.grid_view());
     const RangeFieldType l2_error = l2_product.induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     EXPECT_LE(l2_error, l2_error_expected);
 
-    const Products::H1Semi< GridViewType > h1_semi_product(*(range_space.grid_view()));
+    const Products::H1Semi< GridViewType > h1_semi_product(range_space.grid_view());
     const RangeFieldType h1_error = h1_semi_product.induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
     EXPECT_LE(h1_error, h1_error_expected);
@@ -80,7 +79,7 @@ struct DarcyOperator
   template< class FunctionType, class GV >
   RangeFieldType expected_result_(const std::string type,
                                   const FunctionType& desired_output,
-                                  const std::shared_ptr< const GV >& grid_view_ptr) const
+                                  const GV& grid_view) const
   {
     typedef typename SpaceTools::LeafGridPartView< GridType, RangeSpaceType::needs_grid_view >::Type GPV;
     if (std::is_base_of< Spaces::ContinuousLagrange::FemBased< GPV, 1, RangeFieldType, dimDomain >
@@ -94,13 +93,13 @@ struct DarcyOperator
     } else if (std::is_base_of< Spaces::RaviartThomas::PdelabBased< GPV, 0, RangeFieldType, dimDomain >
                               , RangeSpaceType >::value) {
       typedef Spaces::FiniteVolume::Default< GV, RangeFieldType, dimDomain > FvSpaceType;
-      const FvSpaceType fv_space(grid_view_ptr);
+      const FvSpaceType fv_space(grid_view);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
       DiscreteFunction< FvSpaceType, VectorType > fv_desired_output(fv_space, fv_desired_output_vector);
-      const Operators::L2Projection< GV > l2_projection(*grid_view_ptr);
+      const Operators::L2Projection< GV > l2_projection(grid_view);
       l2_projection.apply(desired_output, fv_desired_output);
-      const Products::L2< GV > l2_product(*grid_view_ptr);
-      const Products::H1Semi< GV > h1_semi_product(*grid_view_ptr);
+      const Products::L2< GV > l2_product(grid_view);
+      const Products::H1Semi< GV > h1_semi_product(grid_view);
       if (type == "l2")
         return 2.0 * l2_product.induced_norm(desired_output - fv_desired_output);
       else if (type == "h1")
