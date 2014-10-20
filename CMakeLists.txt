@@ -50,6 +50,13 @@ set( COMMON_LIBS
     ${FASPLIB}
 )
 
+# search for spe10 data files
+find_file(SPE10MODEL1DATA
+          NAMES perm_case1.dat
+          PATHS "${dune-gdt_SOURCE_DIR}/../local/src/spe10/model1"
+          DOC "Location of perm_case1.dat"
+          NO_DEFAULT_PATH)
+
 add_subdirectory(m4)
 add_subdirectory(doc)
 add_subdirectory(cmake/modules)
