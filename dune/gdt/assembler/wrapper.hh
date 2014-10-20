@@ -27,7 +27,9 @@ class LocalMatrixConstraintsWrapper
 {
   static_assert(std::is_base_of< SpaceInterface< typename TestSpaceType::Traits >, TestSpaceType >::value, "");
   static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceType::Traits >, AnsatzSpaceType >::value, "");
-  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixType::Traits >, MatrixType >::value, "");
+  static_assert(std::is_base_of
+                < Stuff::LA::MatrixInterface< typename MatrixType::Traits, typename MatrixType::Traits::ScalarType >,
+                  MatrixType >::value, "");
   static_assert(std::is_base_of< Spaces::ConstraintsInterface< typename ConstraintsType::Traits,
                                                                typename ConstraintsType::ValueType >,
                                  ConstraintsType >::value, "");

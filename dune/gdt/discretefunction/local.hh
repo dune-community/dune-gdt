@@ -23,7 +23,9 @@ namespace GDT {
 template< class VectorImp >
 class ConstLocalDoFVector
 {
-  static_assert(std::is_base_of< Stuff::LA::VectorInterface< typename VectorImp::Traits >, VectorImp >::value,
+  static_assert(std::is_base_of
+                < Stuff::LA::VectorInterface< typename VectorImp::Traits, typename VectorImp::Traits::ScalarType >,
+                  VectorImp >::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
 public:
   typedef VectorImp VectorType;
@@ -124,7 +126,9 @@ class ConstLocalDiscreteFunction
 {
   static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of< Dune::Stuff::LA::VectorInterface< typename VectorImp::Traits >, VectorImp >::value,
+  static_assert(std::is_base_of
+                < Dune::Stuff::LA::VectorInterface< typename VectorImp::Traits, typename VectorImp::Traits::ScalarType >,
+                  VectorImp >::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
   static_assert(std::is_same< typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType >::value,
                 "Types do not match!");

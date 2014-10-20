@@ -54,7 +54,9 @@ class EllipticSWIPDGTraits
                 "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionTensorType >::value,
                 "DiffusionTensorType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
+  static_assert(std::is_base_of
+                < Stuff::LA::MatrixInterface< typename MatrixImp::Traits, typename MatrixImp::Traits::ScalarType >,
+                  MatrixImp >::value,
                 "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceImp::Traits >, SourceSpaceImp >::value,
                 "SourceSpaceImp has to be derived from SpaceInterface!");
@@ -79,7 +81,9 @@ class EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpace
 {
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DiffusionType >::value,
                 "DiffusionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< Stuff::LA::MatrixInterface< typename MatrixImp::Traits >, MatrixImp >::value,
+  static_assert(std::is_base_of
+                < Stuff::LA::MatrixInterface< typename MatrixImp::Traits, typename MatrixImp::Traits::ScalarType >,
+                  MatrixImp >::value,
                 "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceImp::Traits >, SourceSpaceImp >::value,
                 "SourceSpaceImp has to be derived from SpaceInterface!");

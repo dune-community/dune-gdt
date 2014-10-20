@@ -94,7 +94,7 @@ public:
 
   template< class C, class M >
   void add(Spaces::ConstraintsInterface< C, RangeFieldType >& constraints,
-           Stuff::LA::MatrixInterface< M >& matrix,
+           Stuff::LA::MatrixInterface< M, typename M::ScalarType >& matrix,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -113,7 +113,7 @@ public:
 
   template< class ConstraintsType, class V >
   void add(ConstraintsType& constraints,
-           Stuff::LA::VectorInterface< V >& vector,
+           Stuff::LA::VectorInterface< V, typename V::ScalarType >& vector,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
@@ -125,7 +125,7 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim0Matrix< L >& local_assembler,
-           Stuff::LA::MatrixInterface< M >& matrix,
+           Stuff::LA::MatrixInterface< M, typename M::ScalarType >& matrix,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
@@ -140,7 +140,7 @@ public:
 
   template< class Codim0Assembler, class M >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
-                            Stuff::LA::MatrixInterface< M >& matrix,
+                            Stuff::LA::MatrixInterface< M, typename M::ScalarType >& matrix,
                             const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename M::derived_type MatrixType;
@@ -154,7 +154,7 @@ public:
 
   template< class Codim0Assembler, class V >
   void add_codim0_assembler(const Codim0Assembler& local_assembler,
-                            Stuff::LA::VectorInterface< V >& vector,
+                            Stuff::LA::VectorInterface< V, typename V::ScalarType >& vector,
                             const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
     typedef typename V::derived_type VectorType;
@@ -166,7 +166,7 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
-           Stuff::LA::MatrixInterface< M >& matrix,
+           Stuff::LA::MatrixInterface< M, typename M::ScalarType >& matrix,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::AllIntersections< GridViewType >())
   {
@@ -182,7 +182,7 @@ public:
 
   template< class L, class M >
   void add(const LocalAssembler::Codim1BoundaryMatrix< L >& local_assembler,
-           Stuff::LA::MatrixInterface< M >& matrix,
+           Stuff::LA::MatrixInterface< M, typename M::ScalarType >& matrix,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::AllIntersections< GridViewType >())
   {
@@ -198,7 +198,7 @@ public:
 
   template< class L, class V >
   void add(const LocalAssembler::Codim0Vector< L >& local_assembler,
-           Stuff::LA::VectorInterface< V >& vector,
+           Stuff::LA::VectorInterface< V, typename V::ScalarType >& vector,
            const ApplyOnWhichEntity* where
               = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
@@ -212,7 +212,7 @@ public:
 
   template< class L, class V >
   void add(const LocalAssembler::Codim1Vector< L >& local_assembler,
-           Stuff::LA::VectorInterface< V >& vector,
+           Stuff::LA::VectorInterface< V, typename V::ScalarType >& vector,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::AllIntersections< GridViewType >())
   {
