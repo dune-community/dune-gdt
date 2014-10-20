@@ -172,21 +172,21 @@ public:
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
-                     const Stuff::LA::VectorInterface<S, DomainFieldType>& source)
+                     const Stuff::LA::VectorInterface<S, FieldType>& source)
   {
     apply_inverse(range, source, invert_options()[0]);
   }
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
-                     Stuff::LA::VectorInterface<S, DomainFieldType>& source, const std::string& opt)
+                     Stuff::LA::VectorInterface<S, FieldType>& source, const std::string& opt)
   {
     apply_inverse(range, source, invert_options(opt));
   }
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R, FieldType>& range,
-                     Stuff::LA::VectorInterface<S, DomainFieldType>& source, const Stuff::Common::Configuration& opts)
+                     Stuff::LA::VectorInterface<S, FieldType>& source, const Stuff::Common::Configuration& opts)
   {
     CHECK_CRTP(this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts));
     return this->as_imp(*this).apply_inverse(range.as_imp(range), source.as_imp(source), opts);
@@ -215,7 +215,7 @@ public:
 
   template <class R, class S, class P>
   FieldType apply2(const Stuff::LA::VectorInterface<R, FieldType>& range,
-                   const Stuff::LA::VectorInterface<S, DomainFieldType>& source,
+                   const Stuff::LA::VectorInterface<S, FieldType>& source,
                    const AssemblableProductInterface<P>& product)
   {
     apply(source, range);
@@ -224,7 +224,7 @@ public:
 
   template <class R, class S, class P>
   FieldType apply2(const Stuff::LA::VectorInterface<R, FieldType>& range,
-                   const Stuff::LA::VectorInterface<S, DomainFieldType>& source)
+                   const Stuff::LA::VectorInterface<S, FieldType>& source)
   {
     this->assemble();
     auto tmp = range.copy();

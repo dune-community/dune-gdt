@@ -25,6 +25,7 @@ public:
   typedef typename BaseType::SourceSpaceType SourceSpaceType;
   using typename BaseType::RangeSpaceType;
   using typename BaseType::MatrixType;
+  typedef typename MatrixType::ScalarType ScalarType;
 
 private:
   typedef Stuff::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
@@ -90,8 +91,7 @@ public:
   virtual void assemble() = 0;
 
   template <class S, class R>
-  void apply(const Stuff::LA::VectorInterface<S, typename S::ScalarType>& source,
-             Stuff::LA::VectorInterface<R, typename R::ScalarType>& range)
+  void apply(const Stuff::LA::VectorInterface<S, ScalarType>& source, Stuff::LA::VectorInterface<R, ScalarType>& range)
   {
     assemble();
     matrix_.mv(source.as_imp(), range.as_imp());
@@ -108,9 +108,8 @@ public:
   }
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R, typename R::ScalarType>& range,
-                     Stuff::LA::VectorInterface<S, typename R::ScalarType>& source,
-                     const Stuff::Common::Configuration& opts)
+  void apply_inverse(const Stuff::LA::VectorInterface<R, ScalarType>& range,
+                     Stuff::LA::VectorInterface<S, ScalarType>& source, const Stuff::Common::Configuration& opts)
   {
     assemble();
     LinearSolverType(matrix, source_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
