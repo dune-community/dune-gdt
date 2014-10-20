@@ -209,7 +209,7 @@ public:
 
   template< class R, class S >
   FieldType apply2(const Stuff::LA::VectorInterface< R, FieldType >& range,
-                   const Stuff::LA::VectorInterface< S, DomainFieldType >& source)
+                   const Stuff::LA::VectorInterface< S, FieldType >& source)
   {
     assemble();
     assert(range.size() == matrix().rows());
