@@ -56,11 +56,10 @@ public:
             class R>
   void assembleLocal(const SpaceInterface<TE>& testSpaceEntity, const SpaceInterface<AE>& ansatzSpaceEntity,
                      const SpaceInterface<TN>& testSpaceNeighbor, const SpaceInterface<AN>& ansatzSpaceNeighbor,
-                     const IntersectionType& intersection,
-                     Dune::Stuff::LA::MatrixInterface<MEE, typename MEE::ScalarType>& entityEntityMatrix,
-                     Dune::Stuff::LA::MatrixInterface<MNN, typename MNN::ScalarType>& neighborNeighborMatrix,
-                     Dune::Stuff::LA::MatrixInterface<MEN, typename MEN::ScalarType>& entityNeighborMatrix,
-                     Dune::Stuff::LA::MatrixInterface<MNE, typename MNE::ScalarType>& neighborEntityMatrix,
+                     const IntersectionType& intersection, Dune::Stuff::LA::MatrixInterface<MEE, R>& entityEntityMatrix,
+                     Dune::Stuff::LA::MatrixInterface<MNN, R>& neighborNeighborMatrix,
+                     Dune::Stuff::LA::MatrixInterface<MEN, R>& entityNeighborMatrix,
+                     Dune::Stuff::LA::MatrixInterface<MNE, R>& neighborEntityMatrix,
                      std::vector<std::vector<Dune::DynamicMatrix<R>>>& tmpLocalMatricesContainer,
                      std::vector<Dune::DynamicVector<size_t>>& tmpIndicesContainer) const
   {
@@ -150,8 +149,7 @@ public:
 
   template <class T, class A, class IntersectionType, class M, class R>
   void assembleLocal(const SpaceInterface<T>& testSpace, const SpaceInterface<A>& ansatzSpace,
-                     const IntersectionType& intersection,
-                     Dune::Stuff::LA::MatrixInterface<M, typename M::ScalarType>& systemMatrix,
+                     const IntersectionType& intersection, Dune::Stuff::LA::MatrixInterface<M, R>& systemMatrix,
                      std::vector<std::vector<Dune::DynamicMatrix<R>>>& tmpLocalMatricesContainer,
                      std::vector<Dune::DynamicVector<size_t>>& tmpIndicesContainer) const
   {
@@ -204,8 +202,7 @@ public:
 
   template <class T, class A, class IntersectionType, class M, class R>
   void assembleLocal(const SpaceInterface<T>& testSpace, const SpaceInterface<A>& ansatzSpace,
-                     const IntersectionType& intersection,
-                     Dune::Stuff::LA::MatrixInterface<M, typename M::ScalarType>& systemMatrix,
+                     const IntersectionType& intersection, Dune::Stuff::LA::MatrixInterface<M, R>& systemMatrix,
                      std::vector<std::vector<Dune::DynamicMatrix<R>>>& tmpLocalMatricesContainer,
                      std::vector<Dune::DynamicVector<size_t>>& tmpIndicesContainer) const
   {
@@ -284,7 +281,7 @@ public:
 
   template <class T, class IntersectionType, class V, class R>
   void assembleLocal(const SpaceInterface<T>& testSpace, const IntersectionType& intersection,
-                     Dune::Stuff::LA::VectorInterface<V, typename V::ScalarType>& systemVector,
+                     Dune::Stuff::LA::VectorInterface<V, R>& systemVector,
                      std::vector<std::vector<Dune::DynamicVector<R>>>& tmpLocalVectorsContainer,
                      Dune::DynamicVector<size_t>& tmpIndicesContainer) const
   {
