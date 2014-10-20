@@ -57,7 +57,7 @@ struct ProjectionOperatorBase : ::testing::Test
                                                                                             discrete_function);
     const Dune::GDT::Products::L2<GridViewType> l2_product_operator(space.grid_view());
     const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
-    EXPECT_LE(l2_error, RangeFieldType(1e-15));
+    EXPECT_LE(l2_error, RangeFieldType(1e-11)); // 3d needs this
   }
 }; // ProjectionOperatorType
 
