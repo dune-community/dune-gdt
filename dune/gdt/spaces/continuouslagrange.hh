@@ -57,7 +57,7 @@ private:
 public:
   typedef typename SpaceChooser<GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
 
-  static Type create(const std::shared_ptr<const GridLayerType> grid_layer)
+  static Type create(GridLayerType grid_layer)
   {
     return Type(grid_layer);
   }

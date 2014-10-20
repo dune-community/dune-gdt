@@ -266,8 +266,8 @@ public:
     // now we need to find the intersection opposite to this vertex
     // therefore we walk the intersections
     size_t intersection_counter    = 0;
-    const auto intersection_it_end = grid_view_->iend(entity);
-    for (auto intersection_it = grid_view_->ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
+    const auto intersection_it_end = grid_view_.iend(entity);
+    for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
       const auto& intersection              = *intersection_it;
       const auto intersection_geometry      = intersection.geometry();
       const size_t local_intersection_index = intersection.indexInInside();
