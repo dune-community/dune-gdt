@@ -45,6 +45,12 @@ typedef typename SpaceTools::LevelGridPartView<AluConform2dGridType, false>::Typ
 typedef typename SpaceTools::LeafGridPartView<AluConform2dGridType, true>::Type AluConform2dLeafGridViewType;
 typedef typename SpaceTools::LevelGridPartView<AluConform2dGridType, true>::Type AluConform2dLevelGridViewType;
 
+typedef ALUGrid<3, 3, simplex, conforming> AluConform3dGridType;
+typedef typename SpaceTools::LeafGridPartView<AluConform3dGridType, false>::Type AluConform3dLeafGridPartType;
+typedef typename SpaceTools::LevelGridPartView<AluConform3dGridType, false>::Type AluConform3dLevelGridPartType;
+typedef typename SpaceTools::LeafGridPartView<AluConform3dGridType, true>::Type AluConform3dLeafGridViewType;
+typedef typename SpaceTools::LevelGridPartView<AluConform3dGridType, true>::Type AluConform3dLevelGridViewType;
+
 typedef ALUGrid<2, 2, simplex, nonconforming> AluSimplex2dGridType;
 typedef typename SpaceTools::LeafGridPartView<AluSimplex2dGridType, false>::Type AluSimplex2dLeafGridPartType;
 typedef typename SpaceTools::LevelGridPartView<AluSimplex2dGridType, false>::Type AluSimplex2dLevelGridPartType;
