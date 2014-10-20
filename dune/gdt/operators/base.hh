@@ -90,7 +90,8 @@ public:
   virtual void assemble() = 0;
 
   template <class S, class R>
-  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range)
+  void apply(const Stuff::LA::VectorInterface<S, typename S::ScalarType>& source,
+             Stuff::LA::VectorInterface<R, typename R::ScalarType>& range)
   {
     assemble();
     matrix_.mv(source.as_imp(), range.as_imp());
@@ -107,7 +108,8 @@ public:
   }
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
+  void apply_inverse(const Stuff::LA::VectorInterface<R, typename R::ScalarType>& range,
+                     Stuff::LA::VectorInterface<S, typename R::ScalarType>& source,
                      const Stuff::Common::Configuration& opts)
   {
     assemble();

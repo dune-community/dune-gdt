@@ -358,8 +358,10 @@ class AssemblableBaseHelper
   static_assert(std::is_base_of<LocalOperatorProviderBase<typename LocalOperatorProvider::GridViewType>,
                                 LocalOperatorProvider>::value,
                 "LocalOperatorProvider has to be derived from LocalOperatorProviderBase!");
-  static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits>, MatrixType>::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(
+      std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits, typename MatrixType::Traits::ScalarType>,
+                      MatrixType>::value,
+      "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
 
   template <class LO, bool anthing = false>
   struct Volume
@@ -507,8 +509,10 @@ private:
                 "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceType::Traits>, SourceSpaceType>::value,
                 "SourceSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits>, MatrixType>::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(
+      std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits, typename MatrixType::Traits::ScalarType>,
+                      MatrixType>::value,
+      "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
 }; // class AssemblableBaseTraits
 
 
