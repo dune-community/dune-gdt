@@ -35,3 +35,5 @@ TYPED_TEST_CASE(EllipticCGDiscretization, EllipticTestCases);
 TYPED_TEST(EllipticCGDiscretization, eoc_study) {
   this->eoc_study();
 }
+
+TEST(DISABLED_EllipticCGDiscretization, eoc_study_ESV07_AluConform2d) {}

@@ -706,8 +706,7 @@ private:
 typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 
 #define ALU_CONFORM_2D_ESTIMATOR_TESTCASES \
-    EllipticTestCase::ESV07< AluConform2dGridType > \
-  , EllipticTestCase::LocalThermalBlock< AluConform2dGridType > \
+    EllipticTestCase::LocalThermalBlock< AluConform2dGridType > \
   , EllipticTestCase::Spe10Model1< AluConform2dGridType >
 
 #define ALU_CONFORM_2D_TESTCASES \
@@ -720,7 +719,8 @@ typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridT
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-                        ALU_CONFORM_2D_ESTIMATOR_TESTCASES
+                        EllipticTestCase::ESV07< AluConform2dGridType >
+                      , ALU_CONFORM_2D_ESTIMATOR_TESTCASES
 #endif
                       > EllipticEstimatorTestCases;
 
@@ -728,13 +728,13 @@ typedef Dune::SGrid< 2, 2, double > S2dGridType;
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-                        ALU_CONFORM_2D_TESTCASES ,
-#endif
-                        EllipticTestCase::ESV07< S2dGridType >
-                        , EllipticTestCase::LocalThermalBlock< S2dGridType >
-                        , EllipticTestCase::Spe10Model1< S2dGridType >
-                        , EllipticTestCase::ER07< S2dGridType >
-                        , EllipticTestCase::MixedBoundaryTypes< S2dGridType >
+                        ALU_CONFORM_2D_TESTCASES
+#else
+                        EllipticTestCase::LocalThermalBlock< S2dGridType >
+                      , EllipticTestCase::Spe10Model1< S2dGridType >
+                      , EllipticTestCase::ER07< S2dGridType >
+                      , EllipticTestCase::MixedBoundaryTypes< S2dGridType >
+#endif // HAVE_ALUGRID
                       > EllipticTestCases;
 
 

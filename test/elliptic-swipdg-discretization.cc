@@ -35,3 +35,6 @@ TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_1) {
 TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_2) {
   this->template eoc_study< 2 >();
 }
+
+TEST(DISABLED_EllipticSWIPDGDiscretization, eoc_study_polorder_1_ESV07_AluConform2d) {}
+TEST(DISABLED_EllipticSWIPDGDiscretization, eoc_study_polorder_2_ESV07_AluConform2d) {}
