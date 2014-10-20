@@ -3,9 +3,15 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
+# define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#endif
+
 #include <dune/stuff/test/main.hxx>
 
-#undef HAVE_FASP
+#ifdef HAVE_FASP
+# define HAVE_FASP 0
+#endif
 
 #include "elliptic-testcases.hh"
 #include "elliptic-swipdg-discretization.hh"
@@ -15,28 +21,18 @@ template< class TestCase >
 struct EllipticSWIPDGDiscretization
   : public ::testing::Test
 {
-  void produces_correct_results() const
+  void estimator_study() const
   {
     const TestCase test_case;
-    test_case.print_header(test_out);
+    test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
     EllipticSWIPDG::EstimatorStudy< TestCase > estimator_study(test_case);
-    auto results = estimator_study.run(test_out);
-    std::stringstream ss;
-    for (const auto& norm : estimator_study.provided_norms())
-      if (!Dune::Stuff::Common::FloatCmp::lt(results[norm],
-                                             truncate_vector(estimator_study.expected_results(norm),
-                                                             results[norm].size()))) {
-        Dune::Stuff::Common::print(results[norm],                          "   errors           (" + norm + ")", ss);
-        Dune::Stuff::Common::print(estimator_study.expected_results(norm), "   expected results (" + norm + ")", ss);
-      }
-    const std::string failure = ss.str();
-    if (!failure.empty()) DUNE_THROW(errors_are_not_as_expected, "\n" << failure);
-  } // ... produces_correct_results()
+    Dune::Stuff::Test::check_eoc_study_for_success(estimator_study, estimator_study.run(DSC_LOG_INFO));
+  } // ... estimator_study()
 }; // struct EllipticSWIPDGDiscretization
 
 
 TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticEstimatorTestCases);
-TYPED_TEST(EllipticSWIPDGDiscretization, produces_correct_results) {
-  this->produces_correct_results();
+TYPED_TEST(EllipticSWIPDGDiscretization, estimator_study) {
+  this->estimator_study();
 }
