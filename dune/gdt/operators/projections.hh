@@ -7,20 +7,20 @@
 #define DUNE_GDT_OPERATORS_PROJECTIONS_HH
 
 #include <vector>
-#include <type_traits>
 #include <limits>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
+#include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/common/vector.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
-#include <dune/stuff/common/vector.hh>
+#include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
-#include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/continuouslagrange/base.hh>
@@ -83,7 +83,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
   }
 
   template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
@@ -189,7 +189,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
   }
 
   template <class GP, int p, class R, int r, class V>
@@ -413,7 +413,7 @@ private:
   void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
                                         DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value),
+    static_assert(Dune::AlwaysFalse<E>::value,
                   "Could not find an appropriate operator for this combination of source and range!");
   }
 

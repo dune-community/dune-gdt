@@ -7,23 +7,22 @@
 #define DUNE_GDT_SPACES_INTERFACE_HH
 
 #include <memory>
-#include <type_traits>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
-#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/parallel/threadmanager.hh>
-#include <dune/stuff/la/container/pattern.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/common/float_cmp.hh>
+#include <dune/stuff/common/parallel/threadmanager.hh>
+#include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/layers.hh>
+#include <dune/stuff/la/container/pattern.hh>
 
 #include "constraints.hh"
 

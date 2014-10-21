@@ -9,6 +9,7 @@
 #include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/timedlogging.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/localevaluation/swipdg.hh>
 

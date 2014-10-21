@@ -12,10 +12,11 @@
 #include <dune/geometry/quadraturerules.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
+#include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
-#include <dune/stuff/common/exceptions.hh>
 
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
@@ -74,7 +75,7 @@ public:
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
              DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse<E>::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
   }
 
   /**

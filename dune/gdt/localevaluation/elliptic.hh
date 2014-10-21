@@ -9,13 +9,11 @@
 #define DUNE_GDT_EVALUATION_ELLIPTIC_HH
 
 #include <tuple>
-#include <type_traits>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-#include <type_traits>
 
 #include <dune/stuff/functions/interfaces.hh>
 

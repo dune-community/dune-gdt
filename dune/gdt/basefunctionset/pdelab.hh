@@ -6,20 +6,18 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_PDELAB_HH
 #define DUNE_GDT_BASEFUNCTIONSET_PDELAB_HH
 
-#include <type_traits>
-
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
-
-#include <type_traits>
 
 #if HAVE_DUNE_PDELAB
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif
+
+#include <dune/stuff/common/type_utils.hh>
 
 #include "interface.hh"
 

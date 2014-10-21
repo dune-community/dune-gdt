@@ -6,9 +6,6 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FEM_HH
 
-#include <type_traits>
-
-#include <dune/common/typetraits.hh>
 #include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
@@ -22,6 +19,7 @@
 #endif // HAVE_DUNE_FEM
 
 #include <dune/stuff/common/memory.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include "interface.hh"
 

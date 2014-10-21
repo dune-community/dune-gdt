@@ -7,7 +7,6 @@
 #define DUNE_GDT_LOCALEVALUATION_SWIPDG_HH
 
 #include <tuple>
-#include <type_traits>
 
 #include <dune/common/densematrix.hh>
 
@@ -16,8 +15,9 @@
 #include <dune/stuff/common/logging.hh>
 #endif
 #endif
-#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/timedlogging.hh>
+#include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
 #include "interface.hh"
 

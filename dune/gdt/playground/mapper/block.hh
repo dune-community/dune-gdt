@@ -6,9 +6,8 @@
 #ifndef DUNE_GDT_MAPPER_BLOCK_HH
 #define DUNE_GDT_MAPPER_BLOCK_HH
 
-#include <type_traits>
-
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/default.hh>

@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 

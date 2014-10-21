@@ -10,8 +10,6 @@
 #include <limits>
 #include <mutex>
 
-#include <type_traits>
-
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 #include <dune/geometry/referenceelements.hh>
 
@@ -25,6 +23,7 @@
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/timedlogging.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 #include <dune/gdt/basefunctionset/pdelab.hh>
