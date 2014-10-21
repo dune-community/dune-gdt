@@ -106,15 +106,15 @@ public:
     return vector_;
   }
 
-  ConstLocalDiscreteFunctionType local_discrete_function(const EntityType& entity) const
+  std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
     assert(space_.grid_view().indexSet().contains(entity));
-    return ConstLocalDiscreteFunctionType(space_, vector_, entity);
+    return DSC::make_unique<ConstLocalDiscreteFunctionType>(space_, vector_, entity);
   }
 
   virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
   {
-    return DSC::make_unique<ConstLocalDiscreteFunctionType>(local_discrete_function(entity));
+    return local_discrete_function(entity);
   }
 
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
@@ -198,10 +198,10 @@ public:
 
   using BaseType::local_discrete_function;
 
-  LocalDiscreteFunctionType local_discrete_function(const EntityType& entity)
+  std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
     assert(space_.grid_view().indexSet().contains(entity));
-    return LocalDiscreteFunctionType(space_, this->storage_access(), entity);
+    return DSC::make_unique<LocalDiscreteFunctionType>(space_, this->storage_access(), entity);
   }
 
 private:
