@@ -26,33 +26,33 @@ namespace internal {
 
 
 // these two should trigger a segfault if copying fails, i.e. the one fixed in 6b3ff6d
-template <class S>
+template <class Space>
 class BaseHolder
 {
 public:
-  BaseHolder(S s)
+  BaseHolder(Space s)
     : s_(s)
   {
   }
 
-  const S& space()
+  const Space& space()
   {
     return s_;
   }
 
 private:
-  const S s_;
+  const Space s_;
 };
 
 
-template <class S, class P>
-class DerivedHolder : public BaseHolder<S>
+template <class Space, class Provider>
+class DerivedHolder : public BaseHolder<Space>
 {
-  typedef BaseHolder<S> BaseType;
+  typedef BaseHolder<Space> BaseType;
 
 public:
-  DerivedHolder(const P& p)
-    : BaseType(p.template leaf<S::part_view_type>())
+  DerivedHolder(const Provider& p)
+    : BaseType(Space(p.template leaf<Space::part_view_type>()))
   {
   }
 };

@@ -69,7 +69,7 @@ public:
   {
   }
 
-  SystemAssembler(TestSpaceType test)
+  explicit SystemAssembler(TestSpaceType test)
     : BaseType(test.grid_view())
     , test_space_(test)
     , ansatz_space_(test)

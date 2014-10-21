@@ -32,7 +32,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  BaseFunctionSetInterface(const EntityType& ent)
+  explicit BaseFunctionSetInterface(const EntityType& ent)
     : BaseType(ent)
   {
   }

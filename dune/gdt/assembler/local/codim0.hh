@@ -38,7 +38,7 @@ class Codim0Matrix
 public:
   typedef LocalOperatorImp LocalOperatorType;
 
-  Codim0Matrix(const LocalOperatorType& op)
+  explicit Codim0Matrix(const LocalOperatorType& op)
     : localOperator_(op)
   {
   }
@@ -117,7 +117,7 @@ class Codim0Vector
 public:
   typedef LocalFunctionalImp LocalFunctionalType;
 
-  Codim0Vector(const LocalFunctionalType& func)
+  explicit Codim0Vector(const LocalFunctionalType& func)
     : localFunctional_(func)
   {
   }

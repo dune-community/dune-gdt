@@ -148,7 +148,7 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-  PdelabBased(GridViewType gV)
+  explicit PdelabBased(GridViewType gV)
     : gridView_(gV)
     , fe_map_(gridView_)
     , backend_(const_cast<GridViewType&>(gridView_), fe_map_)
