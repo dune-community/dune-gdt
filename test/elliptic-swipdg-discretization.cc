@@ -32,10 +32,16 @@ TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_1)
 {
   this->template eoc_study<1>();
 }
+#ifdef NDEBUG
+TEST(DISABLED_EllipticSIWPDGDiscretization, eoc_study_polorder_2)
+{
+}
+#else
 TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_2)
 {
   this->template eoc_study<2>();
 }
+#endif
 
 TEST(DISABLED_EllipticSWIPDGDiscretization, eoc_study_polorder_1_ESV07_AluConform2d)
 {
