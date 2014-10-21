@@ -131,7 +131,7 @@ public:
     }
   } // ... apply()
 
-  virtual void prepare() /*DS_OVERRIDE DS_FINAL*/
+  virtual void prepare() override final
   {
     if (!prepared_) {
       num_local_DoFs_per_global_DoF_ = std::vector< size_t >(range_.space().mapper().size(), 0);
@@ -141,7 +141,7 @@ public:
     }
   } // ... prepare()
 
-  virtual void apply_local(const EntityType& entity) /*DS_OVERRIDE DS_FINAL*/
+  virtual void apply_local(const EntityType& entity) override final
   {
     assert(prepared_);
     if (!finalized_) {
@@ -187,7 +187,7 @@ public:
 
   virtual void apply_local(const IntersectionType& intersection,
                            const EntityType& inside_entity,
-                           const EntityType& /*outside_entity*/) /*DS_OVERRIDE DS_FINAL*/
+                           const EntityType& /*outside_entity*/) override final
   {
     assert(prepared_);
     if (!finalized_) {
@@ -212,7 +212,7 @@ public:
     } // if (!finalized_)
   } // ... apply_local(... IntersectionType ...)
 
-  virtual void finalize() /*DS_OVERRIDE DS_FINAL*/
+  virtual void finalize() override final
   {
     if (!finalized_) {
 //      // loop over all DoFs

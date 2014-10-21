@@ -86,12 +86,12 @@ public:
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual ThisType* copy() const DS_OVERRIDE
+  virtual ThisType* copy() const override
   {
     return new ThisType(*this);
   }
 
-  virtual std::string name() const DS_OVERRIDE
+  virtual std::string name() const override
   {
     return name_;
   }
@@ -112,7 +112,7 @@ public:
     return ConstLocalDiscreteFunctionType(space_, vector_, entity);
   }
 
-  virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const DS_OVERRIDE
+  virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
   {
     return DSC::make_unique<ConstLocalDiscreteFunctionType>(local_discrete_function(entity));
   }
@@ -184,7 +184,7 @@ public:
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual ThisType* copy() const DS_OVERRIDE
+  virtual ThisType* copy() const override
   {
     return new ThisType(*this);
   }

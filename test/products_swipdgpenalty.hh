@@ -106,7 +106,7 @@ struct SwipdgPenaltyLocalizableProduct : public SwipdgPenaltyProductBase<SpaceTy
   typedef typename BaseType::FunctionType FunctionType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     return Products::SwipdgPenaltyLocalizable<GridViewType, ScalarType, TensorType, FunctionType, FunctionType>(
                this->space_.grid_view(), function, function, this->one_, this->unit_matrix_)
@@ -137,7 +137,7 @@ struct SwipdgPenaltyAssemblableProduct : public SwipdgPenaltyProductBase<SpaceTy
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::Operators::Projection<GridViewType> ProjectionOperatorType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     // create the product
     Products::SwipdgPenaltyAssemblable<MatrixType, ScalarType, TensorType, SpaceType, GridViewType, SpaceType> product(
@@ -170,7 +170,7 @@ struct SwipdgPenaltyProduct : public SwipdgPenaltyProductBase<SpaceType>
   typedef typename BaseType::FunctionType FunctionType;
   typedef typename BaseType::GridViewType GridViewType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     Products::SwipdgPenalty<GridViewType, FunctionType, TensorType> product(
         this->space_.grid_view(), this->one_, this->unit_matrix_);

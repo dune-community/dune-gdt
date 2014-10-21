@@ -399,12 +399,12 @@ public:
   } // ... compute_locally(...)
 
   virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
-                           const EntityType& outside_entity) DS_OVERRIDE
+                           const EntityType& outside_entity) override
   {
     *result_ += compute_locally(intersection, inside_entity, outside_entity);
   }
 
-  virtual void finalize() DS_OVERRIDE
+  virtual void finalize() override
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();
@@ -493,12 +493,12 @@ public:
   } // ... compute_locally(...)
 
   virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
-                           const EntityType& outside_entity) DS_OVERRIDE
+                           const EntityType& outside_entity) override
   {
     *result_ += compute_locally(intersection, inside_entity, outside_entity);
   }
 
-  virtual void finalize() DS_OVERRIDE
+  virtual void finalize() override
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();

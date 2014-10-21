@@ -91,7 +91,7 @@ struct EllipticLocalizableProduct : public EllipticProductBase<SpaceType>
   typedef typename BaseType::TensorType TensorType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE DS_FINAL
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     return Products::
         EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType, RangeFieldType, TensorType>(
@@ -211,7 +211,7 @@ struct SimplifiedEllipticLocalizableProduct : public EllipticProductBase<SpaceTy
   typedef typename BaseType::TensorType TensorType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE DS_FINAL
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     return Products::EllipticLocalizable<GridViewType, FunctionType, FunctionType, FunctionType>(
                this->space_.grid_view(), function, function, this->one_)

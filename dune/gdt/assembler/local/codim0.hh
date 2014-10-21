@@ -223,12 +223,12 @@ public:
     return local_operator_result[0][0];
   } // ... compute_locally(...)
 
-  virtual void apply_local(const EntityType& entity) DS_OVERRIDE
+  virtual void apply_local(const EntityType& entity) override
   {
     *result_ += compute_locally(entity);
   }
 
-  virtual void finalize() DS_OVERRIDE
+  virtual void finalize() override
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();
