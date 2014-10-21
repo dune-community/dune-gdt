@@ -28,6 +28,9 @@ TYPED_TEST(DG_Space, mapper_fulfills_interface) {
 TYPED_TEST(DG_Space, basefunctionset_fulfills_interface) {
   this->basefunctionset_fulfills_interface();
 }
+TYPED_TEST(DG_Space, check_for_correct_copy) {
+  this->check_for_correct_copy();
+}
 
 
 typedef testing::Types<
@@ -44,9 +47,10 @@ TYPED_TEST(P1Q1_DG_Space, maps_correctly) {
 
 #else // HAVE_DUNE_PDELAB
 
-TEST(DISABLED_SpaceBase, fulfills_interface)                 {}
-TEST(DISABLED_SpaceBase, mapper_fulfills_interface)          {}
-TEST(DISABLED_SpaceBase, basefunctionset_fulfills_interface) {}
+TEST(DISABLED_DG_Space, fulfills_interface)                 {}
+TEST(DISABLED_DG_Space, mapper_fulfills_interface)          {}
+TEST(DISABLED_DG_Space, basefunctionset_fulfills_interface) {}
+TEST(DISABLED_DG_Space, check_for_correct_copy)             {}
 TEST(DISABLED_P1Q1_DG_Space, maps_correctly)                 {}
 
 #endif // HAVE_DUNE_PDELAB

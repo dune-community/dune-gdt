@@ -28,3 +28,6 @@ TYPED_TEST(RT_Space, mapper_fulfills_interface) {
 TYPED_TEST(RT_Space, basefunctionset_fulfills_interface) {
   this->basefunctionset_fulfills_interface();
 }
+TYPED_TEST(RT_Space, check_for_correct_copy) {
+  this->check_for_correct_copy();
+}

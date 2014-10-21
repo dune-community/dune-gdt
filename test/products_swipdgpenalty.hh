@@ -110,14 +110,14 @@ struct SwipdgPenaltyLocalizableProduct
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     return Products::SwipdgPenaltyLocalizable< GridViewType, ScalarType, TensorType, FunctionType, FunctionType >
-        (*(this->space_.grid_view()), function, function, this->one_, this->unit_matrix_).apply2();
+        (this->space_.grid_view(), function, function, this->one_, this->unit_matrix_).apply2();
   }
 
   void fulfills_interface() const
   {
     typedef Products::SwipdgPenaltyLocalizable< GridViewType, ScalarType, TensorType, ScalarType, ScalarType >
       ProductType;
-    ProductType product(*(this->space_.grid_view()), this->one_, this->one_, this->one_, this->unit_matrix_);
+    ProductType product(this->space_.grid_view(), this->one_, this->one_, this->one_, this->unit_matrix_);
     LocalizableProductBase< SpaceType, ProductType >::fulfills_interface(product);
   }
 }; // struct SwipdgPenaltyLocalizableProduct
@@ -146,7 +146,7 @@ struct SwipdgPenaltyAssemblableProduct
     product.assemble();
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
-    ProjectionOperatorType(*(this->space_.grid_view())).apply(function, discrete_function);
+    ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     return product.apply2(discrete_function, discrete_function);
   } // ... compute(...)
@@ -175,14 +175,14 @@ struct SwipdgPenaltyProduct
   virtual RangeFieldType compute(const FunctionType& function) const /*DS_OVERIDE DS_FINAL*/
   {
     Products::SwipdgPenalty< GridViewType, FunctionType, TensorType >
-        product(*this->space_.grid_view(), this->one_, this->unit_matrix_);
+        product(this->space_.grid_view(), this->one_, this->unit_matrix_);
     return product.apply2(function, function);
   } // ... compute(...)
 
   void fulfills_interface() const
   {
     typedef Products::SwipdgPenalty< GridViewType, FunctionType, TensorType > ProductType;
-    ProductBase< SpaceType, ProductType >::fulfills_interface(ProductType(*this->space_.grid_view(),
+    ProductBase< SpaceType, ProductType >::fulfills_interface(ProductType(this->space_.grid_view(),
                                                                           this->one_, this->unit_matrix_));
   }
 }; // struct SwipdgPenaltyProduct
