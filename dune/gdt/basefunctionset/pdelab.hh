@@ -118,17 +118,17 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const DS_OVERRIDE DS_FINAL
+  virtual size_t size() const override final
   {
     return backend_->size();
   }
 
-  virtual size_t order() const DS_OVERRIDE DS_FINAL
+  virtual size_t order() const override final
   {
     return backend_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const DS_OVERRIDE DS_FINAL
+  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const override final
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateFunction(xx, ret);
@@ -136,7 +136,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const DS_OVERRIDE DS_FINAL
+  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const override final
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateJacobian(xx, ret);
@@ -248,17 +248,17 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const DS_OVERRIDE DS_FINAL
+  virtual size_t size() const override final
   {
     return backend_->size();
   }
 
-  virtual size_t order() const DS_OVERRIDE DS_FINAL
+  virtual size_t order() const override final
   {
     return backend_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const DS_OVERRIDE DS_FINAL
+  virtual void evaluate(const DomainType& xx, std::vector< RangeType >& ret) const override final
   {
     assert(lfs_);
     assert(backend_);
@@ -276,7 +276,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const DS_OVERRIDE DS_FINAL
+  virtual void jacobian(const DomainType& xx, std::vector< JacobianRangeType >& ret) const override final
   {
     assert(lfs_);
     assert(backend_);

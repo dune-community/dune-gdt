@@ -163,7 +163,7 @@ public:
     return source_;
   }
 
-  virtual void prepare() DS_OVERRIDE
+  virtual void prepare() override
   {
     if (!prepared_) {
       tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType({4,
@@ -235,12 +235,12 @@ public:
 
   virtual void apply_local(const IntersectionType& intersection,
                            const EntityType& inside_entity,
-                           const EntityType& outside_entity) DS_OVERRIDE
+                           const EntityType& outside_entity) override
   {
     *result_ += compute_locally(intersection, inside_entity, outside_entity);
   }
 
-  virtual void finalize() DS_OVERRIDE
+  virtual void finalize() override
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();

@@ -269,12 +269,12 @@ public:
 
   virtual ~EocStudy() {}
 
-  virtual std::string identifier() const DS_OVERRIDE
+  virtual std::string identifier() const override
   {
     return "SWIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::toString(polOrder);
   }
 
-  virtual size_t num_refinements() const DS_OVERRIDE
+  virtual size_t num_refinements() const override
   {
     if (test_.num_levels() == 0)
       return test_.num_levels();
@@ -282,12 +282,12 @@ public:
       return test_.num_levels() - 1;
   }
 
-  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE
+  virtual std::vector< std::string > provided_norms() const override
   {
     return {"L2", "H1_semi"};
   }
 
-  virtual size_t expected_rate(const std::string type) const DS_OVERRIDE
+  virtual size_t expected_rate(const std::string type) const override
   {
     if (type.compare("L2") == 0)
       return polOrder + 1;
@@ -297,7 +297,7 @@ public:
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
   } // ... expected_rate(...)
 
-  virtual double norm_reference_solution(const std::string type) DS_OVERRIDE
+  virtual double norm_reference_solution(const std::string type) override
   {
     if (test_.provides_exact_solution()) {
       return compute_norm(test_.reference_grid_view(), test_.exact_solution(), type);
@@ -313,19 +313,19 @@ public:
     }
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_grid_size() const DS_OVERRIDE
+  virtual size_t current_grid_size() const override
   {
     assert(current_level_ < test_.num_levels());
     return test_.level_grid_view(current_level_).indexSet().size(0);
   }
 
-  virtual double current_grid_width() const DS_OVERRIDE
+  virtual double current_grid_width() const override
   {
     assert(current_level_ < test_.num_levels());
     return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
   }
 
-  virtual double compute_on_current_refinement() DS_OVERRIDE
+  virtual double compute_on_current_refinement() override
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -363,7 +363,7 @@ public:
     return timer.elapsed() + elapsed;
   } // ... compute_on_current_refinement(...)
 
-  virtual double current_error_norm(const std::string type) DS_OVERRIDE
+  virtual double current_error_norm(const std::string type) override
   {
     // get current solution
     assert(current_level_ < test_.num_levels());
@@ -397,7 +397,7 @@ public:
     }
   } // ... current_error_norm(...)
 
-  virtual void refine() DS_OVERRIDE
+  virtual void refine() override
   {
     if (current_level_ < test_.num_levels())
       ++current_level_;
@@ -602,7 +602,7 @@ public:
 
   virtual ~EstimatorStudy() {}
 
-  virtual std::vector< std::string > provided_norms() const DS_OVERRIDE DS_FINAL
+  virtual std::vector< std::string > provided_norms() const override final
   {
     return { "energy"
             , nonconformity_estimator_id()
@@ -616,7 +616,7 @@ public:
            };
   } // ... provided_norms(...)
 
-  virtual size_t expected_rate(const std::string type) const DS_OVERRIDE DS_FINAL
+  virtual size_t expected_rate(const std::string type) const override final
   {
     if (type == "energy")
       return polOrder;
@@ -640,7 +640,7 @@ public:
       return BaseType::expected_rate(type);
   } // ... expected_rate(...)
 
-  virtual double current_error_norm(const std::string type) DS_OVERRIDE DS_FINAL
+  virtual double current_error_norm(const std::string type) override final
   {
     if (type == "energy")
       return compute_energy_norm();

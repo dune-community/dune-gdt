@@ -27,7 +27,7 @@ struct H1SemiLocalizableProduct
   typedef typename BaseType::TensorType     TensorType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
 
-  virtual RangeFieldType compute(const FunctionType& function) const DS_OVERRIDE DS_FINAL
+  virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     return Products::H1SemiLocalizable< GridViewType, FunctionType, FunctionType >
         (this->space_.grid_view(), function, function).apply2();

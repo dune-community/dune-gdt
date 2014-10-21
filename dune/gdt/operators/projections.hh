@@ -552,7 +552,7 @@ public:
 
   virtual ~DirichletProjectionLocalizable() {}
 
-  virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const EntityType& entity) override final
   {
     if (entity.hasBoundaryIntersections()) {
       const auto local_dirichlet_DoFs = range_.space().local_dirichlet_DoFs(entity, boundary_info_);

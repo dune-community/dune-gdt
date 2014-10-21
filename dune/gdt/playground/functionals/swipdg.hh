@@ -92,7 +92,7 @@ public:
     setup();
   }
 
-  virtual void assemble() DS_OVERRIDE DS_FINAL
+  virtual void assemble() override final
   {
     AssemblerBaseType::assemble();
   }

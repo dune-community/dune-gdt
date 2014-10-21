@@ -51,12 +51,12 @@ public:
 
   virtual ~LocalMatrixConstraintsWrapper() {}
 
-  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const DS_OVERRIDE DS_FINAL
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const EntityType& entity) override final
   {
     test_space_->local_constraints(*ansatz_space_, entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
@@ -94,12 +94,12 @@ public:
   virtual ~LocalVectorConstraintsWrapper() {}
 
   virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const DS_OVERRIDE DS_FINAL
+                        const typename AssemblerType::EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
   {
     test_space_->local_constraints(entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
@@ -140,12 +140,12 @@ public:
   virtual ~LocalVolumeMatrixAssemblerWrapper() {}
 
   virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const DS_OVERRIDE DS_FINAL
+                        const typename AssemblerType::EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
   {
     localMatrixAssembler_.assembleLocal(*test_space_, *ansatz_space_, entity, matrix_, this->matrices(), this->indices());
   }
@@ -184,14 +184,14 @@ public:
   virtual ~LocalFaceMatrixAssemblerWrapper() {}
 
   virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+                        const typename AssemblerType::IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
   virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
                            const typename AssemblerType::EntityType& /*inside_entity*/,
-                           const typename AssemblerType::EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
+                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
   {
     localMatrixAssembler_.assembleLocal(*test_space_, *ansatz_space_, intersection, matrix_, this->matrices(), this->indices());
   }
@@ -226,12 +226,12 @@ public:
   virtual ~LocalVolumeVectorAssemblerWrapper() {}
 
   virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const DS_OVERRIDE DS_FINAL
+                        const typename AssemblerType::EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) DS_OVERRIDE DS_FINAL
+  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
   {
     localVectorAssembler_.assembleLocal(*space_, entity, vector_, this->vectors(), this->indices());
   }
@@ -265,14 +265,14 @@ public:
   virtual ~LocalFaceVectorAssemblerWrapper() {}
 
   virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::IntersectionType& intersection) const DS_OVERRIDE DS_FINAL
+                        const typename AssemblerType::IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
   virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
                            const typename AssemblerType::EntityType& /*inside_entity*/,
-                           const typename AssemblerType::EntityType& /*outside_entity*/) DS_OVERRIDE DS_FINAL
+                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
   {
     localVectorAssembler_.assembleLocal(*space_, intersection, vector_, this->vectors(), this->indices());
   }
