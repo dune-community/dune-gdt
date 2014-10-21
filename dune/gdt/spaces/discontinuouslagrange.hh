@@ -12,6 +12,7 @@
 # include <dune/grid/multiscale/provider/interface.hh>
 #endif
 
+#include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 

@@ -6,11 +6,9 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
 
-#include <type_traits>
-
 #include <vector>
 
-#include <dune/common/typetraits.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include "interface.hh"
 

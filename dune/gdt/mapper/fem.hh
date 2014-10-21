@@ -6,14 +6,14 @@
 #ifndef DUNE_GDT_MAPPER_FEM_HH
 #define DUNE_GDT_MAPPER_FEM_HH
 
-#include <type_traits>
-
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/mapper/nonblockmapper.hh>
 #endif
+
+#include <dune/stuff/common/type_utils.hh>
 
 #include "interface.hh"
 

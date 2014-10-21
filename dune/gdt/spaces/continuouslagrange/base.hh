@@ -6,9 +6,6 @@
 #ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
 #define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
 
-#include <type_traits>
-
-#include <dune/common/typetraits.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
 
@@ -22,6 +19,7 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include "../interface.hh"
 

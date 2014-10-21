@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACE_FINITEVOLUME_HH
 #define DUNE_GDT_SPACE_FINITEVOLUME_HH
 
+#include <dune/stuff/common/type_utils.hh>
+
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "../../mapper/finitevolume.hh"

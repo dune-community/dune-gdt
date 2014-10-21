@@ -6,13 +6,12 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_FINITEVOLUME_HH
 #define DUNE_GDT_BASEFUNCTIONSET_FINITEVOLUME_HH
 
-#include <type_traits>
-
-#include <dune/common/typetraits.hh>
 #include <dune/stuff/common/disable_warnings.hh>
 # include <dune/common/fmatrix.hh>
 # include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
+
+#include <dune/stuff/common/type_utils.hh>
 
 #include "../../basefunctionset/interface.hh"
 

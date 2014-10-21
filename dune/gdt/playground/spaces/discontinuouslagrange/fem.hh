@@ -7,9 +7,7 @@
 #define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
 
 #include <memory>
-#include <type_traits>
 
-#include <dune/common/typetraits.hh>
 #include <dune/common/unused.hh>
 
 #if HAVE_DUNE_FEM
@@ -17,6 +15,8 @@
 #   include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
 # include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_FEM
+
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 

@@ -7,6 +7,7 @@
 #define DUNE_GDT_SPACES_BLOCK_HH
 
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
 # include <dune/grid/multiscale/default.hh>
@@ -188,7 +189,10 @@ private:
 
 
 template< class LocalSpaceImp >
-class Block { static_assert(Dune::AlwaysFalse< LocalSpaceImp >::value, "You are missing dune-grid-multiscale!"); };
+class Block
+{
+  static_assert(Dune::AlwaysFalse< LocalSpaceImp >::value, "You are missing dune-grid-multiscale!");
+};
 
 
 #endif // HAVE_DUNE_GRID_MULTISCALE

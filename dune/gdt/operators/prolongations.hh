@@ -6,7 +6,6 @@
 #ifndef DUNE_GDT_OPERATORS_PROLONGATIONS_HH
 #define DUNE_GDT_OPERATORS_PROLONGATIONS_HH
 
-#include <type_traits>
 #include <vector>
 #include <limits>
 
@@ -14,10 +13,11 @@
 # include <dune/common/dynmatrix.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
+#include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/common/vector.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
-#include <dune/stuff/common/vector.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 
@@ -57,7 +57,7 @@ template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
            DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
 {
-  static_assert((Dune::AlwaysFalse< T >::value), "Not implemented for this combination of source and range!");
+  static_assert(Dune::AlwaysFalse< T >::value, "Not implemented for this combination of source and range!");
 }\endcode
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
@@ -85,7 +85,7 @@ public:
   void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
@@ -104,7 +104,7 @@ public:
   void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
@@ -223,7 +223,7 @@ template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
            DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
 {
-  static_assert((Dune::AlwaysFalse< T >::value), "Not implemented for this combination of source and range!");
+  static_assert(Dune::AlwaysFalse< T >::value, "Not implemented for this combination of source and range!");
 }\endcode
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
@@ -247,7 +247,7 @@ public:
   void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
@@ -265,7 +265,7 @@ public:
   void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
@@ -284,7 +284,7 @@ public:
   void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
              DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
-    static_assert((Dune::AlwaysFalse< GPS >::value), "Not implemented for this combination of source and range!");
+    static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, class VR >

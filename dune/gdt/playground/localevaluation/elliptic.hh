@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_EVALUATION_ELLIPTIC_HH
 #define DUNE_GDT_PLAYGROUND_EVALUATION_ELLIPTIC_HH
 
+#include <dune/stuff/common/type_utils.hh>
+
 #include <dune/gdt/localevaluation/elliptic.hh>
 
 namespace Dune {

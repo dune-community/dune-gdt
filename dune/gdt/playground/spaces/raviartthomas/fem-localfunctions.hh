@@ -6,7 +6,6 @@
 #ifndef DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACE_RAVIARTTHOMAS_FEM_LOCALFUNCTIONS_HH
 
-#include <type_traits>
 #include <memory>
 
 #include <dune/common/exceptions.hh>
@@ -23,6 +22,7 @@
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 #include <dune/stuff/common/color.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include "../../../mapper/fem.hh"
 #include "../../../basefunctionset/fem-localfunctions.hh"

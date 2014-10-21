@@ -8,8 +8,6 @@
 
 #include <memory>
 
-#include <dune/common/typetraits.hh>
-
 #include <dune/stuff/common/disable_warnings.hh>
 # include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
@@ -24,6 +22,7 @@
 # include <dune/stuff/common/reenable_warnings.hh>
 #endif // HAVE_DUNE_PDELAB
 
+#include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/la/container/istl.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
@@ -45,7 +44,7 @@ namespace DiscontinuousLagrange {
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class PdelabBased
 {
-  static_assert((Dune::AlwaysFalse< GridViewImp >::value), "Untested for this combination of dimensions!");
+  static_assert(Dune::AlwaysFalse< GridViewImp >::value, "Untested for this combination of dimensions!");
 }; //class PdelabBased
 
 
@@ -236,7 +235,7 @@ private:
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class PdelabBased
 {
-  static_assert((Dune::AlwaysFalse< GridViewImp >::value), "You are missing dune-pdelab!");
+  static_assert(Dune::AlwaysFalse< GridViewImp >::value, "You are missing dune-pdelab!");
 };
 
 

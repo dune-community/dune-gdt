@@ -7,10 +7,7 @@
 #define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
 #include <memory>
-#include <type_traits>
 
-#include <dune/common/typetraits.hh>
-#include <type_traits>
 #include <dune/common/exceptions.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
@@ -31,6 +28,8 @@
 # include <dune/stuff/common/reenable_warnings.hh>
 # include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
+
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/mapper/fem.hh>
 #include <dune/gdt/basefunctionset/fem-localfunctions.hh>

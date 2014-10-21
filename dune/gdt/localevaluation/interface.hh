@@ -13,8 +13,9 @@
 # include <dune/common/fvector.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/crtp.hh>
+#include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/functions/interfaces.hh>
 
 namespace Dune {
 namespace GDT {

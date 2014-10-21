@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 #define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
 
-#include <type_traits>
-
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
@@ -25,6 +23,7 @@
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 #include <dune/stuff/common/color.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/mapper/fem.hh>
 #include <dune/gdt/basefunctionset/fem-localfunctions.hh>
@@ -180,7 +179,7 @@ public:
   template< class R >
   void local_constraints(const EntityType& /*entity*/, Constraints::LocalDefault< R >& /*ret*/) const
   {
-    static_assert((Dune::AlwaysFalse< R >::value), "Not implemented for arbitrary constraints!");
+    static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for arbitrary constraints!");
   }
 
   using BaseType::compute_pattern;
