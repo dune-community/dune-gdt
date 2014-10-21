@@ -202,7 +202,7 @@ private:
       // compute local DoFs
       Stuff::LA::Solver<LocalMatrixType>(local_matrix).apply(local_vector, local_DoFs);
       // set local DoFs
-      auto local_range_vector = local_range.vector();
+      auto local_range_vector = local_range->vector();
       assert(local_range_vector.size() == local_DoFs.size());
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs.get_entry(ii));
@@ -317,7 +317,7 @@ private:
       assert(source_entity_ptrs.size() == lagrange_points.size());
       // get range
       auto local_range            = range.local_discrete_function(entity);
-      auto local_range_DoF_vector = local_range.vector();
+      auto local_range_DoF_vector = local_range->vector();
       // do the actual work (see below)
       apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
     } // walk the grid
