@@ -148,7 +148,7 @@ public:
       // some preparations
       prepare_for_current_(entity);
       const auto local_source = source_.local_discrete_function(entity);
-      const auto local_source_DoF_vector = local_source.vector();
+      const auto local_source_DoF_vector = local_source->vector();
       const size_t num_vertices = entity.template count< dimDomain >();
       assert(cg_fem_);
       assert(dg_fem_);
@@ -227,7 +227,7 @@ public:
         const auto& entity = *entity_it;
         // get the local functions
         const auto local_source = source_.local_discrete_function(entity);
-        const auto& local_source_DoF_vector = local_source.vector();
+        const auto& local_source_DoF_vector = local_source->vector();
         // get the local finite elements
         // * for the oswald projection
         typedef typename SpaceType::Traits::ContinuousFiniteElementType FiniteElementType;
@@ -471,7 +471,7 @@ private:
       const size_t num_vertices = entity.template count< dimDomain >();
       // get the local functions
       const auto local_source = source.local_discrete_function(entity);
-      const auto& local_source_DoF_vector = local_source.vector();
+      const auto& local_source_DoF_vector = local_source->vector();
 
       // * loop over all local DoFs
       for (size_t local_DoF_id = 0; local_DoF_id < num_vertices; ++local_DoF_id) {

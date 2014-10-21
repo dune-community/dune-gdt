@@ -120,7 +120,7 @@ private:
       const auto& entity = *entity_it;
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
-      auto& local_range_DoF_vector = local_range.vector();
+      auto& local_range_DoF_vector = local_range->vector();
       const auto lagrange_points = range.space().lagrange_points(entity);
       // and do the work (see below)
       apply_local(lagrange_points, *local_source, local_range_DoF_vector);
@@ -307,7 +307,7 @@ private:
       // compute local DoFs
       Stuff::LA::Solver< LocalMatrixType >(local_matrix).apply(local_vector, local_DoFs);
       // set local DoFs
-      auto local_range_vector = local_range.vector();
+      auto local_range_vector = local_range->vector();
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
@@ -559,7 +559,7 @@ public:
       if (local_dirichlet_DoFs.size() > 0) {
         const auto local_source = source_.local_function(entity);
         auto local_range = range_.local_discrete_function(entity);
-        auto& local_range_DoF_vector = local_range.vector();
+        auto& local_range_DoF_vector = local_range->vector();
         const auto lagrange_points = range_.space().lagrange_points(entity);
         assert(lagrange_points.size() == local_range_DoF_vector.size());
         for (const size_t& local_DoF_id : local_dirichlet_DoFs)
