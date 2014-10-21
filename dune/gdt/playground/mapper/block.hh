@@ -109,7 +109,7 @@ private:
   private:
     static size_t find_block_of_(const MsGridType& ms_grid, const Comdim0EntityType& entity)
     {
-      const auto global_entity_index = ms_grid.globalGridView()->indexSet().index(entity);
+      const auto global_entity_index = ms_grid.globalGridView().indexSet().index(entity);
       const auto result = ms_grid.entityToSubdomainMap()->find(global_entity_index);
   #ifndef NDEBUG
       if (result == ms_grid.entityToSubdomainMap()->end())

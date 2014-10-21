@@ -57,6 +57,10 @@ public:
 } // namespace internal
 
 
+/**
+ * \todo This can be implemented easier by now. Since all local spaces hold a copy of their local grid view it should
+ *       be enough to hold a copy of the global grid view in this space (if the ms_grid is not needed elsewhere)
+ */
 template< class LocalSpaceImp >
 class Block
   : public SpaceInterface< internal::BlockTraits< LocalSpaceImp > >
@@ -80,6 +84,7 @@ public:
   Block(const std::shared_ptr< const MsGridType >& ms_grid,
         const std::vector< std::shared_ptr< const LocalSpaceType > >& local_spaces)
     : ms_grid_(ms_grid)
+    , grid_view_(ms_grid_->globalGridView())
     , local_spaces_(local_spaces)
     , mapper_(std::make_shared< MapperType >(ms_grid_, local_spaces_))
   {
@@ -110,7 +115,7 @@ public:
 
   const GridViewType& grid_view() const
   {
-    return ms_grid_->globalGridView();
+    return grid_view_;
   }
 
   const BackendType& backend() const
@@ -152,7 +157,7 @@ private:
   template< class EntityType >
   size_t find_block_of_(const EntityType& entity) const
   {
-    const auto global_entity_index = ms_grid_->globalGridView()->indexSet().index(entity);
+    const auto global_entity_index = ms_grid_->globalGridView().indexSet().index(entity);
     const auto result = ms_grid_->entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
     if (result == ms_grid_->entityToSubdomainMap()->end())
@@ -173,6 +178,7 @@ private:
   } // ... find_block_of_(...)
 
   const std::shared_ptr< const MsGridType > ms_grid_;
+  const GridViewType grid_view_;
   const std::vector< std::shared_ptr< const LocalSpaceType > > local_spaces_;
   const std::shared_ptr< const MapperType > mapper_;
 }; // class Block
