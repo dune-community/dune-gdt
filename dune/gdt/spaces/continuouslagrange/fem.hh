@@ -105,7 +105,7 @@ public:
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
 
-  FemBased(GridPartType gridP)
+  explicit FemBased(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
     , gridView_(new GridViewType(gridPart_->gridView()))
     , backend_(new BackendType(*gridPart_))
@@ -115,7 +115,7 @@ public:
 
 
   FemBased(const ThisType& other) = default;
-  FemBased(ThisType&& source) = default;
+  explicit FemBased(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;

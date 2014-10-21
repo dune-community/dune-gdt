@@ -54,7 +54,7 @@ private:
   typedef PDELab::LocalFunctionSpace< BackendType, PDELab::TrialSpaceTag > PdeLabLFSType;
 
 public:
-  SimplePdelabWrapper(const BackendType& pdelab_space)
+  explicit SimplePdelabWrapper(const BackendType& pdelab_space)
     : backend_(pdelab_space)
     , lfs_(backend_)
   {}

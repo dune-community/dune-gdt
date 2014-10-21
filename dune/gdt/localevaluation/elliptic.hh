@@ -98,7 +98,7 @@ public:
   typedef typename Traits::DomainFieldType                          DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  Elliptic(const LocalizableFunctionType& inducingFunction)
+  explicit Elliptic(const LocalizableFunctionType& inducingFunction)
     : inducingFunction_(inducingFunction)
   {}
 

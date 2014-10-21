@@ -32,7 +32,7 @@ class Codim1CouplingMatrix
 public:
   typedef LocalOperatorImp LocalOperatorType;
 
-  Codim1CouplingMatrix(const LocalOperatorType& op)
+  explicit Codim1CouplingMatrix(const LocalOperatorType& op)
     : localOperator_(op)
   {}
 
@@ -175,7 +175,7 @@ class Codim1BoundaryMatrix
 public:
   typedef LocalOperatorImp LocalOperatorType;
 
-  Codim1BoundaryMatrix(const LocalOperatorType& op)
+  explicit Codim1BoundaryMatrix(const LocalOperatorType& op)
     : localOperator_(op)
   {}
 
@@ -252,7 +252,7 @@ class Codim1Vector
 public:
   typedef LocalFunctionalImp LocalFunctionalType;
 
-  Codim1Vector(const LocalFunctionalType& fu)
+  explicit Codim1Vector(const LocalFunctionalType& fu)
     : localFunctional_(fu)
   {}
 

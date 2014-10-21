@@ -59,7 +59,7 @@ public:
   typedef typename Traits::BackendType                       BackendType;
   typedef typename Traits::EntityType                        EntityType;
 
-  FemDofWrapper(FemDofMapperImp& femNonBlockMapper)
+  explicit FemDofWrapper(FemDofMapperImp& femNonBlockMapper)
     : backend_(femNonBlockMapper)
   {}
 
@@ -87,7 +87,7 @@ private:
   class Functor
   {
   public:
-    Functor(Dune::DynamicVector< size_t >& globalIndices)
+    explicit Functor(Dune::DynamicVector< size_t >& globalIndices)
       : globalIndices_(globalIndices)
     {}
 
@@ -141,7 +141,7 @@ public:
   typedef typename Traits::BackendType              BackendType;
   typedef typename Traits::EntityType               EntityType;
 
-  FemDofWrapper(const BackendType& femMapper)
+  explicit FemDofWrapper(const BackendType& femMapper)
     : backend_(femMapper)
   {}
 
@@ -169,7 +169,7 @@ private:
   class Functor
   {
   public:
-    Functor(Dune::DynamicVector< size_t >& globalIndices)
+    explicit Functor(Dune::DynamicVector< size_t >& globalIndices)
       : globalIndices_(globalIndices)
     {}
 
