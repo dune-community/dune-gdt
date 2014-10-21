@@ -21,6 +21,46 @@
 using namespace Dune;
 using namespace GDT;
 
+
+namespace internal {
+
+
+// these two should trigger a segfault if copying fails, i.e. the one fixed in 6b3ff6d
+template <class S>
+class BaseHolder
+{
+public:
+  BaseHolder(S s)
+    : s_(s)
+  {
+  }
+
+  const S& space()
+  {
+    return s_;
+  }
+
+private:
+  const S s_;
+};
+
+
+template <class S, class P>
+class DerivedHolder : public BaseHolder<S>
+{
+  typedef BaseHolder<S> BaseType;
+
+public:
+  DerivedHolder(const P& p)
+    : BaseType(p.template leaf<S::part_view_type>())
+  {
+  }
+};
+
+
+} // namespace internal
+
+
 /**
   * \brief Checks any space derived from SpaceInterface for it's interface compliance, especially concerning CRTP.
   */
@@ -47,7 +87,6 @@ public:
   void fulfills_interface() const
   {
     using namespace Stuff;
-    SpaceType foop(space_);
     // static checks
     // * as the derived type
     typedef typename SpaceType::Traits Traits;
@@ -196,6 +235,14 @@ public:
       EXPECT_EQ(d_bfs_size, i_bfs_size);
     } // walk the grid
   } // ... fulfills_interface()
+
+  void check_for_correct_copy()
+  {
+    SpaceType foop(space_);
+    auto DUNE_UNUSED(aa) = foop.mapper().size();
+    SpaceType cp = internal::DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
+    auto DUNE_UNUSED(bb) = cp.mapper().size();
+  } // ... check_for_correct_copy()
 
   /**
     * \brief Checks the spaces mapper for it's interface compliance.
