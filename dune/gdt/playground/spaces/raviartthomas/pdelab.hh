@@ -144,7 +144,7 @@ public:
   PdelabBased(GridViewType gV)
     : grid_view_(gV)
     , fe_map_(grid_view_)
-    , backend_(const_cast<GridViewType&>(grid_view_), fe_map_)
+    , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
     , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
@@ -153,13 +153,14 @@ public:
 
   /**
    * \brief Copy ctor.
-   * \note  Manually implemented bc of the std::mutex.
+   * \note  Manually implemented bc of the std::mutex and our space creation policy
+   *        (see https://github.com/pymor/dune-gdt/issues/28)
    */
   PdelabBased(const ThisType& other)
     : grid_view_(other.grid_view_)
-    , fe_map_(other.fe_map_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
+    , mapper_(backend_)
     , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
@@ -170,13 +171,14 @@ public:
 
   /**
    * \brief Move ctor.
-   * \note  Manually implemented bc of the std::mutex.
+   * \note  Manually implemented bc of the std::mutex and our space creation policy
+   *        (see https://github.com/pymor/dune-gdt/issues/28)
    */
   PdelabBased(ThisType&& source)
     : grid_view_(source.grid_view_)
-    , fe_map_(source.fe_map_)
-    , backend_(source.backend_)
-    , mapper_(source.mapper_)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
+    , mapper_(backend_)
     , communicator_(std::move(source.communicator_))
     , communicator_prepared_(source.communicator_prepared_)
   {
@@ -338,7 +340,7 @@ public:
   }
 
 private:
-  const GridViewType grid_view_;
+  GridViewType grid_view_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
