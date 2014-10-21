@@ -68,9 +68,9 @@ public:
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
 
-  Discretization(const std::shared_ptr<const GridViewType>& gp, const BoundaryInfoType& info, const FunctionType& diff,
+  Discretization(const GridViewType& gp, const BoundaryInfoType& info, const FunctionType& diff,
                  const FunctionType& forc, const FunctionType& dir, const FunctionType& neu)
-    : space_(*gp)
+    : space_(gp)
     , boundary_info_(info)
     , diffusion_(diff)
     , force_(forc)
@@ -257,7 +257,7 @@ public:
   virtual double norm_reference_solution(const std::string type) DS_OVERRIDE DS_FINAL
   {
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution(), type);
+      return compute_norm(test_.reference_grid_view(), test_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
@@ -265,15 +265,14 @@ public:
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->space(), *reference_solution_vector_, "CG reference solution");
       // compute norm
-      return compute_norm(*(test_.reference_grid_view()), reference_solution, type);
+      return compute_norm(test_.reference_grid_view(), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
   virtual size_t current_grid_size() const DS_OVERRIDE DS_FINAL
   {
     assert(current_level_ < test_.num_levels());
-    const auto grid_view = test_.level_grid_view(current_level_);
-    return grid_view->size(0);
+    return test_.level_grid_view(current_level_).size(0);
   } // ... current_grid_size(...)
 
   virtual double current_grid_width() const DS_OVERRIDE DS_FINAL
@@ -281,7 +280,7 @@ public:
     assert(current_level_ < test_.num_levels());
     const auto grid_view  = test_.level_grid_view(current_level_);
     double h              = 0.0;
-    const auto entity_ptr = grid_view->template begin<0>();
+    const auto entity_ptr = grid_view.template begin<0>();
     const auto& entity = *entity_ptr;
     for (int cc = 0; cc < entity.template count<dimDomain>(); ++cc) {
       const auto vertex = entity.template subEntity<dimDomain>(cc)->geometry().center();
@@ -316,7 +315,7 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_view = test_.reference_grid_view();
-      const Operators::Prolongation<GridViewType> prolongation_operator(*reference_grid_view);
+      const Operators::Prolongation<GridViewType> prolongation_operator(reference_grid_view);
       assert(reference_discretization_);
       current_solution_vector_ =
           std::unique_ptr<VectorType>(new VectorType(reference_discretization_->create_vector()));
@@ -344,7 +343,7 @@ public:
         reference_discretization_->space(), *current_solution_vector_, "current solution");
     // compute error
     if (test_.provides_exact_solution()) {
-      return compute_norm(*(test_.reference_grid_view()), test_.exact_solution() - current_solution, type);
+      return compute_norm(test_.reference_grid_view(), test_.exact_solution() - current_solution, type);
     } else {
       // get reference solution
       compute_reference_solution();
@@ -352,7 +351,7 @@ public:
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->space(), *reference_solution_vector_, "CG reference solution");
-      return compute_norm(*(test_.reference_grid_view()), reference_solution - current_solution, type);
+      return compute_norm(test_.reference_grid_view(), reference_solution - current_solution, type);
     }
   } // ... current_error_norm(...)
 

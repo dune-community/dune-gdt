@@ -30,6 +30,10 @@ TYPED_TEST(CG_Space, basefunctionset_fulfills_interface)
 {
   this->basefunctionset_fulfills_interface();
 }
+TYPED_TEST(CG_Space, check_for_correct_copy)
+{
+  this->check_for_correct_copy();
+}
 
 typedef testing::Types<SPACES_CG_FEM(1)
 #if HAVE_ALUGRID
@@ -57,6 +61,9 @@ TEST(DISABLED_CG_Space, mapper_fulfills_interface)
 {
 }
 TEST(DISABLED_CG_Space, basefunctionset_fulfills_interface)
+{
+}
+TEST(DISABLED_CG_Space, check_for_correct_copy)
 {
 }
 TEST(DISABLED_P1Q1_CG_Space, fulfills_continuous_interface)
