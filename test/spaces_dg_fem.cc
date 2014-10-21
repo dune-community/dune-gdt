@@ -11,10 +11,18 @@
 #if HAVE_DUNE_FEM
 
 
-typedef testing::Types<SPACES_DG_FEM(1), SPACES_DG_FEM(2)
+typedef testing::Types<SPACES_DG_FEM(1)
+#ifdef NDEBUG
+                           ,
+                       SPACES_DG_FEM(2)
+#endif
 #if HAVE_ALUGRID
-                                             ,
-                       SPACES_DG_FEM_ALUGRID(1), SPACES_DG_FEM_ALUGRID(2)
+                           ,
+                       SPACES_DG_FEM_ALUGRID(1)
+#ifdef NDEBUG
+                           ,
+                       SPACES_DG_FEM_ALUGRID(2)
+#endif
 #endif
                        > DG_Spaces_Fem;
 
@@ -35,6 +43,21 @@ TYPED_TEST(DG_Space, check_for_correct_copy)
 {
   this->check_for_correct_copy();
 }
+
+#ifndef NDEBUG
+TEST(DISABLED_DG_Space, fulfills_interface_polorder_2)
+{
+}
+TEST(DISABLED_DG_Space, mapper_fulfills_interface_polorder_2)
+{
+}
+TEST(DISABLED_DG_Space, basefunctionset_fulfills_interface_polorder_2)
+{
+}
+TEST(DISABLED_DG_Space, check_for_correct_copy_polorder_2)
+{
+}
+#endif // NDEBUG
 
 
 typedef testing::Types<SPACES_DG_FEM(1)
