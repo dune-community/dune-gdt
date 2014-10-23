@@ -53,7 +53,7 @@ private:
     typedef GDT::Spaces::DiscontinuousLagrange::PdelabBased< GridLayerType, p, R, r > Type;
   };
 
-  typedef Stuff::Grid::ConstProviderInterface< GridType > GridProviderType;
+  typedef Stuff::Grid::ProviderInterface< GridType > GridProviderType;
 #if HAVE_DUNE_GRID_MULTISCALE
   typedef grid::Multiscale::ProviderInterface< GridType > MsGridProviderType;
 #endif
@@ -66,7 +66,7 @@ public:
     return Type(grid_layer);
   }
 
-  static Type create(const GridProviderType& grid_provider, const int level = 0)
+  static Type create(GridProviderType& grid_provider, const int level = 0)
   {
     return Type(grid_provider.template layer< layer_type, part_view_type >(level));
   }
