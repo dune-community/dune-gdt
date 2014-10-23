@@ -51,7 +51,7 @@ class DerivedHolder : public BaseHolder<Space>
   typedef BaseHolder<Space> BaseType;
 
 public:
-  DerivedHolder(const Provider& p)
+  DerivedHolder(Provider& p)
     : BaseType(Space(p.template leaf<Space::part_view_type>()))
   {
   }
