@@ -178,7 +178,7 @@ public:
   {
   }
 
-  ~DiscreteFunction()
+  virtual ~DiscreteFunction()
   {
   }
 

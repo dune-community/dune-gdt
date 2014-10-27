@@ -424,6 +424,7 @@ public:
     } else
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
 #else // HAVE_ALUGRID
+    const auto DUNE_UNUSED(no_warning_for_unused_type_param) = type;
     return std::vector<double>();
 #endif
   } // ... expected_results(...)

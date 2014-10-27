@@ -152,13 +152,13 @@ public:
    * \note  required by `LocalEvaluation::Codim1Interface< ..., 2 >`
    */
   template <class IntersectionType, class R, int rT, int rCT, int rA, int rCA>
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFunctions_in,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    const auto localFunction = std::get<0>(localFunctions);
+    const auto localFunction = std::get<0>(localFunctions_in);
     evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
