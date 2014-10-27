@@ -151,7 +151,7 @@ public:
   explicit PdelabBased(GridViewType gV)
     : gridView_(gV)
     , fe_map_(gridView_)
-    , backend_(const_cast<GridViewType&>(gridView_), fe_map_)
+    , backend_(gridView_, fe_map_)
     , mapper_(backend_)
     , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
     , communicator_prepared_(false)
@@ -164,9 +164,9 @@ public:
    */
   PdelabBased(const ThisType& other)
     : gridView_(other.gridView_)
-    , fe_map_(other.fe_map_)
-    , backend_(other.backend_)
-    , mapper_(other.mapper_)
+    , fe_map_(gridView_)
+    , backend_(gridView_, fe_map_)
+    , mapper_(backend_)
     , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
     , communicator_prepared_(false)
   {
@@ -222,7 +222,7 @@ public:
   } // ... communicator(...)
 
 private:
-  const GridViewType gridView_;
+  GridViewType gridView_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
