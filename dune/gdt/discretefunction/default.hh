@@ -176,7 +176,7 @@ public:
     , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
   {}
 
-  ~DiscreteFunction() {}
+  virtual ~DiscreteFunction() {}
 
   ThisType& operator=(const ThisType& other) = delete;
 

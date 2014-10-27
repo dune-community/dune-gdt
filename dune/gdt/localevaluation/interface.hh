@@ -61,12 +61,12 @@ public:
    *  \tparam rC  dimRangeRows of the testBase
    */
   template< class R, int r, int rC >
-  size_t order(const LocalfunctionTupleType& localFunctions,
+  size_t order(const LocalfunctionTupleType& localFunctions_in,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
   {
-    CHECK_CRTP(this->as_imp().order(localFunctions, testBase));
-    return this->as_imp().order(localFunctions, testBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions_in, testBase));
+    return this->as_imp().order(localFunctions_in, testBase);
   }
 
   /**
@@ -77,12 +77,12 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class R, int r, int rC >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFunctions_in,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions_in, testBase, localPoint, ret));
   }
 }; // class Codim0Interface< Traits, 1 >
 
