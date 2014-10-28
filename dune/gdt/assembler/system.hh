@@ -220,19 +220,20 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
   } // ... add(...)
 
-  void assemble(const bool clear_stack = true)
+  void assemble(const bool use_tbb = false)
   {
-    this->walk(clear_stack);
-  }
-
-#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) //&& HAVE_TBB //EXADUNE
-  void tbb_assemble(const bool clear_stack = true)
-  {
-    Stuff::IndexSetPartitioner<GridViewType> partioner(this->grid_view_.indexSet());
-    SeedListPartitioning<typename GridViewType::Grid, 0> partitioning(this->grid_view_, partioner);
-    this->tbb_walk(partitioning, clear_stack);
-  }
+#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
+    if (use_tbb) {
+      Stuff::IndexSetPartitioner<GridViewType> partitioner(this->grid_view_.indexSet());
+      SeedListPartitioning<typename GridViewType::Grid, 0> partitioning(this->grid_view_, partitioner);
+      this->walk(partitioning);
+    } else
 #endif
+    {
+      const auto DUNE_UNUSED(no_warning_for_use_tbb) = use_tbb;
+      this->walk();
+    }
+  }
 
 private:
   const DS::PerThreadValue<const TestSpaceType> test_space_;

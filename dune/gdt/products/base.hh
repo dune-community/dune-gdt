@@ -279,10 +279,10 @@ public:
     return MatrixProvider::storage_access();
   }
 
-  void assemble()
+  void assemble(const bool use_tbb = false)
   {
     if (!assembled_) {
-      AssemblerBaseType::assemble();
+      AssemblerBaseType::assemble(use_tbb);
       assembled_ = true;
     }
   } // ... assemble()
