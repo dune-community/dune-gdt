@@ -11,11 +11,6 @@
 
 #include <dune/common/version.hh>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //&& HAVE_TBB //EXADUNE
-# include <dune/grid/utility/partitioning/seedlist.hh>
-# include <dune/stuff/common/parallel/partitioner.hh>
-#endif
-
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/common/parallel/helper.hh>
 
@@ -227,17 +222,7 @@ public:
 
   void assemble(const bool use_tbb = false)
   {
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    if (use_tbb) {
-      Stuff::IndexSetPartitioner< GridViewType > partitioner(this->grid_view_.indexSet());
-      SeedListPartitioning< typename GridViewType::Grid, 0 > partitioning(this->grid_view_, partitioner);
-      this->walk(partitioning);
-    } else
-#endif
-    {
-      const auto DUNE_UNUSED(no_warning_for_use_tbb) = use_tbb;
-      this->walk();
-    }
+    this->walk(use_tbb);
   }
 
 private:
