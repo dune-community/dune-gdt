@@ -111,12 +111,16 @@ struct BoundaryL2AssemblableProduct : public BoundaryL2ProductBase<SpaceType>
   {
     // create the product
     Products::BoundaryL2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> product(this->space_);
-    product.assemble();
+    product.assemble(false);
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
     ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
-    return product.apply2(discrete_function, discrete_function);
+    const auto result = product.apply2(discrete_function, discrete_function);
+    product.assemble(true);
+    const auto tbb_result = product.apply2(discrete_function, discrete_function);
+    EXPECT_DOUBLE_EQ(tbb_result, result);
+    return result;
   } // ... compute(...)
 
   void fulfills_interface() const
