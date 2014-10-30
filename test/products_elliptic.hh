@@ -38,7 +38,7 @@ struct EllipticProductBase
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain > TensorType;
 
   EllipticProductBase()
-   : grid_(GridProviderType(0.0, 1.0, 3u).grid_ptr())
+   : grid_(GridProviderType(0.0, 1.0, dsc_grid_elements()).grid_ptr())
    , leaf_view_(Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_))
    , space_(leaf_view_)
    , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
