@@ -56,11 +56,11 @@ struct EllipticDiscretizations
       // print table header
       const size_t min_first_column_width = std::string("solver option").size();
       size_t first_column_width = min_first_column_width;
-      for (auto option : linear_solver.options())
-        first_column_width = std::max(first_column_width, option.size());
+      for (auto type : linear_solver.types())
+        first_column_width = std::max(first_column_width, type.size());
       std::stringstream header;
       std::stringstream delimiter;
-      header << " solver option";
+      header << "   solver type";
       delimiter << "--------------";
       for (size_t ii = 0; ii <= first_column_width - min_first_column_width; ++ii) {
         header << " ";
@@ -89,27 +89,27 @@ struct EllipticDiscretizations
 
       // loop over all available options
       size_t printed_rows = 0;
-      for (auto option : linear_solver.options()) {
+      for (auto type : linear_solver.types()) {
         // exclude some solvers that take too long to test
         if (test_all_solvers
-            || !(option == "qr.sparse" || option == "bicgstab.identity" || option == "bicgstab.diagonal"
-                 || option.substr(0, 3) == "cg.")) {
-          const Stuff::Common::Configuration config = linear_solver.options(option);
+            || !(type == "qr.sparse" || type == "bicgstab.identity" || type == "bicgstab.diagonal"
+                 || type.substr(0, 3) == "cg.")) {
+          const Stuff::Common::Configuration options = linear_solver.options(type);
           // print delimiter after every 3rd row
           if (printed_rows == 3) {
             DSC_LOG_INFO << delimiter.str() << std::endl;
             printed_rows = 0;
           }
           // print
-          DSC_LOG_INFO << " " << option << std::flush;
-          for (size_t ii = 0; ii < first_column_width - option.size(); ++ii)
+          DSC_LOG_INFO << " " << type << std::flush;
+          for (size_t ii = 0; ii < first_column_width - type.size(); ++ii)
             DSC_LOG_INFO << " ";
           // solve the system
           timer.reset();
           std::stringstream error_msg;
           bool success = true;
           try {
-            linear_solver.apply(discretization.rhs_vector(), solution_vector, option);
+            linear_solver.apply(discretization.rhs_vector(), solution_vector, options);
           } catch (Stuff::Exceptions::linear_solver_failed_bc_matrix_did_not_fulfill_requirements&) {
             error_msg << Stuff::Common::colorStringRed("matrix_did_not_fulfill_requirements");
             success = false;
@@ -133,9 +133,9 @@ struct EllipticDiscretizations
           if (success) {
             discretization.system_matrix().mv(solution_vector, tmp_vector);
             tmp_vector -= discretization.rhs_vector();
-            double threshhold = config.get<double>("post_check_solves_system");
-            if (config.has_key("precision"))
-              threshhold = config.get<double>("precision");
+            double threshhold = options.get<double>("post_check_solves_system");
+            if (options.has_key("precision"))
+              threshhold = options.get<double>("precision");
             std::stringstream absolute_error;
             absolute_error << std::setw(9) << std::setprecision(2) << std::scientific << tmp_vector.sup_norm();
             if (tmp_vector.sup_norm() < threshhold)
