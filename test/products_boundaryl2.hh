@@ -110,16 +110,18 @@ struct BoundaryL2AssemblableProduct : public BoundaryL2ProductBase<SpaceType>
   virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     // create the product
-    Products::BoundaryL2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> product(this->space_);
+    typedef Products::BoundaryL2Assemblable<MatrixType, SpaceType, GridViewType, SpaceType> Product;
+    Product product(this->space_);
     product.assemble(false);
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
     ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     const auto result = product.apply2(discrete_function, discrete_function);
-    product.assemble(true);
-    const auto tbb_result = product.apply2(discrete_function, discrete_function);
-    EXPECT_DOUBLE_EQ(tbb_result, result);
+    Product product_tbb(this->space_);
+    product_tbb.assemble(true);
+    const auto result_tbb = product_tbb.apply2(discrete_function, discrete_function);
+    EXPECT_DOUBLE_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 

@@ -58,8 +58,9 @@ struct L2AssemblableProduct : public WeightedL2ProductBase<SpaceType>
     ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
     const auto result = product.apply2(discrete_function, discrete_function);
-    product.assemble(true);
-    const auto result_tbb = product.apply2(discrete_function, discrete_function);
+    Product product_tbb(this->space_);
+    product_tbb.assemble(true);
+    const auto result_tbb = product_tbb.apply2(discrete_function, discrete_function);
     EXPECT_DOUBLE_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
