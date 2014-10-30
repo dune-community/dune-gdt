@@ -14,6 +14,7 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/print.hh>
+#include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
@@ -89,9 +90,9 @@ struct P1Q1_CG_Space
         vertex_to_indices_map[convert_vector(vertex)] = std::set< size_t >();
       }
     }
+
     // walk the grid again to find all DoF ids
-    for (auto entity_it = this->space_.grid_view().template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
-      const auto& entity = *entity_it;
+    auto functor = [&](const typename GridProviderType::EntityType& entity) {
       const int num_vertices = entity.template count< dimDomain >();
       const auto basis = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), size_t(num_vertices));
@@ -126,7 +127,10 @@ struct P1Q1_CG_Space
         const size_t global_DoF_index = this->space_.mapper().mapToGlobal(entity, local_DoF_index);
         vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
       }
-    }
+    };
+    DSG::Walker<GridViewType> walker(this->space_.grid_view());
+    walker.add(functor);
+    walker.walk();
     // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive
     std::set< size_t > global_DoF_indices;
     for (const auto& entry : vertex_to_indices_map) {
