@@ -18,7 +18,7 @@
 
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/parallel/threadmanager.hh>
+#include <dune/stuff/common/parallel/threadstorage.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
