@@ -73,10 +73,15 @@ public:
     , vector_(vec)
     , name_(nm)
   {
-    assert(vector_.size() == space_.mapper().size() && "Given vector has wrong size!");
+    assert(vector_.size() == space_->mapper().size() && "Given vector has wrong size!");
   }
 
-  ConstDiscreteFunction(const ThisType& other) = default;
+  ConstDiscreteFunction(const ThisType& other)
+    : space_(other.space())
+    , vector_(other.vector_)
+    , name_(other.name_)
+  {
+  }
 
   ConstDiscreteFunction(ThisType&& source) = delete;
 
@@ -98,7 +103,7 @@ public:
 
   const SpaceType& space() const
   {
-    return space_;
+    return *space_;
   }
 
   const VectorType& vector() const
@@ -108,8 +113,8 @@ public:
 
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.grid_view().indexSet().contains(entity));
-    return DSC::make_unique<ConstLocalDiscreteFunctionType>(space_, vector_, entity);
+    assert(space_->grid_view().indexSet().contains(entity));
+    return DSC::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
   }
 
   virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
@@ -130,7 +135,7 @@ public:
   }
 
 protected:
-  const SpaceType& space_;
+  const DS::PerThreadValue<SpaceType> space_;
 
 private:
   const VectorType& vector_;
@@ -200,8 +205,8 @@ public:
 
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
-    assert(space_.grid_view().indexSet().contains(entity));
-    return DSC::make_unique<LocalDiscreteFunctionType>(space_, this->storage_access(), entity);
+    assert(space_->grid_view().indexSet().contains(entity));
+    return DSC::make_unique<LocalDiscreteFunctionType>(*space_, this->storage_access(), entity);
   }
 
 private:
