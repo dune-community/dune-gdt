@@ -177,11 +177,7 @@ public:
   }
 
   //! \todo is this intentionally c&p of the copy ctor?
-  DiscreteFunction(ThisType&& source)
-    : VectorProviderBaseType(new VectorType(source.vector()))
-    , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
-  {
-  }
+  DiscreteFunction(ThisType&& source) = default;
 
   virtual ~DiscreteFunction()
   {
