@@ -116,10 +116,18 @@ public:
     return helper_.compute_locally(intersection, inside_entity, outside_entity);
   }
 
+  virtual void finalize() override
+  {
+    walked_ = true;
+    WalkerBaseType::finalize();
+  }
+
   FieldType apply2()
   {
-    if (!walked_)
+    if (!walked_) {
       this->walk();
+      walked_ = true;
+    }
     return helper_.result();
   } // ... apply2(...)
 
