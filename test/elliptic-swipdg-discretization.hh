@@ -18,8 +18,6 @@
 #include <dune/geometry/quadraturerules.hh>
 #include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/fem/misc/gridwidth.hh>
-
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container.hh>
@@ -317,12 +315,6 @@ public:
   {
     assert(current_level_ < test_.num_levels());
     return test_.level_grid_view(current_level_).indexSet().size(0);
-  }
-
-  virtual double current_grid_width() const override
-  {
-    assert(current_level_ < test_.num_levels());
-    return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
   }
 
   virtual double compute_on_current_refinement() override
@@ -660,6 +652,7 @@ public:
 
   std::vector< double > expected_results(const std::string type) const
   {
+#if HAVE_ALUGRID
     if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
@@ -735,6 +728,7 @@ public:
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
+#endif
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   } // ... expected_results(...)
 
