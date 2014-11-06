@@ -58,6 +58,7 @@ public:
 
   virtual void apply_local(const EntityType& entity) override final
   {
+    std::lock_guard<std::mutex> guard(mutex_);
     test_space_->local_constraints(*ansatz_space_, entity, constraints_);
     for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
       const size_t row = constraints_.global_row(ii);
@@ -73,6 +74,7 @@ private:
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
   ConstraintsType& constraints_;
   MatrixType& matrix_;
+  std::mutex mutex_;
 }; // class LocalMatrixConstraintsWrapper
 
 
