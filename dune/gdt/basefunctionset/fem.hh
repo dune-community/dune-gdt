@@ -134,7 +134,7 @@ template< class ShapeFunctionSetImp, class EntityImp,
           class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class FemWrapper
 {
-  static_assert(Dune::AlwaysFalse< FemBaseFunctionSetTraits >::value, "You are missing dune-fem!");
+  static_assert(Dune::AlwaysFalse< ShapeFunctionSetImp >::value, "You are missing dune-fem!");
 };
 
 
