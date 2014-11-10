@@ -27,6 +27,7 @@
 
 #include <dune/stuff/grid/search.hh>
 
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/continuouslagrange/fem.hh>
 #include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
@@ -200,7 +201,14 @@ private:
         ++pp;
       } // loop over all quadrature points
       // compute local DoFs
-      Stuff::LA::Solver<LocalMatrixType>(local_matrix).apply(local_vector, local_DoFs);
+      try {
+        Stuff::LA::Solver<LocalMatrixType>(local_matrix).apply(local_vector, local_DoFs);
+      } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+        DUNE_THROW(Exceptions::prolongation_error,
+                   "L2 prolongation failed because a local matrix could not be inverted!\n\n"
+                       << "This was the original error: "
+                       << ee.what());
+      }
       // set local DoFs
       auto local_range_vector = local_range->vector();
       assert(local_range_vector.size() == local_DoFs.size());
