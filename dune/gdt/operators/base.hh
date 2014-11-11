@@ -24,7 +24,7 @@ public:
   using typename BaseType::GridViewType;
   typedef typename BaseType::SourceSpaceType SourceSpaceType;
   using typename BaseType::RangeSpaceType;
-  using typename BaseType::MatrixType;
+  typedef typename BaseType::MatrixType MatrixType;
   typedef typename MatrixType::ScalarType ScalarType;
 
 private:
