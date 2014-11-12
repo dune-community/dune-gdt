@@ -72,7 +72,7 @@ public:
 
   template< class E, class D, int d, class R, int r, int rC, class T, class V >
   void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
-             DiscreteFunction< SpaceInterface< T >, V >& /*range*/) const
+             DiscreteFunction< SpaceInterface< T, d, r, rC >, V >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< E >::value, "Not implemented for this combination of source and range!");
   }
