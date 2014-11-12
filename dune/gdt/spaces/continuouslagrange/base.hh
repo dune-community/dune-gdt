@@ -37,9 +37,10 @@ class ContinuousLagrangeBase
 
 
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
-class ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> : public SpaceInterface<ImpTraits>
+class ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
+    : public SpaceInterface<ImpTraits, domainDim, rangeDim, 1>
 {
-  typedef SpaceInterface<ImpTraits> BaseType;
+  typedef SpaceInterface<ImpTraits, domainDim, rangeDim, 1> BaseType;
   typedef ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
 
   static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
@@ -68,8 +69,8 @@ public:
 
   using BaseType::compute_pattern;
 
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
   }
@@ -166,15 +167,15 @@ public:
 
   using BaseType::local_constraints;
 
-  template <class S, class ConstraintsType>
-  void local_constraints(const SpaceInterface<S>& /*other*/, const EntityType& /*entity*/,
+  template <class S, int d, int r, int rC, class ConstraintsType>
+  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/, const EntityType& /*entity*/,
                          ConstraintsType& /*ret*/) const
   {
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
   }
 
-  template <class S>
-  void local_constraints(const SpaceInterface<S>& other, const EntityType& entity,
+  template <class S, int d, int r, int rC>
+  void local_constraints(const SpaceInterface<S, d, r, rC>& other, const EntityType& entity,
                          Constraints::Dirichlet<IntersectionType, RangeFieldType>& ret) const
   {
     // check
