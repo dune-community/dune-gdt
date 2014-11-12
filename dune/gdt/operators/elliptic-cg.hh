@@ -47,9 +47,13 @@ class EllipticCGTraits
       std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixImp::Traits, typename MatrixImp::Traits::ScalarType>,
                       MatrixImp>::value,
       "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceImp::Traits>, SourceSpaceImp>::value,
+  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceImp::Traits, SourceSpaceImp::dimDomain,
+                                               SourceSpaceImp::dimRange, SourceSpaceImp::dimRangeCols>,
+                                SourceSpaceImp>::value,
                 "SourceSpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceImp::Traits>, RangeSpaceImp>::value,
+  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceImp::Traits, RangeSpaceImp::dimDomain,
+                                               RangeSpaceImp::dimRange, RangeSpaceImp::dimRangeCols>,
+                                RangeSpaceImp>::value,
                 "RangeSpaceImp has to be derived from SpaceInterface!");
 
 public:
