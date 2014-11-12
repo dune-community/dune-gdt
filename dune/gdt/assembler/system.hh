@@ -31,9 +31,17 @@ template< class TestSpaceImp,
 class SystemAssembler
   : public DSG::Walker< GridViewImp >
 {
-  static_assert(std::is_base_of< SpaceInterface< typename TestSpaceImp::Traits >, TestSpaceImp >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename TestSpaceImp::Traits,
+                                                 TestSpaceImp::dimDomain,
+                                                 TestSpaceImp::dimRange,
+                                                 TestSpaceImp::dimRangeCols >,
+                                 TestSpaceImp >::value,
                 "TestSpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceImp::Traits >, AnsatzSpaceImp >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceImp::Traits,
+                                                 AnsatzSpaceImp::dimDomain,
+                                                 AnsatzSpaceImp::dimRange,
+                                                 AnsatzSpaceImp::dimRangeCols >,
+                                 AnsatzSpaceImp >::value,
                 "AnsatzSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_same< typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType >::value,
                 "Types do not match!");
