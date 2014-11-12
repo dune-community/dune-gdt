@@ -36,7 +36,9 @@ class ConstDiscreteFunction
                                                  SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
                                                  SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits>, SpaceImp>::value,
+  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange,
+                                               SpaceImp::dimRangeCols>,
+                                SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits,
                                                                  typename VectorImp::Traits::ScalarType>,
