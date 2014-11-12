@@ -12,6 +12,8 @@
 
 #include <dune/common/timer.hh>
 
+#include <dune/fem/misc/gridwidth.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container.hh>
@@ -289,6 +291,12 @@ public:
   {
     assert(current_level_ < test_.num_levels());
     return test_.level_grid_part(current_level_).indexSet().size(0);
+  }
+
+  virtual double current_grid_width() const override
+  {
+    assert(current_level_ < test_.num_levels());
+    return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
   }
 
   virtual double compute_on_current_refinement() override final
