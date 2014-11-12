@@ -72,7 +72,7 @@ public:
   SystemAssembler(TestSpaceType test, GridViewType grid_view)
     : BaseType(grid_view)
     , test_space_(test)
-    , ansatz_space_(test_space_)
+    , ansatz_space_(test)
   {}
 
   const TestSpaceType& test_space() const
