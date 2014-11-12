@@ -64,8 +64,8 @@ struct ChooseGridPartView<ChooseSpaceBackend::fem>
 };
 
 
-template <class Traits>
-class SpaceInterface : public Stuff::CRTPInterface<SpaceInterface<Traits>, Traits>
+template <class Traits, int domainDim, int rangeDim, int rangeDimCols = 1>
+class SpaceInterface : public Stuff::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -76,16 +76,20 @@ public:
   typedef typename Traits::CommunicatorType CommunicatorType;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange     = Traits::dimRange;
-  static const unsigned int dimRangeCols = Traits::dimRangeCols;
+  static const unsigned int dimDomain    = domainDim;
+  static const unsigned int dimRange     = rangeDim;
+  static const unsigned int dimRangeCols = rangeDimCols;
 
 private:
+  static_assert(dimDomain > 0, "dimDomain has to be positive");
+  static_assert(dimRange > 0, "dimRange has to be positive");
+  static_assert(dimRangeCols > 0, "dimRangeCols has to be positive");
   static_assert(std::is_base_of<GridView<typename GridViewType::Traits>, GridViewType>::value,
                 "GridViewType has to be derived from GridView!");
+  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridView has to match dimDomain");
 
 public:
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
@@ -145,8 +149,8 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
 }
 \endcode
    */
-  template <class S, class C>
-  void local_constraints(const SpaceInterface<S>& ansatz_space, const EntityType& entity,
+  template <class S, int d, int r, int rC, class C>
+  void local_constraints(const SpaceInterface<S, d, r, rC>& ansatz_space, const EntityType& entity,
                          Spaces::ConstraintsInterface<C, RangeFieldType>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().local_constraints(ansatz_space.as_imp(), entity, ret.as_imp()));
@@ -163,8 +167,8 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
    *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this
    * class, namely compute_volume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
    */
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     CHECK_CRTP(this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp()));
     return this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp());
@@ -181,8 +185,8 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
     return compute_pattern(*this);
   }
 
-  template <class S>
-  PatternType compute_pattern(const SpaceInterface<S>& ansatz_space) const
+  template <class S, int d, int r, int rC>
+  PatternType compute_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return compute_pattern(grid_view(), ansatz_space);
   }
@@ -198,8 +202,8 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
     return compute_volume_pattern(*this);
   }
 
-  template <class S>
-  PatternType compute_volume_pattern(const SpaceInterface<S>& ansatz_space) const
+  template <class S, int d, int r, int rC>
+  PatternType compute_volume_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return compute_volume_pattern(grid_view(), ansatz_space);
   }
@@ -214,8 +218,9 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
    *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class G, class S>
-  PatternType compute_volume_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_volume_pattern(const GridView<G>& local_grid_view,
+                                     const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
@@ -247,8 +252,8 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
     return compute_face_and_volume_pattern(local_grid_view, *this);
   }
 
-  template <class S>
-  PatternType compute_face_and_volume_pattern(const SpaceInterface<S>& ansatz_space) const
+  template <class S, int d, int r, int rC>
+  PatternType compute_face_and_volume_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return compute_face_and_volume_pattern(grid_view(), ansatz_space);
   }
@@ -257,9 +262,9 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class G, class S>
+  template <class G, class S, int d, int r, int rC>
   PatternType compute_face_and_volume_pattern(const GridView<G>& local_grid_view,
-                                              const SpaceInterface<S>& ansatz_space) const
+                                              const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
@@ -312,15 +317,15 @@ void local_constraints(const SpaceInterface< S >&, const EntityType&, Constraint
     return compute_face_pattern(local_grid_view, *this);
   }
 
-  template <class S>
-  PatternType compute_face_pattern(const SpaceInterface<S>& ansatz_space) const
+  template <class S, int d, int r, int rC>
+  PatternType compute_face_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return compute_face_pattern(grid_view(), ansatz_space);
   }
 
-  template <class G, class S>
+  template <class G, class S, int d, int r, int rC>
   PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view,
-                                   const SpaceInterface<S>& ansatz_space) const
+                                   const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
@@ -438,14 +443,16 @@ public:
 }; // class SpaceInterface
 
 
-template <class Traits, int codim = 0>
-typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface<Traits>& space)
+template <class Traits, int d, int r, int rC, int codim = 0>
+typename Traits::GridViewType::template Codim<codim>::Iterator
+begin(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
 {
   return space.grid_view().template begin<codim>();
 }
 
-template <class Traits, int codim = 0>
-typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface<Traits>& space)
+template <class Traits, int d, int r, int rC, int codim = 0>
+typename Traits::GridViewType::template Codim<codim>::Iterator
+end(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
 {
   return space.grid_view().template end<codim>();
 }
