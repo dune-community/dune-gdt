@@ -34,7 +34,11 @@ namespace internal {
 template< class LocalSpaceType >
 class BlockTraits
 {
-  static_assert(std::is_base_of< SpaceInterface< typename LocalSpaceType::Traits >, LocalSpaceType >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename LocalSpaceType::Traits,
+                                                 typename LocalSpaceType::dimDomain,
+                                                 typename LocalSpaceType::dimRange,
+                                                 typename LocalSpaceType::dimRangeCols >,
+                                 LocalSpaceType >::value,
                 "LocalSpaceType has to be derived from SpaceInterface!");
 public:
   typedef Block< LocalSpaceType > derived_type;
