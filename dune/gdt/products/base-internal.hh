@@ -498,10 +498,18 @@ public:
 private:
   static_assert(std::is_base_of< Dune::GridView< typename GridViewType::Traits >, GridViewType >::value,
                 "GridViewType has to be derived from GridView!");
-  static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceType::Traits >, RangeSpaceType >::value,
-                "RangeSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceType::Traits >, SourceSpaceType >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename SourceSpaceType::Traits,
+                                                 SourceSpaceType::dimDomain,
+                                                 SourceSpaceType::dimRange,
+                                                 SourceSpaceType::dimRangeCols >,
+                                 SourceSpaceType >::value,
                 "SourceSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of< SpaceInterface< typename RangeSpaceType::Traits,
+                                                 RangeSpaceType::dimDomain,
+                                                 RangeSpaceType::dimRange,
+                                                 RangeSpaceType::dimRangeCols >,
+                                 RangeSpaceType >::value,
+                "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_base_of
                 < Stuff::LA::MatrixInterface< typename MatrixType::Traits, typename MatrixType::Traits::ScalarType >,
                   MatrixType >::value,
