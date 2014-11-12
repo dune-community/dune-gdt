@@ -81,7 +81,7 @@ public:
 
   template <class E, class D, int d, class R, int r, int rC, class T, class V>
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
-             DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
+             DiscreteFunction<SpaceInterface<T, d, r, rC>, V>& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
   }
@@ -187,7 +187,7 @@ public:
 
   template <class E, class D, int d, class R, int r, int rC, class T, class V>
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
-             DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
+             DiscreteFunction<SpaceInterface<T, d, r, rC>, V>& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
   }
@@ -411,7 +411,7 @@ public:
 private:
   template <class E, class D, int d, class R, int r, int rC, class T, class V>
   void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
-                                        DiscreteFunction<SpaceInterface<T>, V>& /*range*/) const
+                                        DiscreteFunction<SpaceInterface<T, d, r, rC>, V>& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse<E>::value,
                   "Could not find an appropriate operator for this combination of source and range!");
