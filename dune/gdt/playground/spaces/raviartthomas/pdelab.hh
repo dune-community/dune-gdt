@@ -112,9 +112,11 @@ private:
 
 template <class GridViewImp, class RangeFieldImp, int rangeDim>
 class PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
-    : public SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>>
+    : public SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+                            rangeDim, 1>
 {
-  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>> BaseType;
+  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+                         rangeDim, 1> BaseType;
   typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
@@ -321,8 +323,8 @@ public:
 
   using BaseType::compute_pattern;
 
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     DSC::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn() << "Returning largest possible pattern!"
                                                                           << std::endl;
@@ -331,8 +333,8 @@ public:
 
   using BaseType::local_constraints;
 
-  template <class S, class C>
-  void local_constraints(const SpaceInterface<S>& /*ansatz_space*/, const EntityType& /*entity*/,
+  template <class S, int d, int r, int rC, class C>
+  void local_constraints(const SpaceInterface<S, d, r, rC>& /*ansatz_space*/, const EntityType& /*entity*/,
                          Spaces::ConstraintsInterface<C, RangeFieldType>& /*ret*/) const
   {
     DUNE_THROW(NotImplemented, "There are no constraints implemented!");

@@ -104,10 +104,12 @@ private:
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>
-    : public SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>>
+    : public SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>,
+                            typename GridPartImp::dimension, 2, 1>
 {
   typedef FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1> ThisType;
-  typedef SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>> BaseType;
+  typedef SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1>,
+                         typename GridPartImp::dimension, 2, 1> BaseType;
 
 public:
   typedef FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 2, 1> Traits;
@@ -193,8 +195,8 @@ public:
 
   using BaseType::compute_pattern;
 
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }

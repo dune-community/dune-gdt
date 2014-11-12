@@ -111,9 +111,11 @@ private:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>>
+    : public SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                            GridViewImp::dimension, 1, 1>
 {
-  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>> BaseType;
+  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>, GridViewImp::dimension,
+                         1, 1> BaseType;
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -190,8 +192,8 @@ public:
 
   using BaseType::compute_pattern;
 
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
