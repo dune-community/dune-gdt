@@ -135,10 +135,14 @@ public:
   typedef Stuff::LA::SparsityPatternDefault PatternType;
 
 private:
-  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceType::Traits>, RangeSpaceType>::value,
-                "RangeSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceType::Traits>, SourceSpaceType>::value,
+  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceType::Traits, SourceSpaceType::dimDomain,
+                                               SourceSpaceType::dimRange, SourceSpaceType::dimRangeCols>,
+                                SourceSpaceType>::value,
                 "SourceSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceType::Traits, RangeSpaceType::dimDomain,
+                                               RangeSpaceType::dimRange, RangeSpaceType::dimRangeCols>,
+                                RangeSpaceType>::value,
+                "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename RangeSpaceType::GridViewType, GridViewType>::value,
                 "The GridViewType of RangeSpaceType and GridViewType have to match!");
   static_assert(std::is_same<typename SourceSpaceType::GridViewType, GridViewType>::value,
