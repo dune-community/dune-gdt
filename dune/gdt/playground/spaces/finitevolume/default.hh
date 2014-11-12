@@ -56,9 +56,11 @@ public:
 
 template< class GridViewImp, class RangeFieldImp, int rangeDim >
 class Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
-  : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >
+  : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
+                           GridViewImp::dimension, rangeDim, 1 >
 {
-  typedef SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > > BaseType;
+  typedef SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
+                          GridViewImp::dimension, rangeDim, 1 >             BaseType;
   typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >                         ThisType;
 public:
   typedef DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
@@ -120,8 +122,9 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class G, class S >
-  PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S >& ansatz_space) const
+  template< class G, class S, int d, int r, int rC >
+  PatternType compute_pattern(const GridView< G >& local_grid_view,
+                              const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }

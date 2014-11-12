@@ -100,9 +100,11 @@ private:
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemLocalfunctionsBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+  : public SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+                           typename GridPartImp::dimension, 1, 1 >
 {
-  typedef SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > >
+  typedef SpaceInterface< FemLocalfunctionsBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+                          typename GridPartImp::dimension, 1, 1 >
     BaseType;
   typedef FemLocalfunctionsBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
 public:
