@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_TEST_PRODUCTS_ELLIPTIC_HH
 #define DUNE_GDT_TEST_PRODUCTS_ELLIPTIC_HH
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
@@ -38,7 +40,7 @@ struct EllipticProductBase
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain > TensorType;
 
   EllipticProductBase()
-   : grid_(GridProviderType(0.0, 1.0, dsc_grid_elements()).grid_ptr())
+   : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast< unsigned int >(dsc_grid_elements())).grid_ptr())
    , leaf_view_(Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_))
    , space_(leaf_view_)
    , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
