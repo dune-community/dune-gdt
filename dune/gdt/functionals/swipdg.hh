@@ -43,9 +43,9 @@ class DirichletBoundarySWIPDGTraits
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DirichletType >::value,
                 "DirichletType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits,
-                                                 typename SpaceImp::dimDomain,
-                                                 typename SpaceImp::dimRange,
-                                                 typename SpaceImp::dimRangeCols >,
+                                                 SpaceImp::dimDomain,
+                                                 SpaceImp::dimRange,
+                                                 SpaceImp::dimRangeCols >,
                                  SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 public:
@@ -66,9 +66,9 @@ class DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, Sp
   static_assert(std::is_base_of< Stuff::Tags::LocalizableFunction, DirichletType >::value,
                 "DirichletType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits,
-                                                 typename SpaceImp::dimDomain,
-                                                 typename SpaceImp::dimRange,
-                                                 typename SpaceImp::dimRangeCols >,
+                                                 SpaceImp::dimDomain,
+                                                 SpaceImp::dimRange,
+                                                 SpaceImp::dimRangeCols >,
                                  SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 public:
