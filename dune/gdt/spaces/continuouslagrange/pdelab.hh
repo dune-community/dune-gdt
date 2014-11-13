@@ -62,11 +62,9 @@ public:
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridViewType::ctype  DomainFieldType;
-public:
   static const unsigned int             dimDomain = GridViewType::dimension;
+public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = rangeDim;
-  static const unsigned int             dimRangeCols = rangeDimCols;
 private:
   template< class G, bool single_geom, bool is_simplex, bool is_cube >
   struct FeMap
@@ -96,7 +94,7 @@ public:
   typedef Mapper::SimplePdelabWrapper< BackendType > MapperType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef BaseFunctionSet::PdelabWrapper
-      < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >
+      < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols >
     BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view = true;
@@ -121,11 +119,14 @@ public:
   typedef typename Traits::GridViewType GridViewType;
   static const int                      polOrder = Traits::polOrder;
   typedef typename GridViewType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridViewType::dimension;
+  static const unsigned int             dimDomain = BaseType::dimDomain;
+private:
+  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridView has to match dimDomain");
+public:
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
+  static const unsigned int               dimRange = BaseType::dimRange;
+  static const unsigned int               dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
