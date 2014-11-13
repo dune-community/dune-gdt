@@ -68,9 +68,7 @@ private:
                 "This space is only implemented for fully simplicial grids!");
 public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = rangeDim;
-  static const unsigned int             dimRangeCols = rangeDimCols;
-  typedef FemLocalfunctionsBased< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
+  typedef FemLocalfunctionsBased< GridPartType, polOrder, RangeFieldType, rangeDim, rangeDimCols > derived_type;
   typedef Dune::LagrangeLocalFiniteElement< Dune::EquidistantPointSet,
                                             dimDomain,
                                             DomainFieldType,
@@ -87,7 +85,7 @@ public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace< BaseFunctionSetMapType >  BackendType;
   typedef Mapper::FemDofWrapper< typename BackendType::MapperType >                 MapperType;
   typedef BaseFunctionSet::FemLocalfunctionsWrapper< BaseFunctionSetMapType,
-              DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols >  BaseFunctionSetType;
+              DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols >  BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType                                  EntityType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view = false;
@@ -114,10 +112,13 @@ public:
   typedef typename Traits::GridViewType   GridViewType;
   typedef typename GridPartType::ctype    DomainFieldType;
   static const int                        polOrder = Traits::polOrder;
-  static const unsigned int               dimDomain = GridPartType::dimension;
+  static const unsigned int               dimDomain = BaseType::dimDomain;
+private:
+  static_assert(GridPartType::dimension == dimDomain, "Dimension of GridPart has to match dimDomain");
+public:
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
+  static const unsigned int               dimRange = BaseType::dimRange;
+  static const unsigned int               dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;

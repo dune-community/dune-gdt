@@ -50,8 +50,6 @@ public:
   typedef typename LocalSpaceType::CommunicatorType     CommunicatorType;
   typedef typename MsGridType::GlobalGridViewType       GridViewType;
   typedef typename LocalSpaceType::RangeFieldType       RangeFieldType;
-  static const unsigned int                             dimRange = LocalSpaceType::dimRange;
-  static const unsigned int                             dimRangeCols = LocalSpaceType::dimRangeCols;
 
   static const Stuff::Grid::ChoosePartView part_view_type = LocalSpaceType::part_view_type;
 
