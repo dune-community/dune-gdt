@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
 #define DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/la/container/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -32,7 +34,7 @@ struct WeightedL2ProductBase : public ::testing::Test
   typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange> FunctionType;
 
   WeightedL2ProductBase()
-    : grid_(GridProviderType(0.0, 1.0, dsc_grid_elements()).grid_ptr())
+    : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast<unsigned int>(dsc_grid_elements())).grid_ptr())
     , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(*grid_))
     , one_("x", "1.0", 0)
   {
