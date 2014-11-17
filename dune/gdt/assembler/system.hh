@@ -71,8 +71,8 @@ public:
   {
   }
 
-  SystemAssembler(TestSpaceType test, GridViewType grid_view)
-    : BaseType(grid_view)
+  SystemAssembler(TestSpaceType test, GridViewType grid_view_in)
+    : BaseType(grid_view_in)
     , test_space_(test)
     , ansatz_space_(test)
   {
