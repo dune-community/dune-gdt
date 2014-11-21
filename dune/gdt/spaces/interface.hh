@@ -8,13 +8,11 @@
 
 #include <memory>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/common/dynvector.hh>
-# include <dune/common/fvector.hh>
+#include <dune/common/dynvector.hh>
+#include <dune/common/fvector.hh>
 
-# include <dune/grid/common/gridview.hh>
-# include <dune/grid/io/file/vtk/vtkwriter.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/grid/common/gridview.hh>
+#include <dune/grid/io/file/vtk/vtkwriter.hh>
 
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/common/float_cmp.hh>
