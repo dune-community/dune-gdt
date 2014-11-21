@@ -3,8 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACE_PLAYGROUND_FV_HH
-#define DUNE_GDT_SPACE_PLAYGROUND_FV_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_FV_DEFAULT_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_FV_DEFAULT_HH
+
+#include <dune/common/deprecated.hh>
 
 #include <dune/stuff/common/type_utils.hh>
 
@@ -17,7 +19,7 @@
 namespace Dune {
 namespace GDT {
 namespace Spaces {
-namespace FiniteVolume {
+namespace FV {
 
 
 // forward, to be used in the traits and to allow for specialization
@@ -146,9 +148,26 @@ private:
 }; // class Default< ..., 1, 1 >
 
 
-} // namespace FiniteVolume
+} // namespace FV
+namespace FiniteVolume {
+
+
+template <class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+class DUNE_DEPRECATED_MSG("Use FV::Default instead (19.11.2014)!") Default
+    : public FV::Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
+{
+public:
+  template <class... Args>
+  Default(Args&&... args)
+    : FV::Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>(std::forward<Args>(args)...)
+  {
+  }
+};
+
+
+} // namespace  FiniteVolume
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACE_PLAYGROUND_FV_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_FV_DEFAULT_HH
