@@ -146,7 +146,7 @@ private:
 
 
 } // namespace FV
-namespace  FiniteVolume {
+namespace FiniteVolume {
 
 
 template< class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
@@ -163,7 +163,7 @@ public:
 };
 
 
-} // namespace  FiniteVolume
+} // namespace FiniteVolume
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
