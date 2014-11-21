@@ -8,14 +8,14 @@
 
 #include "grids.hh"
 
-#include <dune/gdt/playground/spaces/finitevolume/default.hh>
+#include <dune/gdt/playground/spaces/fv/default.hh>
 
 
 #define SPACE_FV_SGRID(dd, rr) \
-  Spaces::FiniteVolume::Default< S ## dd ## dLeafGridViewType, double, rr >
+  Spaces::FV::Default< S ## dd ## dLeafGridViewType, double, rr >
 
 #define SPACE_FV_YASPGRID(dd, rr) \
-  Spaces::FiniteVolume::Default< Yasp ## dd ## dLeafGridViewType, double, rr >
+  Spaces::FV::Default< Yasp ## dd ## dLeafGridViewType, double, rr >
 
 #define SPACES_FV \
     SPACE_FV_SGRID(1, 1) \
@@ -41,10 +41,10 @@
 #if HAVE_ALUGRID
 
 #define SPACE_FV_ALUCONFORMGRID(dd, rr) \
-    Spaces::FiniteVolume::Default< AluConform ## dd ## dLeafGridViewType, double, rr >
+    Spaces::FV::Default< AluConform ## dd ## dLeafGridViewType, double, rr >
 
 #define SPACE_FV_ALUCUBEGRID(dd, rr) \
-    Spaces::FiniteVolume::Default< AluCube ## dd ## dLeafGridViewType, double, rr >
+    Spaces::FV::Default< AluCube ## dd ## dLeafGridViewType, double, rr >
 
 #define SPACES_FV_ALUGRID \
     SPACE_FV_ALUCONFORMGRID(2, 1) \

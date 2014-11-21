@@ -11,30 +11,30 @@
 #if HAVE_ALUGRID
 
 #define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_THREE \
-    std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluCube3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluCube3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-  Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > >
+    std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluCube3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluCube3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+  Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
 
 /* those below do not work in 3d any more! */
 #define L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID \
-  std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-            Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-, std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-            Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
-, std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
-            Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > >
+  std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+            Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+, std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+            Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > > \
+, std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 >, \
+            Dune::GDT::Spaces::DG::FemBased< AluSimplex3dLevelGridPartType, 1, double, 1 > >
 
 #endif // HAVE_ALUGRID
 

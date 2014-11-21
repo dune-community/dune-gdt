@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_TEST_SPACES_DG_FEM_HH
 #define DUNE_GDT_TEST_SPACES_DG_FEM_HH
 
-#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/dg/fem.hh>
 
 #include "grids.hh"
 
@@ -14,10 +14,10 @@
 
 
 #define SPACE_DG_FEM_SGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< S ## dd ## dLeafGridPartType, pp, double, rr >
+  Dune::GDT::Spaces::DG::FemBased< S ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACE_DG_FEM_YASPGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< Yasp ## dd ## dLeafGridPartType, pp, double, rr >
+  Dune::GDT::Spaces::DG::FemBased< Yasp ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACES_DG_FEM(pp) \
     SPACE_DG_FEM_SGRID(1, 1, pp) \
@@ -32,10 +32,10 @@
 
 
 #define SPACE_DG_FEM_ALUCONFORMGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform ## dd ## dLeafGridPartType, pp, double, rr >
+  Dune::GDT::Spaces::DG::FemBased< AluConform ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACE_DG_FEM_ALUCUBEGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluCube ## dd ## dLeafGridPartType, pp, double, rr >
+  Dune::GDT::Spaces::DG::FemBased< AluCube ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACES_DG_FEM_ALUGRID(pp) \
     SPACE_DG_FEM_ALUCONFORMGRID(2, 1, pp) \
