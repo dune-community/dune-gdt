@@ -13,7 +13,7 @@
 
 #include <dune/gdt/operators/darcy.hh>
 #include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/playground/spaces/finitevolume/default.hh>
+#include <dune/gdt/playground/spaces/fv/default.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/spaces/tools.hh>
@@ -78,17 +78,15 @@ struct DarcyOperator : public ::testing::Test
   RangeFieldType expected_result_(const std::string type, const FunctionType& desired_output, const GV& grid_view) const
   {
     typedef typename SpaceTools::LeafGridPartView<GridType, RangeSpaceType::needs_grid_view>::Type GPV;
-    if (std::is_base_of<Spaces::ContinuousLagrange::FemBased<GPV, 1, RangeFieldType, dimDomain>,
-                        RangeSpaceType>::value) {
+    if (std::is_base_of<Spaces::CG::FemBased<GPV, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;
       else if (type == "h1")
         return 3.12e-15;
       else
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
-    } else if (std::is_base_of<Spaces::RaviartThomas::PdelabBased<GPV, 0, RangeFieldType, dimDomain>,
-                               RangeSpaceType>::value) {
-      typedef Spaces::FiniteVolume::Default<GV, RangeFieldType, dimDomain> FvSpaceType;
+    } else if (std::is_base_of<Spaces::RT::PdelabBased<GPV, 0, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+      typedef Spaces::FV::Default<GV, RangeFieldType, dimDomain> FvSpaceType;
       const FvSpaceType fv_space(grid_view);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
       DiscreteFunction<FvSpaceType, VectorType> fv_desired_output(fv_space, fv_desired_output_vector);

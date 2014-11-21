@@ -6,17 +6,16 @@
 #ifndef DUNE_GDT_TEST_SPACES_CG_FEM_HH
 #define DUNE_GDT_TEST_SPACES_CG_FEM_HH
 
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
 
 #include "grids.hh"
 
 #if HAVE_DUNE_FEM
 
 
-#define SPACE_CG_FEM_SGRID(dd, rr, pp) Spaces::ContinuousLagrange::FemBased<S##dd##dLeafGridPartType, pp, double, rr>
+#define SPACE_CG_FEM_SGRID(dd, rr, pp) Spaces::CG::FemBased<S##dd##dLeafGridPartType, pp, double, rr>
 
-#define SPACE_CG_FEM_YASPGRID(dd, rr, pp)                                                                              \
-  Spaces::ContinuousLagrange::FemBased<Yasp##dd##dLeafGridPartType, pp, double, rr>
+#define SPACE_CG_FEM_YASPGRID(dd, rr, pp) Spaces::CG::FemBased<Yasp##dd##dLeafGridPartType, pp, double, rr>
 
 #define SPACES_CG_FEM(pp)                                                                                              \
   SPACE_CG_FEM_SGRID(1, pp, 1)                                                                                         \
@@ -27,11 +26,9 @@
 #if HAVE_ALUGRID
 
 
-#define SPACE_CG_FEM_ALUCONFORMGRID(dd, rr, pp)                                                                        \
-  Spaces::ContinuousLagrange::FemBased<AluConform##dd##dLeafGridPartType, pp, double, rr>
+#define SPACE_CG_FEM_ALUCONFORMGRID(dd, rr, pp) Spaces::CG::FemBased<AluConform##dd##dLeafGridPartType, pp, double, rr>
 
-#define SPACE_CG_FEM_ALUCUBEGRID(dd, rr, pp)                                                                           \
-  Spaces::ContinuousLagrange::FemBased<AluCube##dd##dLeafGridPartType, pp, double, rr>
+#define SPACE_CG_FEM_ALUCUBEGRID(dd, rr, pp) Spaces::CG::FemBased<AluCube##dd##dLeafGridPartType, pp, double, rr>
 
 #define SPACES_CG_FEM_ALUGRID(pp)                                                                                      \
   SPACE_CG_FEM_ALUCONFORMGRID(2, 1, pp)                                                                                \

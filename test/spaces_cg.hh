@@ -16,8 +16,8 @@
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/grid/walker.hh>
 
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
