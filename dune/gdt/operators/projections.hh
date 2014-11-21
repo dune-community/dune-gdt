@@ -21,7 +21,7 @@
 #include <dune/stuff/la/solver.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/continuouslagrange/base.hh>
+#include <dune/gdt/spaces/cg/interface.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/playground/spaces/dg/fem.hh>
@@ -491,8 +491,8 @@ class DirichletProjectionLocalizableTraits
   typedef typename RangeImp::RangeFieldType R;
   static const unsigned int r  = RangeImp::dimRange;
   static const unsigned int rC = RangeImp::dimRangeCols;
-  static_assert(std::is_base_of<Spaces::ContinuousLagrangeBase<T, d, R, r, rC>, typename RangeImp::SpaceType>::value,
-                "The SpaceType of RangeImp has to be derived from Spaces::ContinuousLagrangeBase!");
+  static_assert(std::is_base_of<Spaces::CGInterface<T, d, R, r, rC>, typename RangeImp::SpaceType>::value,
+                "The SpaceType of RangeImp has to be derived from Spaces::CGInterface!");
   static_assert(r == 1, "Not implemeneted for higher dimensions!");
   static_assert(rC == 1, "Not implemeneted for higher dimensions!");
   typedef typename SourceImp::EntityType E;
