@@ -8,9 +8,7 @@
 
 #include <limits>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -18,8 +16,8 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/playground/spaces/rt/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
 #include "interfaces.hh"
@@ -82,7 +80,7 @@ public:
    */
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
-             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
+             DiscreteFunction< Spaces::CG::FemBased< GP, p, FieldType, dimDomain, 1 >, V >& range) const
   {
     typedef typename Stuff::LA::Container< FieldType >::MatrixType MatrixType;
     typedef typename Stuff::LA::Container< FieldType >::VectorType VectorType;
@@ -133,7 +131,7 @@ public:
 
   template< class GP, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1 >& source,
-             DiscreteFunction< Spaces::RaviartThomas::PdelabBased< GP, 0, FieldType, dimDomain >, V >& range) const
+             DiscreteFunction< Spaces::RT::PdelabBased< GP, 0, FieldType, dimDomain >, V >& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();
