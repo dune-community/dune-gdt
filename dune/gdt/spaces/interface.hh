@@ -140,8 +140,8 @@ public:
    *
    *  \note  Any derived class has to implement this method, even if it does not support any kind of constraints!
    *         In that case just provide exactly the following method:\code
-template< class S, class ConstraintsType >
-void local_constraints(const SpaceInterface< S >&, const EntityType&, ConstraintsType&) const
+template< class S, int d, int r, int rC, class ConstraintsType >
+void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&, ConstraintsType&) const
 {
   static_assert(AlwaysFalse< S >::value, "Not implemented for these constraints!");
 }
