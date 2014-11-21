@@ -165,7 +165,7 @@ public:
 };
 
 
-} // namespace  FiniteVolume
+} // namespace FiniteVolume
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
