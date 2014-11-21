@@ -8,15 +8,13 @@
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
+#include <dune/common/typetraits.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-#   include <dune/geometry/referenceelements.hh>
-# else
-#   include <dune/geometry/genericreferenceelements.hh>
-# endif
-# include <dune/common/typetraits.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+# include <dune/geometry/referenceelements.hh>
+#else
+# include <dune/geometry/genericreferenceelements.hh>
+#endif
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -32,8 +30,8 @@ template< class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int
 class CGInterface
   : public SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >
 {
-  typedef SpaceInterface< ImpTraits, domainDim, rangeDim, 1 > BaseType;
-  typedef CGInterface< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 > ThisType;
+  typedef SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols > BaseType;
+  typedef CGInterface< ImpTraits, domainDim, RangeFieldImp, rangeDim, rangeDimCols > ThisType;
 
   static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
 public:
@@ -54,24 +52,28 @@ public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
-//  virtual ~ContinuousLagrangeBase() {}
-
-
-  // von uns neu verlangt
+  /**
+   * \defgroup interface ´´These methods have to be implemented!''
+   * @{
+   **/
   std::vector< DomainType > lagrange_points(const EntityType& entity) const
   {
     CHECK_CRTP(this->as_imp().lagrange_points(entity));
     return this->as_imp().lagrange_points(entity);
-  }
+  } // ... lagrange_points(...)
 
   std::set< size_t > local_dirichlet_DoFs(const EntityType& entity,
                                           const BoundaryInfoType& boundaryInfo) const
   {
-    //...
-  }
+    CHECK_CRTP(this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo));
+    return this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo);
+  } // ... local_dirichlet_DoFs(...)
+  /** @} */
 
-  // von uns bereitgestellt
-
+  /**
+   * \defgroup provided ´´These methods are provided by the interface for convenience.''
+   * @{
+   **/
   std::vector< DomainType > lagrange_points_order_1(const EntityType& entity) const
   {
     // check
@@ -110,7 +112,7 @@ public:
       assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
     }
     return local_vertices;
-  } // ... lagrange_points(...)
+  } // ... lagrange_points_order_1(...)
 
   std::set< size_t > local_dirichlet_DoFs_order_1(const EntityType& entity,
                                                   const BoundaryInfoType& boundaryInfo) const
@@ -160,9 +162,7 @@ public:
       assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
     }
     return localDirichletDofs;
-  } // ... local_dirichlet_DoFs(...)
-
-
+  } // ... local_dirichlet_DoFs_order_1(...)
 
 
   using BaseType::compute_pattern;
@@ -171,7 +171,8 @@ public:
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
-  }
+  } // ... compute_pattern(...)
+
 
   using BaseType::local_constraints;
 
@@ -181,7 +182,7 @@ public:
                          ConstraintsType& /*ret*/) const
   {
     static_assert(AlwaysFalse< S >::value, "Not implemented for these constraints!");
-  }
+  } // ... local_constraints(...)
 
   template< class S, int d, int r, int rC >
   void local_constraints(const SpaceInterface< S, d, r, rC >& other,
@@ -217,7 +218,8 @@ public:
       ret.set_size(0, 0);
     }
   } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
-}; // class ContinuousLagrangeBase
+  /** @} */
+}; // class CGInterface
 
 
 } // namespace Spaces
