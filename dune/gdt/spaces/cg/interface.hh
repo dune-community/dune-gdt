@@ -28,20 +28,11 @@ namespace GDT {
 namespace Spaces {
 
 
-// forward, to allow for specialization
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class ContinuousLagrangeBase
-{
-  static_assert(AlwaysFalse<ImpTraits>::value, "Untested for these dimensions!");
-};
-
-
-template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
-class ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
-    : public SpaceInterface<ImpTraits, domainDim, rangeDim, 1>
+class CGInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, 1> BaseType;
-  typedef ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef CGInterface<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
 
   static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
 
@@ -63,19 +54,24 @@ public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
-  virtual ~ContinuousLagrangeBase()
+  //  virtual ~ContinuousLagrangeBase() {}
+
+
+  // von uns neu verlangt
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
+    CHECK_CRTP(this->as_imp().lagrange_points(entity));
+    return this->as_imp().lagrange_points(entity);
   }
 
-  using BaseType::compute_pattern;
-
-  template <class G, class S, int d, int r, int rC>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
-    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+    //...
   }
 
-  virtual std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  // von uns bereitgestellt
+
+  std::vector<DomainType> lagrange_points_order_1(const EntityType& entity) const
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -116,7 +112,7 @@ public:
     return local_vertices;
   } // ... lagrange_points(...)
 
-  virtual std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
@@ -164,6 +160,15 @@ public:
     }
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs(...)
+
+
+  using BaseType::compute_pattern;
+
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  {
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+  }
 
   using BaseType::local_constraints;
 

@@ -8,6 +8,7 @@
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
+#include <dune/common/deprecated.hh>
 
 #include <dune/stuff/common/disable_warnings.hh>
 #if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
@@ -30,14 +31,16 @@ namespace Spaces {
 
 // forward, to allow for specialization
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class ContinuousLagrangeBase
+class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
+    ContinuousLagrangeBase
 {
   static_assert(AlwaysFalse<ImpTraits>::value, "Untested for these dimensions!");
 };
 
 
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
-class ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
+class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
+    ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
     : public SpaceInterface<ImpTraits, domainDim, rangeDim, 1>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, 1> BaseType;
