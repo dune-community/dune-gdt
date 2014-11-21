@@ -229,7 +229,7 @@ namespace DiscontinuousLagrange {
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
 class
-  DUNE_DEPRECATED_MSG("Use RT::FemLocalfunctionsBased instead (21.11.2014)!")
+  DUNE_DEPRECATED_MSG("Use DG::FemLocalfunctionsBased instead (21.11.2014)!")
       FemLocalfunctionsBased
   : public DG::FemLocalfunctionsBased< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >
 {
