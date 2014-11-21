@@ -13,8 +13,8 @@
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
-#include "continuouslagrange/fem.hh"
-#include "continuouslagrange/pdelab.hh"
+#include "cg/fem.hh"
+#include "cg/pdelab.hh"
 
 
 namespace Dune {
@@ -40,13 +40,13 @@ private:
   template< class G, int p, class R, int r, int rC >
   struct SpaceChooser< G, p, R, r, rC, GDT::ChooseSpaceBackend::fem >
   {
-    typedef GDT::Spaces::ContinuousLagrange::FemBased< GridLayerType, p, R, r > Type;
+    typedef GDT::Spaces::CG::FemBased< GridLayerType, p, R, r > Type;
   };
 
   template< class G, int p, class R, int r, int rC >
   struct SpaceChooser< G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab >
   {
-    typedef GDT::Spaces::ContinuousLagrange::PdelabBased< GridLayerType, p, R, r > Type;
+    typedef GDT::Spaces::CG::PdelabBased< GridLayerType, p, R, r > Type;
   };
 
   typedef Stuff::Grid::ProviderInterface< GridType > GridProviderType;
