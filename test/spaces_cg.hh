@@ -48,7 +48,7 @@ struct P1Q1_CG_Space
   }
 
   template< class T, int d, class R, int r, int rC >
-  void matches_signature(const Dune::GDT::Spaces::ContinuousLagrangeBase< T, d, R, r, rC >& /*space*/)
+  void matches_signature(const Dune::GDT::Spaces::CGInterface< T, d, R, r, rC >& /*space*/)
   {
     static_assert(std::is_same< typename SpaceType::Traits, T >::value, "");
     static_assert(std::is_same< typename SpaceType::RangeFieldType, R >::value, "");
