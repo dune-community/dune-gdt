@@ -22,7 +22,7 @@
 #include "../../mapper/fem.hh"
 #include "../../basefunctionset/fem.hh"
 
-#include "base.hh"
+#include "interface.hh"
 #include "../constraints.hh"
 
 namespace Dune {
@@ -74,14 +74,14 @@ public:
 }; // class SpaceWrappedFemContinuousLagrangeTraits
 
 
-// untested for the vector-valued case, especially Spaces::ContinuousLagrangeBase
+// untested for the vector-valued case, especially Spaces::CGInterface
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                            GridPartImp::dimension, RangeFieldImp, 1, 1>
+    : public Spaces::CGInterface<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                 GridPartImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef Spaces::ContinuousLagrangeBase<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef Spaces::CGInterface<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>, GridPartImp::dimension,
+                              RangeFieldImp, 1, 1> BaseType;
   typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -109,6 +109,8 @@ public:
   typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  using typename BaseType::DomainType;
+  using typename BaseType::BoundaryInfoType;
 
   explicit FemBased(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
@@ -144,6 +146,16 @@ public:
   const MapperType& mapper() const
   {
     return *mapper_;
+  }
+
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  {
+    return BaseType::lagrange_points_order_1(entity);
+  }
+
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  {
+    return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const

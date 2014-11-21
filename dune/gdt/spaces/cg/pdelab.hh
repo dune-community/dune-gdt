@@ -32,7 +32,7 @@
 #include "../../mapper/pdelab.hh"
 #include "../../basefunctionset/pdelab.hh"
 
-#include "base.hh"
+#include "interface.hh"
 
 namespace Dune {
 
@@ -111,11 +111,11 @@ private:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                            GridViewImp::dimension, RangeFieldImp, 1, 1>
+    : public Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                                 GridViewImp::dimension, RangeFieldImp, 1, 1>
 {
-  typedef Spaces::ContinuousLagrangeBase<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
+  typedef Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                              GridViewImp::dimension, RangeFieldImp, 1, 1> BaseType;
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -208,6 +208,16 @@ public:
   const MapperType& mapper() const
   {
     return mapper_;
+  }
+
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  {
+    return BaseType::lagrange_points_order_1(entity);
+  }
+
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  {
+    return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
