@@ -31,7 +31,7 @@ class Default
 
 
 /**
- *  \brief Traits class for Spaces::ContinuousLagrange::FemBased.
+ *  \brief Traits class for Spaces::CG::FemBased.
  */
 template <class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols>
 class DefaultTraits
