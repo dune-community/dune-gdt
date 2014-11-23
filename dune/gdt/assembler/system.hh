@@ -220,6 +220,13 @@ public:
     this->walk(use_tbb);
   }
 
+  template <class Partitioning>
+  void assemble(const Partitioning& partitioning)
+  {
+    this->walk(partitioning);
+  }
+
+
 private:
   const DS::PerThreadValue<const TestSpaceType> test_space_;
   const DS::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
