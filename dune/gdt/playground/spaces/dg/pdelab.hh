@@ -90,7 +90,7 @@ private:
 public:
   typedef PDELab::GridFunctionSpace<GridViewType, FEMapType, PDELab::OverlappingConformingDirichletConstraints>
       BackendType;
-  typedef Mapper::SimplePdelabWrapper<BackendType> MapperType;
+  typedef Mapper::DiscontinuousPdelabWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::PdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim,
                                          rangeDimCols> BaseFunctionSetType;
