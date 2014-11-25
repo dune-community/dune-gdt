@@ -92,7 +92,7 @@ private:
   typedef typename FeMap< GridType, single_geom_, simplicial_, cubic_ >::Type FEMapType;
 public:
   typedef PDELab::GridFunctionSpace< GridViewType, FEMapType > BackendType;
-  typedef Mapper::SimplePdelabWrapper< BackendType > MapperType;
+  typedef Mapper::ContinuousPdelabWrapper< BackendType > MapperType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef BaseFunctionSet::PiolaTransformedPdelabWrapper
       < BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols >
