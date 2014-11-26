@@ -115,33 +115,29 @@ class PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
     : public SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
                             rangeDim, 1>
 {
+  typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
   typedef SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
                          rangeDim, 1> BaseType;
-  typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
   typedef PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;
 
-  typedef typename Traits::GridViewType GridViewType;
-  static const int polOrder = Traits::polOrder;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
-
-private:
-  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridView has to match dimDomain");
-
-public:
-  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const int polOrder              = Traits::polOrder;
+  static const unsigned int dimDomain    = BaseType::dimDomain;
   static const unsigned int dimRange     = BaseType::dimRange;
   static const unsigned int dimRangeCols = BaseType::dimRangeCols;
 
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::PatternType PatternType;
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
   typedef typename Traits::CommunicatorType CommunicatorType;
+
+  typedef typename BaseType::PatternType PatternType;
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename GridViewType::ctype DomainFieldType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
@@ -370,23 +366,6 @@ class PdelabBased
 
 
 } // namespace RT
-namespace RaviartThomas {
-
-
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class DUNE_DEPRECATED_MSG("Use RT::PdelabBased instead (21.11.2014)!") PdelabBased
-    : public RT::PdelabBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
-{
-public:
-  template <class... Args>
-  PdelabBased(Args&&... args)
-    : RT::PdelabBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>(std::forward<Args>(args)...)
-  {
-  }
-};
-
-
-} // namespace RaviartThomas
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
