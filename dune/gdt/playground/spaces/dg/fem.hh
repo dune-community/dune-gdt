@@ -79,32 +79,29 @@ class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
   : public SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
                            GridPartImp::dimension, 1, 1 >
 {
-  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >               ThisType;
+  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >       ThisType;
   typedef SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                          GridPartImp::dimension, 1, 1 >                     BaseType;
+                          GridPartImp::dimension, 1, 1 >                      BaseType;
 public:
-  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >         Traits;
+  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
-  typedef typename Traits::GridPartType GridPartType;
-  typedef typename Traits::GridViewType GridViewType;
-  static const int                      polOrder = Traits::polOrder;
-  typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = BaseType::dimDomain;
-private:
-  static_assert(GridPartType::dimension == dimDomain, "Dimension of GridPart has to match dimDomain");
-public:
-  typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = BaseType::dimRange;
-  static const unsigned int               dimRangeCols = BaseType::dimRangeCols;
+  static const int          polOrder = Traits::polOrder;
+  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const unsigned int dimRange = BaseType::dimRange;
+  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
 
-  typedef typename Traits::BackendType          BackendType;
-  typedef typename Traits::MapperType           MapperType;
-  typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;
-  typedef typename Traits::EntityType           EntityType;
+  typedef typename Traits::GridPartType             GridPartType;
+  typedef typename Traits::GridViewType             GridViewType;
+  typedef typename Traits::RangeFieldType           RangeFieldType;
+  typedef typename Traits::BackendType              BackendType;
+  typedef typename Traits::MapperType               MapperType;
+  typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
+  typedef typename Traits::EntityType               EntityType;
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
   typedef typename Traits::CommunicatorType         CommunicatorType;
 
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef Dune::Stuff::LA::SparsityPatternDefault   PatternType;
+  typedef typename GridPartType::ctype              DomainFieldType;
 
   FemBased(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
@@ -185,24 +182,6 @@ class FemBased
 
 
 } // namespace DG
-namespace DiscontinuousLagrange {
-
-
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
-class
-  DUNE_DEPRECATED_MSG("Use DG::FemBased instead (21.11.2014)!")
-      FemBased
-  : public DG::FemBased< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >
-{
-public:
-  template< class... Args >
-  FemBased(Args&& ...args)
-    : DG::FemBased< GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols >(std::forward< Args >(args)...)
-  {}
-};
-
-
-} // namespace DiscontinuousLagrange
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
