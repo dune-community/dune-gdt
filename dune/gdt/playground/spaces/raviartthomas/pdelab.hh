@@ -9,6 +9,9 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/rt/pdelab.hh> instead (21.11.2014)!
 #include <dune/gdt/playground/spaces/rt/pdelab.hh>
 
+namespace Dune {
+namespace GDT {
+namespace Spaces {
 namespace RaviartThomas {
 
 
@@ -26,5 +29,8 @@ public:
 
 
 } // namespace RaviartThomas
+} // namespace Spaces
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_PLAYGROUND_SPACES_RAVIARTTHOMAS_PDELAB_HH

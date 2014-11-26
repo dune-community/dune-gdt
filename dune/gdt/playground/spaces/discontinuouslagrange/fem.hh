@@ -9,6 +9,9 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/dg/fem.hh> instead (21.11.2014)!
 #include <dune/gdt/playground/spaces/dg/fem.hh>
 
+namespace Dune {
+namespace GDT {
+namespace Spaces {
 namespace DiscontinuousLagrange {
 
 
@@ -26,5 +29,8 @@ public:
 
 
 } // namespace DiscontinuousLagrange
+} // namespace Spaces
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_PLAYGROUND_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
