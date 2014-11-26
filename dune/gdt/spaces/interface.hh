@@ -75,7 +75,7 @@ public:
   typedef typename Traits::CommunicatorType     CommunicatorType;
   typedef typename Traits::GridViewType         GridViewType;
   typedef typename Traits::RangeFieldType       RangeFieldType;
-    static const unsigned int                   dimDomain = domainDim;
+  static const unsigned int                     dimDomain = domainDim;
   static const unsigned int                     dimRange = rangeDim;
   static const unsigned int                     dimRangeCols = rangeDimCols;
 
