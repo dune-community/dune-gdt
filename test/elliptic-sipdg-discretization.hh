@@ -12,6 +12,8 @@
 
 #include <dune/common/timer.hh>
 
+#include <dune/fem/misc/gridwidth.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container.hh>
@@ -290,29 +292,10 @@ public:
     return test_.level_grid_part(current_level_).indexSet().size(0);
   }
 
-  //! todo: use grid information from dune-stuff once the diameter calculation is implemented
   virtual double current_grid_width() const override
   {
     assert(current_level_ < test_.num_levels());
-    typedef typename GridViewType::template Codim<0>::Iterator EntityIteratorType;
-    const GridViewType grid_view     = test_.level_grid_view(current_level_);
-    EntityIteratorType entity_it_end = grid_view.template end<0>();
-    double curr_grid_width           = 0.0;
-    double norm                      = 0.0;
-    int corners = 0;
-    for (EntityIteratorType entity_it = grid_view.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      corners = entity.geometry().corners();
-      for (int corner1 = 0; corner1 < corners; ++corner1) {
-        for (int corner2 = corner1 + 1; corner2 < corners; ++corner2) {
-          auto corner_diff = entity.geometry().corner(corner1) - entity.geometry().corner(corner2);
-          norm = corner_diff.two_norm();
-          if (Dune::FloatCmp::gt(norm, curr_grid_width))
-            curr_grid_width = norm;
-        }
-      }
-    }
-    return curr_grid_width;
+    return Dune::Fem::GridWidth::calcGridWidth(test_.level_grid_part(current_level_));
   }
 
   virtual double compute_on_current_refinement() override final
