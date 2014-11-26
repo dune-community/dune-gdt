@@ -14,7 +14,7 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/information.hh>
+#include <dune/stuff/grid/entity.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/functions/interfaces.hh>
@@ -299,9 +299,12 @@ public:
   virtual double current_grid_width() const override
   {
     assert(current_level_ < test_.num_levels());
+    //get grid_view and first entity from grid_view
     const GridViewType grid_view = test_.level_grid_view(current_level_);
-    Dune::Stuff::Grid::Dimensions< GridViewType > dimensions(grid_view);
-    return dimensions.entity_width.max();
+    assert(grid_view.template begin< 0 >() != grid_view.template end< 0 >());
+    const auto& entity = *(grid_view.template begin< 0 >());
+    //calculate longest straight line within the entity (i.e. between two corners).
+    return Dune::Stuff::Grid::entity_diameter(entity);
   } // ... current_grid_width()
 
   virtual double compute_on_current_refinement() override final
