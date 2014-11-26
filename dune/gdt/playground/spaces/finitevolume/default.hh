@@ -9,4 +9,23 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/fv/default.hh> instead (19.11.2014)!
 #include <dune/gdt/playground/spaces/fv/default.hh>
 
+namespace FiniteVolume {
+
+
+template< class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+class
+  DUNE_DEPRECATED_MSG("Use FV::Default instead (19.11.2014)!")
+      Default
+  : public FV::Default< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols >
+{
+public:
+  template< class... Args >
+  Default(Args&& ...args)
+    : FV::Default< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols >(std::forward< Args >(args)...)
+  {}
+};
+
+
+} // namespace FiniteVolume
+
 #endif // DUNE_GDT_PLAYGROUND_SPACES_FINITEVOLUME_DEFAULT_HH
