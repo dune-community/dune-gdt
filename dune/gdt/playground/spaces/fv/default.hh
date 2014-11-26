@@ -58,34 +58,29 @@ template <class GridViewImp, class RangeFieldImp, int rangeDim>
 class Default<GridViewImp, RangeFieldImp, rangeDim, 1>
     : public SpaceInterface<DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension, rangeDim, 1>
 {
+  typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef SpaceInterface<DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension, rangeDim, 1>
       BaseType;
-  typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
   typedef DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
 
-  typedef typename Traits::GridViewType GridViewType;
-  static const int polOrder = Traits::polOrder;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
-
-private:
-  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridView has to match dimDomain");
-
-public:
-  typedef typename Traits::RangeFieldType RangeFieldType;
+  static const int polOrder              = Traits::polOrder;
+  static const unsigned int dimDomain    = BaseType::dimDomain;
   static const unsigned int dimRange     = BaseType::dimRange;
   static const unsigned int dimRangeCols = BaseType::dimRangeCols;
 
+  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
-  typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
   typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef typename GridViewType::ctype DomainFieldType;
 
   Default(GridViewType gv)
     : grid_view_(gv)
@@ -149,23 +144,6 @@ private:
 
 
 } // namespace FV
-namespace FiniteVolume {
-
-
-template <class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class DUNE_DEPRECATED_MSG("Use FV::Default instead (19.11.2014)!") Default
-    : public FV::Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
-{
-public:
-  template <class... Args>
-  Default(Args&&... args)
-    : FV::Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>(std::forward<Args>(args)...)
-  {
-  }
-};
-
-
-} // namespace FiniteVolume
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
