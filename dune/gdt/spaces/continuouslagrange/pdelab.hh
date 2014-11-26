@@ -9,4 +9,22 @@
 #warning This header is deprecated, include <dune/gdt/spaces/cg/pdelab.hh> instead (21.11.2014)!
 #include <dune/gdt/spaces/cg/pdelab.hh>
 
+namespace ContinuousLagrange {
+
+
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+class DUNE_DEPRECATED_MSG("Use CG::FemBased instead (21.11.2014)!") PdelabBased
+    : public CG::PdelabBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+{
+public:
+  template <class... Args>
+  PdelabBased(Args&&... args)
+    : CG::PdelabBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>(std::forward<Args>(args)...)
+  {
+  }
+};
+
+
+} // namespace ContinuousLagrange
+
 #endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH
