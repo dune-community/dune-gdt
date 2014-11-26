@@ -9,6 +9,9 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/cg/fem-localfunctions.hh> instead (21.11.2014)!
 #include <dune/gdt/playground/spaces/cg/fem-localfunctions.hh>
 
+namespace Dune {
+namespace GDT {
+namespace Spaces {
 namespace ContinuousLagrange {
 
 
@@ -27,5 +30,8 @@ public:
 
 
 } // namespace ContinuousLagrange
+} // namespace Spaces
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_PLAYGROUND_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH

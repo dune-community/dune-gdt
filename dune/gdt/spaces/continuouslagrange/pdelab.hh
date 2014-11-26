@@ -9,6 +9,9 @@
 #warning This header is deprecated, include <dune/gdt/spaces/cg/pdelab.hh> instead (21.11.2014)!
 #include <dune/gdt/spaces/cg/pdelab.hh>
 
+namespace Dune {
+namespace GDT {
+namespace Spaces {
 namespace ContinuousLagrange {
 
 
@@ -27,5 +30,8 @@ public:
 
 
 } // namespace ContinuousLagrange
+} // namespace Spaces
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_PDELAB_HH

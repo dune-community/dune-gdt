@@ -9,6 +9,9 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/fv/default.hh> instead (19.11.2014)!
 #include <dune/gdt/playground/spaces/fv/default.hh>
 
+namespace Dune {
+namespace GDT {
+namespace Spaces {
 namespace FiniteVolume {
 
 
@@ -27,5 +30,8 @@ public:
 
 
 } // namespace FiniteVolume
+} // namespace Spaces
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_PLAYGROUND_SPACES_FINITEVOLUME_DEFAULT_HH
