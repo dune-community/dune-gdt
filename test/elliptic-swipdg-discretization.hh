@@ -18,7 +18,6 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/entity.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 #include <dune/stuff/functions/interfaces.hh>
@@ -308,16 +307,30 @@ public:
     return test_.level_grid_view(current_level_).indexSet().size(0);
   }
 
+  //! todo: use grid information from dune-stuff once the diameter calculation is implemented
   virtual double current_grid_width() const override
   {
     assert(current_level_ < test_.num_levels());
     // get grid_view and first entity from grid_view
     const GridViewType grid_view = test_.level_grid_view(current_level_);
-    assert(grid_view.template begin<0>() != grid_view.template end<0>());
-    const auto& entity = *(grid_view.template begin<0>());
+    auto entity_it = grid_view.template begin<0>();
+    assert(entity_it != grid_view.template end<0>());
+    const auto& entity = *entity_it;
     // calculate longest straight line within the entity (i.e. between two corners).
-    return Dune::Stuff::Grid::entity_diameter(entity);
+    double curr_grid_width = 0.0;
+    double norm            = 0.0;
+    const int corners = entity.geometry().corners();
+    for (int corner1 = 0; corner1 < corners; ++corner1) {
+      for (int corner2 = corner1 + 1; corner2 < corners; ++corner2) {
+        auto corner_diff = entity.geometry().corner(corner1) - entity.geometry().corner(corner2);
+        norm = corner_diff.two_norm();
+        if (Dune::FloatCmp::gt(norm, curr_grid_width))
+          curr_grid_width = norm;
+      }
+    }
+    return curr_grid_width;
   } // ... current_grid_width()
+
 
   virtual double compute_on_current_refinement() override
   {
