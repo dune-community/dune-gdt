@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
-#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
+#ifndef DUNE_GDT_SPACES_CG_INTERFACE_HH
+#define DUNE_GDT_SPACES_CG_INTERFACE_HH
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
@@ -164,7 +164,6 @@ public:
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs_order_1(...)
 
-
   using BaseType::compute_pattern;
 
   template< class G, class S, int d, int r, int rC >
@@ -172,7 +171,6 @@ public:
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
   } // ... compute_pattern(...)
-
 
   using BaseType::local_constraints;
 
@@ -226,4 +224,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
+#endif // DUNE_GDT_SPACES_CG_INTERFACE_HH
