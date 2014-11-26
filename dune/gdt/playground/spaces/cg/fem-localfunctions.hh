@@ -238,24 +238,6 @@ class FemLocalfunctionsBased
 
 
 } // namespace CG
-namespace ContinuousLagrange {
-
-
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class DUNE_DEPRECATED_MSG("Use CG::FemLocalfunctionsBased instead (21.11.2014)!") FemLocalfunctionsBased
-    : public CG::FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
-{
-public:
-  template <class... Args>
-  FemLocalfunctionsBased(Args&&... args)
-    : CG::FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>(
-          std::forward<Args>(args)...)
-  {
-  }
-};
-
-
-} // namespace ContinuousLagrange
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune

@@ -9,4 +9,23 @@
 #warning This header is deprecated, include <dune/gdt/playground/spaces/cg/fem-localfunctions.hh> instead (21.11.2014)!
 #include <dune/gdt/playground/spaces/cg/fem-localfunctions.hh>
 
+namespace ContinuousLagrange {
+
+
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+class DUNE_DEPRECATED_MSG("Use CG::FemLocalfunctionsBased instead (21.11.2014)!") FemLocalfunctionsBased
+    : public CG::FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+{
+public:
+  template <class... Args>
+  FemLocalfunctionsBased(Args&&... args)
+    : CG::FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>(
+          std::forward<Args>(args)...)
+  {
+  }
+};
+
+
+} // namespace ContinuousLagrange
+
 #endif // DUNE_GDT_PLAYGROUND_SPACES_CONTINUOUSLAGRANGE_FEM_LOCALFUNCTIONS_HH
