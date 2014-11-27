@@ -873,7 +873,7 @@ private:
 
     typedef typename TestCase::DiffusionType DiffusionType;
     const Operators::DiffusiveFluxReconstruction<GridViewType, DiffusionType> diffusive_flux_reconstruction(
-        grid_view, test_.diffusion());
+        grid_view, test_.diffusion(), over_integrate);
     diffusive_flux_reconstruction.apply(discrete_solution, diffusive_flux);
 
     GDT::Products::ESV2007::DiffusiveFluxEstimate<GridViewType,
@@ -882,7 +882,7 @@ private:
                                                   ConstDiscreteFunctionType,
                                                   ConstDiscreteFunctionType>
         diffusive_flux_estimator_product(
-            grid_view, discrete_solution, discrete_solution, test_.diffusion(), diffusive_flux, 1);
+            grid_view, discrete_solution, discrete_solution, test_.diffusion(), diffusive_flux, over_integrate);
     return std::sqrt(diffusive_flux_estimator_product.apply2());
   } // ... compute_diffusive_flux_estimator(...)
 
