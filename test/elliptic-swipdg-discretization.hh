@@ -592,18 +592,6 @@ class EstimatorStudy : public EocStudy<TestCase, 1>
   {
     return "efficiency (ESV07)";
   }
-  static std::string residual_estimator_ESV10_id()
-  {
-    return "eta_R (ESV10)";
-  }
-  static std::string estimator_ESV10_id()
-  {
-    return "eta (ESV10)";
-  }
-  static std::string efficiency_ESV10_id()
-  {
-    return "efficiency (ESV10)";
-  }
 
   const size_t over_integrate = 2;
 
@@ -619,18 +607,13 @@ public:
 
   virtual std::vector<std::string> provided_norms() const override final
   {
-    return {
-        "energy",
-        nonconformity_estimator_id(),
-        residual_estimator_ESV07_id(),
-        diffusive_flux_estimator_id()
-        //            , estimator_ESV07_id()
-        ,
-        efficiency_ESV07_id()
-        //            , residual_estimator_ESV10_id()
-        //            , estimator_ESV10_id()
-        //            , efficiency_ESV10_id()
-    };
+    return {"energy",
+            nonconformity_estimator_id(),
+            residual_estimator_ESV07_id(),
+            diffusive_flux_estimator_id()
+            //            , estimator_ESV07_id()
+            ,
+            efficiency_ESV07_id()};
   } // ... provided_norms(...)
 
   virtual size_t expected_rate(const std::string type) const override final
@@ -646,12 +629,6 @@ public:
     else if (type == estimator_ESV07_id())
       return polOrder;
     else if (type == efficiency_ESV07_id())
-      return 0;
-    else if (type == residual_estimator_ESV10_id())
-      return polOrder + 1;
-    else if (type == estimator_ESV10_id())
-      return polOrder;
-    else if (type == efficiency_ESV10_id())
       return 0;
     else
       return BaseType::expected_rate(type);
@@ -693,12 +670,6 @@ public:
         else if (type == efficiency_ESV07_id())
           return {1.37, 1.28, 1.24, 1.22};
         //          return {1.21, 1.21, 1.21, 1.21};
-        //        else if (type == residual_estimator_ESV10_id())
-        //          return {0.0, 0.0, 0.0, 0.0};
-        //        else if (type == estimator_ESV10_id())
-        //          return {0.0, 0.0, 0.0, 0.0};
-        //        else if (type == efficiency_ESV10_id())
-        //          return {0.0, 0.0, 0.0, 0.0};
         else
           return BaseType::expected_results(type);
       } else
@@ -719,12 +690,6 @@ public:
         //          return {};
         else if (type == efficiency_ESV07_id())
           return {1.63e+00, 2.46e+00, 2.33e+00, 2.41e+00};
-        //        else if (type == residual_estimator_ESV10_id())
-        //          return {};
-        //        else if (type == estimator_ESV10_id())
-        //          return {};
-        //        else if (type == efficiency_ESV10_id())
-        //          return {};
         else
           return BaseType::expected_results(type);
       } else
@@ -745,12 +710,6 @@ public:
         //          return {};
         else if (type == efficiency_ESV07_id())
           return {2.58e+01, 7.00e+01};
-        //        else if (type == residual_estimator_ESV10_id())
-        //          return {};
-        //        else if (type == estimator_ESV10_id())
-        //          return {};
-        //        else if (type == efficiency_ESV10_id())
-        //          return {};
         else
           return BaseType::expected_results(type);
       } else
