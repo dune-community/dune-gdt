@@ -590,7 +590,7 @@ class EstimatorStudy
   static std::string estimator_ESV07_id() {          return "eta (ESV07)"; }
   static std::string efficiency_ESV07_id() {         return "efficiency (ESV07)"; }
 
-  const size_t over_integrate = 2;
+  const size_t over_integrate = 1;
 
 public:
   EstimatorStudy(const TestCase& test)
