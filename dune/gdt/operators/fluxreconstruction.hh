@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/dynmatrix.hh>
 
@@ -52,9 +53,11 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstruction(const GridViewType& grid_view, const LocalizableFunctionType& diffusion)
+  DiffusiveFluxReconstruction(const GridViewType& grid_view, const LocalizableFunctionType& diffusion,
+                              const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , diffusion_(diffusion)
+    , over_integrate_(over_integrate)
   {
   }
 
@@ -115,9 +118,8 @@ public:
                                                                   *local_source,
                                                                   *local_constant_one_neighbor,
                                                                   *local_source_neighbor);
-            assert(integrand_order < std::numeric_limits<int>::max());
-            const auto& quadrature =
-                QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(integrand_order));
+            const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+                intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
               const auto& xx_intersection        = quadrature_it->position();
@@ -165,9 +167,8 @@ public:
           FieldType rhs = 0;
           const size_t integrand_order =
               boundary_evaluation.order(*local_diffusion, *local_source, *local_constant_one);
-          assert(integrand_order < std::numeric_limits<int>::max());
-          const auto& quadrature =
-              QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(integrand_order));
+          const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+              intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
             const auto xx_intersection         = quadrature_it->position();
@@ -201,6 +202,7 @@ public:
 private:
   const GridViewType& grid_view_;
   const LocalizableFunctionType& diffusion_;
+  const size_t over_integrate_;
 }; // class DiffusiveFluxReconstruction
 
 
