@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_RECONSTRUCTIONS_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_RECONSTRUCTIONS_HH
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/gdt/playground/localevaluation/swipdg.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 
@@ -35,10 +37,12 @@ private:
 public:
   DiffusiveFluxReconstruction(const GridViewType& grid_view,
                               const DiffusionFactorType& diffusion_factor,
-                              const DiffusionTensorType& diffusion_tensor)
+                              const DiffusionTensorType& diffusion_tensor,
+                              const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
+    , over_integrate_(over_integrate)
   {}
 
   template< class GV, class V >
@@ -102,9 +106,8 @@ public:
                                                                   *local_source,
                                                                   *local_constant_one_neighbor,
                                                                   *local_source_neighbor);
-            assert(integrand_order < std::numeric_limits< int >::max());
-            const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(),
-                                                                                             int(integrand_order));
+            const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(
+                  intersection.type(), boost::numeric_cast< int >(integrand_order + over_integrate_));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
               const auto& xx_intersection = quadrature_it->position();
@@ -156,9 +159,8 @@ public:
                                                                    *local_diffusion_tensor,
                                                                    *local_source,
                                                                    *local_constant_one);
-          assert(integrand_order < std::numeric_limits< int >::max());
-          const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(intersection.type(),
-                                                                                           int(integrand_order));
+          const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain - 1 >::rule(
+                intersection.type(), boost::numeric_cast< int >(integrand_order + over_integrate_));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
             const auto xx_intersection = quadrature_it->position();
@@ -198,6 +200,7 @@ private:
   const GridViewType& grid_view_;
   const DiffusionFactorType& diffusion_factor_;
   const DiffusionTensorType& diffusion_tensor_;
+  const size_t over_integrate_;
 }; // class DiffusiveFluxReconstruction
 
 
