@@ -10,6 +10,8 @@
 #include <set>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/print.hh>
@@ -394,9 +396,9 @@ private:
     // walk the grid to create the maps explained above and to find the boundary vertices
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity        = *entity_it;
-      const size_t num_vertices = entity.template count<dimDomain>();
+      const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
       const auto basis = source.space().base_function_set(entity);
-      if (basis.size() != size_t(num_vertices))
+      if (basis.size() != num_vertices)
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
@@ -407,7 +409,7 @@ private:
         const DomainType vertex       = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
-        if (basis_values.size() != size_t(num_vertices))
+        if (basis_values.size() != num_vertices)
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones            = 0;
         size_t zeros           = 0;
