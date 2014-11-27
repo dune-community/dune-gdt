@@ -126,6 +126,7 @@ public:
            + std::max(testBaseEntity.order(), testBaseNeighbor.order())
            + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   } // size_t order(...)
+
   template <class R, class IntersectionType>
   void evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDiffusionFactorEntity,
