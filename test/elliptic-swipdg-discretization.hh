@@ -824,12 +824,10 @@ private:
 
     const Operators::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
-    const Stuff::Functions::Difference<ConstDiscreteFunctionType, DiscreteFunctionType> difference(
-        discrete_solution, oswald_interpolation);
 
     const Products::Elliptic<GridViewType, typename TestCase::DiffusionType> elliptic_product(
         grid_view, test_.diffusion(), over_integrate);
-    return std::sqrt(elliptic_product.apply2(difference, difference));
+    return elliptic_product.induced_norm(discrete_solution - oswald_interpolation);
   } // ... compute_nonconformity_estimator(...)
 
   double compute_residual_estimator_ESV07()
