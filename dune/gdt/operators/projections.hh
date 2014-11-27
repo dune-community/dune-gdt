@@ -399,9 +399,9 @@ private:
   static const unsigned int dimDomain = GridViewType::dimension;
 
 public:
-  Projection(const GridViewType& grid_view)
+  Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
     : lagrange_operator_(grid_view)
-    , l2_operator_(grid_view)
+    , l2_operator_(grid_view, over_integrate)
   {
   }
 
