@@ -838,9 +838,8 @@ private:
 
     typedef Spaces::FiniteVolume::Default<GridViewType, RangeFieldType, 1, 1> P0SpaceType;
     const P0SpaceType p0_space(grid_view);
-    VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction<P0SpaceType, VectorType> P0DiscreteFunctionType;
-    P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
+    P0DiscreteFunctionType p0_force(p0_space);
 
     Operators::Projection<GridViewType> projection_operator(grid_view);
     projection_operator.apply(test_.force(), p0_force);
