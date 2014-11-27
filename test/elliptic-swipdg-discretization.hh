@@ -817,14 +817,14 @@ private:
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space);
 
-    Operators::Projection< GridViewType > projection_operator(grid_view);
+    Operators::Projection< GridViewType > projection_operator(grid_view, over_integrate);
     projection_operator.apply(test_.force(), p0_force);
 
     typedef typename Stuff::Functions::ESV2007Cutoff< typename TestCase::DiffusionType > CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
     const Products::WeightedL2< GridViewType, CutoffFunctionType >
-        weighted_l2_product(grid_view, cutoff_function, 1);
+        weighted_l2_product(grid_view, cutoff_function, over_integrate);
     return weighted_l2_product.induced_norm(test_.force() - p0_force);
   } // ... compute_residual_estimator_ESV07(...)
 
