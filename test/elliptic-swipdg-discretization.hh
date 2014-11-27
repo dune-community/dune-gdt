@@ -593,7 +593,7 @@ class EstimatorStudy : public EocStudy<TestCase, 1>
     return "efficiency (ESV07)";
   }
 
-  const size_t over_integrate = 2;
+  const size_t over_integrate = 1;
 
 public:
   EstimatorStudy(const TestCase& test)
