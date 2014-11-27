@@ -868,9 +868,8 @@ private:
 
     typedef Spaces::RaviartThomas::PdelabBased<GridViewType, 0, RangeFieldType, dimDomain> RTN0SpaceType;
     const RTN0SpaceType rtn0_space(grid_view);
-    VectorType diffusive_flux_vector(rtn0_space.mapper().size());
     typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
-    RTN0DiscreteFunctionType diffusive_flux(rtn0_space, diffusive_flux_vector);
+    RTN0DiscreteFunctionType diffusive_flux(rtn0_space);
 
     typedef typename TestCase::DiffusionType DiffusionType;
     const Operators::DiffusiveFluxReconstruction<GridViewType, DiffusionType> diffusive_flux_reconstruction(
