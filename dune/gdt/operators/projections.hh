@@ -184,8 +184,9 @@ private:
   static const unsigned int             dimDomain = GridViewType::dimension;
 
 public:
-  L2Projection(const GridViewType& grid_view)
+  L2Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
     : grid_view_(grid_view)
+    , over_integrate_(over_integrate)
   {}
 
   template< class E, class D, int d, class R, int r, int rC, class T, class V >
@@ -284,8 +285,8 @@ private:
       // create quadrature
       // guess the polynomial order of the source by hoping that they are the same for all entities
       const size_t integrand_order = std::max(local_source->order(), local_basis.order()) + local_basis.order();
-      assert(integrand_order < std::numeric_limits< int >::max());
-      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(), int(integrand_order));
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(
+            entity.type(), boost::numeric_cast< int >(integrand_order + over_integrate_));
       // loop over all quadrature points
       for (const auto& quadrature_point : quadrature) {
         const auto local_point = quadrature_point.position();
@@ -337,9 +338,11 @@ private:
       const auto local_source = source.local_function(entity);
       const auto basis = range.space().base_function_set(entity);
       // do a volume quadrature
-      const size_t integrand_order = std::max(size_t(local_source->order() - 1), basis.order()) + basis.order();
-      assert(integrand_order < std::numeric_limits< int >::max());
-      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(), int(integrand_order));
+      const size_t integrand_order = std::max(std::max(ssize_t(local_source->order()) - 1, ssize_t(0)),
+                                              ssize_t(basis.order()))
+                                     + basis.order();
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(
+            entity.type(), boost::numeric_cast< int >(integrand_order + over_integrate_));
       const auto quadrature_it_end = quadrature.end();
       for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
         const auto xx = quadrature_it->position();
@@ -366,6 +369,7 @@ private:
   } // ... apply_global_l2_projection_(...)
 
   const GridViewType& grid_view_;
+  const size_t over_integrate_;
 }; // class L2Projection
 
 
