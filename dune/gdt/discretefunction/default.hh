@@ -77,7 +77,7 @@ public:
 
   ConstDiscreteFunction(const ThisType& other) = default;
 
-  ConstDiscreteFunction(ThisType&& source) = delete;
+  ConstDiscreteFunction(ThisType&& source) = default;
 
   virtual ~ConstDiscreteFunction() {}
 
