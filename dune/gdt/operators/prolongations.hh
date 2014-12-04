@@ -453,6 +453,22 @@ private:
 }; // class Prolongation
 
 
+template <class GridViewType, class SourceType, class RangeType>
+void prolong(const GridViewType& grid_view, const SourceType& source, RangeType& range)
+{
+  const Prolongation<GridViewType> prolongation_operator(grid_view);
+  prolongation_operator.apply(source, range);
+}
+
+
+template <class SourceType, class RangeType>
+void prolong(const SourceType& source, RangeType& range)
+{
+  const Prolongation<typename RangeType::SpaceType::GridViewType> prolongation_operator(range.space().grid_view());
+  prolongation_operator.apply(source, range);
+}
+
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
