@@ -224,17 +224,18 @@ public:
                    const Stuff::LA::VectorInterface< S, FieldType >& source,
                    const AssemblableProductInterface< P >& product)
   {
-    apply(source, range);
-    return product.apply2(range, source);
+    auto tmp = range.copy();
+    apply(source, tmp);
+    return product.apply2(tmp, source);
   }
 
-  template< class R, class S, class P >
+  template< class R, class S >
   FieldType apply2(const Stuff::LA::VectorInterface< R, FieldType >& range,
                    const Stuff::LA::VectorInterface< S, FieldType >& source)
   {
     this->assemble();
     auto tmp = range.copy();
-    this->matrix().mv(source.as_imp(source), tmp);
+    this->matrix().mv(source.as_imp(), tmp);
     return range.dot(tmp);
   }
 
@@ -244,7 +245,6 @@ public:
   {
     return apply2(range.vector(), source.vector());
   }
-
 }; // class AssemblableOperatorInterface
 
 
