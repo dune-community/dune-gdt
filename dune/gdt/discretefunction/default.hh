@@ -67,9 +67,7 @@ public:
 
   typedef ConstLocalDiscreteFunction< SpaceType, VectorType > ConstLocalDiscreteFunctionType;
 
-  ConstDiscreteFunction(const SpaceType& sp,
-                        const VectorType& vec,
-                        const std::string nm = "dune.gdt.constdiscretefunction")
+  ConstDiscreteFunction(const SpaceType& sp, const VectorType& vec, const std::string nm = "gdt.constdiscretefunction")
     : space_(sp)
     , vector_(vec)
     , name_(nm)
@@ -155,12 +153,12 @@ public:
 
   typedef LocalDiscreteFunction< SpaceType, VectorType > LocalDiscreteFunctionType;
 
-  DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
     , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
   {}
 
-  DiscreteFunction(const SpaceType& sp, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(new VectorType(sp.mapper().size()))
     , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
   {}
