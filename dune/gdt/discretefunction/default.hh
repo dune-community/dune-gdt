@@ -158,6 +158,12 @@ public:
   {
   }
 
+  DiscreteFunction(const SpaceType& sp, VectorType&& vec, const std::string nm = "gdt.discretefunction")
+    : VectorProviderBaseType(vec)
+    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+  {
+  }
+
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(new VectorType(sp.mapper().size()))
     , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
