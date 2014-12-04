@@ -274,6 +274,8 @@ private:
 }; // class EllipticSWIPDG
 
 
+/// \todo use matrix as first template parameter, dro /*matrix*/
+/// \todo return by value, implement move ctor
 template <class DF, class M, class S>
 std::unique_ptr<EllipticSWIPDG<DF, M, S, S, typename S::GridViewType>>
 make_elliptic_swipdg(const DF& diffusion_factor,
