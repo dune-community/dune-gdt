@@ -163,12 +163,13 @@ public:
     , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
   {}
 
+  // manual copy ctor needed bc. of the storage provider
   DiscreteFunction(const ThisType& other)
     : VectorProviderBaseType(new VectorType(other.vector()))
     , BaseType(other.space(), VectorProviderBaseType::storage_access(), other.name())
   {}
 
-  //! \todo is this intentionally c&p of the copy ctor?
+  // manual move ctor needed bc. of the storage provider
   DiscreteFunction(ThisType&& source)
     : VectorProviderBaseType(new VectorType(source.vector()))
     , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
