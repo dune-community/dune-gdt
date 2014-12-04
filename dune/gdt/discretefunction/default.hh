@@ -209,6 +209,33 @@ private:
 }; // class DiscreteFunction
 
 
+template< class SpaceType, class VectorType >
+ConstDiscreteFunction< SpaceType,
+                       VectorType > make_const_discrete_function(const SpaceType& space,
+                                                                 const VectorType& vector,
+                                                                 const std::string nm = "gdt.constdiscretefunction")
+{
+  return ConstDiscreteFunction< SpaceType, VectorType >(space, vector, nm);
+}
+
+
+template< class SpaceType, class VectorType >
+DiscreteFunction< SpaceType, VectorType > make_discrete_function(const SpaceType& space,
+                                                                 VectorType& vector,
+                                                                 const std::string nm = "gdt.discretefunction")
+{
+  return DiscreteFunction< SpaceType, VectorType >(space, vector, nm);
+}
+
+
+template< class VectorType, class SpaceType >
+DiscreteFunction< SpaceType, VectorType > make_discrete_function(const SpaceType& space,
+                                                                 const std::string nm = "gdt.discretefunction")
+{
+  return DiscreteFunction< SpaceType, VectorType >(space, nm);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
