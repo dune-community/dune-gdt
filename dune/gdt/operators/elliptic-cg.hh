@@ -8,9 +8,9 @@
 
 #include <type_traits>
 
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/memory.hh>
+#include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
@@ -66,10 +66,12 @@ public:
 
 template <class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp>
 class EllipticCG<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void>
-    : public Operators::MatrixBased<internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp,
+    : Stuff::Common::StorageProvider<MatrixImp>,
+      public Operators::MatrixBased<internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp,
                                                                GridViewImp, void>>,
       public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
 {
+  typedef Stuff::Common::StorageProvider<MatrixImp> StorageProvider;
   typedef SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp> AssemblerBaseType;
   typedef Operators::MatrixBased<internal::EllipticCGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp,
                                                             GridViewImp>> OperatorBaseType;
@@ -92,34 +94,78 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
-  EllipticCG(const DiffusionType& diffusion, MatrixType& matrix, const SourceSpaceType& source_space,
-             const RangeSpaceType& range_space, const GridViewType& grid_view)
-    : OperatorBaseType(matrix, source_space, range_space, grid_view)
-    , AssemblerBaseType(range_space, grid_view, source_space)
+  EllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc,
+             const RangeSpaceType& rng_spc, const GridViewType& grid_view)
+    : StorageProvider(mtrx)
+    , OperatorBaseType(this->storage_access(), src_spc, rng_spc, grid_view)
+    , AssemblerBaseType(rng_spc, grid_view, src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
+    , assembled_(false)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
+
+  EllipticCG(const DiffusionType& diffusion, const SourceSpaceType& src_spc, const RangeSpaceType& rng_spc,
+             const GridViewType& grid_view)
+    : StorageProvider(
+          new MatrixType(rng_spc.mapper().size(), src_spc.mapper().size(), pattern(rng_spc, src_spc, grid_view)))
+    , OperatorBaseType(this->storage_access(), src_spc, rng_spc, grid_view)
+    , AssemblerBaseType(rng_spc, grid_view, src_spc)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
+    , local_assembler_(local_operator_)
+    , assembled_(false)
   {
     this->add(local_assembler_, this->matrix());
   }
 
   EllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc,
              const RangeSpaceType& rng_spc)
-    : OperatorBaseType(mtrx, src_spc, rng_spc)
+    : StorageProvider(mtrx)
+    , OperatorBaseType(this->storage_access(), src_spc, rng_spc)
     , AssemblerBaseType(rng_spc, src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
+    , assembled_(false)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
+
+  EllipticCG(const DiffusionType& diffusion, const SourceSpaceType& src_spc, const RangeSpaceType& rng_spc)
+    : StorageProvider(new MatrixType(rng_spc.mapper().size(), src_spc.mapper().size(), pattern(rng_spc, src_spc)))
+    , OperatorBaseType(this->storage_access(), src_spc, rng_spc)
+    , AssemblerBaseType(rng_spc, src_spc)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
+    , local_assembler_(local_operator_)
+    , assembled_(false)
   {
     this->add(local_assembler_, this->matrix());
   }
 
   EllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc)
-    : OperatorBaseType(mtrx, src_spc)
+    : StorageProvider(mtrx)
+    , OperatorBaseType(this->storage_access(), src_spc)
     , AssemblerBaseType(src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
     , local_assembler_(local_operator_)
+    , assembled_(false)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
+
+  EllipticCG(const DiffusionType& diffusion, const SourceSpaceType& src_spc)
+    : StorageProvider(new MatrixType(src_spc.mapper().size(), src_spc.mapper().size(), pattern(src_spc)))
+    , OperatorBaseType(this->storage_access(), src_spc)
+    , AssemblerBaseType(src_spc)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
+    , local_assembler_(local_operator_)
+    , assembled_(false)
   {
     this->add(local_assembler_, this->matrix());
   }
@@ -130,13 +176,17 @@ public:
 
   virtual void assemble() override final
   {
-    AssemblerBaseType::assemble();
-  }
+    if (!assembled_) {
+      AssemblerBaseType::assemble(true);
+      assembled_ = true;
+    }
+  } // ... assemble(...)
 
 private:
   const DiffusionType& diffusion_;
   const LocalOperatorType local_operator_;
   const LocalAssemblerType local_assembler_;
+  bool assembled_;
 }; // class EllipticCG
 
 
