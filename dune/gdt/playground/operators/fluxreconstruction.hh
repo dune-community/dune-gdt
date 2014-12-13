@@ -204,6 +204,15 @@ private:
 }; // class DiffusiveFluxReconstruction
 
 
+template <class GV, class DF, class DT>
+DiffusiveFluxReconstruction<GV, DF, DT>
+make_diffusive_flux_reconstruction(const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor,
+                                   const size_t over_integrate = 0)
+{
+  return DiffusiveFluxReconstruction<GV, DF, DT>(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
+}
+
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
