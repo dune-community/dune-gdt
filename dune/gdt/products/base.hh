@@ -43,6 +43,7 @@ class LocalizableBase
     : public LocalizableProductInterface<internal::LocalizableBaseTraits<LocalOperatorProvider, RangeImp, SourceImp>>,
       public Stuff::Grid::Walker<typename LocalOperatorProvider::GridViewType>
 {
+  typedef LocalizableBase<LocalOperatorProvider, RangeImp, SourceImp> ThisType;
   typedef LocalizableProductInterface<internal::LocalizableBaseTraits<LocalOperatorProvider, RangeImp, SourceImp>>
       ProductBaseType;
   typedef Stuff::Grid::Walker<typename LocalOperatorProvider::GridViewType> WalkerBaseType;
@@ -78,6 +79,16 @@ public:
     , range_(rng)
     , source_(rng)
     , local_operators_(std::forward<Args>(args)...)
+    , helper_(*this, local_operators_, range_, source_)
+    , walked_(false)
+  {
+  }
+
+  LocalizableBase(const ThisType& other)
+    : WalkerBaseType(other.grid_view())
+    , range_(other.range_)
+    , source_(other.source_)
+    , local_operators_(other.local_operators_)
     , helper_(*this, local_operators_, range_, source_)
     , walked_(false)
   {
