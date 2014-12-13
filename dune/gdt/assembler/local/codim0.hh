@@ -186,7 +186,9 @@ class Codim0OperatorAccumulateFunctor
   static_assert(Stuff::is_localizable_function< AnsatzFunctionType >::value,
                 "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
 
-  typedef Stuff::Grid::Functor::Codim0< GridViewImp > BaseType;
+  typedef Codim0OperatorAccumulateFunctor
+      < GridViewImp, LocalOperatorType, TestFunctionType, AnsatzFunctionType, FieldType > ThisType;
+  typedef Stuff::Grid::Functor::Codim0< GridViewImp >                                     BaseType;
   typedef DSC::TmpMatricesStorage< FieldType > TmpMatricesProviderType;
 public:
   typedef typename BaseType::GridViewType GridViewType;
@@ -206,6 +208,20 @@ public:
     // can not use make_unique here, at least clang does not get it
     tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(
         {1, local_operator_.numTmpObjectsRequired()}, 1, 1));
+  }
+
+  Codim0OperatorAccumulateFunctor(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , local_operator_(other.local_operator_)
+    , test_function_(other.test_function_)
+    , ansatz_function_(other.ansatz_function_)
+    , result_(0)
+    , finalized_(other.finalized_)
+  {
+    // can not use make_unique here, at least clang does not get it
+    tmp_storage_ = std::unique_ptr< TmpMatricesProviderType >(new TmpMatricesProviderType(
+        {1, local_operator_.numTmpObjectsRequired()}, 1, 1));
+    result_ = other.result_;
   }
 
   virtual ~Codim0OperatorAccumulateFunctor() = default;
