@@ -85,6 +85,16 @@ public:
 };
 
 
+template <class GV, class R, class DF, class DT>
+EllipticLocalizable<GV, DF, R, R, typename DF::RangeFieldType, DT>
+make_elliptic_localizable(const GV& grd_vw, const R& rng, const DF& diffusion_factor, const DT& diffusion_tensor,
+                          const size_t over_integrate = 0)
+{
+  typedef EllipticLocalizable<GV, DF, R, R, typename DF::RangeFieldType, DT> ProductType;
+  return ProductType(grd_vw, rng, diffusion_factor, diffusion_tensor, over_integrate);
+}
+
+
 } // namespace Products
 } // namespace GDT
 } // namespace Dune
