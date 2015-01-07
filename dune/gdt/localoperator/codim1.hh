@@ -24,6 +24,8 @@
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
 
+#include <dune/stuff/common/string.hh>
+
 namespace Dune {
 namespace GDT {
 namespace LocalOperator {
@@ -378,16 +380,22 @@ public:
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
     // get entities and local functions
     const auto& entity = entityAverage.entity();
-    const auto localFunctionsEn = evaluation_.localFunctions(entity);
+    const auto& localFunctionsEn = flux_.localFunctions(entity);
     const auto& neighbor = neighborAverage.entity();
-    const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
+    const auto& localFunctionsNe = flux_.localFunctions(neighbor);
+    const auto& localPoint = intersection.geometry().local(intersection.geometry().center());
     //evaluate
+    const auto& u_i = entityAverage.evaluate(entity.geometry().center())[0];
+    const auto& u_j = neighborAverage.evaluate(neighbor.geometry().center());
+    std::cout << "u_i " << Dune::Stuff::Common::toString(u_i) <<", u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
+
     flux_.evaluate(localFunctionsEn, localFunctionsNe,
                          entityTestBase, entityAverage,
                          neighborTestBase, neighborAverage,
-                         intersection, entity.center(),
+                         intersection, localPoint,
                          entityEntityRet,neighborNeighborRet, entityNeighborRet, neighborEntityRet);
-    entityNeighborRet[0][0] *= 1.0/entity.volume();
+    //std::cout << "Entity.geometry().volume()" << entity.geometry().volume() << std::endl;
+    entityNeighborRet[0][0] *= 1.0/entity.geometry().volume();
   } // void apply(...) const
 
 private:
