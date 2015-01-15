@@ -15,7 +15,7 @@
 #include <dune/stuff/common/reenable_warnings.hh>
 #endif
 
-#include <dune/stuff/common/parallel/threadmanager.hh>
+#include <dune/stuff/common/parallel/threadstorage.hh>
 #include <dune/stuff/common/type_utils.hh>
 
 #include "interface.hh"

@@ -11,11 +11,6 @@
 
 #include <dune/common/version.hh>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) //&& HAVE_TBB //EXADUNE
-#include <dune/grid/utility/partitioning/seedlist.hh>
-#include <dune/stuff/common/parallel/partitioner.hh>
-#endif
-
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/common/parallel/helper.hh>
 
@@ -76,10 +71,10 @@ public:
   {
   }
 
-  SystemAssembler(TestSpaceType test, GridViewType grid_view)
-    : BaseType(grid_view)
+  SystemAssembler(TestSpaceType test, GridViewType grid_view_in)
+    : BaseType(grid_view_in)
     , test_space_(test)
-    , ansatz_space_(test_space_)
+    , ansatz_space_(test)
   {
   }
 
@@ -220,19 +215,17 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector_imp));
   } // ... add(...)
 
-  void assemble(const bool clear_stack = true)
+  void assemble(const bool use_tbb = false)
   {
-    this->walk(clear_stack);
+    this->walk(use_tbb);
   }
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) //&& HAVE_TBB //EXADUNE
-  void tbb_assemble(const bool clear_stack = true)
+  template <class Partitioning>
+  void assemble(const Partitioning& partitioning)
   {
-    Stuff::IndexSetPartitioner<GridViewType> partioner(this->grid_view_.indexSet());
-    SeedListPartitioning<typename GridViewType::Grid, 0> partitioning(this->grid_view_, partioner);
-    this->tbb_walk(partitioning, clear_stack);
+    this->walk(partitioning);
   }
-#endif
+
 
 private:
   const DS::PerThreadValue<const TestSpaceType> test_space_;
