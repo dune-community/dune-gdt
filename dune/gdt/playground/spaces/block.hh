@@ -34,11 +34,10 @@ namespace internal {
 template <class LocalSpaceType>
 class BlockTraits
 {
-  static_assert(
-      std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, typename LocalSpaceType::dimDomain,
-                                     typename LocalSpaceType::dimRange, typename LocalSpaceType::dimRangeCols>,
-                      LocalSpaceType>::value,
-      "LocalSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, LocalSpaceType::dimDomain,
+                                               LocalSpaceType::dimRange, LocalSpaceType::dimRangeCols>,
+                                LocalSpaceType>::value,
+                "LocalSpaceType has to be derived from SpaceInterface!");
   typedef grid::Multiscale::Default<typename LocalSpaceType::GridViewType::Grid> MsGridType;
 
 public:
@@ -65,11 +64,11 @@ public:
  *       be enough to hold a copy of the global grid view in this space (if the ms_grid is not needed elsewhere)
  */
 template <class LocalSpaceImp>
-class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>, typename LocalSpaceImp::dimDomain,
-                                    typename LocalSpaceImp::dimRange, typename LocalSpaceImp::dimRangeCols>
+class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain,
+                                    LocalSpaceImp::dimRange, LocalSpaceImp::dimRangeCols>
 {
-  typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>, typename LocalSpaceImp::dimDomain,
-                         typename LocalSpaceImp::dimRange, typename LocalSpaceImp::dimRangeCols> BaseType;
+  typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain, LocalSpaceImp::dimRange,
+                         LocalSpaceImp::dimRangeCols> BaseType;
   typedef Block<LocalSpaceImp> ThisType;
 
 public:
