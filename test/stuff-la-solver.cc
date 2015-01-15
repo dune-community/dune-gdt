@@ -113,7 +113,7 @@ struct EllipticDiscretizations
           bool success = true;
           try {
             linear_solver.apply(discretization.rhs_vector(), solution_vector, options);
-          } catch (Stuff::Exceptions::linear_solver_failed_bc_matrix_did_not_fulfill_requirements&) {
+          } catch (Stuff::Exceptions::linear_solver_failed_bc_data_did_not_fulfill_requirements&) {
             error_msg << Stuff::Common::colorStringRed("matrix_did_not_fulfill_requirements");
             success = false;
           } catch (Stuff::Exceptions::linear_solver_failed_bc_it_did_not_converge&) {
