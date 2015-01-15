@@ -27,7 +27,7 @@ struct EllipticSIWPDGDiscretization
   } // ... eoc_study(...)
 }; // EllipticSIWPDGDiscretization
 
-
+#if HAVE_DUNE_FEM
 TYPED_TEST_CASE(EllipticSIWPDGDiscretization, EllipticTestCases);
 TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_1) {
   this->template eoc_study< 1 >();
@@ -38,6 +38,7 @@ TEST(DISABLED_EllipticSIWPDGDiscretization, eoc_study_polorder_2) {}
 TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_2) {
   this->template eoc_study< 2 >();
 }
+#endif
 #endif
 
 TEST(DISABLED_EllipticSWIPDGDiscretization, eoc_study_polorder_1_ESV07_AluConform2d) {}

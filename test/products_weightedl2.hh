@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
 #define DUNE_GDT_TEST_PRODUCTS_WEIGHTEDL2_HH
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/la/container/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -33,7 +35,7 @@ struct WeightedL2ProductBase
   typedef Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
 
   WeightedL2ProductBase()
-   : grid_(GridProviderType(0.0, 1.0, 3u).grid_ptr())
+   : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast< unsigned int >(dsc_grid_elements())).grid_ptr())
    , space_(Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_))
    , one_("x", "1.0", 0)
   {}
@@ -112,14 +114,19 @@ struct WeightedL2AssemblableProduct
   virtual RangeFieldType compute(const FunctionType& function) const override final
   {
     // create the product
-    Products::WeightedL2Assemblable< MatrixType, FunctionType, SpaceType, GridViewType, SpaceType >
-        product(this->space_, this->one_);
-    product.assemble();
+    typedef Products::WeightedL2Assemblable< MatrixType, FunctionType, SpaceType, GridViewType, SpaceType > Product;
+    Product product(this->space_, this->one_);
+    product.assemble(false);
     // project the function
     DiscreteFunctionType discrete_function(this->space_);
     ProjectionOperatorType(this->space_.grid_view()).apply(function, discrete_function);
     // compute the product
-    return product.apply2(discrete_function, discrete_function);
+    const auto result = product.apply2(discrete_function, discrete_function);
+    Product product_tbb(this->space_, this->one_);
+    product_tbb.assemble(true);
+    const auto result_tbb = product_tbb.apply2(discrete_function, discrete_function);
+    EXPECT_DOUBLE_EQ(result_tbb, result);
+    return result;
   } // ... compute(...)
 
   void fulfills_interface() const

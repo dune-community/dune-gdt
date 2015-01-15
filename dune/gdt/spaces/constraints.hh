@@ -188,10 +188,10 @@ class Dirichlet
 public:
   typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType > BoundaryInfoType;
 
-  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls, const bool set_row = true)
+  Dirichlet(const BoundaryInfoType& bnd_info, const size_t rws, const size_t cls, const bool set_rw = true)
     : BaseType(rws, cls)
     , boundary_info_(bnd_info)
-    , set_row_(set_row)
+    , set_row_(set_rw)
   {}
 
   const BoundaryInfoType& boundary_info() const

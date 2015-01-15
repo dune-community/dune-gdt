@@ -19,12 +19,15 @@ struct EllipticSIPDGDiscretization
   template< int polOrder >
   void eoc_study() const
   {
+#if HAVE_ALUGRID
     if (std::is_same< TestCase,
         EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value)
       DSC_LOG_INFO << DSC::colorStringRed("EllipticSIPDGDiscretization does not work for "
                                           "EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, "
                                           "Dune::conforming > >!") << std::endl;
-    else {
+    else
+#endif
+    {
       const TestCase test_case;
       test_case.print_header(DSC_LOG_INFO);
       DSC_LOG_INFO << std::endl;
@@ -34,7 +37,7 @@ struct EllipticSIPDGDiscretization
   } // ... eoc_study(...)
 }; // EllipticSIPDGDiscretization
 
-
+#if HAVE_DUNE_FEM
 TYPED_TEST_CASE(EllipticSIPDGDiscretization, EllipticTestCases);
 TYPED_TEST(EllipticSIPDGDiscretization, eoc_study_polorder_1) {
   this->template eoc_study< 1 >();
@@ -45,6 +48,7 @@ TEST(DISABLED_EllipticSIPDGDiscretization, eoc_study_polorder_2) {}
 TYPED_TEST(EllipticSIPDGDiscretization, eoc_study_polorder_2) {
   this->template eoc_study< 2 >();
 }
+#endif
 #endif
 
 TEST(DISABLED_EllipticSIPDGDiscretization, eoc_study_polorder_1_ESV07_AluConform2d) {}

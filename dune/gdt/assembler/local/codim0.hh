@@ -13,7 +13,7 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/parallel/threadmanager.hh>
+#include <dune/stuff/common/parallel/threadstorage.hh>
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/walker/functors.hh>
