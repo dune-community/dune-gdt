@@ -34,8 +34,11 @@ namespace internal {
 template <class LocalSpaceType>
 class BlockTraits
 {
-  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits>, LocalSpaceType>::value,
-                "LocalSpaceType has to be derived from SpaceInterface!");
+  static_assert(
+      std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, typename LocalSpaceType::dimDomain,
+                                     typename LocalSpaceType::dimRange, typename LocalSpaceType::dimRangeCols>,
+                      LocalSpaceType>::value,
+      "LocalSpaceType has to be derived from SpaceInterface!");
   typedef grid::Multiscale::Default<typename LocalSpaceType::GridViewType::Grid> MsGridType;
 
 public:
@@ -47,8 +50,6 @@ public:
   typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
   typedef typename MsGridType::GlobalGridViewType GridViewType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange     = LocalSpaceType::dimRange;
-  static const unsigned int dimRangeCols = LocalSpaceType::dimRangeCols;
 
   static const Stuff::Grid::ChoosePartView part_view_type = LocalSpaceType::part_view_type;
 
@@ -64,9 +65,11 @@ public:
  *       be enough to hold a copy of the global grid view in this space (if the ms_grid is not needed elsewhere)
  */
 template <class LocalSpaceImp>
-class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>>
+class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>, typename LocalSpaceImp::dimDomain,
+                                    typename LocalSpaceImp::dimRange, typename LocalSpaceImp::dimRangeCols>
 {
-  typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>> BaseType;
+  typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>, typename LocalSpaceImp::dimDomain,
+                         typename LocalSpaceImp::dimRange, typename LocalSpaceImp::dimRangeCols> BaseType;
   typedef Block<LocalSpaceImp> ThisType;
 
 public:
@@ -145,8 +148,9 @@ public:
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
   }
 
-  template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& /*local_grid_view*/, const SpaceInterface<S>& /*ansatz_space*/) const
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& /*local_grid_view*/,
+                              const SpaceInterface<S, d, r, rC>& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
     return PatternType();

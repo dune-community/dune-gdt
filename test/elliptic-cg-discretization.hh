@@ -26,7 +26,7 @@
 #include <dune/stuff/common/convergence-study.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/operators/elliptic-cg.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/assembler/system.hh>
@@ -63,8 +63,7 @@ public:
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
 
-  typedef Dune::GDT::Spaces::ContinuousLagrange::PdelabBased<GridViewType, polOrder, RangeFieldType, dimRange>
-      SpaceType;
+  typedef Dune::GDT::Spaces::CG::PdelabBased<GridViewType, polOrder, RangeFieldType, dimRange> SpaceType;
 
   typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef Dune::GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;

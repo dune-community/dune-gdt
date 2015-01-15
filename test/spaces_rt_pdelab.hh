@@ -6,14 +6,14 @@
 #ifndef DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 
-#include <dune/gdt/playground/spaces/raviartthomas/pdelab.hh>
+#include <dune/gdt/playground/spaces/rt/pdelab.hh>
 
 #include "grids.hh"
 
 
-#define SPACE_RT_PDELAB_SGRID(dd) Spaces::RaviartThomas::PdelabBased<S##dd##dLeafGridViewType, 0, double, dd>
+#define SPACE_RT_PDELAB_SGRID(dd) Spaces::RT::PdelabBased<S##dd##dLeafGridViewType, 0, double, dd>
 
-#define SPACE_RT_PDELAB_YASPGRID(dd) Spaces::RaviartThomas::PdelabBased<Yasp##dd##dLeafGridViewType, 0, double, dd>
+#define SPACE_RT_PDELAB_YASPGRID(dd) Spaces::RT::PdelabBased<Yasp##dd##dLeafGridViewType, 0, double, dd>
 
 #define SPACES_RT_PDELAB                                                                                               \
   SPACE_RT_PDELAB_SGRID(2)                                                                                             \
@@ -21,11 +21,9 @@
 
 #if HAVE_ALUGRID
 
-#define SPACE_RT_PDELAB_ALUCONFORMGRID(dd)                                                                             \
-  Spaces::RaviartThomas::PdelabBased<AluConform##dd##dLeafGridViewType, 0, double, dd>
+#define SPACE_RT_PDELAB_ALUCONFORMGRID(dd) Spaces::RT::PdelabBased<AluConform##dd##dLeafGridViewType, 0, double, dd>
 
-#define SPACE_RT_PDELAB_ALUCUBEGRID(dd)                                                                                \
-  Spaces::RaviartThomas::PdelabBased<AluCube##dd##dLeafGridViewType, 0, double, dd>
+#define SPACE_RT_PDELAB_ALUCUBEGRID(dd) Spaces::RT::PdelabBased<AluCube##dd##dLeafGridViewType, 0, double, dd>
 
 #define SPACES_RT_PDELAB_ALUGRID                                                                                       \
   SPACE_RT_PDELAB_ALUCONFORMGRID(2)                                                                                    \

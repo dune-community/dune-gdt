@@ -16,8 +16,8 @@
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/grid/walker.hh>
 
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
@@ -47,7 +47,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   }
 
   template <class T, int d, class R, int r, int rC>
-  void matches_signature(const Dune::GDT::Spaces::ContinuousLagrangeBase<T, d, R, r, rC>& /*space*/)
+  void matches_signature(const Dune::GDT::Spaces::CGInterface<T, d, R, r, rC>& /*space*/)
   {
     static_assert(std::is_same<typename SpaceType::Traits, T>::value, "");
     static_assert(std::is_same<typename SpaceType::RangeFieldType, R>::value, "");

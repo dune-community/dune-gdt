@@ -10,9 +10,7 @@
 #include <dune/common/typetraits.hh>
 
 #if HAVE_DUNE_PDELAB
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 #endif
 
 #include <dune/stuff/common/parallel/threadstorage.hh>
@@ -29,35 +27,54 @@ namespace Mapper {
 
 // forward, to be used in the traits
 template <class PdelabSpaceImp>
-class SimplePdelabWrapper;
+class ContinuousPdelabWrapper;
+
+template <class PdelabSpaceImp>
+class DiscontinuousPdelabWrapper;
+
+
+namespace internal {
 
 
 template <class PdelabSpaceImp>
-class SimplePdelabWrapperTraits
+class ContinuousPdelabWrapperTraits
 {
 public:
-  typedef SimplePdelabWrapper<PdelabSpaceImp> derived_type;
+  typedef ContinuousPdelabWrapper<PdelabSpaceImp> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
-};
-
+}; // ContinuousPdelabWrapperTraits
 
 template <class PdelabSpaceImp>
-class SimplePdelabWrapper : public MapperInterface<SimplePdelabWrapperTraits<PdelabSpaceImp>>
+class DiscontinuousPdelabWrapperTraits
 {
-  typedef MapperInterface<SimplePdelabWrapperTraits<PdelabSpaceImp>> InterfaceType;
+public:
+  typedef DiscontinuousPdelabWrapper<PdelabSpaceImp> derived_type;
+  typedef PdelabSpaceImp BackendType;
+  typedef typename BackendType::Element EntityType;
+}; // DiscontinuousPdelabWrapperTraits
+
+
+template <class ImpTraits>
+class PdelabWrapperBase : public MapperInterface<ImpTraits>
+{
+  typedef MapperInterface<ImpTraits> InterfaceType;
 
 public:
-  typedef SimplePdelabWrapperTraits<PdelabSpaceImp> Traits;
-  typedef typename Traits::BackendType BackendType;
+  typedef typename InterfaceType::EntityType EntityType;
+  typedef typename InterfaceType::BackendType BackendType;
 
 private:
   typedef PDELab::LocalFunctionSpace<BackendType, PDELab::TrialSpaceTag> PdeLabLFSType;
 
 public:
-  explicit SimplePdelabWrapper(const BackendType& pdelab_space)
+  explicit PdelabWrapperBase(const BackendType& pdelab_space)
     : backend_(pdelab_space)
     , lfs_(backend_)
+  {
+  }
+
+  virtual ~PdelabWrapperBase()
   {
   }
 
@@ -71,7 +88,6 @@ public:
     return backend_.size();
   }
 
-  template <class EntityType>
   size_t numDofs(const EntityType& entity) const
   {
     lfs_.bind(entity);
@@ -83,7 +99,7 @@ public:
     return backend_.maxLocalSize();
   }
 
-  void globalIndices(const typename Traits::EntityType& entity, Dune::DynamicVector<size_t>& ret) const
+  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     lfs_.bind(entity);
     // some checks
@@ -97,25 +113,78 @@ public:
 
   using InterfaceType::globalIndices;
 
-  template <class EntityType>
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     lfs_.bind(entity);
     assert(localIndex < lfs_.size());
-    return lfs_.dofIndex(localIndex).entityIndex()[1];
+    return mapAfterBound(entity, localIndex);
   } // ... mapToGlobal(...)
 
-private:
+protected:
+  virtual size_t mapAfterBound(const EntityType& entity, const size_t& localIndex) const = 0;
+
   const BackendType& backend_;
   mutable PdeLabLFSType lfs_;
-}; // class SimplePdelabWrapper
+}; // class PdelabWrapperBase
+
+
+} // namespace internal
+
+
+template <class PdelabSpaceImp>
+class ContinuousPdelabWrapper
+    : public internal::PdelabWrapperBase<internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp>>
+{
+public:
+  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp> Traits;
+  typedef typename Traits::EntityType EntityType;
+
+  template <class... Args>
+  ContinuousPdelabWrapper(Args&&... args)
+    : internal::PdelabWrapperBase<Traits>(std::forward<Args>(args)...)
+  {
+  }
+
+protected:
+  virtual size_t mapAfterBound(const EntityType& /*entity*/, const size_t& localIndex) const override
+  {
+    return this->lfs_.dofIndex(localIndex).entityIndex()[1];
+  }
+}; // class ContinuousPdelabWrapper
+
+template <class PdelabSpaceImp>
+class DiscontinuousPdelabWrapper
+    : public internal::PdelabWrapperBase<internal::DiscontinuousPdelabWrapperTraits<PdelabSpaceImp>>
+{
+public:
+  typedef typename internal::DiscontinuousPdelabWrapperTraits<PdelabSpaceImp> Traits;
+  typedef typename Traits::EntityType EntityType;
+
+  template <class... Args>
+  DiscontinuousPdelabWrapper(Args&&... args)
+    : internal::PdelabWrapperBase<Traits>(std::forward<Args>(args)...)
+  {
+  }
+
+protected:
+  virtual size_t mapAfterBound(const EntityType& entity, const size_t& localIndex) const override
+  {
+    return this->lfs_.dofIndex(localIndex).entityIndex()[1] * this->numDofs(entity) + localIndex;
+  }
+}; // class DiscontinuousPdelabWrapper
 
 
 #else // HAVE_DUNE_PDELAB
 
 
 template <class PdelabSpaceImp>
-class SimplePdelabWrapper
+class ContinuousPdelabWrapper
+{
+  static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
+};
+
+template <class PdelabSpaceImp>
+class DiscontinuousPdelabWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
 };

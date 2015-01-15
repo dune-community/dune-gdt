@@ -3,21 +3,18 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
-#define DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
+#ifndef DUNE_GDT_SPACES_CG_INTERFACE_HH
+#define DUNE_GDT_SPACES_CG_INTERFACE_HH
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
-#include <dune/common/deprecated.hh>
+#include <dune/common/typetraits.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
 #include <dune/geometry/referenceelements.hh>
 #else
 #include <dune/geometry/genericreferenceelements.hh>
 #endif
-#include <dune/common/typetraits.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -29,22 +26,11 @@ namespace GDT {
 namespace Spaces {
 
 
-// forward, to allow for specialization
 template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
-class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
-    ContinuousLagrangeBase
+class CGInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
-  static_assert(AlwaysFalse<ImpTraits>::value, "Untested for these dimensions!");
-};
-
-
-template <class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim>
-class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
-    ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
-    : public SpaceInterface<ImpTraits, domainDim, rangeDim, 1>
-{
-  typedef SpaceInterface<ImpTraits, domainDim, rangeDim, 1> BaseType;
-  typedef ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
+  typedef CGInterface<ImpTraits, domainDim, RangeFieldImp, rangeDim, rangeDimCols> ThisType;
 
   static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
 
@@ -66,19 +52,28 @@ public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
-  virtual ~ContinuousLagrangeBase()
+  /**
+   * \defgroup interface ´´These methods have to be implemented!''
+   * @{
+   **/
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
-  }
+    CHECK_CRTP(this->as_imp().lagrange_points(entity));
+    return this->as_imp().lagrange_points(entity);
+  } // ... lagrange_points(...)
 
-  using BaseType::compute_pattern;
-
-  template <class G, class S, int d, int r, int rC>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
-    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
-  }
+    CHECK_CRTP(this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo));
+    return this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo);
+  } // ... local_dirichlet_DoFs(...)
+  /** @} */
 
-  virtual std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  /**
+   * \defgroup provided ´´These methods are provided by the interface for convenience.''
+   * @{
+   **/
+  std::vector<DomainType> lagrange_points_order_1(const EntityType& entity) const
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
@@ -117,9 +112,9 @@ public:
       assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
     }
     return local_vertices;
-  } // ... lagrange_points(...)
+  } // ... lagrange_points_order_1(...)
 
-  virtual std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
@@ -166,7 +161,15 @@ public:
       assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
     }
     return localDirichletDofs;
-  } // ... local_dirichlet_DoFs(...)
+  } // ... local_dirichlet_DoFs_order_1(...)
+
+  using BaseType::compute_pattern;
+
+  template <class G, class S, int d, int r, int rC>
+  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  {
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
+  } // ... compute_pattern(...)
 
   using BaseType::local_constraints;
 
@@ -175,7 +178,7 @@ public:
                          ConstraintsType& /*ret*/) const
   {
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
-  }
+  } // ... local_constraints(...)
 
   template <class S, int d, int r, int rC>
   void local_constraints(const SpaceInterface<S, d, r, rC>& other, const EntityType& entity,
@@ -211,11 +214,12 @@ public:
       ret.set_size(0, 0);
     }
   } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
-}; // class ContinuousLagrangeBase
+  /** @} */
+}; // class CGInterface
 
 
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_CONTINUOUSLAGRANGE_BASE_HH
+#endif // DUNE_GDT_SPACES_CG_INTERFACE_HH

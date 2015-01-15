@@ -82,7 +82,9 @@ struct LevelGridPartView<GridType, false>
 template <class SpaceType>
 class GridPartView
 {
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceType::Traits>, SpaceType>::value,
+  static_assert(std::is_base_of<SpaceInterface<typename SpaceType::Traits, SpaceType::dimDomain, SpaceType::dimRange,
+                                               SpaceType::dimRangeCols>,
+                                SpaceType>::value,
                 "SpaceType has to be derived from SpaceInterface!");
   static const bool needs_grid_view = SpaceType::needs_grid_view;
 
