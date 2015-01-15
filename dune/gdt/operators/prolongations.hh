@@ -9,9 +9,7 @@
 #include <vector>
 #include <limits>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/common/dynmatrix.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/common/dynmatrix.hh>
 
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/common/vector.hh>
@@ -21,23 +19,21 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/grid/search.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/continuouslagrange/fem.hh>
-#include <dune/gdt/spaces/continuouslagrange/pdelab.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/cg/pdelab.hh>
 
 
 namespace Dune {
 namespace GDT {
 
 namespace Spaces {
-namespace DiscontinuousLagrange {
+namespace DG {
 template<class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
 class FemBased;
 }
@@ -56,7 +52,7 @@ namespace Operators {
  *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
 template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
-           DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
+           DiscreteFunction< Spaces::DG::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
 {
   static_assert(Dune::AlwaysFalse< T >::value, "Not implemented for this combination of source and range!");
 }\endcode
@@ -78,40 +74,40 @@ public:
     : grid_view_(grid_view)
   {}
 
-  // Source: Spaces::ContinuousLagrange::FemBased
-  // Range:  Spaces::DiscontinuousLagrange::FemBased
+  // Source: Spaces::CG::FemBased
+  // Range:  Spaces::DG::FemBased
 
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
-             DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  void apply(const ConstDiscreteFunction< Spaces::CG::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< Spaces::DG::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
-  inline void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, R, r, rC >, VS >& source,
-                    DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, R, r, rC >, VR >&
+  inline void apply(const ConstDiscreteFunction< Spaces::CG::FemBased< GPS, pS, R, r, rC >, VS >& source,
+                    DiscreteFunction< Spaces::DG::FemBased< GPR, pR, R, r, rC >, VR >&
                       range) const
   {
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
 
-  // Source: Spaces::DiscontinuousLagrange::FemBased
-  // Range:  Spaces::DiscontinuousLagrange::FemBased
+  // Source: Spaces::DG::FemBased
+  // Range:  Spaces::DG::FemBased
 
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
-             DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  void apply(const ConstDiscreteFunction< Spaces::DG::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< Spaces::DG::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
   inline void apply(const ConstDiscreteFunction
-                      < Spaces::DiscontinuousLagrange::FemBased< GPS, pS, R, r, rC >, VS >& source,
-                    DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, R, r, rC >, VR >&
+                      < Spaces::DG::FemBased< GPS, pS, R, r, rC >, VS >& source,
+                    DiscreteFunction< Spaces::DG::FemBased< GPR, pR, R, r, rC >, VR >&
                       range) const
   {
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
@@ -119,8 +115,8 @@ public:
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
   inline void apply(const ConstDiscreteFunction
-                      < Spaces::Block< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, R, r, rC > >, VS >& source,
-                    DiscreteFunction< Spaces::Block< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, R, r, rC > >, VR >&
+                      < Spaces::Block< Spaces::DG::FemBased< GPS, pS, R, r, rC > >, VS >& source,
+                    DiscreteFunction< Spaces::Block< Spaces::DG::FemBased< GPR, pR, R, r, rC > >, VR >&
                       range) const
   {
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
@@ -128,8 +124,8 @@ public:
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, int pR, class VR >
   inline void apply(const ConstDiscreteFunction
-                      < Spaces::Block< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, R, r, rC > >, VS >& source,
-                    DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPR, pR, R, r, rC >, VR >& range) const
+                      < Spaces::Block< Spaces::DG::FemBased< GPS, pS, R, r, rC > >, VS >& source,
+                    DiscreteFunction< Spaces::DG::FemBased< GPR, pR, R, r, rC >, VR >& range) const
   {
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
@@ -228,7 +224,7 @@ private:
  *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
 template< class T, class VS, class GPR, int pR, class RR, int rR, int rCR, class VR >
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
-           DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
+           DiscreteFunction< Spaces::CG::FemBased< GPR, pR, RR, rR, rCR >, VR >& range) const
 {
   static_assert(Dune::AlwaysFalse< T >::value, "Not implemented for this combination of source and range!");
 }\endcode
@@ -246,58 +242,58 @@ public:
     : grid_view_(grid_view)
   {}
 
-  // Source: Spaces::ContinuousLagrange::FemBased
-  // Range:  Spaces::ContinuousLagrange::FemBased
+  // Source: Spaces::CG::FemBased
+  // Range:  Spaces::CG::FemBased
 
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
-             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  void apply(const ConstDiscreteFunction< Spaces::CG::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< Spaces::CG::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
-  inline void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPS, pS, R, r, 1 >, VS >& source,
-                    DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, R, r, 1 >, VR >& range) const
+  inline void apply(const ConstDiscreteFunction< Spaces::CG::FemBased< GPS, pS, R, r, 1 >, VS >& source,
+                    DiscreteFunction< Spaces::CG::FemBased< GPR, pR, R, r, 1 >, VR >& range) const
   {
     redirect_to_appropriate_apply(source, range);
   }
 
-  // Source: Spaces::DiscontinuousLagrange::FemBased
-  // Range:  Spaces::ContinuousLagrange::FemBased
+  // Source: Spaces::DG::FemBased
+  // Range:  Spaces::CG::FemBased
 
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
-             DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  void apply(const ConstDiscreteFunction< Spaces::DG::FemBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< Spaces::CG::FemBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, class VS, class GPR, int pR, class VR >
   inline void apply(const ConstDiscreteFunction
-                      < Spaces::DiscontinuousLagrange::FemBased< GPS, pS, R, r, 1 >, VS >& source,
-                    DiscreteFunction< Spaces::ContinuousLagrange::FemBased< GPR, pR, R, r, 1 >, VR >& range) const
+                      < Spaces::DG::FemBased< GPS, pS, R, r, 1 >, VS >& source,
+                    DiscreteFunction< Spaces::CG::FemBased< GPR, pR, R, r, 1 >, VR >& range) const
   {
     redirect_to_appropriate_apply(source, range);
   }
 
-  // Source: Spaces::ContinuousLagrange::PdelabBased
-  // Range:  Spaces::ContinuousLagrange::PdelabBased
+  // Source: Spaces::CG::PdelabBased
+  // Range:  Spaces::CG::PdelabBased
 
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  void apply(const ConstDiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
-             DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
+  void apply(const ConstDiscreteFunction< Spaces::CG::PdelabBased< GPS, pS, RS, rS, rCS >, VS >& /*source*/,
+             DiscreteFunction< Spaces::CG::PdelabBased< GPR, pR, RR, rR, rCR >, VR >& /*range*/) const
   {
     static_assert(Dune::AlwaysFalse< GPS >::value, "Not implemented for this combination of source and range!");
   }
 
   template< class GPS, int pS, class R, int r, int rC, class VS, class GPR, class VR >
-  inline void apply(const ConstDiscreteFunction < Spaces::ContinuousLagrange::PdelabBased< GPS, pS, R, r, rC >, VS >&
+  inline void apply(const ConstDiscreteFunction < Spaces::CG::PdelabBased< GPS, pS, R, r, rC >, VS >&
                       source,
-                    DiscreteFunction< Spaces::ContinuousLagrange::PdelabBased< GPR, 1, R, r, rC >, VR >& range) const
+                    DiscreteFunction< Spaces::CG::PdelabBased< GPR, 1, R, r, rC >, VR >& range) const
   {
     redirect_to_appropriate_apply(source, range);
   }
@@ -393,9 +389,9 @@ public:
 private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
-  inline void redirect_to_appropriate_operator(const ConstDiscreteFunction< Spaces::ContinuousLagrange::FemBased
+  inline void redirect_to_appropriate_operator(const ConstDiscreteFunction< Spaces::CG::FemBased
                                                   < GPS, pS, RS, rS, rCS >, VS >& source,
-                                               DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased
+                                               DiscreteFunction< Spaces::DG::FemBased
                                                   < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     l2_prolongation_operator_.apply(source, range);
@@ -404,10 +400,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::DG::FemBased
                                                     < GPS, pS, RS, rS, rCS >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::DG::FemBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     l2_prolongation_operator_.apply(source, range);
@@ -416,10 +412,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::Block< Spaces::DG::FemBased
                                                     < GPS, pS, RS, rS, rCS > >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::Block< Spaces::DG::FemBased
                                                     < GPR, pR, RR, rR, rCR > >, VR >& range) const
   {
     l2_prolongation_operator_.apply(source, range);
@@ -428,10 +424,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::Block< Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::Block< Spaces::DG::FemBased
                                                     < GPS, pS, RS, rS, rCS > >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::DG::FemBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     l2_prolongation_operator_.apply(source, range);
@@ -440,10 +436,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::ContinuousLagrange::FemBased
+                                                  < Spaces::CG::FemBased
                                                     < GPS, pS, RS, rS, rCS >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::ContinuousLagrange::FemBased
+                                                  < Spaces::CG::FemBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     lagrange_prolongation_operator_.apply(source, range);
@@ -452,10 +448,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::DiscontinuousLagrange::FemBased
+                                                  < Spaces::DG::FemBased
                                                     < GPS, pS, RS, rS, rCS >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::ContinuousLagrange::FemBased
+                                                  < Spaces::CG::FemBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     lagrange_prolongation_operator_.apply(source, range);
@@ -464,10 +460,10 @@ private:
   template< class GPS, int pS, class RS, int rS, int rCS, class VS,
             class GPR, int pR, class RR, int rR, int rCR, class VR >
   inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
-                                                  < Spaces::ContinuousLagrange::PdelabBased
+                                                  < Spaces::CG::PdelabBased
                                                     < GPS, pS, RS, rS, rCS >, VS >& source,
                                                DiscreteFunction
-                                                  < Spaces::ContinuousLagrange::PdelabBased
+                                                  < Spaces::CG::PdelabBased
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     lagrange_prolongation_operator_.apply(source, range);

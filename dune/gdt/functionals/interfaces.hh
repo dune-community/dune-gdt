@@ -46,7 +46,11 @@ public:
   typedef typename Traits::ScalarType   ScalarType;
 
 private:
-  static_assert(std::is_base_of< SpaceInterface< typename SpaceType::Traits >, SpaceType >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename SpaceType::Traits,
+                                                 SpaceType::dimDomain,
+                                                 SpaceType::dimRange,
+                                                 SpaceType::dimRangeCols >,
+                                 SpaceType >::value,
                 "SpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_base_of
                 < Stuff::LA::VectorInterface< typename VectorType::Traits, ScalarType >,

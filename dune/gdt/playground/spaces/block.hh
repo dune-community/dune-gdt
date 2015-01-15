@@ -34,7 +34,11 @@ namespace internal {
 template< class LocalSpaceType >
 class BlockTraits
 {
-  static_assert(std::is_base_of< SpaceInterface< typename LocalSpaceType::Traits >, LocalSpaceType >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename LocalSpaceType::Traits,
+                                                 typename LocalSpaceType::dimDomain,
+                                                 typename LocalSpaceType::dimRange,
+                                                 typename LocalSpaceType::dimRangeCols >,
+                                 LocalSpaceType >::value,
                 "LocalSpaceType has to be derived from SpaceInterface!");
   typedef grid::Multiscale::Default< typename LocalSpaceType::GridViewType::Grid > MsGridType;
 public:
@@ -46,8 +50,6 @@ public:
   typedef typename LocalSpaceType::CommunicatorType     CommunicatorType;
   typedef typename MsGridType::GlobalGridViewType       GridViewType;
   typedef typename LocalSpaceType::RangeFieldType       RangeFieldType;
-  static const unsigned int                             dimRange = LocalSpaceType::dimRange;
-  static const unsigned int                             dimRangeCols = LocalSpaceType::dimRangeCols;
 
   static const Stuff::Grid::ChoosePartView part_view_type = LocalSpaceType::part_view_type;
 
@@ -64,10 +66,16 @@ public:
  */
 template< class LocalSpaceImp >
 class Block
-  : public SpaceInterface< internal::BlockTraits< LocalSpaceImp > >
+  : public SpaceInterface< internal::BlockTraits< LocalSpaceImp >,
+                           typename LocalSpaceImp::dimDomain,
+                           typename LocalSpaceImp::dimRange,
+                           typename LocalSpaceImp::dimRangeCols >
 {
-  typedef SpaceInterface< internal::BlockTraits< LocalSpaceImp > > BaseType;
-  typedef Block< LocalSpaceImp >                                   ThisType;
+  typedef SpaceInterface< internal::BlockTraits< LocalSpaceImp >,
+                          typename LocalSpaceImp::dimDomain,
+                          typename LocalSpaceImp::dimRange,
+                          typename LocalSpaceImp::dimRangeCols >    BaseType;
+  typedef Block< LocalSpaceImp >                                    ThisType;
 public:
   typedef internal::BlockTraits< LocalSpaceImp > Traits;
   typedef typename Traits::BackendType         BackendType;
@@ -141,8 +149,9 @@ public:
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
   }
 
-  template< class G, class S >
-  PatternType compute_pattern(const GridView< G >& /*local_grid_view*/, const SpaceInterface< S >& /*ansatz_space*/) const
+  template< class G, class S, int d, int r, int rC >
+  PatternType compute_pattern(const GridView< G >& /*local_grid_view*/,
+                              const SpaceInterface< S, d, r, rC >& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
     return PatternType();

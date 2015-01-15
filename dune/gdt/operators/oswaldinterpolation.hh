@@ -18,7 +18,7 @@
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/playground/spaces/discontinuouslagrange/fem.hh>
+#include <dune/gdt/playground/spaces/dg/fem.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 
 #include "interfaces.hh"
@@ -50,16 +50,16 @@ private:
                 "SourceType has to be a ConstDiscreteFunction!");
   typedef typename SourceType::SpaceType S;
   static_assert(std::is_same< S
-                            , Spaces::DiscontinuousLagrange::FemBased< typename S::GridPartType
+                            , Spaces::DG::FemBased< typename S::GridPartType
                                                                                   , 1
                                                                                   , FieldType, 1, 1 > >::value,
-                "The SpaceType of SourceType has to be a Spaces::DiscontinuousLagrange::FemBased!");
+                "The SpaceType of SourceType has to be a Spaces::DG::FemBased!");
   typedef typename RangeType::SpaceType R;
   static_assert(std::is_same< R
-                            , Spaces::DiscontinuousLagrange::FemBased< typename R::GridPartType
+                            , Spaces::DG::FemBased< typename R::GridPartType
                                                                                   , 1
                                                                                   , FieldType, 1, 1 > >::value,
-                "The SpaceType of RangeType has to be a Spaces::DiscontinuousLagrange::FemBased!");
+                "The SpaceType of RangeType has to be a Spaces::DG::FemBased!");
 }; // class OswaldInterpolationLocalizableTraits
 
 
@@ -363,18 +363,18 @@ public:
   {}
 
   template< class SGP, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< SGP, 1, FieldType, 1, 1 >, SV >&
+  void apply(const ConstDiscreteFunction< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 >, SV >&
                 source,
-             DiscreteFunction< Spaces::DiscontinuousLagrange::FemBased< RGP, 1, FieldType, 1, 1 >, RV >&
+             DiscreteFunction< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 >, RV >&
                 range) const
   {
     apply_dg_fem(source, range);
   }
 
   template< class SGP, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< Spaces::Block< Spaces::DiscontinuousLagrange::FemBased< SGP, 1, FieldType, 1, 1 > >, SV >&
+  void apply(const ConstDiscreteFunction< Spaces::Block< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 > >, SV >&
                 source,
-             DiscreteFunction< Spaces::Block< Spaces::DiscontinuousLagrange::FemBased< RGP, 1, FieldType, 1, 1 > >, RV >&
+             DiscreteFunction< Spaces::Block< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 > >, RV >&
                 range) const
   {
     apply_dg_fem(source, range);

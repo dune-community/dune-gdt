@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_TEST_SPACES_DG_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_DG_PDELAB_HH
 
-#include <dune/gdt/playground/spaces/discontinuouslagrange/pdelab.hh>
+#include <dune/gdt/playground/spaces/dg/pdelab.hh>
 
 #include "grids.hh"
 
@@ -14,10 +14,10 @@
 
 
 #define SPACE_DG_PDELAB_SGRID(dd, rr, pp) \
-  Spaces::DiscontinuousLagrange::PdelabBased< S ## dd ## dLeafGridViewType, pp, double, rr >
+  Spaces::DG::PdelabBased< S ## dd ## dLeafGridViewType, pp, double, rr >
 
 #define SPACE_DG_PDELAB_YASPGRID(dd, rr, pp) \
-  Spaces::DiscontinuousLagrange::PdelabBased< Yasp ## dd ## dLeafGridViewType, pp, double, rr >
+  Spaces::DG::PdelabBased< Yasp ## dd ## dLeafGridViewType, pp, double, rr >
 
 #define SPACES_DG_PDELAB(pp) \
     SPACE_DG_PDELAB_SGRID(1, 1, pp) \
@@ -32,7 +32,7 @@
 
 
 #define SPACE_DG_PDELAB_ALUCUBEGRID(dd, rr, pp) \
-  Spaces::DiscontinuousLagrange::PdelabBased< AluCube ## dd ## dLeafGridViewType, pp, double, rr >
+  Spaces::DG::PdelabBased< AluCube ## dd ## dLeafGridViewType, pp, double, rr >
 
 #define SPACES_DG_PDELAB_ALUGRID(pp) \
     SPACE_DG_PDELAB_ALUCUBEGRID(2, 1, pp) \

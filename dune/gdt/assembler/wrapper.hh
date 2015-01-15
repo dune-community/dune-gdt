@@ -25,8 +25,18 @@ template< class TestSpaceType, class AnsatzSpaceType, class GridViewType, class 
 class LocalMatrixConstraintsWrapper
   : public Stuff::Grid::internal::Codim0Object< GridViewType >
 {
-  static_assert(std::is_base_of< SpaceInterface< typename TestSpaceType::Traits >, TestSpaceType >::value, "");
-  static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceType::Traits >, AnsatzSpaceType >::value, "");
+  static_assert(std::is_base_of< SpaceInterface< typename TestSpaceType::Traits,
+                                                 TestSpaceType::dimDomain,
+                                                 TestSpaceType::dimRange,
+                                                 TestSpaceType::dimRangeCols >,
+                                 TestSpaceType >::value,
+                "TestSpaceType has to be derived from SpaceInterface!");
+  static_assert(std::is_base_of< SpaceInterface< typename AnsatzSpaceType::Traits,
+                                                 AnsatzSpaceType::dimDomain,
+                                                 AnsatzSpaceType::dimRange,
+                                                 AnsatzSpaceType::dimRangeCols >,
+                                 AnsatzSpaceType >::value,
+                "AnsatzSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_base_of
                 < Stuff::LA::MatrixInterface< typename MatrixType::Traits, typename MatrixType::Traits::ScalarType >,
                   MatrixType >::value, "");

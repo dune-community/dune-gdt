@@ -105,7 +105,7 @@ public:
     typedef typename SpaceType::CommunicatorType    D_CommunicatorType;
     static const bool                               d_needs_grid_view = SpaceType::needs_grid_view;
     // * as the interface
-    typedef SpaceInterface< Traits > InterfaceType;
+    typedef SpaceInterface< Traits, d_dimDomain, d_dimRange, d_dimRangeCols > InterfaceType;
     typedef typename InterfaceType::derived_type        derived_type;
     typedef typename InterfaceType::GridViewType        I_GridViewType;
     typedef typename InterfaceType::DomainFieldType     I_DomainFieldType;

@@ -11,51 +11,51 @@
 #if HAVE_ALUGRID
 
 #define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID_TWO \
-  /* all combinations which have Spaces::ContinuousLagrange::FemBased as FineSpaceType */ \
-    std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  /* all combinations which have Spaces::CG::FemBased as FineSpaceType */ \
+    std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
   \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
   \
-  /* all combinations which have Spaces::ContinuousLagrange::FemBased as FineSpaceType */ \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  /* all combinations which have Spaces::CG::FemBased as FineSpaceType */ \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
   \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > >
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > >
 
 #define L2_PROLONGATION_OPERATOR_SPACE_TYPES_ALUGRID \
-  /* all combinations which have Spaces::DiscontinuousLagrange::FemBased as FineSpaceType */ \
-    std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  /* all combinations which have Spaces::DG::FemBased as FineSpaceType */ \
+    std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluConform2dLevelGridPartType, 1, double, 1 > > \
   \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::DiscontinuousLagrange::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > >
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::DG::FemBased< AluSimplex2dLevelGridPartType, 1, double, 1 > >
 
 #endif // HAVE_ALUGRID
 

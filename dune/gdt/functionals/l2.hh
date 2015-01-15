@@ -40,7 +40,11 @@ class L2VolumeTraits
                                                                     , FunctionType::dimRangeCols >
                                , FunctionType >::value,
                 "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits,
+                                                 SpaceImp::dimDomain,
+                                                 SpaceImp::dimRange,
+                                                 SpaceImp::dimRangeCols >,
+                                 SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 public:
   typedef L2Volume< FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType > derived_type;
@@ -139,7 +143,11 @@ class L2FaceTraits
                                                                     , FunctionType::dimRangeCols >
                                , FunctionType >::value,
                 "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits >, SpaceImp >::value,
+  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits,
+                                                 SpaceImp::dimDomain,
+                                                 SpaceImp::dimRange,
+                                                 SpaceImp::dimRangeCols >,
+                                 SpaceImp >::value,
                 "SpaceImp has to be derived from SpaceInterface!");
 public:
   typedef L2Face< FunctionType, VectorImp, SpaceImp, GridViewImp > derived_type;

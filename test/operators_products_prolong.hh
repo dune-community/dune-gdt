@@ -115,18 +115,18 @@ struct ProlongationOperator
 
 
 #define LAGRANGE_PROLONGATION_OPERATOR_SPACE_TYPES \
-  /* all combinations which have Spaces::ContinuousLagrange::FemBased as FineSpaceType */ \
-    std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< S1dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< S1dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< S2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< S2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< S3dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< S3dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp1dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp1dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp2dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp2dLevelGridPartType, 1, double, 1 > > \
-  , std::pair< Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp3dLevelGridPartType, 1, double, 1 >, \
-               Dune::GDT::Spaces::ContinuousLagrange::FemBased< Yasp3dLevelGridPartType, 1, double, 1 > >
+  /* all combinations which have Spaces::CG::FemBased as FineSpaceType */ \
+    std::pair< Dune::GDT::Spaces::CG::FemBased< S1dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< S1dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< S2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< S2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< S3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< S3dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< Yasp1dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< Yasp1dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< Yasp2dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< Yasp2dLevelGridPartType, 1, double, 1 > > \
+  , std::pair< Dune::GDT::Spaces::CG::FemBased< Yasp3dLevelGridPartType, 1, double, 1 >, \
+               Dune::GDT::Spaces::CG::FemBased< Yasp3dLevelGridPartType, 1, double, 1 > >
 
 #endif // DUNE_GDT_TEST_OPERATORS_PRODUCTS_PROLONG_HH

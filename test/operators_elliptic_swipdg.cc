@@ -19,7 +19,7 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 
-#include <dune/gdt/spaces/discontinuouslagrange.hh>
+#include <dune/gdt/spaces/dg.hh>
 #include <dune/gdt/playground/operators/elliptic-swipdg.hh>
 
 using namespace Dune;

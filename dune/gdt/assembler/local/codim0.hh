@@ -58,13 +58,16 @@ public:
   /**
    *  \tparam T           Traits of the SpaceInterface implementation, representing the type of testSpace
    *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatzSpace
+   *  \tparam *d          dimDomain of testSpace (* == T) or ansatzSpace (* == A)
+   *  \tparam *r          dimRange of testSpace (* == T) or ansatzSpace (* == A)
+   *  \tparam *rC         dimRangeCols of testSpace (* == T) or ansatzSpace (* == A)
    *  \tparam EntityType  A model of Dune::Entity< 0 >
    *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the type of systemMatrix
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, class A, class EntityType, class M, class R >
-  void assembleLocal(const SpaceInterface< T >& testSpace,
-                     const SpaceInterface< A >& ansatzSpace,
+  template< class T, int Td, int Tr, int TrC, class A, int Ad, int Ar, int ArC, class EntityType, class M, class R >
+  void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
+                     const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
                      const EntityType& entity,
                      Dune::Stuff::LA::MatrixInterface< M, R >& systemMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
@@ -137,12 +140,15 @@ public:
 
   /**
    *  \tparam T           Traits of the SpaceInterface implementation, representing the type of testSpace
+   *  \tparam d           dimDomain of testSpace
+   *  \tparam r           dimRange of testSpace
+   *  \tparam rC          dimRangeCols of testSpace
    *  \tparam EntityType  A model of Dune::Entity< 0 >
    *  \tparam V           Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type of systemVector
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, class EntityType, class V, class R >
-  void assembleLocal(const SpaceInterface< T >& testSpace,
+  template< class T, int d, int r, int rC, class EntityType, class V, class R >
+  void assembleLocal(const SpaceInterface< T, d, r, rC >& testSpace,
                      const EntityType& entity,
                      Dune::Stuff::LA::VectorInterface< V, R >& systemVector,
                      std::vector< std::vector< Dune::DynamicVector< R > > >& tmpLocalVectorContainer,

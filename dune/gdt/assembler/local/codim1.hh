@@ -50,12 +50,15 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class TE, class AE, class TN, class AN,
+  template< class TE, int TEd, int TEr, int TErC,
+            class AE, int AEd, int AEr, int AErC,
+            class TN, int TNd, int TNr, int TNrC,
+            class AN, int ANd, int ANr, int ANrC,
             class IntersectionType, class MEE, class MNN, class MEN, class MNE, class R >
-  void assembleLocal(const SpaceInterface< TE >& testSpaceEntity,
-                     const SpaceInterface< AE >& ansatzSpaceEntity,
-                     const SpaceInterface< TN >& testSpaceNeighbor,
-                     const SpaceInterface< AN >& ansatzSpaceNeighbor,
+  void assembleLocal(const SpaceInterface< TE, TEd, TEr, TErC >& testSpaceEntity,
+                     const SpaceInterface< AE, AEd, AEr, AErC >& ansatzSpaceEntity,
+                     const SpaceInterface< TN, TNd, TNr, TNrC >& testSpaceNeighbor,
+                     const SpaceInterface< AN, ANd, ANr, ANrC >& ansatzSpaceNeighbor,
                      const IntersectionType& intersection,
                      Dune::Stuff::LA::MatrixInterface< MEE, R >& entityEntityMatrix,
                      Dune::Stuff::LA::MatrixInterface< MNN, R >& neighborNeighborMatrix,
@@ -146,9 +149,11 @@ public:
     }
   } // void assembleLocal(...) const
 
-  template< class T, class A, class IntersectionType, class M, class R >
-  void assembleLocal(const SpaceInterface< T >& testSpace,
-                     const SpaceInterface< A >& ansatzSpace,
+  template< class T, int Td, int Tr, int TrC,
+            class A, int Ad, int Ar, int ArC,
+            class IntersectionType, class M, class R >
+  void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
+                     const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
                      const IntersectionType& intersection,
                      Dune::Stuff::LA::MatrixInterface< M, R >& systemMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
@@ -193,9 +198,11 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class T, class A, class IntersectionType, class M, class R >
-  void assembleLocal(const SpaceInterface< T >& testSpace,
-                     const SpaceInterface< A >& ansatzSpace,
+  template< class T, int Td, int Tr, int TrC,
+            class A, int Ad, int Ar, int ArC,
+            class IntersectionType, class M, class R >
+  void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
+                     const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
                      const IntersectionType& intersection,
                      Dune::Stuff::LA::MatrixInterface< M, R >& systemMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
@@ -270,8 +277,8 @@ public:
     return {numTmpObjectsRequired_, localFunctional_.numTmpObjectsRequired()};
   }
 
-  template< class T, class IntersectionType, class V, class R >
-  void assembleLocal(const SpaceInterface< T >& testSpace,
+  template< class T, int d, int r, int rC, class IntersectionType, class V, class R >
+  void assembleLocal(const SpaceInterface< T, d, r, rC >& testSpace,
                      const IntersectionType& intersection,
                      Dune::Stuff::LA::VectorInterface< V, R >& systemVector,
                      std::vector< std::vector< Dune::DynamicVector< R > > >& tmpLocalVectorsContainer,
