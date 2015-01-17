@@ -13,7 +13,7 @@
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "../../mapper/finitevolume.hh"
-#include "../../basefunctionset/finitevolume.hh"
+#include <dune/gdt/basefunctionset/default/fv.hh>
 #include "../../../spaces/interface.hh"
 
 namespace Dune {
