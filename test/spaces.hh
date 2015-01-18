@@ -18,12 +18,6 @@
 
 #include "grids.hh"
 
-using namespace Dune;
-using namespace GDT;
-
-
-namespace internal {
-
 
 // these two should trigger a segfault if copying fails, i.e. the one fixed in 6b3ff6d
 template< class Space >
@@ -55,10 +49,6 @@ public:
     : BaseType(Space(p.template leaf< Space::part_view_type >()))
   {}
 };
-
-
-} // namespace internal
-
 
 
 /**
@@ -239,7 +229,7 @@ public:
   {
     SpaceType foop(space_);
     auto DUNE_UNUSED(aa) = foop.mapper().size();
-    SpaceType cp = internal::DerivedHolder< SpaceType, ProviderType >(grid_provider_).space();
+    SpaceType cp = DerivedHolder< SpaceType, ProviderType >(grid_provider_).space();
     auto DUNE_UNUSED(bb) = cp.mapper().size();
   } // ... check_for_correct_copy()
 
