@@ -457,6 +457,39 @@ typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::G
 }
 
 
+namespace internal {
+
+
+template< class S >
+struct is_space_helper
+{
+  DSC_has_typedef_initialize_once(Traits)
+  DSC_has_static_member_initialize_once(dimDomain)
+  DSC_has_static_member_initialize_once(dimRange)
+  DSC_has_static_member_initialize_once(dimRangeCols)
+
+  static const bool is_candidate = DSC_has_typedef(Traits)< S >::value
+                                   && DSC_has_static_member(dimDomain)< S >::value
+                                   && DSC_has_static_member(dimRange)< S >::value
+                                   && DSC_has_static_member(dimRangeCols)< S >::value;
+}; // class is_space_helper
+
+
+} // namespace internal
+
+
+template< class S, bool candidate = internal::is_space_helper< S >::is_candidate >
+struct is_space
+  : public std::is_base_of< SpaceInterface< typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols >, S >
+{};
+
+
+template< class S >
+struct is_space< S, false >
+  : public std::false_type
+{};
+
+
 } // namespace GDT
 } // namespace Dune
 
