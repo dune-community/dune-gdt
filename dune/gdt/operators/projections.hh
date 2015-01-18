@@ -26,8 +26,8 @@
 #include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/playground/spaces/dg/fem.hh>
 #include <dune/gdt/playground/spaces/dg/pdelab.hh>
-#include <dune/gdt/playground/spaces/rt/pdelab.hh>
-#include <dune/gdt/playground/spaces/fv/default.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 
 #include "interfaces.hh"

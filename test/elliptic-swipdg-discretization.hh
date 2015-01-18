@@ -26,30 +26,30 @@
 #include <dune/stuff/functions/ESV2007.hh>
 #include <dune/stuff/functions/combined.hh>
 
-#include <dune/gdt/playground/spaces/dg/fem.hh>
-#include <dune/gdt/spaces/cg/fem.hh>
-#include <dune/gdt/playground/spaces/rt/pdelab.hh>
+#include <dune/gdt/assembler/local/codim0.hh>
+#include <dune/gdt/assembler/local/codim1.hh>
+#include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/localevaluation/swipdg.hh>
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/assembler/local/codim0.hh>
-#include <dune/gdt/assembler/local/codim1.hh>
-#include <dune/gdt/spaces/constraints.hh>
-#include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/localoperator/codim0.hh>
+#include <dune/gdt/localoperator/codim1.hh>
+#include <dune/gdt/operators/fluxreconstruction.hh>
+#include <dune/gdt/operators/oswaldinterpolation.hh>
+#include <dune/gdt/operators/prolongations.hh>
+#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/playground/products/ESV2007.hh>
+#include <dune/gdt/playground/spaces/dg/fem.hh>
+#include <dune/gdt/products/elliptic.hh>
+#include <dune/gdt/products/h1.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/weightedl2.hh>
-#include <dune/gdt/products/h1.hh>
-#include <dune/gdt/products/elliptic.hh>
-#include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/operators/prolongations.hh>
-#include <dune/gdt/operators/oswaldinterpolation.hh>
-#include <dune/gdt/playground/products/ESV2007.hh>
-#include <dune/gdt/operators/fluxreconstruction.hh>
+#include <dune/gdt/spaces/constraints.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
 
 #include "elliptic-testcases.hh"
 

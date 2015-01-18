@@ -13,10 +13,10 @@
 
 #include <dune/gdt/operators/darcy.hh>
 #include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/playground/spaces/fv/default.hh>
-#include <dune/gdt/products/l2.hh>
 #include <dune/gdt/products/h1.hh>
+#include <dune/gdt/products/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 
 using namespace Dune;
 using namespace GDT;
