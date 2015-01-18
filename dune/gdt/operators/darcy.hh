@@ -16,9 +16,9 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
 
-#include <dune/gdt/spaces/cg/fem.hh>
-#include <dune/gdt/playground/spaces/rt/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
 
 #include "interfaces.hh"
 

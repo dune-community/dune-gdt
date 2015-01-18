@@ -18,9 +18,9 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 
-#include <dune/gdt/playground/spaces/rt/pdelab.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
 
 namespace Dune {
 namespace GDT {

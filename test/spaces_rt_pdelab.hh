@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 
-#include <dune/gdt/playground/spaces/rt/pdelab.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
 
 #include "grids.hh"
 

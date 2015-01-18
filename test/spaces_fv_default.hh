@@ -8,7 +8,7 @@
 
 #include "grids.hh"
 
-#include <dune/gdt/playground/spaces/fv/default.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 
 
 #define SPACE_FV_SGRID(dd, rr) Spaces::FV::Default<S##dd##dLeafGridViewType, double, rr>
