@@ -444,14 +444,14 @@ public:
 }; // class SpaceInterface
 
 
-template < class Traits, int d, int r, int rC, int codim = 0 >
-typename Traits::GridViewType::template Codim<codim>::Iterator begin(const Dune::GDT::SpaceInterface< Traits, d, r, rC >& space)
+template< class Traits, int d, int r, int rC, int codim = 0 >
+typename Traits::GridViewType::template Codim< codim >::Iterator begin(const Dune::GDT::SpaceInterface< Traits, d, r, rC >& space)
 {
   return space.grid_view().template begin< codim >();
 }
 
-template < class Traits, int d, int r, int rC, int codim = 0 >
-typename Traits::GridViewType::template Codim<codim>::Iterator end(const Dune::GDT::SpaceInterface< Traits, d, r, rC >& space)
+template< class Traits, int d, int r, int rC, int codim = 0 >
+typename Traits::GridViewType::template Codim< codim >::Iterator end(const Dune::GDT::SpaceInterface< Traits, d, r, rC >& space)
 {
   return space.grid_view().template end< codim >();
 }
