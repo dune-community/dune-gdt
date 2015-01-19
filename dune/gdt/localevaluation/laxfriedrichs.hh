@@ -55,8 +55,9 @@ public:
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
   static const unsigned int dimRange = LocalizableFunctionType::dimRange;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef Dune::Stuff::GlobalFunctionInterface
-                     < EntityType, RangeFieldType, dimRange, RangeFieldType, dimDomain, 1 > AnalyticalFluxType;
+  // copy of ProblemInterface::FluxType in dune/hdd/hyperbolic/problems/interfaces.hh
+  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity           FluxSourceEntityType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType, RangeFieldType, dimRange, RangeFieldType, dimDomain > AnalyticalFluxType;
   typedef typename AnalyticalFluxType::RangeType                  FluxRangeType;
 }; // class InnerTraits
 
@@ -83,8 +84,9 @@ public:
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
   static const unsigned int dimRange = LocalizableFunctionType::dimRange;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef Dune::Stuff::GlobalFunctionInterface
-                     < EntityType, RangeFieldType, dimRange, RangeFieldType, dimDomain, 1 > AnalyticalFluxType;
+  // copy of ProblemInterface::FluxType in dune/hdd/hyperbolic/problems/interfaces.hh
+  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity           FluxSourceEntityType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType, RangeFieldType, dimRange, RangeFieldType, dimDomain > AnalyticalFluxType;
   typedef typename AnalyticalFluxType::RangeType                  FluxRangeType;
 }; // class DirichletTraits
 } // namespace internal
@@ -162,17 +164,18 @@ public:
   {
       const EntityType& entity = ansatzBaseEntity.entity();
       const EntityType& neighbor = ansatzBaseNeighbor.entity();
-      const auto& u_i = ansatzBaseEntity.evaluate(entity.geometry().center());
-      const auto& u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().center());
-      //std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
+
+      const auto& u_i = ansatzBaseEntity.evaluate(entity.geometry().local(entity.geometry().center()));
+      const auto& u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
+//      std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
       const FluxRangeType& f_u_i = analytical_flux_.evaluate(u_i[0]);
       const FluxRangeType& f_u_j = analytical_flux_.evaluate(u_j[0]);
-      //std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
+//      std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
       const auto local_center = entity.geometry().local(entity.geometry().center());
       const auto n_ij = intersection.unitOuterNormal(localPoint);
       const auto lambda_ij = std::get< 0 >(localFunctionsEntity)->evaluate(local_center);
-      //std::cout << "ret:" << 1.0/2.0*(f_u_i*n_ij + f_u_j*n_ij) - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]) << std::endl;
-      entityNeighborRet[0][0] = 1.0/2.0*(f_u_i + f_u_j)*n_ij - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]);
+      std::cout << "ret:" << 1.0/2.0*(f_u_i*n_ij + f_u_j*n_ij) - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]) << std::endl;
+      entityNeighborRet[0][0] =(f_u_i + f_u_j)*n_ij*0.5 - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]);
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;
@@ -251,7 +254,7 @@ public:
       const auto local_center = entity.geometry().local(entity.geometry().center());
       const auto lambda_ij = std::get< 0 >(localFunctions)->evaluate(local_center);
       //std::cout << "ret:" << 1.0/2.0*(f_u_i*n_ij + f_u_j*n_ij) - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]) << std::endl;
-      ret[0][0] = 1.0/2.0*(f_u_i + f_u_j)*n_ij - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]);
+      ret[0][0] = (f_u_i + f_u_j)*n_ij*0.5 - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]);
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;
