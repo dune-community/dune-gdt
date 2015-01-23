@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include <dune/common/dynmatrix.hh>
+
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
@@ -309,6 +311,53 @@ private:
   VectorType& vector_;
 }; // class LocalFaceVectorAssemblerWrapper
 
+
+
+template< class AssemblerType, class LocalFaceFVAssembler, class FVSpaceType, class VectorType >
+class LocalFaceFVAssemblerWrapper
+  : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+  , TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType >
+{
+  typedef TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+public:
+  typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
+  typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType > DiscreteFunctionType;
+
+  LocalFaceFVAssemblerWrapper(DiscreteFunctionType& discreteFunction,
+                              DiscreteFunctionType& discreteFunctionUpdate,
+      const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType >* where,
+                              const LocalFaceFVAssembler& localAssembler)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, 1)
+    , where_(where)
+    , localAssembler_(localAssembler)
+    , discreteFunction_(discreteFunction)
+    , discreteFunctionUpdate_(discreteFunctionUpdate)
+    , updateMatrix_(1,1)
+  {}
+
+  virtual ~LocalFaceFVAssemblerWrapper() {}
+
+  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
+                        const typename AssemblerType::IntersectionType& intersection) const override final
+  {
+    return where_->apply_on(gv, intersection);
+  }
+
+  virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
+                           const typename AssemblerType::EntityType& /*inside_entity*/,
+                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
+  {
+    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, intersection, updateMatrix_, this->matrices());
+  }
+
+private:
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
+  const LocalFaceFVAssembler& localAssembler_;
+  DiscreteFunctionType& discreteFunction_;
+  DiscreteFunctionType& discreteFunctionUpdate_;
+  Dune::DynamicMatrix< RangeFieldType > updateMatrix_;
+
+}; // class LocalFaceFVAssemblerWrapper
 
 } // namespace internal
 } // namespace GDT
