@@ -207,6 +207,28 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
+  template< class L, class F, class V >
+  void add(const LocalAssembler::Codim1CouplingFV< L >& local_assembler,
+           GDT::DiscreteFunction< F, V >& discrete_function,
+           GDT::DiscreteFunction< F, V >& discrete_function_update,
+           const ApplyOnWhichIntersection* where
+              = new DSG::ApplyOn::InnerIntersections< GridViewType >())
+  {
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1CouplingFV< L >, F, V > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
+  } // ... add(...)
+
+  template< class L, class F, class V >
+  void add(const LocalAssembler::Codim1BoundaryFV< L >& local_assembler,
+           GDT::DiscreteFunction< F, V >& discrete_function,
+           GDT::DiscreteFunction< F, V >& discrete_function_update,
+           const ApplyOnWhichIntersection* where
+              = new DSG::ApplyOn::BoundaryIntersections< GridViewType >())
+  {
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1BoundaryFV< L >, F, V > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
+  } // ... add(...)
+
   void assemble(const bool use_tbb = false)
   {
     this->walk(use_tbb);
