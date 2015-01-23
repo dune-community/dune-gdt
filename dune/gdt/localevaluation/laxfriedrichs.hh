@@ -14,6 +14,8 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 
+#include <dune/grid/yaspgrid.hh>
+
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 
@@ -174,7 +176,7 @@ public:
       const auto local_center = entity.geometry().local(entity.geometry().center());
       const auto n_ij = intersection.unitOuterNormal(localPoint);
       const auto lambda_ij = std::get< 0 >(localFunctionsEntity)->evaluate(local_center);
-      std::cout << "ret:" << 1.0/2.0*(f_u_i*n_ij + f_u_j*n_ij) - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]) << std::endl;
+//      std::cout << "ret:" << 1.0/2.0*(f_u_i*n_ij + f_u_j*n_ij) - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]) << std::endl;
       entityNeighborRet[0][0] =(f_u_i + f_u_j)*n_ij*0.5 - 1.0/(2.0*lambda_ij[0])*(u_j[0] - u_i[0]);
   } // void evaluate(...) const
 
