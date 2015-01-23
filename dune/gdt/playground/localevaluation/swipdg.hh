@@ -171,23 +171,8 @@ public:
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
     const R sigma = internal::inner_sigma(max_polorder);
-// compute weighting (see Ern, Stephansen, Zunino 2007)
-//   the diffusion factor is supposed to be continuous
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    if (!Stuff::Common::float_cmp(local_diffusion_factor_en, local_diffusion_factor_ne))
-      DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
-          << "The diffusion factor is assumed to be continuous across intersections, but\n"
-          << "    localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
-          << "    localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
-          << "    abs(difference)              = " << std::abs(local_diffusion_factor_en - local_diffusion_factor_ne)
-          << "\n"
-          << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
-          << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-#endif // NDEBUG
-    //   just to be sure we take the average value here
-    //   this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    // compute weighting (see Ern, Stephansen, Zunino 2007)
+    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
     const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     const R delta_plus                = unitOuterNormal * (local_diffusion_tensor_ne * unitOuterNormal);
     const R delta_minus               = unitOuterNormal * (local_diffusion_tensor_en * unitOuterNormal);
@@ -446,21 +431,8 @@ public:
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
     const R sigma = internal::inner_sigma(max_polorder);
-// compute weighting (see Ern, Stephansen, Zunino 2007)
-//   the diffusion factor is supposed to be continuous
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    if (!Stuff::Common::float_cmp(local_diffusion_factor_en, local_diffusion_factor_ne))
-      DSC::TimedLogger().get("gdt.localevaluation.swipdg.innerpenalty").warn()
-          << "The diffusion factor is assumed to be continuous across intersections, but\n"
-          << "    localDiffusionFactorEntity   = " << local_diffusion_factor_en << "\n"
-          << "    localDiffusionFactorNeighbor = " << local_diffusion_factor_ne << "\n"
-          << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
-          << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-#endif // NDEBUG
-    //   just to be sure we take the everage value here
-    //   this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    // compute weighting (see Ern, Stephansen, Zunino 2007)
+    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
     const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     const R delta_plus                = unitOuterNormal * (local_diffusion_tensor_ne * unitOuterNormal);
     const R delta_minus               = unitOuterNormal * (local_diffusion_tensor_en * unitOuterNormal);
