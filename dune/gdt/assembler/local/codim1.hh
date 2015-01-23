@@ -14,8 +14,10 @@
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/common/tmp-storage.hh>
 
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
+#include <dune/gdt/playground/spaces/finitevolume/default.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -536,6 +538,125 @@ private:
   FieldType finalized_result_;
 }; // class Codim1BoundaryOperatorAccumulateFunctor
 
+
+template< class LocalOperatorImp >
+class Codim1CouplingFV
+{
+  static_assert(std::is_base_of< LocalOperator::Codim1CouplingInterface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1CouplingInterface!");
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  explicit Codim1CouplingFV(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector< size_t > numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
+  }
+
+  template< class FVSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunctionUpdate,
+                     const IntersectionType& intersection,
+                     Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
+                     std::vector < std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+  {
+    // check
+    assert(intersection.neighbor());
+    assert(updateMatrix.cols() >= 1);
+    assert(updateMatrix.rows() >= 1);
+    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
+    //clear matrix
+    updateMatrix*=0.0;
+    //get entity and neighbor and local discrete functions
+    const auto entityPtr = intersection.inside();
+    const auto& entity = *entityPtr;
+    const auto neighborPtr = intersection.outside();
+    const auto& neighbor = *neighborPtr;
+    const auto entityAverage = discreteFunction.local_discrete_function(entity);
+    const auto neighborAverage = discreteFunction.local_discrete_function(neighbor);
+    // apply local operator (results are in local*Matrix)
+    localOperator_.apply(*entityAverage, *entityAverage,
+                         *neighborAverage, *neighborAverage,
+                         intersection,
+                         updateMatrix,
+                         updateMatrix,
+                         updateMatrix,
+                         updateMatrix,
+                         tmpLocalMatrices[0]);
+    // write value from updateMatrix to discreteFunctionUpdate
+    discreteFunctionUpdate.local_discrete_function(entity)->vector().add(0, updateMatrix[0][0]);
+  } // void assembleLocal(...) const
+
+private:
+  const LocalOperatorType& localOperator_;
+}; // class Codim1CouplingFV
+
+template< class LocalOperatorImp >
+class Codim1BoundaryFV
+{
+  static_assert(std::is_base_of< LocalOperator::Codim1BoundaryInterface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1CouplingInterface!");
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  explicit Codim1BoundaryFV(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector< size_t > numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
+  }
+
+  template< class FVSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunctionUpdate,
+                     const IntersectionType& intersection,
+                     Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
+                     std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+  {
+    // check
+    assert(updateMatrix.cols() >= 1);
+    assert(updateMatrix.rows() >= 1);
+    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
+    //clear matrix
+    updateMatrix*=0.0;
+    //get entity and neighbor and local discrete functions
+    const auto entityPtr = intersection.inside();
+    const auto& entity = *entityPtr;
+    const auto entityAverage = discreteFunction.local_discrete_function(entity);
+    // apply local operator (results are in local*Matrix)
+    localOperator_.apply(*entityAverage, *entityAverage, intersection, updateMatrix, tmpLocalMatrices[0]);
+    // write value from updateMatrix to discreteFunctionUpdate
+    discreteFunctionUpdate.local_discrete_function(entity)->vector().add(0, updateMatrix[0][0]);
+  } // void assembleLocal(...) const
+
+private:
+  const LocalOperatorType& localOperator_;
+}; // class Codim1BoundaryFV
 
 } // namespace LocalAssembler
 } // namespace GDT
