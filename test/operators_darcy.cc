@@ -14,7 +14,7 @@
 #if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
 
 typedef testing::Types<
-    //                        std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 2) >
+    //                        std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) >
     /*,*/ std::pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>> SpaceTypes;
 
 TYPED_TEST_CASE(DarcyOperator, SpaceTypes);
