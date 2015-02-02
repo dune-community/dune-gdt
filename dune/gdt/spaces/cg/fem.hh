@@ -78,11 +78,11 @@ class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
                                 GridPartImp::dimension, RangeFieldImp, 1, 1 >
 {
   typedef Spaces::CGInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                               GridPartImp::dimension, RangeFieldImp, 1, 1 >          BaseType;
-  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >               ThisType;
+                               GridPartImp::dimension, RangeFieldImp, 1, 1 >  BaseType;
+  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >       ThisType;
 
 public:
-  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >         Traits;
+  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
   static const int                      polOrder = Traits::polOrder;
   static const unsigned int             dimDomain = BaseType::dimDomain;
@@ -91,16 +91,15 @@ public:
 
   typedef typename Traits::GridPartType             GridPartType;
   typedef typename Traits::GridViewType             GridViewType;
-  typedef typename Traits::RangeFieldType           RangeFieldType;
   typedef typename Traits::BackendType              BackendType;
   typedef typename Traits::MapperType               MapperType;
   typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
   typedef typename Traits::EntityType               EntityType;
+private:
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+public:
   typedef typename Traits::CommunicatorType         CommunicatorType;
 
-  typedef typename GridPartType::ctype            DomainFieldType;
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
   using typename BaseType::DomainType;
   using typename BaseType::BoundaryInfoType;
 
