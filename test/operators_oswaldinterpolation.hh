@@ -33,7 +33,7 @@ struct Oswald_Interpolation_Operator
    */
   void produces_correct_results() const
   {
-    // prepare
+    // prepare the source function
     const size_t num_partitions = 2;
     GridProviderType grid_provider(0.0, 1.0, num_partitions);
     auto& grid = grid_provider.grid();
@@ -56,10 +56,12 @@ struct Oswald_Interpolation_Operator
       for (size_t local_DoF = 0; local_DoF < local_source_DoF_vector.size(); ++local_DoF)
         local_source_DoF_vector.set(local_DoF, value);
     }
+    // apply operator
     VectorType range_vector(space.mapper().size());
     DiscreteFunctionType range(space, range_vector);
     Operators::OswaldInterpolation< typename SpaceType::GridViewType > oswald_operator(space.grid_view());
     oswald_operator.apply(source, range);
+    // TODO: test result
   } // ... produces_correct_results()
 }; // struct Oswald_Interpolation_Operator
 
