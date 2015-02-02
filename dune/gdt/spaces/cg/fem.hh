@@ -94,16 +94,17 @@ public:
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
+
+private:
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+
+public:
   typedef typename Traits::CommunicatorType CommunicatorType;
 
-  typedef typename GridPartType::ctype DomainFieldType;
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
   using typename BaseType::DomainType;
   using typename BaseType::BoundaryInfoType;
 
