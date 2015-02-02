@@ -23,7 +23,8 @@ using namespace GDT;
 
 
 /**
- * \note This test assumes that Operators::L2Projection, Products::L2 and Products::H1Semi work correctly.
+ * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
+ *       Spaces::CG::FemBased, Spaces::RT::PdelabBased and Spaces::FV::Default work correctly.
  */
 template <class SpaceTypes>
 struct DarcyOperator : public ::testing::Test
@@ -43,7 +44,6 @@ struct DarcyOperator : public ::testing::Test
 
   void produces_correct_results() const
   {
-
     GridProviderType grid_provider(0.0, 1.0, 4);
     auto& grid = grid_provider.grid();
     grid.globalRefine(1);
