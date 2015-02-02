@@ -148,7 +148,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridViewType>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -163,7 +163,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridViewType>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
