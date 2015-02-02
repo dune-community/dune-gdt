@@ -74,6 +74,7 @@ public:
     */
   void fulfills_interface() const
   {
+    static_assert(Dune::GDT::is_space< SpaceType >::value, "");
     using namespace Stuff;
     // static checks
     // * as the derived type
