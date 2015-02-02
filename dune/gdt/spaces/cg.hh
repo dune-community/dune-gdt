@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
@@ -24,7 +26,7 @@ namespace Spaces {
 
 template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
           class RangeFieldType, int dimRange, int dimRangeCols = 1>
-class ContinuousLagrangeProvider
+class CGProvider
 {
   static const Stuff::Grid::ChoosePartView part_view_type = ChooseGridPartView<backend_type>::type;
 
@@ -74,7 +76,15 @@ public:
     return Type(grid_provider.template layer<layer_type, part_view_type>(level_or_subdomain));
   }
 #endif // HAVE_DUNE_GRID_MULTISCALE
-}; // class ContinuousLagrangeProvider
+}; // class CGProvider
+
+
+template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
+          class RangeFieldType, int dimRange, int dimRangeCols = 1>
+class DUNE_DEPRECATED_MSG("Use CGProvider instead (02.02.2015)!") ContinuousLagrangeProvider
+    : public CGProvider<GridType, layer_type, backend_type, polOrder, RangeFieldType, dimRange, dimRangeCols>
+{
+};
 
 
 } // namespace Spaces
