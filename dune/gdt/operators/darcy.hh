@@ -17,8 +17,9 @@
 #include <dune/stuff/la/solver.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/cg/fem.hh>
-#include <dune/gdt/spaces/rt/pdelab.hh>
+#include <dune/gdt/exceptions.hh>
+#include <dune/gdt/spaces/cg/interface.hh>
+#include <dune/gdt/spaces/rt/interface.hh>
 
 #include "interfaces.hh"
 
@@ -69,19 +70,28 @@ public:
   {
   }
 
-  template <class E, class D, int d, class R, int r, int rC, class T, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
-             DiscreteFunction<SpaceInterface<T, d, r, rC>, V>& /*range*/) const
+  /**
+   * \brief Applies the operator.
+   * \note  See redirect_apply for the implementation (depending on the type of the range space).
+   * \sa    redirect_apply
+   */
+  template <class S, class V, int r, int rC>
+  void
+  apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
+        DiscreteFunction<S, V>& range) const
   {
-    static_assert(Dune::AlwaysFalse<E>::value, "Not implemented for this combination of source and range!");
+    redirect_apply(range.space(), source, range);
   }
 
+private:
   /**
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
-  template <class GP, int p, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
-             DiscreteFunction<Spaces::CG::FemBased<GP, p, FieldType, dimDomain, 1>, V>& range) const
+  template <class T, class R, class S, class V>
+  void redirect_apply(
+      const Spaces::CGInterface<T, dimDomain, R, dimDomain, 1>& /*space*/,
+      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
+      DiscreteFunction<S, V>& range) const
   {
     typedef typename Stuff::LA::Container<FieldType>::MatrixType MatrixType;
     typedef typename Stuff::LA::Container<FieldType>::VectorType VectorType;
@@ -98,7 +108,7 @@ public:
       const auto basis          = range.space().base_function_set(entity);
       // do a volume quadrature
       const size_t integrand_order =
-          std::max(local_function->order() + size_t(local_source->order() - 1), basis.order()) + basis.order();
+          std::max(local_function->order() + ssize_t(local_source->order()) - 1, basis.order()) + basis.order();
       assert(integrand_order < std::numeric_limits<int>::max());
       const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
       const auto quadrature_it_end = quadrature.end();
@@ -124,13 +134,23 @@ public:
     } // walk the grid
 
     // solve
-    Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
-  } // ... apply(...)
+    try {
+      Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
+    } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+      DUNE_THROW(Exceptions::darcy_operator_error,
+                 "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
+                     << "This was the original error: "
+                     << ee.what());
+    }
+  } // ... redirect_apply(...)
 
-  template <class GP, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<Spaces::RT::PdelabBased<GP, 0, FieldType, dimDomain>, V>& range) const
+  template <class T, class R, class S, class V>
+  void redirect_apply(
+      const Spaces::RTInterface<T, dimDomain, R, dimDomain, 1>& /*space*/,
+      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+      DiscreteFunction<S, V>& range) const
   {
+    static_assert(Spaces::RTInterface<T, dimDomain, FieldType, 1>::polOrder == 0, "Untested!");
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
@@ -174,7 +194,7 @@ public:
               const FieldType weigth             = quadrature_it->weight();
               const auto xx_entity               = intersection.geometryInInside().global(xx_intersection);
               const auto xx_neighbor             = intersection.geometryInOutside().global(xx_intersection);
-              // evalaute
+              // evaluate
               auto function_value = local_function->evaluate(xx_entity);
               function_value *= 0.5;
               auto function_value_neighbor = local_function_neighbor->evaluate(xx_neighbor);
@@ -230,9 +250,8 @@ public:
           DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
-  } // ... apply(...)
+  } // ... redirect_apply(...)
 
-private:
   const GridViewType& grid_view_;
   const FunctionImp& function_;
 }; // class Darcy
