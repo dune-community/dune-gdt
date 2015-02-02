@@ -13,7 +13,11 @@ namespace GDT {
 namespace Exceptions {
 
 
-class prolongation_error : public Dune::Exception {};
+class operator_error : public Dune::Exception {};
+
+class prolongation_error : operator_error {};
+
+class darcy_operator_error : public operator_error {};
 
 
 } // namespace Exceptions
