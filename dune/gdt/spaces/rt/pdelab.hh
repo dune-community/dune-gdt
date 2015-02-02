@@ -24,13 +24,13 @@
 
 #include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/basefunctionset/pdelab.hh>
 #include <dune/gdt/mapper/pdelab.hh>
-#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
+
+#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -46,6 +46,9 @@ class PdelabBased
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "Untested for these dimensions or polynomial order!");
 }; // class PdelabBased
+
+
+namespace internal {
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols>
@@ -109,34 +112,32 @@ private:
 }; // class PdelabBasedTraits
 
 
+} // namespace internal
+
+
 template <class GridViewImp, class RangeFieldImp, int rangeDim>
 class PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
-    : public SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                            rangeDim, 1>
+    : public Spaces::RTInterface<internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+                                 GridViewImp::dimension, RangeFieldImp, rangeDim, 1>
 {
   typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef SpaceInterface<PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                         rangeDim, 1> BaseType;
+  typedef Spaces::RTInterface<internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+                              GridViewImp::dimension, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;
+  typedef internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;
 
-  static const int polOrder              = Traits::polOrder;
-  static const unsigned int dimDomain    = BaseType::dimDomain;
-  static const unsigned int dimRange     = BaseType::dimRange;
-  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  using BaseType::dimDomain;
+  using BaseType::polOrder;
 
   typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
   typedef typename Traits::CommunicatorType CommunicatorType;
 
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::EntityType EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
@@ -209,110 +210,6 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
-  /**
-   *  \brief  Computes a vector 'indices' of length entity.count< 1 >(), where 'indices[intersection.indexInInside()]'
-   *          is the index of the basis function (aka the local DoF index) corresponding to the intersection.
-   */
-  std::vector<size_t> local_DoF_indices(const EntityType& entity) const
-  {
-    static_assert(dimDomain == 2 && polOrder == 0, "Not implemented!");
-    // prepare
-    const size_t num_intersections = entity.template count<1>();
-    std::vector<size_t> local_DoF_index_of_vertex(num_intersections, std::numeric_limits<size_t>::infinity());
-    std::vector<size_t> local_DoF_index_of_intersection(num_intersections, std::numeric_limits<size_t>::infinity());
-    typedef typename BaseFunctionSetType::DomainType DomainType;
-    std::vector<DomainType> vertices(num_intersections, DomainType(0));
-    std::vector<bool> lies_on_intersection(num_intersections, false);
-    DomainType corner(0);
-    typedef typename BaseFunctionSetType::RangeType RangeType;
-    const RangeType one(1);
-    std::vector<RangeType> basis_values(num_intersections, one);
-    const auto basis = base_function_set(entity);
-    assert(basis.size() == num_intersections);
-    const auto geometry           = entity.geometry();
-    const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(geometry.type());
-    // find the basis function index that corresponds to each vertex of the entity
-    // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
-    // therefore we walk the vertices
-    assert(int(num_intersections) == entity.template count<dimDomain>());
-    for (size_t vv = 0; vv < num_intersections; ++vv) {
-      const auto vertex_ptr = entity.template subEntity<dimDomain>(int(vv));
-      const auto& vertex    = *vertex_ptr;
-      // get the vertex coordinates
-      vertices[vv]              = vertex.geometry().center();
-      const auto& vertex_entity = reference_element.position(int(vv), dimDomain);
-      // evalaute the basis
-      basis.evaluate(vertex_entity, basis_values);
-      // and find the basis that evaluates zero here
-      size_t zeros    = 0;
-      size_t nonzeros = 0;
-      for (size_t ii = 0; ii < num_intersections; ++ii) {
-        // we would like to check against 0, but there is a bug in dune-commons FloatCmp
-        if (Stuff::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
-          // this is a candidate for the basis function we are looking for
-          local_DoF_index_of_vertex[vv] = ii;
-          ++zeros;
-        } else
-          ++nonzeros;
-      }
-      // make sure there was only one candidate
-      if (zeros != 1 || nonzeros != (num_intersections - 1))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
-                   "This must not happen for RTN0 in 2d!\n"
-                       << "  zeros    = "
-                       << zeros
-                       << "\n"
-                       << "  nonzeros = "
-                       << nonzeros);
-    } // walk the vertices
-    // so from here on we have the local DoF index that corresponds to each vertex vv in local_DoF_index_of_vertex[vv]
-    // now we need to find the intersection opposite to this vertex
-    // therefore we walk the intersections
-    size_t intersection_counter    = 0;
-    const auto intersection_it_end = grid_view_.iend(entity);
-    for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
-      const auto& intersection              = *intersection_it;
-      const auto intersection_geometry      = intersection.geometry();
-      const size_t local_intersection_index = intersection.indexInInside();
-      // make sure this index has not been already taken by another intersection
-      assert(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits<size_t>::infinity());
-      // walk the corners of the intersection
-      for (size_t cc = 0; cc < num_intersections; ++cc) {
-        corner = intersection_geometry.corner(int(cc));
-        // check which vertices lie on the intersection
-        for (size_t vv = 0; vv < num_intersections; ++vv)
-          if (Stuff::Common::FloatCmp::eq(vertices[vv], corner))
-            lies_on_intersection[vv] = true;
-      } // walk the corners of the intersection
-      // now see if we find a vertex that does not lie on the intersection
-      size_t found  = 0;
-      size_t missed = 0;
-      for (size_t vv = 0; vv < num_intersections; ++vv) {
-        if (!(lies_on_intersection[vv])) {
-          // this is a good candidate
-          // so the local DoF id that corresponds to this vertex is the one that corresponds to the intersection
-          local_DoF_index_of_intersection[local_intersection_index] = local_DoF_index_of_vertex[vv];
-          ++found;
-        } else
-          ++missed;
-        // and clear for the next intersection
-        lies_on_intersection[vv] = false;
-      } // walk the vertices of this entity
-      // make sure there was only one candidate
-      if (found != 1 || missed != (num_intersections - 1))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
-                   "This must not happen for RTN0 in 2d!\n"
-                       << "  found  = "
-                       << found
-                       << "\n"
-                       << "  missed = "
-                       << missed);
-      ++intersection_counter;
-    } // walk the intersection
-    assert(intersection_counter == num_intersections);
-    return local_DoF_index_of_intersection;
-  } // ... local_DoF_indices(...)
-
   CommunicatorType& communicator() const
   {
     std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
@@ -321,23 +218,27 @@ public:
     return *communicator_;
   } // ... communicator(...)
 
-  using BaseType::compute_pattern;
-
-  template <class G, class S, int d, int r, int rC>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+private:
+  template <class S, int d, int p, bool simplicial>
+  struct Helper
   {
-    DSC::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn() << "Returning largest possible pattern!"
-                                                                          << std::endl;
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
-  }
+    static_assert(AlwaysFalse<S>::value, "Not available for this combination!");
+  };
 
-  using BaseType::local_constraints;
-
-  template <class S, int d, int r, int rC, class C>
-  void local_constraints(const SpaceInterface<S, d, r, rC>& /*ansatz_space*/, const EntityType& /*entity*/,
-                         Spaces::ConstraintsInterface<C, RangeFieldType>& /*ret*/) const
+  template <class S>
+  struct Helper<S, 2, 0, true>
   {
-    DUNE_THROW(NotImplemented, "There are no constraints implemented!");
+    static std::vector<size_t> local_DoF_indices(const S& space, const EntityType& entity)
+    {
+      return space.local_DoF_indices_2dsimplex_order0(entity);
+    }
+  };
+
+public:
+  std::vector<size_t> local_DoF_indices(const EntityType& entity) const
+  {
+    return Helper < ThisType, dimDomain, polOrder,
+           Traits::single_geom_ && Traits::simplicial_ > ::local_DoF_indices(*this, entity);
   }
 
 private:
