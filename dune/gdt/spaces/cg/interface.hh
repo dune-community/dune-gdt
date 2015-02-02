@@ -170,7 +170,7 @@ public:
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
-  } // ... compute_pattern(...)
+  }
 
   using BaseType::local_constraints;
 
