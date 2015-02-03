@@ -102,6 +102,9 @@ public:
     : inducingFunction_(inducingFunction)
   {}
 
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \{
+
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(inducingFunction_.local_function(entity));
@@ -135,6 +138,62 @@ public:
     evaluate(*std::get< 0 >(localFuncs), testBase, ansatzBase, localPoint, ret);
   }
 
+  /// \}
+  /// \name Actual implementations of order
+  /// \{
+
+  /**
+   *  \return localFunction.order() + (testBase.order() - 1) + (ansatzBase.order() - 1)
+   */
+  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
+  const
+  {
+    return localFunction.order()
+        + boost::numeric_cast< size_t >(std::max(ssize_t(testBase.order())   - 1, ssize_t(0)))
+        + boost::numeric_cast< size_t >(std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0)));
+  } // ... order( ... )
+
+  /// \}
+  /// \name Actual implementations of evaluate
+  /// \{
+
+  /**
+   *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
+   *  \tparam R RangeFieldType
+   */
+  template< class R, int r >
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& ansatzBase,
+                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
+                Dune::DynamicMatrix< R >& ret) const
+  {
+    typedef typename Stuff::LocalfunctionSetInterface
+        < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType JacobianRangeType;
+    // evaluate local function
+    const auto functionValue = localFunction.evaluate(localPoint);
+    // evaluate test gradient
+    const size_t rows = testBase.size();
+    std::vector< JacobianRangeType > testGradients(rows, JacobianRangeType(0));
+    testBase.jacobian(localPoint, testGradients);
+    // evaluate ansatz gradient
+    const size_t cols = ansatzBase.size();
+    std::vector< JacobianRangeType > ansatzGradients(cols, JacobianRangeType(0));
+    ansatzBase.jacobian(localPoint, ansatzGradients);
+    // compute products
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      auto& retRow = ret[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        retRow[jj] = functionValue * (ansatzGradients[jj][0] * testGradients[ii][0]);
+      }
+    }
+  } // ... redirect_evaluate< ..., 1, ... >(...)
+
   /**
    *  \brief  Computes an elliptic evaluation for a 2x2 matrix-valued local function and matrix-valued basefunctionsets.
    *  \tparam R RangeFieldType
@@ -165,60 +224,9 @@ public:
     evaluate_matrix_valued_(localFunction, testBase, ansatzBase, localPoint, ret);
   }
 
+  /// \}
+
 private:
-  /**
-   *  \return localFunction.order() + (testBase.order() - 1) + (ansatzBase.order() - 1)
-   */
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  size_t redirect_order(const Stuff::LocalfunctionInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-                        const Stuff::LocalfunctionSetInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                        const Stuff::LocalfunctionSetInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
-  {
-    return localFunction.order()
-        + boost::numeric_cast< size_t >(std::max(ssize_t(testBase.order())   - 1, ssize_t(0)))
-        + boost::numeric_cast< size_t >(std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0)));
-  } // ... order( ... )
-
-  /**
-   *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   *  \tparam R RangeFieldType
-   */
-  template< class R, int r >
-  void evaluate(const Stuff::LocalfunctionInterface
-                             < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
-                         const Stuff::LocalfunctionSetInterface
-                             < EntityType, DomainFieldType, dimDomain, R, r, 1 >& testBase,
-                         const Stuff::LocalfunctionSetInterface
-                             < EntityType, DomainFieldType, dimDomain, R, r, 1 >& ansatzBase,
-                         const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
-                         Dune::DynamicMatrix< R >& ret) const
-  {
-    typedef typename Stuff::LocalfunctionSetInterface
-        < EntityType, DomainFieldType, dimDomain, R, r, 1 >::JacobianRangeType JacobianRangeType;
-    // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPoint);
-    // evaluate test gradient
-    const size_t rows = testBase.size();
-    std::vector< JacobianRangeType > testGradients(rows, JacobianRangeType(0));
-    testBase.jacobian(localPoint, testGradients);
-    // evaluate ansatz gradient
-    const size_t cols = ansatzBase.size();
-    std::vector< JacobianRangeType > ansatzGradients(cols, JacobianRangeType(0));
-    ansatzBase.jacobian(localPoint, ansatzGradients);
-    // compute products
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
-    for (size_t ii = 0; ii < rows; ++ii) {
-      auto& retRow = ret[ii];
-      for (size_t jj = 0; jj < cols; ++jj) {
-        retRow[jj] = functionValue * (ansatzGradients[jj][0] * testGradients[ii][0]);
-      }
-    }
-  } // ... redirect_evaluate< ..., 1, ... >(...)
-
   template< class R >
   void evaluate_matrix_valued_(const Stuff::LocalfunctionInterface
                                    < EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain >& localFunction,
