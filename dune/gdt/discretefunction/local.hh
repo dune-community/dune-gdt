@@ -248,7 +248,6 @@ public:
     , local_DoF_vector_(const_local_DoF_vector_)
   {}
 
-  //! previous comment questioned validity, defaulting this doesn't touch that question
   LocalDiscreteFunction(ThisType&& source) = default;
 
   LocalDiscreteFunction(const ThisType& other) = delete;
