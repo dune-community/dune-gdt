@@ -95,6 +95,12 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    CHECK_CRTP(this->as_imp().localFunctions(entity));
+    return this->as_imp().localFunctions(entity);
+  }
+
   /**
    *  \brief  Computes the needed integration order.
    *  \tparam R       RangeFieldType
@@ -154,6 +160,12 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    CHECK_CRTP(this->as_imp().localFunctions(entity));
+    return this->as_imp().localFunctions(entity);
+  }
+
   /**
    *  \brief  Computes the needed integration order.
    *  \tparam R   RangeFieldType
@@ -199,6 +211,12 @@ public:
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
+
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    CHECK_CRTP(this->as_imp().localFunctions(entity));
+    return this->as_imp().localFunctions(entity);
+  }
 
   /**
    *  \brief  Computes the needed integration order.
@@ -248,6 +266,12 @@ public:
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
+
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    CHECK_CRTP(this->as_imp().localFunctions(entity));
+    return this->as_imp().localFunctions(entity);
+  }
 
   /**
    *  \brief  Computes the needed integration order.
