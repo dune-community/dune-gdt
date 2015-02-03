@@ -36,10 +36,10 @@ namespace internal {
 template< class DiffusionFactorImp, class DiffusionTensorImp >
 class EllipticTraits
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -47,7 +47,7 @@ class EllipticTraits
                               typename DiffusionTensorImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef Elliptic< DiffusionFactorImp, DiffusionTensorImp >                  derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -65,8 +65,8 @@ public:
 template< class LocalizableFunctionImp >
 class EllipticTraits< LocalizableFunctionImp, void >
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be a localizable function!");
 public:
   typedef LocalizableFunctionImp                                LocalizableFunctionType;
   typedef Elliptic< LocalizableFunctionType, void >             derived_type;
