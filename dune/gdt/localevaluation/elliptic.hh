@@ -117,8 +117,7 @@ public:
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    return redirect_order(*localFunction, testBase, ansatzBase);
+    return order(*std::get< 0 >(localFuncs), testBase, ansatzBase);
   }
 
   /**
@@ -133,8 +132,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
+    evaluate(*std::get< 0 >(localFuncs), testBase, ansatzBase, localPoint, ret);
   }
 
   /**
