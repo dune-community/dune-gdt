@@ -9,6 +9,8 @@
 #include <vector>
 #include <type_traits>
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
@@ -21,7 +23,9 @@ namespace GDT {
 
 
 template< class VectorImp >
-class ConstLocalDoFVector
+class
+  DUNE_DEPRECATED_MSG("Not needed any more (02.02.2015)!")
+      ConstLocalDoFVector
 {
   static_assert(std::is_base_of
                 < Stuff::LA::VectorInterface< typename VectorImp::Traits, typename VectorImp::Traits::ScalarType >,
@@ -82,7 +86,9 @@ std::ostream& operator<<(std::ostream& out, const ConstLocalDoFVector< V >& vect
 
 
 template< class VectorImp >
-class LocalDoFVector
+class
+  DUNE_DEPRECATED_MSG("Not needed any more (02.02.2015)!")
+      LocalDoFVector
   : public ConstLocalDoFVector< VectorImp >
 {
   typedef ConstLocalDoFVector< VectorImp > BaseType;
