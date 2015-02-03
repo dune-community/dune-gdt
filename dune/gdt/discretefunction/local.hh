@@ -163,7 +163,7 @@ public:
   ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& global_vector, const EntityType& ent)
     : BaseType(ent)
     , space_(space)
-    , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
+    , base_(new BaseFunctionSetType(space_.base_function_set(entity_)))
     , global_indices_(space_.mapper().globalIndices(entity_))
     , const_local_DoF_vector_(map_to_local(global_vector, global_indices_))
   {
@@ -196,10 +196,9 @@ public:
   virtual void evaluate(const DomainType& xx, RangeType& ret) const override
   {
     assert(this->is_a_valid_point(xx));
-    ret *= 0.0;
-    std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
-    assert(localVector_->size() == tmpBaseValues.size());
-    base_->evaluate(xx, tmpBaseValues);
+    ret *= RangeFieldType(0);
+    auto tmpBaseValues = base_->evaluate(xx);
+    assert(const_local_DoF_vector_.size() == tmpBaseValues.size());
     for (size_t ii = 0; ii < const_local_DoF_vector_.size(); ++ii) {
       tmpBaseValues[ii] *= const_local_DoF_vector_[ii];
       ret += tmpBaseValues[ii];
@@ -210,9 +209,8 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= RangeFieldType(0);
-    std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
-    assert(localVector_->size() == tmpBaseJacobianValues.size());
-    base_->jacobian(xx, tmpBaseJacobianValues);
+    auto tmpBaseJacobianValues = base_->jacobian(xx);
+    assert(const_local_DoF_vector_.size() == tmpBaseJacobianValues.size());
     for (size_t ii = 0; ii < const_local_DoF_vector_.size(); ++ii) {
       tmpBaseJacobianValues[ii] *= const_local_DoF_vector_[ii];
       ret += tmpBaseJacobianValues[ii];
@@ -293,9 +291,6 @@ public:
   }
 
 private:
-  using BaseType::space_;
-  using BaseType::entity_;
-  using BaseType::base_;
   using BaseType::global_indices_;
   using BaseType::const_local_DoF_vector_;
   VectorType& global_vector_;
