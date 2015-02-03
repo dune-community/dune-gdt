@@ -157,7 +157,9 @@ struct EllipticDiscretizations
           ++printed_rows;
         }
       } // loop over all available options
-    } catch (Dune::IOError&) {} // <- the SPE10Model1 function needs a data file on disc
+    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing& ee) {  // <- the SPE10Model1 function needs a data file on disc
+      std::cerr << ee.what() << std::endl;
+    }
   } // ... run(...)
 }; // struct EllipticDiscretizations
 
