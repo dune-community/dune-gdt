@@ -54,7 +54,7 @@ struct Oswald_Interpolation_Operator
       auto local_source = source.local_discrete_function(entity);
       auto local_source_DoF_vector = local_source->vector();
       for (size_t local_DoF = 0; local_DoF < local_source_DoF_vector.size(); ++local_DoF)
-        local_source_DoF_vector.set(local_DoF, value);
+        local_source_DoF_vector[local_DoF] = value;
     }
     // apply operator
     VectorType range_vector(space.mapper().size());

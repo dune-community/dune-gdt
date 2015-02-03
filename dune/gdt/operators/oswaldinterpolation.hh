@@ -487,7 +487,7 @@ private:
           // do the oswald projection
           const size_t num_DoFS_per_vertex = global_vertex_id_to_global_DoF_id_map[global_vertex_id].size();
           // * get the source DoF
-          const FieldType source_DoF_value = local_source_DoF_vector.get(local_DoF_id);
+          const FieldType source_DoF_value = local_source_DoF_vector[local_DoF_id];
           // * and add it to all target DoFs
           for (size_t target_global_DoF_id : global_vertex_id_to_global_DoF_id_map[global_vertex_id])
             range.vector().add_to_entry(target_global_DoF_id, source_DoF_value / num_DoFS_per_vertex);

@@ -134,12 +134,12 @@ private:
     assert(lagrange_points.size() == local_range_DoF_vector.size());
     size_t kk = 0;
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-      if (std::isinf(local_range_DoF_vector.get(kk))) {
+      if (std::isinf(local_range_DoF_vector[kk])) {
         const auto& lagrange_point = lagrange_points[ii];
         // evaluate source function
         const auto source_value = local_source.evaluate(lagrange_point);
         for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-          local_range_DoF_vector.set(kk, source_value[jj]);
+          local_range_DoF_vector[kk] = source_value[jj];
       }
       else
         kk += dimRange;
@@ -308,7 +308,7 @@ private:
       // set local DoFs
       auto local_range_vector = local_range->vector();
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-        local_range_vector.set(ii, local_DoFs[ii]);
+        local_range_vector[ii] = local_DoFs[ii];
     } // walk the grid
   } // ... apply_local_l2_projection_(...)
 
@@ -565,7 +565,7 @@ public:
         const auto lagrange_points = range_.space().lagrange_points(entity);
         assert(lagrange_points.size() == local_range_DoF_vector.size());
         for (const size_t& local_DoF_id : local_dirichlet_DoFs)
-          local_range_DoF_vector.set(local_DoF_id, local_source->evaluate(lagrange_points[local_DoF_id]));
+          local_range_DoF_vector[local_DoF_id] = local_source->evaluate(lagrange_points[local_DoF_id]);
       }
     }
   } // ... apply_local(...)
