@@ -229,21 +229,14 @@ private:
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatzBase,
       const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    typedef typename Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>::
-        RangeType DiffusionRangeType;
-    typedef
-        typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::JacobianRangeType
-            JacobianRangeType;
     // evaluate local function
-    const DiffusionRangeType functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test gradient
-    const size_t rows = testBase.size();
-    std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
-    testBase.jacobian(localPoint, testGradients);
+    const size_t rows        = testBase.size();
+    const auto testGradients = testBase.jacobian(localPoint);
     // evaluate ansatz gradient
-    const size_t cols = ansatzBase.size();
-    std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
-    ansatzBase.jacobian(localPoint, ansatzGradients);
+    const size_t cols          = ansatzBase.size();
+    const auto ansatzGradients = ansatzBase.jacobian(localPoint);
     // compute products
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
