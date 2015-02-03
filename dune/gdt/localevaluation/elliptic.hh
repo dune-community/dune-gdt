@@ -22,7 +22,7 @@ namespace GDT {
 namespace LocalEvaluation {
 
 
-// forwards
+// forward
 template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class Elliptic;
 
@@ -58,7 +58,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class EllipticTraits
 
 
 template <class LocalizableFunctionImp>
@@ -75,7 +75,9 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class EllipticTraits< ..., void >
+
+
 } // namespace internal
 
 
@@ -172,19 +174,6 @@ private:
            + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
   } // size_t redirect_order( ... )
 
-  //  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  //  void redirect_evaluate(const Stuff::LocalfunctionInterface
-  //                             < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunction*/,
-  //                         const Stuff::LocalfunctionSetInterface
-  //                             < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
-  //                         const Stuff::LocalfunctionSetInterface
-  //                             < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/,
-  //                         const Dune::FieldVector< DomainFieldType, dimDomain >& /*localPoint*/,
-  //                         Dune::DynamicMatrix< R >& /*ret*/) const
-  //  {
-  //    static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
-  //  } // ... redirect_evaluate< ... >(...)
-
   /**
    *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
    *  \tparam R RangeFieldType
@@ -217,7 +206,7 @@ private:
         retRow[jj] = functionValue * (ansatzGradients[jj][0] * testGradients[ii][0]);
       }
     }
-  } // ... redirect_evaluate< ..., 1, 1 >(...)
+  } // ... redirect_evaluate< ..., 1, ... >(...)
 
   template <class R>
   void evaluate_matrix_valued_(
@@ -256,7 +245,7 @@ private:
   } // ... evaluate_matrix_valued_(...)
 
   const LocalizableFunctionType& inducingFunction_;
-}; // class LocalElliptic
+}; // class Elliptic
 
 
 } // namespace Evaluation
