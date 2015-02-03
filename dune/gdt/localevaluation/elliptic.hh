@@ -10,10 +10,8 @@
 
 #include <tuple>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/common/dynmatrix.hh>
-# include <dune/common/typetraits.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/common/dynmatrix.hh>
+#include <dune/common/typetraits.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 
