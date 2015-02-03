@@ -10,6 +10,8 @@
 
 #include <tuple>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 
@@ -178,8 +180,8 @@ private:
                             < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
     return localFunction.order()
-         + std::max(ssize_t(testBase.order()) - 1, ssize_t(0))
-         + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
+        + boost::numeric_cast< size_t >(std::max(ssize_t(testBase.order())   - 1, ssize_t(0)))
+        + boost::numeric_cast< size_t >(std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0)));
   } // size_t redirect_order( ... )
 
   /**
