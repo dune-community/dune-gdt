@@ -145,20 +145,12 @@ public:
   typedef VectorImp                     VectorType;
   typedef typename BaseType::EntityType EntityType;
 
-  typedef typename BaseType::DomainFieldType  DomainFieldType;
-  static const unsigned int                   dimDomain = BaseType::dimDomain;
-  typedef typename BaseType::DomainType       DomainType;
-
-  typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const unsigned int                 dimRangeRows = BaseType::dimRangeCols;
-  static const unsigned int                 dimRangeCols = BaseType::dimRangeCols;
-  typedef typename BaseType::RangeType      RangeType;
-
+  typedef typename BaseType::DomainType        DomainType;
+  typedef typename BaseType::RangeFieldType    RangeFieldType;
+  typedef typename BaseType::RangeType         RangeType;
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
-private:
-  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
-public:
+  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
   ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& global_vector, const EntityType& ent)
     : BaseType(ent)
@@ -250,20 +242,6 @@ public:
   typedef typename BaseType::VectorType VectorType;
   typedef typename BaseType::EntityType EntityType;
 
-  typedef typename BaseType::DomainFieldType  DomainFieldType;
-  static const unsigned int                   dimDomain = BaseType::dimDomain;
-  typedef typename BaseType::DomainType       DomainType;
-
-  typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const unsigned int                 dimRangeRows = BaseType::dimRangeCols;
-  static const unsigned int                 dimRangeCols = BaseType::dimRangeCols;
-  typedef typename BaseType::RangeType      RangeType;
-
-  typedef typename BaseType::JacobianRangeType JacobianRangeType;
-private:
-  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
-
-public:
   LocalDiscreteFunction(const SpaceType& space, VectorType& global_vector, const EntityType& ent)
     : BaseType(space, global_vector, ent)
     , global_vector_(global_vector)
