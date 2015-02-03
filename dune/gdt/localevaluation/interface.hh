@@ -44,7 +44,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const unsigned int                       dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -60,8 +60,8 @@ public:
    */
   template< class R, int r, int rC >
   size_t order(const LocalfunctionTupleType& localFunctions_in,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase)
+  const
   {
     CHECK_CRTP(this->as_imp().order(localFunctions_in, testBase));
     return this->as_imp().order(localFunctions_in, testBase);
@@ -97,7 +97,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const unsigned int                       dimDomain = Traits::dimDomain;
 
   /**
    *  \brief  Computes the needed integration order.
@@ -161,7 +161,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const unsigned int                       dimDomain = Traits::dimDomain;
 
   /**
    *  \brief  Computes the needed integration order.
@@ -171,8 +171,8 @@ public:
    */
   template< class R, int r, int rC >
   size_t order(const LocalfunctionTupleType& localFunctions,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase)
+  const
   {
     CHECK_CRTP(this->as_imp().order(localFunctions, testBase));
     return this->as_imp().order(localFunctions, testBase);
@@ -210,7 +210,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const unsigned int                       dimDomain = Traits::dimDomain;
 
   /**
    *  \brief  Computes the needed integration order.
@@ -265,7 +265,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const unsigned int                       dimDomain = Traits::dimDomain;
 
   /**
    *  \brief  Computes the needed integration order.
