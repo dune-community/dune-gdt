@@ -209,7 +209,7 @@ private:
                    << "This was the original error: " << ee.what());
       }
       // set local DoFs
-      auto local_range_vector = local_range->vector();
+      auto& local_range_vector = local_range->vector();
       assert(local_range_vector.size() == local_DoFs.size());
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector[ii] = local_DoFs.get_entry(ii);
@@ -327,7 +327,7 @@ private:
       assert(source_entity_ptrs.size() == lagrange_points.size());
       // get range
       auto local_range = range.local_discrete_function(entity);
-      auto local_range_DoF_vector = local_range->vector();
+      auto& local_range_DoF_vector = local_range->vector();
       // do the actual work (see below)
       apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
     } // walk the grid

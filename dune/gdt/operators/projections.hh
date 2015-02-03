@@ -306,7 +306,7 @@ private:
       // compute local DoFs
       Stuff::LA::Solver< LocalMatrixType >(local_matrix).apply(local_vector, local_DoFs);
       // set local DoFs
-      auto local_range_vector = local_range->vector();
+      auto& local_range_vector = local_range->vector();
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector[ii] = local_DoFs[ii];
     } // walk the grid
