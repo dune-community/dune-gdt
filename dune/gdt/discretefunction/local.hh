@@ -160,15 +160,15 @@ private:
   typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
 public:
-  typedef ConstLocalDoFVector< VectorType > ConstLocalDoFVectorType;
 
-  ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& globalVector, const EntityType& ent)
+  ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& global_vector, const EntityType& ent)
     : BaseType(ent)
     , space_(space)
     , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
-    , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
+    , global_indices_(space_.mapper().globalIndices(entity_))
+    , const_local_DoF_vector_(map_to_local(global_vector, global_indices_))
   {
-    assert(localVector_->size() == base_->size());
+    assert(const_local_DoF_vector_.size() == base_->size());
   }
 
   ConstLocalDiscreteFunction(ThisType&& source) = default;
@@ -184,9 +184,9 @@ public:
     return *base_;
   }
 
-  const ConstLocalDoFVectorType& vector() const
+  const VectorType& vector() const
   {
-    return *localVector_;
+    return const_local_DoF_vector_;
   }
 
   virtual size_t order() const override
@@ -201,8 +201,8 @@ public:
     std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
     assert(localVector_->size() == tmpBaseValues.size());
     base_->evaluate(xx, tmpBaseValues);
-    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseValues[ii] *= localVector_->get(ii);
+    for (size_t ii = 0; ii < const_local_DoF_vector_.size(); ++ii) {
+      tmpBaseValues[ii] *= const_local_DoF_vector_[ii];
       ret += tmpBaseValues[ii];
     }
   } // ... evaluate(...)
@@ -214,8 +214,8 @@ public:
     std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
     assert(localVector_->size() == tmpBaseJacobianValues.size());
     base_->jacobian(xx, tmpBaseJacobianValues);
-    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseJacobianValues[ii] *= localVector_->get(ii);
+    for (size_t ii = 0; ii < const_local_DoF_vector_.size(); ++ii) {
+      tmpBaseJacobianValues[ii] *= const_local_DoF_vector_[ii];
       ret += tmpBaseJacobianValues[ii];
     }
   } // ... jacobian(...)
@@ -224,9 +224,21 @@ public:
   using BaseType::jacobian;
 
 protected:
+  static VectorType map_to_local(const VectorType& global_vector, const DynamicVector< size_t >& indices)
+  {
+    VectorType ret(indices.size());
+    for (size_t ii = 0; ii < indices.size(); ++ii) {
+      assert(indices[ii] < global_vector.size());
+      ret[ii] = global_vector[indices[ii]];
+    }
+    return ret;
+  } // ... map_to_local(...)
+
+  using BaseType::entity_;
   const SpaceType& space_;
-  std::unique_ptr< const BaseFunctionSetType > base_;
-  std::unique_ptr< const ConstLocalDoFVectorType > localVector_;
+  const std::unique_ptr< const BaseFunctionSetType > base_;
+  const DynamicVector< size_t > global_indices_;
+  const VectorType const_local_DoF_vector_;
 }; // class ConstLocalDiscreteFunction
 
 
@@ -255,14 +267,11 @@ private:
   typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
 
 public:
-  typedef LocalDoFVector< VectorType > LocalDoFVectorType;
-
-  LocalDiscreteFunction(const SpaceType& space, VectorType& globalVector, const EntityType& ent)
-    : BaseType(space, globalVector, ent)
-    , localVector_(new LocalDoFVectorType(space_.mapper(), entity_, globalVector))
-  {
-    assert(localVector_->size() == base_->size());
-  }
+  LocalDiscreteFunction(const SpaceType& space, VectorType& global_vector, const EntityType& ent)
+    : BaseType(space, global_vector, ent)
+    , global_vector_(global_vector)
+    , local_DoF_vector_(const_local_DoF_vector_)
+  {}
 
   //! previous comment questioned validity, defaulting this doesn't touch that question
   LocalDiscreteFunction(ThisType&& source) = default;
@@ -271,18 +280,27 @@ public:
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual ~LocalDiscreteFunction() {}
-
-  LocalDoFVectorType& vector()
+  virtual ~LocalDiscreteFunction()
   {
-    return *localVector_;
+    for (size_t ii = 0; ii < global_indices_.size(); ++ii) {
+      assert(global_indices_[ii] < global_vector_.size());
+      global_vector_[global_indices_[ii]] = local_DoF_vector_[ii];
+    }
+  } // ~LocalDiscreteFunction(...)
+
+  VectorType& vector()
+  {
+    return local_DoF_vector_;
   }
 
 private:
   using BaseType::space_;
   using BaseType::entity_;
   using BaseType::base_;
-  std::unique_ptr< LocalDoFVectorType > localVector_;
+  using BaseType::global_indices_;
+  using BaseType::const_local_DoF_vector_;
+  VectorType& global_vector_;
+  VectorType local_DoF_vector_;
 }; // class LocalDiscreteFunction
 
 
