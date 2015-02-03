@@ -174,7 +174,7 @@ private:
   {
     return localFunction.order() + boost::numeric_cast<size_t>(std::max(ssize_t(testBase.order()) - 1, ssize_t(0)))
            + boost::numeric_cast<size_t>(std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0)));
-  } // size_t redirect_order( ... )
+  } // ... order( ... )
 
   /**
    *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
