@@ -17,7 +17,7 @@ class operator_error : public Dune::Exception
 {
 };
 
-class prolongation_error : operator_error
+class prolongation_error : public operator_error
 {
 };
 
