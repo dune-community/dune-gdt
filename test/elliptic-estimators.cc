@@ -22,11 +22,15 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
 {
   void estimator_study() const
   {
-    const TestCase test_case;
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
-    EllipticSWIPDG::EstimatorStudy<TestCase> estimator_study(test_case);
-    Dune::Stuff::Test::check_eoc_study_for_success(estimator_study, estimator_study.run(DSC_LOG_INFO));
+    try {
+      const TestCase test_case;
+      test_case.print_header(DSC_LOG_INFO);
+      DSC_LOG_INFO << std::endl;
+      EllipticSWIPDG::EstimatorStudy<TestCase> estimator_study(test_case);
+      Dune::Stuff::Test::check_eoc_study_for_success(estimator_study, estimator_study.run(DSC_LOG_INFO));
+    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing& ee) {
+      std::cerr << ee.what() << std::endl;
+    }
   } // ... estimator_study()
 }; // struct EllipticSWIPDGDiscretization
 
