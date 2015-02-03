@@ -19,11 +19,15 @@ struct EllipticSIWPDGDiscretization
   template< int polOrder >
   void eoc_study() const
   {
-    const TestCase test_case;
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
-    EllipticSWIPDG::EocStudy< TestCase, polOrder > eoc_study(test_case);
-    Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    try {
+      const TestCase test_case;
+      test_case.print_header(DSC_LOG_INFO);
+      DSC_LOG_INFO << std::endl;
+      EllipticSWIPDG::EocStudy< TestCase, polOrder > eoc_study(test_case);
+      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing& ee) {
+      std::cerr << ee.what() << std::endl;
+    }
   } // ... eoc_study(...)
 }; // EllipticSIWPDGDiscretization
 
