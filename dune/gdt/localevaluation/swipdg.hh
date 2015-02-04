@@ -81,7 +81,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class InnerTraits
 
 
 template <class LocalizableFunctionImp>
@@ -98,7 +98,7 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class InnerTraits< ..., void >
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
@@ -126,7 +126,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class InnerPenaltyTraits
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
@@ -154,7 +154,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryLHSTraits
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
@@ -182,7 +182,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryLHSPenaltyTraits
 
 
 template <class LocalizableFunctionImp>
@@ -199,7 +199,7 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class BoundaryLHSTraits< ..., void >
 
 
 template <class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp>
@@ -235,7 +235,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryRHSTraits
 
 
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
@@ -265,7 +265,7 @@ public:
   typedef typename LocalizableDiffusionFunctionType::EntityType EntityType;
   typedef typename LocalizableDiffusionFunctionType::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
-};
+}; // class BoundaryRHSTraits< ..., void >
 
 
 } // namespace internal
@@ -516,12 +516,12 @@ public:
         neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
       } // loop over all neighbor ansatz basis functions
     } // loop over all neighbor test basis functions
-  } // void evaluate< ..., 1, 1 >(...) const
+  } // ... evaluate(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // CouplingPrimal
+}; // class Inner< ..., void >
 
 
 template <class LocalizableFunctionImp>
@@ -652,12 +652,12 @@ public:
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
-  } // void evaluate(...) const
+  } // ... evaluate(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // class BoundaryLHS
+}; // class BoundaryLHS< ..., void >
 
 
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
@@ -791,7 +791,7 @@ private:
   const LocalizableDiffusionFunctionType& diffusion_;
   const LocalizableDirichletFunctionType& dirichlet_;
   const double beta_;
-}; // class BoundaryRHS
+}; // class BoundaryRHS< ..., void >
 
 
 } // namespace SWIPDG
