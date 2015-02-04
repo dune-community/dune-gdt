@@ -60,19 +60,17 @@ public:
 }; // class EllipticTraits
 
 
-template< class LocalizableFunctionImp >
-class EllipticTraits< LocalizableFunctionImp, void >
+template< class DiffusionType >
+class EllipticTraits< DiffusionType, void >
 {
-  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionType >::value,
+                "DiffusionType has to be a localizable function!");
 public:
-  typedef LocalizableFunctionImp                                LocalizableFunctionType;
-  typedef Elliptic< LocalizableFunctionType, void >             derived_type;
-  typedef typename LocalizableFunctionType::EntityType          EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  typedef Elliptic< DiffusionType, void >         derived_type;
+  typedef typename DiffusionType::EntityType      EntityType;
+  typedef typename DiffusionType::DomainFieldType DomainFieldType;
+  typedef std::tuple< std::shared_ptr< typename DiffusionType::LocalfunctionType > > LocalfunctionTupleType;
+  static const unsigned int                       dimDomain = DiffusionType::dimDomain;
 }; // class EllipticTraits< ..., void >
 
 
