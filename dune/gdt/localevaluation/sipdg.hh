@@ -295,19 +295,15 @@ private:
     neighborNeighborRet *= 0.0;
     entityNeighborRet *= 0.0;
     neighborEntityRet *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::JacobianRangeType
-        JacobianRangeType;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
-    const DomainType localPointEn    = intersection.geometryInInside().global(localPoint);
-    const DomainType localPointNe    = intersection.geometryInOutside().global(localPoint);
-    const DomainType unitOuterNormal = intersection.unitOuterNormal(localPoint);
+    const auto localPointEn    = intersection.geometryInInside().global(localPoint);
+    const auto localPointNe    = intersection.geometryInOutside().global(localPoint);
+    const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const RangeType functionValueEn = localFunctionEntity.evaluate(localPointEn);
-    const RangeType functionValueNe = localFunctionNeighbor.evaluate(localPointNe);
+    const auto functionValueEn = localFunctionEntity.evaluate(localPointEn);
+    const auto functionValueNe = localFunctionNeighbor.evaluate(localPointNe);
     // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t max_polorder =
+    const auto max_polorder =
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
     const R sigma   = internal::inner_sigma(max_polorder);
@@ -315,30 +311,22 @@ private:
     // evaluate bases
     // * entity
     //   * test
-    const size_t rowsEn = testBaseEntity.size();
-    std::vector<RangeType> testValuesEn(rowsEn, RangeType(0));
-    std::vector<JacobianRangeType> testGradientsEn(rowsEn, JacobianRangeType(0));
-    testBaseEntity.evaluate(localPointEn, testValuesEn);
-    testBaseEntity.jacobian(localPointEn, testGradientsEn);
+    const auto rowsEn          = testBaseEntity.size();
+    const auto testValuesEn    = testBaseEntity.evaluate(localPointEn);
+    const auto testGradientsEn = testBaseEntity.jacobian(localPointEn);
     //   * ansatz
-    const size_t colsEn = ansatzBaseEntity.size();
-    std::vector<RangeType> ansatzValuesEn(colsEn, RangeType(0));
-    std::vector<JacobianRangeType> ansatzGradientsEn(colsEn, JacobianRangeType(0));
-    ansatzBaseEntity.evaluate(localPointEn, ansatzValuesEn);
-    ansatzBaseEntity.jacobian(localPointEn, ansatzGradientsEn);
+    const auto colsEn            = ansatzBaseEntity.size();
+    const auto ansatzValuesEn    = ansatzBaseEntity.evaluate(localPointEn);
+    const auto ansatzGradientsEn = ansatzBaseEntity.jacobian(localPointEn);
     // * neighbor
     //   * test
-    const size_t rowsNe = testBaseNeighbor.size();
-    std::vector<RangeType> testValuesNe(rowsNe, RangeType(0));
-    std::vector<JacobianRangeType> testGradientsNe(rowsNe, JacobianRangeType(0));
-    testBaseNeighbor.evaluate(localPointNe, testValuesNe);
-    testBaseNeighbor.jacobian(localPointNe, testGradientsNe);
+    const auto rowsNe          = testBaseNeighbor.size();
+    const auto testValuesNe    = testBaseNeighbor.evaluate(localPointNe);
+    const auto testGradientsNe = testBaseNeighbor.jacobian(localPointNe);
     //   * ansatz
-    const size_t colsNe = ansatzBaseNeighbor.size();
-    std::vector<RangeType> ansatzValuesNe(colsNe, RangeType(0));
-    std::vector<JacobianRangeType> ansatzGradientsNe(colsNe, JacobianRangeType(0));
-    ansatzBaseNeighbor.evaluate(localPointNe, ansatzValuesNe);
-    ansatzBaseNeighbor.jacobian(localPointNe, ansatzGradientsNe);
+    const auto colsNe            = ansatzBaseNeighbor.size();
+    const auto ansatzValuesNe    = ansatzBaseNeighbor.evaluate(localPointNe);
+    const auto ansatzGradientsNe = ansatzBaseNeighbor.jacobian(localPointNe);
     // compute the evaluations
     assert(entityEntityRet.rows() >= rowsEn);
     assert(entityEntityRet.cols() >= colsEn);
@@ -492,32 +480,24 @@ private:
   {
     // clear ret
     ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::JacobianRangeType
-        JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
-    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
-    const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
+    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const RangeType functionValue = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma             = internal::boundary_sigma(max_polorder);
-    const R penalty           = sigma / std::pow(intersection.geometry().volume(), beta_);
+    const auto max_polorder = std::max(testBase.order(), ansatzBase.order());
+    const R sigma           = internal::boundary_sigma(max_polorder);
+    const R penalty         = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
-    const size_t rows = testBase.size();
-    std::vector<RangeType> testValues(rows, RangeType(0));
-    std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
-    testBase.jacobian(localPointEntity, testGradients);
+    const auto rows          = testBase.size();
+    const auto testValues    = testBase.evaluate(localPointEntity);
+    const auto testGradients = testBase.jacobian(localPointEntity);
     // * ansatz
-    const size_t cols = ansatzBase.size();
-    std::vector<RangeType> ansatzValues(cols, RangeType(0));
-    std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
-    ansatzBase.evaluate(localPointEntity, ansatzValues);
-    ansatzBase.jacobian(localPointEntity, ansatzGradients);
+    const auto cols            = ansatzBase.size();
+    const auto ansatzValues    = ansatzBase.evaluate(localPointEntity);
+    const auto ansatzGradients = ansatzBase.jacobian(localPointEntity);
     // compute products
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
@@ -623,29 +603,20 @@ private:
   {
     // clear ret
     ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::DomainType
-        DomainType;
-    typedef
-        typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::RangeType RangeType;
-    typedef
-        typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::JacobianRangeType
-            JacobianRangeType;
     // get local point (which is in intersection coordinates) in entity coordinates
-    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
-    const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
+    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
     // evaluate local functions
-    const RangeType diffusionValue = localDiffusion.evaluate(localPointEntity);
-    const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
+    const auto diffusionValue = localDiffusion.evaluate(localPointEntity);
+    const auto dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t polorder = testBase.order();
-    const R sigma         = internal::boundary_sigma(polorder);
-    const R penalty       = sigma / std::pow(intersection.geometry().volume(), beta_);
+    const auto polorder = testBase.order();
+    const R sigma       = internal::boundary_sigma(polorder);
+    const R penalty     = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate basis
-    const size_t size = testBase.size();
-    std::vector<RangeType> testValues(size, RangeType(0));
-    std::vector<JacobianRangeType> testGradients(size, JacobianRangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
-    testBase.jacobian(localPointEntity, testGradients);
+    const auto size          = testBase.size();
+    const auto testValues    = testBase.evaluate(localPointEntity);
+    const auto testGradients = testBase.jacobian(localPointEntity);
     // compute
     assert(ret.size() >= size);
     // loop over all test basis functions
