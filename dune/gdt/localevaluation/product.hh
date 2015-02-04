@@ -201,14 +201,11 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    // checks
-    typedef Dune::FieldVector< R, 1 > RangeType;
     // evaluate local function
-    const RangeType functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test base
     const size_t size = testBase.size();
-    std::vector< RangeType > testValues(size, RangeType(0));
-    testBase.evaluate(localPoint, testValues);
+    const auto testValues= testBase.evaluate(localPoint);
     // compute product
     assert(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii) {
@@ -244,14 +241,10 @@ public:
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate bases
-    const size_t rows = testBase.size();
-    const size_t cols = ansatzBase.size();
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >::RangeType
-        RangeType;
-    std::vector< RangeType > testValues(rows, RangeType(0));
-    std::vector< RangeType > ansatzValues(cols, RangeType(0));
-    testBase.evaluate(localPoint, testValues);
-    ansatzBase.evaluate(localPoint, ansatzValues);
+    const auto rows = testBase.size();
+    const auto cols = ansatzBase.size();
+    const auto testValues = testBase.evaluate(localPoint);
+    const auto ansatzValues = ansatzBase.evaluate(localPoint);
     // compute product
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
@@ -273,16 +266,12 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    // checks
-    typedef Dune::FieldVector< DomainFieldType, dimDomain > DomainType;
-    typedef Dune::FieldVector< R, 1 > RangeType;
     // evaluate local function
-    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
-    const RangeType functionValue = localFunction.evaluate(localPointEntity);
+    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
+    const auto functionValue = localFunction.evaluate(localPointEntity);
     // evaluate test base
     const size_t size = testBase.size();
-    std::vector< RangeType > testValues(size, RangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
+    const auto testValues = testBase.evaluate(localPointEntity);
     // compute product
     assert(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii) {
@@ -308,12 +297,8 @@ public:
     // evaluate bases
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
-    typedef typename Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >::RangeType
-        RangeType;
-    std::vector< RangeType > testValues(rows, RangeType(0));
-    std::vector< RangeType > ansatzValues(cols, RangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
-    ansatzBase.evaluate(localPointEntity, ansatzValues);
+    const auto testValues = testBase.evaluate(localPointEntity);
+    const auto ansatzValues = ansatzBase.evaluate(localPointEntity);
     // compute product
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
