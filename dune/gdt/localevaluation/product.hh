@@ -72,32 +72,31 @@ public:
     : inducingFunction_(inducingFunction)
   {}
 
+  /// \name Required by all variants of LocalEvaluation::Codim0Interface
+  /// \{
+
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(inducingFunction_.local_function(entity));
   }
 
-  /**
-   * These are the methods required to fulfill the interfaces
-   * \{
-   */
+  /// \}
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 1 >
+  /// \{
 
   /**
    * \brief extracts the local function and calls the correct order() method
-   * \note  required by `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template< class R, int rT, int rCT >
   size_t order(const LocalfunctionTupleType& localFuncs,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    return order(*localFunction, testBase);
+    return order(*std::get< 0 >(localFuncs), testBase);
   }
 
   /**
    * \brief extracts the local function and calls the correct evaluate() method
-   * \note  required by `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template< class R, int rT, int rCT >
   void evaluate(const LocalfunctionTupleType& localFuncs,
@@ -105,45 +104,15 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    evaluate(*localFunction, testBase, localPoint, ret);
+    evaluate(*std::get< 0 >(localFuncs), testBase, localPoint, ret);
   }
 
-  /**
-   * \brief extracts the local function and calls the correct order() method
-   * \note  required by
-   *        - `LocalEvaluation::Codim0Interface< ..., 2 >`
-   *        - `LocalEvaluation::Codim1Interface< ..., 2 >`
-   */
-  template< class R, int rT, int rCT, int rA, int rCA >
-  size_t order(const LocalfunctionTupleType& localFuncs,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
-  {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    return order(*localFunction, testBase, ansatzBase);
-  }
+  /// \}
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >
+  /// \{
 
   /**
    * \brief extracts the local function and calls the correct evaluate() method
-   * \note  required by `LocalEvaluation::Codim0Interface< ..., 2 >`
-   */
-  template< class R, int rT, int rCT, int rA, int rCA >
-  void evaluate(const LocalfunctionTupleType& localFuncs,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
-                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
-                Dune::DynamicMatrix< R >& ret) const
-  {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    evaluate(*localFunction, testBase, ansatzBase, localPoint, ret);
-  }
-
-  /**
-   * \brief extracts the local function and calls the correct evaluate() method
-   * \note  required by `LocalEvaluation::Codim1Interface< ..., 1 >`
    */
   template< class IntersectionType, class R, int r, int rC >
   void evaluate(const LocalfunctionTupleType& localFuncs,
@@ -152,13 +121,32 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    evaluate(*localFunction, testBase, intersection, localPoint, ret);
+    evaluate(*std::get< 0 >(localFuncs), testBase, intersection, localPoint, ret);
   }
+
+  /// \}
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \{
 
   /**
    * \brief extracts the local function and calls the correct evaluate() method
-   * \note  required by `LocalEvaluation::Codim1Interface< ..., 2 >`
+   */
+  template< class R, int rT, int rCT, int rA, int rCA >
+  void evaluate(const LocalfunctionTupleType& localFuncs,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
+                Dune::DynamicMatrix< R >& ret) const
+  {
+    evaluate(*std::get< 0 >(localFuncs), testBase, ansatzBase, localPoint, ret);
+  }
+
+  /// \}
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \{
+
+  /**
+   * \brief extracts the local function and calls the correct evaluate() method
    */
   template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions_in,
@@ -168,22 +156,32 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const auto localFunction = std::get< 0 >(localFunctions_in);
-    evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
+    evaluate(*std::get< 0 >(localFunctions_in), testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-  /**
-   * \}
-   * end of: These are the methods required to fulfill the interfaces
-   */
+  /// \}
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 > and LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \{
 
   /**
-   * These are the methods that do the actual computations
-   * \{
+   * \brief extracts the local function and calls the correct order() method
    */
+  template< class R, int rT, int rCT, int rA, int rCA >
+  size_t order(const LocalfunctionTupleType& localFuncs,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
+  const
+  {
+    return order(*std::get< 0 >(localFuncs), testBase, ansatzBase);
+  }
+
+  /// \}
+  /// \name Actual implementations of order
+  /// \{
 
   /**
-   * \note implementation for `LocalEvaluation::Codim0Interface< ..., 1 >`
+   * \note   for `LocalEvaluation::Codim0Interface< ..., 1 >`
+   * \return localFunction.order() + testBase.order()
    */
   template< class R, int rL, int rCL, int rT, int rCT >
   size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
@@ -194,7 +192,26 @@ public:
   }
 
   /**
-   * \note implementation for `LocalEvaluation::Codim0Interface< ..., 1 >`
+   * \note   for
+   *         - `LocalEvaluation::Codim0Interface< ..., 2 >`
+   *         - `LocalEvaluation::Codim1Interface< ..., 2 >`
+   * \return localFunction.order() + testBase.order() + ansatzBase.order()
+   */
+  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface
+                  < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+  {
+    return localFunction.order() + testBase.order() + ansatzBase.order();
+  }
+
+  /// \}
+  /// \name Actual implementations of evaluate
+  /// \{
+
+  /**
+   * \note for `LocalEvaluation::Codim0Interface< ..., 1 >`
    */
   template< class R >
   void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
@@ -213,20 +230,6 @@ public:
       ret[ii] = functionValue * testValues[ii];
     }
   } // ... evaluate(...)
-
-  /**
-   * \note implementation for
-   *       - `LocalEvaluation::Codim0Interface< ..., 2 >`
-   *       - `LocalEvaluation::Codim1Interface< ..., 2 >`
-   */
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface
-                  < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
-  {
-    return localFunction.order() + testBase.order() + ansatzBase.order();
-  }
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
@@ -311,10 +314,7 @@ public:
     }
   } // ... evaluate(...)
 
-  /**
-   * \}
-   * end of: These are the methods that do the actual computations
-   */
+  /// \}
 
 private:
   const LocalizableFunctionType& inducingFunction_;
