@@ -30,35 +30,93 @@ namespace LocalEvaluation {
 namespace SIPDG {
 
 
+// forwards
 template< class LocalizableFunctionImp >
 class Inner;
+
+template< class LocalizableFunctionImp >
+class BoundaryLHS;
+
+template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
+class BoundaryRHS;
+
+
+namespace internal {
 
 
 template< class LocalizableFunctionImp >
 class InnerTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be a localizable function!");
 public:
-  typedef Inner< LocalizableFunctionImp >                       derived_type;
-  typedef LocalizableFunctionImp                                LocalizableFunctionType;
-  typedef typename LocalizableFunctionType::EntityType          EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+  typedef Inner< LocalizableFunctionImp >                     derived_type;
+  typedef LocalizableFunctionImp                              LocalizableFunctionType;
+  typedef typename LocalizableFunctionType::EntityType        EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType   DomainFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
+  static const unsigned int                                   dimDomain = LocalizableFunctionType::dimDomain;
+}; // class InnerTraits
+
+
+template< class LocalizableFunctionImp >
+class BoundaryLHSTraits
+{
+  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be a localizable function!");
+public:
+  typedef LocalizableFunctionImp                              LocalizableFunctionType;
+  typedef BoundaryLHS< LocalizableFunctionImp >               derived_type;
+  typedef typename LocalizableFunctionType::EntityType        EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType   DomainFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
+  static const unsigned int                                   dimDomain = LocalizableFunctionType::dimDomain;
+}; // class BoundaryLHSTraits
+
+
+template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
+class BoundaryRHSTraits
+{
+  static_assert(Stuff::is_localizable_function< LocalizableDiffusionFunctionImp >::value,
+                "LocalizableDiffusionFunctionImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< LocalizableDirichletFunctionImp >::value,
+                "LocalizableDirichletFunctionImp has to be a localizable function!");
+  static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::EntityType,
+                              typename LocalizableDirichletFunctionImp::EntityType >::value,
+                "EntityTypes have to agree!");
+  static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::DomainFieldType,
+                              typename LocalizableDirichletFunctionImp::DomainFieldType >::value,
+                "DomainFieldTypes have to agree!");
+  static_assert(LocalizableDiffusionFunctionImp::dimDomain == LocalizableDirichletFunctionImp::dimDomain,
+                "Dimensions have to agree");
+public:
+  typedef BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >   derived_type;
+  typedef LocalizableDiffusionFunctionImp                               LocalizableDiffusionFunctionType;
+  typedef LocalizableDirichletFunctionImp                               LocalizableDirichletFunctionType;
+  typedef typename LocalizableDiffusionFunctionType::LocalfunctionType  LocalDiffusionFunctionType;
+  typedef typename LocalizableDirichletFunctionType::LocalfunctionType  LocalDirichletFunctionType;
+  typedef std::tuple< std::shared_ptr< LocalDiffusionFunctionType >,
+                      std::shared_ptr< LocalDirichletFunctionType > >   LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFunctionType::EntityType         EntityType;
+  typedef typename LocalizableDiffusionFunctionType::DomainFieldType    DomainFieldType;
+  static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
+}; // class BoundaryRHSTraits
 
 
 /**
  *  see Epshteyn, Riviere, 2007 for the meaning of beta
+} // namespace internal
+
+
  */
 template< class LocalizableFunctionImp >
 class Inner
-  : public LocalEvaluation::Codim1Interface< InnerTraits< LocalizableFunctionImp >, 4 >
+  : public LocalEvaluation::Codim1Interface< internal::InnerTraits< LocalizableFunctionImp >, 4 >
 {
 public:
-  typedef InnerTraits< LocalizableFunctionImp >     Traits;
+  typedef internal::InnerTraits< LocalizableFunctionImp > Traits;
   typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType   LocalfunctionTupleType;
   typedef typename Traits::EntityType               EntityType;
@@ -330,33 +388,14 @@ private:
 }; // CouplingPrimal
 
 
-//forward
-template< class LocalizableFunctionImp >
-class BoundaryLHS;
-
-
-template< class LocalizableFunctionImp >
-class BoundaryLHSTraits
-{
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-public:
-  typedef LocalizableFunctionImp                                LocalizableFunctionType;
-  typedef BoundaryLHS< LocalizableFunctionImp >                 derived_type;
-  typedef typename LocalizableFunctionType::EntityType          EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
 
 
 template< class LocalizableFunctionImp >
 class BoundaryLHS
-    : public LocalEvaluation::Codim1Interface< BoundaryLHSTraits< LocalizableFunctionImp >, 2 >
+    : public LocalEvaluation::Codim1Interface< internal::BoundaryLHSTraits< LocalizableFunctionImp >, 2 >
 {
 public:
-  typedef BoundaryLHSTraits< LocalizableFunctionImp > Traits;
+  typedef internal::BoundaryLHSTraits< LocalizableFunctionImp > Traits;
   typedef typename Traits::LocalizableFunctionType    LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType     LocalfunctionTupleType;
   typedef typename Traits::EntityType                 EntityType;
@@ -511,47 +550,13 @@ private:
 }; // class BoundaryDirichletLHS
 
 
-//forward
-template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
-class BoundaryRHS;
-
-
-template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
-class BoundaryRHSTraits
-{
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDiffusionFunctionImp >::value,
-                "LocalizableDiffusionFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDirichletFunctionImp >::value,
-                "LocalizableDirichletFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::EntityType,
-                              typename LocalizableDirichletFunctionImp::EntityType >::value,
-                "EntityTypes have to agree!");
-  static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::DomainFieldType,
-                              typename LocalizableDirichletFunctionImp::DomainFieldType >::value,
-                "DomainFieldTypes have to agree!");
-  static_assert(LocalizableDiffusionFunctionImp::dimDomain == LocalizableDirichletFunctionImp::dimDomain,
-                "Dimensions of domains have to agree");
-public:
-  typedef BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >   derived_type;
-  typedef LocalizableDiffusionFunctionImp                               LocalizableDiffusionFunctionType;
-  typedef LocalizableDirichletFunctionImp                               LocalizableDirichletFunctionType;
-  typedef typename LocalizableDiffusionFunctionType::LocalfunctionType  LocalDiffusionFunctionType;
-  typedef typename LocalizableDirichletFunctionType::LocalfunctionType  LocalDirichletFunctionType;
-  typedef std::tuple< std::shared_ptr< LocalDiffusionFunctionType >,
-                      std::shared_ptr< LocalDirichletFunctionType > >   LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFunctionType::EntityType         EntityType;
-  typedef typename LocalizableDiffusionFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
-};
-
-
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
 class BoundaryRHS
-  : public LocalEvaluation::Codim1Interface< BoundaryRHSTraits< LocalizableDiffusionFunctionImp,
+  : public LocalEvaluation::Codim1Interface< internal::BoundaryRHSTraits< LocalizableDiffusionFunctionImp,
                                                                 LocalizableDirichletFunctionImp >, 1 >
 {
 public:
-  typedef BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp > Traits;
+  typedef internal::BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp > Traits;
   typedef typename Traits::LocalizableDiffusionFunctionType     LocalizableDiffusionFunctionType;
   typedef typename Traits::LocalizableDirichletFunctionType     LocalizableDirichletFunctionType;
   typedef typename Traits::LocalfunctionTupleType               LocalfunctionTupleType;
