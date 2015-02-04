@@ -35,31 +35,27 @@ namespace internal {
 /**
  *  \brief  Traits for the Elliptic evaluation.
  */
-template <class DiffusionFactorImp, class DiffusionTensorImp>
+template <class DiffusionFactorType, class DiffusionTensorType>
 class EllipticTraits
 {
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
+  static_assert(Stuff::is_localizable_function<DiffusionFactorType>::value,
+                "DiffusionFactorType has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function<DiffusionTensorType>::value,
+                "DiffusionTensorType has to be a localizable function!");
+  static_assert(std::is_same<typename DiffusionFactorType::EntityType, typename DiffusionTensorType::EntityType>::value,
                 "EntityTypes have to agree!");
   static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value,
+      std::is_same<typename DiffusionFactorType::DomainFieldType, typename DiffusionTensorType::DomainFieldType>::value,
       "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions have to agree!");
+  static_assert(DiffusionFactorType::dimDomain == DiffusionTensorType::dimDomain, "Dimensions have to agree!");
 
 public:
-  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  typedef Elliptic<DiffusionFactorType, DiffusionTensorType> derived_type;
+  typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
+  typedef typename DiffusionFactorType::EntityType EntityType;
+  typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
+  static const unsigned int dimDomain = DiffusionFactorType::dimDomain;
 }; // class EllipticTraits
 
 
@@ -86,20 +82,20 @@ public:
 /**
  *  \brief  Computes an elliptic evaluation.
  */
-template <class LocalizableFunctionImp>
-class Elliptic<LocalizableFunctionImp, void>
-    : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<LocalizableFunctionImp, void>, 2>
+template <class DiffusionImp>
+class Elliptic<DiffusionImp, void>
+    : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<DiffusionImp, void>, 2>
 {
 public:
-  typedef internal::EllipticTraits<LocalizableFunctionImp, void> Traits;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef DiffusionImp DiffusionType;
+  typedef internal::EllipticTraits<DiffusionType, void> Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  explicit Elliptic(const LocalizableFunctionType& inducingFunction)
-    : inducingFunction_(inducingFunction)
+  explicit Elliptic(const DiffusionType& inducingFunction)
+    : diffusion_(inducingFunction)
   {
   }
 
@@ -108,7 +104,7 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(inducingFunction_.local_function(entity));
+    return std::make_tuple(diffusion_.local_function(entity));
   }
 
   /**
@@ -250,8 +246,8 @@ private:
     }
   } // ... evaluate_matrix_valued_(...)
 
-  const LocalizableFunctionType& inducingFunction_;
-}; // class Elliptic
+  const DiffusionType& diffusion_;
+}; // class Elliptic< ...., void >
 
 
 } // namespace Evaluation
