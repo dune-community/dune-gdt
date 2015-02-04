@@ -13,7 +13,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/playground/localevaluation/elliptic.hh>
+#include <dune/gdt/localevaluation/elliptic.hh>
 
 #include "base-internal.hh"
 
