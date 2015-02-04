@@ -298,6 +298,9 @@ public:
     , beta_(beta)
   {}
 
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 4 >
+  /// \{
+
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(inducingFunction_.local_function(entity));
@@ -358,6 +361,10 @@ public:
              neighborEntityRet);
   }
 
+  /// \}
+  /// \name Actual implementation of order
+  /// \{
+
   template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunctionEntity,
@@ -377,6 +384,9 @@ public:
          + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
+  /// \}
+  /// \name Actual implementation of evaluate
+  /// \{
 
   /**
    *  \brief  Computes the swipdg fluxes in a primal setting.
@@ -512,6 +522,8 @@ public:
     } // loop over all neighbor test basis functions
   } // ... evaluate(...)
 
+  /// \}
+
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
@@ -536,6 +548,9 @@ public:
     , beta_(beta)
   {}
 
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \{
+
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(inducingFunction_.local_function(entity));
@@ -550,23 +565,8 @@ public:
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
   const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    return order(*localFunction, testBase, ansatzBase);
+    return order(*std::get< 0 >(localFuncs), testBase, ansatzBase);
   }
-
-  /**
-   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
-   */
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  size_t order(const Stuff::LocalfunctionInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
-  {
-      return localFunction.order() + testBase.order() + ansatzBase.order();
-  } // size_t order(...)
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
@@ -581,11 +581,28 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const auto localFunction = std::get< 0 >(localFuncs);
-    evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
+    evaluate(*std::get< 0 >(localFuncs), testBase, ansatzBase, intersection, localPoint, ret);
   }
 
+  /// \}
+  /// \name Actual implementation of order
+  /// \{
+
+  /**
+   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
+   */
+  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
+  const
   {
+      return localFunction.order() + testBase.order() + ansatzBase.order();
+  }
+
+  /// \}
+  /// \name Actual implementation of evaluate
+  /// \{
 
   template< class IntersectionType, class R >
   void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, 2, R, 1, 1 >& localFunction,
@@ -635,6 +652,8 @@ public:
     } // loop over all test basis functions
   } // ... evaluate(...)
 
+  /// \}
+
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
@@ -664,6 +683,9 @@ public:
     , beta_(beta)
   {}
 
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >
+  /// \{
+
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(diffusion_.local_function(entity), dirichlet_.local_function(entity));
@@ -679,7 +701,7 @@ public:
   {
     const auto localDiffusion = std::get< 0 >(localFuncs);
     const auto localDirichlet = std::get< 1 >(localFuncs);
-    return redirect_order(*localDiffusion, *localDirichlet, testBase);
+    return order(*localDiffusion, *localDirichlet, testBase);
   }
 
   /**
@@ -694,39 +716,42 @@ public:
   {
     const auto localDiffusion = std::get< 0 >(localFuncs);
     const auto localDirichlet = std::get< 1 >(localFuncs);
-    redirect_evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
+    evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
   }
 
-private:
+  /// \}
+  /// \name Actual implementation of order
+  /// \{
+
   /**
    *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
    */
   template< class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
-  size_t redirect_order(const Stuff::LocalfunctionInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rLF, rCLF >& localDiffusion,
-                        const Stuff::LocalfunctionInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rLR, rCLR >& localDirichlet,
-                        const Stuff::LocalfunctionSetInterface
-                            < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase) const
+  size_t order(const Stuff::LocalfunctionInterface
+                  < EntityType, DomainFieldType, dimDomain, R, rLF, rCLF >& localDiffusion,
+               const Stuff::LocalfunctionInterface
+                  < EntityType, DomainFieldType, dimDomain, R, rLR, rCLR >& localDirichlet,
+               const Stuff::LocalfunctionSetInterface
+                  < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase) const
   {
       const size_t testOrder = testBase.order();
       const size_t testGradientOrder = boost::numeric_cast< size_t >(std::max(ssize_t(testOrder) - 1, ssize_t(0)));
       const size_t diffusionOrder = localDiffusion.order();
       const size_t dirichletOrder = localDirichlet.order();
       return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-  } // ... redirect_order(...)
+  } // ... order(...)
 
+  /// \}
+  /// \name Actual implementation of evaluate
+  /// \{
 
   template< class IntersectionType, class R >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface
-                             < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDiffusion,
-                         const Stuff::LocalfunctionInterface
-                             < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDirichlet,
-                         const Stuff::LocalfunctionSetInterface
-                             < EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
-                         const IntersectionType& intersection,
-                         const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
-                         Dune::DynamicVector< R >& ret) const
+  void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDiffusion,
+                const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localDirichlet,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& testBase,
+                const IntersectionType& intersection,
+                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
+                Dune::DynamicVector< R >& ret) const
   {
     // clear ret
     ret *= 0.0;
@@ -755,8 +780,9 @@ private:
       // penalty term
       ret[ii] += penalty * dirichletValue * testValues[ii];
     } // loop over all test basis functions
-  } // void redirect_evaluate(...) const
+  } // ... evaluate(...)
 
+private:
   const LocalizableDiffusionFunctionType& diffusion_;
   const LocalizableDirichletFunctionType& dirichlet_;
   const double beta_;
