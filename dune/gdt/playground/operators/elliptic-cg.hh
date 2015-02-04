@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_CG_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_CG_HH
 
-#include <dune/gdt/playground/localevaluation/elliptic.hh>
+#include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/operators/elliptic-cg.hh>
 
 namespace Dune {
