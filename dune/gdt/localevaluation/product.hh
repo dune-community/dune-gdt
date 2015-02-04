@@ -25,6 +25,9 @@ template< class LocalizableFunctionImp >
 class Product;
 
 
+namespace internal {
+
+
 /**
  *  \brief Traits for the Product evaluation.
  */
@@ -44,19 +47,21 @@ public:
 
 };
 
+} // namespace internal
+
 
 /**
  *  \brief  Computes a product evaluation.
  */
 template< class LocalizableFunctionImp >
 class Product
-  : public LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 1 >
-  , public LocalEvaluation::Codim0Interface< ProductTraits< LocalizableFunctionImp >, 2 >
-  , public LocalEvaluation::Codim1Interface< ProductTraits< LocalizableFunctionImp >, 1 >
-  , public LocalEvaluation::Codim1Interface< ProductTraits< LocalizableFunctionImp >, 2 >
+  : public LocalEvaluation::Codim0Interface< internal::ProductTraits< LocalizableFunctionImp >, 1 >
+  , public LocalEvaluation::Codim0Interface< internal::ProductTraits< LocalizableFunctionImp >, 2 >
+  , public LocalEvaluation::Codim1Interface< internal::ProductTraits< LocalizableFunctionImp >, 1 >
+  , public LocalEvaluation::Codim1Interface< internal::ProductTraits< LocalizableFunctionImp >, 2 >
 {
 public:
-  typedef ProductTraits< LocalizableFunctionImp >   Traits;
+  typedef internal::ProductTraits< LocalizableFunctionImp > Traits;
   typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType   LocalfunctionTupleType;
   typedef typename Traits::EntityType               EntityType;
