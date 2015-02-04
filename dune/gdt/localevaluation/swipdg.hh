@@ -10,16 +10,11 @@
 
 #include <dune/common/densematrix.hh>
 
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-#include <dune/stuff/common/logging.hh>
-#endif
-#endif
-#include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "interface.hh"
+#include "sipdg.hh"
 
 namespace Dune {
 namespace GDT {
@@ -59,69 +54,6 @@ class BoundaryRHS;
 
 
 namespace internal {
-
-
-/**
- * \note see Epshteyn, Riviere, 2007
- */
-static inline double default_beta(const size_t dimDomain)
-{
-  return 1.0 / (dimDomain - 1.0);
-}
-
-
-/**
- * \note see Epshteyn, Riviere, 2007
- */
-static inline double inner_sigma(const size_t pol_order)
-{
-  double sigma = 1.0;
-  if (pol_order <= 1)
-    sigma *= 8.0;
-  else if (pol_order <= 2)
-    sigma *= 20.0;
-  else if (pol_order <= 3)
-    sigma *= 38.0;
-  else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
-        << "a polynomial order of " << pol_order << " is untested!\n"
-        << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
-        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
-#endif
-    sigma *= 50.0;
-  }
-  return sigma;
-} // ... inner_sigma(...)
-
-
-/**
- * \note see Epshteyn, Riviere, 2007
- */
-static inline double boundary_sigma(const size_t pol_order)
-{
-  double sigma = 1.0;
-  if (pol_order <= 1)
-    sigma *= 14.0;
-  else if (pol_order <= 2)
-    sigma *= 38.0;
-  else if (pol_order <= 3)
-    sigma *= 74.0;
-  else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localevaluation.swipdg.inner").warn()
-        << "a polynomial order of " << pol_order << " is untested!\n"
-        << "  #define DUNE_GDT_LOCALEVALUATION_SWIPDG_DISABLE_WARNINGS to statically disable this warning\n"
-        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
-#endif
-    sigma *= 100.0;
-  }
-  return sigma;
-} // ... boundary_sigma(...)
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
@@ -356,7 +288,7 @@ public:
   static const unsigned int dimDomain = Traits::dimDomain;
 
   Inner(const LocalizableFunctionType& inducingFunction,
-        const double beta = internal::default_beta(LocalizableFunctionType::dimDomain))
+        const double beta = SIPDG::internal::default_beta(LocalizableFunctionType::dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {
@@ -487,7 +419,7 @@ public:
     const size_t max_polorder =
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
-    const R sigma = internal::inner_sigma(max_polorder);
+    const R sigma = SIPDG::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R delta_plus   = /*unitOuterNormal * (*/ functionValueNe /** unitOuterNormal)*/;
     const R delta_minus  = /*unitOuterNormal * (*/ functionValueEn /** unitOuterNormal)*/;
@@ -605,7 +537,8 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
+  BoundaryLHS(const LocalizableFunctionType& inducingFunction,
+              const double beta = SIPDG::internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {
@@ -687,7 +620,7 @@ public:
     const RangeType functionValue = localFunction.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma             = internal::boundary_sigma(max_polorder);
+    const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma   = /*unitOuterNormal * (*/ functionValue /** unitOuterNormal)*/;
     const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
@@ -744,7 +677,7 @@ public:
   static const unsigned int dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = internal::default_beta(dimDomain))
+              const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
@@ -835,7 +768,7 @@ private:
     const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
-    const R sigma         = internal::boundary_sigma(polorder);
+    const R sigma         = SIPDG::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma   = /*unitOuterNormal * (*/ diffusionValue /** unitOuterNormal)*/;
     const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
