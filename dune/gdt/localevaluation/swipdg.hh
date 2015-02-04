@@ -365,22 +365,6 @@ public:
            + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
-  template <class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  void evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunctionEntity*/,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL,
-                                          rCL>& /*localFunctionNeighbor*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBaseEntity*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBaseEntity*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBaseNeighbor*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA,
-                                             rCA>& /*ansatzBaseNeighbor*/,
-      const IntersectionType& /*intersection*/, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& /*localPoint*/,
-      Dune::DynamicMatrix<R>& /*entityEntityRet*/, Dune::DynamicMatrix<R>& /*neighborNeighborRet*/,
-      Dune::DynamicMatrix<R>& /*entityNeighborRet*/, Dune::DynamicMatrix<R>& /*neighborEntityRet*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  }
 
   /**
    *  \brief  Computes the swipdg fluxes in a primal setting.
@@ -587,211 +571,194 @@ public:
     evaluate(*localFunction, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-  template <class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
-  void
-  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& /*localFunction*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/,
-           const IntersectionType& /*intersection*/,
-           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& /*localPoint*/,
-           Dune::DynamicMatrix<R>& /*ret*/) const
   {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // void evaluate(...) const
 
-  template <class IntersectionType, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunction,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBase,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBase,
-                const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, 1>& localPoint,
-                Dune::DynamicMatrix<R>& ret) const
+    template <class IntersectionType, class R>
+    void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunction,
+                  const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBase,
+                  const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBase,
+                  const IntersectionType& intersection,
+                  const Dune::FieldVector<DomainFieldType, 1>& localPoint,
+                  Dune::DynamicMatrix<R>& ret) const
+    {
+      // clear ret
+      ret *= 0.0;
+      typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::DomainType DomainType;
+      typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::RangeType RangeType;
+      typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::JacobianRangeType
+          JacobianRangeType;
+      // get local point (which is in intersection coordinates) in entity coordinates
+      const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
+      const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+      // evaluate local function
+      const RangeType functionValue = localFunction.evaluate(localPointEntity);
+      // compute penalty (see Epshteyn, Riviere, 2007)
+      const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
+      const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
+      // compute weighting (see Ern, Stephansen, Zunino 2007)
+      const R gamma   = /*unitOuterNormal * (*/ functionValue /** unitOuterNormal)*/;
+      const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+      // evaluate bases
+      // * test
+      const size_t rows = testBase.size();
+      std::vector<RangeType> testValues(rows, RangeType(0));
+      std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
+      testBase.evaluate(localPointEntity, testValues);
+      testBase.jacobian(localPointEntity, testGradients);
+      // * ansatz
+      const size_t cols = ansatzBase.size();
+      std::vector<RangeType> ansatzValues(cols, RangeType(0));
+      std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
+      ansatzBase.evaluate(localPointEntity, ansatzValues);
+      ansatzBase.jacobian(localPointEntity, ansatzGradients);
+      // compute products
+      assert(ret.rows() >= rows);
+      assert(ret.cols() >= cols);
+      // loop over all test basis functions
+      for (size_t ii = 0; ii < rows; ++ii) {
+        auto& retRow = ret[ii];
+        // loop over all ansatz basis functions
+        for (size_t jj = 0; jj < cols; ++jj) {
+          // consistency term
+          retRow[jj] += -1.0 * functionValue * (ansatzGradients[jj][0] * unitOuterNormal) * testValues[ii];
+          // symmetry term
+          retRow[jj] += -1.0 * ansatzValues[jj] * functionValue * (testGradients[ii][0] * unitOuterNormal);
+          // penalty term
+          retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
+        } // loop over all ansatz basis functions
+      } // loop over all test basis functions
+    } // ... evaluate(...)
+
+  private:
+    const LocalizableFunctionType& inducingFunction_;
+    const double beta_;
+  }; // class BoundaryLHS< ..., void >
+
+
+  template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
+  class BoundaryRHS<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void>
+      : public LocalEvaluation::Codim1Interface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
+                                                                            LocalizableDirichletFunctionImp, void>,
+                                                1>
   {
-    // clear ret
-    ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::DomainType DomainType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::RangeType RangeType;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>::JacobianRangeType
-        JacobianRangeType;
-    // get local point (which is in intersection coordinates) in entity coordinates
-    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
-    const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
-    // evaluate local function
-    const RangeType functionValue = localFunction.evaluate(localPointEntity);
-    // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
-    // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma   = /*unitOuterNormal * (*/ functionValue /** unitOuterNormal)*/;
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    // evaluate bases
-    // * test
-    const size_t rows = testBase.size();
-    std::vector<RangeType> testValues(rows, RangeType(0));
-    std::vector<JacobianRangeType> testGradients(rows, JacobianRangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
-    testBase.jacobian(localPointEntity, testGradients);
-    // * ansatz
-    const size_t cols = ansatzBase.size();
-    std::vector<RangeType> ansatzValues(cols, RangeType(0));
-    std::vector<JacobianRangeType> ansatzGradients(cols, JacobianRangeType(0));
-    ansatzBase.evaluate(localPointEntity, ansatzValues);
-    ansatzBase.jacobian(localPointEntity, ansatzGradients);
-    // compute products
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
-    // loop over all test basis functions
-    for (size_t ii = 0; ii < rows; ++ii) {
-      auto& retRow = ret[ii];
-      // loop over all ansatz basis functions
-      for (size_t jj = 0; jj < cols; ++jj) {
-        // consistency term
-        retRow[jj] += -1.0 * functionValue * (ansatzGradients[jj][0] * unitOuterNormal) * testValues[ii];
+  public:
+    typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void> Traits;
+    typedef typename Traits::LocalizableDiffusionFunctionType LocalizableDiffusionFunctionType;
+    typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
+    typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
+    typedef typename Traits::EntityType EntityType;
+    typedef typename Traits::DomainFieldType DomainFieldType;
+    static const unsigned int dimDomain = Traits::dimDomain;
+
+    BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
+                const double beta = SIPDG::internal::default_beta(dimDomain))
+      : diffusion_(diffusion)
+      , dirichlet_(dirichlet)
+      , beta_(beta)
+    {
+    }
+
+    LocalfunctionTupleType localFunctions(const EntityType& entity) const
+    {
+      return std::make_tuple(diffusion_.local_function(entity), dirichlet_.local_function(entity));
+    }
+
+    /**
+     * \brief extracts the local functions and calls the correct order() method
+     */
+    template <class R, int r, int rC>
+    size_t
+    order(const LocalfunctionTupleType localFuncs,
+          const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase) const
+    {
+      const auto localDiffusion = std::get<0>(localFuncs);
+      const auto localDirichlet = std::get<1>(localFuncs);
+      return redirect_order(*localDiffusion, *localDirichlet, testBase);
+    }
+
+    /**
+     * \brief extracts the local functions and calls the correct evaluate() method
+     */
+    template <class IntersectionType, class R, int r, int rC>
+    void evaluate(const LocalfunctionTupleType localFuncs,
+                  const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
+                  const IntersectionType& intersection,
+                  const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+                  Dune::DynamicVector<R>& ret) const
+    {
+      const auto localDiffusion = std::get<0>(localFuncs);
+      const auto localDirichlet = std::get<1>(localFuncs);
+      redirect_evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
+    }
+
+  private:
+    /**
+     *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
+     */
+    template <class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT>
+    size_t redirect_order(
+        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLF, rCLF>& localDiffusion,
+        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLR, rCLR>& localDirichlet,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
+    {
+      const size_t testOrder         = testBase.order();
+      const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
+      const size_t diffusionOrder    = localDiffusion.order();
+      const size_t dirichletOrder = localDirichlet.order();
+      return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
+    } // ... redirect_order(...)
+
+
+    template <class IntersectionType, class R>
+    void redirect_evaluate(
+        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDiffusion,
+        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDirichlet,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
+        const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+        Dune::DynamicVector<R>& ret) const
+    {
+      // clear ret
+      ret *= 0.0;
+      typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::DomainType
+          DomainType;
+      typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::RangeType
+          RangeType;
+      typedef
+          typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::JacobianRangeType
+              JacobianRangeType;
+      // get local point (which is in intersection coordinates) in entity coordinates
+      const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
+      const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+      // evaluate local functions
+      const RangeType diffusionValue = localDiffusion.evaluate(localPointEntity);
+      const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
+      // compute penalty (see Epshteyn, Riviere, 2007)
+      const size_t polorder = testBase.order();
+      const R sigma         = SIPDG::internal::boundary_sigma(polorder);
+      // compute weighting (see Ern, Stephansen, Zunino 2007)
+      const R gamma   = /*unitOuterNormal * (*/ diffusionValue /** unitOuterNormal)*/;
+      const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+      // evaluate basis
+      const size_t size = testBase.size();
+      std::vector<RangeType> testValues(size, RangeType(0));
+      std::vector<JacobianRangeType> testGradients(size, JacobianRangeType(0));
+      testBase.evaluate(localPointEntity, testValues);
+      testBase.jacobian(localPointEntity, testGradients);
+      // compute
+      assert(ret.size() >= size);
+      // loop over all test basis functions
+      for (size_t ii = 0; ii < size; ++ii) {
         // symmetry term
-        retRow[jj] += -1.0 * ansatzValues[jj] * functionValue * (testGradients[ii][0] * unitOuterNormal);
+        ret[ii] += -1.0 * dirichletValue * diffusionValue * (testGradients[ii][0] * unitOuterNormal);
         // penalty term
-        retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
-      } // loop over all ansatz basis functions
-    } // loop over all test basis functions
-  } // ... evaluate(...)
+        ret[ii] += penalty * dirichletValue * testValues[ii];
+      } // loop over all test basis functions
+    } // void redirect_evaluate(...) const
 
-private:
-  const LocalizableFunctionType& inducingFunction_;
-  const double beta_;
-}; // class BoundaryLHS< ..., void >
-
-
-template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
-class BoundaryRHS<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void>
-    : public LocalEvaluation::Codim1Interface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
-                                                                          LocalizableDirichletFunctionImp, void>,
-                                              1>
-{
-public:
-  typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void> Traits;
-  typedef typename Traits::LocalizableDiffusionFunctionType LocalizableDiffusionFunctionType;
-  typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
-
-  BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = SIPDG::internal::default_beta(dimDomain))
-    : diffusion_(diffusion)
-    , dirichlet_(dirichlet)
-    , beta_(beta)
-  {
-  }
-
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
-  {
-    return std::make_tuple(diffusion_.local_function(entity), dirichlet_.local_function(entity));
-  }
-
-  /**
-   * \brief extracts the local functions and calls the correct order() method
-   */
-  template <class R, int r, int rC>
-  size_t order(const LocalfunctionTupleType localFuncs,
-               const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase) const
-  {
-    const auto localDiffusion = std::get<0>(localFuncs);
-    const auto localDirichlet = std::get<1>(localFuncs);
-    return redirect_order(*localDiffusion, *localDirichlet, testBase);
-  }
-
-  /**
-   * \brief extracts the local functions and calls the correct evaluate() method
-   */
-  template <class IntersectionType, class R, int r, int rC>
-  void evaluate(const LocalfunctionTupleType localFuncs,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
-  {
-    const auto localDiffusion = std::get<0>(localFuncs);
-    const auto localDirichlet = std::get<1>(localFuncs);
-    redirect_evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
-  }
-
-private:
-  /**
-   *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-   */
-  template <class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT>
-  size_t redirect_order(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLF, rCLF>& localDiffusion,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLR, rCLR>& localDirichlet,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
-  {
-    const size_t testOrder         = testBase.order();
-    const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
-    const size_t diffusionOrder    = localDiffusion.order();
-    const size_t dirichletOrder = localDirichlet.order();
-    return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-  } // ... redirect_order(...)
-
-  template <class IntersectionType, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT, int rCT>
-  void redirect_evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>& /*localDiffusion*/,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDR, rCLDR>& /*localDirichlet*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-      const IntersectionType& /*intersection*/, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& /*localPoint*/,
-      Dune::DynamicVector<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // void redirect_evaluate(...) const
-
-  template <class IntersectionType, class R>
-  void redirect_evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDiffusion,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDirichlet,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
-      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-      Dune::DynamicVector<R>& ret) const
-  {
-    // clear ret
-    ret *= 0.0;
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::DomainType
-        DomainType;
-    typedef
-        typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::RangeType RangeType;
-    typedef
-        typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>::JacobianRangeType
-            JacobianRangeType;
-    // get local point (which is in intersection coordinates) in entity coordinates
-    const DomainType localPointEntity = intersection.geometryInInside().global(localPoint);
-    const DomainType unitOuterNormal  = intersection.unitOuterNormal(localPoint);
-    // evaluate local functions
-    const RangeType diffusionValue = localDiffusion.evaluate(localPointEntity);
-    const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
-    // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t polorder = testBase.order();
-    const R sigma         = SIPDG::internal::boundary_sigma(polorder);
-    // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma   = /*unitOuterNormal * (*/ diffusionValue /** unitOuterNormal)*/;
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    // evaluate basis
-    const size_t size = testBase.size();
-    std::vector<RangeType> testValues(size, RangeType(0));
-    std::vector<JacobianRangeType> testGradients(size, JacobianRangeType(0));
-    testBase.evaluate(localPointEntity, testValues);
-    testBase.jacobian(localPointEntity, testGradients);
-    // compute
-    assert(ret.size() >= size);
-    // loop over all test basis functions
-    for (size_t ii = 0; ii < size; ++ii) {
-      // symmetry term
-      ret[ii] += -1.0 * dirichletValue * diffusionValue * (testGradients[ii][0] * unitOuterNormal);
-      // penalty term
-      ret[ii] += penalty * dirichletValue * testValues[ii];
-    } // loop over all test basis functions
-  } // void redirect_evaluate(...) const
-
-  const LocalizableDiffusionFunctionType& diffusion_;
-  const LocalizableDirichletFunctionType& dirichlet_;
-  const double beta_;
-}; // class BoundaryRHS< ..., void >
+    const LocalizableDiffusionFunctionType& diffusion_;
+    const LocalizableDirichletFunctionType& dirichlet_;
+    const double beta_;
+  }; // class BoundaryRHS< ..., void >
 
 
 } // namespace SWIPDG
