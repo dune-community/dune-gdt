@@ -59,10 +59,10 @@ namespace internal {
 template< class DiffusionFactorImp, class DiffusionTensorImp >
 class InnerTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -70,7 +70,7 @@ class InnerTraits
                               typename DiffusionTensorImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef Inner< DiffusionFactorImp, DiffusionTensorImp >                     derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -88,8 +88,8 @@ public:
 template< class LocalizableFunctionImp >
 class InnerTraits< LocalizableFunctionImp, void >
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be a localizable function!");
 public:
   typedef Inner< LocalizableFunctionImp, void >                 derived_type;
   typedef LocalizableFunctionImp                                LocalizableFunctionType;
@@ -104,10 +104,10 @@ public:
 template< class DiffusionFactorImp, class DiffusionTensorImp >
 class InnerPenaltyTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -115,7 +115,7 @@ class InnerPenaltyTraits
                               typename DiffusionTensorImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef InnerPenalty< DiffusionFactorImp, DiffusionTensorImp >              derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -133,10 +133,10 @@ public:
 template< class DiffusionFactorImp, class DiffusionTensorImp >
 class BoundaryLHSTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -144,7 +144,7 @@ class BoundaryLHSTraits
                               typename DiffusionTensorImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef BoundaryLHS< DiffusionFactorImp, DiffusionTensorImp >               derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -162,10 +162,10 @@ public:
 template< class DiffusionFactorImp, class DiffusionTensorImp >
 class BoundaryLHSPenaltyTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -173,7 +173,7 @@ class BoundaryLHSPenaltyTraits
                               typename DiffusionTensorImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef BoundaryLHSPenalty< DiffusionFactorImp, DiffusionTensorImp >        derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -191,8 +191,8 @@ public:
 template< class LocalizableFunctionImp >
 class BoundaryLHSTraits< LocalizableFunctionImp, void >
 {
-static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be a localizable function!");
 public:
   typedef LocalizableFunctionImp                                LocalizableFunctionType;
   typedef BoundaryLHS< LocalizableFunctionType >                derived_type;
@@ -207,12 +207,12 @@ public:
 template< class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp >
 class BoundaryRHSTraits
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionFactorImp >::value,
-                "DiffusionFactorImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DirichletImp >::value,
-                "DirichletImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, DiffusionTensorImp >::value,
-                "DiffusionTensorImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                "DiffusionFactorImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DirichletImp >::value,
+                "DirichletImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< DiffusionTensorImp >::value,
+                "DiffusionTensorImp has to be a localizable function!");
   static_assert(std::is_same< typename DiffusionFactorImp::EntityType,
                               typename DiffusionTensorImp::EntityType >::value &&
                 std::is_same< typename DiffusionFactorImp::EntityType,
@@ -225,7 +225,7 @@ class BoundaryRHSTraits
                 "DomainFieldTypes have to agree!");
   static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain &&
                 DiffusionFactorImp::dimDomain == DirichletImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef BoundaryRHS< DiffusionFactorImp, DirichletImp, DiffusionTensorImp > derived_type;
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
@@ -246,10 +246,10 @@ public:
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
 class BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void >
 {
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDiffusionFunctionImp >::value,
-                "LocalizableDiffusionFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of< Stuff::IsLocalizableFunction, LocalizableDirichletFunctionImp >::value,
-                "LocalizableDirichletFunctionImp has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Stuff::is_localizable_function< LocalizableDiffusionFunctionImp >::value,
+                "LocalizableDiffusionFunctionImp has to be a localizable function!");
+  static_assert(Stuff::is_localizable_function< LocalizableDirichletFunctionImp >::value,
+                "LocalizableDirichletFunctionImp has to be a localizable function!");
   static_assert(std::is_same< typename LocalizableDiffusionFunctionImp::EntityType,
                               typename LocalizableDirichletFunctionImp::EntityType >::value,
                 "EntityTypes have to agree!");
@@ -257,7 +257,7 @@ class BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFu
                               typename LocalizableDirichletFunctionImp::DomainFieldType >::value,
                 "DomainFieldTypes have to agree!");
   static_assert(LocalizableDiffusionFunctionImp::dimDomain == LocalizableDirichletFunctionImp::dimDomain,
-                "Dimensions of domains have to agree");
+                "Dimensions have to agree!");
 public:
   typedef BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >   derived_type;
   typedef LocalizableDiffusionFunctionImp                               LocalizableDiffusionFunctionType;
