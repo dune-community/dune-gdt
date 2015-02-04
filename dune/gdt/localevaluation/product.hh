@@ -20,7 +20,7 @@ namespace GDT {
 namespace LocalEvaluation {
 
 
-// forward, to be used in the traits
+// forward
 template< class LocalizableFunctionImp >
 class Product;
 
@@ -37,15 +37,15 @@ class ProductTraits
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
                 "LocalizableFunctionImp has to be a localizable function.");
 public:
-  typedef LocalizableFunctionImp                                LocalizableFunctionType;
-  typedef Product< LocalizableFunctionType >                    derived_type;
-  typedef typename LocalizableFunctionType::EntityType          EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  typedef LocalizableFunctionImp                              LocalizableFunctionType;
+  typedef Product< LocalizableFunctionType >                  derived_type;
+  typedef typename LocalizableFunctionType::EntityType        EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType   DomainFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
+  static const unsigned int                                   dimDomain = LocalizableFunctionType::dimDomain;
+}; // class ProductTraits
 
-};
 
 } // namespace internal
 
@@ -62,11 +62,11 @@ class Product
 {
 public:
   typedef internal::ProductTraits< LocalizableFunctionImp > Traits;
-  typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
-  typedef typename Traits::LocalfunctionTupleType   LocalfunctionTupleType;
-  typedef typename Traits::EntityType               EntityType;
-  typedef typename Traits::DomainFieldType          DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  typedef typename Traits::LocalizableFunctionType          LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType           LocalfunctionTupleType;
+  typedef typename Traits::EntityType                       EntityType;
+  typedef typename Traits::DomainFieldType                  DomainFieldType;
+  static const unsigned int                                 dimDomain = Traits::dimDomain;
 
   Product(const LocalizableFunctionType& inducingFunction)
     : inducingFunction_(inducingFunction)
@@ -132,10 +132,8 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFuncs,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -164,10 +162,8 @@ public:
    */
   template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions_in,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
@@ -234,7 +230,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  implementation for `LocalEvaluation::Codim0Interface< ..., 2 >`
+   * \note  for `LocalEvaluation::Codim0Interface< ..., 2 >`
    */
   template< class R, int r >
   void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
@@ -262,7 +258,7 @@ public:
   } // ... evaluate(...)
 
   /**
-   * \note implementation for `LocalEvaluation::Codim1Interface< ..., 1 >`
+   * \note for `LocalEvaluation::Codim1Interface< ..., 1 >`
    */
   template< class IntersectionType, class R >
   void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
@@ -286,7 +282,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  implementation for `LocalEvaluation::Codim1Interface< ..., 2 >`
+   * \note  for `LocalEvaluation::Codim1Interface< ..., 2 >`
    */
   template< class IntersectionType, class R, int r >
   void evaluate(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, 1, 1 >& localFunction,
