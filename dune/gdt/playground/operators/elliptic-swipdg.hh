@@ -79,7 +79,7 @@ public:
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
                  const GridViewType& grid_view,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(matrix)
     , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
@@ -102,7 +102,7 @@ public:
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
                  const GridViewType& grid_view,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space, grid_view)))
     , OperatorBaseType(this->storage_access(), source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
@@ -125,7 +125,7 @@ public:
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(matrix)
     , OperatorBaseType(this->storage_access(), source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
@@ -147,7 +147,7 @@ public:
                  const BoundaryInfoType& boundary_info,
                  const SourceSpaceType& source_space,
                  const RangeSpaceType& range_space,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space, source_space)))
     , OperatorBaseType(this->storage_access(), source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
@@ -169,7 +169,7 @@ public:
                  const BoundaryInfoType& boundary_info,
                  MatrixType& matrix,
                  const SourceSpaceType& source_space,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(matrix)
     , OperatorBaseType(this->storage_access(), source_space)
     , AssemblerBaseType(source_space)
@@ -190,7 +190,7 @@ public:
                  const DiffusionTensorType& diffusion_tensor,
                  const BoundaryInfoType& boundary_info,
                  const SourceSpaceType& source_space,
-                 const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                 const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : StorageBaseType(new MatrixType(source_space.mapper().size(), source_space.mapper().size(), pattern(source_space)))
     , OperatorBaseType(this->storage_access(), source_space)
     , AssemblerBaseType(source_space)
