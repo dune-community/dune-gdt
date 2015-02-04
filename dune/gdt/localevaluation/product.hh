@@ -31,8 +31,8 @@ class Product;
 template <class LocalizableFunctionImp>
 class ProductTraits
 {
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be a localizable function.");
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
