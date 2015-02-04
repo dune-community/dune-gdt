@@ -275,28 +275,6 @@ private:
          + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
   }
 
-  template< class IntersectionType, class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
-  void evaluate(const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunctionEntity*/,
-                const Stuff::LocalfunctionInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& /*localFunctionNeighbor*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBaseEntity*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBaseNeighbor*/,
-                const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBaseNeighbor*/,
-                const IntersectionType& /*intersection*/,
-                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
-                Dune::DynamicMatrix< R >& /*entityEntityRet*/,
-                Dune::DynamicMatrix< R >& /*neighborNeighborRet*/,
-                Dune::DynamicMatrix< R >& /*entityNeighborRet*/,
-                Dune::DynamicMatrix< R >& /*neighborEntityRet*/) const
-  {
-    static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
-  }
 
   /**
    *  \brief  Computes the ipdg fluxes in a primal setting.
@@ -432,12 +410,12 @@ private:
         neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
       } // loop over all neighbor ansatz basis functions
     } // loop over all neighbor test basis functions
-  } // void evaluate< ..., 1, 1 >(...) const
+  } // ... evaluate(...)
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // CouplingPrimal
 
 
+}; // class Inner
 
 
 template< class LocalizableFunctionImp >
@@ -576,11 +554,11 @@ private:
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
-  } // void evaluate(...) const
+  } // ... evaluate(...)
 
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // class BoundaryDirichletLHS
+}; // class BoundaryLHS
 
 
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
@@ -655,21 +633,8 @@ private:
     const size_t diffusionOrder = localDiffusion.order();
     const size_t dirichletOrder = localDirichlet.order();
     return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-  } // size_t redirect_order(...)
+  } // ... order(...)
 
-  template< class IntersectionType, class R, int rLDF, int rCLDF, int rLDR, int rCLDR, int rT, int rCT >
-  void redirect_evaluate(const Stuff::LocalfunctionInterface
-                             < EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF >& /*localDiffusion*/,
-                         const Stuff::LocalfunctionInterface
-                             < EntityType, DomainFieldType, dimDomain, R, rLDR, rCLDR >& /*localDirichlet*/,
-                         const Stuff::LocalfunctionSetInterface
-                             < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
-                         const IntersectionType& /*intersection*/,
-                         const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& /*localPoint*/,
-                         Dune::DynamicVector< R >& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse< R >::value, "Not implemented for these dimensions!");
-  } // void redirect_evaluate(...) const
 
   template< class IntersectionType, class R >
   void redirect_evaluate(const Stuff::LocalfunctionInterface
@@ -715,12 +680,12 @@ private:
       // penalty term
       ret[ii] += penalty * dirichletValue * testValues[ii];
     } // loop over all test basis functions
-  } // void redirect_evaluate(...) const
+  } // ... evaluate(...)
 
   const LocalizableDiffusionFunctionType& diffusion_;
   const LocalizableDirichletFunctionType& dirichlet_;
   const double beta_;
-}; // class BoundaryDirichletRHS
+}; // class BoundaryRHS
 
 
 } // namespace SIPDG
