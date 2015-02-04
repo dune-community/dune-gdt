@@ -66,7 +66,7 @@ struct SwipdgPenaltyProductBase : public ::testing::Test
   {
     // there is no jump in the middle, but at the left boundary we are not zero
     // the 1 is the order of continuous_
-    check(compute(continuous_), LocalEvaluation::SWIPDG::internal::boundary_sigma(1), 1e-13);
+    check(compute(continuous_), LocalEvaluation::SIPDG::internal::boundary_sigma(1), 1e-13);
   }
 
   void discontinuous_arguments() const
@@ -75,8 +75,7 @@ struct SwipdgPenaltyProductBase : public ::testing::Test
     // the 0 is the order of *jump_
     // *0.5 because the value of *jump_ is 0 left and 1 right
     check(compute(*jump_),
-          0.5 * LocalEvaluation::SWIPDG::internal::inner_sigma(0)
-              + LocalEvaluation::SWIPDG::internal::boundary_sigma(0));
+          0.5 * LocalEvaluation::SIPDG::internal::inner_sigma(0) + LocalEvaluation::SIPDG::internal::boundary_sigma(0));
   }
 
   void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 1e-14) const
