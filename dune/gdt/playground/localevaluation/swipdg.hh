@@ -34,7 +34,7 @@ public:
 
   Inner(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
         const LocalizableDiffusionTensorFunctionType& inducingFunction,
-        const double beta = internal::default_beta(dimDomain))
+        const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(inducingFunction)
     , beta_(beta)
@@ -180,7 +180,7 @@ public:
                                          std::max(ansatzBaseEntity.order(),
                                                   std::max(testBaseNeighbor.order(),
                                                            ansatzBaseNeighbor.order())));
-    const R sigma = internal::inner_sigma(max_polorder);
+    const R sigma = SIPDG::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
     const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
@@ -303,7 +303,7 @@ public:
 
   InnerPenalty(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
                const LocalizableDiffusionTensorFunctionType& inducingFunction,
-               const double beta = internal::default_beta(dimDomain))
+               const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(inducingFunction)
     , beta_(beta)
@@ -449,7 +449,7 @@ public:
                                          std::max(ansatzBaseEntity.order(),
                                                   std::max(testBaseNeighbor.order(),
                                                            ansatzBaseNeighbor.order())));
-    const R sigma = internal::inner_sigma(max_polorder);
+    const R sigma = SIPDG::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
     const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
@@ -536,7 +536,7 @@ public:
 
   BoundaryLHS(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
               const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
-              const double beta = internal::default_beta(dimDomain))
+              const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , beta_(beta)
@@ -639,7 +639,7 @@ public:
     const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma = internal::boundary_sigma(max_polorder);
+    const R sigma = SIPDG::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
     const R penalty = (diffusion_factor_value * sigma * gamma ) / std::pow(intersection.geometry().volume(), beta_);
@@ -698,7 +698,7 @@ public:
 
   BoundaryLHSPenalty(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
                      const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
-                     const double beta = internal::default_beta(dimDomain))
+                     const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , beta_(beta)
@@ -813,7 +813,7 @@ public:
 #endif // NDEBUG
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma = internal::boundary_sigma(max_polorder);
+    const R sigma = SIPDG::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
     const R penalty = (diffusion_factor_value * sigma * gamma ) / std::pow(intersection.geometry().volume(), beta_);
@@ -879,7 +879,7 @@ public:
   BoundaryRHS(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
               const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
               const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = internal::default_beta(dimDomain))
+              const double beta = SIPDG::internal::default_beta(dimDomain))
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , dirichlet_(dirichlet)
@@ -988,7 +988,7 @@ private:
     const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
-    const R sigma = internal::boundary_sigma(polorder);
+    const R sigma = SIPDG::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusionTensorValue * unitOuterNormal);
     const R penalty = (diffusionFactorValue * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);

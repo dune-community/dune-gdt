@@ -11,6 +11,11 @@
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/stuff/common/color.hh>
+#ifndef NDEBUG
+# ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+#   include <dune/stuff/common/timedlogging.hh>
+# endif
+#endif
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -106,10 +111,72 @@ public:
 
 
 /**
- *  see Epshteyn, Riviere, 2007 for the meaning of beta
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double default_beta(const size_t dimDomain)
+{
+  return 1.0/(dimDomain - 1.0);
+}
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double inner_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 8.0;
+  else if (pol_order <= 2)
+    sigma *= 20.0;
+  else if (pol_order <= 3)
+    sigma *= 38.0;
+  else {
+#ifndef NDEBUG
+# ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+    DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
+# endif
+#endif
+    sigma *= 50.0;
+  }
+  return sigma;
+} // ... inner_sigma(...)
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double boundary_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 14.0;
+  else if (pol_order <= 2)
+    sigma *= 38.0;
+  else if (pol_order <= 3)
+    sigma *= 74.0;
+  else {
+#ifndef NDEBUG
+# ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+    DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
+# endif
+#endif
+    sigma *= 100.0;
+  }
+  return sigma;
+} // ... boundary_sigma(...)
+
 } // namespace internal
 
 
+/**
+ * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template< class LocalizableFunctionImp >
 class Inner
@@ -123,8 +190,7 @@ public:
   typedef typename Traits::DomainFieldType          DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  Inner(const LocalizableFunctionType& inducingFunction,
-        const double beta = 1.0/(dimDomain - 1.0))
+  Inner(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {}
@@ -274,23 +340,7 @@ private:
                                          std::max(ansatzBaseEntity.order(),
                                                   std::max(testBaseNeighbor.order(),
                                                            ansatzBaseNeighbor.order())));
-    R sigma = 1.0;
-    if (max_polorder <= 1)
-      sigma *= 8.0;
-    else if (max_polorder <= 2)
-      sigma *= 20.0;
-    else if (max_polorder <= 3)
-      sigma *= 38.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.inner):")
-                << " a polynomial order of " << max_polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 50.0;
-    }
+    const R sigma = internal::inner_sigma(max_polorder);
     const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * entity
@@ -402,8 +452,7 @@ public:
   typedef typename Traits::DomainFieldType            DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  BoundaryLHS(const LocalizableFunctionType& inducingFunction,
-              const double beta = 1.0/(dimDomain - 1.0))
+  BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
   {}
@@ -496,23 +545,7 @@ private:
     const RangeType functionValue = localFunction.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
-    R sigma = 1.0;
-    if (max_polorder <= 1)
-      sigma *= 14.0;
-    else if (max_polorder <= 2)
-      sigma *= 38.0;
-    else if (max_polorder <= 3)
-      sigma *= 74.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundarylhs):")
-                << " a polynomial order of " << max_polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 100.0;
-    }
+    const R sigma = internal::boundary_sigma(max_polorder);
     const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
@@ -566,7 +599,7 @@ public:
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion,
               const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = 1.0/(dimDomain - 1.0))
+              const double beta = internal::default_beta(dimDomain))
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
@@ -665,23 +698,7 @@ private:
     const RangeType dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
-    R sigma = 1.0;
-    if (polorder <= 1)
-      sigma *= 14.0;
-    else if (polorder <= 2)
-      sigma *= 38.0;
-    else if (polorder <= 3)
-      sigma *= 74.0;
-    else {
-#ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-      std::cout << "\n" << Dune::Stuff::Common::colorString("WARNING(dune.gdt.localevaluation.sipdg.boundaryrhs):")
-                << " a polynomial order of " << polorder << " is untested!" << std::endl
-                << "  (#define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to disable this warning)!" << std::endl;
-#endif
-#endif
-      sigma *= 100.0;
-    }
+    const R sigma = internal::boundary_sigma(polorder);
     const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate basis
     const size_t size = testBase.size();
