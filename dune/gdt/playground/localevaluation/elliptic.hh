@@ -3,11 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PLAYGROUND_EVALUATION_ELLIPTIC_HH
-#define DUNE_GDT_PLAYGROUND_EVALUATION_ELLIPTIC_HH
-
+#warning This header is deprecated, include dune/gdt/localevaluation/elliptic.hh instead (04.02.2015)!
 
 #include <dune/gdt/localevaluation/elliptic.hh>
-
-
-#endif // DUNE_GDT_PLAYGROUND_EVALUATION_ELLIPTIC_HH
