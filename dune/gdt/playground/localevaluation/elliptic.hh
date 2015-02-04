@@ -20,16 +20,15 @@ class Elliptic
     : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>, 2>
 {
 public:
-  typedef internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
-  typedef typename Traits::LocalizableDiffusionFactorFunctionType LocalizableDiffusionFactorFunctionType;
-  typedef typename Traits::LocalizableDiffusionTensorFunctionType LocalizableDiffusionTensorFunctionType;
+  typedef DiffusionFactorImp DiffusionFactorType;
+  typedef DiffusionTensorImp DiffusionTensorType;
+  typedef internal::EllipticTraits<DiffusionFactorType, DiffusionTensorType> Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  Elliptic(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
-           const LocalizableDiffusionTensorFunctionType& diffusion_tensor)
+  Elliptic(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
   {
@@ -187,8 +186,8 @@ private:
     }
   } // ... evaluate_matrix_valued_(...)
 
-  const LocalizableDiffusionFactorFunctionType& diffusion_factor_;
-  const LocalizableDiffusionTensorFunctionType& diffusion_tensor_;
+  const DiffusionFactorType& diffusion_factor_;
+  const DiffusionTensorType& diffusion_tensor_;
 }; // class LocalElliptic
 
 
