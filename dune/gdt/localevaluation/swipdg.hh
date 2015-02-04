@@ -82,7 +82,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class InnerTraits
 
 
 template< class LocalizableFunctionImp >
@@ -98,7 +98,7 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class InnerTraits< ..., void >
 
 
 template< class DiffusionFactorImp, class DiffusionTensorImp >
@@ -127,7 +127,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class InnerPenaltyTraits
 
 
 template< class DiffusionFactorImp, class DiffusionTensorImp >
@@ -156,7 +156,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryLHSTraits
 
 
 template< class DiffusionFactorImp, class DiffusionTensorImp >
@@ -185,7 +185,7 @@ public:
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryLHSPenaltyTraits
 
 
 template< class LocalizableFunctionImp >
@@ -201,7 +201,7 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class BoundaryLHSTraits< ..., void >
 
 
 template< class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp >
@@ -231,16 +231,16 @@ public:
   typedef DiffusionFactorImp                                                  LocalizableDiffusionFactorFunctionType;
   typedef DirichletImp                                                        LocalizableDirichletFunctionType;
   typedef DiffusionTensorImp                                                  LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType      LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDirichletFunctionType::LocalfunctionType            LocalDirichletFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType      LocalDiffusionTensorFunctionType;
+  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType  LocalDiffusionFactorFunctionType;
+  typedef typename LocalizableDirichletFunctionType::LocalfunctionType        LocalDirichletFunctionType;
+  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType  LocalDiffusionTensorFunctionType;
   typedef std::tuple< std::shared_ptr< LocalDiffusionFactorFunctionType >,
                       std::shared_ptr< LocalDiffusionTensorFunctionType >,
-                      std::shared_ptr< LocalDirichletFunctionType > >             LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType             EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType        DomainFieldType;
+                      std::shared_ptr< LocalDirichletFunctionType > >         LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
+  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-};
+}; // class BoundaryRHSTraits
 
 
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
@@ -260,16 +260,16 @@ class BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFu
                 "Dimensions have to agree!");
 public:
   typedef BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp >   derived_type;
-  typedef LocalizableDiffusionFunctionImp                               LocalizableDiffusionFunctionType;
-  typedef LocalizableDirichletFunctionImp                               LocalizableDirichletFunctionType;
-  typedef typename LocalizableDiffusionFunctionType::LocalfunctionType  LocalDiffusionFunctionType;
-  typedef typename LocalizableDirichletFunctionType::LocalfunctionType  LocalDirichletFunctionType;
+  typedef LocalizableDiffusionFunctionImp                              LocalizableDiffusionFunctionType;
+  typedef LocalizableDirichletFunctionImp                              LocalizableDirichletFunctionType;
+  typedef typename LocalizableDiffusionFunctionType::LocalfunctionType LocalDiffusionFunctionType;
+  typedef typename LocalizableDirichletFunctionType::LocalfunctionType LocalDirichletFunctionType;
   typedef std::tuple< std::shared_ptr< LocalDiffusionFunctionType >,
-                      std::shared_ptr< LocalDirichletFunctionType > >   LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFunctionType::EntityType         EntityType;
-  typedef typename LocalizableDiffusionFunctionType::DomainFieldType    DomainFieldType;
+                      std::shared_ptr< LocalDirichletFunctionType > >  LocalfunctionTupleType;
+  typedef typename LocalizableDiffusionFunctionType::EntityType        EntityType;
+  typedef typename LocalizableDiffusionFunctionType::DomainFieldType   DomainFieldType;
   static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
-};
+}; // class BoundaryRHSTraits< ..., void >
 
 
 } // namespace internal
@@ -283,12 +283,12 @@ class Inner< LocalizableFunctionImp, void >
   : public LocalEvaluation::Codim1Interface< internal::InnerTraits< LocalizableFunctionImp, void >, 4 >
 {
 public:
-  typedef internal::InnerTraits< LocalizableFunctionImp, void >   Traits;
-  typedef typename Traits::LocalizableFunctionType                LocalizableFunctionType;
-  typedef typename Traits::LocalfunctionTupleType                 LocalfunctionTupleType;
-  typedef typename Traits::EntityType                             EntityType;
-  typedef typename Traits::DomainFieldType                        DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  typedef internal::InnerTraits< LocalizableFunctionImp, void > Traits;
+  typedef typename Traits::LocalizableFunctionType              LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType               LocalfunctionTupleType;
+  typedef typename Traits::EntityType                           EntityType;
+  typedef typename Traits::DomainFieldType                      DomainFieldType;
+  static const unsigned int                                     dimDomain = Traits::dimDomain;
 
   Inner(const LocalizableFunctionType& inducingFunction,
         const double beta = SIPDG::internal::default_beta(LocalizableFunctionType::dimDomain))
@@ -545,12 +545,12 @@ public:
         neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
       } // loop over all neighbor ansatz basis functions
     } // loop over all neighbor test basis functions
-  } // void evaluate< ..., 1, 1 >(...) const
+  } // ... evaluate(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // CouplingPrimal
+}; // class Inner< ..., void >
 
 
 template< class LocalizableFunctionImp >
@@ -559,11 +559,11 @@ class BoundaryLHS< LocalizableFunctionImp, void >
 {
 public:
   typedef internal::BoundaryLHSTraits< LocalizableFunctionImp, void > Traits;
-  typedef typename Traits::LocalizableFunctionType  LocalizableFunctionType;
-  typedef typename Traits::LocalfunctionTupleType   LocalfunctionTupleType;
-  typedef typename Traits::EntityType               EntityType;
-  typedef typename Traits::DomainFieldType          DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  typedef typename Traits::LocalizableFunctionType                    LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType                     LocalfunctionTupleType;
+  typedef typename Traits::EntityType                                 EntityType;
+  typedef typename Traits::DomainFieldType                            DomainFieldType;
+  static const unsigned int                                           dimDomain = Traits::dimDomain;
 
   BoundaryLHS(const LocalizableFunctionType& inducingFunction,
               const double beta = SIPDG::internal::default_beta(dimDomain))
@@ -581,10 +581,9 @@ public:
    */
   template< class R, int rT, int rCT, int rA, int rCA >
   size_t order(const LocalfunctionTupleType localFuncs,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
-               const Stuff::LocalfunctionSetInterface
-                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
+               const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
+  const
   {
     const auto localFunction = std::get< 0 >(localFuncs);
     return order(*localFunction, testBase, ansatzBase);
@@ -691,12 +690,12 @@ public:
         retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
-  } // void evaluate(...) const
+  } // ... evaluate(...)
 
 private:
   const LocalizableFunctionType& inducingFunction_;
   const double beta_;
-}; // class BoundaryLHS
+}; // class BoundaryLHS< ..., void >
 
 
 template< class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp >
@@ -707,12 +706,12 @@ class BoundaryRHS< LocalizableDiffusionFunctionImp, LocalizableDirichletFunction
 {
 public:
   typedef internal::BoundaryRHSTraits< LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void > Traits;
-  typedef typename Traits::LocalizableDiffusionFunctionType     LocalizableDiffusionFunctionType;
-  typedef typename Traits::LocalizableDirichletFunctionType     LocalizableDirichletFunctionType;
-  typedef typename Traits::LocalfunctionTupleType               LocalfunctionTupleType;
-  typedef typename Traits::EntityType                           EntityType;
-  typedef typename Traits::DomainFieldType                      DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  typedef typename Traits::LocalizableDiffusionFunctionType LocalizableDiffusionFunctionType;
+  typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
+  typedef typename Traits::LocalfunctionTupleType           LocalfunctionTupleType;
+  typedef typename Traits::EntityType                       EntityType;
+  typedef typename Traits::DomainFieldType                  DomainFieldType;
+  static const unsigned int                                 dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion,
               const LocalizableDirichletFunctionType& dirichlet,
@@ -839,7 +838,7 @@ private:
   const LocalizableDiffusionFunctionType& diffusion_;
   const LocalizableDirichletFunctionType& dirichlet_;
   const double beta_;
-}; // class BoundaryRHS
+}; // class BoundaryRHS< ..., void >
 
 
 } // namespace SWIPDG
