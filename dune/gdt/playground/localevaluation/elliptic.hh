@@ -37,7 +37,7 @@ public:
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(diffusion_factor_.local_function(entity), diffusion_tensor_.local_function(entity));
-  } // ... localFunctions(...)
+  }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
@@ -80,19 +80,6 @@ private:
            + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
   } // ... order(...)
 
-  template <class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA>
-  void
-  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF,
-                                               rCDF>& /*local_diffusion_factor*/,
-           const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT,
-                                               rCDT>& /*local_diffusion_tensor*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
-           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& /*localPoint*/, Dune::DynamicMatrix<R>& /*ret*/) const
-  {
-    static_assert(Dune::AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... evaluate< ... >(...)
-
   template <class R, int r>
   void
   evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor,
@@ -125,7 +112,7 @@ private:
                      * (ansatzGradients[jj][0] * testGradients[ii][0]);
       }
     }
-  } // ... evaluate< ..., 1, 1 >(...)
+  } // ... evaluate(...)
 
   template <class R>
   void
