@@ -8,6 +8,8 @@
 
 #include <tuple>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/densematrix.hh>
 
 #include <dune/stuff/common/type_utils.hh>
@@ -732,7 +734,7 @@ private:
                             < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase) const
   {
       const size_t testOrder = testBase.order();
-      const size_t testGradientOrder = std::max(ssize_t(testOrder) - 1, ssize_t(0));
+      const size_t testGradientOrder = boost::numeric_cast< size_t >(std::max(ssize_t(testOrder) - 1, ssize_t(0)));
       const size_t diffusionOrder = localDiffusion.order();
       const size_t dirichletOrder = localDirichlet.order();
       return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
