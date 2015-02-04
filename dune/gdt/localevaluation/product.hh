@@ -20,7 +20,7 @@ namespace GDT {
 namespace LocalEvaluation {
 
 
-// forward, to be used in the traits
+// forward
 template <class LocalizableFunctionImp>
 class Product;
 
@@ -45,7 +45,8 @@ public:
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-};
+}; // class ProductTraits
+
 
 } // namespace internal
 
@@ -224,7 +225,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  implementation for `LocalEvaluation::Codim0Interface< ..., 2 >`
+   * \note  for `LocalEvaluation::Codim0Interface< ..., 2 >`
    */
   template <class R, int r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
@@ -251,7 +252,7 @@ public:
   } // ... evaluate(...)
 
   /**
-   * \note implementation for `LocalEvaluation::Codim1Interface< ..., 1 >`
+   * \note for `LocalEvaluation::Codim1Interface< ..., 1 >`
    */
   template <class IntersectionType, class R>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
@@ -274,7 +275,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  implementation for `LocalEvaluation::Codim1Interface< ..., 2 >`
+   * \note  for `LocalEvaluation::Codim1Interface< ..., 2 >`
    */
   template <class IntersectionType, class R, int r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
