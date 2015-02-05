@@ -8,8 +8,9 @@
 
 #include <vector>
 
-#include <dune/common/bartonnackmanifcheck.hh>
 #include <dune/common/dynvector.hh>
+
+#include <dune/stuff/common/crtp.hh>
 
 #include <dune/gdt/basefunctionset/interface.hh>
 
@@ -20,14 +21,15 @@ namespace LocalFunctional {
 
 template< class Traits >
 class Codim0Interface
+  : public Stuff::CRTPInterface< Codim0Interface< Traits >, Traits >
 {
 public:
   typedef typename Traits::derived_type derived_type;
 
   size_t numTmpObjectsRequired() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().numTmpObjectsRequired());
-    return asImp().numTmpObjectsRequired();
+    CHECK_CRTP(this->as_imp().numTmpObjectsRequired());
+    return this->as_imp().numTmpObjectsRequired();
   }
 
   /**
@@ -44,30 +46,22 @@ public:
              Dune::DynamicVector< R >& ret,
              std::vector< Dune::DynamicVector< R > >& tmpLocalVectors) const
   {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, ret, tmpLocalVectors));
-  }
-
-  derived_type& asImp()
-  {
-    return static_cast< derived_type& >(*this);
-  }
-
-  const derived_type& asImp() const
-  {
-    return static_cast< const derived_type& >(*this);
+    CHECK_AND_CALL_CRTP(this->as_imp().apply(testBase, ret, tmpLocalVectors));
   }
 }; // class Codim0Interface
 
+
 template< class Traits >
 class Codim1Interface
+  : public Stuff::CRTPInterface< Codim1Interface< Traits >, Traits >
 {
 public:
   typedef typename Traits::derived_type derived_type;
 
   size_t numTmpObjectsRequired() const
   {
-    CHECK_INTERFACE_IMPLEMENTATION(asImp().numTmpObjectsRequired());
-    return asImp().numTmpObjectsRequired();
+    CHECK_CRTP(this->as_imp().numTmpObjectsRequired());
+    return this->as_imp().numTmpObjectsRequired();
   }
 
   /**
@@ -86,17 +80,7 @@ public:
              Dune::DynamicVector< R >& ret,
              std::vector< Dune::DynamicVector< R > >& tmpLocalVectors) const
   {
-    CHECK_AND_CALL_INTERFACE_IMPLEMENTATION(asImp().apply(testBase, intersection, ret, tmpLocalVectors));
-  }
-
-  derived_type& asImp()
-  {
-    return static_cast< derived_type& >(*this);
-  }
-
-  const derived_type& asImp() const
-  {
-    return static_cast< const derived_type& >(*this);
+    CHECK_AND_CALL_CR(this->as_imp().apply(testBase, intersection, ret, tmpLocalVectors));
   }
 }; // class Codim1Interface
 
