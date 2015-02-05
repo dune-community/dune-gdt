@@ -24,9 +24,12 @@ namespace Mapper {
 #if HAVE_DUNE_FEM
 
 
-// forward, to be used in the traits and to allow for specialization
+// forward
 template <class FemDofMapperImp, int block_size = 1>
 class FemDofWrapper;
+
+
+namespace internal {
 
 
 template <class FemDofMapperImp, int block_size>
@@ -49,13 +52,16 @@ public:
 };
 
 
+} // namespace internal
+
+
 template <class FemDofMapperImp, int block_size>
-class FemDofWrapper : public MapperInterface<FemDofWrapperTraits<FemDofMapperImp, block_size>>
+class FemDofWrapper : public MapperInterface<internal::FemDofWrapperTraits<FemDofMapperImp, block_size>>
 {
-  typedef MapperInterface<FemDofWrapperTraits<FemDofMapperImp, block_size>> InterfaceType;
+  typedef MapperInterface<internal::FemDofWrapperTraits<FemDofMapperImp, block_size>> InterfaceType;
 
 public:
-  typedef FemDofWrapperTraits<FemDofMapperImp, block_size> Traits;
+  typedef internal::FemDofWrapperTraits<FemDofMapperImp, block_size> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -135,12 +141,12 @@ private:
 
 
 template <class FemDofMapperImp>
-class FemDofWrapper<FemDofMapperImp, 1> : public MapperInterface<FemDofWrapperTraits<FemDofMapperImp, 1>>
+class FemDofWrapper<FemDofMapperImp, 1> : public MapperInterface<internal::FemDofWrapperTraits<FemDofMapperImp, 1>>
 {
-  typedef MapperInterface<FemDofWrapperTraits<FemDofMapperImp, 1>> InterfaceType;
+  typedef MapperInterface<internal::FemDofWrapperTraits<FemDofMapperImp, 1>> InterfaceType;
 
 public:
-  typedef FemDofWrapperTraits<FemDofMapperImp, 1> Traits;
+  typedef internal::FemDofWrapperTraits<FemDofMapperImp, 1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
