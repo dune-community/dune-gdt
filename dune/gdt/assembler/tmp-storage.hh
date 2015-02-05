@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_ASSEMBLER_TMP_STORAGE_HH
 #define DUNE_GDT_ASSEMBLER_TMP_STORAGE_HH
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/aliases.hh>
 
@@ -13,8 +15,38 @@ namespace Dune {
 namespace GDT {
 namespace TmpStorageProvider {
 
-template<class T> using Matrices = DSC::TmpMatricesStorage<T>;
-template<class T> using Vectors = DSC::TmpVectorsStorage<T>;
+
+template< class T >
+class
+  DUNE_DEPRECATED_MSG("Use Dune::Stuff::Common::TmpMatricesStorage instead (04.02.2015)!")
+      Matrices
+  : public DSC::TmpMatricesStorage< T >
+{
+  typedef DSC::TmpMatricesStorage< T > BaseType;
+
+public:
+  template< class... Args >
+  Matrices(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+}; // class Matrices
+
+
+template< class T >
+class
+  DUNE_DEPRECATED_MSG("Use Dune::Stuff::Common::TmpVectorsStorage instead (04.02.2015)!")
+      Vectors
+  : public DSC::TmpVectorsStorage< T >
+{
+  typedef DSC::TmpVectorsStorage< T > BaseType;
+
+public:
+  template< class... Args >
+  Vectors(Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+  {}
+}; // class Vectors
+
 
 } // namespace TmpStorageProvider
 } // namespace GDT
