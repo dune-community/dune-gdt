@@ -26,9 +26,12 @@ namespace GDT {
 namespace LocalFunctional {
 
 
-// forward, to be used in the traits
+// forward
 template <class UnaryEvaluationImp>
 class Codim0Integral;
+
+
+namespace internal {
 
 
 template <class UnaryEvaluationImp>
@@ -44,8 +47,11 @@ public:
 };
 
 
+} // namespace internal
+
+
 template <class UnaryEvaluationImp>
-class Codim0Integral : public LocalFunctional::Codim0Interface<Codim0IntegralTraits<UnaryEvaluationImp>>
+class Codim0Integral : public LocalFunctional::Codim0Interface<internal::Codim0IntegralTraits<UnaryEvaluationImp>>
 {
 public:
   typedef Codim0IntegralTraits<UnaryEvaluationImp> Traits;
