@@ -76,7 +76,6 @@ class L2Volume : public Functionals::VectorBased<internal::L2VolumeTraits<Functi
   typedef Functionals::VectorBased<internal::L2VolumeTraits<FunctionType, VectorImp, SpaceImp, GridViewImp,
                                                             LocalEvaluationType>> FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
-
   typedef LocalFunctional::Codim0Integral<LocalEvaluationType> LocalFunctionalType;
   typedef LocalAssembler::Codim0Vector<LocalFunctionalType> LocalAssemblerType;
 
@@ -140,7 +139,6 @@ class L2Face : public Functionals::VectorBased<internal::L2FaceTraits<FunctionTy
   typedef Functionals::VectorBased<internal::L2FaceTraits<FunctionType, VectorImp, SpaceImp, GridViewImp>>
       FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
-
   typedef LocalFunctional::Codim1Integral<LocalEvaluation::Product<FunctionType>> LocalFunctionalType;
   typedef LocalAssembler::Codim1Vector<LocalFunctionalType> LocalAssemblerType;
 

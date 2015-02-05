@@ -81,11 +81,9 @@ class DirichletBoundarySWIPDG<DiffusionType, DirichletType, VectorImp, SpaceImp,
                                                                            SpaceImp, GridViewImp, void>>
       FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
-
   typedef LocalFunctional::Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<DiffusionType, DirichletType>>
       LocalFunctionalType;
   typedef LocalAssembler::Codim1Vector<LocalFunctionalType> LocalAssemblerType;
-
   typedef typename VectorImp::ScalarType ScalarType;
 
 public:

@@ -28,7 +28,7 @@ namespace GDT {
 namespace Operators {
 
 
-// forward, to be used in the traits
+// forward
 template <class GridViewImp, class FieldImp = double>
 class OswaldInterpolation;
 

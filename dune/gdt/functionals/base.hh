@@ -71,7 +71,7 @@ public:
   {
     assemble();
     return vector_.dot(source.as_imp());
-  } // ... apply(...)
+  }
 
 private:
   VectorType& vector_;

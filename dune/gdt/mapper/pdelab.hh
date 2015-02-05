@@ -25,7 +25,7 @@ namespace Mapper {
 #if HAVE_DUNE_PDELAB
 
 
-// forward, to be used in the traits
+// forwards
 template <class PdelabSpaceImp>
 class ContinuousPdelabWrapper;
 
@@ -43,7 +43,7 @@ public:
   typedef ContinuousPdelabWrapper<PdelabSpaceImp> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
-}; // ContinuousPdelabWrapperTraits
+};
 
 template <class PdelabSpaceImp>
 class DiscontinuousPdelabWrapperTraits
@@ -52,7 +52,7 @@ public:
   typedef DiscontinuousPdelabWrapper<PdelabSpaceImp> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
-}; // DiscontinuousPdelabWrapperTraits
+};
 
 
 template <class ImpTraits>
@@ -92,7 +92,7 @@ public:
   {
     lfs_.bind(entity);
     return lfs_.size();
-  } // ... numDofs(...)
+  }
 
   size_t maxNumDofs() const
   {
@@ -151,6 +151,7 @@ protected:
     return this->lfs_.dofIndex(localIndex).entityIndex()[1];
   }
 }; // class ContinuousPdelabWrapper
+
 
 template <class PdelabSpaceImp>
 class DiscontinuousPdelabWrapper

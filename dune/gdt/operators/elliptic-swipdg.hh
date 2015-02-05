@@ -29,7 +29,7 @@ namespace GDT {
 namespace Operators {
 
 
-// forwards
+// forward
 template <class DiffusionFactorType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
           class GridViewImp = typename SourceSpaceImp::GridViewType, class DiffusionTensorType = void>
 class EllipticSWIPDG;
@@ -97,17 +97,14 @@ class EllipticSWIPDG<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, Gr
   typedef LocalAssembler::Codim0Matrix<VolumeOperatorType> VolumeAssemblerType;
   typedef LocalOperator::Codim1CouplingIntegral<LocalEvaluation::SWIPDG::Inner<DiffusionType>> CouplingOperatorType;
   typedef LocalAssembler::Codim1CouplingMatrix<CouplingOperatorType> CouplingAssemblerType;
-
   typedef LocalOperator::Codim1BoundaryIntegral<LocalEvaluation::SWIPDG::BoundaryLHS<DiffusionType>>
       DirichletBoundaryOperatorType;
   typedef LocalAssembler::Codim1BoundaryMatrix<DirichletBoundaryOperatorType> DirichletBoundaryAssemblerType;
-
   typedef typename MatrixImp::ScalarType ScalarType;
 
 public:
   typedef internal::EllipticSWIPDGTraits<DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void>
       Traits;
-
   typedef typename Traits::MatrixType MatrixType;
   typedef typename Traits::SourceSpaceType SourceSpaceType;
   typedef typename Traits::RangeSpaceType RangeSpaceType;

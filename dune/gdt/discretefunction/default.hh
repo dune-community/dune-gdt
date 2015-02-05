@@ -115,7 +115,7 @@ public:
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
         space().grid_view(), filename, subsampling, vtk_output_type);
-  }
+  } // ... visualize(...)
 
   bool dofs_valid() const
   {

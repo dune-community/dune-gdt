@@ -157,7 +157,7 @@ public:
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateFunction(xx, ret);
-  } // ... evaluate(...)
+  }
 
   using BaseType::evaluate;
 

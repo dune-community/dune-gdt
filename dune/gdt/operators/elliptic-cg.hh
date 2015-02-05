@@ -25,7 +25,7 @@ namespace GDT {
 namespace Operators {
 
 
-// forwards
+// forward
 template <class DiffusionFactorType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp = SourceSpaceImp,
           class GridViewImp = typename SourceSpaceImp::GridViewType, class DiffusionTensorType = void>
 class EllipticCG;

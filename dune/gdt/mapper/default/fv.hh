@@ -20,9 +20,12 @@ namespace GDT {
 namespace Mapper {
 
 
-// forward, to be used in the traits
+// forward
 template <class GridViewImp, int rangeDim = 1, int rangeDimCols = 1>
-class FiniteVolume;
+class FiniteVolume
+{
+  static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
+};
 
 
 template <class GridViewImp, int rangeDim, int rangeDimCols>
@@ -88,7 +91,7 @@ public:
   {
     assert(localIndex == 0);
     return backend_.index(entity);
-  } // ... mapToGlobal(...)
+  }
 
 private:
   const BackendType& backend_;
@@ -102,7 +105,7 @@ class FiniteVolume<GridViewImp, rangeDim, 1> : public MapperInterface<FiniteVolu
   static const unsigned int dimRange = rangeDim;
 
 public:
-  typedef FiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;
+  typedef internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
@@ -147,7 +150,7 @@ public:
   {
     assert(localIndex < dimRange);
     return (dimRange * backend_.index(entity)) + localIndex;
-  } // ... mapToGlobal(...)
+  }
 
 private:
   const BackendType& backend_;
