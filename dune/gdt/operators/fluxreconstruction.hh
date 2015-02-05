@@ -39,7 +39,7 @@ template <class GridViewType, class LocalizableFunctionType>
 class DiffusiveFluxReconstruction<GridViewType, LocalizableFunctionType, void>
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, LocalizableFunctionType>::value,
+  static_assert(Stuff::is_localizable_function<LocalizableFunctionType>::value,
                 "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
 
 public:
@@ -119,11 +119,11 @@ public:
                 intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-              const auto& xx_intersection        = quadrature_it->position();
-              xx_entity                          = intersection.geometryInInside().global(xx_intersection);
-              normal                             = intersection.unitOuterNormal(xx_intersection);
-              const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-              const FieldType weigth             = quadrature_it->weight();
+              const auto& xx_intersection   = quadrature_it->position();
+              xx_entity                     = intersection.geometryInInside().global(xx_intersection);
+              normal                        = intersection.unitOuterNormal(xx_intersection);
+              const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
+              const auto weigth             = quadrature_it->weight();
               // evalaute
               local_basis.evaluate(xx_entity, basis_values);
               const auto& basis_value = basis_values[local_DoF_index];
@@ -168,11 +168,11 @@ public:
               intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-            const auto xx_intersection         = quadrature_it->position();
-            normal                             = intersection.unitOuterNormal(xx_intersection);
-            const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const FieldType weigth             = quadrature_it->weight();
-            xx_entity                          = intersection.geometryInInside().global(xx_intersection);
+            const auto xx_intersection    = quadrature_it->position();
+            normal                        = intersection.unitOuterNormal(xx_intersection);
+            const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
+            const auto weigth             = quadrature_it->weight();
+            xx_entity                     = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             local_basis.evaluate(xx_entity, basis_values);
             const auto& basis_value = basis_values[local_DoF_index];
