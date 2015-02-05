@@ -149,8 +149,8 @@ public:
   void apply(const Stuff::LA::VectorInterface< S, DomainFieldType >& source,
              Stuff::LA::VectorInterface< R, FieldType >& range)
   {
-    CHECK_CRTP(this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range)));
-    return this->as_imp(*this).apply(source.as_imp(source), range.as_imp(range));
+    CHECK_CRTP(this->as_imp().apply(source.as_imp(), range.as_imp()));
+    return this->as_imp().apply(source.as_imp(), range.as_imp());
   }
 
   template< class S, class R >
