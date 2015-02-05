@@ -13,13 +13,9 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/common/densematrix.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -31,9 +27,15 @@ namespace GDT {
 namespace LocalOperator {
 
 
-// forward, to be used in the traits
+// forwards
 template <class QuaternaryEvaluationImp>
 class Codim1CouplingIntegral;
+
+template <class BinaryEvaluationImp>
+class Codim1BoundaryIntegral;
+
+
+namespace internal {
 
 
 template <class QuaternaryEvaluationImp>
@@ -45,38 +47,52 @@ class Codim1CouplingIntegralTraits
 
 public:
   typedef Codim1CouplingIntegral<QuaternaryEvaluationImp> derived_type;
-  typedef LocalEvaluation::Codim1Interface<typename QuaternaryEvaluationImp::Traits, 4> QuaternaryEvaluationType;
 };
+
+
+template <class BinaryEvaluationImp>
+class Codim1BoundaryIntegralTraits
+{
+  static_assert(std::is_base_of<LocalEvaluation::Codim1Interface<typename BinaryEvaluationImp::Traits, 2>,
+                                BinaryEvaluationImp>::value,
+                "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
+
+public:
+  typedef Codim1BoundaryIntegral<BinaryEvaluationImp> derived_type;
+};
+
+
+} // namespace internal
 
 
 template <class QuaternaryEvaluationImp>
 class Codim1CouplingIntegral
-    : public LocalOperator::Codim1CouplingInterface<Codim1CouplingIntegralTraits<QuaternaryEvaluationImp>>
+    : public LocalOperator::Codim1CouplingInterface<internal::Codim1CouplingIntegralTraits<QuaternaryEvaluationImp>>
 {
 public:
-  typedef Codim1CouplingIntegralTraits<QuaternaryEvaluationImp> Traits;
-  typedef typename Traits::QuaternaryEvaluationType QuaternaryEvaluationType;
+  typedef internal::Codim1CouplingIntegralTraits<QuaternaryEvaluationImp> Traits;
+  typedef QuaternaryEvaluationImp QuaternaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 4;
 
 public:
   template <class... Args>
-  Codim1CouplingIntegral(Args&&... args)
+  explicit Codim1CouplingIntegral(Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(0)
   {
   }
 
   template <class... Args>
-  Codim1CouplingIntegral(const size_t over_integrate, Args&&... args)
+  explicit Codim1CouplingIntegral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
   {
   }
 
   template <class... Args>
-  Codim1CouplingIntegral(const int over_integrate, Args&&... args)
+  explicit Codim1CouplingIntegral(const int over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
@@ -103,11 +119,11 @@ public:
     const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
     // quadrature
     const size_t integrand_order =
-        evaluation().order(
+        evaluation_.order(
             localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase)
         + over_integrate_;
-    assert(integrand_order < std::numeric_limits<int>::max());
-    const auto& faceQuadrature = QuadratureRules<D, d - 1>::rule(intersection.type(), int(integrand_order));
+    const auto& faceQuadrature =
+        QuadratureRules<D, d - 1>::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
     // check matrices
     entityEntityRet *= 0.0;
     neighborNeighborRet *= 0.0;
@@ -126,28 +142,28 @@ public:
     assert(neighborEntityRet.rows() >= rowsEn);
     assert(neighborEntityRet.cols() >= colsEn);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
-    Dune::DynamicMatrix<R>& entityEntityVals     = tmpLocalMatrices[0];
-    Dune::DynamicMatrix<R>& neighborNeighborVals = tmpLocalMatrices[1];
-    Dune::DynamicMatrix<R>& entityNeighborVals   = tmpLocalMatrices[2];
-    Dune::DynamicMatrix<R>& neighborEntityVals   = tmpLocalMatrices[3];
+    auto& entityEntityVals     = tmpLocalMatrices[0];
+    auto& neighborNeighborVals = tmpLocalMatrices[1];
+    auto& entityNeighborVals   = tmpLocalMatrices[2];
+    auto& neighborEntityVals   = tmpLocalMatrices[3];
     // loop over all quadrature points
     for (auto quadPoint = faceQuadrature.begin(); quadPoint != faceQuadrature.end(); ++quadPoint) {
       const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
-      const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
-      const R quadratureWeight                     = quadPoint->weight();
+      const auto integrationFactor                 = intersection.geometry().integrationElement(localPoint);
+      const auto quadratureWeight                  = quadPoint->weight();
       // evaluate local
-      evaluation().evaluate(localFunctionsEn,
-                            localFunctionsNe,
-                            entityTestBase,
-                            entityAnsatzBase,
-                            neighborTestBase,
-                            neighborAnsatzBase,
-                            intersection,
-                            localPoint,
-                            entityEntityVals,
-                            neighborNeighborVals,
-                            entityNeighborVals,
-                            neighborEntityVals);
+      evaluation_.evaluate(localFunctionsEn,
+                           localFunctionsNe,
+                           entityTestBase,
+                           entityAnsatzBase,
+                           neighborTestBase,
+                           neighborAnsatzBase,
+                           intersection,
+                           localPoint,
+                           entityEntityVals,
+                           neighborNeighborVals,
+                           entityNeighborVals,
+                           neighborEntityVals);
       // compute integral
       assert(entityEntityVals.rows() >= rowsEn);
       assert(entityEntityVals.cols() >= colsEn);
@@ -191,41 +207,18 @@ public:
   } // void apply(...) const
 
 private:
-  const QuaternaryEvaluationType& evaluation() const
-  {
-    return evaluation_;
-  }
-
-  const QuaternaryEvaluationImp evaluation_;
+  const QuaternaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class Codim1CouplingIntegral
 
 
-// forward, to be used in the traits
-template <class BinaryEvaluationImp>
-class Codim1BoundaryIntegral;
-
-
-template <class BinaryEvaluationImp>
-class Codim1BoundaryIntegralTraits
-{
-  static_assert(std::is_base_of<LocalEvaluation::Codim1Interface<typename BinaryEvaluationImp::Traits, 2>,
-                                BinaryEvaluationImp>::value,
-                "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
-
-public:
-  typedef Codim1BoundaryIntegral<BinaryEvaluationImp> derived_type;
-  typedef LocalEvaluation::Codim1Interface<typename BinaryEvaluationImp::Traits, 2> BinaryEvaluationType;
-};
-
-
 template <class BinaryEvaluationImp>
 class Codim1BoundaryIntegral
-    : public LocalOperator::Codim1BoundaryInterface<Codim1BoundaryIntegralTraits<BinaryEvaluationImp>>
+    : public LocalOperator::Codim1BoundaryInterface<internal::Codim1BoundaryIntegralTraits<BinaryEvaluationImp>>
 {
 public:
-  typedef Codim1BoundaryIntegralTraits<BinaryEvaluationImp> Traits;
-  typedef typename Traits::BinaryEvaluationType BinaryEvaluationType;
+  typedef internal::Codim1BoundaryIntegralTraits<BinaryEvaluationImp> Traits;
+  typedef BinaryEvaluationImp BinaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
@@ -269,9 +262,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
     typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, testBase, ansatzBase) + over_integrate_;
-    assert(integrand_order < std::numeric_limits<int>::max());
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
+    const auto integrand_order = evaluation_.order(localFunctions, testBase, ansatzBase) + over_integrate_;
+    const FaceQuadratureType& faceQuadrature =
+        FaceQuadratureRules::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
     // check matrix and tmp storage
     ret *= 0.0;
     const size_t rows = testBase.size();
@@ -286,7 +279,7 @@ public:
       const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
       const R quadratureWeight                     = quadPoint->weight();
       // evaluate local
-      evaluation().evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, localMatrix);
+      evaluation_.evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, localMatrix);
       // compute integral
       assert(localMatrix.rows() >= rows);
       assert(localMatrix.cols() >= cols);
@@ -303,12 +296,7 @@ public:
   } // void apply(...) const
 
 private:
-  const BinaryEvaluationType& evaluation() const
-  {
-    return evaluation_;
-  }
-
-  const BinaryEvaluationImp evaluation_;
+  const BinaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class Codim1BoundaryIntegral
 
