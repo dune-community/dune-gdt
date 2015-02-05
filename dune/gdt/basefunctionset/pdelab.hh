@@ -119,9 +119,9 @@ private:
   typedef typename Traits::FESwitchType FESwitchType;
 
 public:
-  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
-  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
+  typedef typename BaseType::DomainType DomainType;
+  typedef typename BaseType::RangeType RangeType;
+  typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
   PdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
     : BaseType(ent)
