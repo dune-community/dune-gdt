@@ -11,11 +11,11 @@
 #include <type_traits>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/densevector.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -27,9 +27,12 @@ namespace GDT {
 namespace LocalFunctional {
 
 
-// forward, to be used in the traits
+// forward
 template <class UnaryEvaluationImp>
 class Codim1Integral;
+
+
+namespace internal {
 
 
 template <class UnaryEvaluationImp>
@@ -41,29 +44,41 @@ class Codim1IntegralTraits
 
 public:
   typedef Codim1Integral<UnaryEvaluationImp> derived_type;
-  typedef LocalEvaluation::Codim1Interface<typename UnaryEvaluationImp::Traits, 1> UnaryEvaluationType;
 };
 
 
+} // namespace internal
+
+
 template <class UnaryEvaluationImp>
-class Codim1Integral : public LocalFunctional::Codim1Interface<Codim1IntegralTraits<UnaryEvaluationImp>>
+class Codim1Integral : public LocalFunctional::Codim1Interface<internal::Codim1IntegralTraits<UnaryEvaluationImp>>
 {
 public:
-  typedef Codim1IntegralTraits<UnaryEvaluationImp> Traits;
-  typedef typename Traits::UnaryEvaluationType UnaryEvaluationType;
+  typedef internal::Codim1IntegralTraits<UnaryEvaluationImp> Traits;
+  typedef UnaryEvaluationImp UnaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  Codim1Integral(const UnaryEvaluationImp eval)
-    : evaluation_(eval)
+  template <class... Args>
+  explicit Codim1Integral(Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(0)
   {
   }
 
   template <class... Args>
-  explicit Codim1Integral(Args&&... args)
+  explicit Codim1Integral(const int over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
+  {
+  }
+
+  template <class... Args>
+  explicit Codim1Integral(const size_t over_integrate, Args&&... args)
+    : evaluation_(std::forward<Args>(args)...)
+    , over_integrate_(over_integrate)
   {
   }
 
@@ -80,40 +95,33 @@ public:
     const auto& entity        = testBase.entity();
     const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
-    typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
-    typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, testBase);
-    assert(integrand_order < std::numeric_limits<int>::max());
-    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(), int(integrand_order));
+    const auto integrand_order = evaluation_.order(localFunctions, testBase) + over_integrate_;
+    const auto& faceQuadrature =
+        QuadratureRules<D, d - 1>::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
     // check vector and tmp storage
     ret *= 0.0;
     const size_t size = testBase.size();
     assert(ret.size() >= size);
     assert(tmpLocalVectors.size() >= numTmpObjectsRequired_);
-    Dune::DynamicVector<R>& localVector = tmpLocalVectors[0];
+    auto& localVector = tmpLocalVectors[0];
     // loop over all quadrature points
     for (auto quadPoint = faceQuadrature.begin(); quadPoint != faceQuadrature.end(); ++quadPoint) {
       const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
-      const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
-      const R quadratureWeight                     = quadPoint->weight();
+      const auto integrationFactor                 = intersection.geometry().integrationElement(localPoint);
+      const auto quadratureWeight                  = quadPoint->weight();
       // evaluate local
-      evaluation().evaluate(localFunctions, testBase, intersection, localPoint, localVector);
+      evaluation_.evaluate(localFunctions, testBase, intersection, localPoint, localVector);
       // compute integral
       assert(localVector.size() >= size);
       // loop over all test basis functions
-      for (size_t ii = 0; ii < size; ++ii) {
+      for (size_t ii = 0; ii < size; ++ii)
         ret[ii] += localVector[ii] * integrationFactor * quadratureWeight;
-      } // loop over all test basis functions
     } // loop over all quadrature points
   } // void apply(...) const
 
 private:
-  const UnaryEvaluationType& evaluation() const
-  {
-    return evaluation_;
-  }
-
-  const UnaryEvaluationImp evaluation_;
+  const UnaryEvaluationType evaluation_;
+  const size_t over_integrate_;
 }; // class Codim1Integral
 
 
