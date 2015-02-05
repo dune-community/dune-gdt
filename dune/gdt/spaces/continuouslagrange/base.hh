@@ -10,14 +10,11 @@
 #include <dune/common/version.hh>
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
 #if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
 #include <dune/geometry/referenceelements.hh>
 #else
 #include <dune/geometry/genericreferenceelements.hh>
 #endif
-#include <dune/common/typetraits.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
