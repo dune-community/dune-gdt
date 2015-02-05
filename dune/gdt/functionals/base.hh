@@ -80,27 +80,6 @@ private:
 }; // class VectorBased
 
 
-// forward, to be used in the traits
-template <class ImpTraits>
-class AssemblableFaceBase;
-
-
-template <class ImpTraits>
-class AssemblableFaceBaseTraits
-{
-public:
-  typedef typename ImpTraits::derived_type derived_type;
-  typedef typename ImpTraits::GridViewType GridViewType;
-  typedef typename ImpTraits::SpaceType SpaceType;
-  typedef typename ImpTraits::VectorType VectorType;
-  typedef typename ImpTraits::ScalarType ScalarType;
-
-private:
-  static_assert(std::is_base_of<Stuff::LA::VectorInterface<typename VectorType::Traits, ScalarType>, VectorType>::value,
-                "VectorType has to be derived from Stuff::LA::VectorInterface!");
-}; // class AssemblableFaceBaseTraits
-
-
 } // namespace Functionals
 } // namespace GDT
 } // namespace Dune
