@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/dynmatrix.hh>
 
@@ -63,10 +64,19 @@ public:
   template< class... Args >
   explicit Codim0Integral(Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(0)
   {}
 
-  Codim0Integral(const UnaryEvaluationImp eval)
-    : evaluation_(eval)
+  template< class... Args >
+  explicit Codim0Integral(const int over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+  {}
+
+  template< class... Args >
+  explicit Codim0Integral(const size_t over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(over_integrate)
   {}
 
   size_t numTmpObjectsRequired() const
@@ -91,8 +101,8 @@ public:
     const auto integrand_order = evaluation_.order(localFunctions, testBase) + over_integrate_;
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    assert(integrand_order < std::numeric_limits< int >::max());
-    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), int(integrand_order));
+    const auto& volumeQuadrature = QuadratureRules< D, d >::rule(entity.type(),
+                                                                 boost::numeric_cast< int >(integrand_order));
     // check vector and tmp storage
     ret *= 0.0;
     const size_t size = testBase.size();
@@ -117,6 +127,7 @@ public:
 
 private:
   const UnaryEvaluationType evaluation_;
+  const size_t over_integrate_;
 }; // class Codim0Integral
 
 } // namespace LocalFunctional
