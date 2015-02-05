@@ -28,6 +28,9 @@ class FiniteVolume
 };
 
 
+namespace internal {
+
+
 template <class GridViewImp, int rangeDim, int rangeDimCols>
 class FiniteVolumeTraits
 {
@@ -42,13 +45,16 @@ public:
 };
 
 
+} // namespace internal
+
+
 template <class GridViewImp>
-class FiniteVolume<GridViewImp, 1, 1> : public MapperInterface<FiniteVolumeTraits<GridViewImp, 1, 1>>
+class FiniteVolume<GridViewImp, 1, 1> : public MapperInterface<internal::FiniteVolumeTraits<GridViewImp, 1, 1>>
 {
-  typedef MapperInterface<FiniteVolumeTraits<GridViewImp, 1, 1>> InterfaceType;
+  typedef MapperInterface<internal::FiniteVolumeTraits<GridViewImp, 1, 1>> InterfaceType;
 
 public:
-  typedef FiniteVolumeTraits<GridViewImp, 1, 1> Traits;
+  typedef internal::FiniteVolumeTraits<GridViewImp, 1, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
@@ -99,9 +105,10 @@ private:
 
 
 template <class GridViewImp, int rangeDim>
-class FiniteVolume<GridViewImp, rangeDim, 1> : public MapperInterface<FiniteVolumeTraits<GridViewImp, rangeDim, 1>>
+class FiniteVolume<GridViewImp, rangeDim, 1>
+    : public MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>>
 {
-  typedef MapperInterface<FiniteVolumeTraits<GridViewImp, rangeDim, 1>> InterfaceType;
+  typedef MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>> InterfaceType;
   static const unsigned int dimRange = rangeDim;
 
 public:
