@@ -104,9 +104,8 @@ public:
                                                         matrix.as_imp()));
   } // ... add(...)
 
-  /** \todo Investigate why the ConstraintsInterface is not used here! */
-  template< class ConstraintsType, class V >
-  void add(ConstraintsType& constraints,
+  template< class C, class V >
+  void add(Spaces::ConstraintsInterface< C, RangeFieldType >& constraints,
            Stuff::LA::VectorInterface< V, RangeFieldType >& vector,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
