@@ -62,12 +62,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  using typename BaseType::DomainFieldType;
-  using BaseType::dimDomain;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
