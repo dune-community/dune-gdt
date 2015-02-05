@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <memory>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/version.hh>
 
 #include <dune/stuff/grid/walker.hh>
@@ -132,7 +133,9 @@ public:
   } // ... add(...)
 
   template< class Codim0Assembler, class M >
-  void add_codim0_assembler(const Codim0Assembler& local_assembler,
+  void
+    DUNE_DEPRECATED_MSG("Will be removed or first argument has to be replaced by an interface (04.02.2015)!")
+        add_codim0_assembler(const Codim0Assembler& local_assembler,
                             Stuff::LA::MatrixInterface< M, RangeFieldType >& matrix,
                             const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
@@ -146,7 +149,9 @@ public:
   } // ... add(...)
 
   template< class Codim0Assembler, class V >
-  void add_codim0_assembler(const Codim0Assembler& local_assembler,
+  void
+    DUNE_DEPRECATED_MSG("Will be removed or first argument has to be replaced by an interface (04.02.2015)!")
+       add_codim0_assembler(const Codim0Assembler& local_assembler,
                             Stuff::LA::VectorInterface< V, RangeFieldType >& vector,
                             const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities< GridViewType >())
   {
