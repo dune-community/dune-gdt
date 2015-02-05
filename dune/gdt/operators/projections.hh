@@ -37,8 +37,24 @@ namespace GDT {
 namespace Operators {
 
 
+// forwards
 template< class GridViewImp, class FieldImp = double >
 class LagrangeProjection;
+
+template< class GridViewImp, class FieldImp = double >
+class L2Projection;
+
+template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double >
+class DirichletProjectionLocalizable;
+
+template< class GridViewImp >
+class DirichletProjection;
+
+template< class GridViewImp, class FieldImp = double >
+class Projection;
+
+
+namespace internal {
 
 
 template< class GridViewImp, class FieldImp = double >
@@ -51,6 +67,68 @@ public:
 }; // class LagrangeProjectionTraits
 
 
+template< class GridViewImp, class FieldImp = double >
+class L2ProjectionTraits
+{
+public:
+  typedef L2Projection< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp                           GridViewType;
+  typedef FieldImp                              FieldType;
+};
+
+
+template< class GridViewImp, class FieldImp >
+class ProjectionTraits
+{
+public:
+  typedef Projection< GridViewImp, FieldImp > derived_type;
+  typedef GridViewImp                         GridViewType;
+  typedef FieldImp                            FieldType;
+};
+
+
+template< class GridViewImp >
+class DirichletProjectionTraits
+{
+public:
+  typedef DirichletProjection< GridViewImp > derived_type;
+  typedef GridViewImp                        GridViewType;
+};
+
+
+
+template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
+class DirichletProjectionLocalizableTraits
+{
+  typedef typename RangeImp::SpaceType::Traits T;
+  static const unsigned int d = RangeImp::dimDomain;
+  typedef typename RangeImp::RangeFieldType R;
+  static const unsigned int r = RangeImp::dimRange;
+  static const unsigned int rC = RangeImp::dimRangeCols;
+  static_assert(is_cg_space< typename RangeImp::SpaceType >::value,
+                "The SpaceType of RangeImp has to be derived from Spaces::CGInterface!");
+  static_assert(r == 1, "Not implemeneted for higher dimensions!");
+  static_assert(rC == 1, "Not implemeneted for higher dimensions!");
+  typedef typename SourceImp::EntityType E;
+  typedef typename SourceImp::DomainFieldType D;
+  static_assert(SourceImp::dimDomain == d, "Dimensions do not match!");
+  static_assert(std::is_same< typename SourceImp::RangeFieldType, R >::value, "Types do not match!");
+  static_assert(SourceImp::dimRange == r, "Dimensions do not match!");
+  static_assert(SourceImp::dimRangeCols == rC, "Dimensions do not match!");
+  static_assert(Stuff::is_localizable_function< SourceImp >::value,
+                "SourceImp has to be derived from Stuff::LocalizableFunctionInterface!");
+public:
+  typedef DirichletProjectionLocalizable< GridViewImp, SourceImp, RangeImp > derived_type;
+  typedef GridViewImp                                                        GridViewType;
+  typedef FieldImp                                                           FieldType;
+  typedef SourceImp                                                          SourceType;
+  typedef RangeImp                                                           RangeType;
+}; // class DirichletProjectionLocalizableTraits
+
+
+} // namespace internal
+
+
 /**
  *  \brief  Does a projection using the lagrange points.
  *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
@@ -61,42 +139,30 @@ template< class GridViewImp, class FieldImp >
 class LagrangeProjection
 {
 public:
-  typedef LagrangeProjectionTraits< GridViewImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::FieldType    FieldType;
-
+  typedef internal::LagrangeProjectionTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType                               GridViewType;
+  typedef typename Traits::FieldType                                  FieldType;
 private:
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
-  typedef typename GridViewType::ctype              DomainFieldType;
-  static const unsigned int                         dimDomain = GridViewType::dimension;
-  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
+  typedef typename GridViewType::template Codim< 0 >::Entity          EntityType;
+  typedef typename GridViewType::ctype                                DomainFieldType;
+  static const unsigned int                                           dimDomain = GridViewType::dimension;
+  typedef FieldVector< DomainFieldType, dimDomain >                   DomainType;
 
 public:
   LagrangeProjection(const GridViewType& grid_view)
     : grid_view_(grid_view)
   {}
 
-  template< class E, class D, int d, class R, int r, int rC, class T, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
-             DiscreteFunction< SpaceInterface< T, d, r, rC >, V >& /*range*/) const
-  {
-    static_assert(Dune::AlwaysFalse< E >::value, "Not implemented for this combination of source and range!");
-  }
-
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
-                                                  source,
-                                               DiscreteFunction< Spaces::CG::PdelabBased
-                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
+                    DiscreteFunction< Spaces::CG::PdelabBased< GP, p, RR, rR, rCR >, V >& range) const
   {
     apply_p(source, range);
   }
 
   template< class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V >
-  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >&
-                                                  source,
-                                               DiscreteFunction< Spaces::CG::FemBased
-                                                  < GP, p, RR, rR, rCR >, V >& range) const
+  inline void apply(const Stuff::LocalizableFunctionInterface< E, D, d, RS, rS, rCS >& source,
+                    DiscreteFunction< Spaces::CG::FemBased< GP, p, RR, rR, rCR >, V >& range) const
   {
     apply_p(source, range);
   }
@@ -150,20 +216,6 @@ private:
 }; // class LagrangeProjection
 
 
-template< class GridViewImp, class FieldImp = double >
-class L2Projection;
-
-
-template< class GridViewImp, class FieldImp = double >
-class L2ProjectionTraits
-{
-public:
-  typedef L2Projection< GridViewImp, FieldImp > derived_type;
-  typedef GridViewImp GridViewType;
-  typedef FieldImp FieldType;
-}; // class L2ProjectionTraits
-
-
 /**
  *  \brief  Does an L2 projection by solving local or global problems.
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
@@ -173,26 +225,19 @@ template< class GridViewImp, class FieldImp >
 class L2Projection
 {
 public:
-  typedef L2ProjectionTraits< GridViewImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::FieldType    FieldType;
+  typedef internal::L2ProjectionTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType                         GridViewType;
+  typedef typename Traits::FieldType                            FieldType;
 private:
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
-  typedef typename GridViewType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity    EntityType;
+  typedef typename GridViewType::ctype                          DomainFieldType;
+  static const unsigned int                                     dimDomain = GridViewType::dimension;
 
 public:
   L2Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , over_integrate_(over_integrate)
   {}
-
-  template< class E, class D, int d, class R, int r, int rC, class T, class V >
-  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& /*source*/,
-             DiscreteFunction< SpaceInterface< T, d, r, rC >, V >& /*range*/) const
-  {
-    static_assert(Dune::AlwaysFalse< E >::value, "Not implemented for this combination of source and range!");
-  }
 
   template< class GP, int p, class R, int r, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
@@ -371,20 +416,6 @@ private:
 }; // class L2Projection
 
 
-template< class GridViewImp, class FieldImp = double >
-class Projection;
-
-
-template< class GridViewImp, class FieldImp >
-class ProjectionTraits
-{
-public:
-  typedef Projection< GridViewImp, FieldImp > derived_type;
-  typedef GridViewImp GridViewType;
-  typedef FieldImp FieldType;
-}; // class ProjectionTraits
-
-
 /**
  *  \brief  Does a projection by selecting the appropriate Lagrange or L2 operator at compile time.
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
@@ -394,13 +425,13 @@ template< class GridViewImp, class FieldImp >
 class Projection
 {
 public:
-  typedef ProjectionTraits< GridViewImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::FieldType    FieldType;
+  typedef internal::ProjectionTraits< GridViewImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType                       GridViewType;
+  typedef typename Traits::FieldType                          FieldType;
 private:
-  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
-  typedef typename GridViewType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
+  typedef typename GridViewType::ctype                        DomainFieldType;
+  static const unsigned int                                  dimDomain = GridViewType::dimension;
 
 public:
   Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -485,63 +516,20 @@ private:
   const L2Projection< GridViewType > l2_operator_;
 }; // Projection
 
-template< class SourceType, class RangeType >
-void apply_projection(const SourceType& source, RangeType& range) {
-  auto& view = range.space().grid_view();
-  Projection<typename std::remove_reference<decltype(view)>::type,
-      typename RangeType::SpaceType::RangeFieldType>(view).apply(source, range);
-}
-
-// forward, to be used in the traits
-template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double >
-class DirichletProjectionLocalizable;
-
-
-template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
-class DirichletProjectionLocalizableTraits
-{
-  typedef typename RangeImp::SpaceType::Traits T;
-  static const unsigned int d = RangeImp::dimDomain;
-  typedef typename RangeImp::RangeFieldType R;
-  static const unsigned int r = RangeImp::dimRange;
-  static const unsigned int rC = RangeImp::dimRangeCols;
-  static_assert(std::is_base_of< Spaces::CGInterface< T, d, R, r, rC >, typename RangeImp::SpaceType >::value,
-                "The SpaceType of RangeImp has to be derived from Spaces::CGInterface!");
-  static_assert(r == 1, "Not implemeneted for higher dimensions!");
-  static_assert(rC == 1, "Not implemeneted for higher dimensions!");
-  typedef typename SourceImp::EntityType E;
-  typedef typename SourceImp::DomainFieldType D;
-  static_assert(SourceImp::dimDomain == d, "Dimensions do not match!");
-  static_assert(std::is_same< typename SourceImp::RangeFieldType, R >::value, "Types do not match!");
-  static_assert(SourceImp::dimRange == r, "Dimensions do not match!");
-  static_assert(SourceImp::dimRangeCols == rC, "Dimensions do not match!");
-  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >, SourceImp >::value,
-                "SourceImp has to be derived from Stuff::LocalizableFunctionInterface!");
-public:
-  typedef DirichletProjectionLocalizable< GridViewImp, SourceImp, RangeImp > derived_type;
-  typedef GridViewImp GridViewType;
-  typedef FieldImp    FieldType;
-  typedef SourceImp   SourceType;
-  typedef RangeImp    RangeType;
-}; // class DirichletProjectionLocalizableTraits
-
 
 template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
 class DirichletProjectionLocalizable
-  : public LocalizableOperatorInterface< DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
+  : public LocalizableOperatorInterface< internal::DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
   , public Stuff::Grid::Functor::Codim0< GridViewImp >
 {
 public:
-  typedef DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::SourceType   SourceType;
-  typedef typename Traits::RangeType    RangeType;
+  typedef internal::DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > Traits;
+  typedef typename Traits::GridViewType                                                                GridViewType;
+  typedef typename Traits::SourceType                                                                  SourceType;
+  typedef typename Traits::RangeType                                                                   RangeType;
+  typedef typename Stuff::Grid::Functor::Codim0< GridViewImp >::EntityType                             EntityType;
+  typedef Stuff::Grid::BoundaryInfoInterface< typename GridViewType::Intersection >                    BoundaryInfoType;
 
-  typedef typename GridViewType::template Codim< 0 >::Entity      EntityType;
-  typedef typename GridViewType::Intersection                     IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface< IntersectionType >  BoundaryInfoType;
-
-public:
   DirichletProjectionLocalizable(const GridViewType& grd_vw,
                        const BoundaryInfoType& boundary_info,
                        const SourceType& src,
@@ -605,19 +593,6 @@ private:
 }; // class DirichletProjectionLocalizable
 
 
-template< class GridViewImp >
-class DirichletProjection;
-
-
-template< class GridViewImp >
-class DirichletProjectionTraits
-{
-public:
-  typedef DirichletProjection< GridViewImp > derived_type;
-  typedef GridViewImp GridViewType;
-}; // class DirichletProjectionTraits
-
-
 /**
  *  \brief  Does a dirichlet projection in the sense that the lagrange point set on each entity is matched against
  *          those vertices of the entity which lie on the dirichlet boundary.
@@ -629,13 +604,11 @@ template< class GridViewImp >
 class DirichletProjection
 {
 public:
-  typedef DirichletProjectionTraits< GridViewImp > Traits;
-
-  typedef typename Traits::GridViewType GridViewType;
-
-  typedef typename GridViewType::template Codim< 0 >::Entity                  EntityType;
-  typedef typename GridViewType::ctype                                        DomainFieldType;
-  static const unsigned int                                                   dimDomain = GridViewType::dimension;
+  typedef internal::DirichletProjectionTraits< GridViewImp >                        Traits;
+  typedef typename Traits::GridViewType                                             GridViewType;
+  typedef typename GridViewType::template Codim< 0 >::Entity                        EntityType;
+  typedef typename GridViewType::ctype                                              DomainFieldType;
+  static const unsigned int                                                         dimDomain = GridViewType::dimension;
   typedef Stuff::Grid::BoundaryInfoInterface< typename GridViewType::Intersection > BoundaryInfoType;
 
 public:
@@ -671,12 +644,24 @@ private:
   const BoundaryInfoType& boundary_info_;
 }; // class DirichletProjection
 
+
+template< class SourceType, class RangeType >
+void apply_projection(const SourceType& source, RangeType& range)
+{
+  auto& view = range.space().grid_view();
+  Projection<typename std::remove_reference<decltype(view)>::type,
+      typename RangeType::SpaceType::RangeFieldType>(view).apply(source, range);
+}
+
+
 template< class SourceType, class RangeSpaceType, class V >
 void apply_dirichlet_projection(
-    const DSG::BoundaryInfoInterface< typename RangeSpaceType::GridViewType::Intersection>& boundary_info,
-    const SourceType& source, DiscreteFunction<RangeSpaceType, V>& range) {
+    const DSG::BoundaryInfoInterface< typename RangeSpaceType::GridViewType::Intersection >& boundary_info,
+    const SourceType& source,
+    DiscreteFunction<RangeSpaceType, V >& range)
+{
   auto& view = range.space().grid_view();
-  DirichletProjection<typename std::remove_reference<decltype(*view)>::type>(*view, boundary_info).apply(source, range);
+  DirichletProjection< typename std::remove_reference< decltype(view) >::type >(view, boundary_info).apply(source, range);
 }
 
 } // namespace Operators
