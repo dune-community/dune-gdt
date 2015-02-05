@@ -80,16 +80,16 @@ public:
     assert(tmpLocalMatricesContainer[1].size() >= localOperator_.numTmpObjectsRequired());
     assert(tmpIndicesContainer.size() >= 2);
     // get and clear matrix
-    Dune::DynamicMatrix<R>& localMatrix = tmpLocalMatricesContainer[0][0];
+    auto& localMatrix = tmpLocalMatricesContainer[0][0];
     localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // apply local operator (result is in localMatrix)
     localOperator_.apply(
         testSpace.base_function_set(entity), ansatzSpace.base_function_set(entity), localMatrix, tmpOperatorMatrices);
     // write local matrix to global
-    Dune::DynamicVector<size_t>& globalRows = tmpIndicesContainer[0];
-    Dune::DynamicVector<size_t>& globalCols = tmpIndicesContainer[1];
-    const size_t rows                       = testSpace.mapper().numDofs(entity);
+    auto& globalRows  = tmpIndicesContainer[0];
+    auto& globalCols  = tmpIndicesContainer[1];
+    const size_t rows = testSpace.mapper().numDofs(entity);
     const size_t cols = ansatzSpace.mapper().numDofs(entity);
     assert(globalRows.size() >= rows);
     assert(globalCols.size() >= cols);
@@ -206,11 +206,9 @@ public:
     , test_function_(test_function)
     , ansatz_function_(ansatz_function)
     , result_(0)
+    , tmp_storage_(new TmpMatricesProviderType({1, local_operator_.numTmpObjectsRequired()}, 1, 1))
     , finalized_(false)
   {
-    // can not use make_unique here, at least clang does not get it
-    tmp_storage_ = std::unique_ptr<TmpMatricesProviderType>(
-        new TmpMatricesProviderType({1, local_operator_.numTmpObjectsRequired()}, 1, 1));
   }
 
   Codim0OperatorAccumulateFunctor(const ThisType& other)
@@ -218,13 +216,10 @@ public:
     , local_operator_(other.local_operator_)
     , test_function_(other.test_function_)
     , ansatz_function_(other.ansatz_function_)
-    , result_(0)
+    , result_(other.result_)
+    , tmp_storage_(new TmpMatricesProviderType({1, local_operator_.numTmpObjectsRequired()}, 1, 1))
     , finalized_(other.finalized_)
   {
-    // can not use make_unique here, at least clang does not get it
-    tmp_storage_ = std::unique_ptr<TmpMatricesProviderType>(
-        new TmpMatricesProviderType({1, local_operator_.numTmpObjectsRequired()}, 1, 1));
-    result_ = other.result_;
   }
 
   virtual ~Codim0OperatorAccumulateFunctor() = default;
