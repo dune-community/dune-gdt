@@ -42,13 +42,13 @@ class ConstDiscreteFunction
   typedef Stuff::LocalizableFunctionInterface
       < typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
         typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols >
-    BaseType;
+                                                       BaseType;
   typedef ConstDiscreteFunction< SpaceImp, VectorImp > ThisType;
 public:
-  typedef SpaceImp                              SpaceType;
-  typedef VectorImp                             VectorType;
-  typedef typename BaseType::EntityType         EntityType;
-  typedef typename BaseType::LocalfunctionType  LocalfunctionType;
+  typedef SpaceImp                             SpaceType;
+  typedef VectorImp                            VectorType;
+  typedef typename BaseType::EntityType        EntityType;
+  typedef typename BaseType::LocalfunctionType LocalfunctionType;
 
   typedef ConstLocalDiscreteFunction< SpaceType, VectorType > ConstLocalDiscreteFunctionType;
 
@@ -115,7 +115,7 @@ public:
                                                                      filename,
                                                                      subsampling,
                                                                      vtk_output_type);
-  }
+  } // ... visualize(...)
 
   bool dofs_valid() const
   {
@@ -135,14 +135,14 @@ class DiscreteFunction
   : Stuff::Common::StorageProvider< VectorImp >
   , public ConstDiscreteFunction< SpaceImp, VectorImp >
 {
-  typedef Stuff::Common::StorageProvider< VectorImp > VectorProviderBaseType;
-  typedef ConstDiscreteFunction< SpaceImp, VectorImp >  BaseType;
-  typedef DiscreteFunction< SpaceImp, VectorImp >       ThisType;
+  typedef Stuff::Common::StorageProvider< VectorImp >  VectorProviderBaseType;
+  typedef ConstDiscreteFunction< SpaceImp, VectorImp > BaseType;
+  typedef DiscreteFunction< SpaceImp, VectorImp >      ThisType;
 public:
-  typedef typename BaseType::SpaceType          SpaceType;
-  typedef typename BaseType::VectorType         VectorType;
-  typedef typename BaseType::EntityType         EntityType;
-  typedef typename BaseType::LocalfunctionType  LocalfunctionType;
+  typedef typename BaseType::SpaceType         SpaceType;
+  typedef typename BaseType::VectorType        VectorType;
+  typedef typename BaseType::EntityType        EntityType;
+  typedef typename BaseType::LocalfunctionType LocalfunctionType;
 
   typedef LocalDiscreteFunction< SpaceType, VectorType > LocalDiscreteFunctionType;
 

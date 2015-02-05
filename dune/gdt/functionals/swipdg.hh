@@ -46,10 +46,10 @@ class DirichletBoundarySWIPDGTraits
 public:
   typedef DirichletBoundarySWIPDG
       < DiffusionFactorType, DirichletType, VectorImp, SpaceImp, GridViewImp, DiffusionTensorType > derived_type;
-  typedef VectorImp   VectorType;
-  typedef SpaceImp    SpaceType;
-  typedef GridViewImp GridViewType;
-  typedef typename VectorType::ScalarType ScalarType;
+  typedef VectorImp                                                                                 VectorType;
+  typedef SpaceImp                                                                                  SpaceType;
+  typedef GridViewImp                                                                               GridViewType;
+  typedef typename VectorType::ScalarType                                                           ScalarType;
 }; // class DirichletBoundarySWIPDGTraits
 
 
@@ -63,10 +63,10 @@ class DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp, Sp
   static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
 public:
   typedef DirichletBoundarySWIPDG< DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void > derived_type;
-  typedef VectorImp   VectorType;
-  typedef SpaceImp    SpaceType;
-  typedef GridViewImp GridViewType;
-  typedef typename VectorType::ScalarType ScalarType;
+  typedef VectorImp                                                                                       VectorType;
+  typedef SpaceImp                                                                                        SpaceType;
+  typedef GridViewImp                                                                                     GridViewType;
+  typedef typename VectorType::ScalarType                                                                 ScalarType;
 }; // class DirichletBoundarySWIPDGTraits< ..., void >
 
 
@@ -81,21 +81,18 @@ class DirichletBoundarySWIPDG< DiffusionType, DirichletType, VectorImp, SpaceImp
 {
   typedef Functionals::VectorBased< internal::DirichletBoundarySWIPDGTraits< DiffusionType, DirichletType, VectorImp
                                                                            , SpaceImp, GridViewImp, void > >
-      FunctionalBaseType;
-  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
-
+                                                                               FunctionalBaseType;
+  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp >                   AssemblerBaseType;
   typedef LocalFunctional::Codim1Integral< LocalEvaluation::SWIPDG::BoundaryRHS< DiffusionType, DirichletType > >
-      LocalFunctionalType;
-  typedef LocalAssembler::Codim1Vector< LocalFunctionalType > LocalAssemblerType;
-
-  typedef typename VectorImp::ScalarType ScalarType;
-
+                                                                               LocalFunctionalType;
+  typedef LocalAssembler::Codim1Vector< LocalFunctionalType >                  LocalAssemblerType;
+  typedef typename VectorImp::ScalarType                                       ScalarType;
 public:
   typedef internal::DirichletBoundarySWIPDGTraits
       < DiffusionType, DirichletType, VectorImp, SpaceImp, GridViewImp, void > Traits;
 
-  typedef typename Traits::VectorType VectorType;
-  typedef typename Traits::SpaceType  SpaceType;
+  typedef typename Traits::VectorType   VectorType;
+  typedef typename Traits::SpaceType    SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
   typedef Stuff::Grid::BoundaryInfoInterface< typename GridViewType::Intersection > BoundaryInfoType;

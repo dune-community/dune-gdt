@@ -160,8 +160,7 @@ public:
   template< class L, class M >
   void add(const LocalAssembler::Codim1CouplingMatrix< L >& local_assembler,
            Stuff::LA::MatrixInterface< M, RangeFieldType >& matrix,
-           const ApplyOnWhichIntersection* where
-              = new DSG::ApplyOn::AllIntersections< GridViewType >())
+           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections< GridViewType >())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -174,8 +173,7 @@ public:
   template< class L, class M >
   void add(const LocalAssembler::Codim1BoundaryMatrix< L >& local_assembler,
            Stuff::LA::MatrixInterface< M, RangeFieldType >& matrix,
-           const ApplyOnWhichIntersection* where
-              = new DSG::ApplyOn::AllIntersections< GridViewType >())
+           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections< GridViewType >())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -214,7 +212,7 @@ public:
     this->walk(use_tbb);
   }
 
-  template <class Partitioning>
+  template< class Partitioning >
   void assemble(const Partitioning& partitioning)
   {
     this->walk(partitioning);
@@ -222,8 +220,8 @@ public:
 
 
 private:
-  const DS::PerThreadValue<const TestSpaceType> test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
+  const DS::PerThreadValue< const TestSpaceType > test_space_;
+  const DS::PerThreadValue< const AnsatzSpaceType > ansatz_space_;
 }; // class SystemAssembler
 
 

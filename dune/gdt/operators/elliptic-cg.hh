@@ -25,7 +25,7 @@ namespace GDT {
 namespace Operators {
 
 
-// forwards
+// forward
 template< class DiffusionFactorType
         , class MatrixImp
         , class SourceSpaceImp
@@ -75,20 +75,20 @@ class EllipticCG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridV
                                                              , SourceSpaceImp, RangeSpaceImp, GridViewImp, void > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
-  typedef Stuff::Common::StorageProvider< MatrixImp > StorageProvider;
-  typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
+  typedef Stuff::Common::StorageProvider< MatrixImp >                                        StorageProvider;
+  typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >                      AssemblerBaseType;
   typedef Operators::MatrixBased< internal::EllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp
                                                             , RangeSpaceImp, GridViewImp > > OperatorBaseType;
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > > LocalOperatorType;
-  typedef LocalAssembler::Codim0Matrix< LocalOperatorType >                           LocalAssemblerType;
+  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >        LocalOperatorType;
+  typedef LocalAssembler::Codim0Matrix< LocalOperatorType >                                  LocalAssemblerType;
 public:
   typedef internal::EllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
       Traits;
 
-  typedef typename Traits::MatrixType       MatrixType;
-  typedef typename Traits::SourceSpaceType  SourceSpaceType;
-  typedef typename Traits::RangeSpaceType   RangeSpaceType;
-  typedef typename Traits::GridViewType     GridViewType;
+  typedef typename Traits::MatrixType      MatrixType;
+  typedef typename Traits::SourceSpaceType SourceSpaceType;
+  typedef typename Traits::RangeSpaceType  RangeSpaceType;
+  typedef typename Traits::GridViewType    GridViewType;
 
   using OperatorBaseType::pattern;
 

@@ -25,7 +25,7 @@ namespace Mapper {
 #if HAVE_DUNE_PDELAB
 
 
-// forward, to be used in the traits
+// forwards
 template< class PdelabSpaceImp >
 class ContinuousPdelabWrapper;
 
@@ -33,7 +33,7 @@ template< class PdelabSpaceImp >
 class DiscontinuousPdelabWrapper;
 
 
-namespace internal{
+namespace internal {
 
 
 template< class PdelabSpaceImp >
@@ -41,18 +41,18 @@ class ContinuousPdelabWrapperTraits
 {
 public:
   typedef ContinuousPdelabWrapper< PdelabSpaceImp > derived_type;
-  typedef PdelabSpaceImp BackendType;
-  typedef typename BackendType::Element EntityType;
-}; // ContinuousPdelabWrapperTraits
+  typedef PdelabSpaceImp                            BackendType;
+  typedef typename BackendType::Element             EntityType;
+};
 
 template< class PdelabSpaceImp >
 class DiscontinuousPdelabWrapperTraits
 {
 public:
   typedef DiscontinuousPdelabWrapper< PdelabSpaceImp > derived_type;
-  typedef PdelabSpaceImp BackendType;
-  typedef typename BackendType::Element EntityType;
-}; // DiscontinuousPdelabWrapperTraits
+  typedef PdelabSpaceImp                               BackendType;
+  typedef typename BackendType::Element                EntityType;
+};
 
 
 template< class ImpTraits >
@@ -61,8 +61,8 @@ class PdelabWrapperBase
 {
   typedef MapperInterface< ImpTraits > InterfaceType;
 public:
-  typedef typename InterfaceType::EntityType     EntityType;
-  typedef typename InterfaceType::BackendType    BackendType;
+  typedef typename InterfaceType::EntityType  EntityType;
+  typedef typename InterfaceType::BackendType BackendType;
 private:
   typedef PDELab::LocalFunctionSpace< BackendType, PDELab::TrialSpaceTag > PdeLabLFSType;
 
@@ -88,7 +88,7 @@ public:
   {
     lfs_.bind(entity);
     return lfs_.size();
-  } // ... numDofs(...)
+  }
 
   size_t maxNumDofs() const
   {
@@ -133,7 +133,7 @@ class ContinuousPdelabWrapper
 {
 public:
   typedef typename internal::ContinuousPdelabWrapperTraits< PdelabSpaceImp > Traits;
-  typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::EntityType                                        EntityType;
 
   template< class... Args >
   ContinuousPdelabWrapper(Args&& ...args)
@@ -147,13 +147,14 @@ protected:
   }
 }; // class ContinuousPdelabWrapper
 
+
 template< class PdelabSpaceImp >
 class DiscontinuousPdelabWrapper
   : public internal::PdelabWrapperBase< internal::DiscontinuousPdelabWrapperTraits< PdelabSpaceImp > >
 {
 public:
   typedef typename internal::DiscontinuousPdelabWrapperTraits< PdelabSpaceImp > Traits;
-  typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::EntityType                                           EntityType;
 
   template< class... Args >
   DiscontinuousPdelabWrapper(Args&& ...args)

@@ -102,6 +102,7 @@ private:
       assert(localDoF < int(globalIndices_.size()));
       globalIndices_[localDoF] = globalDoF;
     }
+
   private:
     Dune::DynamicVector< size_t >& globalIndices_;
   };
@@ -184,6 +185,7 @@ private:
       assert(localDoF < int(globalIndices_.size()));
       globalIndices_[localDoF] = globalDoF;
     }
+
   private:
     Dune::DynamicVector< size_t >& globalIndices_;
   };

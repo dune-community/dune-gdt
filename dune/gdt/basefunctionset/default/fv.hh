@@ -35,7 +35,7 @@ class FiniteVolumeTraits
 public:
   typedef FiniteVolume< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   typedef RangeFieldImp BackendType;
-  typedef EntityImp EntityType;
+  typedef EntityImp     EntityType;
 };
 
 
@@ -52,8 +52,8 @@ class FiniteVolume< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
                                                       , DomainFieldImp, domainDim, RangeFieldImp, 1, 1 > BaseType;
 public:
   typedef FiniteVolumeTraits< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 > Traits;
-  typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::EntityType   EntityType;
+  typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType  EntityType;
 
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
@@ -116,8 +116,8 @@ class FiniteVolume< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDi
                                                       , DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > BaseType;
 public:
   typedef FiniteVolumeTraits< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 > Traits;
-  typedef typename Traits::BackendType  BackendType;
-  typedef typename Traits::EntityType   EntityType;
+  typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType  EntityType;
 
   using typename BaseType::DomainType;
   using BaseType::dimRange;

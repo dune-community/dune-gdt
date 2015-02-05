@@ -41,8 +41,8 @@ namespace internal {
 template< class QuaternaryEvaluationImp >
 class Codim1CouplingIntegralTraits
 {
-  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationImp::Traits, 4 >,
-                                  QuaternaryEvaluationImp >::value,
+  static_assert(std::is_base_of< LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationImp::Traits, 4 >,
+                                 QuaternaryEvaluationImp >::value,
                 "QuaternaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
 public:
   typedef Codim1CouplingIntegral< QuaternaryEvaluationImp > derived_type;

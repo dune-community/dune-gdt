@@ -29,7 +29,7 @@ public:
   {
     CHECK_CRTP(this->as_imp().apply(source));
     return this->as_imp().apply(source);
-  } // apply(...)
+  }
 }; // class FunctionalInterface
 
 

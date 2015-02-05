@@ -41,10 +41,10 @@ class L2VolumeTraits
   static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
 public:
   typedef L2Volume< FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType > derived_type;
-  typedef VectorImp   VectorType;
-  typedef SpaceImp    SpaceType;
-  typedef GridViewImp GridViewType;
-  typedef typename VectorType::ScalarType ScalarType;
+  typedef VectorImp                                                                       VectorType;
+  typedef SpaceImp                                                                        SpaceType;
+  typedef GridViewImp                                                                     GridViewType;
+  typedef typename VectorType::ScalarType                                                 ScalarType;
 }; // class L2VolumeTraits
 
 
@@ -73,17 +73,15 @@ class L2Volume
   , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
 {
   typedef Functionals::VectorBased< internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp,
-                                                              LocalEvaluationType> >
-      FunctionalBaseType;
-  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
-
-  typedef LocalFunctional::Codim0Integral<LocalEvaluationType> LocalFunctionalType;
-  typedef LocalAssembler::Codim0Vector< LocalFunctionalType > LocalAssemblerType;
+                                                              LocalEvaluationType> > FunctionalBaseType;
+  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp >                         AssemblerBaseType;
+  typedef LocalFunctional::Codim0Integral<LocalEvaluationType>                       LocalFunctionalType;
+  typedef LocalAssembler::Codim0Vector< LocalFunctionalType >                        LocalAssemblerType;
 
 public:
   typedef internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType > Traits;
-  typedef typename Traits::VectorType VectorType;
-  typedef typename Traits::SpaceType  SpaceType;
+  typedef typename Traits::VectorType   VectorType;
+  typedef typename Traits::SpaceType    SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
   L2Volume(const FunctionType& function, VectorType& vec, const SpaceType& spc, const GridViewType& grd_vw)
@@ -139,16 +137,15 @@ class L2Face
   , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
 {
   typedef Functionals::VectorBased< internal::L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > >
-      FunctionalBaseType;
-  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp > AssemblerBaseType;
-
+                                                                                      FunctionalBaseType;
+  typedef SystemAssembler< SpaceImp, GridViewImp, SpaceImp >                          AssemblerBaseType;
   typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > LocalFunctionalType;
-  typedef LocalAssembler::Codim1Vector< LocalFunctionalType > LocalAssemblerType;
+  typedef LocalAssembler::Codim1Vector< LocalFunctionalType >                         LocalAssemblerType;
 public:
-  typedef internal::L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp > Traits;
+  typedef internal::L2FaceTraits< FunctionType, VectorImp, SpaceImp, GridViewImp >    Traits;
 
-  typedef typename Traits::VectorType VectorType;
-  typedef typename Traits::SpaceType  SpaceType;
+  typedef typename Traits::VectorType   VectorType;
+  typedef typename Traits::SpaceType    SpaceType;
   typedef typename Traits::GridViewType GridViewType;
 
   L2Face(const FunctionType& function,

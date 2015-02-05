@@ -195,7 +195,7 @@ class Codim0OperatorAccumulateFunctor
   typedef Codim0OperatorAccumulateFunctor
       < GridViewImp, LocalOperatorType, TestFunctionType, AnsatzFunctionType, FieldType > ThisType;
   typedef Stuff::Grid::Functor::Codim0< GridViewImp >                                     BaseType;
-  typedef DSC::TmpMatricesStorage< FieldType > TmpMatricesProviderType;
+  typedef DSC::TmpMatricesStorage< FieldType >                                            TmpMatricesProviderType;
 public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType   EntityType;

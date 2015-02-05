@@ -108,14 +108,14 @@ class PdelabWrapper< PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, Rang
   typedef BaseFunctionSetInterface
       < internal::PdelabWrapperTraits< PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >,
         DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
-    BaseType;
+      BaseType;
 public:
   typedef internal::PdelabWrapperTraits< PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 > Traits;
-  typedef typename Traits::BackendType    BackendType;
-  typedef typename Traits::EntityType     EntityType;
+  typedef typename Traits::BackendType   BackendType;
+  typedef typename Traits::EntityType    EntityType;
 private:
-  typedef typename Traits::PdelabLFSType  PdelabLFSType;
-  typedef typename Traits::FESwitchType   FESwitchType;
+  typedef typename Traits::PdelabLFSType PdelabLFSType;
+  typedef typename Traits::FESwitchType  FESwitchType;
 
 public:
   typedef typename BaseType::DomainType        DomainType;
@@ -156,7 +156,7 @@ public:
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateFunction(xx, ret);
-  } // ... evaluate(...)
+  }
 
   using BaseType::evaluate;
 
@@ -195,17 +195,17 @@ class PiolaTransformedPdelabWrapper< PdelabSpaceType, EntityImp, DomainFieldImp,
                                                                       DomainFieldImp, domainDim,
                                                                       RangeFieldImp, rangeDim >,
                                     DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
-    BaseType;
+      BaseType;
 public:
   typedef internal::PiolaTransformedPdelabWrapperTraits< PdelabSpaceType, EntityImp,
                                             DomainFieldImp, domainDim,
                                             RangeFieldImp, rangeDim >
-    Traits;
-  typedef typename Traits::BackendType    BackendType;
-  typedef typename Traits::EntityType     EntityType;
+                                         Traits;
+  typedef typename Traits::BackendType   BackendType;
+  typedef typename Traits::EntityType    EntityType;
 private:
-  typedef typename Traits::PdelabLFSType  PdelabLFSType;
-  typedef typename Traits::FESwitchType   FESwitchType;
+  typedef typename Traits::PdelabLFSType PdelabLFSType;
+  typedef typename Traits::FESwitchType  FESwitchType;
 
 public:
   using typename BaseType::DomainFieldType;

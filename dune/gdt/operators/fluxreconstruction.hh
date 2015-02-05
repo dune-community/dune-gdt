@@ -43,10 +43,10 @@ class DiffusiveFluxReconstruction< GridViewType, LocalizableFunctionType, void >
                 "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
 public:
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
-  typedef typename LocalizableFunctionType::RangeFieldType FieldType;
-  typedef typename LocalizableFunctionType::DomainType DomainType;
+  typedef typename GridViewType::ctype                       DomainFieldType;
+  static const unsigned int                                  dimDomain = GridViewType::dimension;
+  typedef typename LocalizableFunctionType::RangeFieldType   FieldType;
+  typedef typename LocalizableFunctionType::DomainType       DomainType;
 
 private:
   static_assert(dimDomain == 2, "Not implemented!");

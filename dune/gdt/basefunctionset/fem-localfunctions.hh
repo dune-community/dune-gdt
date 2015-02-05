@@ -51,9 +51,9 @@ class FemLocalfunctionsWrapper< BaseFunctionSetMapImp, DomainFieldImp, domainDim
   typedef BaseFunctionSetInterface
       < internal::FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >,
         DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
-    BaseType;
+      BaseType;
   typedef FemLocalfunctionsWrapper< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
-    ThisType;
+      ThisType;
 public:
   typedef internal::FemLocalfunctionsWrapperTraits< BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
       Traits;

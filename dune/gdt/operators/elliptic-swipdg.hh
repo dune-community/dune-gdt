@@ -29,7 +29,7 @@ namespace GDT {
 namespace Operators {
 
 
-// forwards
+// forward
 template< class DiffusionFactorType
         , class MatrixImp
         , class SourceSpaceImp
@@ -98,33 +98,28 @@ class EllipticSWIPDG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, G
                                                                  , RangeSpaceImp, GridViewImp, void > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
-  typedef Stuff::Common::StorageProvider< MatrixImp > StorageProvider;
-  typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
+  typedef Stuff::Common::StorageProvider< MatrixImp >                                   StorageProvider;
+  typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >                 AssemblerBaseType;
   typedef Operators::MatrixBased< internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp
                                                                 , SourceSpaceImp, RangeSpaceImp
                                                                 , GridViewImp, void > > OperatorBaseType;
 
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > > VolumeOperatorType;
-  typedef LocalAssembler::Codim0Matrix< VolumeOperatorType >                          VolumeAssemblerType;
+  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >   VolumeOperatorType;
+  typedef LocalAssembler::Codim0Matrix< VolumeOperatorType >                            VolumeAssemblerType;
   typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SWIPDG::Inner< DiffusionType > >
-      CouplingOperatorType;
-  typedef LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >
-      CouplingAssemblerType;
-
+                                                                                        CouplingOperatorType;
+  typedef LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >                  CouplingAssemblerType;
   typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SWIPDG::BoundaryLHS< DiffusionType > >
-      DirichletBoundaryOperatorType;
-  typedef LocalAssembler::Codim1BoundaryMatrix< DirichletBoundaryOperatorType > DirichletBoundaryAssemblerType;
-
-  typedef typename MatrixImp::ScalarType ScalarType;
-
+                                                                                        DirichletBoundaryOperatorType;
+  typedef LocalAssembler::Codim1BoundaryMatrix< DirichletBoundaryOperatorType >         DirichletBoundaryAssemblerType;
+  typedef typename MatrixImp::ScalarType                                                ScalarType;
 public:
   typedef internal::EllipticSWIPDGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
-      Traits;
-
-  typedef typename Traits::MatrixType       MatrixType;
-  typedef typename Traits::SourceSpaceType  SourceSpaceType;
-  typedef typename Traits::RangeSpaceType   RangeSpaceType;
-  typedef typename Traits::GridViewType     GridViewType;
+                                           Traits;
+  typedef typename Traits::MatrixType      MatrixType;
+  typedef typename Traits::SourceSpaceType SourceSpaceType;
+  typedef typename Traits::RangeSpaceType  RangeSpaceType;
+  typedef typename Traits::GridViewType    GridViewType;
 
   typedef Stuff::Grid::BoundaryInfoInterface< typename GridViewType::Intersection > BoundaryInfoType;
 

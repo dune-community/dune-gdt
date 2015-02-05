@@ -62,9 +62,9 @@ class LagrangeProjectionTraits
 {
 public:
   typedef LagrangeProjection< GridViewImp, FieldImp > derived_type;
-  typedef GridViewImp GridViewType;
-  typedef FieldImp FieldType;
-}; // class LagrangeProjectionTraits
+  typedef GridViewImp                                 GridViewType;
+  typedef FieldImp                                    FieldType;
+};
 
 
 template< class GridViewImp, class FieldImp = double >
@@ -170,7 +170,7 @@ public:
 private:
   template< class R, int r, class V, class SpaceType >
   void apply_p(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, 1 >& source,
-             DiscreteFunction< SpaceType, V >& range) const
+               DiscreteFunction< SpaceType, V >& range) const
   {
     // checks
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
@@ -247,7 +247,7 @@ public:
     typedef Spaces::DG::FemBased< GP, p, R, r, 1 > SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
-  } // ... apply(... Spaces::DG::FemBased< ..., 1 > ...)
+  }
 
 #if HAVE_DUNE_GRID_MULTISCALE
 
@@ -280,7 +280,7 @@ public:
     typedef Spaces::FV::Default< GV, R, r, 1 > SpaceType;
     static_assert(SpaceType::dimDomain == dimDomain, "Dimensions do not match!");
     apply_local_l2_projection_(source, range);
-  } // ... apply(... Spaces::FV::Default< ..., 1 > ...)
+  }
 
   template< class GP, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
@@ -622,22 +622,22 @@ public:
              DiscreteFunction< Spaces::CG::FemBased< GV, p, R, r, rC >, V >& range) const
   {
     typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC > SourceType;
-    typedef DiscreteFunction< Spaces::CG::FemBased< GV, p, R, r, rC >, V >           RangeType;
+    typedef DiscreteFunction< Spaces::CG::FemBased< GV, p, R, r, rC >, V >                          RangeType;
     DirichletProjectionLocalizable< GridViewType, SourceType, RangeType >
         localizable_operator(grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
-  }
+  } // ... apply(...)
 
   template< class R, int r, int rC, class GV, int p, class V >
   void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
              DiscreteFunction< Spaces::CG::PdelabBased< GV, p, R, r, rC >, V >& range) const
   {
     typedef Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC > SourceType;
-    typedef DiscreteFunction< Spaces::CG::PdelabBased< GV, p, R, r, rC >, V >        RangeType;
+    typedef DiscreteFunction< Spaces::CG::PdelabBased< GV, p, R, r, rC >, V >                       RangeType;
     DirichletProjectionLocalizable< GridViewType, SourceType, RangeType >
         localizable_operator(grid_view_, boundary_info_, source, range);
     localizable_operator.apply();
-  }
+  } // ... apply(...)
 
 private:
   const GridViewType& grid_view_;
@@ -663,6 +663,7 @@ void apply_dirichlet_projection(
   auto& view = range.space().grid_view();
   DirichletProjection< typename std::remove_reference< decltype(view) >::type >(view, boundary_info).apply(source, range);
 }
+
 
 } // namespace Operators
 } // namespace GDT

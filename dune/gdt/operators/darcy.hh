@@ -47,8 +47,8 @@ class DarcyTraits
                 "Types do not match!");
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
 public:
-  typedef Darcy< GridViewImp, FunctionImp > derived_type;
-  typedef GridViewImp GridViewType;
+  typedef Darcy< GridViewImp, FunctionImp >    derived_type;
+  typedef GridViewImp                          GridViewType;
   typedef typename FunctionImp::RangeFieldType FieldType;
 }; // class DarcyTraits
 
