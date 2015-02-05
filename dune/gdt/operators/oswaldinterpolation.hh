@@ -33,6 +33,9 @@ template <class GridViewImp, class FieldImp = double>
 class OswaldInterpolation;
 
 
+namespace internal {
+
+
 template <class GridViewImp, class FieldImp>
 class OswaldInterpolationTraits
 {
@@ -40,20 +43,20 @@ public:
   typedef OswaldInterpolation<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
-}; // class OswaldInterpolationTraits
+};
+
+
+} // namespace internal
 
 
 template <class GridViewImp, class FieldImp>
-class OswaldInterpolation : public OperatorInterface<OswaldInterpolationTraits<GridViewImp, FieldImp>>
+class OswaldInterpolation : public OperatorInterface<internal::OswaldInterpolationTraits<GridViewImp, FieldImp>>
 {
 public:
-  typedef OswaldInterpolationTraits<GridViewImp, FieldImp> Traits;
+  typedef internal::OswaldInterpolationTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
-
-  typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
-  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
   OswaldInterpolation(const GridViewType& grd_vw, const bool zero_boundary = true)
     : grid_view_(grd_vw)
@@ -99,10 +102,9 @@ private:
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-        assert(local_vertex_id < std::numeric_limits<int>::max());
-        const auto vertex_ptr         = entity.template subEntity<dimDomain>(int(local_vertex_id));
-        const size_t global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
-        const DomainType vertex       = vertex_ptr->geometry().center();
+        const auto vertex_ptr       = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+        const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
+        const auto vertex           = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
         if (basis_values.size() != num_vertices)
@@ -148,10 +150,9 @@ private:
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we
               // loop over all vertices of the entity
               for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-                assert(local_vertex_id < std::numeric_limits<int>::max());
-                const auto vertex_ptr         = entity.template subEntity<dimDomain>(int(local_vertex_id));
-                const size_t global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
-                const DomainType vertex = vertex_ptr->geometry().center();
+                const auto vertex_ptr       = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+                const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
+                const auto vertex = vertex_ptr->geometry().center();
                 if (Stuff::Common::FloatCmp::eq(global_intersection_corner, vertex))
                   boundary_vertices.insert(global_vertex_id);
               } // loop over all vertices of the entity
@@ -163,8 +164,8 @@ private:
 
     // walk the grid for the second time
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity        = *entity_it;
-      const size_t num_vertices = entity.template count<dimDomain>();
+      const auto& entity      = *entity_it;
+      const auto num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
       // get the local functions
       const auto local_source             = source.local_discrete_function(entity);
       const auto& local_source_DoF_vector = local_source->vector();
