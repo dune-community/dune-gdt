@@ -35,6 +35,9 @@ class FemWrapper
 };
 
 
+namespace internal {
+
+
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
           int rangeDim, int rangeDimCols>
 class FemWrapperTraits
@@ -47,21 +50,24 @@ public:
 };
 
 
+} // namespace internal
+
+
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
           int rangeDim>
 class FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim,
-                                                       RangeFieldImp, rangeDim, 1>,
+    : public BaseFunctionSetInterface<internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
+                                                                 domainDim, RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
   typedef FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim,
-                                                    RangeFieldImp, rangeDim, 1>,
+  typedef BaseFunctionSetInterface<internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim,
+                                                              RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-      Traits;
+  typedef internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                     1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainType DomainType;
