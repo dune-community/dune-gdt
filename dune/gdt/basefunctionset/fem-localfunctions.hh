@@ -26,6 +26,9 @@ class FemLocalfunctionsWrapper
 };
 
 
+namespace internal {
+
+
 template <class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
           int rangeDimCols>
 class FemLocalfunctionsWrapperTraits
@@ -38,21 +41,24 @@ public:
 };
 
 
+} // namespace internal
+
+
 template <class BaseFunctionSetMapImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim>
 class FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
-                                                                     RangeFieldImp, rangeDim, 1>,
+    : public BaseFunctionSetInterface<internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
+                                                                               domainDim, RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef BaseFunctionSetInterface<FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim,
-                                                                  RangeFieldImp, rangeDim, 1>,
+  typedef BaseFunctionSetInterface<internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
+                                                                            domainDim, RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
   typedef FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
 
 public:
-  typedef FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-      Traits;
+  typedef internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                                   rangeDim, 1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
