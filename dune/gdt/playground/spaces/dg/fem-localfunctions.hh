@@ -18,9 +18,7 @@
 
 # include <dune/fem_localfunctions/localfunctions/transformations.hh>
 # include <dune/fem_localfunctions/basefunctions/genericbasefunctionsetstorage.hh>
-# include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
+# include <dune/fem_localfunctions/basefunctionsetmap/basefunctionsetmap.hh>
 # include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 

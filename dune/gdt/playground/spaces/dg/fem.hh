@@ -12,10 +12,8 @@
 #include <dune/common/deprecated.hh>
 
 #if HAVE_DUNE_FEM
-# include <dune/stuff/common/disable_warnings.hh>
-#   include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
-# include <dune/stuff/common/reenable_warnings.hh>
-#endif // HAVE_DUNE_FEM
+# include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
+#endif
 
 #include <dune/stuff/common/type_utils.hh>
 
