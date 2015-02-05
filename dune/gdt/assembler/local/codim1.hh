@@ -73,10 +73,10 @@ public:
     assert(tmpLocalMatricesContainer[1].size() >= localOperator_.numTmpObjectsRequired());
     assert(tmpIndicesContainer.size() >= 4);
     // get and clear matrix
-    Dune::DynamicMatrix< R >& localEntityEntityMatrix = tmpLocalMatricesContainer[0][0];
-    Dune::DynamicMatrix< R >& localNeighborNeighborMatrix = tmpLocalMatricesContainer[0][1];
-    Dune::DynamicMatrix< R >& localEntityNeighborMatrix = tmpLocalMatricesContainer[0][2];
-    Dune::DynamicMatrix< R >& localNeighborEntityMatrix = tmpLocalMatricesContainer[0][3];
+    auto& localEntityEntityMatrix = tmpLocalMatricesContainer[0][0];
+    auto& localNeighborNeighborMatrix = tmpLocalMatricesContainer[0][1];
+    auto& localEntityNeighborMatrix = tmpLocalMatricesContainer[0][2];
+    auto& localNeighborEntityMatrix = tmpLocalMatricesContainer[0][3];
     localEntityEntityMatrix *= 0.0;
     localNeighborNeighborMatrix *= 0.0;
     localEntityNeighborMatrix *= 0.0;
@@ -101,10 +101,10 @@ public:
     const size_t colsEn = ansatzSpaceEntity.mapper().numDofs(entity);
     const size_t rowsNe = testSpaceNeighbor.mapper().numDofs(neighbor);
     const size_t colsNe = ansatzSpaceNeighbor.mapper().numDofs(neighbor);
-    Dune::DynamicVector< size_t >& globalRowsEn = tmpIndicesContainer[0];
-    Dune::DynamicVector< size_t >& globalColsEn = tmpIndicesContainer[1];
-    Dune::DynamicVector< size_t >& globalRowsNe = tmpIndicesContainer[2];
-    Dune::DynamicVector< size_t >& globalColsNe = tmpIndicesContainer[3];
+    auto& globalRowsEn = tmpIndicesContainer[0];
+    auto& globalColsEn = tmpIndicesContainer[1];
+    auto& globalRowsNe = tmpIndicesContainer[2];
+    auto& globalColsNe = tmpIndicesContainer[3];
     assert(globalRowsEn.size() >= rowsEn);
     assert(globalColsEn.size() >= colsEn);
     assert(globalRowsNe.size() >= rowsNe);
@@ -214,7 +214,7 @@ public:
     assert(tmpLocalMatricesContainer[1].size() >= localOperator_.numTmpObjectsRequired());
     assert(tmpIndicesContainer.size() >= 2);
     // get and clear matrix
-    Dune::DynamicMatrix< R >& localMatrix = tmpLocalMatricesContainer[0][0];
+    auto& localMatrix = tmpLocalMatricesContainer[0][0];
     localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entity
@@ -227,8 +227,8 @@ public:
     // write local matrices to global
     const size_t rows = testSpace.mapper().numDofs(entity);
     const size_t cols = ansatzSpace.mapper().numDofs(entity);
-    Dune::DynamicVector< size_t >& globalRows = tmpIndicesContainer[0];
-    Dune::DynamicVector< size_t >& globalCols = tmpIndicesContainer[1];
+    auto& globalRows = tmpIndicesContainer[0];
+    auto& globalCols = tmpIndicesContainer[1];
     assert(globalRows.size() >= rows);
     assert(globalCols.size() >= cols);
     assert(localMatrix.size() >= rows);
@@ -289,7 +289,7 @@ public:
     assert(tmpLocalVectorsContainer[0].size() >= numTmpObjectsRequired_);
     assert(tmpLocalVectorsContainer[1].size() >= localFunctional_.numTmpObjectsRequired());
     // get and clear vector
-    Dune::DynamicVector< R >& localVector = tmpLocalVectorsContainer[0][0];
+    auto& localVector = tmpLocalVectorsContainer[0][0];
     localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorsContainer[1];
     // get entity
