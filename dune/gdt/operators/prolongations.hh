@@ -9,6 +9,8 @@
 #include <vector>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/stuff/common/type_utils.hh>
@@ -155,9 +157,9 @@ private:
       LocalVectorType local_vector(local_basis.size(), RangeFieldType(0));
       LocalVectorType local_DoFs(local_basis.size(), RangeFieldType(0));
       // create quadrature
-      const size_t integrand_order = std::max(source_order, local_basis.order()) + local_basis.order();
-      assert(integrand_order < std::numeric_limits<int>::max());
-      const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
+      const auto integrand_order = std::max(source_order, local_basis.order()) + local_basis.order();
+      const auto& quadrature =
+          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
       // get global quadrature points
       std::vector<DomainType> quadrature_points;
       for (const auto& quadrature_point : quadrature)
