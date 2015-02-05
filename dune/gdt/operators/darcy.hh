@@ -8,6 +8,8 @@
 
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/exceptions.hh>
@@ -33,10 +35,13 @@ template <class GridViewImp, class FunctionImp>
 class Darcy;
 
 
+namespace internal {
+
+
 template <class GridViewImp, class FunctionImp>
 class DarcyTraits
 {
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, FunctionImp>::value,
+  static_assert(Stuff::is_localizable_function<FunctionImp>::value,
                 "FunctionImp has to be derived from Stuff::IsLocalizableFunction!");
   static_assert(std::is_same<typename GridViewImp::ctype, typename FunctionImp::DomainFieldType>::value,
                 "Types do not match!");
@@ -49,17 +54,19 @@ public:
 }; // class DarcyTraits
 
 
+} // namespace internal
+
+
 /**
   * \note Only works for scalar valued function atm.
   **/
 template <class GridViewImp, class FunctionImp>
-class Darcy : public OperatorInterface<DarcyTraits<GridViewImp, FunctionImp>>
+class Darcy : public OperatorInterface<internal::DarcyTraits<GridViewImp, FunctionImp>>
 {
 public:
-  typedef DarcyTraits<GridViewImp, FunctionImp> Traits;
+  typedef internal::DarcyTraits<GridViewImp, FunctionImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
-
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const unsigned int dimDomain = GridViewType::dimension;
@@ -109,15 +116,15 @@ private:
       // do a volume quadrature
       const size_t integrand_order =
           std::max(local_function->order() + ssize_t(local_source->order()) - 1, basis.order()) + basis.order();
-      assert(integrand_order < std::numeric_limits<int>::max());
-      const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), int(integrand_order));
+      const auto& quadrature =
+          QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
       const auto quadrature_it_end = quadrature.end();
       for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-        const auto xx                             = quadrature_it->position();
-        const FieldType quadrature_weight         = quadrature_it->weight();
-        const DomainFieldType integration_element = entity.geometry().integrationElement(xx);
-        const auto function_value                 = local_function->evaluate(xx);
-        const auto source_gradient                = local_source->jacobian(xx);
+        const auto xx                  = quadrature_it->position();
+        const auto quadrature_weight   = quadrature_it->weight();
+        const auto integration_element = entity.geometry().integrationElement(xx);
+        const auto function_value      = local_function->evaluate(xx);
+        const auto source_gradient     = local_source->jacobian(xx);
         const auto basis_value = basis.evaluate(xx);
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
@@ -151,9 +158,9 @@ private:
       DiscreteFunction<S, V>& range) const
   {
     static_assert(Spaces::RTInterface<T, dimDomain, FieldType, 1>::polOrder == 0, "Untested!");
-    const auto& rtn0_space   = range.space();
-    auto& range_vector       = range.vector();
-    const FieldType infinity = std::numeric_limits<FieldType>::infinity();
+    const auto& rtn0_space = range.space();
+    auto& range_vector     = range.vector();
+    const auto infinity = std::numeric_limits<FieldType>::infinity();
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     // walk the grid
@@ -183,9 +190,8 @@ private:
             FieldType lhs                = 0;
             FieldType rhs                = 0;
             const size_t integrand_order = local_function->order();
-            assert(integrand_order < std::numeric_limits<int>::max());
-            const auto& quadrature =
-                QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(integrand_order));
+            const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+                intersection.type(), boost::numeric_cast<int>(integrand_order));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
               const auto xx_intersection         = quadrature_it->position();
@@ -223,16 +229,15 @@ private:
           FieldType lhs                = 0;
           FieldType rhs                = 0;
           const size_t integrand_order = local_function->order();
-          assert(integrand_order < std::numeric_limits<int>::max());
-          const auto& quadrature =
-              QuadratureRules<DomainFieldType, dimDomain - 1>::rule(intersection.type(), int(integrand_order));
+          const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+              intersection.type(), boost::numeric_cast<int>(integrand_order));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-            const auto xx_intersection         = quadrature_it->position();
-            const auto normal                  = intersection.unitOuterNormal(xx_intersection);
-            const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const FieldType weigth             = quadrature_it->weight();
-            const auto xx_entity               = intersection.geometryInInside().global(xx_intersection);
+            const auto xx_intersection    = quadrature_it->position();
+            const auto normal             = intersection.unitOuterNormal(xx_intersection);
+            const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
+            const auto weigth             = quadrature_it->weight();
+            const auto xx_entity          = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             const auto function_value  = local_function->evaluate(xx_entity);
             const auto source_gradient = local_source->jacobian(xx_entity);
