@@ -38,23 +38,14 @@ template <class DiffusionFactorType, class MatrixImp, class SourceSpaceImp, clas
           class DiffusionTensorType = void>
 class EllipticCGTraits
 {
-  static_assert(std::is_base_of<Stuff::Tags::LocalizableFunction, DiffusionFactorType>::value,
+  static_assert(Stuff::is_localizable_function<DiffusionFactorType>::value,
                 "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of<Stuff::Tags::LocalizableFunction, DiffusionTensorType>::value
+  static_assert(Stuff::is_localizable_function<DiffusionTensorType>::value
                     || std::is_same<void, DiffusionTensorType>::value,
                 "DiffusionTensorType has to be void or derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(
-      std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixImp::Traits, typename MatrixImp::Traits::ScalarType>,
-                      MatrixImp>::value,
-      "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename SourceSpaceImp::Traits, SourceSpaceImp::dimDomain,
-                                               SourceSpaceImp::dimRange, SourceSpaceImp::dimRangeCols>,
-                                SourceSpaceImp>::value,
-                "SourceSpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename RangeSpaceImp::Traits, RangeSpaceImp::dimDomain,
-                                               RangeSpaceImp::dimRange, RangeSpaceImp::dimRangeCols>,
-                                RangeSpaceImp>::value,
-                "RangeSpaceImp has to be derived from SpaceInterface!");
+  static_assert(Stuff::is_matrix<MatrixImp>::value, "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(is_space<SourceSpaceImp>::value, "SourceSpaceImp has to be derived from SpaceInterface!");
+  static_assert(is_space<RangeSpaceImp>::value, "RangeSpaceImp has to be derived from SpaceInterface!");
 
 public:
   typedef EllipticCG<DiffusionFactorType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, DiffusionTensorType>
@@ -64,6 +55,7 @@ public:
   typedef RangeSpaceImp RangeSpaceType;
   typedef GridViewImp GridViewType;
 }; // class EllipticCGTraits
+
 
 } // namespace internal
 
