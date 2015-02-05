@@ -58,12 +58,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  using typename BaseType::DomainFieldType;
-  using BaseType::dimDomain;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
@@ -131,12 +126,8 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  using typename BaseType::DomainFieldType;
-  using BaseType::dimDomain;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
   using BaseType::dimRange;
-  using BaseType::dimRangeCols;
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
@@ -172,7 +163,7 @@ public:
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii) {
       ret[ii] *= 0.0;
-      ret[ii][ii] = RangeFieldType(1);
+      ret[ii][ii] = 1.0;
     }
   } // ... evaluate(...)
 
