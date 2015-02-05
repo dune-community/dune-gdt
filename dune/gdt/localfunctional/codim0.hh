@@ -99,8 +99,6 @@ public:
     const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
     const auto integrand_order = evaluation_.order(localFunctions, testBase) + over_integrate_;
-    typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
-    typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
     const auto& volumeQuadrature = QuadratureRules< D, d >::rule(entity.type(),
                                                                  boost::numeric_cast< int >(integrand_order));
     // check vector and tmp storage
@@ -108,20 +106,19 @@ public:
     const size_t size = testBase.size();
     assert(ret.size() >= size);
     assert(tmpLocalVectors.size() >= numTmpObjectsRequired_);
-    Dune::DynamicVector< R >& localVector = tmpLocalVectors[0];
+    auto& localVector = tmpLocalVectors[0];
     // loop over all quadrature points
     const auto quadPointEndIt = volumeQuadrature.end();
     for (auto quadPointIt = volumeQuadrature.begin(); quadPointIt != quadPointEndIt; ++quadPointIt) {
       const Dune::FieldVector< D, d > x = quadPointIt->position();
       // integration factors
-      const double integrationFactor = entity.geometry().integrationElement(x);
-      const double quadratureWeight = quadPointIt->weight();
+      const auto integrationFactor = entity.geometry().integrationElement(x);
+      const auto quadratureWeight = quadPointIt->weight();
       // evaluate the local operation
       evaluation_.evaluate(localFunctions, testBase, x, localVector);
       // compute integral
-      for (size_t ii = 0; ii < size; ++ii) {
+      for (size_t ii = 0; ii < size; ++ii)
         ret[ii] += localVector[ii] * integrationFactor * quadratureWeight;
-      } // compute integral
     } // loop over all quadrature points
   } // ... apply(...)
 
