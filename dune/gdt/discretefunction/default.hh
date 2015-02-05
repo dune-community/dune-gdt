@@ -50,16 +50,6 @@ public:
   typedef typename BaseType::EntityType         EntityType;
   typedef typename BaseType::LocalfunctionType  LocalfunctionType;
 
-  static const unsigned int                   dimDomain = BaseType::dimDomain;
-  typedef typename BaseType::DomainFieldType  DomainFieldType;
-  typedef typename BaseType::DomainType       DomainType;
-
-  static const unsigned int                     dimRange = BaseType::dimRange;
-  static const unsigned int                     dimRangeCols = BaseType::dimRangeCols;
-  typedef typename BaseType::RangeFieldType     RangeFieldType;
-  typedef typename BaseType::RangeType          RangeType;
-  typedef typename BaseType::JacobianRangeType  JacobianRangeType;
-
   typedef ConstLocalDiscreteFunction< SpaceType, VectorType > ConstLocalDiscreteFunctionType;
 
   ConstDiscreteFunction(const SpaceType& sp, const VectorType& vec, const std::string nm = "gdt.constdiscretefunction")
