@@ -41,8 +41,7 @@ class Codim0IntegralTraits
                                   UnaryEvaluationImp >::value,
                 "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
 public:
-  typedef Codim0Integral< UnaryEvaluationImp >                                        derived_type;
-  typedef LocalEvaluation::Codim0Interface< typename UnaryEvaluationImp::Traits, 1 >  UnaryEvaluationType;
+  typedef Codim0Integral< UnaryEvaluationImp > derived_type;
 };
 
 
@@ -54,8 +53,8 @@ class Codim0Integral
   : public LocalFunctional::Codim0Interface< internal::Codim0IntegralTraits< UnaryEvaluationImp > >
 {
 public:
-  typedef Codim0IntegralTraits< UnaryEvaluationImp >  Traits;
-  typedef typename Traits::UnaryEvaluationType        UnaryEvaluationType;
+  typedef internal::Codim0IntegralTraits< UnaryEvaluationImp > Traits;
+  typedef UnaryEvaluationImp                                   UnaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
@@ -89,9 +88,9 @@ public:
     const auto& entity = testBase.entity();
     const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
+    const auto integrand_order = evaluation_.order(localFunctions, testBase) + over_integrate_;
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, testBase);
     assert(integrand_order < std::numeric_limits< int >::max());
     const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), int(integrand_order));
     // check vector and tmp storage
@@ -108,7 +107,7 @@ public:
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight = quadPointIt->weight();
       // evaluate the local operation
-      evaluation().evaluate(localFunctions, testBase, x, localVector);
+      evaluation_.evaluate(localFunctions, testBase, x, localVector);
       // compute integral
       for (size_t ii = 0; ii < size; ++ii) {
         ret[ii] += localVector[ii] * integrationFactor * quadratureWeight;
@@ -117,12 +116,7 @@ public:
   } // ... apply(...)
 
 private:
-  const UnaryEvaluationType& evaluation() const
-  {
-    return evaluation_;
-  }
-
-  const UnaryEvaluationImp evaluation_;
+  const UnaryEvaluationType evaluation_;
 }; // class Codim0Integral
 
 } // namespace LocalFunctional
