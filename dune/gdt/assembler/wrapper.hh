@@ -3,6 +3,7 @@
 
 #include <type_traits>
 
+#include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
@@ -128,9 +129,9 @@ private:
 template< class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType >
 class LocalVolumeMatrixAssemblerWrapper
   : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
-  , TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType >
+  , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
 {
-  typedef TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+  typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
 public:
   LocalVolumeMatrixAssemblerWrapper(const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space,
                                     const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType>& ansatz_space,
