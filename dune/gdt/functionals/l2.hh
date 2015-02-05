@@ -36,20 +36,9 @@ namespace internal {
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp, class LocalEvaluationType >
 class L2VolumeTraits
 {
-  static_assert(std::is_base_of< Stuff::LocalizableFunctionInterface< typename FunctionType::EntityType
-                                                                    , typename FunctionType::DomainFieldType
-                                                                    , FunctionType::dimDomain
-                                                                    , typename FunctionType::RangeFieldType
-                                                                    , FunctionType::dimRange
-                                                                    , FunctionType::dimRangeCols >
-                               , FunctionType >::value,
+  static_assert(Stuff::is_localizable_function< FunctionType >::value,
                 "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of< SpaceInterface< typename SpaceImp::Traits,
-                                                 SpaceImp::dimDomain,
-                                                 SpaceImp::dimRange,
-                                                 SpaceImp::dimRangeCols >,
-                                 SpaceImp >::value,
-                "SpaceImp has to be derived from SpaceInterface!");
+  static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
 public:
   typedef L2Volume< FunctionType, VectorImp, SpaceImp, GridViewImp, LocalEvaluationType > derived_type;
   typedef VectorImp   VectorType;
