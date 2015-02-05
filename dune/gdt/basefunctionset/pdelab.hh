@@ -119,18 +119,13 @@ private:
   typedef typename Traits::FESwitchType FESwitchType;
 
 public:
-  typedef DomainFieldImp DomainFieldType;
-  static const unsigned int dimDomain = domainDim;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef RangeFieldImp RangeFieldType;
-  static const unsigned int dimRange     = 1;
-  static const unsigned int dimRangeCols = 1;
   typedef Dune::FieldVector<RangeFieldType, dimRange> RangeType;
   typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> JacobianRangeType;
 
   PdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
     : BaseType(ent)
-    , tmp_domain_(RangeFieldType(0))
+    , tmp_domain_(0)
   {
     PdelabLFSType* lfs_ptr = new PdelabLFSType(space);
     lfs_ptr->bind(this->entity());
@@ -215,9 +210,6 @@ public:
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
