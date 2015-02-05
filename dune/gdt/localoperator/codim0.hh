@@ -13,13 +13,9 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/common/densematrix.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/common/densematrix.hh>
 
-#include <dune/stuff/common/disable_warnings.hh>
-# include <dune/geometry/quadraturerules.hh>
-#include <dune/stuff/common/reenable_warnings.hh>
+#include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -36,6 +32,9 @@ template< class BinaryEvaluationImp >
 class Codim0Integral;
 
 
+namespace internal {
+
+
 template< class BinaryEvaluationImp >
 class Codim0IntegralTraits
 {
@@ -44,44 +43,41 @@ class Codim0IntegralTraits
                 "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
 public:
   typedef Codim0Integral< BinaryEvaluationImp > derived_type;
-  typedef LocalEvaluation::Codim0Interface< typename BinaryEvaluationImp::Traits, 2 > BinaryEvaluationType;
 };
+
+
+} // namespace internal
 
 
 template< class BinaryEvaluationImp >
 class Codim0Integral
-  : public LocalOperator::Codim0Interface< Codim0IntegralTraits< BinaryEvaluationImp > >
+  : public LocalOperator::Codim0Interface< internal::Codim0IntegralTraits< BinaryEvaluationImp > >
 {
 public:
-  typedef Codim0IntegralTraits< BinaryEvaluationImp > Traits;
-  typedef typename Traits::BinaryEvaluationType       BinaryEvaluationType;
+  typedef internal::Codim0IntegralTraits< BinaryEvaluationImp > Traits;
+  typedef BinaryEvaluationImp                                   BinaryEvaluationType;
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
   template< class... Args >
-  Codim0Integral(Args&& ...args)
+  explicit Codim0Integral(Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(0)
   {}
 
   template< class... Args >
-  Codim0Integral(const int over_integrate, Args&& ...args)
+  explicit Codim0Integral(const int over_integrate, Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
   {}
 
   template< class... Args >
-  Codim0Integral(const size_t over_integrate, Args&& ...args)
+  explicit Codim0Integral(const size_t over_integrate, Args&& ...args)
     : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
   {}
-
-  const BinaryEvaluationType& inducingEvaluation() const
-  {
-    return evaluation_;
-  }
 
   size_t numTmpObjectsRequired() const
   {
@@ -99,9 +95,9 @@ public:
     // quadrature
     typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
     typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const size_t integrand_order = evaluation().order(localFunctions, ansatzBase, testBase) + over_integrate_;
-    assert(integrand_order < std::numeric_limits< int >::max());
-    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(), int(integrand_order));
+    const size_t integrand_order = evaluation_.order(localFunctions, ansatzBase, testBase) + over_integrate_;
+    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(),
+                                                                               boost::numeric_cast< int >(integrand_order));
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
@@ -118,7 +114,7 @@ public:
       const double integrationFactor = entity.geometry().integrationElement(x);
       const double quadratureWeight = quadPointIt->weight();
       // evaluate the local operation
-      evaluation().evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
+      evaluation_.evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& retRow = ret[ii];
@@ -130,12 +126,7 @@ public:
   } // ... apply(...)
 
 private:
-  const BinaryEvaluationType& evaluation() const
-  {
-    return evaluation_;
-  }
-
-  const BinaryEvaluationImp evaluation_;
+  const BinaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class Codim0Integral
 
