@@ -24,13 +24,24 @@ namespace BaseFunctionSet {
 #if HAVE_DUNE_PDELAB
 
 
-// forward, to be used in the traits and to allow for specialization
+// forwards, to be used in the traits and to allow for specialization
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
           int rangeDimCols = 1>
 class PdelabWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for arbitrary dimension!");
 };
+
+
+template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
+          int rangeDimCols = 1>
+class PiolaTransformedPdelabWrapper
+{
+  static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for these dimensions!");
+};
+
+
+namespace internal {
 
 
 // forward, to allow for specialization
@@ -59,20 +70,47 @@ private:
 };
 
 
+template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim>
+class PiolaTransformedPdelabWrapperTraits
+{
+  static_assert(domainDim == rangeDim, "Untested!");
+
+public:
+  typedef PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+      derived_type;
+
+private:
+  typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
+  typedef FiniteElementInterfaceSwitch<typename PdelabSpaceImp::Traits::FiniteElementType> FESwitchType;
+
+public:
+  typedef typename FESwitchType::Basis BackendType;
+  typedef EntityImp EntityType;
+
+private:
+  friend class PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                             rangeDim, 1>;
+};
+
+
+} // namespace internal
+
+
 //! Specialization for dimRange = 1, dimRangeRows = 1
 template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp>
 class PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
-    : public BaseFunctionSetInterface<PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                          RangeFieldImp, 1, 1>,
+    : public BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                    domainDim, RangeFieldImp, 1, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
 {
   typedef PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
-  typedef BaseFunctionSetInterface<PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                       RangeFieldImp, 1, 1>,
+  typedef BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
+                                                                 RangeFieldImp, 1, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, 1, 1> BaseType;
 
 public:
-  typedef PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> Traits;
+  typedef internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+      Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -148,54 +186,24 @@ private:
 }; // class PdelabWrapper
 
 
-// forward, to be used in the traits and to allow for specialization
-template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim,
-          int rangeDimCols = 1>
-class PiolaTransformedPdelabWrapper
-{
-  static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for these dimensions!");
-};
-
-
-template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim>
-class PiolaTransformedPdelabWrapperTraits
-{
-  static_assert(domainDim == rangeDim, "Untested!");
-
-public:
-  typedef PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
-      derived_type;
-
-private:
-  typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
-  typedef FiniteElementInterfaceSwitch<typename PdelabSpaceImp::Traits::FiniteElementType> FESwitchType;
-
-public:
-  typedef typename FESwitchType::Basis BackendType;
-  typedef EntityImp EntityType;
-
-private:
-  friend class PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                             rangeDim, 1>;
-};
-
-
 template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
           int rangeDim>
 class PiolaTransformedPdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
-                                                                          domainDim, RangeFieldImp, rangeDim>,
+    : public BaseFunctionSetInterface<internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp,
+                                                                                    DomainFieldImp, domainDim,
+                                                                                    RangeFieldImp, rangeDim>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
   typedef PiolaTransformedPdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
                                         1> ThisType;
-  typedef BaseFunctionSetInterface<PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
-                                                                       domainDim, RangeFieldImp, rangeDim>,
+  typedef BaseFunctionSetInterface<internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp,
+                                                                                 DomainFieldImp, domainDim,
+                                                                                 RangeFieldImp, rangeDim>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                              rangeDim> Traits;
+  typedef internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
+                                                        RangeFieldImp, rangeDim> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
