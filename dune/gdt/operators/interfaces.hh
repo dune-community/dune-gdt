@@ -77,11 +77,9 @@ class LocalizableOperatorInterface : public Stuff::CRTPInterface<LocalizableOper
   static const unsigned int dimDomain = GridViewType::dimension;
 
 private:
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, SourceType>::value,
+  static_assert(Stuff::is_localizable_function<SourceType>::value,
                 "SourceType has to be derived from Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of<DiscreteFunction<typename RangeType::SpaceType, typename RangeType::VectorType>,
-                                RangeType>::value,
-                "RangeType has to be derived from DiscreteFunction!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be derived from DiscreteFunction!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
                 "The EntityType of SourceType and GridViewType have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
@@ -133,16 +131,10 @@ class AssemblableOperatorInterface : public AssemblableProductInterface<Traits>
 public:
   typedef typename BaseType::derived_type derived_type;
 
-  using typename BaseType::GridViewType;
   using typename BaseType::FieldType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
-  using typename BaseType::MatrixType;
-
-  using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
-  using BaseType::dimDomain;
-  using typename BaseType::PatternType;
 
   template <class S, class R>
   void apply(const Stuff::LA::VectorInterface<S, DomainFieldType>& source,
