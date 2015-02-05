@@ -21,9 +21,13 @@ namespace GDT {
 namespace Functionals {
 
 
+// forwards
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType,
           class LocalEvaluationType                                              = LocalEvaluation::Product<FunctionType>>
 class L2Volume;
+
+template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType>
+class L2Face;
 
 
 namespace internal {
@@ -50,6 +54,22 @@ public:
   typedef GridViewImp GridViewType;
   typedef typename VectorType::ScalarType ScalarType;
 }; // class L2VolumeTraits
+
+
+template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
+class L2FaceTraits
+{
+  static_assert(Stuff::is_localizable_function<FunctionType>::value,
+                "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(is_space<SpaceImp>::value, "SpaceImp has to be derived from SpaceInterface!");
+
+public:
+  typedef L2Face<FunctionType, VectorImp, SpaceImp, GridViewImp> derived_type;
+  typedef VectorImp VectorType;
+  typedef SpaceImp SpaceType;
+  typedef GridViewImp GridViewType;
+  typedef typename VectorType::ScalarType ScalarType;
+}; // class L2FaceTraits
 
 
 } // namespace internal
@@ -118,39 +138,6 @@ private:
   const LocalFunctionalType local_functional_;
   const LocalAssemblerType local_assembler_;
 }; // class L2Volume
-
-
-template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp = typename SpaceImp::GridViewType>
-class L2Face;
-
-
-namespace internal {
-
-
-template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
-class L2FaceTraits
-{
-  static_assert(std::is_base_of<Stuff::LocalizableFunctionInterface<
-                                    typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
-                                    FunctionType::dimDomain, typename FunctionType::RangeFieldType,
-                                    FunctionType::dimRange, FunctionType::dimRangeCols>,
-                                FunctionType>::value,
-                "FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange,
-                                               SpaceImp::dimRangeCols>,
-                                SpaceImp>::value,
-                "SpaceImp has to be derived from SpaceInterface!");
-
-public:
-  typedef L2Face<FunctionType, VectorImp, SpaceImp, GridViewImp> derived_type;
-  typedef VectorImp VectorType;
-  typedef SpaceImp SpaceType;
-  typedef GridViewImp GridViewType;
-  typedef typename VectorType::ScalarType ScalarType;
-}; // class L2FaceTraits
-
-
-} // namespace internal
 
 
 template <class FunctionType, class VectorImp, class SpaceImp, class GridViewImp>
