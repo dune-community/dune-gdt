@@ -9,9 +9,9 @@
 #include <type_traits>
 
 #include <dune/common/dynvector.hh>
-#include <dune/common/typetraits.hh>
 
 #include <dune/stuff/common/debug.hh>
+#include <dune/stuff/common/type_utils.hh>
 
 #include "../../mapper/interface.hh"
 
