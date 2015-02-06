@@ -8,7 +8,7 @@
 
 #include <dune/stuff/common/memory.hh>
 
-#include <dune/gdt/playground/elliptic.hh>
+#include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/playground/localevaluation/swipdg.hh>
 #include <dune/gdt/operators/elliptic-swipdg.hh>
 
