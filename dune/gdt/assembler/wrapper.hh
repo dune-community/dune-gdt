@@ -25,18 +25,10 @@ namespace internal {
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType, class MatrixType>
 class LocalMatrixConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
 {
-  static_assert(std::is_base_of<SpaceInterface<typename TestSpaceType::Traits, TestSpaceType::dimDomain,
-                                               TestSpaceType::dimRange, TestSpaceType::dimRangeCols>,
-                                TestSpaceType>::value,
-                "TestSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<SpaceInterface<typename AnsatzSpaceType::Traits, AnsatzSpaceType::dimDomain,
-                                               AnsatzSpaceType::dimRange, AnsatzSpaceType::dimRangeCols>,
-                                AnsatzSpaceType>::value,
-                "AnsatzSpaceType has to be derived from SpaceInterface!");
-  static_assert(
-      std::is_base_of<Stuff::LA::MatrixInterface<typename MatrixType::Traits, typename MatrixType::Traits::ScalarType>,
-                      MatrixType>::value,
-      "");
+  static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
+  static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
+  static_assert(Stuff::LA::is_matrix<MatrixType>::value,
+                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(std::is_base_of<Spaces::ConstraintsInterface<typename ConstraintsType::Traits,
                                                              typename ConstraintsType::ValueType>,
                                 ConstraintsType>::value,
@@ -90,9 +82,19 @@ private:
 template <class AssemblerType, class ConstraintsType, class VectorType>
 class LocalVectorConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
+  static_assert(std::is_base_of<Spaces::ConstraintsInterface<typename ConstraintsType::Traits,
+                                                             typename ConstraintsType::ValueType>,
+                                ConstraintsType>::value,
+                "");
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+
 public:
-  LocalVectorConstraintsWrapper(const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space,
-                                const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>* where,
+  typedef typename BaseType::EntityType EntityType;
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+
+  LocalVectorConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                                 ConstraintsType& constraints, VectorType& vector)
     : test_space_(test_space)
     , where_(where)
@@ -105,23 +107,21 @@ public:
   {
   }
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const override final
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
+  virtual void apply_local(const EntityType& entity) override final
   {
     test_space_->local_constraints(entity, constraints_);
-    for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
-      vector_.set_entry(constraints_.global_row(ii), typename AssemblerType::TestSpaceType::RangeFieldType(0));
-    }
+    for (size_t ii = 0; ii < constraints_.rows(); ++ii)
+      vector_.set_entry(constraints_.global_row(ii), 0.0);
   }
 
 private:
-  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>> where_;
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   ConstraintsType& constraints_;
   VectorType& vector_;
 }; // class LocalVectorConstraintsWrapper
@@ -135,11 +135,15 @@ class LocalVolumeMatrixAssemblerWrapper
   typedef DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpMatricesProvider;
 
 public:
-  LocalVolumeMatrixAssemblerWrapper(
-      const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space,
-      const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType>& ansatz_space,
-      const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>* where,
-      const LocalVolumeMatrixAssembler& localAssembler, MatrixType& matrix)
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+
+  LocalVolumeMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                    const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                    const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                                    const LocalVolumeMatrixAssembler& localAssembler, MatrixType& matrix)
     : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), test_space->mapper().maxNumDofs(),
                           ansatz_space->mapper().maxNumDofs())
     , test_space_(test_space)
@@ -154,22 +158,21 @@ public:
   {
   }
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const override final
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
+  virtual void apply_local(const EntityType& entity) override final
   {
     localMatrixAssembler_.assembleLocal(
         *test_space_, *ansatz_space_, entity, matrix_, this->matrices(), this->indices());
   }
 
 private:
-  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>> where_;
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   const LocalVolumeMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
 }; // class LocalVolumeMatrixAssemblerWrapper
@@ -178,16 +181,21 @@ private:
 template <class AssemblerType, class LocalFaceMatrixAssembler, class MatrixType>
 class LocalFaceMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>,
-      TmpStorageProvider::Matrices<typename AssemblerType::TestSpaceType::RangeFieldType>
+      DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
-  typedef TmpStorageProvider::Matrices<typename AssemblerType::TestSpaceType::RangeFieldType> TmpMatricesProvider;
+  typedef DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpMatricesProvider;
 
 public:
-  LocalFaceMatrixAssemblerWrapper(
-      const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space,
-      const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType>& ansatz_space,
-      const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>* where,
-      const LocalFaceMatrixAssembler& localAssembler, MatrixType& matrix)
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+  typedef typename Stuff::Grid::internal::Codim1Object<GridViewType>::IntersectionType IntersectionType;
+
+  LocalFaceMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                                  const LocalFaceMatrixAssembler& localAssembler, MatrixType& matrix)
     : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), test_space->mapper().maxNumDofs(),
                           ansatz_space->mapper().maxNumDofs())
     , test_space_(test_space)
@@ -202,24 +210,22 @@ public:
   {
   }
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::IntersectionType& intersection) const override final
+  virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
-  virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
-                           const typename AssemblerType::EntityType& /*inside_entity*/,
-                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
+                           const EntityType& /*outside_entity*/) override final
   {
     localMatrixAssembler_.assembleLocal(
         *test_space_, *ansatz_space_, intersection, matrix_, this->matrices(), this->indices());
-  }
+  } // ... apply_local(...)
 
 private:
-  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const typename AssemblerType::AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>> where_;
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalFaceMatrixAssembler& localMatrixAssembler_;
   MatrixType& matrix_;
 }; // class LocalFaceMatrixAssemblerWrapper
@@ -228,15 +234,18 @@ private:
 template <class AssemblerType, class LocalVolumeVectorAssembler, class VectorType>
 class LocalVolumeVectorAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
-      TmpStorageProvider::Vectors<typename AssemblerType::TestSpaceType::RangeFieldType>
+      DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
-  typedef TmpStorageProvider::Vectors<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
+  typedef DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
 
 public:
-  LocalVolumeVectorAssemblerWrapper(
-      const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& space,
-      const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>* where,
-      const LocalVolumeVectorAssembler& localAssembler, VectorType& vector)
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+
+  LocalVolumeVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
+                                    const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                                    const LocalVolumeVectorAssembler& localAssembler, VectorType& vector)
     : TmpVectorsProvider(localAssembler.numTmpObjectsRequired(), space->mapper().maxNumDofs())
     , space_(space)
     , where_(where)
@@ -249,20 +258,19 @@ public:
   {
   }
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::EntityType& entity) const override final
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
+  virtual void apply_local(const EntityType& entity) override final
   {
     localVectorAssembler_.assembleLocal(*space_, entity, vector_, this->vectors(), this->indices());
   }
 
 private:
-  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<typename AssemblerType::GridViewType>> where_;
+  const DS::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   const LocalVolumeVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
 }; // class LocalVolumeVectorAssemblerWrapper
@@ -271,15 +279,19 @@ private:
 template <class AssemblerType, class LocalFaceVectorAssembler, class VectorType>
 class LocalFaceVectorAssemblerWrapper
     : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>,
-      TmpStorageProvider::Vectors<typename AssemblerType::TestSpaceType::RangeFieldType>
+      DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
-  typedef TmpStorageProvider::Vectors<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
+  typedef DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
 
 public:
-  LocalFaceVectorAssemblerWrapper(
-      const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& space,
-      const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>* where,
-      const LocalFaceVectorAssembler& localAssembler, VectorType& vector)
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+  typedef typename Stuff::Grid::internal::Codim1Object<GridViewType>::IntersectionType IntersectionType;
+
+  LocalFaceVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
+                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                                  const LocalFaceVectorAssembler& localAssembler, VectorType& vector)
     : TmpVectorsProvider(localAssembler.numTmpObjectsRequired(), space->mapper().maxNumDofs())
     , space_(space)
     , where_(where)
@@ -292,22 +304,20 @@ public:
   {
   }
 
-  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
-                        const typename AssemblerType::IntersectionType& intersection) const override final
+  virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
-  virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
-                           const typename AssemblerType::EntityType& /*inside_entity*/,
-                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
+                           const EntityType& /*outside_entity*/) override final
   {
     localVectorAssembler_.assembleLocal(*space_, intersection, vector_, this->vectors(), this->indices());
   }
 
 private:
-  const DS::PerThreadValue<const typename AssemblerType::TestSpaceType>& space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<typename AssemblerType::GridViewType>> where_;
+  const DS::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalFaceVectorAssembler& localVectorAssembler_;
   VectorType& vector_;
 }; // class LocalFaceVectorAssemblerWrapper
