@@ -14,6 +14,10 @@
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 
+#if HAVE_DUNE_GRID_MULTISCALE
+# include <dune/grid/multiscale/provider/interface.hh>
+#endif
+
 #include "interface.hh"
 #include "cg/fem.hh"
 #include "cg/pdelab.hh"
