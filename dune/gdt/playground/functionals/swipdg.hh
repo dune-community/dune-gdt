@@ -59,7 +59,7 @@ public:
                           const SpaceType& space,
                           const GridViewType& grid_view,
                           const ScalarType beta
-                              = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                              = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space, grid_view)
     , AssemblerBaseType(space, grid_view)
     , diffusion_factor_(diffusion_factor)
@@ -79,7 +79,7 @@ public:
                           VectorType& vector,
                           const SpaceType& space,
                           const ScalarType beta
-                              = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                              = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space)
     , AssemblerBaseType(space)
     , diffusion_factor_(diffusion_factor)

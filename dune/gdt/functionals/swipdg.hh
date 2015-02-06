@@ -103,7 +103,7 @@ public:
                           VectorType& vector,
                           const SpaceType& space,
                           const GridViewType& grid_view,
-                          const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                          const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space, grid_view)
     , AssemblerBaseType(space, grid_view)
     , diffusion_(diffusion)
@@ -120,7 +120,7 @@ public:
                           const BoundaryInfoType& boundary_info,
                           VectorType& vector,
                           const SpaceType& space,
-                          const ScalarType beta = LocalEvaluation::SWIPDG::internal::default_beta(GridViewType::dimension))
+                          const ScalarType beta = LocalEvaluation::SIPDG::internal::default_beta(GridViewType::dimension))
     : FunctionalBaseType(vector, space)
     , AssemblerBaseType(space)
     , diffusion_(diffusion)
