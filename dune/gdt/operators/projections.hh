@@ -100,10 +100,10 @@ template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp>
 class DirichletProjectionLocalizableTraits
 {
   typedef typename RangeImp::SpaceType::Traits T;
-  static const unsigned int d = RangeImp::dimDomain;
+  static const size_t d = RangeImp::dimDomain;
   typedef typename RangeImp::RangeFieldType R;
-  static const unsigned int r  = RangeImp::dimRange;
-  static const unsigned int rC = RangeImp::dimRangeCols;
+  static const size_t r  = RangeImp::dimRange;
+  static const size_t rC = RangeImp::dimRangeCols;
   static_assert(is_cg_space<typename RangeImp::SpaceType>::value,
                 "The SpaceType of RangeImp has to be derived from Spaces::CGInterface!");
   static_assert(r == 1, "Not implemeneted for higher dimensions!");
@@ -146,7 +146,7 @@ public:
 private:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
 public:
@@ -155,14 +155,16 @@ public:
   {
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void apply(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                     DiscreteFunction<Spaces::CG::PdelabBased<GP, p, RR, rR, rCR>, V>& range) const
   {
     apply_p(source, range);
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void apply(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                     DiscreteFunction<Spaces::CG::FemBased<GP, p, RR, rR, rCR>, V>& range) const
   {
@@ -170,7 +172,7 @@ public:
   }
 
 private:
-  template <class R, int r, class V, class SpaceType>
+  template <class R, size_t r, class V, class SpaceType>
   void apply_p(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
                DiscreteFunction<SpaceType, V>& range) const
   {
@@ -197,7 +199,7 @@ private:
   void apply_local(const LagrangePointsType& lagrange_points, const LocalSourceType& local_source,
                    LocalRangeVectorType& local_range_DoF_vector) const
   {
-    static const unsigned int dimRange = LocalSourceType::dimRange;
+    static const size_t dimRange = LocalSourceType::dimRange;
     assert(lagrange_points.size() == local_range_DoF_vector.size());
     size_t kk = 0;
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
@@ -232,7 +234,7 @@ public:
 private:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
 public:
   L2Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -241,7 +243,7 @@ public:
   {
   }
 
-  template <class GP, int p, class R, int r, class V>
+  template <class GP, int p, class R, size_t r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
              DiscreteFunction<Spaces::DG::FemBased<GP, p, R, r, 1>, V>& range) const
   {
@@ -253,7 +255,7 @@ public:
 
 #if HAVE_DUNE_GRID_MULTISCALE
 
-  template <class GP, int p, class R, int r, class V>
+  template <class GP, int p, class R, size_t r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
              DiscreteFunction<Spaces::Block<Spaces::DG::FemBased<GP, p, R, r, 1>>, V>& range) const
   {
@@ -265,7 +267,7 @@ public:
 
 #endif // HAVE_DUNE_GRID_MULTISCALE
 
-  template <class GP, int p, class R, int r, class V>
+  template <class GP, int p, class R, size_t r, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& source,
              DiscreteFunction<Spaces::DG::PdelabBased<GP, p, R, r, 1>, V>& range) const
   {
@@ -275,7 +277,7 @@ public:
     apply_local_l2_projection_(source, range);
   }
 
-  template <class E, class D, int d, class R, int r, class GV, class V>
+  template <class E, class D, size_t d, class R, size_t r, class GV, class V>
   void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, 1>& source,
              DiscreteFunction<Spaces::FV::Default<GV, R, r, 1>, V>& range) const
   {
@@ -430,7 +432,7 @@ public:
 private:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
 public:
   Projection(const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -446,7 +448,7 @@ public:
   }
 
 private:
-  template <class E, class D, int d, class R, int r, int rC, class T, class V>
+  template <class E, class D, size_t d, class R, size_t r, size_t rC, class T, class V>
   void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& /*source*/,
                                         DiscreteFunction<SpaceInterface<T, d, r, rC>, V>& /*range*/) const
   {
@@ -454,7 +456,8 @@ private:
                   "Could not find an appropriate operator for this combination of source and range!");
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void
   redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                                    DiscreteFunction<Spaces::CG::FemBased<GP, p, RR, rR, rCR>, V>& range) const
@@ -462,7 +465,8 @@ private:
     lagrange_operator_.apply(source, range);
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void
   redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                                    DiscreteFunction<Spaces::CG::PdelabBased<GP, p, RR, rR, rCR>, V>& range) const
@@ -470,7 +474,8 @@ private:
     lagrange_operator_.apply(source, range);
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void
   redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                                    DiscreteFunction<Spaces::DG::FemBased<GP, p, RR, rR, rCR>, V>& range) const
@@ -480,7 +485,8 @@ private:
 
 #if HAVE_DUNE_GRID_MULTISCALE
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void redirect_to_appropriate_operator(
       const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
       DiscreteFunction<Spaces::Block<Spaces::DG::FemBased<GP, p, RR, rR, rCR>>, V>& range) const
@@ -490,7 +496,8 @@ private:
 
 #endif // HAVE_DUNE_GRID_MULTISCALE
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GP, int p, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GP, int p, class RR, size_t rR,
+            size_t rCR, class V>
   inline void
   redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                                    DiscreteFunction<Spaces::DG::PdelabBased<GP, p, RR, rR, rCR>, V>& range) const
@@ -498,7 +505,8 @@ private:
     l2_operator_.apply(source, range);
   }
 
-  template <class E, class D, int d, class RS, int rS, int rCS, class GV, class RR, int rR, int rCR, class V>
+  template <class E, class D, size_t d, class RS, size_t rS, size_t rCS, class GV, class RR, size_t rR, size_t rCR,
+            class V>
   inline void redirect_to_appropriate_operator(const Stuff::LocalizableFunctionInterface<E, D, d, RS, rS, rCS>& source,
                                                DiscreteFunction<Spaces::FV::Default<GV, RR, rR, rCR>, V>& range) const
   {
@@ -603,7 +611,7 @@ public:
   typedef typename Traits::GridViewType GridViewType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
   typedef Stuff::Grid::BoundaryInfoInterface<typename GridViewType::Intersection> BoundaryInfoType;
 
 public:
@@ -613,7 +621,7 @@ public:
   {
   }
 
-  template <class R, int r, int rC, class GV, int p, class V>
+  template <class R, size_t r, size_t rC, class GV, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& source,
              DiscreteFunction<Spaces::CG::FemBased<GV, p, R, r, rC>, V>& range) const
   {
@@ -624,7 +632,7 @@ public:
     localizable_operator.apply();
   } // ... apply(...)
 
-  template <class R, int r, int rC, class GV, int p, class V>
+  template <class R, size_t r, size_t rC, class GV, int p, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& source,
              DiscreteFunction<Spaces::CG::PdelabBased<GV, p, R, r, rC>, V>& range) const
   {

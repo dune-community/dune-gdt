@@ -56,7 +56,7 @@ public:
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
   typedef typename DiffusionFactorType::EntityType EntityType;
   typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = DiffusionFactorType::dimDomain;
+  static const size_t dimDomain = DiffusionFactorType::dimDomain;
 }; // class EllipticTraits
 
 
@@ -77,7 +77,7 @@ public:
   typedef typename DiffusionType::EntityType EntityType;
   typedef typename DiffusionType::DomainFieldType DomainFieldType;
   typedef std::tuple<std::shared_ptr<typename DiffusionType::LocalfunctionType>> LocalfunctionTupleType;
-  static const unsigned int dimDomain = DiffusionType::dimDomain;
+  static const size_t dimDomain = DiffusionType::dimDomain;
 }; // class EllipticTraits< ..., void >
 
 
@@ -99,7 +99,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t dimDomain = Traits::dimDomain;
 
   Elliptic(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
     : diffusion_factor_(diffusion_factor)
@@ -115,7 +115,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class R, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
   order(const LocalfunctionTupleType& local_functions_tuple,
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
@@ -129,7 +129,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class R, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(const LocalfunctionTupleType& local_functions_tuple,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
@@ -141,7 +141,7 @@ public:
   }
 
 private:
-  template <class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t order(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>& local_diffusion_factor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT, rCDT>& local_diffusion_tensor,
@@ -153,7 +153,7 @@ private:
            + std::max(ssize_t(ansatzBase.order()) - 1, ssize_t(0));
   } // ... order(...)
 
-  template <class R, int r>
+  template <class R, size_t r>
   void
   evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor,
            const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_tensor,
@@ -262,7 +262,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t dimDomain = Traits::dimDomain;
 
   explicit Elliptic(const DiffusionType& inducingFunction)
     : diffusion_(inducingFunction)
@@ -280,7 +280,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template <class R, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
   order(const LocalfunctionTupleType& localFuncs,
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
@@ -292,7 +292,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template <class R, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
@@ -308,7 +308,7 @@ public:
   /**
    *  \return localFunction.order() + (testBase.order() - 1) + (ansatzBase.order() - 1)
    */
-  template <class R, int rL, int rCL, int rT, int rCT, int rA, int rCA>
+  template <class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
   order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
         const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
@@ -326,7 +326,7 @@ public:
    *  \brief  Computes an elliptic evaluation for a scalar local function and scalar or vector valued basefunctionsets.
    *  \tparam R RangeFieldType
    */
-  template <class R, int r>
+  template <class R, size_t r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,

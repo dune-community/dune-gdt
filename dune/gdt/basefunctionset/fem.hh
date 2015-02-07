@@ -27,8 +27,8 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
-          int rangeDim, int rangeDimCols = 1>
+template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim, size_t rangeDimCols = 1>
 class FemWrapper
 {
   static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "Untested for these dimensions!");
@@ -38,8 +38,8 @@ class FemWrapper
 namespace internal {
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
-          int rangeDim, int rangeDimCols>
+template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim, size_t rangeDimCols>
 class FemWrapperTraits
 {
 public:
@@ -53,8 +53,8 @@ public:
 } // namespace internal
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
-          int rangeDim>
+template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim>
 class FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
     : public BaseFunctionSetInterface<internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
                                                                  domainDim, RangeFieldImp, rangeDim, 1>,
@@ -127,8 +127,8 @@ private:
 #else // HAVE_DUNE_FEM
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp,
-          int rangeDim, int rangeDimCols = 1>
+template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim, size_t rangeDimCols = 1>
 class FemWrapper
 {
   static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "You are missing dune-fem!");

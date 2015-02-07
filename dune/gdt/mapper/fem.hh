@@ -99,9 +99,9 @@ private:
     {
     }
 
-    void operator()(int localDoF, int globalDoF)
+    void operator()(size_t localDoF, size_t globalDoF)
     {
-      assert(localDoF < int(globalIndices_.size()));
+      assert(localDoF < globalIndices_.size());
       globalIndices_[localDoF] = globalDoF;
     }
 
@@ -184,9 +184,9 @@ private:
     {
     }
 
-    void operator()(int localDoF, int globalDoF)
+    void operator()(size_t localDoF, size_t globalDoF)
     {
-      assert(localDoF < int(globalIndices_.size()));
+      assert(localDoF < globalIndices_.size());
       globalIndices_[localDoF] = globalDoF;
     }
 

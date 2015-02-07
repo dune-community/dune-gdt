@@ -31,9 +31,9 @@ struct SwipdgPenaltyProductBase : public ::testing::Test
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
+  static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = SpaceType::dimRange;
+  static const size_t dimRange = SpaceType::dimRange;
   typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange> ScalarType;
   typedef Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
       TensorType;

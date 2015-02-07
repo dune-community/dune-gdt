@@ -22,9 +22,9 @@ struct ProductBase
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
+  static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = SpaceType::dimRange;
+  static const size_t dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef typename Dune::GDT::ProductInterface<typename ProductType::Traits> InterfaceType;
@@ -66,9 +66,9 @@ struct LocalizableProductBase
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
+  static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = SpaceType::dimRange;
+  static const size_t dimRange = SpaceType::dimRange;
   typedef typename Dune::GDT::LocalizableProductInterface<typename ProductType::Traits> InterfaceType;
 
   static void fulfills_interface(ProductType& product)
@@ -119,9 +119,9 @@ struct AssemblableProductBase
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = SpaceType::dimDomain;
+  static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = SpaceType::dimRange;
+  static const size_t dimRange = SpaceType::dimRange;
   typedef typename Dune::GDT::AssemblableProductInterface<typename ProductType::Traits> InterfaceType;
 
   static void fulfills_interface(ProductType& product)

@@ -6,18 +6,21 @@
 #ifndef DUNE_GDT_TEST_SPACES_CG
 #define DUNE_GDT_TEST_SPACES_CG
 
-#include "spaces.hh"
+#include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/stuff/common/print.hh>
+#include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
+
+#include "spaces.hh"
 
 
 template <class SpaceType>
@@ -32,7 +35,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
-  static const unsigned int dimDomain = GridType::dimension;
+  static const size_t dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
 
@@ -44,7 +47,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     return ret;
   }
 
-  template <class T, int d, class R, int r, int rC>
+  template <class T, size_t d, class R, size_t r, size_t rC>
   void matches_signature(const Dune::GDT::Spaces::CGInterface<T, d, R, r, rC>& /*space*/)
   {
     static_assert(std::is_same<typename SpaceType::Traits, T>::value, "");
@@ -82,7 +85,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     const auto entity_end_it = this->space_.grid_view().template end<0>();
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      for (int cc = 0; cc < entity.template count<dimDomain>(); ++cc) {
+      for (auto cc : DSC::valueRange(entity.template count<dimDomain>())) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         vertex_to_indices_map[convert_vector(vertex)] = std::set<size_t>();
@@ -90,16 +93,16 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     }
 
     // walk the grid again to find all DoF ids
-    auto functor             = [&](const typename GridProviderType::EntityType& entity) {
-      const int num_vertices = entity.template count<dimDomain>();
+    auto functor                = [&](const typename GridProviderType::EntityType& entity) {
+      const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
       const auto basis = this->space_.base_function_set(entity);
-      EXPECT_EQ(basis.size(), size_t(num_vertices));
-      for (int cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
+      EXPECT_EQ(basis.size(), num_vertices);
+      for (size_t cc = 0; cc < num_vertices; ++cc) {
+        const auto vertex_ptr   = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
         const DomainType vertex = vertex_ptr->geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
-        EXPECT_EQ(basis_values.size(), size_t(num_vertices));
+        EXPECT_EQ(basis_values.size(), num_vertices);
         size_t ones            = 0;
         size_t zeros           = 0;
         size_t failures        = 0;

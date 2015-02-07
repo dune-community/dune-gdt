@@ -69,7 +69,7 @@ public:
   typedef typename Traits::FieldType FieldType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
   Darcy(const GridViewType& grd_vw, const FunctionImp& function)
     : grid_view_(grd_vw)
@@ -82,7 +82,7 @@ public:
    * \note  See redirect_apply for the implementation (depending on the type of the range space).
    * \sa    redirect_apply
    */
-  template <class S, class V, int r, int rC>
+  template <class S, class V, size_t r, size_t rC>
   void
   apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
         DiscreteFunction<S, V>& range) const

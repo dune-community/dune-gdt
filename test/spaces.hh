@@ -9,6 +9,8 @@
 
 #include <type_traits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/test/gtest/gtest.h>
 
@@ -84,11 +86,11 @@ public:
     typedef typename SpaceType::Traits Traits;
     typedef typename SpaceType::GridViewType D_GridViewType;
     typedef typename SpaceType::DomainFieldType D_DomainFieldType;
-    static const unsigned int d_dimDomain = SpaceType::dimDomain;
+    static const size_t d_dimDomain = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType D_RangeFieldType;
-    static const unsigned int d_dimRange     = SpaceType::dimRange;
-    static const unsigned int d_dimRangeCols = SpaceType::dimRangeCols;
-    static const int d_polOrder              = SpaceType::polOrder;
+    static const int d_polOrder        = SpaceType::polOrder;
+    static const size_t d_dimRange     = SpaceType::dimRange;
+    static const size_t d_dimRangeCols = SpaceType::dimRangeCols;
     typedef typename SpaceType::BackendType D_BackendType;
     typedef typename SpaceType::MapperType D_MapperType;
     typedef typename SpaceType::BaseFunctionSetType D_BaseFunctionSetType;
@@ -103,11 +105,11 @@ public:
     typedef typename InterfaceType::derived_type derived_type;
     typedef typename InterfaceType::GridViewType I_GridViewType;
     typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
-    static const unsigned int i_dimDomain = InterfaceType::dimDomain;
+    static const size_t i_dimDomain = InterfaceType::dimDomain;
     typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const unsigned int i_dimRange     = InterfaceType::dimRange;
-    static const unsigned int i_dimRangeCols = InterfaceType::dimRangeCols;
-    static const int i_polOrder              = InterfaceType::polOrder;
+    static const int i_polOrder        = InterfaceType::polOrder;
+    static const size_t i_dimRange     = InterfaceType::dimRange;
+    static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
     typedef typename InterfaceType::BackendType I_BackendType;
     typedef typename InterfaceType::MapperType I_MapperType;
     typedef typename InterfaceType::BaseFunctionSetType I_BaseFunctionSetType;
@@ -315,11 +317,11 @@ public:
     typedef typename BaseFunctionSetType::BackendType D_BackendType;
     typedef typename BaseFunctionSetType::EntityType D_EntityType;
     typedef typename BaseFunctionSetType::DomainFieldType D_DomainFieldType;
-    static const unsigned int d_dimDomain = BaseFunctionSetType::dimDomain;
+    static const size_t d_dimDomain = BaseFunctionSetType::dimDomain;
     typedef typename BaseFunctionSetType::DomainType D_DomainType;
     typedef typename BaseFunctionSetType::RangeFieldType D_RangeFieldType;
-    static const unsigned int d_dimRange     = BaseFunctionSetType::dimRange;
-    static const unsigned int d_dimRangeCols = BaseFunctionSetType::dimRangeCols;
+    static const size_t d_dimRange     = BaseFunctionSetType::dimRange;
+    static const size_t d_dimRangeCols = BaseFunctionSetType::dimRangeCols;
     typedef typename BaseFunctionSetType::RangeType D_RangeType;
     typedef typename BaseFunctionSetType::JacobianRangeType D_JacobianRangeType;
     static_assert(std::is_same<D_EntityType, typename SpaceType::EntityType>::value, "Types do not match!");
@@ -340,11 +342,11 @@ public:
     typedef typename InterfaceType::BackendType I_BackendType;
     typedef typename InterfaceType::EntityType I_EntityType;
     typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
-    static const unsigned int i_dimDomain = InterfaceType::dimDomain;
+    static const size_t i_dimDomain = InterfaceType::dimDomain;
     typedef typename InterfaceType::DomainType I_DomainType;
     typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const unsigned int i_dimRange     = InterfaceType::dimRange;
-    static const unsigned int i_dimRangeCols = InterfaceType::dimRangeCols;
+    static const size_t i_dimRange     = InterfaceType::dimRange;
+    static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
     typedef typename InterfaceType::RangeType I_RangeType;
     typedef typename InterfaceType::JacobianRangeType I_JacobianRangeType;
     static_assert(std::is_same<derived_type, BaseFunctionSetType>::value, "Types do not match!");
@@ -368,10 +370,11 @@ public:
       const D_BackendType& d_backend          = d_base_function_set.backend();
       size_t d_order                          = d_base_function_set.order();
 #if DUNE_GDT_TEST_SPACES_RT_CHECK
-      EXPECT_GE(d_order, int(SpaceType::polOrder)); // <- normaly we would expect equality here, but the raviart
+      EXPECT_GE(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder)); // <- normaly we would expect equality here,
+// but the raviart
 //    thomas space of order 0 reports order 1 here
 #else
-      EXPECT_EQ(d_order, int(SpaceType::polOrder));
+      EXPECT_EQ(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder));
 #endif
       //   the size has already been checked in fulfills_interface() above
       // * as the interface

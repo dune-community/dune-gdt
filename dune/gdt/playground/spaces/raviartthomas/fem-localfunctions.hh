@@ -15,7 +15,7 @@ namespace Spaces {
 namespace RaviartThomas {
 
 
-template <class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1>
+template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DUNE_DEPRECATED_MSG("Use RT::FemLocalfunctionsBased instead (21.11.2014)!") FemLocalfunctionsBased
     : public RT::FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
 {

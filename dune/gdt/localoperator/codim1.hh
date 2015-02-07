@@ -85,14 +85,14 @@ public:
   }
 
   template <class... Args>
-  explicit Codim1CouplingIntegral(const size_t over_integrate, Args&&... args)
+  explicit Codim1CouplingIntegral(const int over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
   {
   }
 
   template <class... Args>
-  explicit Codim1CouplingIntegral(const int over_integrate, Args&&... args)
+  explicit Codim1CouplingIntegral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
@@ -103,7 +103,8 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class E, class N, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  template <class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
+            size_t rCA>
   void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& entityTestBase,
              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& entityAnsatzBase,
              const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& neighborTestBase,
@@ -232,14 +233,14 @@ public:
   }
 
   template <class... Args>
-  Codim1BoundaryIntegral(const size_t over_integrate, Args&&... args)
+  Codim1BoundaryIntegral(const int over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
   {
   }
 
   template <class... Args>
-  Codim1BoundaryIntegral(const int over_integrate, Args&&... args)
+  Codim1BoundaryIntegral(const size_t over_integrate, Args&&... args)
     : evaluation_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
@@ -250,7 +251,7 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template <class E, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA>
+  template <class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret,

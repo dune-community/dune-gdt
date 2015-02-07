@@ -29,7 +29,7 @@ namespace Spaces {
 
 
 template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
-          class RangeFieldType, int dimRange, int dimRangeCols = 1>
+          class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class CGProvider
 {
   static const Stuff::Grid::ChoosePartView part_view_type = ChooseGridPartView<backend_type>::type;
@@ -38,19 +38,19 @@ public:
   typedef typename Stuff::Grid::Layer<GridType, layer_type, part_view_type>::Type GridLayerType;
 
 private:
-  template <class G, int p, class R, int r, int rC, GDT::ChooseSpaceBackend b>
+  template <class G, int p, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
   struct SpaceChooser
   {
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
   };
 
-  template <class G, int p, class R, int r, int rC>
+  template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
     typedef GDT::Spaces::CG::FemBased<GridLayerType, p, R, r> Type;
   };
 
-  template <class G, int p, class R, int r, int rC>
+  template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab>
   {
     typedef GDT::Spaces::CG::PdelabBased<GridLayerType, p, R, r> Type;
@@ -69,13 +69,13 @@ public:
     return Type(grid_layer);
   }
 
-  static Type create(GridProviderType& grid_provider, const int level = 0)
+  static Type create(GridProviderType& grid_provider, const size_t level = 0)
   {
     return Type(grid_provider.template layer<layer_type, part_view_type>(level));
   }
 
 #if HAVE_DUNE_GRID_MULTISCALE
-  static Type create(const MsGridProviderType& grid_provider, const int level_or_subdomain = 0)
+  static Type create(const MsGridProviderType& grid_provider, const size_t level_or_subdomain = 0)
   {
     return Type(grid_provider.template layer<layer_type, part_view_type>(level_or_subdomain));
   }
@@ -84,7 +84,7 @@ public:
 
 
 template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
-          class RangeFieldType, int dimRange, int dimRangeCols = 1>
+          class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class DUNE_DEPRECATED_MSG("Use CGProvider instead (02.02.2015)!") ContinuousLagrangeProvider
     : public CGProvider<GridType, layer_type, backend_type, polOrder, RangeFieldType, dimRange, dimRangeCols>
 {

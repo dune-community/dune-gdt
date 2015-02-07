@@ -37,7 +37,7 @@ struct DarcyOperator : public ::testing::Test
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = SourceSpaceType::dimDomain;
+  static const size_t dimDomain = SourceSpaceType::dimDomain;
   typedef double RangeFieldType;
 
   typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;

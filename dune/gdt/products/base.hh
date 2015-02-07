@@ -340,7 +340,7 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
   template <class... Args>
   GenericBase(const GridViewType& grd_vw, Args&&... args)
@@ -354,7 +354,7 @@ public:
     return grid_view_;
   }
 
-  template <class RR, int rRR, int rCR, class RS, int rRS, int rCS>
+  template <class RR, size_t rRR, size_t rCR, class RS, size_t rRS, size_t rCS>
   FieldType
   apply2(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RR, rRR, rCR>& range,
          const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RS, rRS, rCS>& source) const

@@ -53,7 +53,7 @@ public:
   typedef typename Dune::GDT::SpaceTools::LevelGridPartView<GridType>::Type GridViewType;
   typedef typename GridType::template Codim<0>::Entity EntityType;
   typedef typename GridType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridType::dimension;
+  static const size_t dimDomain = GridType::dimension;
 
   Base(std::unique_ptr<GridProviderType>&& grd_prv, size_t num_refinements)
     : grid_provider_(std::move(grd_prv))
@@ -145,9 +145,9 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
-  static const unsigned int dimRange = 1;
+  static const size_t dimRange = 1;
   typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
@@ -251,9 +251,9 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
-  static const unsigned int dimRange = 1;
+  static const size_t dimRange = 1;
   typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
@@ -368,9 +368,9 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
-  static const unsigned int dimRange = 1;
+  static const size_t dimRange = 1;
   typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
@@ -506,9 +506,9 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
-  static const unsigned int dimRange = 1;
+  static const size_t dimRange = 1;
   typedef DSG::BoundaryInfos::NormalBased<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
@@ -618,9 +618,9 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef double RangeFieldType;
-  static const unsigned int dimRange = 1;
+  static const size_t dimRange = 1;
   typedef DSG::BoundaryInfos::AllDirichlet<typename GridViewType::Intersection> BoundaryInfoType;
 
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>

@@ -148,12 +148,12 @@ public:
   typedef typename BaseType::EntityType EntityType;
 
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef typename BaseType::DomainType DomainType;
 
   typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRangeRows = BaseType::dimRangeCols;
-  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  static const size_t dimRangeRows = BaseType::dimRangeCols;
+  static const size_t dimRangeCols = BaseType::dimRangeCols;
   typedef typename BaseType::RangeType RangeType;
 
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
@@ -246,12 +246,12 @@ public:
   typedef typename BaseType::EntityType EntityType;
 
   typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = BaseType::dimDomain;
+  static const size_t dimDomain = BaseType::dimDomain;
   typedef typename BaseType::DomainType DomainType;
 
   typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRangeRows = BaseType::dimRangeCols;
-  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  static const size_t dimRangeRows = BaseType::dimRangeCols;
+  static const size_t dimRangeCols = BaseType::dimRangeCols;
   typedef typename BaseType::RangeType RangeType;
 
   typedef typename BaseType::JacobianRangeType JacobianRangeType;

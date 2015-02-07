@@ -45,7 +45,7 @@ class DiffusiveFluxReconstruction<GridViewType, LocalizableFunctionType, void>
 public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
   typedef typename LocalizableFunctionType::RangeFieldType FieldType;
   typedef typename LocalizableFunctionType::DomainType DomainType;
 

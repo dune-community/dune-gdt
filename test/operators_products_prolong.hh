@@ -30,10 +30,10 @@ struct ProlongationOperatorBase
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename FineSpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int dimDomain = FineSpaceType::dimDomain;
+  static const size_t dimDomain = FineSpaceType::dimDomain;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename FineSpaceType::RangeFieldType RangeFieldType;
-  static const unsigned int dimRange = FineSpaceType::dimRange;
+  static const size_t dimRange = FineSpaceType::dimRange;
   typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;

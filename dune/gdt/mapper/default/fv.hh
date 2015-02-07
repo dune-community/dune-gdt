@@ -21,7 +21,7 @@ namespace Mapper {
 
 
 // forward
-template <class GridViewImp, int rangeDim = 1, int rangeDimCols = 1>
+template <class GridViewImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
 class FiniteVolume
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
@@ -31,7 +31,7 @@ class FiniteVolume
 namespace internal {
 
 
-template <class GridViewImp, int rangeDim, int rangeDimCols>
+template <class GridViewImp, size_t rangeDim, size_t rangeDimCols>
 class FiniteVolumeTraits
 {
   static_assert(rangeDim >= 1, "Really?");
@@ -104,12 +104,12 @@ private:
 }; // class FiniteVolume< ..., 1, 1 >
 
 
-template <class GridViewImp, int rangeDim>
+template <class GridViewImp, size_t rangeDim>
 class FiniteVolume<GridViewImp, rangeDim, 1>
     : public MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>>
 {
   typedef MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>> InterfaceType;
-  static const unsigned int dimRange = rangeDim;
+  static const size_t dimRange = rangeDim;
 
 public:
   typedef internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;

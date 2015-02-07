@@ -147,7 +147,7 @@ public:
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
   }
 
-  template <class G, class S, int d, int r, int rC>
+  template <class G, class S, size_t d, size_t r, size_t rC>
   PatternType compute_pattern(const GridView<G>& /*local_grid_view*/,
                               const SpaceInterface<S, d, r, rC>& /*ansatz_space*/) const
   {

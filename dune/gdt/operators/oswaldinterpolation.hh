@@ -56,7 +56,7 @@ public:
   typedef internal::OswaldInterpolationTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
   OswaldInterpolation(const GridViewType& grd_vw, const bool zero_boundary = true)
     : grid_view_(grd_vw)
@@ -144,7 +144,8 @@ private:
           const auto& intersection = *intersectionIt;
           if (intersection.boundary() && !intersection.neighbor()) {
             const auto& intersection_geometry = intersection.geometry();
-            for (int local_intersection_corner_id = 0; local_intersection_corner_id < intersection_geometry.corners();
+            for (size_t local_intersection_corner_id = 0;
+                 local_intersection_corner_id < intersection_geometry.corners();
                  ++local_intersection_corner_id) {
               const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we

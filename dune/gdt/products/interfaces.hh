@@ -68,7 +68,7 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
 private:
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, SourceType>::value,
@@ -130,7 +130,7 @@ public:
   typedef typename MatrixType::ScalarType FieldType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
 
   typedef Stuff::LA::SparsityPatternDefault PatternType;
 

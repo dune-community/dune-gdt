@@ -92,7 +92,7 @@ public:
    *  \tparam T   Traits of the BaseFunctionSetInterface implementation, representing the type of the testBase
    *  \attention  ret is assumed to be zero!
    */
-  template <class E, class D, int d, class R, int r, int rC>
+  template <class E, class D, size_t d, class R, size_t r, size_t rC>
   void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, Dune::DynamicVector<R>& ret,
              std::vector<Dune::DynamicVector<R>>& tmpLocalVectors) const
   {
