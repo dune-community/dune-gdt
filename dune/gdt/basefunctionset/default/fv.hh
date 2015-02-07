@@ -19,7 +19,7 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class FiniteVolume
 {
   static_assert(Dune::AlwaysFalse< EntityImp >::value, "Untested for these dimensions!");
@@ -29,7 +29,7 @@ class FiniteVolume
 namespace internal {
 
 
-template< class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class FiniteVolumeTraits
 {
 public:
@@ -42,7 +42,7 @@ public:
 } // namespace internal
 
 
-template< class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp >
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp >
 class FiniteVolume< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
   : public BaseFunctionSetInterface< internal::FiniteVolumeTraits< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
                                    , DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
@@ -106,7 +106,7 @@ private:
 }; // class FiniteVolume< ..., 1, 1 >
 
 
-template< class EntityImp, class DomainFieldImp, int domainDim, class RangeFieldImp, int rangeDim >
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim >
 class FiniteVolume< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
   : public BaseFunctionSetInterface< internal::FiniteVolumeTraits< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
                                    , DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >

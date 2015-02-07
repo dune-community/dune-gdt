@@ -19,7 +19,7 @@ template< class SpaceType >
 class RT_Space
   : public SpaceBase< SpaceType >
 {
-  template< class T, int d, class R, int r, int rC >
+  template< class T, size_t d, class R, size_t r, size_t rC >
   void matches_signature(const Dune::GDT::Spaces::RTInterface< T, d, R, r, rC >& /*space*/)
   {
     static_assert(Dune::GDT::is_rt_space< SpaceType >::value, "");

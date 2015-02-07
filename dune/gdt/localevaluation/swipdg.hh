@@ -83,7 +83,7 @@ public:
                       std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 }; // class InnerTraits
 
 
@@ -99,7 +99,7 @@ public:
   typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
 }; // class InnerTraits< ..., void >
 
 
@@ -128,7 +128,7 @@ public:
                       std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 }; // class InnerPenaltyTraits
 
 
@@ -157,7 +157,7 @@ public:
                       std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 }; // class BoundaryLHSTraits
 
 
@@ -186,7 +186,7 @@ public:
                       std::shared_ptr< LocalDiffusionTensorFunctionType > >   LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 }; // class BoundaryLHSPenaltyTraits
 
 
@@ -202,7 +202,7 @@ public:
   typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
 }; // class BoundaryLHSTraits< ..., void >
 
 
@@ -241,7 +241,7 @@ public:
                       std::shared_ptr< LocalDirichletFunctionType > >         LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFactorFunctionType::EntityType         EntityType;
   typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType    DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
 }; // class BoundaryRHSTraits
 
 
@@ -270,7 +270,7 @@ public:
                       std::shared_ptr< LocalDirichletFunctionType > >  LocalfunctionTupleType;
   typedef typename LocalizableDiffusionFunctionType::EntityType        EntityType;
   typedef typename LocalizableDiffusionFunctionType::DomainFieldType   DomainFieldType;
-  static const unsigned int dimDomain = LocalizableDiffusionFunctionType::dimDomain;
+  static const size_t dimDomain = LocalizableDiffusionFunctionType::dimDomain;
 }; // class BoundaryRHSTraits< ..., void >
 
 
@@ -290,7 +290,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType               LocalfunctionTupleType;
   typedef typename Traits::EntityType                           EntityType;
   typedef typename Traits::DomainFieldType                      DomainFieldType;
-  static const unsigned int                                     dimDomain = Traits::dimDomain;
+  static const size_t                                           dimDomain = Traits::dimDomain;
 
   Inner(const LocalizableFunctionType& inducingFunction,
         const double beta = SIPDG::internal::default_beta(LocalizableFunctionType::dimDomain))
@@ -309,7 +309,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFunctionsEntity,
                const LocalfunctionTupleType& localFunctionsNeighbor,
                const Stuff::LocalfunctionSetInterface
@@ -331,7 +331,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
                 const LocalfunctionTupleType& localFunctionsNeighbor,
                 const Stuff::LocalfunctionSetInterface
@@ -365,7 +365,7 @@ public:
   /// \name Actual implementation of order
   /// \{
 
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunctionEntity,
                const Stuff::LocalfunctionInterface
@@ -540,7 +540,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                     LocalfunctionTupleType;
   typedef typename Traits::EntityType                                 EntityType;
   typedef typename Traits::DomainFieldType                            DomainFieldType;
-  static const unsigned int                                           dimDomain = Traits::dimDomain;
+  static const size_t                                                 dimDomain = Traits::dimDomain;
 
   BoundaryLHS(const LocalizableFunctionType& inducingFunction,
               const double beta = SIPDG::internal::default_beta(dimDomain))
@@ -559,7 +559,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType localFuncs,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
@@ -571,7 +571,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -591,7 +591,7 @@ public:
   /**
    *  \return localFunction.order() + testBase.order() + ansatzBase.order()
    */
-  template< class R, int rL, int rCL, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, R, rL, rCL >& localFunction,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase)
@@ -673,7 +673,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType           LocalfunctionTupleType;
   typedef typename Traits::EntityType                       EntityType;
   typedef typename Traits::DomainFieldType                  DomainFieldType;
-  static const unsigned int                                 dimDomain = Traits::dimDomain;
+  static const size_t                                       dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion,
               const LocalizableDirichletFunctionType& dirichlet,
@@ -694,7 +694,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int r, int rC >
+  template< class R, size_t r, size_t rC >
   size_t order(const LocalfunctionTupleType localFuncs,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
@@ -707,7 +707,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int r, int rC >
+  template< class IntersectionType, class R, size_t r, size_t rC >
   void evaluate(const LocalfunctionTupleType localFuncs,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const IntersectionType& intersection,
@@ -726,7 +726,7 @@ public:
   /**
    *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
    */
-  template< class R, int rLF, int rCLF, int rLR, int rCLR, int rT, int rCT >
+  template< class R, size_t rLF, size_t rCLF, size_t rLR, size_t rCLR, size_t rT, size_t rCT >
   size_t order(const Stuff::LocalfunctionInterface
                   < EntityType, DomainFieldType, dimDomain, R, rLF, rCLF >& localDiffusion,
                const Stuff::LocalfunctionInterface

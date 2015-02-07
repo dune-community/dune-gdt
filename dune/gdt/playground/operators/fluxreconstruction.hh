@@ -27,7 +27,7 @@ class DiffusiveFluxReconstruction
 public:
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridViewType::dimension;
   typedef typename DiffusionFactorType::RangeFieldType FieldType;
   typedef typename DiffusionFactorType::DomainType DomainType;
 

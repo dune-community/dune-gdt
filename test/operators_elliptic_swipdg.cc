@@ -24,12 +24,12 @@ using namespace Dune::GDT;
 
 TEST(EllipticSWIPDGOperator, is_affinely_decomposable)
 {
-  static const unsigned int d = 2;
+  static const size_t d = 2;
   typedef SGrid< d, d > GridType;
   typedef GridType::template Codim< 0 >::Entity E;
   typedef GridType::ctype D;
   typedef double R;
-  static const unsigned int r = 1;
+  static const size_t r = 1;
   auto grid_provider = Stuff::Grid::Providers::Cube< GridType >::create();
   typedef Spaces::DiscontinuousLagrangeProvider< GridType,
                                                  Stuff::Grid::ChooseLayer::leaf,

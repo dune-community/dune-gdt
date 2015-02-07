@@ -27,7 +27,7 @@ namespace Spaces {
 
 
 // forward, to allow for specialization
-template< class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class
     DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
       ContinuousLagrangeBase
@@ -36,7 +36,7 @@ class
 };
 
 
-template< class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim >
+template< class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim >
 class
     DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
       ContinuousLagrangeBase< ImpTraits, domainDim, RangeFieldImp, rangeDim, 1 >
@@ -68,7 +68,7 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class G, class S, int d, int r, int rC >
+  template< class G, class S, size_t d, size_t r, size_t rC >
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
@@ -166,7 +166,7 @@ public:
 
   using BaseType::local_constraints;
 
-  template< class S, int d, int r, int rC, class ConstraintsType >
+  template< class S, size_t d, size_t r, size_t rC, class ConstraintsType >
   void local_constraints(const SpaceInterface< S, d, r, rC >& /*other*/,
                          const EntityType& /*entity*/,
                          ConstraintsType& /*ret*/) const
@@ -174,7 +174,7 @@ public:
     static_assert(AlwaysFalse< S >::value, "Not implemented for these constraints!");
   }
 
-  template< class S, int d, int r, int rC >
+  template< class S, size_t d, size_t r, size_t rC >
   void local_constraints(const SpaceInterface< S, d, r, rC >& other,
                          const EntityType& entity,
                          Constraints::Dirichlet< IntersectionType, RangeFieldType >& ret) const

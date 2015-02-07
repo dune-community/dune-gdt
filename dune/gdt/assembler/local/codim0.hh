@@ -65,7 +65,7 @@ public:
    *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the type of systemMatrix
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, int Td, int Tr, int TrC, class A, int Ad, int Ar, int ArC, class EntityType, class M, class R >
+  template< class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType, class M, class R >
   void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
                      const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
                      const EntityType& entity,
@@ -147,7 +147,7 @@ public:
    *  \tparam V           Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type of systemVector
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, int d, int r, int rC, class EntityType, class V, class R >
+  template< class T, size_t d, size_t r, size_t rC, class EntityType, class V, class R >
   void assembleLocal(const SpaceInterface< T, d, r, rC >& testSpace,
                      const EntityType& entity,
                      Dune::Stuff::LA::VectorInterface< V, R >& systemVector,

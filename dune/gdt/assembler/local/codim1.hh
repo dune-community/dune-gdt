@@ -50,10 +50,10 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class TE, int TEd, int TEr, int TErC,
-            class AE, int AEd, int AEr, int AErC,
-            class TN, int TNd, int TNr, int TNrC,
-            class AN, int ANd, int ANr, int ANrC,
+  template< class TE, size_t TEd, size_t TEr, size_t TErC,
+            class AE, size_t AEd, size_t AEr, size_t AErC,
+            class TN, size_t TNd, size_t TNr, size_t TNrC,
+            class AN, size_t ANd, size_t ANr, size_t ANrC,
             class IntersectionType, class MEE, class MNN, class MEN, class MNE, class R >
   void assembleLocal(const SpaceInterface< TE, TEd, TEr, TErC >& testSpaceEntity,
                      const SpaceInterface< AE, AEd, AEr, AErC >& ansatzSpaceEntity,
@@ -149,8 +149,8 @@ public:
     }
   } // void assembleLocal(...) const
 
-  template< class T, int Td, int Tr, int TrC,
-            class A, int Ad, int Ar, int ArC,
+  template< class T, size_t Td, size_t Tr, size_t TrC,
+            class A, size_t Ad, size_t Ar, size_t ArC,
             class IntersectionType, class M, class R >
   void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
                      const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
@@ -198,8 +198,8 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class T, int Td, int Tr, int TrC,
-            class A, int Ad, int Ar, int ArC,
+  template< class T, size_t Td, size_t Tr, size_t TrC,
+            class A, size_t Ad, size_t Ar, size_t ArC,
             class IntersectionType, class M, class R >
   void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
                      const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
@@ -277,7 +277,7 @@ public:
     return {numTmpObjectsRequired_, localFunctional_.numTmpObjectsRequired()};
   }
 
-  template< class T, int d, int r, int rC, class IntersectionType, class V, class R >
+  template< class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R >
   void assembleLocal(const SpaceInterface< T, d, r, rC >& testSpace,
                      const IntersectionType& intersection,
                      Dune::Stuff::LA::VectorInterface< V, R >& systemVector,

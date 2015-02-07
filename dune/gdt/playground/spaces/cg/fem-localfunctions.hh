@@ -41,14 +41,14 @@ namespace CG {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
 };
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class FemLocalfunctionsBasedTraits
 {
 public:
@@ -58,7 +58,7 @@ public:
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  static const size_t                   dimDomain = GridPartType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
   typedef FemLocalfunctionsBased< GridPartType, polOrder, RangeFieldType, rangeDim, rangeDimCols > derived_type;
@@ -92,7 +92,7 @@ public:
   static const bool needs_grid_view = false;
   typedef double CommunicatorType;
 private:
-  template< class G, int p, class R, int r, int rC >
+  template< class G, int p, class R, size_t r, size_t rC >
   friend class FemLocalfunctionsBased;
 }; // class FemLocalfunctionsBasedTraits
 
@@ -112,14 +112,14 @@ public:
   typedef typename Traits::GridViewType   GridViewType;
   static const int                        polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype              DomainFieldType;
-  static const unsigned int                         dimDomain = BaseType::dimension;
+  static const size_t                               dimDomain = BaseType::dimension;
 private:
   static_assert(GridPartType::dimension == dimDomain, "Dimension of GridPart has to match dimDomain");
 public:
   typedef FieldVector< DomainFieldType, dimDomain > DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = BaseType::dimRange;
-  static const unsigned int               dimRangeCols = BaseType::dimRangeCols;
+  static const size_t                     dimRange = BaseType::dimRange;
+  static const size_t                     dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
@@ -220,7 +220,7 @@ private:
 #else // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "You are missing dune-fem-localfunctions!");

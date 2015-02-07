@@ -25,7 +25,7 @@ namespace LocalEvaluation {
  *  \tparam numArguments  The number of local bases.
  *  \note   All evaluations have to be copyable!
  */
-template< class Traits, int numArguments >
+template< class Traits, size_t numArguments >
 class Codim0Interface
 {
   static_assert(AlwaysFalse< Traits >::value, "There is no interface for this numArguments!");
@@ -44,7 +44,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int                       dimDomain = Traits::dimDomain;
+  static const size_t                             dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -58,7 +58,7 @@ public:
    *  \tparam r   dimRange of the testBase
    *  \tparam rC  dimRangeRows of the testBase
    */
-  template< class R, int r, int rC >
+  template< class R, size_t r, size_t rC >
   size_t order(const LocalfunctionTupleType& localFunctions_in,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase)
   const
@@ -74,7 +74,7 @@ public:
    *  \tparam rC  dimRangeRows of the testBase
    *  \attention ret is assumed to be zero!
    */
-  template< class R, int r, int rC >
+  template< class R, size_t r, size_t rC >
   void evaluate(const LocalfunctionTupleType& localFunctions_in,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
@@ -97,7 +97,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int                       dimDomain = Traits::dimDomain;
+  static const size_t                             dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -111,7 +111,7 @@ public:
    *  \tparam r{T,A}  dimRange of the {testBase,ansatzBase}
    *  \tparam rC{T,A} dimRangeRows of the {testBase,ansatzBase}
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFunctions,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -129,7 +129,7 @@ public:
    *  \tparam rC{L,T,A} dimRangeRows of the {localFunction,testBase,ansatzBase}
    *  \attention ret is assumed to be zero!
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -148,7 +148,7 @@ public:
  *  \tparam numArguments  The number of local bases.
  *  \note   All evaluations have to be copyable!
  */
-template< class Traits, int numArguments >
+template< class Traits, size_t numArguments >
 class Codim1Interface
 {
   static_assert(AlwaysFalse< Traits >::value, "There is no interface for this numArguments!");
@@ -167,7 +167,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int                       dimDomain = Traits::dimDomain;
+  static const size_t                             dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -181,7 +181,7 @@ public:
    *  \tparam r   dimRange of the testBase
    *  \tparam rC  dimRangeRows of the testBase
    */
-  template< class R, int r, int rC >
+  template< class R, size_t r, size_t rC >
   size_t order(const LocalfunctionTupleType& localFunctions,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase)
   const
@@ -198,7 +198,7 @@ public:
    *  \tparam rC                  dimRangeRows of the testBase
    *  \attention ret is assumed to be zero!
    */
-  template< class IntersectionType, class R, int r, int rC >
+  template< class IntersectionType, class R, size_t r, size_t rC >
   void evaluate(const LocalfunctionTupleType& localFunctions,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const IntersectionType& intersection,
@@ -222,7 +222,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int                       dimDomain = Traits::dimDomain;
+  static const size_t                             dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -236,7 +236,7 @@ public:
    *  \tparam r{T,A}              dimRange of the {testBase,ansatzBase}
    *  \tparam rC{T,A}             dimRangeRows of the {testBase,ansatzBase}
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFunctions,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -255,7 +255,7 @@ public:
    *  \tparam rC{T,A}             dimRangeRows of the {testBase*,ansatzBase*}
    *  \attention ret is assumed to be zero!
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctions,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -283,7 +283,7 @@ public:
   typedef typename Traits::EntityType             EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType        DomainFieldType;
-  static const unsigned int                       dimDomain = Traits::dimDomain;
+  static const size_t                             dimDomain = Traits::dimDomain;
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -297,7 +297,7 @@ public:
    *  \tparam r{T,A}                dimRange of the {testBase*,ansatzBase*}
    *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType localFunctionsEntity,
                const LocalfunctionTupleType localFunctionsNeighbor,
                const Stuff::LocalfunctionSetInterface
@@ -325,7 +325,7 @@ public:
    *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
    *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
                 const LocalfunctionTupleType& localFunctionsNeighbor,
                 const Stuff::LocalfunctionSetInterface

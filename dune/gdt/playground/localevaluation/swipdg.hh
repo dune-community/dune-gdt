@@ -30,7 +30,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                         LocalfunctionTupleType;
   typedef typename Traits::EntityType                                     EntityType;
   typedef typename Traits::DomainFieldType                                DomainFieldType;
-  static const unsigned int                                               dimDomain = Traits::dimDomain;
+  static const size_t                                                     dimDomain = Traits::dimDomain;
 
   Inner(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
         const LocalizableDiffusionTensorFunctionType& inducingFunction,
@@ -48,7 +48,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFunctionsEntity,
                const LocalfunctionTupleType& localFunctionsNeighbor,
                const Stuff::LocalfunctionSetInterface
@@ -73,7 +73,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
                 const LocalfunctionTupleType& localFunctionsNeighbor,
                 const Stuff::LocalfunctionSetInterface
@@ -106,7 +106,7 @@ public:
              neighborEntityRet);
   }
 
-  template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& localDiffusionFactorEntity,
                const Stuff::LocalfunctionInterface
@@ -299,7 +299,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                         LocalfunctionTupleType;
   typedef typename Traits::EntityType                                     EntityType;
   typedef typename Traits::DomainFieldType                                DomainFieldType;
-  static const unsigned int                                               dimDomain = Traits::dimDomain;
+  static const size_t                                                     dimDomain = Traits::dimDomain;
 
   InnerPenalty(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
                const LocalizableDiffusionTensorFunctionType& inducingFunction,
@@ -317,7 +317,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFunctionsEntity,
                const LocalfunctionTupleType& localFunctionsNeighbor,
                const Stuff::LocalfunctionSetInterface
@@ -342,7 +342,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
                 const LocalfunctionTupleType& localFunctionsNeighbor,
                 const Stuff::LocalfunctionSetInterface
@@ -375,7 +375,7 @@ public:
              neighborEntityRet);
   }
 
-  template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& localDiffusionFactorEntity,
                const Stuff::LocalfunctionInterface
@@ -532,7 +532,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                               LocalfunctionTupleType;
   typedef typename Traits::EntityType                                           EntityType;
   typedef typename Traits::DomainFieldType                                      DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t                                                           dimDomain = Traits::dimDomain;
 
   BoundaryLHS(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
               const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
@@ -550,7 +550,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFuncs,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -565,7 +565,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -580,7 +580,7 @@ public:
     evaluate(*local_diffusion_factor, *local_diffusion_tensor, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-  template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& localDiffusionFactor,
                const Stuff::LocalfunctionInterface
@@ -593,7 +593,7 @@ public:
       return localDiffusionFactor.order() + localDiffusionTensor.order() + testBase.order() + ansatzBase.order();
   } // size_t order< ... >(...)
 
-  template< class IntersectionType, class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const Stuff::LocalfunctionInterface
                     < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*localDiffusionFactor*/,
                 const Stuff::LocalfunctionInterface
@@ -694,7 +694,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                               LocalfunctionTupleType;
   typedef typename Traits::EntityType                                           EntityType;
   typedef typename Traits::DomainFieldType                                      DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t                                             dimDomain = Traits::dimDomain;
 
   BoundaryLHSPenalty(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
                      const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
@@ -712,7 +712,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const LocalfunctionTupleType& localFuncs,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -727,7 +727,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
@@ -742,7 +742,7 @@ public:
     evaluate(*local_diffusion_factor, *local_diffusion_tensor, testBase, ansatzBase, intersection, localPoint, ret);
   }
 
-  template< class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& localDiffusionFactor,
                const Stuff::LocalfunctionInterface
@@ -755,7 +755,7 @@ public:
       return localDiffusionFactor.order() + localDiffusionTensor.order() + testBase.order() + ansatzBase.order();
   } // size_t order< ... >(...)
 
-  template< class IntersectionType, class R, int rDF, int rCDF, int rDT, int rCDT, int rT, int rCT, int rA, int rCA >
+  template< class IntersectionType, class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void evaluate(const Stuff::LocalfunctionInterface
                     < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*localDiffusionFactor*/,
                 const Stuff::LocalfunctionInterface
@@ -874,7 +874,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType                             LocalfunctionTupleType;
   typedef typename Traits::EntityType                                         EntityType;
   typedef typename Traits::DomainFieldType                                    DomainFieldType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const LocalizableDiffusionFactorFunctionType& diffusion_factor,
               const LocalizableDiffusionTensorFunctionType& diffusion_tensor,
@@ -896,7 +896,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
-  template< class R, int r, int rC >
+  template< class R, size_t r, size_t rC >
   size_t order(const LocalfunctionTupleType& localFuncs,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase) const
@@ -910,7 +910,7 @@ public:
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
-  template< class IntersectionType, class R, int r, int rC >
+  template< class IntersectionType, class R, size_t r, size_t rC >
   void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const IntersectionType& intersection,
@@ -924,7 +924,7 @@ public:
   }
 
 private:
-  template< class R, int rDF, int rCDF, int rDT, int rCDT, int rLR, int rCLR, int rT, int rCT >
+  template< class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rLR, size_t rCLR, size_t rT, size_t rCT >
   size_t order(const Stuff::LocalfunctionInterface
                    < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& localDiffusionFactor,
                const Stuff::LocalfunctionInterface
@@ -941,7 +941,7 @@ private:
       return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
   } // size_t order(...)
 
-  template< class IntersectionType, class R, int rDF, int rCDF, int rDT, int rCDT, int rLDR, int rCLDR, int rT, int rCT >
+  template< class IntersectionType, class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rLDR, size_t rCLDR, size_t rT, size_t rCT >
   void evaluate(const Stuff::LocalfunctionInterface
                     < EntityType, DomainFieldType, dimDomain, R, rDF, rCDF >& /*localDiffusionFactor*/,
                 const Stuff::LocalfunctionInterface

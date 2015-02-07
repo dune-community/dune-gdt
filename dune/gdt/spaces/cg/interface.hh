@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACES_CG_INTERFACE_HH
 #define DUNE_GDT_SPACES_CG_INTERFACE_HH
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
 #include <dune/common/typetraits.hh>
@@ -26,7 +28,7 @@ namespace GDT {
 namespace Spaces {
 
 
-template< class ImpTraits, int domainDim, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class CGInterface
   : public SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >
 {
@@ -85,13 +87,13 @@ public:
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
     std::vector< RangeType > tmp_basis_values(basis.size(), RangeType(0));
     const auto& reference_element = ReferenceElements< DomainFieldType, dimDomain >::general(entity.type());
-    const int num_vertices = reference_element.size(dimDomain);
+    const auto num_vertices = reference_element.size(dimDomain);
     assert(num_vertices >= 0);
-    assert(size_t(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
+    assert(boost::numeric_cast< size_t >(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
     std::vector< DomainType > local_vertices(num_vertices, DomainType(0));
     // loop over all vertices
-    for (int ii = 0; ii < num_vertices; ++ii) {
+    for (auto ii : DSC::valueRange(num_vertices)) {
       // get the local coordinate of the iith vertex
       const auto local_vertex = reference_element.position(ii, dimDomain);
       // evaluate the basefunctionset
@@ -136,7 +138,7 @@ public:
       if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (int cc = 0; cc < geometry.corners(); ++cc)
+        for (auto cc : DSC::valueRange(geometry.corners()))
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
       } // only work on dirichlet ones
     } // loop over all intersections
@@ -166,7 +168,7 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class G, class S, int d, int r, int rC >
+  template< class G, class S, size_t d, size_t r, size_t rC >
   PatternType compute_pattern(const GridView< G >& local_grid_view, const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
     return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
@@ -174,7 +176,7 @@ public:
 
   using BaseType::local_constraints;
 
-  template< class S, int d, int r, int rC, class ConstraintsType >
+  template< class S, size_t d, size_t r, size_t rC, class ConstraintsType >
   void local_constraints(const SpaceInterface< S, d, r, rC >& /*other*/,
                          const EntityType& /*entity*/,
                          ConstraintsType& /*ret*/) const
@@ -182,7 +184,7 @@ public:
     static_assert(AlwaysFalse< S >::value, "Not implemented for these constraints!");
   } // ... local_constraints(...)
 
-  template< class S, int d, int r, int rC >
+  template< class S, size_t d, size_t r, size_t rC >
   void local_constraints(const SpaceInterface< S, d, r, rC >& other,
                          const EntityType& entity,
                          Constraints::Dirichlet< IntersectionType, RangeFieldType >& ret) const

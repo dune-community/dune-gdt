@@ -26,7 +26,7 @@ struct Oswald_Interpolation_Operator
   typedef typename SpaceType::GridViewType               GridViewType;
   typedef typename GridViewType::Grid                    GridType;
   typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
-  static const unsigned int                              dimDomain = SpaceType::dimDomain;
+  static const size_t                                    dimDomain = SpaceType::dimDomain;
 
   /**
    * \note This is not a test for correct results yet!

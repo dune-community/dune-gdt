@@ -26,8 +26,8 @@ namespace BaseFunctionSet {
 
 // forwards, to be used in the traits and to allow for specialization
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PdelabWrapper
 {
   static_assert(Dune::AlwaysFalse< PdelabSpaceImp >::value, "Untested for arbitrary dimension!");
@@ -35,8 +35,8 @@ class PdelabWrapper
 
 
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PiolaTransformedPdelabWrapper
 {
   static_assert(Dune::AlwaysFalse< PdelabSpaceImp >::value, "Untested for these dimensions!");
@@ -48,14 +48,14 @@ namespace internal {
 
 // forward, to allow for specialization
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class PdelabWrapperTraits;
 
 
 //! Specialization for dimRange = 1, dimRangeRows = 1
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
+          class DomainFieldImp, size_t domainDim,
           class RangeFieldImp >
 class PdelabWrapperTraits< PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
 {
@@ -73,8 +73,8 @@ private:
 
 
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim >
 class PiolaTransformedPdelabWrapperTraits
 {
   static_assert(domainDim == rangeDim, "Untested!");
@@ -97,7 +97,7 @@ private:
 
 //! Specialization for dimRange = 1, dimRangeRows = 1
 template< class PdelabSpaceType, class EntityImp,
-          class DomainFieldImp, int domainDim,
+          class DomainFieldImp, size_t domainDim,
           class RangeFieldImp >
 class PdelabWrapper< PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1 >
   : public BaseFunctionSetInterface< internal::PdelabWrapperTraits< PdelabSpaceType, EntityImp,
@@ -181,8 +181,8 @@ private:
 
 
 template< class PdelabSpaceType, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim >
 class PiolaTransformedPdelabWrapper< PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1 >
   : public BaseFunctionSetInterface< internal::PiolaTransformedPdelabWrapperTraits< PdelabSpaceType, EntityImp,
                                                                        DomainFieldImp, domainDim,
@@ -304,8 +304,8 @@ private:
 
 
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PdelabWrapper
 {
   static_assert(AlwaysFalse< PdelabSpaceImp >::value, "You are missing dune-pdelab!");
@@ -313,8 +313,8 @@ class PdelabWrapper
 
 
 template< class PdelabSpaceImp, class EntityImp,
-          class DomainFieldImp, int domainDim,
-          class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+          class DomainFieldImp, size_t domainDim,
+          class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PiolaTransformedPdelabWrapper
 {
   static_assert(AlwaysFalse< PdelabSpaceImp >::value, "You are missing dune-pdelab!");

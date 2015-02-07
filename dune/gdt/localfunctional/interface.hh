@@ -41,7 +41,7 @@ public:
    *  \tparam r   dimRange
    *  \tparam rC  dimRangeCols
    */
-  template< class T, class D, int d, class R, int r, int rC >
+  template< class T, class D, size_t d, class R, size_t r, size_t rC >
   void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
              Dune::DynamicVector< R >& ret,
              std::vector< Dune::DynamicVector< R > >& tmpLocalVectors) const
@@ -74,7 +74,7 @@ public:
    *  \tparam r                 dimRange of the of the testBase
    *  \tparam rC                dimRangeCols of the testBase
    */
-  template< class T, class IntersectionType, class D, int d, class R, int r, int rC >
+  template< class T, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC >
   void apply(const BaseFunctionSetInterface< T, D, d, R, r, rC >& testBase,
              const IntersectionType& intersection,
              Dune::DynamicVector< R >& ret,

@@ -22,7 +22,7 @@ namespace FV {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class Default
 {
   static_assert(Dune::AlwaysFalse< GridViewImp >::value, "Untested for these dimensions!");
@@ -32,7 +32,7 @@ class Default
 /**
  *  \brief Traits class for Spaces::CG::FemBased.
  */
-template< class GridViewImp, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class DefaultTraits
 {
 public:
@@ -53,7 +53,7 @@ public:
 }; // class DefaultTraits
 
 
-template< class GridViewImp, class RangeFieldImp, int rangeDim >
+template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
   : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
                            GridViewImp::dimension, rangeDim, 1 >
@@ -65,9 +65,9 @@ public:
   typedef DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >  Traits;
 
   static const int          polOrder = Traits::polOrder;
-  static const unsigned int dimDomain = BaseType::dimDomain;
-  static const unsigned int dimRange = BaseType::dimRange;
-  static const unsigned int dimRangeCols = BaseType::dimRangeCols;
+  static const size_t       dimDomain = BaseType::dimDomain;
+  static const size_t       dimRange = BaseType::dimRange;
+  static const size_t       dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::GridViewType             GridViewType;
   typedef typename Traits::RangeFieldType           RangeFieldType;
@@ -121,7 +121,7 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class G, class S, int d, int r, int rC >
+  template< class G, class S, size_t d, size_t r, size_t rC >
   PatternType compute_pattern(const GridView< G >& local_grid_view,
                               const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {

@@ -21,7 +21,7 @@ namespace GDT {
  *
  *          \see Stuff::LocalfunctionSetInterface for the template parameters D, d, R, r and rC.
  */
-template< class Traits, class D, int d, class R, int r, int rC = 1 >
+template< class Traits, class D, size_t d, class R, size_t r, size_t rC = 1 >
 class BaseFunctionSetInterface
   : public Stuff::LocalfunctionSetInterface< typename Traits::EntityType, D, d, R, r, rC >
   , public Stuff::CRTPInterface< BaseFunctionSetInterface< Traits, D, d, R, r, rC >, Traits >

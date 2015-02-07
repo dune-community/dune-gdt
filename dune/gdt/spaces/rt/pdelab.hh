@@ -41,7 +41,7 @@ namespace RT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PdelabBased
 {
   static_assert(AlwaysFalse< GridViewImp >::value, "Untested for these dimensions or polynomial order!");
@@ -51,7 +51,7 @@ class PdelabBased
 namespace internal {
 
 
-template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class PdelabBasedTraits
 {
 public:
@@ -63,7 +63,7 @@ public:
   static_assert(rangeDimCols == 1, "Untested!");
 private:
   typedef typename GridViewType::ctype DomainFieldType;
-  static const unsigned int             dimDomain = GridViewType::dimension;
+  static const size_t                  dimDomain = GridViewType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
 private:
@@ -111,7 +111,7 @@ private:
 } // namespace internal
 
 
-template< class GridViewImp, class RangeFieldImp, int rangeDim >
+template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >
   : public Spaces::RTInterface< internal::PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >,
                                 GridViewImp::dimension, RangeFieldImp, rangeDim, 1 >
@@ -211,7 +211,7 @@ public:
   } // ... communicator(...)
 
 private:
-  template< class S, int d, int p, bool simplicial >
+  template< class S, size_t d, int p, bool simplicial >
   struct Helper
   {
     static_assert(AlwaysFalse< S >::value, "Not available for this combination!");
@@ -247,7 +247,7 @@ private:
 #else // HAVE_DUNE_PDELAB
 
 
-template< class GridViewImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class PdelabBased
 {
   static_assert(AlwaysFalse< GridViewImp >::value, "You are missing dune-pdelab!");

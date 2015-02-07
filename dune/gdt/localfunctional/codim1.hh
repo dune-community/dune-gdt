@@ -84,7 +84,7 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class E, class IntersectionType, class D, int d, class R, int r, int rC >
+  template< class E, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC >
   void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, r, rC >& testBase,
              const IntersectionType& intersection,
              Dune::DynamicVector< R >& ret,

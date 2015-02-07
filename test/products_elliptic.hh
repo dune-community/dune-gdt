@@ -31,16 +31,16 @@ struct EllipticProductBase
   typedef Dune::Stuff::Grid::Providers::Cube< GridType > GridProviderType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
-  static const unsigned int                   dimDomain = SpaceType::dimDomain;
+  static const size_t                         dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType  RangeFieldType;
-  static const unsigned int                   dimRange = SpaceType::dimRange;
+  static const size_t                         dimRange = SpaceType::dimRange;
   typedef Stuff::Functions::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >             FunctionType;
   typedef Stuff::Functions::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain > TensorType;
 
   EllipticProductBase()
-   : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast< unsigned int >(dsc_grid_elements())).grid_ptr())
+   : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast< size_t >(dsc_grid_elements())).grid_ptr())
    , leaf_view_(Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_))
    , space_(leaf_view_)
    , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})

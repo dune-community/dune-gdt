@@ -42,7 +42,7 @@ public:
    *  \tparam r{T,A}  dimRange of the of the {testBase,ansatzBase}
    *  \tparam rC{T,a} dimRangeCols of the {testBase,ansatzBase}
    */
-  template< class T, class A, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  template< class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void apply(const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
              const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
              Dune::DynamicMatrix< R >& ret,
@@ -81,7 +81,7 @@ public:
    */
   template< class TE, class AE, class TN, class AN,
             class IntersectionType,
-            class D, int d, class R, int rT, int rCT, int rA, int rCA >
+            class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void apply(const BaseFunctionSetInterface< TE, D, d, R, rT, rCT >& testBaseEntity,
              const BaseFunctionSetInterface< AE, D, d, R, rA, rCA >& ansatzBaseEntity,
              const BaseFunctionSetInterface< TN, D, d, R, rT, rCT >& testBaseNeighbor,
@@ -127,7 +127,7 @@ public:
    *  \tparam r{T,A}  dimRange of the of the {testBase,ansatzBase}
    *  \tparam rC{T,a} dimRangeCols of the {testBase,ansatzBase}
    */
-  template< class T, class A, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  template< class T, class A, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void apply(const BaseFunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
              const BaseFunctionSetInterface< A, D, d, R, rA, rCA >& ansatzBase,
              const IntersectionType& intersection,

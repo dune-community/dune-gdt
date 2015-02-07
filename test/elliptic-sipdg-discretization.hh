@@ -56,10 +56,10 @@ template< class GridPartType,
 class Discretization
 {
 public:
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  static const size_t                   dimDomain = GridPartType::dimension;
   typedef typename GridPartType::ctype  DomainFieldType;
 
-  static const unsigned int dimRange = 1;
+  static const size_t       dimRange = 1;
   typedef double            RangeFieldType;
 
   static const unsigned int polOrder = polynomialOrder;
@@ -222,9 +222,9 @@ class EocStudy
   typedef typename TestCase::EntityType   EntityType;
 
   typedef typename TestCase::DomainFieldType  DomainFieldType;
-  static const unsigned int                   dimDomain = TestCase::dimDomain;
+  static const size_t                         dimDomain = TestCase::dimDomain;
   typedef typename TestCase::RangeFieldType RangeFieldType;
-  static const unsigned int                 dimRange = TestCase::dimRange;
+  static const size_t                       dimRange = TestCase::dimRange;
 
   typedef Discretization< GridPartType, polOrder >  DiscretizationType;
   typedef typename DiscretizationType::VectorType                 VectorType;

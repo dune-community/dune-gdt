@@ -39,7 +39,7 @@ namespace RT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
@@ -47,7 +47,7 @@ class FemLocalfunctionsBased
 
 
 // forward, to allow for specialization
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class FemLocalfunctionsBasedTraits
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
@@ -65,11 +65,11 @@ public:
   static const int                      polOrder = polynomialOrder;
 private:
   typedef typename GridPartType::ctype  DomainFieldType;
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  static const size_t                   dimDomain = GridPartType::dimension;
 public:
   typedef RangeFieldImp                 RangeFieldType;
-  static const unsigned int             dimRange = 2;
-  static const unsigned int             dimRangeCols = 1;
+  static const size_t                   dimRange = 2;
+  static const size_t                   dimRangeCols = 1;
   typedef FemLocalfunctionsBased< GridPartType, polOrder, RangeFieldType, dimRange, dimRangeCols > derived_type;
 private:
   typedef typename GridPartType::GridType GridType;
@@ -97,7 +97,7 @@ public:
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view = false;
 private:
-  template< class G, int p, class R, int r, int rC >
+  template< class G, int p, class R, size_t r, size_t rC >
   friend class FemLocalfunctionsBased;
 }; // class FemLocalfunctionsBasedTraits< ..., 2, 1 >
 
@@ -117,10 +117,10 @@ public:
   typedef typename Traits::GridViewType   GridViewType;
   typedef typename GridPartType::ctype    DomainFieldType;
   static const int                        polOrder = Traits::polOrder;
-  static const unsigned int               dimDomain = GridPartType::dimension;
+  static const size_t                     dimDomain = GridPartType::dimension;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const unsigned int               dimRange = Traits::dimRange;
-  static const unsigned int               dimRangeCols = Traits::dimRangeCols;
+  static const size_t                     dimRange = Traits::dimRange;
+  static const size_t                     dimRangeCols = Traits::dimRangeCols;
 
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
@@ -193,7 +193,7 @@ public:
 
   using BaseType::compute_pattern;
 
-  template< class G, class S, int d, int r, int rC >
+  template< class G, class S, size_t d, size_t r, size_t rC >
   PatternType compute_pattern(const GridView< G >& local_grid_view,
                               const SpaceInterface< S, d, r, rC >& ansatz_space) const
   {
@@ -212,7 +212,7 @@ private:
 #else // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp, int rangeDim, int rangeDimCols = 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class FemLocalfunctionsBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "You are missing dune-fem-localfunctions!");

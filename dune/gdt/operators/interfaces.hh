@@ -73,9 +73,9 @@ class LocalizableOperatorInterface
   typedef typename Traits::RangeType    RangeType;
   typedef typename Traits::FieldType    FieldType;
 
-  typedef typename GridViewType::template Codim< 0 >::Entity  EntityType;
-  typedef typename GridViewType::ctype                        DomainFieldType;
-  static const unsigned int                                   dimDomain = GridViewType::dimension;
+  typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
+  typedef typename GridViewType::ctype                       DomainFieldType;
+  static const size_t                                        dimDomain = GridViewType::dimension;
 
 private:
   static_assert(Stuff::is_localizable_function< SourceType >::value,

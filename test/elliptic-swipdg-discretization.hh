@@ -12,6 +12,8 @@
 #include <cmath>
 #include <limits>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/common/timer.hh>
 
 #include <dune/geometry/quadraturerules.hh>
@@ -71,10 +73,10 @@ template< class GridPartType,
 class Discretization
 {
 public:
-  static const unsigned int             dimDomain = GridPartType::dimension;
+  static const size_t                   dimDomain = GridPartType::dimension;
   typedef typename GridPartType::ctype  DomainFieldType;
 
-  static const unsigned int dimRange = 1;
+  static const size_t       dimRange = 1;
   typedef double            RangeFieldType;
 
   static const unsigned int polOrder = polynomialOrder;
@@ -241,9 +243,9 @@ protected:
   typedef typename TestCase::GridViewType GridViewType;
 
   typedef typename TestCase::DomainFieldType  DomainFieldType;
-  static const unsigned int                   dimDomain = TestCase::dimDomain;
+  static const size_t                         dimDomain = TestCase::dimDomain;
   typedef typename TestCase::RangeFieldType RangeFieldType;
-  static const unsigned int                 dimRange = TestCase::dimRange;
+  static const size_t                       dimRange = TestCase::dimRange;
 
   typedef Discretization< GridPartType, polOrder >  DiscretizationType;
 
@@ -572,9 +574,9 @@ class EstimatorStudy
   typedef typename BaseType::EntityType   EntityType;
 
   typedef typename BaseType::DomainFieldType  DomainFieldType;
-  static const unsigned int                   dimDomain = BaseType::dimDomain;
+  static const size_t                         dimDomain = BaseType::dimDomain;
   typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const unsigned int                 dimRange = BaseType::dimRange;
+  static const size_t                       dimRange = BaseType::dimRange;
 
   typedef typename BaseType::DiscretizationType DiscretizationType;
   typedef typename DiscretizationType::VectorType                 VectorType;
@@ -1220,7 +1222,7 @@ private:
         if (intersection.boundary() && !intersection.neighbor()) {
           const auto& intersection_geometry = intersection.geometry();
           for (size_t local_intersection_corner_id = 0;
-               int(local_intersection_corner_id) < intersection_geometry.corners();
+               local_intersection_corner_id < boost::numeric_cast< size_t >(intersection_geometry.corners());
                ++local_intersection_corner_id) {
             const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
             // now, we need to find the entity's vertex this intersection's corner point equals to, so we

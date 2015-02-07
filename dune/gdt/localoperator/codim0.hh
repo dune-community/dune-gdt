@@ -84,7 +84,7 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class E, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  template< class E, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
              const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase,
              Dune::DynamicMatrix< R >& ret,
