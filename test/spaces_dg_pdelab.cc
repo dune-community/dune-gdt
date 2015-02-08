@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#define DUNE_STUFF_TEST_MAIN_CATCH_EXCEPTIONS 1
+
 #include <dune/stuff/test/main.hxx>
 
 #include "spaces_dg.hh"
@@ -51,6 +53,6 @@ TEST(DISABLED_DG_Space, fulfills_interface)                 {}
 TEST(DISABLED_DG_Space, mapper_fulfills_interface)          {}
 TEST(DISABLED_DG_Space, basefunctionset_fulfills_interface) {}
 TEST(DISABLED_DG_Space, check_for_correct_copy)             {}
-TEST(DISABLED_P1Q1_DG_Space, maps_correctly)                 {}
+TEST(DISABLED_P1Q1_DG_Space, maps_correctly)                {}
 
 #endif // HAVE_DUNE_PDELAB
