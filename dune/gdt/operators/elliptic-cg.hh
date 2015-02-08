@@ -43,7 +43,7 @@ class EllipticCGTraits
   static_assert(Stuff::is_localizable_function<DiffusionTensorType>::value
                     || std::is_same<void, DiffusionTensorType>::value,
                 "DiffusionTensorType has to be void or derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(Stuff::is_matrix<MatrixImp>::value, "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(Stuff::LA::is_matrix<MatrixImp>::value, "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
   static_assert(is_space<SourceSpaceImp>::value, "SourceSpaceImp has to be derived from SpaceInterface!");
   static_assert(is_space<RangeSpaceImp>::value, "RangeSpaceImp has to be derived from SpaceInterface!");
 
