@@ -27,6 +27,15 @@
 
 namespace Dune {
 namespace GDT {
+namespace Exceptions {
+
+
+class darcy_operator_error : public operator_error
+{
+};
+
+
+} // namespace Exceptions
 namespace Operators {
 
 

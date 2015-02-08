@@ -21,7 +21,7 @@ class prolongation_error : public operator_error
 {
 };
 
-class darcy_operator_error : public operator_error
+class projection_error : public operator_error
 {
 };
 
