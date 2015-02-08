@@ -11,6 +11,7 @@
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
+#include <dune/stuff/test/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/projections.hh>
@@ -40,7 +41,7 @@ struct EllipticProductBase
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain > TensorType;
 
   EllipticProductBase()
-   : grid_(GridProviderType(0.0, 1.0, boost::numeric_cast< size_t >(dsc_grid_elements())).grid_ptr())
+   : grid_(GridProviderType(0.0, 1.0, Stuff::Test::grid_elements()).grid_ptr())
    , leaf_view_(Dune::GDT::SpaceTools::GridPartView< SpaceType >::create_leaf(*grid_))
    , space_(leaf_view_)
    , one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
