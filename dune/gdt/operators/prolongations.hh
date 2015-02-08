@@ -211,10 +211,10 @@ private:
                    << "This was the original error: " << ee.what());
       }
       // set local DoFs
-      auto local_range_vector = local_range->vector();
+      auto& local_range_vector = local_range->vector();
       assert(local_range_vector.size() == local_DoFs.size());
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-        local_range_vector.set(ii, local_DoFs.get_entry(ii));
+        local_range_vector[ii] = local_DoFs.get_entry(ii);
     } // walk the grid
   } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
 
@@ -329,7 +329,7 @@ private:
       assert(source_entity_ptrs.size() == lagrange_points.size());
       // get range
       auto local_range = range.local_discrete_function(entity);
-      auto local_range_DoF_vector = local_range->vector();
+      auto& local_range_DoF_vector = local_range->vector();
       // do the actual work (see below)
       apply_local(source, lagrange_points, source_entity_ptrs, local_range_DoF_vector);
     } // walk the grid
@@ -345,7 +345,7 @@ private:
     size_t kk = 0;
     assert(source_entity_ptr_unique_ptrs.size() >= lagrange_points.size());
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-      if (std::isinf(range_DoF_vector.get(kk))) {
+      if (std::isinf(range_DoF_vector[kk])) {
         const auto& global_point = lagrange_points[ii];
         // evaluate source function
         const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[ii];
@@ -356,10 +356,10 @@ private:
           const auto local_source = source.local_function(source_entity);
           const auto source_value = local_source->evaluate(local_source_point);
           for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-            range_DoF_vector.set(kk, source_value[jj]);
+            range_DoF_vector[kk] = source_value[jj];
         } else
           for (size_t jj = 0; jj < dimRange; ++jj, ++kk)
-            range_DoF_vector.set(kk, 0.0);
+            range_DoF_vector[kk] = 0.0;
       }
       else
         kk += dimRange;
