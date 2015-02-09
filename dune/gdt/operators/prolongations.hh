@@ -47,10 +47,9 @@ namespace Operators {
 
 
 /**
- *  \note The polynomial order of the local source is guessed by taking the polynomial order of the sources local
- *        function for the first entity in the sources grid view, only. Thus this operator will fail for highly varying
- *        local polynomial degree.
- *
+ *  \note The automatic detection of the right integration order might fail, so you might want to specify
+ *        over_integrate. The reason is that in order to locally evaluate the source we first have to create a
+ *        quadrature, the correct order of wich we guess by taking the sources order on the first entity.
  *  \note We would have liked to do something like this and match on implementations of SpaceInterface:\code
 template< class T, class VS, class GPR, int pR, class RR, size_t rR, size_t rCR, class VR >
 void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
