@@ -21,20 +21,25 @@ TYPED_TEST_CASE(L2ProjectionOperator, SpaceTypes);
 TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
  this->produces_correct_results();
 }
+TYPED_TEST(L2ProjectionOperator, free_project_l2_function_works) {
+ this->free_project_l2_function_works();
+}
 
 TYPED_TEST_CASE(ProjectionOperator, SpaceTypes);
 TYPED_TEST(ProjectionOperator, produces_correct_results) {
  this->produces_correct_results();
 }
-TYPED_TEST(ProjectionOperator, apply_projection_works) {
- this->apply_projection_works();
+TYPED_TEST(ProjectionOperator, free_project_function_works) {
+ this->free_project_function_works();
 }
 
 #else // HAVE_DUNE_FEM
 
 
 TEST(DISABLED_L2ProjectionOperator, produces_correct_results) {}
-TEST(DISABLED_ProjectionOperator, apply_projection_works)     {}
+TEST(DISABLED_L2ProjectionOperator, free_project_l2_function_works) {}
+TEST(DISABLED_ProjectionOperator, produces_correct_results) {}
+TEST(DISABLED_ProjectionOperator, free_project_function_works) {}
 
 
 #endif // HAVE_DUNE_FEM

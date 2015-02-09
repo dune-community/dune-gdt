@@ -9,10 +9,6 @@
 #include "operators_projections_l2.hh"
 
 
-/**
-  * \todo This test is disabled on purpose. It compiles but the result check is not made for FV spaces!
-  */
-#if 0
 typedef testing::Types< SPACE_FV_SGRID(1, 1)
                       , SPACE_FV_SGRID(2, 1)
                       , SPACE_FV_SGRID(3, 1)
@@ -29,17 +25,16 @@ typedef testing::Types< SPACE_FV_SGRID(1, 1)
 
 TYPED_TEST_CASE(L2ProjectionOperator, SpaceTypes);
 TYPED_TEST(L2ProjectionOperator, produces_correct_results) {
- this->produces_correct_results();
+ this->produces_correct_results(0.096226);
+}
+TYPED_TEST(L2ProjectionOperator, free_project_l2_function_works) {
+ this->free_project_l2_function_works(0.096226);
 }
 
 TYPED_TEST_CASE(ProjectionOperator, SpaceTypes);
 TYPED_TEST(ProjectionOperator, produces_correct_results) {
- this->produces_correct_results();
+ this->produces_correct_results(0.096226);
 }
-TYPED_TEST(ProjectionOperator, apply_projection_works) {
- this->apply_projection_works();
+TYPED_TEST(ProjectionOperator, free_project_function_works) {
+ this->free_project_function_works(0.096226);
 }
-#endif
-
-TEST(DISABLED_L2ProjectionOperator, produces_correct_results) {}
-TEST(DISABLED_ProjectionOperator, apply_projection_works)     {}
