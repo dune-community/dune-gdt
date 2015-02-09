@@ -17,11 +17,11 @@ namespace GDT {
 namespace Spaces {
 
 
-template <class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
 class RTInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
-  typedef RTInterface<ImpTraits, domainDim, RangeFieldImp, rangeDim, rangeDimCols> ThisType;
+  typedef RTInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -171,7 +171,7 @@ public:
   void local_constraints(const SpaceInterface<S, d, r, rC>& /*ansatz_space*/, const EntityType& /*entity*/,
                          Spaces::ConstraintsInterface<C, R>& /*ret*/) const
   {
-    DUNE_THROW(NotImplemented, "There are no constraints implemented!");
+    DUNE_THROW(NotImplemented, "RT spaces do not implement constraints!");
   }
   /** @} */
 }; // class RTInterface
@@ -184,14 +184,12 @@ namespace internal {
 template <class S>
 struct is_rt_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_typedef_initialize_once(RangeFieldType)
-      DSC_has_static_member_initialize_once(dimDomain) DSC_has_static_member_initialize_once(dimRange)
-          DSC_has_static_member_initialize_once(dimRangeCols)
+  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
+      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
 
-              static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_typedef(RangeFieldType)<S>::value
-                          && DSC_has_static_member(dimDomain)<S>::value && DSC_has_static_member(dimRange)<S>::value
-                          && DSC_has_static_member(dimRangeCols)<S>::value;
+          static const
+      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
+                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_rt_space_helper
 
 
@@ -200,9 +198,7 @@ struct is_rt_space_helper
 
 template <class S, bool candidate = internal::is_rt_space_helper<S>::is_candidate>
 struct is_rt_space
-    : public std::is_base_of<Spaces::RTInterface<typename S::Traits, S::dimDomain, typename S::RangeFieldType,
-                                                 S::dimRange, S::dimRangeCols>,
-                             S>
+    : public std::is_base_of<Spaces::RTInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 
