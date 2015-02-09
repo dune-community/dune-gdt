@@ -15,16 +15,14 @@
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
 
-using namespace Dune;
-using namespace Dune::GDT;
-
 
 /**
  * \note This test assumes that Products::L2 does the right thing!
  */
 template <class SpaceType, class ProjectionOperatorType>
-struct ProjectionOperatorBase : ::testing::Test
+class ProjectionOperatorBase : public ::testing::Test
 {
+protected:
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
@@ -38,61 +36,51 @@ struct ProjectionOperatorBase : ::testing::Test
       FunctionType;
   typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_backend>::VectorType VectorType;
 
-  void produces_correct_results() const
+public:
+  ProjectionOperatorBase()
+    : grid_provider_(0.0, 1.0, 3u)
+    , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_provider_.grid()))
+    , function_("x", {"x[0]", "0", "0"}, 1)
+    , vector_(space_.mapper().size())
+    , discrete_function_(space_, vector_)
   {
-    // prepare
-    GridProviderType grid_provider(0.0, 1.0, 3u);
-    auto& grid                = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid);
-    const SpaceType space(grid_part_view);
-    const FunctionType function("x", "x[0]", 1, "function");
-    VectorType vector(space.mapper().size());
-    typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
-    DiscreteFunctionType discrete_function(space, vector, "discrete function");
-    // project
-    const ProjectionOperatorType projection_operator(space.grid_view());
-    projection_operator.apply(function, discrete_function);
-    // measure error
-    const Dune::Stuff::Functions::Difference<FunctionType, DiscreteFunctionType> difference(function,
-                                                                                            discrete_function);
-    const Dune::GDT::Products::L2<GridViewType> l2_product_operator(space.grid_view());
-    const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
-    EXPECT_LE(l2_error, RangeFieldType(1e-11)); // 3d needs this
   }
-}; // ProjectionOperatorType
+
+  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  {
+    vector_ *= 0.0;
+    const ProjectionOperatorType projection_operator(space_.grid_view());
+    projection_operator.apply(function_, discrete_function_);
+    measure_error(tolerance);
+  }
+
+  void free_project_function_works(const RangeFieldType& tolerance = 1e-15)
+  {
+    vector_ *= 0.0;
+    Dune::GDT::project(function_, discrete_function_);
+    measure_error(tolerance);
+  }
+
+protected:
+  void measure_error(const RangeFieldType& tolerance) const
+  {
+    const Dune::GDT::Products::L2<GridViewType> l2_product_operator(space_.grid_view());
+    const auto l2_error = l2_product_operator.induced_norm(function_ - discrete_function_);
+    EXPECT_LE(l2_error, tolerance);
+  }
+
+  GridProviderType grid_provider_;
+  const SpaceType space_;
+  const FunctionType function_;
+  VectorType vector_;
+  Dune::GDT::DiscreteFunction<SpaceType, VectorType> discrete_function_;
+}; // class ProjectionOperatorBase
 
 
 template <class SpaceType>
 struct ProjectionOperator
-    : public ProjectionOperatorBase<SpaceType, Operators::Projection<typename SpaceType::GridViewType>>
+    : ProjectionOperatorBase<SpaceType, Dune::GDT::Operators::Projection<typename SpaceType::GridViewType>>
 {
-  typedef ProjectionOperatorBase<SpaceType, Operators::Projection<typename SpaceType::GridViewType>> BaseType;
-  typedef typename BaseType::GridProviderType GridProviderType;
-  typedef typename BaseType::GridViewType GridViewType;
-  typedef typename BaseType::FunctionType FunctionType;
-  typedef typename BaseType::RangeFieldType RangeFieldType;
-  typedef typename BaseType::VectorType VectorType;
-
-  void apply_projection_works() const
-  {
-    // prepare
-    GridProviderType grid_provider(0.0, 1.0, 3u);
-    auto& grid                = grid_provider.grid();
-    const auto grid_part_view = Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid);
-    const SpaceType space(grid_part_view);
-    const FunctionType function("x", "x[0]", 1, "function");
-    VectorType vector(space.mapper().size());
-    typedef Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
-    DiscreteFunctionType discrete_function(space, vector, "discrete function");
-    // project
-    Operators::apply_projection(function, discrete_function);
-    // measure error
-    const Dune::Stuff::Functions::Difference<FunctionType, DiscreteFunctionType> difference(function,
-                                                                                            discrete_function);
-    const Dune::GDT::Products::L2<GridViewType> l2_product_operator(space.grid_view());
-    const auto l2_error = std::sqrt(l2_product_operator.apply2(difference, difference));
-    EXPECT_LE(l2_error, RangeFieldType(1e-15));
-  }
 };
 
 
