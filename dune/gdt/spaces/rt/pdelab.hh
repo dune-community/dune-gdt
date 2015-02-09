@@ -114,25 +114,25 @@ private:
 template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >
   : public Spaces::RTInterface< internal::PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >,
-                                GridViewImp::dimension, RangeFieldImp, rangeDim, 1 >
+                                GridViewImp::dimension, rangeDim, 1 >
 {
-  typedef PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >                                       ThisType;
+  typedef PdelabBased< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >                  ThisType;
   typedef Spaces::RTInterface< internal::PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >,
-                               GridViewImp::dimension, RangeFieldImp, rangeDim, 1 >                       BaseType;
+                               GridViewImp::dimension, rangeDim, 1 >                 BaseType;
 public:
   typedef internal::PdelabBasedTraits< GridViewImp, 0, RangeFieldImp, rangeDim, 1 >  Traits;
 
   using BaseType::dimDomain;
   using BaseType::polOrder;
 
-  typedef typename Traits::GridViewType             GridViewType;
-  typedef typename Traits::BackendType              BackendType;
-  typedef typename Traits::MapperType               MapperType;
-  typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
-  typedef typename Traits::CommunicatorType         CommunicatorType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
+  using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::CommunicatorType;
 
-  typedef typename BaseType::PatternType  PatternType;
-  typedef typename BaseType::EntityType   EntityType;
+  using typename BaseType::PatternType;
+  using typename BaseType::EntityType;
 private:
   typedef typename Traits::FEMapType FEMapType;
 
