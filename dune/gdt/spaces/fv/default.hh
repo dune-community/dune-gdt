@@ -12,8 +12,9 @@
 
 #include <dune/gdt/basefunctionset/default/fv.hh>
 #include <dune/gdt/mapper/default/fv.hh>
-#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
+
+#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -27,6 +28,9 @@ class Default
 {
   static_assert(Dune::AlwaysFalse< GridViewImp >::value, "Untested for these dimensions!");
 };
+
+
+namespace internal {
 
 
 /**
@@ -53,33 +57,28 @@ public:
 }; // class DefaultTraits
 
 
+} // namespace internal
+
+
 template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
-  : public SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
-                           GridViewImp::dimension, rangeDim, 1 >
+  : public FVInterface< internal::DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
+                        GridViewImp::dimension, rangeDim, 1 >
 {
-  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >        ThisType;
-  typedef SpaceInterface< DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
-                          GridViewImp::dimension, rangeDim, 1 >     BaseType;
+  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 > ThisType;
+  typedef FVInterface< internal::DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
+                       GridViewImp::dimension, rangeDim, 1 > BaseType;
 public:
-  typedef DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >  Traits;
-
-  static const int          polOrder = Traits::polOrder;
-  static const size_t       dimDomain = BaseType::dimDomain;
-  static const size_t       dimRange = BaseType::dimRange;
-  static const size_t       dimRangeCols = BaseType::dimRangeCols;
-
-  typedef typename Traits::GridViewType             GridViewType;
-  typedef typename Traits::RangeFieldType           RangeFieldType;
-  typedef typename Traits::BackendType              BackendType;
-  typedef typename Traits::MapperType               MapperType;
-  typedef typename Traits::EntityType               EntityType;
-  typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
+  using typename BaseType::Traits;
+  using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
+  using typename BaseType::EntityType;
+  using typename BaseType::BaseFunctionSetType;
+private:
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
-  typedef typename Traits::CommunicatorType         CommunicatorType;
-
-  typedef Dune::Stuff::LA::SparsityPatternDefault   PatternType;
-  typedef typename GridViewType::ctype              DomainFieldType;
+public:
+  using typename BaseType::CommunicatorType;
 
   Default(GridViewType gv)
     : grid_view_(gv)
@@ -117,15 +116,6 @@ public:
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     return BaseFunctionSetType(entity);
-  }
-
-  using BaseType::compute_pattern;
-
-  template< class G, class S, size_t d, size_t r, size_t rC >
-  PatternType compute_pattern(const GridView< G >& local_grid_view,
-                              const SpaceInterface< S, d, r, rC >& ansatz_space) const
-  {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
   CommunicatorType& communicator() const
