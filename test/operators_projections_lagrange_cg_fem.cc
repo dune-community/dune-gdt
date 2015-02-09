@@ -23,12 +23,19 @@ TYPED_TEST(LagrangeProjectionOperator, produces_correct_results)
 {
   this->produces_correct_results();
 }
+TYPED_TEST(LagrangeProjectionOperator, free_project_function_works)
+{
+  this->free_project_function_works();
+}
 
 
 #else // HAVE_DUNE_FEM
 
 
 TEST(DISABLED_LagrangeProjectionOperator, produces_correct_results)
+{
+}
+TEST(DISABLED_LagrangeProjectionOperator, free_project_function_works)
 {
 }
 
