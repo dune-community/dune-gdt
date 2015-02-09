@@ -22,7 +22,7 @@
 #include "../../../mapper/fem.hh"
 #include "../../../basefunctionset/fem.hh"
 
-#include "../../../spaces/interface.hh"
+#include "../../../spaces/dg/interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -38,6 +38,9 @@ class FemBased
 {
   static_assert(Dune::AlwaysFalse< GridPartImp >::value, "Untested for these dimensions!");
 };
+
+
+namespace internal {
 
 
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
@@ -71,35 +74,30 @@ public:
 }; // class FemBasedTraits
 
 
+} // namespace internal
+
+
 // untested for the vector-valued case
 template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
 class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+  : public DGInterface< internal::FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
                            GridPartImp::dimension, 1, 1 >
 {
-  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >       ThisType;
-  typedef SpaceInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                          GridPartImp::dimension, 1, 1 >                      BaseType;
+  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
+  typedef DGInterface< internal::FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+                       GridPartImp::dimension, 1, 1 >                   BaseType;
 public:
-  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
-
-  static const int          polOrder = Traits::polOrder;
-  static const size_t dimDomain = BaseType::dimDomain;
-  static const size_t dimRange = BaseType::dimRange;
-  static const size_t dimRangeCols = BaseType::dimRangeCols;
-
-  typedef typename Traits::GridPartType             GridPartType;
-  typedef typename Traits::GridViewType             GridViewType;
-  typedef typename Traits::RangeFieldType           RangeFieldType;
-  typedef typename Traits::BackendType              BackendType;
-  typedef typename Traits::MapperType               MapperType;
-  typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
-  typedef typename Traits::EntityType               EntityType;
+  using typename BaseType::Traits;
+  typedef typename Traits::GridPartType GridPartType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
+  using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::EntityType;
+private:
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
-  typedef typename Traits::CommunicatorType         CommunicatorType;
-
-  typedef Dune::Stuff::LA::SparsityPatternDefault   PatternType;
-  typedef typename GridPartType::ctype              DomainFieldType;
+public:
+  using typename BaseType::CommunicatorType;
 
   FemBased(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
@@ -116,15 +114,6 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
 
   ThisType& operator=(ThisType&& source) = delete;
-
-  using BaseType::compute_pattern;
-
-  template< class G, class S, size_t d, size_t r, size_t rC >
-  PatternType compute_pattern(const GridView< G >& local_grid_view,
-                              const SpaceInterface< S, d, r, rC >& ansatz_space) const
-  {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
-  }
 
   const GridPartType& grid_part() const
   {

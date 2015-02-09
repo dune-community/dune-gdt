@@ -27,7 +27,7 @@
 #include "../../../mapper/pdelab.hh"
 #include "../../../basefunctionset/pdelab.hh"
 
-#include "../../../spaces/interface.hh"
+#include "../../../spaces/dg/interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -42,7 +42,10 @@ template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t ra
 class PdelabBased
 {
   static_assert(Dune::AlwaysFalse< GridViewImp >::value, "Untested for this combination of dimensions!");
-}; //class PdelabBased
+};
+
+
+namespace internal {
 
 
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
@@ -99,40 +102,31 @@ private:
 }; // class PdelabBasedTraits
 
 
+} // namespace internal
+
+
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp >
 class PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public SpaceInterface< PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                           GridViewImp::dimension, 1, 1 >
+  : public DGInterface< internal::PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+                        GridViewImp::dimension, 1, 1 >
 {
-  typedef PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >       ThisType;
-  typedef SpaceInterface< PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                          GridViewImp::dimension, 1, 1 >                         BaseType;
+  typedef PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
+  typedef DGInterface< internal::PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
+                       GridViewImp::dimension, 1, 1 >                      BaseType;
 public:
-  typedef PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
+  using typename BaseType::Traits;
 
-  static const int          polOrder = Traits::polOrder;
-  static const size_t dimDomain = BaseType::dimDomain;
-  static const size_t dimRange = BaseType::dimRange;
-  static const size_t dimRangeCols = BaseType::dimRangeCols;
-
-  typedef typename Traits::GridViewType             GridViewType;
-  typedef typename Traits::RangeFieldType           RangeFieldType;
-  typedef typename Traits::BackendType              BackendType;
-  typedef typename Traits::MapperType               MapperType;
-  typedef typename Traits::BaseFunctionSetType      BaseFunctionSetType;
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
-  typedef typename Traits::CommunicatorType         CommunicatorType;
-
-  typedef typename GridViewType::ctype              DomainFieldType;
-  typedef FieldVector< DomainFieldType, dimDomain > DomainType;
-
-  typedef typename BaseType::IntersectionType  IntersectionType;
-  typedef typename BaseType::EntityType        EntityType;
-  typedef typename BaseType::PatternType       PatternType;
-  typedef typename BaseType::BoundaryInfoType  BoundaryInfoType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
+  using typename BaseType::EntityType;
+  using typename BaseType::BaseFunctionSetType;
 private:
-  typedef typename Traits::FEMapType FEMapType;
+  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::FEMapType                FEMapType;
 public:
+  using typename BaseType::CommunicatorType;
+
   PdelabBased(GridViewType gV)
     : grid_view_(gV)
     , fe_map_()
@@ -175,15 +169,6 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
 
   ThisType& operator=(ThisType&& source) = delete;
-
-  using BaseType::compute_pattern;
-
-  template< class G, class S, size_t d, size_t r, size_t rC >
-  PatternType compute_pattern(const GridView< G >& local_grid_view,
-                              const SpaceInterface< S, d, r, rC >& ansatz_space) const
-  {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
-  }
 
   const GridViewType& grid_view() const
   {
