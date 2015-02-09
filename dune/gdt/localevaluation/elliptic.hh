@@ -381,7 +381,7 @@ public:
         retRow[jj] = functionValue * (ansatzGradients[jj][0] * testGradients[ii][0]);
       }
     }
-  } // ... redirect_evaluate< ..., 1, ... >(...)
+  } // ... evaluate< ..., 1, ... >(...)
 
   /**
    *  \brief  Computes an elliptic evaluation for a 2x2 matrix-valued local function and matrix-valued basefunctionsets.
