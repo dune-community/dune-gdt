@@ -28,13 +28,11 @@ namespace GDT {
 namespace Spaces {
 
 
-template <class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
 class CGInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
-  typedef CGInterface<ImpTraits, domainDim, RangeFieldImp, rangeDim, rangeDimCols> ThisType;
-
-  static constexpr RangeFieldImp compare_tolerance_ = 1e-13;
+  typedef CGInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -45,7 +43,7 @@ public:
   using BaseType::dimDomain;
   using typename BaseType::DomainType;
 
-  typedef typename Traits::RangeFieldType RangeFieldType;
+  using typename BaseType::RangeFieldType;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
 
@@ -54,6 +52,10 @@ public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
+private:
+  static const constexpr RangeFieldType compare_tolerance_ = 1e-13;
+
+public:
   /**
    * \defgroup interface ´´These methods have to be implemented!''
    * @{
@@ -180,7 +182,7 @@ public:
                          ConstraintsType& /*ret*/) const
   {
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
-  } // ... local_constraints(...)
+  }
 
   template <class S, size_t d, size_t r, size_t rC>
   void local_constraints(const SpaceInterface<S, d, r, rC>& other, const EntityType& entity,
@@ -227,14 +229,12 @@ namespace internal {
 template <class S>
 struct is_cg_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_typedef_initialize_once(RangeFieldType)
-      DSC_has_static_member_initialize_once(dimDomain) DSC_has_static_member_initialize_once(dimRange)
-          DSC_has_static_member_initialize_once(dimRangeCols)
+  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
+      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
 
-              static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_typedef(RangeFieldType)<S>::value
-                          && DSC_has_static_member(dimDomain)<S>::value && DSC_has_static_member(dimRange)<S>::value
-                          && DSC_has_static_member(dimRangeCols)<S>::value;
+          static const
+      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
+                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_cg_space_helper
 
 
@@ -243,9 +243,7 @@ struct is_cg_space_helper
 
 template <class S, bool candidate = internal::is_cg_space_helper<S>::is_candidate>
 struct is_cg_space
-    : public std::is_base_of<Spaces::CGInterface<typename S::Traits, S::dimDomain, typename S::RangeFieldType,
-                                                 S::dimRange, S::dimRangeCols>,
-                             S>
+    : public std::is_base_of<Spaces::CGInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 

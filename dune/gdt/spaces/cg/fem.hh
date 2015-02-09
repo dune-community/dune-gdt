@@ -78,10 +78,10 @@ public:
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public Spaces::CGInterface<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                 GridPartImp::dimension, RangeFieldImp, 1, 1>
+                                 GridPartImp::dimension, 1, 1>
 {
   typedef Spaces::CGInterface<FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>, GridPartImp::dimension,
-                              RangeFieldImp, 1, 1> BaseType;
+                              1, 1> BaseType;
   typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
