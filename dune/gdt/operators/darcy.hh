@@ -99,8 +99,8 @@ private:
   /**
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
-  template< class T, class R, class S, class V >
-  void redirect_apply(const Spaces::CGInterface< T, dimDomain, R, dimDomain, 1 >& /*space*/,
+  template< class T, class S, class V >
+  void redirect_apply(const Spaces::CGInterface< T, dimDomain, dimDomain, 1 >& /*space*/,
                       const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1, 1 >& source,
                       DiscreteFunction< S, V >& range) const
   {
@@ -157,12 +157,12 @@ private:
     }
   } // ... redirect_apply(...)
 
-  template< class T, class R, class S, class V >
-  void redirect_apply(const Spaces::RTInterface< T, dimDomain, R, dimDomain, 1 >& /*space*/,
+  template< class T, class S, class V >
+  void redirect_apply(const Spaces::RTInterface< T, dimDomain, dimDomain, 1 >& /*space*/,
                       const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, FieldType, 1 >& source,
                       DiscreteFunction< S, V >& range) const
   {
-    static_assert(Spaces::RTInterface< T, dimDomain, FieldType, 1 >::polOrder == 0, "Untested!");
+    static_assert(Spaces::RTInterface< T, dimDomain, 1 >::polOrder == 0, "Untested!");
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();
     const auto infinity = std::numeric_limits< FieldType >::infinity();

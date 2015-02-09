@@ -107,10 +107,10 @@ private:
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp >
 class PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >
   : public Spaces::CGInterface< PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                                GridViewImp::dimension, RangeFieldImp, 1, 1 >
+                                GridViewImp::dimension, 1, 1 >
 {
   typedef Spaces::CGInterface< PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                               GridViewImp::dimension, RangeFieldImp, 1, 1 >     BaseType;
+                               GridViewImp::dimension, 1, 1 >                    BaseType;
   typedef PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >       ThisType;
 public:
   typedef PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
