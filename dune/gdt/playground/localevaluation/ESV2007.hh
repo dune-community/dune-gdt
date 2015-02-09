@@ -24,107 +24,103 @@ namespace ESV2007 {
 
 
 // forward, to be used in the traits
-template <class DiffusionFactorImp, class DiffusiveFluxImp, class DiffusionTensorImp = void>
+template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType = void>
 class DiffusiveFluxEstimate;
 
 
 namespace internal {
 
 
-template <class DiffusionFactorImp, class DiffusiveFluxImp, class DiffusionTensorImp = void>
+template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType = void>
 class DiffusiveFluxEstimateTraits
 {
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusiveFluxImp>::value,
-                "DiffusiveFluxImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(Stuff::is_localizable_function<DiffusionFactorType>::value,
+                "DiffusionFactorType has to be a localizable function.");
+  static_assert(Stuff::is_localizable_function<DiffusiveFluxType>::value,
+                "DiffusiveFluxType has to be a localizable function.");
+  static_assert(Stuff::is_localizable_function<DiffusionTensorType>::value,
+                "DiffusionTensorType has to be a localizable function.");
   static_assert(
-      std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusiveFluxImp::EntityType>::value
-          && std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
-      "EntityTypes have to agree!");
+      std::is_same<typename DiffusionFactorType::EntityType, typename DiffusiveFluxType::EntityType>::value
+          && std::is_same<typename DiffusionFactorType::EntityType, typename DiffusionTensorType::EntityType>::value,
+      "Types have to agree!");
   static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusiveFluxImp::DomainFieldType>::value
-          && std::is_same<typename DiffusionFactorImp::DomainFieldType,
-                          typename DiffusionTensorImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusiveFluxImp::dimDomain
-                    && DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain,
-                "Dimensions of domains have to agree");
+      std::is_same<typename DiffusionFactorType::DomainFieldType, typename DiffusiveFluxType::DomainFieldType>::value
+          && std::is_same<typename DiffusionFactorType::DomainFieldType,
+                          typename DiffusionTensorType::DomainFieldType>::value,
+      "Types have to agree!");
+  static_assert(DiffusionFactorType::dimDomain == DiffusiveFluxType::dimDomain
+                    && DiffusionFactorType::dimDomain == DiffusionTensorType::dimDomain,
+                "Dimensions have to agree");
 
 public:
-  typedef DiffusiveFluxEstimate<DiffusionFactorImp, DiffusiveFluxImp, DiffusionTensorImp> derived_type;
-
-  typedef DiffusionFactorImp LocalizableDiffusionFactorType;
-  typedef DiffusiveFluxImp LocalizableDiffusiveFluxType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorType;
-
-  typedef typename LocalizableDiffusionFactorType::LocalfunctionType LocalDiffusionFactorType;
-  typedef typename LocalizableDiffusiveFluxType::LocalfunctionType LocalDiffusiveFluxType;
-  typedef typename LocalizableDiffusionTensorType::LocalfunctionType LocalDiffusionTensorType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorType>, std::shared_ptr<LocalDiffusionTensorType>,
-                     std::shared_ptr<LocalDiffusiveFluxType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorType::dimDomain;
+  typedef DiffusiveFluxEstimate<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType> derived_type;
+  typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
+  typedef typename DiffusionFactorType::EntityType EntityType;
+  typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
+  static const size_t dimDomain = DiffusionFactorType::dimDomain;
 }; // class DiffusiveFluxEstimateTraits
 
 
-template <class DiffusionImp, class DiffusiveFluxImp>
-class DiffusiveFluxEstimateTraits<DiffusionImp, DiffusiveFluxImp, void>
+template <class DiffusionType, class DiffusiveFluxType>
+class DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType, void>
 {
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusionImp>::value,
-                "DiffusionImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, DiffusiveFluxImp>::value,
-                "DiffusiveFluxImp has to be derived from Stuff::IsLocalizableFunction.");
-  static_assert(std::is_same<typename DiffusionImp::EntityType, typename DiffusiveFluxImp::EntityType>::value,
-                "EntityImps have to agree!");
-  static_assert(std::is_same<typename DiffusionImp::DomainFieldType, typename DiffusiveFluxImp::DomainFieldType>::value,
-                "DomainFieldTypes have to agree!");
-  static_assert(DiffusionImp::dimDomain == DiffusiveFluxImp::dimDomain, "Dimensions of domains have to agree");
+  static_assert(Stuff::is_localizable_function<DiffusionType>::value,
+                "DiffusionType has to be a localizable function.");
+  static_assert(Stuff::is_localizable_function<DiffusiveFluxType>::value,
+                "DiffusiveFluxType has to be a localizable function.");
+  static_assert(std::is_same<typename DiffusionType::EntityType, typename DiffusiveFluxType::EntityType>::value,
+                "Types have to agree!");
+  static_assert(
+      std::is_same<typename DiffusionType::DomainFieldType, typename DiffusiveFluxType::DomainFieldType>::value,
+      "Types have to agree!");
+  static_assert(DiffusionType::dimDomain == DiffusiveFluxType::dimDomain, "Dimensions of domains have to agree");
 
 public:
-  typedef DiffusiveFluxEstimate<DiffusionImp, DiffusiveFluxImp> derived_type;
-  typedef DiffusionImp LocalizableDiffusionType;
-  typedef DiffusiveFluxImp LocalizableDiffusiveFluxType;
-  typedef typename LocalizableDiffusionType::LocalfunctionType LocalDiffusionType;
-  typedef typename LocalizableDiffusiveFluxType::LocalfunctionType LocalDiffusiveFluxType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionType>, std::shared_ptr<LocalDiffusiveFluxType>>
-      LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionType::dimDomain;
+  typedef DiffusiveFluxEstimate<DiffusionType, DiffusiveFluxType> derived_type;
+  typedef std::tuple<std::shared_ptr<typename DiffusionType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
+  typedef typename DiffusionType::EntityType EntityType;
+  typedef typename DiffusionType::DomainFieldType DomainFieldType;
+  static const size_t dimDomain = DiffusionType::dimDomain;
 }; // class DiffusiveFluxEstimateTraits
 
 
 } // namespace internal
 
 
-template <class DiffusionImp, class DiffusiveFluxImp>
-class DiffusiveFluxEstimate<DiffusionImp, DiffusiveFluxImp, void>
-    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionImp, DiffusiveFluxImp>, 2>
+template <class DiffusionType, class DiffusiveFluxType>
+class DiffusiveFluxEstimate<DiffusionType, DiffusiveFluxType, void>
+    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>,
+                                              2>
 {
-public:
-  typedef internal::DiffusiveFluxEstimateTraits<DiffusionImp, DiffusiveFluxImp> Traits;
-  typedef typename Traits::LocalizableDiffusionType LocalizableDiffusionType;
-  typedef typename Traits::LocalizableDiffusiveFluxType LocalizableDiffusiveFluxType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
+  typedef LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
+      BaseType;
 
-  DiffusiveFluxEstimate(const LocalizableDiffusionType& diffusion, const LocalizableDiffusiveFluxType& diffusive_flux)
+public:
+  typedef internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType> Traits;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+
+  DiffusiveFluxEstimate(const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux)
     : diffusion_(diffusion)
     , diffusive_flux_(diffusive_flux)
   {
   }
+
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
     return std::make_tuple(diffusion_.local_function(entity), diffusive_flux_.local_function(entity));
   }
 
+  /// \brief Extracts the local functions and calls the correct order method.
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
   order(const LocalfunctionTupleType localFuncs,
@@ -133,9 +129,10 @@ public:
   {
     const auto local_diffusion      = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
-    return redirect_order(*local_diffusion, *local_diffusive_flux, testBase, ansatzBase);
-  } // ... order(...)
+    return order(*local_diffusion, *local_diffusive_flux, testBase, ansatzBase);
+  }
 
+  /// \brief Extracts the local functions and calls the correct evaluate method.
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(const LocalfunctionTupleType localFuncs,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
@@ -144,12 +141,15 @@ public:
   {
     const auto local_diffusion      = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
-    redirect_evaluate(*local_diffusion, *local_diffusive_flux, test_base, ansatz_base, local_point, ret);
-  } // ... evaluate(...)
+    evaluate(*local_diffusion, *local_diffusive_flux, test_base, ansatz_base, local_point, ret);
+  }
 
-private:
+  /// \}
+  /// \name Actual implementation of order.
+  /// \{
+
   template <class R, size_t rLD, size_t rCLD, size_t rLDF, size_t rCLDF, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t redirect_order(
+  size_t order(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& local_diffusion,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
@@ -161,32 +161,20 @@ private:
                        local_diffusive_flux.order()))
            + (std::max(local_diffusion.order() + std::max(ssize_t(ansatz_base.order()) - 1, ssize_t(0)),
                        local_diffusive_flux.order()));
-  } // ... redirect_order(...)
+  } // ... order(...)
 
-  template <class R, size_t rLD, size_t rCLD, size_t rLDF, size_t rCLDF, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void redirect_evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& /*local_diffusion*/,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF,
-                                          rCLDF>& /*local_diffusive_flux*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*test_base*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatz_base*/,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/) const
-  {
-    static_assert(AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... redirect_evaluate(...)
+  /// \}
+  /// \name Actual implementation of evalaute.
+  /// \{
 
   template <class R>
-  void redirect_evaluate(
+  void evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain>& local_diffusive_flux,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
       const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
       const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
-    typedef typename Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>::JacobianRangeType
-        JacobianRangeType;
-    JacobianRangeType left_sum(0);
-    JacobianRangeType right_sum(0);
     // evaluate local functions
     const auto diffusion_value       = local_diffusion.evaluate(local_point);
     const R one_over_diffusion_value = 1.0 / diffusion_value;
@@ -194,10 +182,12 @@ private:
     // evaluate test gradient
     const size_t rows         = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
+    auto left_sum = test_gradients[0];
     assert(test_gradients.size() == rows);
     // evaluate ansatz gradient
     const size_t cols           = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
+    auto right_sum = ansatz_gradients[0];
     assert(ansatz_gradients.size() == rows);
     // compute
     assert(ret.rows() >= rows);
@@ -214,38 +204,44 @@ private:
         retRow[jj] = one_over_diffusion_value * (left_sum[0] * right_sum[0]);
       }
     }
-  } // ... redirect_evaluate(...)
+  } // ... evaluate(...)
 
-  const LocalizableDiffusionType& diffusion_;
-  const LocalizableDiffusiveFluxType& diffusive_flux_;
+  /// \}
+
+private:
+  const DiffusionType& diffusion_;
+  const DiffusiveFluxType& diffusive_flux_;
 }; // class DiffusiveFluxEstimate< ..., void >
 
 
-template <class DiffusionFactorImp, class DiffusiveFluxImp, class DiffusionTensorImp>
+template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType>
 class DiffusiveFluxEstimate
-    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorImp,
-                                                                                    DiffusiveFluxImp,
-                                                                                    DiffusionTensorImp>,
+    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType,
+                                                                                    DiffusiveFluxType,
+                                                                                    DiffusionTensorType>,
                                               2>
 {
-public:
-  typedef internal::DiffusiveFluxEstimateTraits<DiffusionFactorImp, DiffusiveFluxImp, DiffusionTensorImp> Traits;
-  typedef typename Traits::LocalizableDiffusionFactorType LocalizableDiffusionFactorType;
-  typedef typename Traits::LocalizableDiffusiveFluxType LocalizableDiffusiveFluxType;
-  typedef typename Traits::LocalizableDiffusionTensorType LocalizableDiffusionTensorType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
+  typedef LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
+                                                                                 DiffusionTensorType>,
+                                           2> BaseType;
 
-  DiffusiveFluxEstimate(const LocalizableDiffusionFactorType& diffusion_factor,
-                        const LocalizableDiffusionTensorType& diffusion_tensor,
-                        const LocalizableDiffusiveFluxType& diffusive_flux)
+public:
+  typedef internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType> Traits;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+
+  DiffusiveFluxEstimate(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
+                        const DiffusiveFluxType& diffusive_flux)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , diffusive_flux_(diffusive_flux)
   {
   }
+
+  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -254,6 +250,7 @@ public:
                            diffusive_flux_.local_function(entity));
   }
 
+  /// \brief Extracts the local functions and calls the correct order method.
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
   order(const LocalfunctionTupleType localFuncs,
@@ -263,10 +260,10 @@ public:
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
     const auto local_diffusive_flux = std::get<2>(localFuncs);
-    return redirect_order(
-        *local_diffusion_factor, *local_diffusion_tensor, *local_diffusive_flux, testBase, ansatzBase);
+    return order(*local_diffusion_factor, *local_diffusion_tensor, *local_diffusive_flux, testBase, ansatzBase);
   } // ... order(...)
 
+  /// \brief Extracts the local functions and calls the correct evaluate method.
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(const LocalfunctionTupleType localFuncs,
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
@@ -276,19 +273,22 @@ public:
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
     const auto local_diffusive_flux = std::get<2>(localFuncs);
-    redirect_evaluate(*local_diffusion_factor,
-                      *local_diffusion_tensor,
-                      *local_diffusive_flux,
-                      test_base,
-                      ansatz_base,
-                      local_point,
-                      ret);
+    evaluate(*local_diffusion_factor,
+             *local_diffusion_tensor,
+             *local_diffusive_flux,
+             test_base,
+             ansatz_base,
+             local_point,
+             ret);
   } // ... evaluate(...)
 
-private:
+  /// \}
+  /// \name Actual implementation of order.
+  /// \{
+
   template <class R, size_t rLD, size_t rCLD, size_t rLDT, size_t rCLDT, size_t rLDF, size_t rCLDF, size_t rT,
             size_t rCT, size_t rA, size_t rCA>
-  size_t redirect_order(
+  size_t order(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& local_diffusion_factor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT, rCLDT>&
           local_diffusion_tensor,
@@ -304,26 +304,14 @@ private:
                        local_diffusive_flux.order()))
            + (std::max(local_diffusion_order + std::max(ssize_t(ansatz_base.order()) - 1, ssize_t(0)),
                        local_diffusive_flux.order()));
-  } // ... redirect_order(...)
+  } // ... order(...)
 
-  template <class R, size_t rLD, size_t rCLD, size_t rLDT, size_t rCLDT, size_t rLDF, size_t rCLDF, size_t rT,
-            size_t rCT, size_t rA, size_t rCA>
-  void redirect_evaluate(
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD,
-                                          rCLD>& /*local_diffusion_factor*/,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT,
-                                          rCLDT>& /*local_diffusion_tensor*/,
-      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF,
-                                          rCLDF>& /*local_diffusive_flux*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*test_base*/,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatz_base*/,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& /*local_point*/, Dune::DynamicMatrix<R>& /*ret*/) const
-  {
-    static_assert(AlwaysFalse<R>::value, "Not implemented for these dimensions!");
-  } // ... redirect_evaluate(...)
+  /// \}
+  /// \name Actual implementation of evalaute.
+  /// \{
 
   template <class R>
-  void redirect_evaluate(
+  void evaluate(
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor,
       const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
           local_diffusion_tensor,
@@ -367,11 +355,14 @@ private:
         retRow[jj] = (one_over_diffusion_value * left_sum) * right_sum;
       }
     }
-  } // ... redirect_evaluate(...)
+  } // ... evaluate(...)
 
-  const LocalizableDiffusionFactorType& diffusion_factor_;
-  const LocalizableDiffusionTensorType& diffusion_tensor_;
-  const LocalizableDiffusiveFluxType& diffusive_flux_;
+  /// \}
+
+private:
+  const DiffusionFactorType& diffusion_factor_;
+  const DiffusionTensorType& diffusion_tensor_;
+  const DiffusiveFluxType& diffusive_flux_;
 }; // class DiffusiveFluxEstimate
 
 
