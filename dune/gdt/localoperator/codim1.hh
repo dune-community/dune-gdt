@@ -353,7 +353,8 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class E, class N, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  template< class E, class N, class IntersectionType, class D, unsigned long d,
+            class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
   void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& entityTestBase,
              const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& entityAverage,
              const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& neighborTestBase,
@@ -384,6 +385,8 @@ public:
     const auto& neighbor = neighborAverage.entity();
     const auto localFunctionsNe = flux_.localFunctions(neighbor);
     const auto localPoint = intersection.geometry().local(intersection.geometry().center());
+//    std::cout << " Entity center 2 " << entity.geometry().center() << "Intersection: " << intersection.geometry().center() << std::endl;
+//    std::cout << " Neighbor center 2 " << neighbor.geometry().center() << "Intersection: " << intersection.geometry().center() << std::endl;
     //evaluate
     flux_.evaluate(localFunctionsEn, localFunctionsNe,
                          entityTestBase, entityAverage,
@@ -456,7 +459,8 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class T, class A, class IntersectionType, class D, int d, class R, int rT, int rCT, int rA, int rCA >
+  template< class T, class A, class IntersectionType, class D, unsigned long d,
+            class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
   void apply(const Stuff::LocalfunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
              const Stuff::LocalfunctionSetInterface< A, D, d, R, rA, rCA >& entityAverage,
              const IntersectionType& intersection,

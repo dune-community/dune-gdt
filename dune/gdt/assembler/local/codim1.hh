@@ -17,7 +17,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
-#include <dune/gdt/playground/spaces/finitevolume/default.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
