@@ -112,14 +112,14 @@ public:
    *  \tparam rC{T,A} dimRangeRows of the {testBase,ansatzBase}
    */
   template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
-  size_t order(const LocalfunctionTupleType& localFunctions,
+  size_t order(const LocalfunctionTupleType& localFunctions_arg,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
-    CHECK_CRTP(this->as_imp().order(localFunctions, testBase, ansatzBase));
-    return this->as_imp().order(localFunctions, testBase, ansatzBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions_arg, testBase, ansatzBase));
+    return this->as_imp().order(localFunctions_arg, testBase, ansatzBase);
   }
 
   /**
@@ -130,7 +130,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFunctions_arg,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                 const Stuff::LocalfunctionSetInterface
@@ -138,7 +138,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, ansatzBase, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions_arg, testBase, ansatzBase, localPoint, ret));
   }
 }; // class Codim0Interface< Traits, 2 >
 
@@ -182,12 +182,12 @@ public:
    *  \tparam rC  dimRangeRows of the testBase
    */
   template< class R, size_t r, size_t rC >
-  size_t order(const LocalfunctionTupleType& localFunctions,
+  size_t order(const LocalfunctionTupleType& localFunctions_arg,
                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase)
   const
   {
-    CHECK_CRTP(this->as_imp().order(localFunctions, testBase));
-    return this->as_imp().order(localFunctions, testBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions_arg, testBase));
+    return this->as_imp().order(localFunctions_arg, testBase);
   }
 
   /**
@@ -199,13 +199,13 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R, size_t r, size_t rC >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFunctions_arg,
                 const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& testBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, intersection, localPoint, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions_arg, testBase, intersection, localPoint, ret));
   }
 }; // class Codim1Interface< Traits, 1 >
 
@@ -237,14 +237,14 @@ public:
    *  \tparam rC{T,A}             dimRangeRows of the {testBase,ansatzBase}
    */
   template< class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
-  size_t order(const LocalfunctionTupleType& localFunctions,
+  size_t order(const LocalfunctionTupleType& localFunctions_arg,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                const Stuff::LocalfunctionSetInterface
                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase) const
   {
-    CHECK_CRTP(this->as_imp().order(localFunctions, testBase, ansatzBase));
-    return this->as_imp().order(localFunctions, testBase, ansatzBase);
+    CHECK_CRTP(this->as_imp().order(localFunctions_arg, testBase, ansatzBase));
+    return this->as_imp().order(localFunctions_arg, testBase, ansatzBase);
   }
 
   /**
@@ -256,7 +256,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFunctions_arg,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& testBase,
                 const Stuff::LocalfunctionSetInterface
@@ -265,7 +265,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint,
+    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctions_arg, testBase, ansatzBase, intersection, localPoint,
                                                      ret));
   }
 }; // class Codim1Interface< Traits, 2 >
