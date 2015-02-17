@@ -9,7 +9,6 @@
 #include <type_traits>
 
 #include <dune/common/dynvector.hh>
-#include <dune/common/static_assert.hh>
 
 #include <dune/stuff/common/debug.hh>
 #include <dune/stuff/common/type_utils.hh>
