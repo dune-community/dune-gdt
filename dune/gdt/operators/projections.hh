@@ -622,7 +622,7 @@ namespace Operators {
 
 
 template <class SourceType, class RangeType>
-void DUNE_DEPRECATED_MSG("Use project() instead (08.02.2015)!")
+void DUNE_DEPRECATED_MSG("Use Dune::GDT::project() instead (08.02.2015)! (drop the Operators NS!)")
     apply_projection(const SourceType& source, RangeType& range)
 {
   auto& view = range.space().grid_view();
@@ -632,9 +632,10 @@ void DUNE_DEPRECATED_MSG("Use project() instead (08.02.2015)!")
 
 
 template <class SourceType, class RangeSpaceType, class V>
-void DUNE_DEPRECATED_MSG("Use project_dirichlet() instead (08.02.2015)!") apply_dirichlet_projection(
-    const DSG::BoundaryInfoInterface<typename RangeSpaceType::GridViewType::Intersection>& boundary_info,
-    const SourceType& source, DiscreteFunction<RangeSpaceType, V>& range)
+void DUNE_DEPRECATED_MSG("Use Dune::GDT::project_dirichlet() instead (08.02.2015)! (drop the Operators NS!)")
+    apply_dirichlet_projection(
+        const DSG::BoundaryInfoInterface<typename RangeSpaceType::GridViewType::Intersection>& boundary_info,
+        const SourceType& source, DiscreteFunction<RangeSpaceType, V>& range)
 {
   auto& view = range.space().grid_view();
   DirichletProjection<typename std::remove_reference<decltype(view)>::type>(view, boundary_info).apply(source, range);
