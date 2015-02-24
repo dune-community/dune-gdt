@@ -8,9 +8,14 @@
 #ifndef DUNE_GDT_SPACES_PARALLEL_HH
 #define DUNE_GDT_SPACES_PARALLEL_HH
 
+//#define HAVE_DUNE_ISTL 0
+//#define HAVE_DUNE_PDELAB 0
+
 #include <dune/common/parallel/communicator.hh>
 
-#include <dune/istl/owneroverlapcopy.hh>
+#if HAVE_DUNE_ISTL
+# include <dune/istl/owneroverlapcopy.hh>
+#endif
 
 #if HAVE_DUNE_PDELAB
 # include <dune/pdelab/backend/istl/parallelhelper.hh>

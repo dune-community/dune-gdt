@@ -1190,7 +1190,7 @@ private:
       assert(dg_local_coefficients.size() == cg_local_coefficients.size()
              && "Wrong finite element given!");
       // loop over all vertices
-      std::vector< DomainType > global_vertices(entity.template count< dimDomain >(), DomainType(0));
+      std::vector< DomainType > global_vertices(entity.subEntities(dimDomain), DomainType(0));
       std::vector< size_t > global_vertex_ids(global_vertices.size(), 0);
       for (size_t local_vertex_id = 0; local_vertex_id < global_vertices.size(); ++local_vertex_id) {
         // get global vertex id

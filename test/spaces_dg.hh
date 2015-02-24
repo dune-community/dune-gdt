@@ -47,7 +47,7 @@ struct P1Q1_DG_Space
     const auto entity_end_it = this->space_.grid_view().template end< 0 >();
     for (auto entity_it = this->space_.grid_view().template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      for (auto cc : DSC::valueRange(entity.template count< dimDomain >())) {
+      for (auto cc : DSC::valueRange(entity.subEntities(dimDomain))) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
         const DomainType vertex = vertex_ptr->geometry().center();
         vertex_to_indices_map[convert_vector(vertex)].first = std::set< size_t >();
@@ -57,7 +57,7 @@ struct P1Q1_DG_Space
     // walk the grid again to find all DoF ids
     for (auto entity_it = this->space_.grid_view().template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      const size_t num_vertices = boost::numeric_cast< size_t >(entity.template count< dimDomain >());
+      const size_t num_vertices = boost::numeric_cast< size_t >(entity.subEntities(dimDomain));
       const auto basis = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
