@@ -150,8 +150,18 @@ struct BoundaryL2Product
 
   virtual RangeFieldType compute(const FunctionType& function) const override final
   {
-    const Products::BoundaryL2< GridViewType > product(this->space_.grid_view());
-    return product.apply2(function, function);
+    typedef typename DSG::Intersection< GridViewType >::Type IT;
+    const auto view = this->space_.grid_view();
+    const Products::BoundaryL2< GridViewType > product(view);
+    const auto only_first_half = [=](const GridViewType&, const IT& it){ return it.boundary() && it.geometry().center()[0] < 0.5; };
+    const auto only_second_half = [&](const GridViewType&, const IT& it){ return it.boundary() && it.geometry().center()[0] >= 0.5;};
+    const Products::BoundaryL2< GridViewType > product_first_half(view, only_first_half);
+    const Products::BoundaryL2< GridViewType > product_second_half(view, only_second_half);
+    const auto full = product.apply2(function, function);
+    const auto first_half = product_first_half.apply2(function, function);
+    const auto second_half = product_second_half.apply2(function, function);
+    EXPECT_TRUE(DSC::FloatCmp::eq(first_half + second_half, full));
+    return full;
   } // ... compute(...)
 
   void fulfills_interface() const
