@@ -76,11 +76,6 @@ public:
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual ThisType* copy() const override
-  {
-    return new ThisType(*this);
-  }
-
   virtual std::string name() const override
   {
     return name_;
@@ -176,11 +171,6 @@ public:
   virtual ~DiscreteFunction() {}
 
   ThisType& operator=(const ThisType& other) = delete;
-
-  virtual ThisType* copy() const override
-  {
-    return new ThisType(*this);
-  }
 
   using BaseType::vector;
 
