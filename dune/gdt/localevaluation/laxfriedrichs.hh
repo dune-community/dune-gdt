@@ -34,6 +34,9 @@ class Inner;
 template< class LocalizableFunctionImp, class BoundaryValueFunctionImp >
 class Dirichlet;
 
+template< class LocalizableFunctionImp >
+class Godunov;
+
 
 namespace internal {
 
@@ -61,11 +64,8 @@ public:
   typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
                                                 RangeFieldType, dimRange,
                                                 RangeFieldType, dimDomain >             AnalyticalFluxType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
-                                                RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain, dimRange >   AnalyticalFluxDerivativeType;
+
   typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
-  typedef typename AnalyticalFluxDerivativeType::RangeType                              FluxDerivativeRangeType;
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
                                                            DomainFieldType, dimDomain,
                                                            RangeFieldType, 1, 1 >::RangeType  RangeType;
@@ -100,6 +100,37 @@ public:
   typedef typename AnalyticalFluxType::RangeType                  FluxRangeType;
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >::RangeType RangeType;
 }; // class DirichletTraits
+
+
+template< class LocalizableFunctionImp >
+class GodunovTraits
+{
+  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+public:
+  typedef LocalizableFunctionImp                                    LocalizableFunctionType;
+  typedef Godunov< LocalizableFunctionType >                        derived_type;
+  typedef typename LocalizableFunctionType::EntityType              EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
+  typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
+  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
+  static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
+  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
+                                                RangeFieldType, dimRange,
+                                                RangeFieldType, dimDomain >             AnalyticalFluxType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
+                                                RangeFieldType, dimRange,
+                                                RangeFieldType, dimDomain, dimRange >   AnalyticalFluxJacobianType;
+  typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
+  typedef typename AnalyticalFluxJacobianType::RangeType                              FluxJacobianRangeType;
+  typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
+                                                           DomainFieldType, dimDomain,
+                                                           RangeFieldType, 1, 1 >::RangeType  RangeType;
+}; // class GodunovTraits
 } // namespace internal
 
 
@@ -118,15 +149,12 @@ public:
   typedef typename Traits::DomainFieldType                          DomainFieldType;
   typedef typename Traits::RangeFieldType                           RangeFieldType;
   typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
-  typedef typename Traits::AnalyticalFluxDerivativeType             AnalyticalFluxDerivativeType;
   typedef typename Traits::FluxRangeType                            FluxRangeType;
-  typedef typename Traits::FluxDerivativeRangeType                  FluxDerivativeRangeType;
   typedef typename Traits::RangeType                                RangeType;
   static const unsigned int dimDomain = Traits::dimDomain;
 
-  explicit Inner(const AnalyticalFluxType& analytical_flux, const AnalyticalFluxDerivativeType& analytical_flux_derivative, const LocalizableFunctionType& ratio_dt_dx)
+  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx)
     : analytical_flux_(analytical_flux)
-    , analytical_flux_derivative_(analytical_flux_derivative)
     , ratio_dt_dx_(ratio_dt_dx)
   {}
 
@@ -158,7 +186,7 @@ public:
    *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
    */
   template< class IntersectionType >
-  void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
+  void evaluate(const LocalfunctionTupleType& /*localFunctionsEntity*/,
                 const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseEntity*/,
@@ -175,31 +203,25 @@ public:
                 Dune::DynamicMatrix< RangeFieldType >& entityNeighborRet,
                 Dune::DynamicMatrix< RangeFieldType >& /*neighborEntityRet*/) const
   {
-      const EntityType& entity = ansatzBaseEntity.entity();
-      const EntityType& neighbor = ansatzBaseNeighbor.entity();
-      const auto local_center_entity = entity.geometry().local(entity.geometry().center());
-      const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
-      const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
-//      std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
-      const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
-      const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
-//      std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
-      const auto n_ij = intersection.unitOuterNormal(localPoint);
-      if (dimDomain == 1) {
-        const RangeFieldType ratio_dt_dx = (std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity))[0];
-        entityNeighborRet[0][0] = 0.5*((f_u_i + f_u_j)*n_ij - (u_j[0] - u_i[0])/ratio_dt_dx);
-      } else {
-        const FluxDerivativeRangeType derivative_u_i = analytical_flux_derivative_.evaluate(u_i[0]);
-        const FluxDerivativeRangeType derivative_u_j = analytical_flux_derivative_.evaluate(u_j[0]);
-        const RangeFieldType max_derivative = derivative_u_i.infinity_norm() > derivative_u_j.infinity_norm()
-                                              ? derivative_u_i.infinity_norm()
-                                              : derivative_u_j.infinity_norm();
-        entityNeighborRet[0][0] = 0.5*((f_u_i + f_u_j)*n_ij - max_derivative*(u_j[0] - u_i[0]));
-      }
+    const EntityType& entity = ansatzBaseEntity.entity();
+    const EntityType& neighbor = ansatzBaseNeighbor.entity();
+    const auto local_center_entity = entity.geometry().local(entity.geometry().center());
+    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
+    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
+    //      std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
+    const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
+    const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
+    //      std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
+    const auto n_ij = intersection.unitOuterNormal(localPoint);
+    const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
+    const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
+    const RangeFieldType max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
+                                          ? jacobian_u_i.infinity_norm()
+                                          : jacobian_u_j.infinity_norm();
+    entityNeighborRet[0][0] = 0.5*((f_u_i + f_u_j)*n_ij - max_derivative*(u_j[0] - u_i[0]));
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;
-  const AnalyticalFluxDerivativeType& analytical_flux_derivative_;
   const LocalizableFunctionType& ratio_dt_dx_;
 }; // class Inner
 
@@ -282,6 +304,107 @@ public:
   const LocalizableFunctionType& lambda_;
   const BoundaryValueFunctionType& boundary_values_;
 }; // class Dirichlet
+
+
+
+
+
+
+template< class LocalizableFunctionImp >
+class Godunov
+  : public LocalEvaluation::Codim1Interface< internal::GodunovTraits< LocalizableFunctionImp >, 4 >
+{
+public:
+  typedef internal::GodunovTraits< LocalizableFunctionImp >           Traits;
+  typedef typename Traits::LocalizableFunctionType                  LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
+  typedef typename Traits::EntityType                               EntityType;
+  typedef typename Traits::DomainFieldType                          DomainFieldType;
+  typedef typename Traits::RangeFieldType                           RangeFieldType;
+  typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
+  typedef typename Traits::AnalyticalFluxJacobianType             AnalyticalFluxJacobianType;
+  typedef typename Traits::FluxRangeType                            FluxRangeType;
+  typedef typename Traits::FluxJacobianRangeType                  FluxJacobianRangeType;
+  typedef typename Traits::RangeType                                RangeType;
+  static const unsigned int dimDomain = Traits::dimDomain;
+
+  explicit Godunov(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx)
+    : analytical_flux_(analytical_flux)
+    , ratio_dt_dx_(ratio_dt_dx)
+  {}
+
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(ratio_dt_dx_.local_function(entity));
+  }
+
+  size_t order(const LocalfunctionTupleType& /*localFunctionsEntity*/,
+               const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseEntity*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*ansatzBaseEntity*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseNeighbor*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*ansatzBaseNeighbor*/) const
+  {
+    DUNE_THROW(NotImplemented, "Not meant to be integrated");
+  }
+
+  /**
+   *  \brief  Computes a quaternary codim 1 evaluation.
+   *  \tparam IntersectionType      A model of Dune::Intersection< ... >
+   *  \tparam R                     RangeFieldType
+   *  \tparam r{T,A}                dimRange of the {testBase*,ansatzBase*}
+   *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
+   *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
+   */
+  template< class IntersectionType >
+  void evaluate(const LocalfunctionTupleType& /*localFunctionsEntity*/,
+                const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseNeighbor*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& ansatzBaseNeighbor,
+                const IntersectionType& intersection,
+                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
+                Dune::DynamicMatrix< RangeFieldType >& /*entityEntityRet*/,
+                Dune::DynamicMatrix< RangeFieldType >& /*neighborNeighborRet*/,
+                Dune::DynamicMatrix< RangeFieldType >& entityNeighborRet,
+                Dune::DynamicMatrix< RangeFieldType >& /*neighborEntityRet*/) const
+  {
+    const EntityType& entity = ansatzBaseEntity.entity();
+    const EntityType& neighbor = ansatzBaseNeighbor.entity();
+    const auto local_center_entity = entity.geometry().local(entity.geometry().center());
+    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
+    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
+    //      std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
+    const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
+    const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
+    //      std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
+    const auto n_ij = intersection.unitOuterNormal(localPoint);
+    if (Dune::Stuff::Common::FloatCmp::eq(f_u_i, f_u_j)) {
+      entityNeighborRet[0][0] = f_u_i*n_ij;
+    } else {
+      const RangeFieldType s = (f_u_i - f_u_j)/(u_i[0] - u_j[0]);
+      if (s > 0 /*&& u_j[0] > 0*/) {
+        entityNeighborRet[0][0] = 0.5*((f_u_j+f_u_i) - (f_u_j-f_u_i)*n_ij)*n_ij;
+      } else if (s < 0 /*&& u_i[0] < 0*/) {
+        entityNeighborRet[0][0] = 0.5*((f_u_j+f_u_i) - (f_u_i-f_u_j)*n_ij)*n_ij;
+      } else {
+        entityNeighborRet[0][0] = f_u_i*n_ij;
+      }
+    }
+  } // void evaluate(...) const
+
+  const AnalyticalFluxType& analytical_flux_;
+  const LocalizableFunctionType& ratio_dt_dx_;
+}; // class Godunov
 
 } // namespace LaxFriedrichs
 } // namespace Evaluation
