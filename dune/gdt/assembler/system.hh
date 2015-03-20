@@ -209,7 +209,7 @@ public:
 
   template< class L, class F, class V >
   void add(const LocalAssembler::Codim1CouplingFV< L >& local_assembler,
-           GDT::DiscreteFunction< F, V >& discrete_function,
+           const GDT::DiscreteFunction< F, V >& discrete_function,
            GDT::DiscreteFunction< F, V >& discrete_function_update,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::InnerIntersections< GridViewType >())
@@ -220,7 +220,7 @@ public:
 
   template< class L, class F, class V >
   void add(const LocalAssembler::Codim1BoundaryFV< L >& local_assembler,
-           GDT::DiscreteFunction< F, V >& discrete_function,
+           const GDT::DiscreteFunction< F, V >& discrete_function,
            GDT::DiscreteFunction< F, V >& discrete_function_update,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::BoundaryIntersections< GridViewType >())

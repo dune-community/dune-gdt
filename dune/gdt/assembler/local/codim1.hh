@@ -567,7 +567,7 @@ public:
   }
 
   template< class FVSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
-  void assembleLocal(Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
+  void assembleLocal(const Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
                      Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunctionUpdate,
                      const IntersectionType& intersection,
                      Dune::DynamicMatrix< RangeFieldType >& updateMatrix,

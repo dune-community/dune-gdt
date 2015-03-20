@@ -323,7 +323,7 @@ public:
   typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
   typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType > DiscreteFunctionType;
 
-  LocalFaceFVAssemblerWrapper(DiscreteFunctionType& discreteFunction,
+  LocalFaceFVAssemblerWrapper(const DiscreteFunctionType& discreteFunction,
                               DiscreteFunctionType& discreteFunctionUpdate,
       const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType >* where,
                               const LocalFaceFVAssembler& localAssembler)
@@ -353,7 +353,7 @@ public:
 private:
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceFVAssembler& localAssembler_;
-  DiscreteFunctionType& discreteFunction_;
+  const DiscreteFunctionType& discreteFunction_;
   DiscreteFunctionType& discreteFunctionUpdate_;
   Dune::DynamicMatrix< RangeFieldType > updateMatrix_;
 
