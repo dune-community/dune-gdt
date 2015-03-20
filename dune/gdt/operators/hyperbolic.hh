@@ -11,8 +11,6 @@
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/laxfriedrichs.hh>
@@ -38,20 +36,25 @@ namespace internal {
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
 class HyperbolicLaxFriedrichsTraits
 {
-//  static_assert(std::is_base_of< Stuff::GlobalFunctionInterface, AnalyticalFluxImp >::value,
-//                "AnalyticalFluxType has to be derived from Stuff::GlobalFunctionInterface!");
+  static_assert(std::is_base_of< Stuff::GlobalFunctionInterface< typename AnalyticalFluxImp::EntityType,
+                                                                 typename FVSpaceImp::RangeFieldType,
+                                                                 FVSpaceImp::dimRange,
+                                                                 typename FVSpaceImp::DomainFieldType,
+                                                                 FVSpaceImp::dimDomain >,
+                AnalyticalFluxImp >::value,
+                "AnalyticalFluxType has to be derived from Stuff::GlobalFunctionInterface!");
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
                 "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(is_space< FVSpaceImp >::value,    "FVSpaceImp has to be derived from SpaceInterface!");
 public:
-  typedef HyperbolicLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > derived_type;
-  typedef FVSpaceImp  FVSpaceType;
-  typedef typename FVSpaceType::RangeFieldType RangeFieldType;
-  typedef typename FVSpaceType::GridViewType     GridViewType;
-  typedef AnalyticalFluxImp         AnalyticalFluxType;
-  typedef LocalizableFunctionImp LocalizableFunctionType;
+  typedef HyperbolicLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp >      derived_type;
+  typedef FVSpaceImp                                                                            FVSpaceType;
+  typedef typename FVSpaceType::RangeFieldType                                                  RangeFieldType;
+  typedef typename FVSpaceType::GridViewType                                                    GridViewType;
+  typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
+  typedef LocalizableFunctionImp                                                                LocalizableFunctionType;
   typedef DiscreteFunction< FVSpaceType, Dune::Stuff::LA::CommonDenseVector< RangeFieldType > > FVFunctionType;
-  typedef typename FVSpaceType::DomainFieldType FieldType;
+  typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
 }; // class HyperbolicLaxFriedrichsTraits
 
 } // namespace internal
@@ -59,23 +62,27 @@ public:
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
 class HyperbolicLaxFriedrichs
-  : public Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > >
+  : public Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp,
+                                                                                  LocalizableFunctionImp,
+                                                                                  FVSpaceImp > >
   , public SystemAssembler< FVSpaceImp >
 {
-  typedef Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > > OperatorBaseType;
+  typedef Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp,
+                                                                                 LocalizableFunctionImp,
+                                                                                 FVSpaceImp > > OperatorBaseType;
   typedef SystemAssembler< FVSpaceImp >     AssemblerBaseType;
 
-  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp > NumericalFluxType;
-  typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType > LocalOperatorType;
-  typedef typename LocalAssembler::Codim1CouplingFV< LocalOperatorType > InnerAssemblerType;
+  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp >   NumericalFluxType;
+  typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType >                      LocalOperatorType;
+  typedef typename LocalAssembler::Codim1CouplingFV< LocalOperatorType >                        InnerAssemblerType;
 
 public:
   typedef internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > Traits;
-  typedef typename Traits::FVSpaceType        FVSpaceType;
-  typedef typename Traits::GridViewType       GridViewType;
-  typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
+  typedef typename Traits::FVSpaceType             FVSpaceType;
+  typedef typename Traits::GridViewType            GridViewType;
+  typedef typename Traits::AnalyticalFluxType      AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
-  typedef typename Traits::FVFunctionType FVFunctionType;
+  typedef typename Traits::FVFunctionType          FVFunctionType;
 
   HyperbolicLaxFriedrichs(const std::shared_ptr< const AnalyticalFluxType >& analytical_flux,
                  const LocalizableFunctionType& ratio_dt_dx,
@@ -91,7 +98,7 @@ using AssemblerBaseType::add;
 using AssemblerBaseType::assemble;
 
   template< class SourceType, class RangeType >
-  void apply(SourceType& source, RangeType& range)
+  void apply(const SourceType& source, RangeType& range)
   {
     this->add(inner_assembler_, source, range);
     this->assemble();
