@@ -27,11 +27,26 @@ namespace Operators {
 
 
 // forward
+template< class InnerAssemblerImp, class SourceImp, class RangeImp >
+class HyperbolicLaxFriedrichsLocalizable;
+
 template< class AnalyticalFluxImp, class LocalizableFunctionImp,class FVSpaceImp >
 class HyperbolicLaxFriedrichs;
 
 
 namespace internal {
+
+template< class InnerAssemblerImp, class SourceImp, class RangeImp >
+class HyperbolicLaxFriedrichsLocalizableTraits
+{
+public:
+  typedef HyperbolicLaxFriedrichsLocalizable< InnerAssemblerImp, SourceImp, RangeImp >          derived_type;
+  typedef SourceImp                                                                             SourceType;
+  typedef RangeImp                                                                              RangeType;
+  typedef InnerAssemblerImp                                                                     InnerAssemblerType;
+  typedef typename RangeType::SpaceType::GridViewType                                           GridViewType;
+  typedef typename GridViewType::ctype                                                          FieldType;
+}; // class HyperbolicLaxFriedrichsTraits
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
 class HyperbolicLaxFriedrichsTraits
@@ -49,15 +64,84 @@ class HyperbolicLaxFriedrichsTraits
 public:
   typedef HyperbolicLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp >      derived_type;
   typedef FVSpaceImp                                                                            FVSpaceType;
-  typedef typename FVSpaceType::RangeFieldType                                                  RangeFieldType;
   typedef typename FVSpaceType::GridViewType                                                    GridViewType;
+  typedef typename FVSpaceType::RangeFieldType                                                  RangeFieldType;
   typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
   typedef LocalizableFunctionImp                                                                LocalizableFunctionType;
-  typedef DiscreteFunction< FVSpaceType, Dune::Stuff::LA::CommonDenseVector< RangeFieldType > > FVFunctionType;
   typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
 }; // class HyperbolicLaxFriedrichsTraits
 
 } // namespace internal
+
+
+template< class InnerAssemblerImp, class SourceImp, class RangeImp >
+class HyperbolicLaxFriedrichsLocalizable
+  : public Dune::GDT::LocalizableOperatorInterface<
+                             internal::HyperbolicLaxFriedrichsLocalizableTraits< InnerAssemblerImp,
+                                                                                 SourceImp,
+                                                                                 RangeImp > >
+  , public SystemAssembler< typename RangeImp::SpaceType >
+{
+  typedef Dune::GDT::LocalizableOperatorInterface<
+                             internal::HyperbolicLaxFriedrichsLocalizableTraits< InnerAssemblerImp,
+                                                                                 SourceImp,
+                                                                                 RangeImp > > OperatorBaseType;
+  typedef SystemAssembler< typename RangeImp::SpaceType >     AssemblerBaseType;
+
+public:
+  typedef internal::HyperbolicLaxFriedrichsLocalizableTraits< InnerAssemblerImp,
+                                                              SourceImp,
+                                                              RangeImp >         Traits;
+  typedef typename Traits::GridViewType            GridViewType;
+  typedef typename Traits::SourceType              SourceType;
+  typedef typename Traits::RangeType               RangeType;
+  typedef typename Traits::InnerAssemblerType      InnerAssemblerType;
+
+  HyperbolicLaxFriedrichsLocalizable(const InnerAssemblerType inner_assembler,
+                                     const SourceType& source,
+                                     RangeType& range)
+    : OperatorBaseType()
+    , AssemblerBaseType(range.space())
+    , inner_assembler_(inner_assembler)
+    , source_(source)
+    , range_(range)
+  {}
+
+  const GridViewType& grid_view() const
+  {
+    return range_.space().grid_view();
+  }
+
+  const SourceType& source() const
+  {
+    return source_;
+  }
+
+  const RangeType& range() const
+  {
+    return range_;
+  }
+
+  RangeType& range()
+  {
+    return range_;
+  }
+
+using AssemblerBaseType::add;
+using AssemblerBaseType::assemble;
+
+  void apply()
+  {
+    this->add(inner_assembler_, source_, range_);
+    this->assemble();
+  }
+
+private:
+  const InnerAssemblerType inner_assembler_;
+  const SourceType& source_;
+  RangeType& range_;
+}; // class HyperbolicLaxFriedrichsLocalizable
+
 
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
@@ -65,12 +149,10 @@ class HyperbolicLaxFriedrichs
   : public Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp,
                                                                                   LocalizableFunctionImp,
                                                                                   FVSpaceImp > >
-  , public SystemAssembler< FVSpaceImp >
 {
   typedef Dune::GDT::OperatorInterface< internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp,
                                                                                  LocalizableFunctionImp,
                                                                                  FVSpaceImp > > OperatorBaseType;
-  typedef SystemAssembler< FVSpaceImp >     AssemblerBaseType;
 
   typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp >   NumericalFluxType;
   typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType >                      LocalOperatorType;
@@ -78,36 +160,37 @@ class HyperbolicLaxFriedrichs
 
 public:
   typedef internal::HyperbolicLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > Traits;
-  typedef typename Traits::FVSpaceType             FVSpaceType;
   typedef typename Traits::GridViewType            GridViewType;
+  typedef typename Traits::RangeFieldType          RangeFieldType;
   typedef typename Traits::AnalyticalFluxType      AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
-  typedef typename Traits::FVFunctionType          FVFunctionType;
+  typedef typename Traits::FVSpaceType             FVSpaceType;
 
   HyperbolicLaxFriedrichs(const std::shared_ptr< const AnalyticalFluxType >& analytical_flux,
-                 const LocalizableFunctionType& ratio_dt_dx,
-                 const FVSpaceType& fv_space)
+                          const LocalizableFunctionType& ratio_dt_dx,
+                          const FVSpaceType& fv_space)
     : OperatorBaseType()
-    , AssemblerBaseType(fv_space)
     , local_operator_(*analytical_flux, ratio_dt_dx)
     , inner_assembler_(local_operator_)
-//    , update_function_(fv_space, "solution")
+    , fv_space_(fv_space)
   {}
 
-using AssemblerBaseType::add;
-using AssemblerBaseType::assemble;
+  const GridViewType& grid_view() const
+  {
+    return fv_space_.grid_view();
+  }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range)
+  void apply(const SourceType& source, RangeType& range) const
   {
-    this->add(inner_assembler_, source, range);
-    this->assemble();
+    HyperbolicLaxFriedrichsLocalizable< InnerAssemblerType, SourceType, RangeType > localizable_operator(inner_assembler_, source, range);
+    localizable_operator.apply();
   }
 
 private:
   const LocalOperatorType local_operator_;
   const InnerAssemblerType inner_assembler_;
-//  FVFunctionType update_function_;
+  const FVSpaceType& fv_space_;
 }; // class HyperbolicLaxFriedrichs
 
 
