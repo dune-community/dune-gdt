@@ -101,7 +101,7 @@ private:
     //walk the grid to create the maps explained above and to find the boundary vertices
     for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
-      const size_t num_vertices = boost::numeric_cast< size_t >(entity.subEntities(dimDomain));
+      const size_t num_vertices = boost::numeric_cast< size_t >(entity.template count< dimDomain >());
       const auto basis = source.space().base_function_set(entity);
       if (basis.size() != num_vertices)
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
@@ -170,7 +170,7 @@ private:
     // walk the grid for the second time
     for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
-      const auto num_vertices = boost::numeric_cast< size_t >(entity.subEntities(dimDomain));
+      const auto num_vertices = boost::numeric_cast< size_t >(entity.template count< dimDomain >());
       // get the local functions
       const auto local_source = source.local_discrete_function(entity);
       const auto& local_source_DoF_vector = local_source->vector();
