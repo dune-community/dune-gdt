@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 #define DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 
+#include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -148,10 +149,11 @@ public:
     const auto localPointNe = intersection.geometryInOutside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     const auto local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
-    const auto local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
+    const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
     const auto local_diffusion_factor_ne = localDiffusionFactorNeighbor.evaluate(localPointNe);
-    const auto local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
+    const TensorType local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBaseEntity.order(),
                                          std::max(ansatzBaseEntity.order(),
@@ -565,8 +567,9 @@ public:
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     const auto diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
-    const auto diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
+    const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
     const R sigma = SIPDG::internal::boundary_sigma(max_polorder);
