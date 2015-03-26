@@ -48,11 +48,10 @@ struct P1Q1_CG_Space
     return ret;
   }
 
-  template< class T, size_t d, class R, size_t r, size_t rC >
-  void matches_signature(const Dune::GDT::Spaces::CGInterface< T, d, R, r, rC >& /*space*/)
+  template< class T, size_t d, size_t r, size_t rC >
+  void matches_signature(const Dune::GDT::Spaces::CGInterface< T, d, r, rC >& /*space*/)
   {
     static_assert(std::is_same< typename SpaceType::Traits, T >::value, "");
-    static_assert(std::is_same< typename SpaceType::RangeFieldType, R >::value, "");
     static_assert(d == SpaceType::dimDomain, "");
     static_assert(r == SpaceType::dimRange, "");
     static_assert(rC == SpaceType::dimRangeCols, "");
@@ -120,8 +119,8 @@ struct P1Q1_CG_Space
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
              << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
-             << ", vertex " << cc << ": [ " << vertex << "], ";
-          Common::print(basis_values, "basis_values", ss);
+             << ", vertex " << cc << ": [ " << vertex
+             << "], basis_values = " << DSC::toString(basis_values) << std::endl;
           EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii

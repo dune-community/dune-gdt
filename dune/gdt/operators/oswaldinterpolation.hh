@@ -132,8 +132,8 @@ private:
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
              << num_vertices << ", entity " << grid_view_.indexSet().index(entity)
-             << ", vertex " << local_vertex_id << ": [ " << vertex << "], ";
-          Stuff::Common::print(basis_values, "basis_values", ss);
+             << ", vertex " << local_vertex_id << ": [ " << vertex
+             << "], basis_values = " << DSC::toString(basis_values) << std::endl;
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii

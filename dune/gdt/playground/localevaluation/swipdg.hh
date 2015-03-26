@@ -702,16 +702,16 @@ public:
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
 #ifndef NDEBUG
-    DSC::print(intersection.geometry().global(localPoint), "global(localPoint)", logger.debug());
-    DSC::print(localPointEntity, "localPointEntity", logger.debug(), "  ");
-    DSC::print(unitOuterNormal, "unitOuterNormal", logger.debug(), "  ");
+    logger.debug() << "global(localPoint) = " << DSC::toString(intersection.geometry().global(localPoint)) << std::endl;
+    logger.debug() << "  localPointEntity = " << DSC::toString(localPointEntity) << std::endl;
+    logger.debug() << "  unitOuterNormal = "  << DSC::toString(unitOuterNormal) << std::endl;
 #endif // NDEBUG
     // evaluate local function
     const auto diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
     const auto diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
 #ifndef NDEBUG
-    DSC::print(diffusion_factor_value, "diffusion_factor_value", logger.debug(), "  ");
-    DSC::print(diffusion_tensor_value, "diffusion_tensor_value", logger.debug(), "  ");
+    logger.debug() << "  diffusion_factor_value = "  << DSC::toString(diffusion_factor_value)
+                   << "  diffusion_tensor_value = "  << DSC::toString(diffusion_tensor_value);
 #endif // NDEBUG
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
@@ -746,9 +746,9 @@ public:
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
 #ifndef NDEBUG
-    DSC::print(testValues, "testValues", logger.debug(), "  ");
-    DSC::print(ansatzValues, "ansatzValues", logger.debug(), "  ");
-    DSC::print(ret, "ret", logger.debug(), "  ");
+    logger.debug() << "  testValues = " << DSC::toString(testValues) << std::endl;
+    logger.debug() << "  ansatzValues = " << DSC::toString(ansatzValues) << std::endl;
+    logger.debug() << "  ret = " << DSC::toString(ret) << std::endl;
 #endif // NDEBUG
   } // void evaluate(...) const
 

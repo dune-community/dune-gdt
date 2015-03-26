@@ -83,8 +83,8 @@ struct P1Q1_DG_Space
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures << ", num_vertices = "
              << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
-             << ", vertex " << cc << ": [ " << vertex << "], ";
-          Common::print(basis_values, "basis_values", ss);
+             << ", vertex " << cc << ": [ " << vertex
+             << "], basis_values = " << DSC::toString(basis_values) << std::endl;
           EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii
