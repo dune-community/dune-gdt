@@ -8,15 +8,32 @@
 #ifndef DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
 #define DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
 
+#include <dune/gdt/operators/interfaces.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/la/container.hh>
+
 
 namespace Dune {
 namespace GDT {
 namespace TimeStepper {
 
-
+/** \brief Time stepper using Runge Kutta methods
+ *
+ * Timestepper for equations of the form u_t + L(u) = q(u) where u is a discrete function, L a space operator
+ * and q a function representing a source or sink.
+ * A fractional step approach is used to evolve the equation, where the same Runge Kutta method is used in both steps.
+ * The specific Runge Kutta method can be chosen in the constructor by supplying a DynamicMatrix< RangeFieldType >
+ * A and vectors (DynamicVector< RangeFieldType >) b and c. Here, A, b and c form the butcher tableau (see
+ * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is composed of the coefficients a_{ij}, b of b_j
+ * and c of c_j). The default is a forward euler method. By now, c will be ignored as operators that are explicitly
+ * time-dependent are not supported yet.
+ *
+ * \tparam OperatorImp Type of space operator, has to offer a void apply(DiscreteFunctionImp, std::vector) method
+ * \tparam DiscreteFunctionImp Type of initial values
+ * \tparam SourceFunctionImp Type of source function, has to offer a RangeType evaluate(DomainType) method
+ */
 template< class OperatorImp, class DiscreteFunctionImp, class SourceFunctionImp >
 class RungeKutta
 {
@@ -29,6 +46,17 @@ public:
   typedef typename Dune::DynamicMatrix< RangeFieldType > MatrixType;
   typedef typename Dune::DynamicVector< RangeFieldType > VectorType;
 
+  /**
+   * \brief Constructor for RungeKutta time stepper
+   *
+   * \param space_operator L
+   * \param initial_values Discrete function containing initial values for u
+   * \param source_function q
+   * \param start_time Starting time (s.t. u(start_time) = initial_values)
+   * \param A A (see above)
+   * \param b b (see above)
+   * \param c c (completely ignored, see above)
+   */
   RungeKutta(OperatorType& space_operator,
              const DiscreteFunctionType& initial_values,
              const SourceFunctionType& source_function,
@@ -57,11 +85,11 @@ public:
         }
     }
 #endif //NDEBUG
-    // store as many discrete functions as needed for the intermediate stages
+    // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_ ; ++ii) {
       u_intermediate_stages_.emplace_back(u_n_);
     }
-  }
+  } // constructor
 
   double step(const double dt)
   {
