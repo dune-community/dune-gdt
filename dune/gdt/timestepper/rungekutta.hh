@@ -140,6 +140,16 @@ public:
     } // while (t_ < t_end)
   } // ... solve(...)
 
+  double current_time() const
+  {
+    return t_;
+  }
+
+  const DiscreteFunctionType& current_solution() const
+  {
+    return u_n_;
+  }
+
 private:
   OperatorType& space_operator_;
   const DiscreteFunctionType& initial_values_;
