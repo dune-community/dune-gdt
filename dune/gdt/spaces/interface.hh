@@ -39,6 +39,16 @@ enum class ChooseSpaceBackend
 }; // enum class ChooseSpaceBackend
 
 
+static constexpr ChooseSpaceBackend default_space_backend =
+#if HAVE_DUNE_FEM
+                                                            ChooseSpaceBackend::fem;
+#elif HAVE_DUNE_PDELAB
+                                                            ChooseSpaceBackend::pdelab;
+#else
+                                                            ChooseSpaceBackend::gdt;
+#endif
+
+
 template< ChooseSpaceBackend type >
 struct ChooseGridPartView;
 
