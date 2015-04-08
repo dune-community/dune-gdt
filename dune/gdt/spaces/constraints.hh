@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_SPACES_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_CONSTRAINTS_HH
 
+#include <ostream>
+
 #include <dune/common/dynvector.hh>
 #include <dune/common/dynmatrix.hh>
 
@@ -54,7 +56,23 @@ public:
     CHECK_CRTP(this->as_imp().value(ii, jj));
     return this->as_imp().value(ii, jj);
   }
+
+private:
+  template< class T, class V >
+  friend std::ostream& operator<<(std::ostream& /*out*/, const ConstraintsInterface< T, V >& /*constraints*/);
 }; // class ConstraintsInterface
+
+
+template< class T, class V >
+std::ostream& operator<<(std::ostream& out, const ConstraintsInterface< T, V >& constraints)
+{
+  out << "gdt.spaces.constraints of size " << constraints.rows() << " x " << constraints.cols() << ", containing\n";
+  for (size_t ii = 0; ii < constraints.rows(); ++ii)
+    for (size_t jj = 0; jj < constraints.cols(); ++jj)
+      out << "  " << constraints.global_row(ii) << ", " << constraints.global_col(jj) << ": "
+          << constraints.value(ii, jj) << "\n";
+  return out;
+} // ... operator<<(...)
 
 
 namespace Constraints {
