@@ -385,8 +385,6 @@ public:
     const auto& neighbor = neighborAverage.entity();
     const auto localFunctionsNe = flux_.localFunctions(neighbor);
     const auto localPoint = intersection.geometry().local(intersection.geometry().center());
-//    std::cout << " Entity center 2 " << entity.geometry().center() << "Intersection: " << intersection.geometry().center() << std::endl;
-//    std::cout << " Neighbor center 2 " << neighbor.geometry().center() << "Intersection: " << intersection.geometry().center() << std::endl;
     //evaluate
     flux_.evaluate(localFunctionsEn, localFunctionsNe,
                          entityTestBase, entityAverage,

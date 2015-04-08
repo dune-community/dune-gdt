@@ -37,6 +37,9 @@ class Dirichlet;
 template< class LocalizableFunctionImp >
 class Godunov;
 
+template< class LocalizableFunctionImp >
+class Absorbing;
+
 
 namespace internal {
 
@@ -131,6 +134,36 @@ public:
                                                            DomainFieldType, dimDomain,
                                                            RangeFieldType, 1, 1 >::RangeType  RangeType;
 }; // class GodunovTraits
+
+/**
+ *  \brief  Traits for the Lax-Friedrichs flux evaluation on absorbing boundary.
+ */
+template< class LocalizableFunctionImp >
+class AbsorbingTraits
+{
+  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
+                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+public:
+  typedef LocalizableFunctionImp                                    LocalizableFunctionType;
+  typedef Absorbing< LocalizableFunctionType >                      derived_type;
+  typedef typename LocalizableFunctionType::EntityType              EntityType;
+  typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
+  typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
+  typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
+  typedef std::tuple< >  LocalfunctionTupleType;
+  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
+  static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
+  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
+                                                RangeFieldType, dimRange,
+                                                RangeFieldType, dimDomain >             AnalyticalFluxType;
+
+  typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
+  typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
+                                                           DomainFieldType, dimDomain,
+                                                           RangeFieldType, 1, 1 >::RangeType  RangeType;
+}; // class AbsorbingTraits
 } // namespace internal
 
 
@@ -208,10 +241,8 @@ public:
     const auto local_center_entity = entity.geometry().local(entity.geometry().center());
     const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
     const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
-    //      std::cout << "u_i 2 " << Dune::Stuff::Common::toString(u_i) <<" u_j " << Dune::Stuff::Common::toString(u_j) << std::endl;
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
-    //      std::cout << "f_u_i" << f_u_i << ", f_u_j" << f_u_j << std::endl;
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
     const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
@@ -405,6 +436,77 @@ public:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
 }; // class Godunov
+
+
+
+/**
+ *  \brief  Lax-Friedrichs flux evaluation for absorbing boundary conditions on boundary intersections.
+ */
+template< class LocalizableFunctionImp >
+class Absorbing
+  : public LocalEvaluation::Codim1Interface
+                          < internal::AbsorbingTraits< LocalizableFunctionImp >, 2 >
+{
+public:
+  typedef internal::AbsorbingTraits< LocalizableFunctionImp >       Traits;
+  typedef typename Traits::LocalizableFunctionType                  LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
+  typedef typename Traits::EntityType                               EntityType;
+  typedef typename Traits::DomainFieldType                          DomainFieldType;
+  typedef typename Traits::RangeFieldType                           RangeFieldType;
+  typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
+  typedef typename Traits::FluxRangeType                            FluxRangeType;
+  static const unsigned int dimDomain = Traits::dimDomain;
+
+  explicit Absorbing(const AnalyticalFluxType& analytical_flux)
+    : analytical_flux_(analytical_flux)
+  {}
+
+  LocalfunctionTupleType localFunctions(const EntityType& /*entity*/) const
+  {
+    return std::make_tuple();
+  }
+
+  template< class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
+  size_t order(const LocalfunctionTupleType /*localFuncs*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& /*ansatzBase*/) const
+  {
+    DUNE_THROW(NotImplemented, "Not meant to be integrated");
+  }
+
+  /**
+   *  \brief  Computes a binary codim 1 evaluation.
+   *  \tparam IntersectionType    A model of Dune::Intersection< ... >
+   *  \tparam R                   RangeFieldType
+   *  \tparam r{T,A}              dimRange of the {testBase*,ansatzBase*}
+   *  \tparam rC{T,A}             dimRangeRows of the {testBase*,ansatzBase*}
+   *  \attention ret is assumed to be zero!
+   */
+  template< class IntersectionType, class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
+  void evaluate(const LocalfunctionTupleType& /*localFunctions*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                const IntersectionType& intersection,
+                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
+                Dune::DynamicMatrix< R >& ret) const
+  {
+      const EntityType& entity = ansatzBase.entity();
+      const auto local_center_entity = entity.geometry().local(entity.geometry().center());
+      const auto& u_i = ansatzBase.evaluate(local_center_entity);
+      const FluxRangeType& f_u_i = analytical_flux_.evaluate(u_i[0]);
+      const auto n_ij = intersection.unitOuterNormal(localPoint);
+      const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
+      const RangeFieldType max_derivative = jacobian_u_i.infinity_norm();
+      ret[0][0] = 0.5*((f_u_i + f_u_i)*n_ij - max_derivative*(u_i[0] - u_i[0]));
+  } // void evaluate(...) const
+
+  const AnalyticalFluxType& analytical_flux_;
+}; // class Absorbing
 
 } // namespace LaxFriedrichs
 } // namespace Evaluation

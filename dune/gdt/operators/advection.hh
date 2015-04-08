@@ -118,8 +118,11 @@ public:
   typedef typename Traits::LocalizableFunctionType                                              LocalizableFunctionType;
 
   typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp >   NumericalFluxType;
+  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Absorbing< LocalizableFunctionImp >   NumericalBoundaryFluxType;
   typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType >                      LocalOperatorType;
+  typedef typename Dune::GDT::LocalOperator::Codim1FVBoundary< NumericalBoundaryFluxType >      LocalBoundaryOperatorType;
   typedef typename LocalAssembler::Codim1CouplingFV< LocalOperatorType >                        InnerAssemblerType;
+  typedef typename LocalAssembler::Codim1BoundaryFV< LocalBoundaryOperatorType >                BoundaryAssemblerType;
 
   AdvectionLaxFriedrichsLocalizable(const AnalyticalFluxType& analytical_flux,
                                     const LocalizableFunctionType& ratio_dt_dx,
@@ -128,7 +131,9 @@ public:
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , local_operator_(analytical_flux, ratio_dt_dx)
+    , local_boundary_operator_(analytical_flux)
     , inner_assembler_(local_operator_)
+    , boundary_assembler_(local_boundary_operator_)
     , source_(source)
     , range_(range)
   {}
@@ -160,12 +165,15 @@ using AssemblerBaseType::assemble;
   {
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
+    this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
     this->assemble();
   }
 
 private:
   const LocalOperatorType local_operator_;
+  const LocalBoundaryOperatorType local_boundary_operator_;
   const InnerAssemblerType inner_assembler_;
+  const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
 }; // class AdvectionLaxFriedrichsLocalizable
