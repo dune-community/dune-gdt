@@ -196,37 +196,16 @@ public:
   }
 
   template< class S, size_t d, size_t r, size_t rC >
-  void local_constraints(const SpaceInterface< S, d, r, rC >& other,
+  void local_constraints(const SpaceInterface< S, d, r, rC >& /*other*/,
                          const EntityType& entity,
-                         Constraints::Dirichlet< IntersectionType, RangeFieldType >& ret) const
+                         DirichletConstraints< IntersectionType >& ret) const
   {
-    // check
-    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
-    if (dimRange != 1) DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
-    assert(this->grid_view().indexSet().contains(entity));
-    const std::set< size_t > localDirichletDofs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
-    const size_t numRows = localDirichletDofs.size();
-    Dune::DynamicVector< size_t > tmpMappedRows;
-    Dune::DynamicVector< size_t > tmpMappedCols;
-    if (numRows > 0) {
-      const size_t numCols = this->mapper().numDofs(entity);
-      ret.set_size(numRows, numCols);
-      this->mapper().globalIndices(entity, tmpMappedRows);
-      other.mapper().globalIndices(entity, tmpMappedCols);
-      size_t localRow = 0;
-      for (const size_t& localDirichletDofIndex : localDirichletDofs) {
-        ret.global_row(localRow) = tmpMappedRows[localDirichletDofIndex];
-        for (size_t jj = 0; jj < ret.cols(); ++jj) {
-          ret.global_col(jj) = tmpMappedCols[jj];
-          if (tmpMappedCols[jj] == tmpMappedRows[localDirichletDofIndex])
-            ret.value(localRow, jj) = ret.set_row() ? 1 : 0;
-          else
-            ret.value(localRow, jj) = 0;
-        }
-        ++localRow;
+    const auto local_DoFs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
+    if (local_DoFs.size() > 0) {
+      const auto global_indices = this->mapper().globalIndices(entity);
+      for (const auto& local_DoF : local_DoFs) {
+        ret.insert(global_indices[local_DoF]);
       }
-    } else {
-      ret.set_size(0, 0);
     }
   } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
   /** @} */
