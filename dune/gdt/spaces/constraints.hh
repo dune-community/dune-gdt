@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_SPACES_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_CONSTRAINTS_HH
 
-#include <ostream>
+#include <mutex>
 
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -14,6 +14,15 @@
 
 namespace Dune {
 namespace GDT {
+namespace internal {
+
+
+// forward, needed for friendlyness
+template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
+class ConstraintsWrapper;
+
+
+} // namespace internal
 namespace Spaces {
 
 
@@ -52,6 +61,8 @@ public:
 template <class IntersectionType>
 class DirichletConstraints : public ConstraintsInterface<internal::DirichletConstraintsTraits<IntersectionType>>
 {
+  typedef DirichletConstraints<IntersectionType> ThisType;
+
 public:
   typedef internal::DirichletConstraintsTraits<IntersectionType> Traits;
   typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
@@ -63,9 +74,23 @@ public:
   {
   }
 
+  // manual copy ctor needed bc. of the mutex
+  DirichletConstraints(const ThisType& other)
+    : boundary_info_(other.boundary_info_)
+    , size_(other.size_)
+    , set_(other.set_)
+    , dirichlet_DoFs_(other.dirichlet_DoFs_)
+  {
+  }
+
   const BoundaryInfoType& boundary_info() const
   {
     return boundary_info_;
+  }
+
+  size_t size() const
+  {
+    return size_;
   }
 
   inline void insert(const size_t DoF)
@@ -114,10 +139,14 @@ public:
   } // ... apply(...)
 
 private:
+  template <class T, class A, class GV, class C>
+  friend class GDT::internal::ConstraintsWrapper;
+
   const BoundaryInfoType& boundary_info_;
   const size_t size_;
   const bool set_;
   std::set<size_t> dirichlet_DoFs_;
+  std::mutex mutex_;
 }; // class DirichletConstraints
 
 

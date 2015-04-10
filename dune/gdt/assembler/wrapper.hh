@@ -25,11 +25,19 @@ namespace internal {
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
 class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
 {
+  static_assert(AlwaysFalse<ConstraintsType>::value, "Please add a specialization for these Constraints!");
+};
+
+
+template <class TestSpaceType, class AnsatzSpaceType, class GridViewType>
+class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
+                         Spaces::DirichletConstraints<typename GridViewType::Intersection>>
+    : public Stuff::Grid::internal::Codim0Object<GridViewType>
+{
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Spaces::ConstraintsInterface<typename ConstraintsType::Traits>, ConstraintsType>::value,
-                "");
   typedef Stuff::Grid::internal::Codim0Object<GridViewType> BaseType;
+  typedef Spaces::DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
 
 public:
   typedef typename BaseType::EntityType EntityType;
@@ -41,6 +49,7 @@ public:
     , ansatz_space_(ansatz_space)
     , where_(where)
     , constraints_(constraints)
+    , thread_local_constraints_(constraints_.boundary_info(), constraints_.size())
   {
   }
 
@@ -55,7 +64,14 @@ public:
 
   virtual void apply_local(const EntityType& entity) override final
   {
-    test_space_->local_constraints(*ansatz_space_, entity, constraints_);
+    test_space_->local_constraints(*ansatz_space_, entity, *thread_local_constraints_);
+  }
+
+  virtual void finalize() override final
+  {
+    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(constraints_.mutex_);
+    constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
+                                        thread_local_constraints_->dirichlet_DoFs_.end());
   }
 
 private:
@@ -63,6 +79,7 @@ private:
   const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   ConstraintsType& constraints_;
+  DS::PerThreadValue<ConstraintsType> thread_local_constraints_;
 }; // class ConstraintsWrapper
 
 
