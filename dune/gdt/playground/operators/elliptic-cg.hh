@@ -162,6 +162,14 @@ private:
 }; // class EllipticCG
 
 
+template <class M, class DF, class DT, class S>
+std::unique_ptr<EllipticCG<DF, M, S, S, typename S::GridViewType, DT>>
+make_elliptic_cg(const DF& diffusion_factor, const DT& diffusion_tensor, const S& space)
+{
+  return Stuff::Common::make_unique<EllipticCG<DF, M, S, S, typename S::GridViewType, DT>>(
+      diffusion_factor, diffusion_tensor, space);
+} // ... make_elliptic_cg(...)
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
