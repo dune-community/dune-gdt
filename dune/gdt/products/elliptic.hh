@@ -75,7 +75,10 @@ public:
  * \brief An elliptic product.
  *
  *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
- *        internal::EllipticBase.
+ *        internal::EllipticBase. For instance:\code
+Elliptic(grid_view, diffusion, over_integrate = 0);
+Elliptic(grid_view, diffusion_factor, diffusion_tensor, over_integrate = 0);
+\endcode
  * \todo  Add more documentation, especially a mathematical definition.
  */
 template< class GridView, class DiffusionFactor, class FieldType = double, class DiffusionTensor = void >
