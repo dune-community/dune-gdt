@@ -111,7 +111,7 @@ public:
   }
 
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
-                 VTK::OutputType vtk_output_type = VTK::appendedraw) const
+                 const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
         space().grid_view(), filename, subsampling, vtk_output_type);
@@ -219,13 +219,19 @@ make_const_discrete_function(const SpaceType& space, const VectorType& vector,
 
 
 template <class SpaceType, class VectorType>
-DiscreteFunction<SpaceType, VectorType> make_discrete_function(const SpaceType& space, VectorType& vector,
-                                                               const std::string nm = "gdt.discretefunction")
+typename std::enable_if<is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+                        DiscreteFunction<SpaceType, VectorType>>::type
+make_discrete_function(const SpaceType& space, VectorType& vector, const std::string nm = "gdt.discretefunction")
 {
   return DiscreteFunction<SpaceType, VectorType>(space, vector, nm);
 }
 
 
+/**
+ * This can be used like \code
+auto discrete_function = make_discrete_function< VectorType >(space);
+\endcode
+ */
 template <class VectorType, class SpaceType>
 DiscreteFunction<SpaceType, VectorType> make_discrete_function(const SpaceType& space,
                                                                const std::string nm = "gdt.discretefunction")
