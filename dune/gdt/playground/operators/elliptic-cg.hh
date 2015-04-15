@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_CG_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_ELLIPTIC_CG_HH
 
+#include <dune/stuff/common/memory.hh>
+
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/operators/elliptic-cg.hh>
 
@@ -21,10 +23,12 @@ template< class DiffusionFactorType
         , class GridViewImp
         , class DiffusionTensorType >
 class EllipticCG
-  : public Operators::MatrixBased< internal::EllipticCGTraits< DiffusionFactorType, MatrixImp, SourceSpaceImp
+  : Stuff::Common::StorageProvider< MatrixImp >
+  , public Operators::MatrixBased< internal::EllipticCGTraits< DiffusionFactorType, MatrixImp, SourceSpaceImp
                                                              , RangeSpaceImp, GridViewImp, DiffusionTensorType > >
   , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
 {
+  typedef Stuff::Common::StorageProvider< MatrixImp > StorageBaseType;
   typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp > AssemblerBaseType;
   typedef Operators::MatrixBased< internal::EllipticCGTraits< DiffusionFactorType, MatrixImp
                                                             , SourceSpaceImp, RangeSpaceImp
@@ -51,13 +55,17 @@ public:
     return range_space.compute_volume_pattern(grid_view, source_space);
   }
 
+  /// \name Ctors taking an existing matrix (must have the right sparsity pattern)
+  /// \{
+
   EllipticCG(const DiffusionFactorType& diffusion_factor,
              const DiffusionTensorType& diffusion_tensor,
              MatrixType& matrix,
              const SourceSpaceType& source_space,
              const RangeSpaceType& range_space,
              const GridViewType& grid_view)
-    : OperatorBaseType(matrix, source_space, range_space, grid_view)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->access(), source_space, range_space, grid_view)
     , AssemblerBaseType(range_space, grid_view, source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -72,7 +80,8 @@ public:
              MatrixType& matrix,
              const SourceSpaceType& source_space,
              const RangeSpaceType& range_space)
-    : OperatorBaseType(matrix, source_space, range_space)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->access(), source_space, range_space)
     , AssemblerBaseType(range_space, source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -86,7 +95,8 @@ public:
              const DiffusionTensorType& diffusion_tensor,
              MatrixType& matrix,
              const SourceSpaceType& source_space)
-    : OperatorBaseType(matrix, source_space)
+    : StorageBaseType(matrix)
+    , OperatorBaseType(this->access(), source_space)
     , AssemblerBaseType(source_space)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -95,6 +105,60 @@ public:
   {
     setup();
   }
+
+  /// \}
+  /// \name Ctors creating a matrix
+  /// \{
+
+  EllipticCG(const DiffusionFactorType& diffusion_factor,
+             const DiffusionTensorType& diffusion_tensor,
+             const SourceSpaceType& source_space,
+             const RangeSpaceType& range_space,
+             const GridViewType& grid_view)
+    : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space,
+                                                                                                        source_space,
+                                                                                                        grid_view)))
+    , OperatorBaseType(this->access(), source_space, range_space, grid_view)
+    , AssemblerBaseType(range_space, grid_view, source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , local_operator_(diffusion_factor_, diffusion_tensor_)
+    , local_assembler_(local_operator_)
+  {
+    setup();
+  }
+
+  EllipticCG(const DiffusionFactorType& diffusion_factor,
+             const DiffusionTensorType& diffusion_tensor,
+             const SourceSpaceType& source_space,
+             const RangeSpaceType& range_space)
+    : StorageBaseType(new MatrixType(range_space.mapper().size(), source_space.mapper().size(), pattern(range_space,
+                                                                                                        source_space)))
+    , OperatorBaseType(this->access(), source_space, range_space)
+    , AssemblerBaseType(range_space, source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , local_operator_(diffusion_factor_, diffusion_tensor_)
+    , local_assembler_(local_operator_)
+  {
+    setup();
+  }
+
+  EllipticCG(const DiffusionFactorType& diffusion_factor,
+             const DiffusionTensorType& diffusion_tensor,
+             const SourceSpaceType& source_space)
+    : StorageBaseType(new MatrixType(source_space.mapper().size(), source_space.mapper().size(), pattern(source_space)))
+    , OperatorBaseType(this->access(), source_space)
+    , AssemblerBaseType(source_space)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , local_operator_(diffusion_factor_, diffusion_tensor_)
+    , local_assembler_(local_operator_)
+  {
+    setup();
+  }
+
+  /// \}
 
   virtual ~EllipticCG() {}
 
