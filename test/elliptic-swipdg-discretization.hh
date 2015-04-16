@@ -51,6 +51,7 @@
 #include <dune/gdt/products/weightedl2.hh>
 #include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/pdelab.hh>
 
 #include "elliptic-testcases.hh"
@@ -805,7 +806,7 @@ private:
     Operators::Projection<GridViewType> projection_operator(grid_view, over_integrate);
     projection_operator.apply(test_.force(), p0_force);
 
-    typedef typename Stuff::Functions::ESV2007Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
+    typedef typename Stuff::Functions::ESV2007::Cutoff<typename TestCase::DiffusionType> CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
     const Products::WeightedL2<GridViewType, CutoffFunctionType> weighted_l2_product(
