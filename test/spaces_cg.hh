@@ -48,11 +48,10 @@ struct P1Q1_CG_Space
     return ret;
   }
 
-  template< class T, size_t d, class R, size_t r, size_t rC >
-  void matches_signature(const Dune::GDT::Spaces::CGInterface< T, d, R, r, rC >& /*space*/)
+  template< class T, size_t d, size_t r, size_t rC >
+  void matches_signature(const Dune::GDT::Spaces::CGInterface< T, d, r, rC >& /*space*/)
   {
     static_assert(std::is_same< typename SpaceType::Traits, T >::value, "");
-    static_assert(std::is_same< typename SpaceType::RangeFieldType, R >::value, "");
     static_assert(d == SpaceType::dimDomain, "");
     static_assert(r == SpaceType::dimRange, "");
     static_assert(rC == SpaceType::dimRangeCols, "");
@@ -71,10 +70,14 @@ struct P1Q1_CG_Space
     typedef typename SpaceType::RangeFieldType RangeFieldType;
     Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
     std::set< size_t > local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
-    Spaces::Constraints::Dirichlet< IntersectionType, RangeFieldType> dirichlet_constraints_a(boundary_info, 0, 0);
-    Spaces::Constraints::Dirichlet< IntersectionType, RangeFieldType> dirichlet_constraints_b(boundary_info, 0, 0, false);
-    this->space_.local_constraints(entity, dirichlet_constraints_a);
-    this->space_.local_constraints(entity, dirichlet_constraints_b);
+    Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_set(boundary_info,
+                                                                               this->space_.mapper().size(),
+                                                                               true);
+    Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_clear(boundary_info,
+                                                                                 this->space_.mapper().size(),
+                                                                                 false);
+    this->space_.local_constraints(entity, dirichlet_constraints_set);
+    this->space_.local_constraints(entity, dirichlet_constraints_clear);
   }
 
   void maps_correctly()
