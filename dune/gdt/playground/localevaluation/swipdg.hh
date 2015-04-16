@@ -7,6 +7,7 @@
 #define DUNE_GDT_PLAYGROUND_LOCALEVALUATION_SWIPDG_HH
 
 #include <dune/stuff/common/print.hh>
+#include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/type_utils.hh>
 
@@ -138,6 +139,7 @@ public:
                 Dune::DynamicMatrix< R >& entityNeighborRet,
                 Dune::DynamicMatrix< R >& neighborEntityRet) const
   {
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     // clear ret
     entityEntityRet *= 0.0;
     neighborNeighborRet *= 0.0;
@@ -148,10 +150,10 @@ public:
     const auto localPointNe = intersection.geometryInOutside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const auto local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
-    const auto local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
-    const auto local_diffusion_factor_ne = localDiffusionFactorNeighbor.evaluate(localPointNe);
-    const auto local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
+    const auto       local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
+    const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
+    const auto       local_diffusion_factor_ne = localDiffusionFactorNeighbor.evaluate(localPointNe);
+    const TensorType local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBaseEntity.order(),
                                          std::max(ansatzBaseEntity.order(),
@@ -388,6 +390,7 @@ public:
                 Dune::DynamicMatrix< R >& entityNeighborRet,
                 Dune::DynamicMatrix< R >& neighborEntityRet) const
   {
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     // clear ret
     entityEntityRet *= 0.0;
     neighborNeighborRet *= 0.0;
@@ -398,10 +401,10 @@ public:
     const auto localPointNe = intersection.geometryInOutside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const auto local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
-    const auto local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
-    const auto local_diffusion_factor_ne = localDiffusionFactorNeighbor.evaluate(localPointNe);
-    const auto local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
+    const auto       local_diffusion_factor_en = localDiffusionFactorEntity.evaluate(localPointEn);
+    const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
+    const auto       local_diffusion_factor_ne = localDiffusionFactorNeighbor.evaluate(localPointNe);
+    const TensorType local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBaseEntity.order(),
                                          std::max(ansatzBaseEntity.order(),
@@ -559,14 +562,15 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
-    const auto diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
-    const auto diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
+    const auto       diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
+    const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
     const R sigma = SIPDG::internal::boundary_sigma(max_polorder);
@@ -693,6 +697,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
 #ifndef NDEBUG
     auto logger = DSC::TimedLogger().get("gdt.localevaluation.swipdg.boundarylhspenalty");
 #endif
@@ -707,8 +712,8 @@ public:
     DSC::print(unitOuterNormal, "unitOuterNormal", logger.debug(), "  ");
 #endif // NDEBUG
     // evaluate local function
-    const auto diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
-    const auto diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
+    const auto       diffusion_factor_value = localDiffusionFactor.evaluate(localPointEntity);
+    const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
 #ifndef NDEBUG
     DSC::print(diffusion_factor_value, "diffusion_factor_value", logger.debug(), "  ");
     DSC::print(diffusion_tensor_value, "diffusion_tensor_value", logger.debug(), "  ");
@@ -854,15 +859,16 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
+    typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local functions
-    const auto diffusionFactorValue = localDiffusionFactor.evaluate(localPointEntity);
-    const auto diffusionTensorValue = localDiffusionTensor.evaluate(localPointEntity);
-    const auto dirichletValue = localDirichlet.evaluate(localPointEntity);
+    const auto       diffusionFactorValue = localDiffusionFactor.evaluate(localPointEntity);
+    const TensorType diffusionTensorValue = localDiffusionTensor.evaluate(localPointEntity);
+    const auto       dirichletValue       = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
     const R sigma = SIPDG::internal::boundary_sigma(polorder);
