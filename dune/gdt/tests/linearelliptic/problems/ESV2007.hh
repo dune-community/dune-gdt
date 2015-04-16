@@ -86,7 +86,7 @@ public:
   using typename BaseType::GridType;
 
   ESV2007TestCase(const size_t num_refs = 3)
-    : BaseType(create_initial_grid(), num_refs)
+    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_cfg())->grid_ptr(), num_refs)
     , problem_()
     , exact_solution_()
   {
@@ -124,25 +124,6 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
-  {
-    auto grid_cfg = ProblemType::default_grid_cfg();
-    //    grid_cfg["num_elements"] = "[8 8]";
-    //    int initial_refine = 0;
-    //    if (std::is_same< GridType, SGrid< 2, 2 > >::value) {
-    //      grid_cfg["num_elements"] = "[8 8]";
-    //      initial_refine = 0;
-    //#if HAVE_ALUGRID
-    //    } else if (std::is_same< GridType, ALUConformGrid< 2, 2 > >::value
-    //            || std::is_same< GridType, ALUGrid< 2, 2, simplex, conforming > >::value) {
-    //      initial_refine = 0;
-    //#endif // HAVE_ALUGRID
-    //    }
-    auto grid_ptr = Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_cfg())->grid_ptr();
-    //    grid_ptr->globalRefine(initial_refine);
-    return grid_ptr;
-  } // ... create_initial_grid(...)
-
   const ProblemType problem_;
   const ExactSolutionType exact_solution_;
 }; // class ESV2007TestCase
