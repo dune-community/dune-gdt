@@ -19,14 +19,14 @@ using namespace Dune::GDT;
 #if HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_CG_discretization, AluGridTestCases);
-TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_fem_and_istl)
+TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_fem_and_istl_and_alugrid)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::istl_sparse>();
 }
 
 #else
 
-TEST(DISABLED_linearelliptic_CG_discretization, eoc_study_using_fem_and_istl_alugrid)
+TEST(DISABLED_linearelliptic_CG_discretization, eoc_study_using_fem_and_istl_and_alugrid)
 {
 }
 
