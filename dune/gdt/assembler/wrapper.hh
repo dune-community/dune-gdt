@@ -22,35 +22,38 @@ namespace GDT {
 namespace internal {
 
 
-template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType, class MatrixType>
-class LocalMatrixConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
+template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
+class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
+{
+  static_assert(AlwaysFalse<ConstraintsType>::value, "Please add a specialization for these Constraints!");
+};
+
+
+template <class TestSpaceType, class AnsatzSpaceType, class GridViewType>
+class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
+                         Spaces::DirichletConstraints<typename GridViewType::Intersection>>
+    : public Stuff::Grid::internal::Codim0Object<GridViewType>
 {
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
-  static_assert(Stuff::LA::is_matrix<MatrixType>::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
-  static_assert(std::is_base_of<Spaces::ConstraintsInterface<typename ConstraintsType::Traits,
-                                                             typename ConstraintsType::ValueType>,
-                                ConstraintsType>::value,
-                "");
   typedef Stuff::Grid::internal::Codim0Object<GridViewType> BaseType;
+  typedef Spaces::DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
 
 public:
   typedef typename BaseType::EntityType EntityType;
 
-  LocalMatrixConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                                const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
-                                ConstraintsType& constraints, MatrixType& matrix)
+  ConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                     const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                     const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where, ConstraintsType& constraints)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
     , constraints_(constraints)
-    , matrix_(matrix)
+    , thread_local_constraints_(constraints_.boundary_info(), constraints_.size())
   {
   }
 
-  virtual ~LocalMatrixConstraintsWrapper()
+  virtual ~ConstraintsWrapper()
   {
   }
 
@@ -61,70 +64,23 @@ public:
 
   virtual void apply_local(const EntityType& entity) override final
   {
-    test_space_->local_constraints(*ansatz_space_, entity, constraints_);
-    for (size_t ii = 0; ii < constraints_.rows(); ++ii) {
-      const size_t row = constraints_.global_row(ii);
-      for (size_t jj = 0; jj < constraints_.cols(); ++jj) {
-        matrix_.set_entry(row, constraints_.global_col(jj), constraints_.value(ii, jj));
-      }
-    }
-  } // ... apply_local(...)
+    test_space_->local_constraints(*ansatz_space_, entity, *thread_local_constraints_);
+  }
+
+  virtual void finalize() override final
+  {
+    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(constraints_.mutex_);
+    constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
+                                        thread_local_constraints_->dirichlet_DoFs_.end());
+  }
 
 private:
   const DS::PerThreadValue<const TestSpaceType>& test_space_;
   const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   ConstraintsType& constraints_;
-  MatrixType& matrix_;
-}; // class LocalMatrixConstraintsWrapper
-
-
-template <class AssemblerType, class ConstraintsType, class VectorType>
-class LocalVectorConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
-{
-  static_assert(std::is_base_of<Spaces::ConstraintsInterface<typename ConstraintsType::Traits,
-                                                             typename ConstraintsType::ValueType>,
-                                ConstraintsType>::value,
-                "");
-  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
-
-public:
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename AssemblerType::TestSpaceType TestSpaceType;
-  typedef typename AssemblerType::GridViewType GridViewType;
-
-  LocalVectorConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
-                                ConstraintsType& constraints, VectorType& vector)
-    : test_space_(test_space)
-    , where_(where)
-    , constraints_(constraints)
-    , vector_(vector)
-  {
-  }
-
-  virtual ~LocalVectorConstraintsWrapper()
-  {
-  }
-
-  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
-  {
-    return where_->apply_on(gv, entity);
-  }
-
-  virtual void apply_local(const EntityType& entity) override final
-  {
-    test_space_->local_constraints(entity, constraints_);
-    for (size_t ii = 0; ii < constraints_.rows(); ++ii)
-      vector_.set_entry(constraints_.global_row(ii), 0.0);
-  }
-
-private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
-  ConstraintsType& constraints_;
-  VectorType& vector_;
-}; // class LocalVectorConstraintsWrapper
+  DS::PerThreadValue<ConstraintsType> thread_local_constraints_;
+}; // class ConstraintsWrapper
 
 
 template <class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType>

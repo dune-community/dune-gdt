@@ -89,31 +89,13 @@ public:
 
   using BaseType::add;
 
-  template <class C, class M>
-  void add(Spaces::ConstraintsInterface<C, RangeFieldType>& constraints,
-           Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+  template <class C>
+  void add(Spaces::ConstraintsInterface<C>& constraints,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
   {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalMatrixConstraintsWrapper<TestSpaceType,
-                                                    AnsatzSpaceType,
-                                                    GridViewType,
-                                                    typename C::derived_type,
-                                                    typename M::derived_type> WrapperType;
-    this->codim0_functors_.emplace_back(
-        new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp(), matrix.as_imp()));
-  } // ... add(...)
-
-  template <class C, class V>
-  void add(Spaces::ConstraintsInterface<C, RangeFieldType>& constraints,
-           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
-  {
-    assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalVectorConstraintsWrapper<ThisType, typename C::derived_type, typename V::derived_type>
+    typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType, typename C::derived_type>
         WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, constraints.as_imp(), vector.as_imp()));
+    this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp()));
   } // ... add(...)
 
   template <class L, class M>

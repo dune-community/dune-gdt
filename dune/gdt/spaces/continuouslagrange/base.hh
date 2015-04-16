@@ -28,7 +28,7 @@ namespace Spaces {
 
 // forward, to allow for specialization
 template <class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
+class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg.hh> and use CGInterface instead (21.11.2014)!")
     ContinuousLagrangeBase
 {
   static_assert(AlwaysFalse<ImpTraits>::value, "Untested for these dimensions!");
@@ -36,7 +36,7 @@ class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterfa
 
 
 template <class ImpTraits, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg/fem.hh> and use CGInterface instead (21.11.2014)!")
+class DUNE_DEPRECATED_MSG("Include <dune/gdt/spaces/cg.hh> and use CGInterface instead (21.11.2014)!")
     ContinuousLagrangeBase<ImpTraits, domainDim, RangeFieldImp, rangeDim, 1>
     : public SpaceInterface<ImpTraits, domainDim, rangeDim, 1>
 {

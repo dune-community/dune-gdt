@@ -642,6 +642,24 @@ void DUNE_DEPRECATED_MSG("Use Dune::GDT::project_dirichlet() instead (08.02.2015
 }
 
 
+template <class GV, class S, class R>
+DirichletProjectionLocalizable<GV, S, R> make_localizable_dirichlet_projection(
+    const GV& grid_view, const Stuff::Grid::BoundaryInfoInterface<typename GV::Intersection>& boundary_info,
+    const S& source, R& range)
+{
+  return DirichletProjectionLocalizable<GV, S, R>(grid_view, boundary_info, source, range);
+}
+
+
+template <class GV>
+DirichletProjection<GV>
+make_dirichlet_projection(const GV& grid_view,
+                          const Stuff::Grid::BoundaryInfoInterface<typename GV::Intersection>& boundary_info)
+{
+  return DirichletProjection<GV>(grid_view, boundary_info);
+}
+
+
 } // namespace Operators
 } // namespace GDT
 } // namespace Dune
