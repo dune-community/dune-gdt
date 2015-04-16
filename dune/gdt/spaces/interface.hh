@@ -39,6 +39,16 @@ enum class ChooseSpaceBackend
 }; // enum class ChooseSpaceBackend
 
 
+static constexpr ChooseSpaceBackend default_space_backend =
+#if HAVE_DUNE_FEM
+                                                            ChooseSpaceBackend::fem;
+#elif HAVE_DUNE_PDELAB
+                                                            ChooseSpaceBackend::pdelab;
+#else
+                                                            ChooseSpaceBackend::gdt;
+#endif
+
+
 template< ChooseSpaceBackend type >
 struct ChooseGridPartView;
 
@@ -153,13 +163,13 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   template< class S, size_t d, size_t r, size_t rC, class C >
   void local_constraints(const SpaceInterface< S, d, r, rC >& ansatz_space,
                          const EntityType& entity,
-                         Spaces::ConstraintsInterface< C, RangeFieldType >& ret) const
+                         Spaces::ConstraintsInterface< C >& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().local_constraints(ansatz_space.as_imp(), entity, ret.as_imp()));
   }
 
   template< class C >
-  void local_constraints(const EntityType& entity, Spaces::ConstraintsInterface< C, RangeFieldType >& ret) const
+  void local_constraints(const EntityType& entity, Spaces::ConstraintsInterface< C >& ret) const
   {
     local_constraints(*this, entity, ret);
   }

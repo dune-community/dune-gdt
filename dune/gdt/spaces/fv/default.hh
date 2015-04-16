@@ -132,6 +132,21 @@ private:
 
 
 } // namespace FV
+
+
+template< class R, size_t r, size_t rC, class GV >
+FV::Default< GV, R, r, rC > make_fv(const GV& grid_view)
+{
+  return FV::Default< GV, R, r, rC >(grid_view);
+}
+
+template< class R, size_t r, class GV >
+FV::Default< GV, R, r, 1 > make_fv(const GV& grid_view)
+{
+  return FV::Default< GV, R, r, 1 >(grid_view);
+}
+
+
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune

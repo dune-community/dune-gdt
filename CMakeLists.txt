@@ -59,6 +59,7 @@ find_file(SPE10MODEL1DATA
 
 add_subdirectory(m4)
 add_subdirectory(doc)
+add_subdirectory(dune)
 add_subdirectory(cmake/modules)
 add_subdirectory(test EXCLUDE_FROM_ALL)
 

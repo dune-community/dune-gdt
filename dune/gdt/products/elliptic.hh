@@ -75,7 +75,10 @@ public:
  * \brief An elliptic product.
  *
  *        Possible ctor signaturer are a combination of the ones from \sa GenericBase first and then \sa
- *        internal::EllipticBase.
+ *        internal::EllipticBase. For instance:\code
+Elliptic(grid_view, diffusion, over_integrate = 0);
+Elliptic(grid_view, diffusion_factor, diffusion_tensor, over_integrate = 0);
+\endcode
  * \todo  Add more documentation, especially a mathematical definition.
  */
 template< class GridView, class DiffusionFactor, class FieldType = double, class DiffusionTensor = void >
@@ -90,6 +93,41 @@ public:
     : BaseType(std::forward< Args >(args)...)
   {}
 };
+
+
+/**
+ * \brief Creates a generic elliptic product.
+ * \sa    Products::Elliptic
+ *
+ * Can be used, for instance, as\code
+auto elliptic_product = Products::make_elliptic< double >(grid_view, diffusion_factor, diffusion_tensor, 1);
+\endcode
+ */
+template< class RangeFieldType, class GV, class DF, class DT >
+Elliptic< GV, DF, RangeFieldType, DT > make_elliptic(const GV& grid_view,
+                                                     const DF& diffusion_factor,
+                                                     const DT& diffusion_tensor, const size_t over_integrate = 0)
+{
+  return Elliptic< GV, DF, RangeFieldType, DT >(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
+}
+
+/**
+ * \brief Creates a generic elliptic product (variant with RangeFieldType = double).
+ * \sa    make_elliptic
+ * \sa    Products::Elliptic
+ *
+ * Can be used, for instance, as\code
+auto elliptic_product = Products::make_elliptic(grid_view, diffusion_factor, diffusion_tensor, 1);
+\endcode
+ */
+template< class GV, class DF, class DT >
+Elliptic< GV, DF, double, DT > make_elliptic(const GV& grid_view,
+                                             const DF& diffusion_factor,
+                                             const DT& diffusion_tensor,
+                                             const size_t over_integrate = 0)
+{
+  return make_elliptic< double >(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
+}
 
 
 template< class GV, class R, class DF, class DT >

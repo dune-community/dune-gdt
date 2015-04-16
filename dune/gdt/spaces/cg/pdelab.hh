@@ -115,10 +115,10 @@ class PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 >
 public:
   typedef PdelabBasedTraits< GridViewImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
 
-  static const int           polOrder = Traits::polOrder;
-  static const size_t        dimDomain = BaseType::dimDomain;
-  static const size_t        dimRange = BaseType::dimRange;
-  static const size_t        dimRangeCols = BaseType::dimRangeCols;
+  static const int    polOrder = Traits::polOrder;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+  static const size_t dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::GridViewType         GridViewType;
   typedef typename Traits::RangeFieldType       RangeFieldType;
