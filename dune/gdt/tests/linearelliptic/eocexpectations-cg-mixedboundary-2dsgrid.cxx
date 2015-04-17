@@ -24,13 +24,19 @@ class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<SGrid<
   typedef LinearElliptic::MixedBoundaryTestCase<SGrid<2, 2>, double, 1> TestCaseType;
 
 public:
-  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
-    if (type == "L2")
-      return {2.96e-03, 7.44e-04, 1.81e-04, 3.95e-05};
-    else if (type == "H1_semi" || type == "energy")
-      return {5.75e-02, 2.84e-02, 1.39e-02, 6.20e-03};
-    else
+    if (type == "L2") {
+      if (test_case.num_refinements() == 1)
+        return {2.86e-03, 6.32e-04};
+      else
+        return {2.96e-03, 7.44e-04, 1.81e-04, 3.95e-05};
+    } else if (type == "H1_semi" || type == "energy") {
+      if (test_case.num_refinements() == 1)
+        return {5.57e-02, 2.48e-02};
+      else
+        return {5.75e-02, 2.84e-02, 1.39e-02, 6.20e-03};
+    } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
   } // ... results(...)
