@@ -44,6 +44,14 @@ add_library(obj_tests_linearelliptic_eocexpectations_cg_spe10_2dsgrid
             OBJECT
             EXCLUDE_FROM_ALL
             eocexpectations-cg-spe10-2dsgrid.cxx)
+# add alugrid compile flags for the above objects (add_dune_alugrid_flags does not work here)
+foreach(_target obj_tests_linearelliptic_eocexpectations_cg_ao2013_2dalugrid
+                obj_tests_linearelliptic_eocexpectations_cg_er2007_2dalugrid
+                obj_tests_linearelliptic_eocexpectations_cg_esv2007_2dalugrid
+                obj_tests_linearelliptic_eocexpectations_cg_mixedboundary_2dalugrid
+                obj_tests_linearelliptic_eocexpectations_cg_spe10_2dalugrid)
+  add_dune_alugrid_compile_flags(${_target})
+endforeach(_target)
 
 # test target libs
 add_library(lib_test_linearelliptic_cg_discretizations_sgrid

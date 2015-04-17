@@ -22,6 +22,7 @@ list(APPEND CMAKE_MODULE_PATH
 
 #include the dune macros
 include(DuneMacros)
+include(AddALUGridCompileFlags)
 
 # start a dune project with information from dune.module
 dune_project()
