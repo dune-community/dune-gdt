@@ -58,9 +58,11 @@ struct CommunicationChooser< ViewImp, true >
   template< class Space >
   static bool prepare(const Space& space, Type& communicator)
   {
+#if HAVE_DUNE_PDELAB
     Stuff::LA::IstlRowMajorSparseMatrix< typename Space::RangeFieldType > matrix;
     PDELab::istl::ParallelHelper< typename Space::BackendType >(space.backend(), 0)
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
+#endif // HAVE_DUNE_PDELAB
     return true;
   }
 }; // struct CommunicationChooser< ..., true >

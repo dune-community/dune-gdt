@@ -30,6 +30,8 @@ class RT_Space
   }
 
 public:
+  virtual ~RT_Space() {}
+
   void matches_raviart_thomas_signature()
   {
     matches_signature(this->space_);
@@ -42,6 +44,8 @@ class RT_2d_simplicial_Space
   : public RT_Space< SpaceType >
 {
 public:
+  virtual ~RT_2d_simplicial_Space() {}
+
   void fulfills_raviart_thomas_2d_simplicial_interface()
   {
     for (const auto& entity : DSC::entityRange(this->space_.grid_view()))

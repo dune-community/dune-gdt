@@ -15,6 +15,15 @@ endforeach (test ${testnames})
 
 END_TESTCASES()
 
+target_link_libraries(test_linearelliptic-cg-discretization_fem_eigen_alugrid    lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic-cg-discretization_fem_eigen_sgrid      lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_fem_istl_alugrid     lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic-cg-discretization_fem_istl_sgrid       lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_alugrid lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_sgrid   lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
+
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
   set (SPE10MODEL1DATA_TARGET_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/perm_case1.dat")

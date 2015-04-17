@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_FUNCTIONALS_L2_HH
 #define DUNE_GDT_FUNCTIONALS_L2_HH
 
+#include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
@@ -193,6 +194,32 @@ private:
   const LocalAssemblerType local_assembler_;
 }; // class L2Face
 
+
+template< class F, class V, class S, class GV >
+  std::unique_ptr< L2Volume< F, V, S, GV > >
+make_l2_volume(const F& function, V& vector, const S& space, const GV& grid_view)
+{
+  return Stuff::Common::make_unique< L2Volume< F, V, S, GV > >(function, vector, space, grid_view);
+}
+
+template< class F, class V, class S >
+  std::unique_ptr< L2Volume< F, V, S > >
+make_l2_volume(const F& function, V& vector, const S& space)
+{
+  return Stuff::Common::make_unique< L2Volume< F, V, S > >(function, vector, space);
+}
+
+
+template< class F, class V, class S >
+  std::unique_ptr< L2Face< F, V, S > >
+make_l2_face(const F& function,
+             V& vector,
+             const S& space,
+             const Stuff::Grid::ApplyOn::WhichIntersection< typename S::GridViewType >* which_intersections
+                = new Stuff::Grid::ApplyOn::AllIntersections< typename S::GridViewType >())
+{
+  return Stuff::Common::make_unique< L2Face< F, V, S > >(function, vector, space, which_intersections);
+}
 
 } // namespace Functionals
 } // namespace GDT

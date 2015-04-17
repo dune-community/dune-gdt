@@ -51,6 +51,7 @@
 #include <dune/gdt/products/weightedl2.hh>
 #include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/pdelab.hh>
 
 #include "elliptic-testcases.hh"
