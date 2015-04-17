@@ -19,7 +19,11 @@ struct EllipticSIWPDGDiscretization : public ::testing::Test
   void eoc_study() const
   {
     try {
+#if THIS_IS_A_BUILDBOT_BUILD
+      const TestCase test_case(1);
+#else
       const TestCase test_case;
+#endif
       test_case.print_header(DSC_LOG_INFO);
       DSC_LOG_INFO << std::endl;
       EllipticSWIPDG::EocStudy<TestCase, polOrder> eoc_study(test_case);
