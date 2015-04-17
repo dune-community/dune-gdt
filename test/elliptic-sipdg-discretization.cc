@@ -28,7 +28,11 @@ struct EllipticSIPDGDiscretization
     else
 #endif
     {
+#if THIS_IS_A_BUILDBOT_BUILD
+      const TestCase test_case(1);
+#else
       const TestCase test_case;
+#endif
       test_case.print_header(DSC_LOG_INFO);
       DSC_LOG_INFO << std::endl;
       EllipticSIPDG::EocStudy< TestCase, polOrder > eoc_study(test_case);
