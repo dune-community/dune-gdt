@@ -35,8 +35,18 @@ struct EllipticSWIPDGDiscretization : public ::testing::Test
 }; // struct EllipticSWIPDGDiscretization
 
 
+#if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB
+
 TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticEstimatorTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, estimator_study)
 {
   this->estimator_study();
 }
+
+#else // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB
+
+TEST(DISABLED_EllipticSWIPDGDiscretization, estimator_study__missing_dune_fem_or_dune_pdelab)
+{
+}
+
+#endif
