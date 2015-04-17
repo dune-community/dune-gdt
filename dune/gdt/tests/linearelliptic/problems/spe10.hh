@@ -82,7 +82,7 @@ template< class G, class R = double, int r = 1 >
 class Spe10Model1TestCase
   : public Tests::StationaryTestCase< G,
                                       LinearElliptic::Spe10Model1Problem< typename G::template Codim< 0 >::Entity,
-                                                                      typename G::ctype, G::dimension, R, r > >
+                                                                          typename G::ctype, G::dimension, R, r > >
 {
   typedef typename G::template Codim< 0 >::Entity E;
   typedef typename G::ctype D;

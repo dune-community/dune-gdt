@@ -78,7 +78,7 @@ template< class G, class R = double, int r = 1 >
 class ER2007TestCase
   : public Tests::StationaryTestCase< G,
                                       LinearElliptic::ER2007Problem< typename G::template Codim< 0 >::Entity,
-                                                                      typename G::ctype, G::dimension, R, r > >
+                                                                     typename G::ctype, G::dimension, R, r > >
 {
   typedef typename G::template Codim< 0 >::Entity E;
   typedef typename G::ctype D;

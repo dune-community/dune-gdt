@@ -78,7 +78,7 @@ template< class G, class R = double, int r = 1 >
 class AO2013TestCase
   : public Tests::StationaryTestCase< G,
                                       LinearElliptic::AO2013Problem< typename G::template Codim< 0 >::Entity,
-                                                                      typename G::ctype, G::dimension, R, r > >
+                                                                     typename G::ctype, G::dimension, R, r > >
 {
   typedef typename G::template Codim< 0 >::Entity E;
   typedef typename G::ctype D;
