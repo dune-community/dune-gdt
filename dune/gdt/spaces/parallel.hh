@@ -57,7 +57,14 @@ struct CommunicationChooser<ViewImp, true>
   }
 
   template <class Space>
-  static bool prepare(const Space& space, Type& communicator)
+  static bool prepare(const Space&
+#if HAVE_DUNE_PDELAB
+                          space,
+                      Type& communicator)
+#else
+                      /*space*/,
+                      Type& /*communicator*/)
+#endif
   {
 #if HAVE_DUNE_PDELAB
     Stuff::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
@@ -65,7 +72,7 @@ struct CommunicationChooser<ViewImp, true>
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
 #endif // HAVE_DUNE_PDELAB
     return true;
-  }
+  } // ... prepare(...)
 }; // struct CommunicationChooser< ..., true >
 
 
