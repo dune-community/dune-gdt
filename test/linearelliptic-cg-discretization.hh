@@ -3,6 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#ifndef THIS_IS_A_BUILDBOT_BUILD
+#define THIS_IS_A_BUILDBOT_BUILD 0
+#endif
+
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/tests/linearelliptic/eocstudy.hh>
 #include <dune/gdt/tests/linearelliptic/discretizers/cg.hh>
