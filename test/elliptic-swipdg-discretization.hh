@@ -650,7 +650,7 @@ public:
 
   std::vector< double > expected_results(const std::string type) const
   {
-//#if HAVE_ALUGRID
+#if HAVE_ALUGRID
     if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
