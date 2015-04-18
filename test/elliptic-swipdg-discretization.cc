@@ -13,7 +13,7 @@
 
 
 template <class TestCase>
-struct EllipticSIWPDGDiscretization : public ::testing::Test
+struct EllipticSWIPDGDiscretization : public ::testing::Test
 {
   template <int polOrder>
   void eoc_study() const
@@ -32,20 +32,20 @@ struct EllipticSIWPDGDiscretization : public ::testing::Test
       std::cerr << ee.what() << std::endl;
     }
   } // ... eoc_study(...)
-}; // EllipticSIWPDGDiscretization
+}; // EllipticSWIPDGDiscretization
 
 #if HAVE_DUNE_FEM
-TYPED_TEST_CASE(EllipticSIWPDGDiscretization, EllipticTestCases);
-TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_1)
+TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticTestCases);
+TYPED_TEST(EllipticSWIPDGDiscretization, eoc_study_polorder_1)
 {
   this->template eoc_study<1>();
 }
 #ifdef NDEBUG
-TEST(DISABLED_EllipticSIWPDGDiscretization, eoc_study_polorder_2)
+TEST(DISABLED_EllipticSWIPDGDiscretization, eoc_study_polorder_2)
 {
 }
 #else
-TYPED_TEST(EllipticSIWPDGDiscretization, eoc_study_polorder_2)
+TYPED_TEST(EllipticSWIPDGDiscretization, eoc_study_polorder_2)
 {
   this->template eoc_study<2>();
 }
