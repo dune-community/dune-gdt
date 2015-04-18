@@ -396,17 +396,31 @@ public:
                             EllipticTestCase::LocalThermalBlock<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::
                    value) {
       if (polOrder == 1) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {6.16e-02, 3.07e-02};
+        else if (type.compare("H1_semi") == 0)
+          return {3.10e-01, 2.55e-01};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {6.79e-02, 3.86e-02, 1.10e-02, 2.46e-03};
         else if (type.compare("H1_semi") == 0)
           return {3.47e-01, 2.99e-01, 1.62e-01, 7.46e-02};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {2.47e-02, 3.61e-03};
+        else if (type.compare("H1_semi") == 0)
+          return {2.06e-01, 6.57e-02};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {2.47e-02, 3.71e-03, 6.28e-04, 1.21e-04};
         else if (type.compare("H1_semi") == 0)
           return {2.08e-01, 6.93e-02, 2.20e-02, 6.90e-03};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -433,17 +447,31 @@ public:
                             EllipticTestCase::
                                 MixedBoundaryTypes<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {4.55e-02, 1.12e-02};
+        else if (type.compare("H1_semi") == 0)
+          return {2.61e-01, 1.22e-01};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {4.75e-02, 1.35e-02, 3.49e-03, 7.76e-04};
         else if (type.compare("H1_semi") == 0)
           return {2.73e-01, 1.44e-01, 7.15e-02, 3.22e-02};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {3.96e-03, 7.19e-04};
+        else if (type.compare("H1_semi") == 0)
+          return {4.79e-02, 1.61e-02};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {3.95e-03, 7.10e-04, 1.43e-04, 3.24e-05};
         else if (type.compare("H1_semi") == 0)
           return {4.89e-02, 1.82e-02, 7.38e-03, 2.96e-03};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
       } else
