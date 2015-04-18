@@ -27,7 +27,7 @@ struct EllipticSIPDGDiscretization
                                           "Dune::conforming > >!") << std::endl;
     else
 #endif
-    {
+         {
 #if THIS_IS_A_BUILDBOT_BUILD
       const TestCase test_case(1);
 #else
