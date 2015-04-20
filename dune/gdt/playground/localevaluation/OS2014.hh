@@ -90,10 +90,10 @@ class DiffusiveFluxEstimateStar
 public:
   typedef internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType, DiffusionTensorType,
                                                     DiffusiveFluxType> Traits;
-  using typename Traits::LocalfunctionTupleType;
-  using typename Traits::EntityType;
-  using typename Traits::DomainFieldType;
-  using Traits::dimDomain;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
 
   DiffusiveFluxEstimateStar(const DiffusionFactorType& diffusion_factor,
                             const DiffusionFactorHatType& diffusion_factor_hat,
