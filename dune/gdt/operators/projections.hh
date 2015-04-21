@@ -129,7 +129,6 @@ public:
 
 /**
  *  \brief  Does a projection using the lagrange points.
- *  \note   This use of the lagrange points is known to fail for polynomial orders higher than 1.
  *  \note   If you add other dimension/polorder/space combinations, do not forget to add a testcase in
  *          tests/operators.cc!
  */
@@ -284,7 +283,7 @@ private:
       const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimRange, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
-    redirect_apply(*(space->local_spaces.at(0)), source, range);
+    redirect_apply(*(space.local_spaces().at(0)), source, range);
   }
 
 #endif // HAVE_DUNE_GRID_MULTISCALE
