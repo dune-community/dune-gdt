@@ -405,7 +405,7 @@ public:
       ++current_level_;
   }
 
-  std::vector< double > expected_results(const std::string type) const
+  std::vector< double > expected_results(const std::string type) const override
   {
     using namespace Dune;
     if (std::is_same< TestCase, EllipticTestCase::ESV07< SGrid< 2, 2 > > >::value) {
@@ -440,17 +440,31 @@ public:
     } else if (std::is_same< TestCase,
                EllipticTestCase::LocalThermalBlock< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {5.33e-02, 1.69e-02};
+        else if (type.compare("H1_semi") == 0)
+          return {3.82e-01, 2.29e-01};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {5.57e-02, 1.99e-02, 5.54e-03, 1.29e-03};
         else if (type.compare("H1_semi") == 0)
           return {4.32e-01, 2.93e-01, 1.50e-01, 6.54e-02};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
+#if THIS_IS_A_BUILDBOT_BUILD
+        if (type.compare("L2") == 0)
+          return {1.18e-02, 2.12e-03};
+        else if (type.compare("H1_semi") == 0)
+          return {1.67e-01, 5.58e-02};
+#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {1.18e-02, 2.11e-03, 3.89e-04, 7.76e-05};
         else if (type.compare("H1_semi") == 0)
           return {1.69e-01, 5.96e-02, 1.94e-02, 6.04e-03};
+#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -648,24 +662,22 @@ public:
       return BaseType::current_error_norm(type);
   } // ... current_error_norm(...)
 
-  std::vector< double > expected_results(const std::string type) const
+  std::vector< double > expected_results(const std::string type) const override
   {
 #if HAVE_ALUGRID
     if (std::is_same< TestCase, EllipticTestCase::ESV07< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {3.29e-01, 1.63e-01, 8.05e-02, 4.02e-02};
+          return {3.28e-01, 1.62e-01, 8.04e-02, 4.01e-02};
         else if (type == nonconformity_estimator_id())
-          return {1.90e-1, 9.73e-2, 4.90e-2, 2.46e-2};
+          return {1.66e-01, 7.89e-02, 3.91e-02, 1.95e-02};
         else if (type == residual_estimator_ESV07_id())
-          return {7.24e-2, 1.83e-2, 4.55e-3, 1.15e-3};
+          return {7.23e-02, 1.82e-02, 4.54e-03, 1.14e-03};
         else if (type == diffusive_flux_estimator_id())
-          return {3.55e-1, 1.76e-1, 8.73e-2, 4.35e-2};
+          return {3.55e-01, 1.76e-01, 8.73e-02, 4.35e-02};
 //          return {3.39e-1, 1.70e-1, 8.40e-2, 4.19e-2};
-        else if (type == estimator_ESV07_id())
-          return {4.50e-01, 2.08e-01,  9.92e-02, 4.86e-02};
         else if (type == efficiency_ESV07_id())
-          return {1.37, 1.28, 1.24, 1.22};
+          return {1.37, 1.28, 1.23, 1.21};
 //          return {1.21, 1.21, 1.21, 1.21};
         else
           return BaseType::expected_results(type);
@@ -674,17 +686,23 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::LocalThermalBlock< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {9.11e-02, 5.24e-02, 2.69e-02, 1.21e-02};
+#if THIS_IS_A_BUILDBOT_BUILD
+          return {8.27e-02, 4.09e-02};
+#else
+          return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
+#endif
         else if (type == nonconformity_estimator_id())
-          return {9.58e-02, 1.11e-01, 5.13e-02, 2.18e-02};
+          return {9.57e-02, 1.10e-01, 5.12e-02, 2.17e-02};
         else if (type == residual_estimator_ESV07_id())
-          return {1.00e-10, 1.00e-10, 1.00e-10, 1.00e-10};
+          return {0.0, 0.0, 0.0, 0.0};
         else if (type == diffusive_flux_estimator_id())
-          return {1.13e-01, 6.55e-02, 3.55e-02, 1.91e-02};
-//        else if (type == estimator_ESV07_id())
-//          return {};
+          return {1.12e-01, 6.54e-02, 3.54e-02, 1.90e-02};
         else if (type == efficiency_ESV07_id())
-          return {1.63e+00, 2.46e+00, 2.33e+00, 2.41e+00};
+#if THIS_IS_A_BUILDBOT_BUILD
+          return {1.78e+00, 3.13e+00};
+#else
+          return {1.62e+00, 2.45e+00, 2.32e+00, 2.40e+00};
+#endif
         else
           return BaseType::expected_results(type);
       } else
@@ -692,17 +710,15 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {3.31e-02, 1.66e-02};
+          return {3.30e-02, 1.65e-02};
         else if (type == nonconformity_estimator_id())
-          return {8.50e-01, 1.16e+00};
+          return {8.49e-01, 1.15e+00};
         else if (type == residual_estimator_ESV07_id())
-          return {1.00e-10, 1.00e-10};
+          return {0.0, 0.0};
         else if (type == diffusive_flux_estimator_id())
-          return {4.77e-02, 3.07e-02};
-//        else if (type == estimator_ESV07_id())
-//          return {};
+          return {4.76e-02, 3.06e-02};
         else if (type == efficiency_ESV07_id())
-          return {2.58e+01, 7.00e+01};
+          return {2.57e+01, 6.99e+01};
         else
           return BaseType::expected_results(type);
       } else

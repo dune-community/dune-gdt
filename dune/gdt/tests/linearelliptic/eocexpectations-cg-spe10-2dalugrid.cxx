@@ -5,13 +5,12 @@
 
 #include "config.h"
 
-//#if HAVE_ALUGRID // <- this is a tricky thing, since HAVE_ALUGRID is not defined here. This is the case since we cannot
-                   //    add_dune_alugrid_flags(...) for this object file
+#if HAVE_ALUGRID
 
-#include <dune/grid/alugrid/common/declaration.hh>
+# include <dune/grid/alugrid.hh>
 
-#include "problems/spe10.hh"
-#include "eocexpectations.hh"
+# include "problems/spe10.hh"
+# include "eocexpectations.hh"
 
 
 namespace Dune {
@@ -79,4 +78,4 @@ template class LinearEllipticEocExpectations< LinearElliptic::Spe10Model1TestCas
 } // namespace GDT
 } // namespace Dune
 
-//#endif // HAVE_ALUGRID
+#endif // HAVE_ALUGRID

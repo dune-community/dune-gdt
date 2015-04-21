@@ -15,11 +15,14 @@ set( ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../local/lib/pkgconfig:$E
 
 # find dune-common and set the module path
 find_package(dune-common)
-list(APPEND CMAKE_MODULE_PATH ${dune-common_MODULE_PATH}
-    "${CMAKE_SOURCE_DIR}/cmake/modules")
+list(APPEND CMAKE_MODULE_PATH
+     ${dune-common_MODULE_PATH}
+     "${CMAKE_SOURCE_DIR}/../dune-stuff/cmake/modules"
+     "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 #include the dune macros
 include(DuneMacros)
+include(AddALUGridCompileFlags)
 
 # start a dune project with information from dune.module
 dune_project()
