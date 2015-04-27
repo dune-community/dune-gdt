@@ -133,7 +133,7 @@ public:
 
   void solve(const double t_end, const double first_dt, const double save_step = 0.0, const bool output = false)
   {
-
+    assert(t_end > t_);
     double dt = first_dt;
     size_t time_step_counter = 0;
 
@@ -176,6 +176,52 @@ public:
   const DiscreteFunctionType& current_solution() const
   {
     return u_n_;
+  }
+
+  const std::pair< bool, double > find_suitable_dt(const double initial_dt,
+                                                   const double dt_refinement_factor = 2,
+                                                   const double treshold = 0.9*std::numeric_limits< double >::max(),
+                                                   const size_t max_steps_per_dt = 20,
+                                                   const size_t max_refinements = 20)
+  {
+    assert(treshold > 0);
+    // save current state
+    DiscreteFunctionType initial_u_n = u_n_;
+    double initial_t = t_;
+    // start with initial dt
+    double current_dt = initial_dt;
+    size_t num_refinements = 0;
+    while (num_refinements < max_refinements) {
+      std::cout << "Trying time step length dt = " << current_dt << "... ";
+      bool unlikely_value_occured = false;
+      size_t num_steps = 0;
+      // do max_steps_per_dt time steps...
+      while (!unlikely_value_occured) {
+        step(current_dt);
+        ++num_steps;
+        // ... unless there is a value above threshold
+        for (size_t kk = 0; kk < u_n_.vector().size(); ++kk) {
+          if (std::abs(u_n_.vector()[kk]) > treshold) {
+            unlikely_value_occured = true;
+            std::cout << "failed" << std::endl;
+            break;
+          }
+        }
+        // if we are able to do max_steps_per_dt time steps with this dt, we accept this dt
+        if (num_steps == max_steps_per_dt) {
+          std::cout << "looks fine" << std::endl;
+          u_n_.vector() = initial_u_n.vector();
+          t_ = initial_t;
+          return std::make_pair(bool(true), current_dt);
+        }
+      }
+      // if there was a value above threshold start over with smaller dt
+      u_n_.vector() = initial_u_n.vector();
+      t_ = initial_t;
+      current_dt /= dt_refinement_factor;
+      ++num_refinements;
+    }
+    return std::make_pair(bool(false), current_dt);
   }
 
 private:
