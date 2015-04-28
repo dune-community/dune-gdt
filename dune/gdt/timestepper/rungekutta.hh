@@ -116,8 +116,13 @@ public:
         for (size_t jj = 0; jj < num_stages_; ++jj) {
           u_tmp.vector() += u_intermediate_stages_[jj].vector()*dt*A_[ii][jj];
         }
-        for (size_t kk = 0; kk < u_tmp.vector().size(); ++kk)
-          u_intermediate_stages_[ii].vector()[kk] = source_function_.evaluate(u_tmp.vector()[kk]);
+        const auto it_end = u_n_.space().grid_view().template end< 0 >();
+        for (auto it = u_n_.space().grid_view().template begin< 0 >(); it != it_end; ++it) {
+          const auto& entity = *it;
+          const auto source_value = source_function_.evaluate(u_tmp.local_function(entity)->evaluate(entity.geometry().center()));
+          for (size_t kk = 0; kk < source_value.size(); ++kk)
+            u_intermediate_stages_[ii].local_discrete_function(entity)->vector().set(kk, source_value[kk]);
+        }
       };
 
       for (size_t ii = 0; ii < num_stages_; ++ii) {
