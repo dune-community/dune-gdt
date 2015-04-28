@@ -106,6 +106,12 @@ class DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >
   typedef typename Dune::GDT::ProductSpaceInterface< Traits >                                ProductInterfaceType;
 public:
   using typename BaseType::GridViewType;
+  using typename BaseType::EntityType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
   typedef typename Traits::FactorMapperType FactorMapperType;
   typedef typename Traits::SpaceTupleType   SpaceTupleType;
   typedef typename Traits::FactorSpaceType  FactorSpaceType;
@@ -127,6 +133,8 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
 
   ThisType& operator=(ThisType&& source) = delete;
+
+  using BaseType::grid_view;
 
   const FactorMapperType& factor_mapper() const
   {
