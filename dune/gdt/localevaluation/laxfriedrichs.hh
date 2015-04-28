@@ -151,18 +151,18 @@ public:
   typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
   typedef std::tuple< >  LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
+  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
+  static const size_t dimRange = LocalizableFunctionType::dimRange;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
   typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
                                                 RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain >             AnalyticalFluxType;
+                                                RangeFieldType, dimDomain*dimRange >             AnalyticalFluxType;
 
   typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
                                                            DomainFieldType, dimDomain,
-                                                           RangeFieldType, 1, 1 >::RangeType  RangeType;
+                                                           RangeFieldType, dimRange, 1 >::RangeType  RangeType;
 }; // class AbsorbingTraits
 } // namespace internal
 
@@ -184,7 +184,8 @@ public:
   typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
   typedef typename Traits::FluxRangeType                            FluxRangeType;
   typedef typename Traits::RangeType                                RangeType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
 
   explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx)
     : analytical_flux_(analytical_flux)
@@ -222,13 +223,13 @@ public:
   void evaluate(const LocalfunctionTupleType& /*localFunctionsEntity*/,
                 const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseEntity*/,
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& /*testBaseEntity*/,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& ansatzBaseEntity,
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& ansatzBaseEntity,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseNeighbor*/,
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& /*testBaseNeighbor*/,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& ansatzBaseNeighbor,
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& ansatzBaseNeighbor,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< RangeFieldType >& /*entityEntityRet*/,
@@ -500,9 +501,7 @@ public:
       const auto& u_i = ansatzBase.evaluate(local_center_entity);
       const FluxRangeType& f_u_i = analytical_flux_.evaluate(u_i[0]);
       const auto n_ij = intersection.unitOuterNormal(localPoint);
-      const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
-      const RangeFieldType max_derivative = jacobian_u_i.infinity_norm();
-      ret[0][0] = 0.5*((f_u_i + f_u_i)*n_ij - max_derivative*(u_i[0] - u_i[0]));
+      ret[0][0] = 0.5*(f_u_i + f_u_i)*n_ij;
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;

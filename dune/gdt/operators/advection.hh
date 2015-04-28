@@ -45,7 +45,7 @@ class AdvectionLaxFriedrichsLocalizableTraits
                                                                  typename SourceImp::RangeFieldType,
                                                                  SourceImp::dimRange,
                                                                  typename SourceImp::DomainFieldType,
-                                                                 SourceImp::dimDomain >,
+                                                                 SourceImp::dimDomain*SourceImp::dimRange >,
                 AnalyticalFluxImp >::value,
                 "AnalyticalFluxImp has to be derived from Stuff::GlobalFunctionInterface!");
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
@@ -72,7 +72,7 @@ class AdvectionLaxFriedrichsTraits
                                                                  typename FVSpaceImp::RangeFieldType,
                                                                  FVSpaceImp::dimRange,
                                                                  typename FVSpaceImp::DomainFieldType,
-                                                                 FVSpaceImp::dimDomain >,
+                                                                 FVSpaceImp::dimDomain*FVSpaceImp::dimRange >,
                 AnalyticalFluxImp >::value,
                 "AnalyticalFluxImp has to be derived from Stuff::GlobalFunctionInterface!");
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
