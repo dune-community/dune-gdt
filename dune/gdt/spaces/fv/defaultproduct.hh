@@ -102,13 +102,15 @@ class DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >
 {
   typedef DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >                          ThisType;
   typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >                                 BaseType;
-  typedef typename internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
-  typedef typename Dune::GDT::ProductSpaceInterface< Traits >                                ProductInterfaceType;
+  typedef typename Dune::GDT::ProductSpaceInterface<
+      internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >            ProductInterfaceType;
 public:
+  typedef typename internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::EntityType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::BaseFunctionSetType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
@@ -135,6 +137,10 @@ public:
   ThisType& operator=(ThisType&& source) = delete;
 
   using BaseType::grid_view;
+  using BaseType::backend;
+  using BaseType::mapper;
+  using BaseType::base_function_set;
+  using BaseType::communicator;
 
   const FactorMapperType& factor_mapper() const
   {
@@ -148,9 +154,9 @@ public:
   }
 
 private:
+    using BaseType::grid_view_;
     const FactorSpaceType factor_space_;
     const FactorMapperType factor_mapper_;
-//    using BaseType::grid_view_;
 }; // class DefaultProduct< ..., 1 >
 
 
