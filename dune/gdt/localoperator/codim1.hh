@@ -310,6 +310,8 @@ class Codim1FVTraits
 public:
   typedef Codim1FV< QuaternaryEvaluationImp > derived_type;
   typedef QuaternaryEvaluationImp QuaternaryEvaluationType;
+  static const size_t dimDomain = QuaternaryEvaluationType::dimDomain;
+  static const size_t dimRange = QuaternaryEvaluationType::dimRange;
 };
 
 /** LocalOperator for FV schemes for hyperbolic equation of the form \delta_t u + div f(u) = q(u), where u: R^d \to R,
@@ -325,6 +327,8 @@ class Codim1FV
 public:
   typedef Codim1FVTraits< QuaternaryEvaluationImp > Traits;
   typedef typename Traits::QuaternaryEvaluationType QuaternaryEvaluationType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
 
 private:
   static const size_t numTmpObjectsRequired_ = 0;
@@ -353,12 +357,11 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class E, class N, class IntersectionType, class D, unsigned long d,
-            class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
-  void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& entityTestBase,
-             const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& entityAverage,
-             const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& neighborTestBase,
-             const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& neighborAverage,
+  template< class E, class N, class IntersectionType, class D, class R >
+  void apply(const Stuff::LocalfunctionSetInterface< E, D, dimDomain, R, dimRange, 1 >& entityTestBase,
+             const Stuff::LocalfunctionSetInterface< E, D, dimDomain, R, dimRange, 1 >& entityAverage,
+             const Stuff::LocalfunctionSetInterface< N, D, dimDomain, R, dimRange, 1 >& neighborTestBase,
+             const Stuff::LocalfunctionSetInterface< N, D, dimDomain, R, dimRange, 1 >& neighborAverage,
              const IntersectionType& intersection,
              Dune::DynamicMatrix< R >& entityEntityRet,
              Dune::DynamicMatrix< R >& neighborNeighborRet,
@@ -374,7 +377,7 @@ public:
     assert(entityEntityRet.cols() >= 1);
     assert(neighborNeighborRet.rows() >= 1);
     assert(neighborNeighborRet.cols() >= 1);
-    assert(entityNeighborRet.rows() >= 1);
+    assert(entityNeighborRet.rows() >= dimRange);
     assert(entityNeighborRet.cols() >= 1);
     assert(neighborEntityRet.rows() >= 1);
     assert(neighborEntityRet.cols() >= 1);
@@ -414,6 +417,8 @@ class Codim1FVBoundaryTraits
 public:
   typedef Codim1FVBoundary< BinaryEvaluationImp > derived_type;
   typedef BinaryEvaluationImp BinaryEvaluationType;
+  static const size_t dimDomain = BinaryEvaluationType::dimDomain;
+  static const size_t dimRange = BinaryEvaluationType::dimRange;
 };
 
 /** LocalOperator for FV schemes for hyperbolic equation of the form \delta_t u + div f(u) = q(u), where u: R^d \to R,
@@ -429,6 +434,8 @@ class Codim1FVBoundary
 public:
   typedef Codim1FVBoundaryTraits< BinaryEvaluationImp > Traits;
   typedef typename Traits::BinaryEvaluationType BinaryEvaluationType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
 
 private:
   static const size_t numTmpObjectsRequired_ = 0;
@@ -457,10 +464,9 @@ public:
     return numTmpObjectsRequired_;
   }
 
-  template< class T, class A, class IntersectionType, class D, unsigned long d,
-            class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
-  void apply(const Stuff::LocalfunctionSetInterface< T, D, d, R, rT, rCT >& testBase,
-             const Stuff::LocalfunctionSetInterface< A, D, d, R, rA, rCA >& entityAverage,
+  template< class T, class A, class IntersectionType, class D, class R >
+  void apply(const Stuff::LocalfunctionSetInterface< T, D, dimDomain, R, dimRange, 1 >& testBase,
+             const Stuff::LocalfunctionSetInterface< A, D, dimDomain, R, dimRange, 1 >& entityAverage,
              const IntersectionType& intersection,
              Dune::DynamicMatrix< R >& ret,
              std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
@@ -468,7 +474,7 @@ public:
     // check local function
     assert(entityAverage.size() == 1);
     // check matrices
-    assert(ret.rows() >= 1);
+    assert(ret.rows() >= dimRange);
     assert(ret.cols() >= 1);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
     // get entities and local functions
@@ -477,7 +483,7 @@ public:
     const auto localPoint = intersection.geometry().local(intersection.geometry().center());
     //evaluate
     flux_.evaluate(localFunctions, testBase, entityAverage, intersection, localPoint, ret);
-    ret[0][0] /= entity.geometry().volume();
+    ret /= entity.geometry().volume();
   } // void apply(...) const
 
 private:
