@@ -59,19 +59,19 @@ public:
   typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
   typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType > >        LocalfunctionTupleType;
   static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
   static const unsigned int dimRange = LocalizableFunctionType::dimRange;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
   typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
                                                 RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain >             AnalyticalFluxType;
+                                                RangeFieldType, dimRange, dimDomain >   AnalyticalFluxType;
 
   typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
                                                            DomainFieldType, dimDomain,
-                                                           RangeFieldType, 1, 1 >::RangeType  RangeType;
+                                                           RangeFieldType, dimRange, 1 >::RangeType  RangeType;
 }; // class InnerTraits
 
 /**
@@ -79,60 +79,50 @@ public:
  */
 template< class LocalizableFunctionImp, class BoundaryValueFunctionImp >
 class DirichletTraits
+    : public InnerTraits< LocalizableFunctionImp >
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
   static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, BoundaryValueFunctionImp >::value,
                 "BoundaryValueFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  typedef InnerTraits< LocalizableFunctionImp >                            BaseType;
 public:
-  typedef LocalizableFunctionImp                                LocalizableFunctionType;
-  typedef BoundaryValueFunctionImp                              BoundaryValueFunctionType;
-  typedef typename BoundaryValueFunctionType::LocalfunctionType BoundaryValueLocalfunctionType;
-  typedef Dirichlet< LocalizableFunctionType, BoundaryValueFunctionType >                  derived_type;
-  typedef typename LocalizableFunctionType::EntityType          EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType     DomainFieldType;
-  typedef typename LocalizableFunctionType::RangeFieldType      RangeFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType   LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType >, std::shared_ptr< BoundaryValueLocalfunctionType > >    LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
-  static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  // copy of ProblemInterface::FluxType in dune/hdd/hyperbolic/problems/interfaces.hh
-  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity           FluxSourceEntityType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType, RangeFieldType, dimRange, RangeFieldType, dimDomain > AnalyticalFluxType;
-  typedef typename AnalyticalFluxType::RangeType                  FluxRangeType;
-  typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >::RangeType RangeType;
+  typedef LocalizableFunctionImp                                           LocalizableFunctionType;
+  typedef BoundaryValueFunctionImp                                         BoundaryValueFunctionType;
+  typedef typename BoundaryValueFunctionType::LocalfunctionType            BoundaryValueLocalfunctionType;
+  typedef Dirichlet< LocalizableFunctionType, BoundaryValueFunctionType >  derived_type;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::LocalfunctionType;
+  typedef std::tuple< std::shared_ptr< LocalfunctionType >,
+                      std::shared_ptr< BoundaryValueLocalfunctionType > >  LocalfunctionTupleType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::FluxSourceEntityType;
+  using typename BaseType::AnalyticalFluxType;
+  using typename BaseType::FluxRangeType;
+  using typename BaseType::RangeType;
 }; // class DirichletTraits
 
 
 template< class LocalizableFunctionImp >
 class GodunovTraits
+   : public InnerTraits< LocalizableFunctionImp >
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  typedef InnerTraits< LocalizableFunctionImp > BaseType;
 public:
-  typedef LocalizableFunctionImp                                    LocalizableFunctionType;
-  typedef Godunov< LocalizableFunctionType >                        derived_type;
-  typedef typename LocalizableFunctionType::EntityType              EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
-  typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
-  typedef std::tuple< std::shared_ptr< LocalfunctionType > >  LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
-  static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
-                                                RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain >             AnalyticalFluxType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
-                                                RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain, dimRange >   AnalyticalFluxJacobianType;
-  typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
-  typedef typename AnalyticalFluxJacobianType::RangeType                              FluxJacobianRangeType;
-  typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
-                                                           DomainFieldType, dimDomain,
-                                                           RangeFieldType, 1, 1 >::RangeType  RangeType;
+  typedef LocalizableFunctionImp                LocalizableFunctionType;
+  typedef Godunov< LocalizableFunctionType >    derived_type;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::LocalfunctionTupleType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::FluxSourceEntityType;
+  using typename BaseType::AnalyticalFluxType;
+  using typename BaseType::FluxRangeType;
+  using typename BaseType::RangeType;
 }; // class GodunovTraits
 
 /**
@@ -140,30 +130,26 @@ public:
  */
 template< class LocalizableFunctionImp >
 class AbsorbingTraits
+   : public InnerTraits< LocalizableFunctionImp >
 {
-  static_assert(std::is_base_of< Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  typedef InnerTraits< LocalizableFunctionImp > BaseType;
 public:
-  typedef LocalizableFunctionImp                                    LocalizableFunctionType;
-  typedef Absorbing< LocalizableFunctionType >                      derived_type;
-  typedef typename LocalizableFunctionType::EntityType              EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
-  typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
-  typedef std::tuple< >  LocalfunctionTupleType;
-  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
-  static const size_t dimRange = LocalizableFunctionType::dimRange;
-  static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
-                                                RangeFieldType, dimRange,
-                                                RangeFieldType, dimDomain*dimRange >             AnalyticalFluxType;
-
-  typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
-  typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
-                                                           DomainFieldType, dimDomain,
-                                                           RangeFieldType, dimRange, 1 >::RangeType  RangeType;
+  typedef LocalizableFunctionImp                LocalizableFunctionType;
+  typedef Absorbing< LocalizableFunctionType >  derived_type;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::LocalfunctionType;
+  typedef typename std::tuple< >                LocalfunctionTupleType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::FluxSourceEntityType;
+  using typename BaseType::AnalyticalFluxType;
+  using typename BaseType::FluxRangeType;
+  using typename BaseType::RangeType;
 }; // class AbsorbingTraits
+
+
 } // namespace internal
 
 
@@ -242,15 +228,17 @@ public:
     const auto local_center_entity = entity.geometry().local(entity.geometry().center());
     const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
     const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
+    assert(u_i.size() == 1 && u_j.size() == 1);
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
     const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
-    const RangeFieldType max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
+    const auto max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
                                           ? jacobian_u_i.infinity_norm()
                                           : jacobian_u_j.infinity_norm();
-    entityNeighborRet[0][0] = 0.5*((f_u_i + f_u_j)*n_ij - max_derivative*(u_j[0] - u_i[0]));
+    for (size_t kk = 0; kk < dimRange; ++kk)
+      entityNeighborRet[kk][0] = 0.5*((f_u_i[kk] + f_u_j[kk])*n_ij - (u_j[0] - u_i[0])[kk]*max_derivative);
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;
@@ -336,9 +324,6 @@ public:
   const LocalizableFunctionType& lambda_;
   const BoundaryValueFunctionType& boundary_values_;
 }; // class Dirichlet
-
-
-
 
 
 
@@ -457,7 +442,8 @@ public:
   typedef typename Traits::RangeFieldType                           RangeFieldType;
   typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
   typedef typename Traits::FluxRangeType                            FluxRangeType;
-  static const unsigned int dimDomain = Traits::dimDomain;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
 
   explicit Absorbing(const AnalyticalFluxType& analytical_flux)
     : analytical_flux_(analytical_flux)
@@ -482,16 +468,14 @@ public:
    *  \brief  Computes a binary codim 1 evaluation.
    *  \tparam IntersectionType    A model of Dune::Intersection< ... >
    *  \tparam R                   RangeFieldType
-   *  \tparam r{T,A}              dimRange of the {testBase*,ansatzBase*}
-   *  \tparam rC{T,A}             dimRangeRows of the {testBase*,ansatzBase*}
    *  \attention ret is assumed to be zero!
    */
-  template< class IntersectionType, class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
+  template< class IntersectionType, class R >
   void evaluate(const LocalfunctionTupleType& /*localFunctions*/,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rT, rCT >& /*testBase*/,
+                    < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface
-                    < EntityType, DomainFieldType, dimDomain, R, rA, rCA >& ansatzBase,
+                    < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& ansatzBase,
                 const IntersectionType& intersection,
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
@@ -501,7 +485,8 @@ public:
       const auto& u_i = ansatzBase.evaluate(local_center_entity);
       const FluxRangeType& f_u_i = analytical_flux_.evaluate(u_i[0]);
       const auto n_ij = intersection.unitOuterNormal(localPoint);
-      ret[0][0] = 0.5*(f_u_i + f_u_i)*n_ij;
+      for (size_t kk = 0; kk < dimRange; ++kk)
+        ret[kk][0] = 0.5*((f_u_i[kk] + f_u_i[kk])*n_ij);
   } // void evaluate(...) const
 
   const AnalyticalFluxType& analytical_flux_;
