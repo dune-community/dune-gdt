@@ -391,7 +391,7 @@ public:
                          neighborTestBase, neighborAverage,
                          intersection, localPoint,
                          entityEntityRet,neighborNeighborRet, entityNeighborRet, neighborEntityRet);
-    entityNeighborRet[0][0] /= entity.geometry().volume();
+    entityNeighborRet /= entity.geometry().volume();
   } // void apply(...) const
 
 private:
