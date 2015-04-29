@@ -292,7 +292,7 @@ public:
     , localAssembler_(localAssembler)
     , discreteFunction_(discreteFunction)
     , discreteFunctionUpdate_(discreteFunctionUpdate)
-    , updateMatrix_(1,1)
+    , updateMatrix_(discreteFunction.space().dimRange,1)
   {}
 
   virtual ~LocalFaceFVAssemblerWrapper() {}
