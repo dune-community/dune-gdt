@@ -16,9 +16,10 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/memory.hh>
+#include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -57,8 +58,11 @@ public:
     , vector_(vec)
     , name_(nm)
   {
-    assert(vector_.size() == space_->mapper().size() && "Given vector has wrong size!");
-  }
+    if (vector_.size() != space_->mapper().size())
+      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+                      " vector.size()         = " << vector_.size() << "\n"
+                 << "   space.mapper().size() = " << space_->mapper().size());
+  } // ConstDiscreteFunction(...)
 
   ConstDiscreteFunction(const ThisType& other)
     : space_(other.space())
@@ -104,9 +108,9 @@ public:
 
   void visualize(const std::string filename,
                  const bool subsampling = (SpaceType::polOrder > 1),
-                 VTK::OutputType vtk_output_type = VTK::appendedraw) const
+                 const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    BaseType::template visualize< typename SpaceType::GridViewType >(space().grid_view(),
+    BaseType::template visualize< typename SpaceType::GridViewType >(space_->grid_view(),
                                                                      filename,
                                                                      subsampling,
                                                                      vtk_output_type);
