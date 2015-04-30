@@ -29,16 +29,16 @@ namespace Operators {
 
 
 // forward
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class RangeImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
 class AdvectionLaxFriedrichsLocalizable;
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
 class AdvectionLaxFriedrichs;
 
 
 namespace internal {
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class RangeImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
 class AdvectionLaxFriedrichsLocalizableTraits
 {
   static_assert(std::is_base_of< Stuff::GlobalFunctionInterface< typename AnalyticalFluxImp::EntityType,
@@ -56,16 +56,18 @@ public:
   typedef AdvectionLaxFriedrichsLocalizable< AnalyticalFluxImp,
                                              LocalizableFunctionImp,
                                              SourceImp,
+                                             BoundaryValueImp,
                                              RangeImp >                                         derived_type;
   typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
   typedef LocalizableFunctionImp                                                                LocalizableFunctionType;
   typedef SourceImp                                                                             SourceType;
+  typedef BoundaryValueImp                                                                      BoundaryValueType;
   typedef RangeImp                                                                              RangeType;
   typedef typename RangeType::SpaceType::GridViewType                                           GridViewType;
   typedef typename GridViewType::ctype                                                          FieldType;
 }; // class AdvectionLaxFriedrichsLocalizableTraits
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
 class AdvectionLaxFriedrichsTraits
 {
   static_assert(std::is_base_of< Stuff::GlobalFunctionInterface< typename AnalyticalFluxImp::EntityType,
@@ -77,11 +79,12 @@ class AdvectionLaxFriedrichsTraits
                 "AnalyticalFluxImp has to be derived from Stuff::GlobalFunctionInterface!");
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
                 "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(is_space< FVSpaceImp >::value,    "FVSpaceImp has to be derived from SpaceInterface!");
+//  static_assert(is_space< FVSpaceImp >::value,    "FVSpaceImp has to be derived from SpaceInterface!");
 public:
-  typedef AdvectionLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp >       derived_type;
+  typedef AdvectionLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp,BoundaryValueImp, FVSpaceImp >       derived_type;
   typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
   typedef LocalizableFunctionImp                                                                LocalizableFunctionType;
+  typedef BoundaryValueImp                                                                      BoundaryValueType;
   typedef FVSpaceImp                                                                            FVSpaceType;
   typedef typename FVSpaceType::GridViewType                                                    GridViewType;
   typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
@@ -90,12 +93,13 @@ public:
 } // namespace internal
 
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class RangeImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
 class AdvectionLaxFriedrichsLocalizable
   : public Dune::GDT::LocalizableOperatorInterface<
                              internal::AdvectionLaxFriedrichsLocalizableTraits< AnalyticalFluxImp,
                                                                                 LocalizableFunctionImp,
                                                                                 SourceImp,
+                                                                                BoundaryValueImp,
                                                                                 RangeImp > >
   , public SystemAssembler< typename RangeImp::SpaceType >
 {
@@ -103,12 +107,14 @@ class AdvectionLaxFriedrichsLocalizable
                              internal::AdvectionLaxFriedrichsLocalizableTraits< AnalyticalFluxImp,
                                                                                 LocalizableFunctionImp,
                                                                                 SourceImp,
+                                                                                BoundaryValueImp,
                                                                                 RangeImp > >    OperatorBaseType;
   typedef SystemAssembler< typename RangeImp::SpaceType >                                       AssemblerBaseType;
 public:
   typedef internal::AdvectionLaxFriedrichsLocalizableTraits< AnalyticalFluxImp,
                                                              LocalizableFunctionImp,
                                                              SourceImp,
+                                                             BoundaryValueImp,
                                                              RangeImp >                         Traits;
 
   typedef typename Traits::GridViewType                                                         GridViewType;
@@ -116,9 +122,10 @@ public:
   typedef typename Traits::RangeType                                                            RangeType;
   typedef typename Traits::AnalyticalFluxType                                                   AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType                                              LocalizableFunctionType;
+  typedef typename Traits::BoundaryValueType                                                    BoundaryValueType;
 
   typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp >   NumericalFluxType;
-  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Absorbing< LocalizableFunctionImp >   NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Dirichlet< LocalizableFunctionImp, BoundaryValueType > NumericalBoundaryFluxType;
   typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType >                      LocalOperatorType;
   typedef typename Dune::GDT::LocalOperator::Codim1FVBoundary< NumericalBoundaryFluxType >      LocalBoundaryOperatorType;
   typedef typename LocalAssembler::Codim1CouplingFV< LocalOperatorType >                        InnerAssemblerType;
@@ -127,11 +134,12 @@ public:
   AdvectionLaxFriedrichsLocalizable(const AnalyticalFluxType& analytical_flux,
                                     const LocalizableFunctionType& ratio_dt_dx,
                                     const SourceType& source,
+                                    const BoundaryValueType& boundary_values,
                                     RangeType& range)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , local_operator_(analytical_flux, ratio_dt_dx)
-    , local_boundary_operator_(analytical_flux)
+    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -180,29 +188,34 @@ private:
 
 
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class FVSpaceImp >
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
 class AdvectionLaxFriedrichs
   : public Dune::GDT::OperatorInterface< internal::AdvectionLaxFriedrichsTraits<  AnalyticalFluxImp,
                                                                                   LocalizableFunctionImp,
+                                                                                  BoundaryValueImp,
                                                                                   FVSpaceImp > >
 {
   typedef Dune::GDT::OperatorInterface< internal::AdvectionLaxFriedrichsTraits<  AnalyticalFluxImp,
                                                                                  LocalizableFunctionImp,
+                                                                                 BoundaryValueImp,
                                                                                  FVSpaceImp > > OperatorBaseType;
 
 public:
-  typedef internal::AdvectionLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, FVSpaceImp > Traits;
+  typedef internal::AdvectionLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, BoundaryValueImp, FVSpaceImp > Traits;
   typedef typename Traits::GridViewType            GridViewType;
   typedef typename Traits::AnalyticalFluxType      AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef typename Traits::BoundaryValueType       BoundaryValueType;
   typedef typename Traits::FVSpaceType             FVSpaceType;
 
   AdvectionLaxFriedrichs(const AnalyticalFluxType& analytical_flux,
                          const LocalizableFunctionType& ratio_dt_dx,
+                         const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , ratio_dt_dx_(ratio_dt_dx)
+    , boundary_values_(boundary_values)
     , fv_space_(fv_space)
   {}
 
@@ -217,13 +230,15 @@ public:
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, range);
+                                       BoundaryValueType,
+                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, boundary_values_, range);
     localizable_operator.apply();
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
+  const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
 }; // class AdvectionLaxFriedrichs
 
