@@ -137,7 +137,9 @@ public:
     , ratio_dt_dx_(ratio_dt_dx)
     , is_linear_(is_linear)
   {
-    initialize_jacobians();
+    if (!jacobians_constructed_)
+      initialize_jacobians();
+    jacobians_constructed_ = true;
   }
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -285,11 +287,20 @@ private:
 
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
-  FluxJacobianRangeType jacobian_neg_;
-  FluxJacobianRangeType jacobian_pos_;
+  static FluxJacobianRangeType jacobian_neg_;
+  static FluxJacobianRangeType jacobian_pos_;
+  static bool jacobians_constructed_;
   const bool is_linear_;
 }; // class Inner
 
+template < class LocalizableFunctionImp >
+typename internal::InnerTraits< LocalizableFunctionImp >::FluxJacobianRangeType Inner< LocalizableFunctionImp >::jacobian_neg_(0);
+
+template < class LocalizableFunctionImp >
+typename internal::InnerTraits< LocalizableFunctionImp >::FluxJacobianRangeType Inner< LocalizableFunctionImp >::jacobian_pos_(0);
+
+template < class LocalizableFunctionImp >
+bool Inner< LocalizableFunctionImp >::jacobians_constructed_(false);
 
 template< class LocalizableFunctionImp, class BoundaryValueFunctionImp >
 class Dirichlet
@@ -322,7 +333,9 @@ public:
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    initialize_jacobians();
+    if (!jacobians_constructed_)
+      initialize_jacobians();
+    jacobians_constructed_ = true;
   }
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -457,10 +470,20 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
   const BoundaryValueFunctionType& boundary_values_;
-  FluxJacobianRangeType jacobian_neg_;
-  FluxJacobianRangeType jacobian_pos_;
+  static FluxJacobianRangeType jacobian_neg_;
+  static FluxJacobianRangeType jacobian_pos_;
+  static bool jacobians_constructed_;
   const bool is_linear_;
 }; // class Dirichlet
+
+template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
+typename internal::DirichletTraits< LocalizableFunctionImp, BoundaryValueFunctionImp >::FluxJacobianRangeType Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp >::jacobian_neg_(0);
+
+template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
+typename internal::DirichletTraits< LocalizableFunctionImp, BoundaryValueFunctionImp >::FluxJacobianRangeType Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp >::jacobian_pos_(0);
+
+template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
+bool Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp >::jacobians_constructed_(false);
 
 
 } // namespace Godunov
