@@ -198,19 +198,26 @@ public:
     }
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
-    const FluxRangeType delta_f_u = f_u_i - f_u_j;
+    const FluxRangeType delta_u = u_i[0] - u_j[0];
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     // calculate return vector
     RangeType negative_waves(RangeFieldType(0));
     RangeType positive_waves(RangeFieldType(0));
-    jacobian_neg.mv(delta_f_u, negative_waves);
-    jacobian_pos.mv(delta_f_u, positive_waves);
+    jacobian_neg.mv(delta_u, negative_waves);
+    jacobian_pos.mv(delta_u, positive_waves);
+//    if (n_ij > 0) {
+//      for (size_t kk = 0; kk < dimRange; ++kk)
+//        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+//    } else {
+//      for (size_t kk = 0; kk < dimRange; ++kk)
+//        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+//    }
     if (n_ij > 0) {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = (f_u_i[kk] + negative_waves[kk])*n_ij;
+        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij;
     } else {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = (f_u_i[kk] - positive_waves[kk])*n_ij;
+        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij;
     }
   } // void evaluate(...) const
 
@@ -355,26 +362,33 @@ public:
       const std::vector< RangeType > u_i = ansatzBase.evaluate(entity.geometry().local(entity.geometry().center()));
       const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
       const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
-      FluxJacobianRangeType jacobian_pos = jacobian_pos_;
       FluxJacobianRangeType jacobian_neg = jacobian_neg_;
+      FluxJacobianRangeType jacobian_pos = jacobian_pos_;
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
         reinitialize_jacobians(u_i[0], u_j, jacobian_neg, jacobian_pos);
       }
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
       const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j);
-      const FluxRangeType delta_f_u = f_u_i - f_u_j;
+      const RangeType delta_u = u_i[0] - u_j;
       const auto n_ij = intersection.unitOuterNormal(localPoint);
       // calculate return vector
       RangeType negative_waves(RangeFieldType(0));
       RangeType positive_waves(RangeFieldType(0));
-      jacobian_neg.mv(delta_f_u, negative_waves);
-      jacobian_pos.mv(delta_f_u, positive_waves);
-      if (n_ij > 0) { //dimDomain = 1 needed!!
+      jacobian_neg.mv(delta_u, negative_waves);
+      jacobian_pos.mv(delta_u, positive_waves);
+//      if (n_ij > 0) {
+//        for (size_t kk = 0; kk < dimRange; ++kk)
+//          ret[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+//      } else {
+//        for (size_t kk = 0; kk < dimRange; ++kk)
+//          ret[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+//      }
+      if (n_ij > 0) {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = (f_u_i[kk] + negative_waves[kk])*n_ij;
+          ret[kk][0] = -negative_waves[kk]*n_ij;
       } else {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = (f_u_i[kk] - positive_waves[kk])*n_ij;
+          ret[kk][0] = -positive_waves[kk]*n_ij;
       }
   } // void evaluate(...) const
 
@@ -412,8 +426,8 @@ private:
                            FluxJacobianRangeType& jacobian_pos) const
   {
 #if HAVE_EIGEN
-    EigenMatrixType diag_jacobian_pos(dimRange, dimRange, RangeFieldType(0));
     EigenMatrixType diag_jacobian_neg(dimRange, dimRange, RangeFieldType(0));
+    EigenMatrixType diag_jacobian_pos(dimRange, dimRange, RangeFieldType(0));
     // create EigenSolver
     ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
                                                                                        eigen_solver(jacobian.backend());
