@@ -21,11 +21,68 @@
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/productinterface.hh>
 
 #include "local.hh"
 
 namespace Dune {
 namespace GDT {
+
+//forward
+template< class SpaceImp, class VectorImp >
+class ConstDiscreteFunction;
+
+
+namespace internal {
+
+
+template< size_t ii, class SpaceImp, class VectorImp, class Traits, class Tag >
+struct visualize_helper {
+  static void visualize_factor(const std::string filename,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
+                               const DS::PerThreadValue< SpaceImp >& space,
+                               const VectorImp& vector);
+};
+
+template< size_t ii, class SpaceImp, class VectorImp, class Traits >
+struct visualize_helper< ii, SpaceImp, VectorImp, Traits, void > {
+  static void visualize_factor(const std::string filename,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
+                               const DS::PerThreadValue< SpaceImp >& space,
+                               const VectorImp& vector)
+  {
+    assert( ii == 0 );
+    ConstDiscreteFunction< SpaceImp, VectorImp > discrete_function(space, vector);
+    discrete_function.visualize(filename, subsampling, vtk_output_type);
+    std::cout << std::is_base_of< typename Dune::GDT::ProductSpaceInterface< Traits >, SpaceImp >::value;
+  }
+};
+
+template< size_t ii, class SpaceImp, class VectorImp, class Traits >
+struct visualize_helper< ii, SpaceImp, VectorImp, Traits, SpaceImp  > {
+  static void visualize_factor(const std::string filename,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
+                               const DS::PerThreadValue< SpaceImp >& space,
+                               const VectorImp& vector)
+  {
+    assert(ii < SpaceImp::num_factors);
+    const auto factor_space = space->template factor< ii >();
+    VectorImp factor_vector(space->grid_view().size(0));
+    const auto it_end = space->grid_view().template end< 0 >();
+    for (auto it = space->grid_view().template begin< 0 >(); it != it_end; ++it) {
+      const auto& entity = *it;
+      factor_vector[factor_space.mapper().mapToGlobal(entity, 0)] = vector[space->factor_mapper().mapToGlobal(ii, entity, 0)];
+    }
+    ConstDiscreteFunction< decltype(factor_space), VectorImp > factor_discrete_function(factor_space, factor_vector);
+    factor_discrete_function.visualize(filename, subsampling, vtk_output_type);
+  }
+};
+
+
+} // namespace internal
 
 
 template< class SpaceImp, class VectorImp >
@@ -34,7 +91,7 @@ class ConstDiscreteFunction
                                                 typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols >
 {
-  static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
+//  static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
   static_assert(Stuff::LA::is_vector< VectorImp >::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
   static_assert(std::is_same< typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType >::value,
@@ -46,6 +103,7 @@ class ConstDiscreteFunction
   typedef ConstDiscreteFunction< SpaceImp, VectorImp > ThisType;
 public:
   typedef SpaceImp                             SpaceType;
+  typedef typename SpaceImp::Traits            SpaceTraits;
   typedef VectorImp                            VectorType;
   typedef typename BaseType::EntityType        EntityType;
   typedef typename BaseType::LocalfunctionType LocalfunctionType;
@@ -111,6 +169,23 @@ public:
                                                                      subsampling,
                                                                      vtk_output_type);
   } // ... visualize(...)
+
+  template< size_t ii >
+  void visualize_factor (const std::string filename,
+                         const bool subsampling = (SpaceType::polOrder > 1),
+                         const VTK::OutputType vtk_output_type = VTK::appendedraw)
+  {
+    internal::visualize_helper
+        < ii,
+          SpaceType,
+          VectorType,
+          SpaceTraits,
+          typename std::enable_if< std::is_base_of< typename Dune::GDT::ProductSpaceInterface< SpaceTraits >,
+                                                    SpaceType >::value,
+                                   SpaceType >::type >
+                              ::visualize_factor(filename, subsampling, vtk_output_type, space_, vector_);
+  }
+
 
   bool dofs_valid() const
   {
