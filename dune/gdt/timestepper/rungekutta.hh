@@ -102,7 +102,7 @@ public:
         for (size_t jj = 0; jj < num_stages_; ++jj) {
           u_tmp.vector() += u_intermediate_stages_[jj].vector()*dt*A_[ii][jj];
         }
-        space_operator_.apply(u_tmp , u_intermediate_stages_[ii]);
+        space_operator_.apply(u_tmp , u_intermediate_stages_[ii], t_);
       };
 
       for (size_t ii = 0; ii < num_stages_; ++ii) {

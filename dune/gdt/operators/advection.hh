@@ -125,14 +125,14 @@ class AdvectionGodunovTraits
 {
 typedef AdvectionLaxFriedrichsTraits< AnalyticalFluxImp, LocalizableFunctionImp, BoundaryValueImp, FVSpaceImp > BaseType;
 public:
-  typedef AdvectionGodunov< AnalyticalFluxImp, LocalizableFunctionImp,BoundaryValueImp, FVSpaceImp > derived_type;
+  typedef AdvectionGodunov< AnalyticalFluxImp, LocalizableFunctionImp, BoundaryValueImp, FVSpaceImp > derived_type;
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::LocalizableFunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::FVSpaceType;
   using typename BaseType::GridViewType;
   using typename BaseType::FieldType;
-}; // class LaxFriedrichsTraits
+}; // class GodunovTraits
 
 } // namespace internal
 
@@ -426,13 +426,14 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
-                                       BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, boundary_values_, range, is_linear_);
+                                       typename BoundaryValueType::ExpressionFunctionType,
+                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, current_boundary_values, range, is_linear_);
     localizable_operator.apply();
   }
 
