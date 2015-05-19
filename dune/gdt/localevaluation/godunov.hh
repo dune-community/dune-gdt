@@ -25,7 +25,6 @@
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
 #include "interface.hh"
