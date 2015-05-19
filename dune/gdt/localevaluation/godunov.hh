@@ -25,7 +25,7 @@
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/linear.hh>
+#include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/la/container/eigen.hh>
 
 #include "interface.hh"
@@ -73,9 +73,6 @@ public:
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
                                                            DomainFieldType, dimDomain,
                                                            RangeFieldType, dimRange, 1 >::RangeType  RangeType;
-  typedef typename Dune::Stuff::Functions::Linear< FluxSourceEntityType,
-                                                   RangeFieldType, dimRange,
-                                                   RangeFieldType, dimRange, dimDomain > LinearFunctionType;
   typedef typename Dune::Stuff::LA::EigenDenseMatrix< RangeFieldType >                  EigenMatrixType;
 }; // class InnerTraits
 
@@ -102,7 +99,6 @@ public:
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
   using typename BaseType::RangeType;
-  using typename BaseType::LinearFunctionType;
   using typename BaseType::EigenMatrixType;
 }; // class DirichletTraits
 
@@ -125,7 +121,6 @@ public:
   typedef typename Traits::FluxRangeType                            FluxRangeType;
   typedef typename Traits::FluxJacobianRangeType                    FluxJacobianRangeType;
   typedef typename Traits::RangeType                                RangeType;
-  typedef typename Traits::LinearFunctionType                       LinearFunctionType;
   typedef typename Traits::EigenMatrixType                          EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
@@ -319,7 +314,6 @@ public:
   typedef typename Traits::FluxRangeType                            FluxRangeType;
   typedef typename Traits::FluxJacobianRangeType                    FluxJacobianRangeType;
   typedef typename Traits::RangeType                                RangeType;
-  typedef typename Traits::LinearFunctionType                       LinearFunctionType;
   typedef typename Traits::EigenMatrixType                          EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
