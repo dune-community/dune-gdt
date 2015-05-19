@@ -19,10 +19,10 @@ template< class Traits >
 class ProductSpaceInterface
     : public SpaceInterface< Traits, Traits::dimDomain, Traits::dimRange, Traits::dimRangeCols >
 {
+public:
   typedef typename Traits::FactorMapperType FactorMapperType;
   typedef typename Traits::SpaceTupleType SpaceTupleType;
-
-public:
+  static const size_t num_factors = std::tuple_size< SpaceTupleType >::value;
   /**
    * \defgroup interface ´´These methods have to be implemented in addition to the SpaceInterface methods!''
    * @{
@@ -33,11 +33,12 @@ public:
     return this->as_imp().factor_mapper();
   }
 
-  template< size_t i >
-  const typename std::tuple_element< i, SpaceTupleType >::type& factor() const
+  template< size_t ii >
+  const typename std::tuple_element< ii, SpaceTupleType >::type& factor() const
   {
-    CHECK_CRTP(this->as_imp().template factor< i >());
-    return this->as_imp().template factor< i >();
+    static_assert(ii < num_factors, "This factor does not exist!") ;
+    CHECK_CRTP(this->as_imp().template factor< ii >());
+    return this->as_imp().template factor< ii >();
   }
   /**
     }
