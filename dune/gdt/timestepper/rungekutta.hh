@@ -119,7 +119,7 @@ public:
         const auto it_end = u_n_.space().grid_view().template end< 0 >();
         for (auto it = u_n_.space().grid_view().template begin< 0 >(); it != it_end; ++it) {
           const auto& entity = *it;
-          const auto source_value = source_function_.evaluate(u_tmp.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center())));
+          const auto source_value = source_function_.local_global_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()), u_tmp.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center())));
           for (size_t kk = 0; kk < source_value.size(); ++kk)
             u_intermediate_stages_[ii].local_discrete_function(entity)->vector().set(kk, source_value[kk]);
         }
@@ -136,7 +136,10 @@ public:
       return dt;
   } // ... step(...)
 
-  void solve(const double t_end, const double first_dt, const double save_step = 0.0, const bool output = false)
+  void solve(const double t_end,
+             const double first_dt,
+             const double save_step = 0.0,
+             const bool output = false)
   {
     assert(t_end > t_);
     double dt = first_dt;
@@ -146,9 +149,11 @@ public:
     double next_save_time = t_ + save_interval;
     size_t save_step_counter = 1;
 
+    const size_t factor_to_be_visualized = 0;
+
     if (output)
       std::cout << "Visualizing initial values..." << std::endl;
-    u_n_.visualize("concentration_0", false);
+    u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_concentration_0", false);
 
     if (output)
       std::cout << "Starting time loop..." << std::endl;
@@ -159,7 +164,7 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (t_ >= next_save_time) {
-        u_n_.visualize("concentration_" + DSC::toString(save_step_counter), false);
+        u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_concentration_" + DSC::toString(save_step_counter), false);
         next_save_time += save_interval;
         ++save_step_counter;
       }
