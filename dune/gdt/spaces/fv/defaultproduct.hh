@@ -72,23 +72,14 @@ class DefaultProductTraits
   typedef DefaultTraits< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols >  BaseType;
 public:
   typedef DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
-  using BaseType::polOrder;
-  using BaseType::part_view_type;
-  using BaseType::needs_grid_view;
   using typename BaseType::GridViewType;
   static const size_t dimDomain = GridViewType::dimension;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
-  using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::MapperType;
-  using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicationChooserType;
-  using typename BaseType::CommunicatorType;
-  typedef typename Dune::GDT::Spaces::FV::Default< GridViewImp, RangeFieldImp, 1, dimRangeCols >  FactorSpaceType;
-  typedef typename make_identical_tuple< FactorSpaceType, dimRange >::type                        SpaceTupleType;
-  typedef typename Dune::GDT::Mapper::ProductFiniteVolume< GridViewType, dimRange, 1 >            FactorMapperType;
+  typedef typename Dune::GDT::Spaces::FV::Default< GridViewType, RangeFieldType, 1, dimRangeCols >  FactorSpaceType;
+  typedef typename make_identical_tuple< FactorSpaceType, dimRange >::type                          SpaceTupleType;
+  typedef typename Dune::GDT::Mapper::ProductFiniteVolume< GridViewType, dimRange, 1 >              FactorMapperType;
 }; // class DefaultProductTraits
 
 
@@ -106,6 +97,8 @@ class DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >
       internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >            ProductInterfaceType;
 public:
   typedef typename internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
+  // We need all these using declarations because DefaultProduct is derived from two versions of SpaceInterface with
+  // different Traits. Removing these results in an "ambiguous name lookup" compiler error.
   using typename BaseType::GridViewType;
   using typename BaseType::EntityType;
   using typename BaseType::RangeFieldType;
@@ -147,7 +140,7 @@ public:
     return factor_mapper_;
   }
 
-  template< size_t i >
+  template< size_t ii >
   const FactorSpaceType factor() const
   {
     return factor_space_;
