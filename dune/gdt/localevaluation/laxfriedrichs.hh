@@ -150,10 +150,10 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool local_lax_friedrichs = false)
+  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool use_local = false)
     : analytical_flux_(analytical_flux)
     , ratio_dt_dx_(ratio_dt_dx)
-    , local_lax_friedrichs_(local_lax_friedrichs)
+    , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -218,7 +218,7 @@ public:
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     RangeFieldType max_derivative = std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity)[0];
-    if (local_lax_friedrichs_) {
+    if (use_local_) {
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
       const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
       max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
@@ -239,7 +239,7 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
-  const bool local_lax_friedrichs_;
+  const bool use_local_;
 }; // class Inner
 
 /**
@@ -265,11 +265,11 @@ public:
   static const unsigned int dimRange = Traits::dimRange;
 
   // lambda = Delta t / Delta x
-  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const BoundaryValueFunctionType& boundary_values, const bool local_lax_friedrichs = false)
+  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const BoundaryValueFunctionType& boundary_values, const bool use_local = false)
     : analytical_flux_(analytical_flux)
     , ratio_dt_dx_(ratio_dt_dx)
     , boundary_values_(boundary_values)
-    , local_lax_friedrichs_(local_lax_friedrichs)
+    , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -321,7 +321,7 @@ public:
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0];
-    if (local_lax_friedrichs_) {
+    if (use_local_) {
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
       const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
       max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
@@ -343,7 +343,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
   const BoundaryValueFunctionType& boundary_values_;
-  const bool local_lax_friedrichs_;
+  const bool use_local_;
 }; // class Dirichlet
 
 
@@ -367,10 +367,10 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool local_lax_friedrichs)
+  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool use_local)
     : analytical_flux_(analytical_flux)
     , ratio_dt_dx_(ratio_dt_dx)
-    , local_lax_friedrichs_(local_lax_friedrichs)
+    , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& /*entity*/) const
@@ -425,7 +425,7 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& ratio_dt_dx_;
-  const bool local_lax_friedrichs_;
+  const bool use_local_;
 }; // class Absorbing
 
 } // namespace LaxFriedrichs
