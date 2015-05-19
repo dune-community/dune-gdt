@@ -88,7 +88,7 @@ class AdvectionLaxFriedrichsTraits
                 "AnalyticalFluxImp has to be derived from Stuff::GlobalFunctionInterface!");
   static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
                 "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
-//  static_assert(is_space< FVSpaceImp >::value,    "FVSpaceImp has to be derived from SpaceInterface!");
+  static_assert(is_space< FVSpaceImp >::value, "FVSpaceImp has to be derived from SpaceInterface!");
 public:
   typedef AdvectionLaxFriedrichs< AnalyticalFluxImp, LocalizableFunctionImp,BoundaryValueImp, FVSpaceImp > derived_type;
   typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
@@ -166,7 +166,7 @@ public:
   typedef typename Traits::RangeType                                                          RangeType;
   typedef typename Traits::AnalyticalFluxType                                                 AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType                                            LocalizableFunctionType;
-  typedef typename Traits::BoundaryValueType                                                  BoundaryValueType;
+  typedef typename Traits::BoundaryValueType::ExpressionFunctionType                          BoundaryValueType;
 
   typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp > NumericalFluxType;
   typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Dirichlet< LocalizableFunctionImp,
@@ -180,11 +180,12 @@ public:
                                     const LocalizableFunctionType& ratio_dt_dx,
                                     const SourceType& source,
                                     const BoundaryValueType& boundary_values,
-                                    RangeType& range)
+                                    RangeType& range,
+                                    const bool use_local)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , local_operator_(analytical_flux, ratio_dt_dx)
-    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values)
+    , local_operator_(analytical_flux, ratio_dt_dx, use_local)
+    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values, use_local)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -256,12 +257,14 @@ public:
   AdvectionLaxFriedrichs(const AnalyticalFluxType& analytical_flux,
                          const LocalizableFunctionType& ratio_dt_dx,
                          const BoundaryValueType& boundary_values,
-                         const FVSpaceType& fv_space)
+                         const FVSpaceType& fv_space,
+                         const bool use_local = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , ratio_dt_dx_(ratio_dt_dx)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
+    , use_local_(use_local)
   {}
 
   const GridViewType& grid_view() const
@@ -270,13 +273,14 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, boundary_values_, range);
+                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, current_boundary_values, range, use_local_);
     localizable_operator.apply();
   }
 
@@ -285,6 +289,7 @@ private:
   const LocalizableFunctionType& ratio_dt_dx_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
+  const bool use_local_;
 }; // class AdvectionLaxFriedrichs
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
