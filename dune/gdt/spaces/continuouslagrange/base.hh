@@ -177,7 +177,7 @@ public:
   template< class S, size_t d, size_t r, size_t rC >
   void local_constraints(const SpaceInterface< S, d, r, rC >& other,
                          const EntityType& entity,
-                         Constraints::Dirichlet< IntersectionType, RangeFieldType >& ret) const
+                         DirichletConstraints< IntersectionType >& ret) const
   {
     // check
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
