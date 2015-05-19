@@ -36,17 +36,9 @@ class ConstDiscreteFunction;
 namespace internal {
 
 
-template< size_t ii, class SpaceImp, class VectorImp, class Traits, class Tag >
-struct visualize_helper {
-  static void visualize_factor(const std::string filename,
-                               const bool subsampling,
-                               const VTK::OutputType vtk_output_type,
-                               const DS::PerThreadValue< SpaceImp >& space,
-                               const VectorImp& vector);
-};
-
-template< size_t ii, class SpaceImp, class VectorImp, class Traits >
-struct visualize_helper< ii, SpaceImp, VectorImp, Traits, void > {
+template< size_t ii, class SpaceImp, class VectorImp, class Traits, bool is_factor_space = false >
+struct visualize_helper
+{
   static void visualize_factor(const std::string filename,
                                const bool subsampling,
                                const VTK::OutputType vtk_output_type,
@@ -61,7 +53,7 @@ struct visualize_helper< ii, SpaceImp, VectorImp, Traits, void > {
 };
 
 template< size_t ii, class SpaceImp, class VectorImp, class Traits >
-struct visualize_helper< ii, SpaceImp, VectorImp, Traits, SpaceImp  > {
+struct visualize_helper< ii, SpaceImp, VectorImp, Traits, true  > {
   static void visualize_factor(const std::string filename,
                                const bool subsampling,
                                const VTK::OutputType vtk_output_type,
@@ -91,7 +83,7 @@ class ConstDiscreteFunction
                                                 typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
                                                 typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols >
 {
-//  static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
+  static_assert(is_space< SpaceImp >::value, "SpaceImp has to be derived from SpaceInterface!");
   static_assert(Stuff::LA::is_vector< VectorImp >::value,
                 "VectorImp has to be derived from Stuff::LA::VectorInterface!");
   static_assert(std::is_same< typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType >::value,
@@ -171,21 +163,18 @@ public:
   } // ... visualize(...)
 
   template< size_t ii >
-  void visualize_factor (const std::string filename,
-                         const bool subsampling = (SpaceType::polOrder > 1),
-                         const VTK::OutputType vtk_output_type = VTK::appendedraw)
+  void visualize_factor(const std::string filename,
+                        const bool subsampling = (SpaceType::polOrder > 1),
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw)
   {
     internal::visualize_helper
         < ii,
           SpaceType,
           VectorType,
           SpaceTraits,
-          typename std::enable_if< std::is_base_of< typename Dune::GDT::ProductSpaceInterface< SpaceTraits >,
-                                                    SpaceType >::value,
-                                   SpaceType >::type >
+          std::is_base_of< typename Dune::GDT::ProductSpaceInterface< SpaceTraits >, SpaceType >::value >
                               ::visualize_factor(filename, subsampling, vtk_output_type, space_, vector_);
-  }
-
+  } // ... visualize_factor< ii >(...)
 
   bool dofs_valid() const
   {
