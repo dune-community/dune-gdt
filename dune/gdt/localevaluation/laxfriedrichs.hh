@@ -3,7 +3,7 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //
-// Contributors: Kirsten Weber, Tobias Leibner
+// Contributors: Tobias Leibner
 
 #ifndef DUNE_GDT_EVALUATION_LAXFRIEDRICHS_HH
 #define DUNE_GDT_EVALUATION_LAXFRIEDRICHS_HH
@@ -219,11 +219,21 @@ public:
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     RangeFieldType max_derivative = std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity)[0];
     if (use_local_) {
+      max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
       const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
-      max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
-                       ? jacobian_u_i.infinity_norm()
-                       : jacobian_u_j.infinity_norm();
+      // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
+      // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
+      for (auto& derivative_i : jacobian_u_i) {
+        if (derivative_i.infinity_norm() > max_derivative) {
+          max_derivative = derivative_i.infinity_norm();
+        }
+      }
+      for (auto& derivative_j : jacobian_u_j) {
+        if (derivative_j.infinity_norm() > max_derivative) {
+          max_derivative = derivative_j.infinity_norm();
+        }
+      }
     }
     RangeFieldType vol_intersection = 1;
     int num_neighbors = 2;
@@ -322,11 +332,21 @@ public:
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0];
     if (use_local_) {
+      max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
       const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-      max_derivative = jacobian_u_i.infinity_norm() > jacobian_u_j.infinity_norm()
-                       ? jacobian_u_i.infinity_norm()
-                       : jacobian_u_j.infinity_norm();
+      // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
+      // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
+      for (auto& derivative_i : jacobian_u_i) {
+        if (derivative_i.infinity_norm() > max_derivative) {
+          max_derivative = derivative_i.infinity_norm();
+        }
+      }
+      for (auto& derivative_j : jacobian_u_j) {
+        if (derivative_j.infinity_norm() > max_derivative) {
+          max_derivative = derivative_j.infinity_norm();
+        }
+      }
     }
     RangeFieldType vol_intersection = 1;
     int num_neighbors = 2;
