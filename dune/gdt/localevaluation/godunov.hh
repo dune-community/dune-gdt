@@ -230,18 +230,19 @@ private:
                               FluxJacobianRangeType& jacobian_neg,
                               FluxJacobianRangeType& jacobian_pos) const
   {
-    // calculate jacobian as 0.5*(jacobian_neighbor + jacobian_entity)
+    // calculate jacobian as jacobian(0.5*(u_i+u_j)
     jacobian_neg *= RangeFieldType(0);
     jacobian_pos *= RangeFieldType(0);
-    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_i)));
-    const EigenMatrixType jacobian_neighbor
-                                    = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_j)));
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      for (size_t jj = 0; jj < dimRange; ++jj) {
-        jacobian.add_to_entry(ii, jj, jacobian_neighbor.get_entry(ii, jj));
-      }
+    RangeType u_mean = u_i;
+    for (size_t ii = 0; ii < u_mean.size(); ++ii) {
+      u_mean[ii] += u_j[ii];
+      u_mean[ii] *= 0.5;
     }
-    jacobian.scal(RangeFieldType(0.5));
+    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_mean)));
+//    std::cout << DSC::toString(jacobian) << std::endl;
+//    std::cout << DSC::toString(u_mean) << std::endl;
+//    std::cout << DSC::toString(u_i) << "   " << DSC::toString(u_j) << std::endl;
+
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(jacobian, jacobian_neg, jacobian_pos);
   } // void reinitialize_jacobians(...)
@@ -411,18 +412,15 @@ private:
                               FluxJacobianRangeType& jacobian_neg,
                               FluxJacobianRangeType& jacobian_pos) const
   {
-    // calculate jacobian as 0.5*(jacobian_neighbor + jacobian_entity)
+    // calculate jacobian as jacobian(0.5*(u_i+u_j)
     jacobian_neg *= RangeFieldType(0);
     jacobian_pos *= RangeFieldType(0);
-    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_i)));
-    const EigenMatrixType jacobian_neighbor
-                                    = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_j)));
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      for (size_t jj = 0; jj < dimRange; ++jj) {
-        jacobian.add_to_entry(ii, jj, jacobian_neighbor.get_entry(ii, jj));
-      }
+    RangeType u_mean = u_i;
+    for (size_t ii = 0; ii < u_mean.size(); ++ii) {
+      u_mean[ii] += u_j[ii];
+      u_mean[ii] *= 0.5;
     }
-    jacobian.scal(RangeFieldType(0.5));
+    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_mean)));
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(jacobian, jacobian_neg, jacobian_pos);
   } // void reinitialize_jacobians(...)
