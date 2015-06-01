@@ -68,7 +68,7 @@ public:
                                                 RangeFieldType, dimRange, dimDomain >   AnalyticalFluxType;
 
   typedef typename AnalyticalFluxType::RangeType                                        FluxRangeType;
-  typedef typename AnalyticalFluxType::JacobianRangeType                                FluxJacobianRangeType;
+  typedef typename Dune::FieldVector< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange >, dimDomain > FluxJacobianRangeType;
   typedef typename Dune::Stuff::LocalfunctionSetInterface< EntityType,
                                                            DomainFieldType, dimDomain,
                                                            RangeFieldType, dimRange, 1 >::RangeType  RangeType;
@@ -81,24 +81,13 @@ class DirichletTraits
 {
   typedef InnerTraits< LocalizableFunctionImp > BaseType;
 public:
-  typedef LocalizableFunctionImp                LocalizableFunctionType;
-  typedef BoundaryValueFunctionImp              BoundaryValueFunctionType;
-  typedef typename BoundaryValueFunctionType::LocalfunctionType            BoundaryValueLocalfunctionType;
-  typedef Dirichlet< LocalizableFunctionType, BoundaryValueFunctionType >    derived_type;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::RangeFieldType;
+  typedef LocalizableFunctionImp                                            LocalizableFunctionType;
+  typedef BoundaryValueFunctionImp                                          BoundaryValueFunctionType;
+  typedef typename BoundaryValueFunctionType::LocalfunctionType             BoundaryValueLocalfunctionType;
+  typedef Dirichlet< LocalizableFunctionType, BoundaryValueFunctionType >   derived_type;
   using typename BaseType::LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType >,
-                      std::shared_ptr< BoundaryValueLocalfunctionType > >  LocalfunctionTupleType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using typename BaseType::FluxSourceEntityType;
-  using typename BaseType::AnalyticalFluxType;
-  using typename BaseType::FluxRangeType;
-  using typename BaseType::FluxJacobianRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::EigenMatrixType;
+                      std::shared_ptr< BoundaryValueLocalfunctionType > >   LocalfunctionTupleType;
 }; // class DirichletTraits
 
 
@@ -192,15 +181,25 @@ public:
     if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
       reinitialize_jacobians(u_i[0], u_j[0], jacobian_neg, jacobian_pos);
     }
-    const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
-    const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j[0]);
-    const FluxRangeType delta_u = u_i[0] - u_j[0];
+    const RangeType delta_u = u_i[0] - u_j[0];
     const auto n_ij = intersection.unitOuterNormal(localPoint);
+    // find direction of unit outer normal
+    size_t coord = 0;
+    size_t num_zeros = 0;
+    for (size_t ii = 0; ii < n_ij.size(); ++ii) {
+      if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+        coord = ii;
+      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
+        ++num_zeros;
+      else
+        DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
+    }
+    assert(num_zeros == dimRange - 1);
     // calculate return vector
     RangeType negative_waves(RangeFieldType(0));
     RangeType positive_waves(RangeFieldType(0));
-    jacobian_neg.mv(delta_u, negative_waves);
-    jacobian_pos.mv(delta_u, positive_waves);
+    jacobian_neg[coord].mv(delta_u, negative_waves);
+    jacobian_pos[coord].mv(delta_u, positive_waves);
 //    if (n_ij > 0) {
 //      for (size_t kk = 0; kk < dimRange; ++kk)
 //        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
@@ -208,21 +207,23 @@ public:
 //      for (size_t kk = 0; kk < dimRange; ++kk)
 //        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
 //    }
-    if (n_ij > 0) {
+    if (n_ij[coord] > 0) {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij;
+        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij[coord];
     } else {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij;
+        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij[coord];
     }
   } // void evaluate(...) const
 
 private:
   void initialize_jacobians()
   {
-    const EigenMatrixType jacobian
-                           = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(RangeType(0))));
-    calculate_jacobians(jacobian, jacobian_neg_, jacobian_pos_);
+    const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
+    std::vector< EigenMatrixType > jacobian_eigen;
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+    calculate_jacobians(jacobian_eigen, jacobian_neg_, jacobian_pos_);
   } // void initialize_jacobians()
 
   void reinitialize_jacobians(const RangeType u_i,
@@ -230,51 +231,61 @@ private:
                               FluxJacobianRangeType& jacobian_neg,
                               FluxJacobianRangeType& jacobian_pos) const
   {
+    // clear jacobian_pos and jacobian_neg
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      jacobian_neg[ii] *= RangeFieldType(0);
+      jacobian_pos[ii] *= RangeFieldType(0);
+    }
     // calculate jacobian as jacobian(0.5*(u_i+u_j)
-    jacobian_neg *= RangeFieldType(0);
-    jacobian_pos *= RangeFieldType(0);
     RangeType u_mean = u_i;
     for (size_t ii = 0; ii < u_mean.size(); ++ii) {
       u_mean[ii] += u_j[ii];
       u_mean[ii] *= 0.5;
     }
-    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_mean)));
-//    std::cout << DSC::toString(jacobian) << std::endl;
-//    std::cout << DSC::toString(u_mean) << std::endl;
-//    std::cout << DSC::toString(u_i) << "   " << DSC::toString(u_j) << std::endl;
+    const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
+    std::vector< EigenMatrixType > jacobian_eigen;
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+    //    std::cout << DSC::toString(jacobian) << std::endl;
+    //    std::cout << DSC::toString(u_mean) << std::endl;
+    //    std::cout << DSC::toString(u_i) << "   " << DSC::toString(u_j) << std::endl;
 
     // calculate jacobian_neg and jacobian_pos
-    calculate_jacobians(jacobian, jacobian_neg, jacobian_pos);
+    calculate_jacobians(jacobian_eigen, jacobian_neg, jacobian_pos);
   } // void reinitialize_jacobians(...)
 
-  void calculate_jacobians(EigenMatrixType jacobian,
+  void calculate_jacobians(std::vector< EigenMatrixType > jacobian,
                            FluxJacobianRangeType& jacobian_neg,
                            FluxJacobianRangeType& jacobian_pos) const
   {
 #if HAVE_EIGEN
-    EigenMatrixType diag_jacobian_pos(dimRange, dimRange, RangeFieldType(0));
-    EigenMatrixType diag_jacobian_neg(dimRange, dimRange, RangeFieldType(0));
-    // create EigenSolver
-    ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
-                                                                                       eigen_solver(jacobian.backend());
-    assert(eigen_solver.info() == ::Eigen::Success);
-    const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
-    const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
-    assert(boost::numeric_cast< size_t >(eigenvalues.size()) == dimRange);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      // assert this is real
-      assert(std::abs(eigenvalues[ii].imag()) < 1e-15);
-      const RangeFieldType eigenvalue = eigenvalues[ii].real();
-      if (eigenvalue < 0)
-        diag_jacobian_neg.set_entry(ii, ii, eigenvalue);
-      else
-        diag_jacobian_pos.set_entry(ii, ii, eigenvalue);
+    EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
+    EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      diag_jacobian_pos_tmp.scal(RangeFieldType(0));
+      diag_jacobian_neg_tmp.scal(RangeFieldType(0));
+      // create EigenSolver
+      ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
+          eigen_solver(jacobian[ii].backend());
+      assert(eigen_solver.info() == ::Eigen::Success);
+      const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+      const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
+      assert(boost::numeric_cast< size_t >(eigenvalues.size()) == dimRange);
+      for (size_t jj = 0; jj < dimRange; ++jj) {
+        // assert this is real
+        assert(std::abs(eigenvalues[jj].imag()) < 1e-15);
+        const RangeFieldType eigenvalue = eigenvalues[jj].real();
+        if (eigenvalue < 0)
+          diag_jacobian_neg_tmp.set_entry(jj, jj, eigenvalue);
+        else
+          diag_jacobian_pos_tmp.set_entry(jj, jj, eigenvalue);
+      }
+      const auto eigenvectors_inverse = eigenvectors.inverse();
+      EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
+      EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
+      jacobian_neg[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
+      jacobian_pos[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
     }
-    const auto eigenvectors_inverse = eigenvectors.inverse();
-    EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg.backend()*eigenvectors_inverse.real());
-    EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos.backend()*eigenvectors_inverse.real());
-    jacobian_neg = DSC::fromString< FluxJacobianRangeType >(DSC::toString(jacobian_neg_eigen));
-    jacobian_pos = DSC::fromString< FluxJacobianRangeType >(DSC::toString(jacobian_pos_eigen));
 #else
     static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
 #endif
@@ -369,42 +380,54 @@ public:
       const std::vector< RangeType > u_i = ansatzBase.evaluate(entity.geometry().local(entity.geometry().center()));
       const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
       const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
-      FluxJacobianRangeType jacobian_neg = jacobian_neg_;
       FluxJacobianRangeType jacobian_pos = jacobian_pos_;
+      FluxJacobianRangeType jacobian_neg = jacobian_neg_;
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
         reinitialize_jacobians(u_i[0], u_j, jacobian_neg, jacobian_pos);
       }
-      const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i[0]);
-      const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j);
       const RangeType delta_u = u_i[0] - u_j;
       const auto n_ij = intersection.unitOuterNormal(localPoint);
+      // find direction of unit outer normal
+      size_t coord = 0;
+      size_t num_zeros = 0;
+      for (size_t ii = 0; ii < n_ij.size(); ++ii) {
+        if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+          coord = ii;
+        else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
+          ++num_zeros;
+        else
+          DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
+      }
+      assert(num_zeros == dimRange - 1);
       // calculate return vector
       RangeType negative_waves(RangeFieldType(0));
       RangeType positive_waves(RangeFieldType(0));
-      jacobian_neg.mv(delta_u, negative_waves);
-      jacobian_pos.mv(delta_u, positive_waves);
-//      if (n_ij > 0) {
-//        for (size_t kk = 0; kk < dimRange; ++kk)
-//          ret[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-//      } else {
-//        for (size_t kk = 0; kk < dimRange; ++kk)
-//          ret[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-//      }
-      if (n_ij > 0) {
+      jacobian_neg[coord].mv(delta_u, negative_waves);
+      jacobian_pos[coord].mv(delta_u, positive_waves);
+  //    if (n_ij > 0) {
+  //      for (size_t kk = 0; kk < dimRange; ++kk)
+  //        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+  //    } else {
+  //      for (size_t kk = 0; kk < dimRange; ++kk)
+  //        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
+  //    }
+      if (n_ij[coord] > 0) {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -negative_waves[kk]*n_ij;
+          ret[kk][0] = -negative_waves[kk]*n_ij[coord];
       } else {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -positive_waves[kk]*n_ij;
+          ret[kk][0] = -positive_waves[kk]*n_ij[coord];
       }
   } // void evaluate(...) const
 
 private:
   void initialize_jacobians()
   {
-    const EigenMatrixType jacobian
-                           = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(RangeType(0))));
-    calculate_jacobians(jacobian, jacobian_neg_, jacobian_pos_);
+    const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
+    std::vector< EigenMatrixType > jacobian_eigen;
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+    calculate_jacobians(jacobian_eigen, jacobian_neg_, jacobian_pos_);
   } // void initialize_jacobians()
 
   void reinitialize_jacobians(const RangeType u_i,
@@ -412,47 +435,61 @@ private:
                               FluxJacobianRangeType& jacobian_neg,
                               FluxJacobianRangeType& jacobian_pos) const
   {
+    // clear jacobian_pos and jacobian_neg
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      jacobian_neg[ii] *= RangeFieldType(0);
+      jacobian_pos[ii] *= RangeFieldType(0);
+    }
     // calculate jacobian as jacobian(0.5*(u_i+u_j)
-    jacobian_neg *= RangeFieldType(0);
-    jacobian_pos *= RangeFieldType(0);
     RangeType u_mean = u_i;
     for (size_t ii = 0; ii < u_mean.size(); ++ii) {
       u_mean[ii] += u_j[ii];
       u_mean[ii] *= 0.5;
     }
-    EigenMatrixType jacobian = DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_mean)));
+    const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
+    std::vector< EigenMatrixType > jacobian_eigen;
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+    //    std::cout << DSC::toString(jacobian) << std::endl;
+    //    std::cout << DSC::toString(u_mean) << std::endl;
+    //    std::cout << DSC::toString(u_i) << "   " << DSC::toString(u_j) << std::endl;
+
     // calculate jacobian_neg and jacobian_pos
-    calculate_jacobians(jacobian, jacobian_neg, jacobian_pos);
+    calculate_jacobians(jacobian_eigen, jacobian_neg, jacobian_pos);
   } // void reinitialize_jacobians(...)
 
-  void calculate_jacobians(EigenMatrixType jacobian,
+  void calculate_jacobians(std::vector< EigenMatrixType > jacobian,
                            FluxJacobianRangeType& jacobian_neg,
                            FluxJacobianRangeType& jacobian_pos) const
   {
 #if HAVE_EIGEN
-    EigenMatrixType diag_jacobian_neg(dimRange, dimRange, RangeFieldType(0));
-    EigenMatrixType diag_jacobian_pos(dimRange, dimRange, RangeFieldType(0));
-    // create EigenSolver
-    ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
-                                                                                       eigen_solver(jacobian.backend());
-    assert(eigen_solver.info() == ::Eigen::Success);
-    const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
-    const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
-    assert(boost::numeric_cast< size_t >(eigenvalues.size()) == dimRange);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      // assert this is real
-      assert(std::abs(eigenvalues[ii].imag()) < 1e-15);
-      const RangeFieldType eigenvalue = eigenvalues[ii].real();
-      if (eigenvalue < 0)
-        diag_jacobian_neg.set_entry(ii, ii, eigenvalue);
-      else
-        diag_jacobian_pos.set_entry(ii, ii, eigenvalue);
+    EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
+    EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      diag_jacobian_pos_tmp.scal(RangeFieldType(0));
+      diag_jacobian_neg_tmp.scal(RangeFieldType(0));
+      // create EigenSolver
+      ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
+          eigen_solver(jacobian[ii].backend());
+      assert(eigen_solver.info() == ::Eigen::Success);
+      const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+      const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
+      assert(boost::numeric_cast< size_t >(eigenvalues.size()) == dimRange);
+      for (size_t jj = 0; jj < dimRange; ++jj) {
+        // assert this is real
+        assert(std::abs(eigenvalues[ii].imag()) < 1e-15);
+        const RangeFieldType eigenvalue = eigenvalues[jj].real();
+        if (eigenvalue < 0)
+          diag_jacobian_neg_tmp.set_entry(jj, jj, eigenvalue);
+        else
+          diag_jacobian_pos_tmp.set_entry(jj, jj, eigenvalue);
+      }
+      const auto eigenvectors_inverse = eigenvectors.inverse();
+      EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
+      EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
+      jacobian_neg[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
+      jacobian_pos[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
     }
-    const auto eigenvectors_inverse = eigenvectors.inverse();
-    EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg.backend()*eigenvectors_inverse.real());
-    EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos.backend()*eigenvectors_inverse.real());
-    jacobian_neg = DSC::fromString< FluxJacobianRangeType >(DSC::toString(jacobian_neg_eigen));
-    jacobian_pos = DSC::fromString< FluxJacobianRangeType >(DSC::toString(jacobian_pos_eigen));
 #else
     static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
 #endif
