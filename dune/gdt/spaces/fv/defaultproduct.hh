@@ -113,14 +113,14 @@ public:
 
   DefaultProduct(GridViewType gv)
     : BaseType(gv)
-    , factor_space_(gv)
-    , factor_mapper_(gv)
+    , factor_space_(grid_view_)
+    , factor_mapper_(grid_view_)
   {}
 
   DefaultProduct(const ThisType& other)
     : BaseType(other)
-    , factor_space_(other.grid_view_)
-    , factor_mapper_(other.grid_view_)
+    , factor_space_(other.factor_space_)
+    , factor_mapper_(other.factor_mapper_)
   {}
 
   DefaultProduct(ThisType&& source) = default;
