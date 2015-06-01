@@ -23,6 +23,7 @@ target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_alugrid
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_sgrid   lib_test_linearelliptic_cg_discretizations_sgrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_hyperbolic-fv-discretization_yaspgrid    lib_test_hyperbolic_fv_discretizations_yaspgrid)
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
