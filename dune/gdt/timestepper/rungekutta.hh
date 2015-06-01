@@ -142,6 +142,7 @@ public:
              const double first_dt,
              const double save_step,
              const bool output,
+             const bool visualize,
              const bool save_solution,
              std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
@@ -155,9 +156,11 @@ public:
 
     const size_t factor_to_be_visualized = 0;
 
+    if (visualize) {
     if (output)
       std::cout << "Visualizing initial values..." << std::endl;
     u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_0", false);
+    }
 
     if (save_solution) {
       // clear solution
@@ -174,7 +177,8 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (t_ >= next_save_time) {
-        u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), false);
+        if (visualize)
+          u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), false);
         if (save_solution) {
           solution.emplace_back(std::make_pair(t_, u_n_));
         }
@@ -195,6 +199,7 @@ public:
              const double first_dt,
              const double save_step = 0.0,
              const bool output = false,
+             const bool visualize = true,
              const bool save_solution = false)
   {
     solve(t_end, first_dt, save_step, output, save_solution, solution_);
