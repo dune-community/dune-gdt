@@ -276,9 +276,9 @@ private:
 template< class AssemblerType, class LocalFaceFVAssembler, class FVSpaceType, class VectorType >
 class LocalFaceFVAssemblerWrapper
   : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
-  , TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType >
+  , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
 {
-  typedef TmpStorageProvider::Matrices< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+  typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
 public:
   typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
   typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType > DiscreteFunctionType;
