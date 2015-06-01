@@ -8,6 +8,8 @@
 #ifndef DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
 #define DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
 
+#include <utility>
+
 #include <dune/gdt/operators/interfaces.hh>
 
 #include <dune/stuff/common/memory.hh>
@@ -60,7 +62,6 @@ public:
   RungeKutta(OperatorType& space_operator,
              const DiscreteFunctionType& initial_values,
              const SourceFunctionType& source_function,
-             const double start_time = 0.0,
              const MatrixType A = DSC::fromString< MatrixType >("[0]"),
              const VectorType b = DSC::fromString< VectorType >("[1]"),
              const VectorType c = DSC::fromString< VectorType >("[0]"))
@@ -68,11 +69,12 @@ public:
     , initial_values_(initial_values)
     , u_n_(initial_values_)
     , source_function_(source_function)
-    , t_(start_time)
+    , t_(0.0)
     , A_(A)
     , b_(b)
     , c_(c)
     , num_stages_(A_.rows())
+    , solution_(std::vector< std::pair< double, DiscreteFunctionType > >())
   {
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(b_.size() == A_.rows());
@@ -80,7 +82,7 @@ public:
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
         for (size_t jj = ii; jj < A_.cols(); ++jj) {
-          assert(A_[ii][jj] == 0 &&
+          assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0) &&
                  "A has to be a lower triangular matrix with 0 on the diagonal (implicit methods are not supported)");
         }
     }
@@ -138,11 +140,13 @@ public:
 
   void solve(const double t_end,
              const double first_dt,
-             const double save_step = 0.0,
-             const bool output = false)
+             const double save_step,
+             const bool output,
+             const bool save_solution,
+             std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
-    assert(t_end > t_);
     double dt = first_dt;
+    assert(t_end - t_ >= dt);
     size_t time_step_counter = 0;
 
     const double save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
@@ -153,7 +157,13 @@ public:
 
     if (output)
       std::cout << "Visualizing initial values..." << std::endl;
-    u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_concentration_0", false);
+    u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_0", false);
+
+    if (save_solution) {
+      // clear solution
+      solution.clear();
+      solution.emplace_back(std::make_pair(t_, u_n_));
+    }
 
     if (output)
       std::cout << "Starting time loop..." << std::endl;
@@ -164,7 +174,10 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (t_ >= next_save_time) {
-        u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_concentration_" + DSC::toString(save_step_counter), false);
+        u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), false);
+        if (save_solution) {
+          solution.emplace_back(std::make_pair(t_, u_n_));
+        }
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -177,6 +190,15 @@ public:
         std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
     } // while (t_ < t_end)
   } // ... solve(...)
+
+  void solve(const double t_end,
+             const double first_dt,
+             const double save_step = 0.0,
+             const bool output = false,
+             const bool save_solution = false)
+  {
+    solve(t_end, first_dt, save_step, output, save_solution, solution_);
+  }
 
   double current_time() const
   {
@@ -245,6 +267,7 @@ private:
   const VectorType c_;
   std::vector< DiscreteFunctionType > u_intermediate_stages_;
   const size_t num_stages_;
+  std::vector< std::pair< double, DiscreteFunctionType > > solution_;
 };
 
 } // namespace TimeStepper
