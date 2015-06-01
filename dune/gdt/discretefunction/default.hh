@@ -165,7 +165,7 @@ public:
   template< size_t ii >
   void visualize_factor(const std::string filename,
                         const bool subsampling = (SpaceType::polOrder > 1),
-                        const VTK::OutputType vtk_output_type = VTK::appendedraw)
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     internal::visualize_helper
         < ii,
