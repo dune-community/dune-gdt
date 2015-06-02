@@ -202,7 +202,7 @@ public:
              const bool visualize = true,
              const bool save_solution = false)
   {
-    solve(t_end, first_dt, save_step, output, save_solution, solution_);
+    solve(t_end, first_dt, save_step, output, visualize, save_solution, solution_);
   }
 
   double current_time() const
