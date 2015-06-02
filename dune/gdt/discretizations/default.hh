@@ -294,7 +294,8 @@ public:
       // now do the time steps
       std::vector< std::pair< double, DiscreteFunctionType > > solution_as_discrete_function;
 
-      timestepper.solve(t_end, dt, dt, false, true, solution_as_discrete_function);
+      const double saveInterval = t_end/500 > dt ? t_end/500 : dt;
+      timestepper.solve(t_end, dt, saveInterval, false, false, true, solution_as_discrete_function);
       solution.clear();
       const size_t num_time_steps = solution_as_discrete_function.size();
       for (size_t ii = 0; ii < num_time_steps; ++ii) {
