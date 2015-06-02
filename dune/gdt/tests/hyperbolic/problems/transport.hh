@@ -96,11 +96,11 @@ public:
     ConfigType flux_config = DefaultFluxType::default_config();
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["variable"] = "u";
-    flux_config["expression"] = "[u[0] 2*u[0] 3*u[0]; 4*u[0] 5*u[0] 6*u[0]; 7*u[0] 8*u[0] 9*u[0]]";
+    flux_config["expression"] = "[u[0] u[0] 3*u[0]; 4*u[0] 5*u[0] 6*u[0]; 7*u[0] 8*u[0] 9*u[0]]";
     flux_config["order"] = "1";
     flux_config["gradient"] = "[1 0 0; 4 0 0; 7 0 0]";
     flux_config["gradient.0"] = "[1 0 0; 4 0 0; 7 0 0]";
-    flux_config["gradient.1"] = "[2 0 0; 5 0 0; 8 0 0]";
+    flux_config["gradient.1"] = "[1 0 0; 5 0 0; 8 0 0]";
     flux_config["gradient.2"] = "[3 0 0; 6 0 0; 9 0 0]";
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config = DefaultFunctionType::default_config();
@@ -140,16 +140,13 @@ public:
     if (dimDomain == 1)
       return 0.5;
     else
-      return 0.1;
+      return 0.005;
   }
 
 
   virtual double t_end() const override
   {
-    if (dimDomain == 1)
-      return 1.0;
-    else
-      return 4.0;
+    return 1.0;
   }
 };
 
@@ -173,7 +170,7 @@ public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
 
-  TransportTestCase(const size_t num_refs = 3)
+  TransportTestCase(const size_t num_refs = 2)
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_()
   {

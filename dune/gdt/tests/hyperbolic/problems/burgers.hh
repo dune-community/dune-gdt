@@ -147,10 +147,11 @@ public:
 
   virtual double t_end() const override
   {
-    if (dimDomain == 1)
+    return 1.0;
+/*    if (dimDomain == 1)
       return 1.0;
     else
-      return 4.0;
+      return 4.0*/;
   }
 };
 
@@ -190,11 +191,9 @@ public:
 
   virtual void print_header(std::ostream& out = std::cout) const override final
   {
-    std::string domainstring;
-    if (d == 1)
-      domainstring = "||  domain = [0, 1]                                                   ||\n";
-    else
-      domainstring = "||  domain = [0, 1] x [0, 1]                                          ||\n";
+    const std::string domainstring = (d == 1)
+                                   ? "||  domain = [0, 1]                                                   ||\n"
+                                   : "||  domain = [0, 1] x [0, 1]                                          ||\n";
     out << "+======================================================================+\n"
         << "|+====================================================================+|\n"
         << "||  Testcase: Burgers                                                 ||\n"

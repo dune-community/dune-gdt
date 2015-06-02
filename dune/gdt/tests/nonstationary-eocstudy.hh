@@ -212,28 +212,28 @@ public:
           average_pair.second = (curr_sol_on_level_jj.second*(curr_sol_on_level_jj.first - curr_sol_ii_minus_1.first)
                                           + curr_sol_on_level_jj_plus_1.second*(curr_sol_ii.first - curr_sol_on_level_jj.first))
                                          *(1.0/(curr_sol_ii.first - curr_sol_ii_minus_1.first));
-          //std::cout << "dings: " << DSC::toString(average_pair.second) << std::endl;
           current_solution_vector_on_level_->emplace_back(average_pair);
           ++jj;
         }
       }
       // spatial prolongation
       for (size_t ii = 0; ii < current_solution_vector_->size(); ++ii) {
-        const ConstDiscreteFunctionType curr_ii_as_discrete_func(current_discretization_->fv_space(),
-                                                                 current_solution_vector_on_level_->operator[](ii).second,
-                                                                 "solution on current level");
+        DiscreteFunctionType curr_ii_as_discrete_func(current_discretization_->fv_space(),
+                                                      current_solution_vector_on_level_->operator[](ii).second,
+                                                      "solution on current level");
         DiscreteFunctionType curr_ii_on_ref_as_discrete_func(reference_discretization_->fv_space(),
-                                                           current_solution_vector_->operator[](ii).second,
-                                                           "solution on refererence level");
+                                                             current_solution_vector_->operator[](ii).second,
+                                                             "solution on reference level");
         Operators::prolong(curr_ii_as_discrete_func, curr_ii_on_ref_as_discrete_func);
       }
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {
+        DiscreteFunctionType curr_ii_on_ref_as_discrete_func(reference_discretization_->fv_space(),
+                                                             current_solution_vector_->operator[](0).second,
+                                                             "solution on reference level");
         for (size_t ii = 0; ii < current_solution_vector_->size(); ++ii) {
-          const ConstDiscreteFunctionType curr_ii_on_ref_as_discrete_func(reference_discretization_->fv_space(),
-                                                             current_solution_vector_->operator[](ii).second,
-                                                             "solution on refererence level");
+          curr_ii_on_ref_as_discrete_func.vector() = current_solution_vector_->operator[](ii).second;
           curr_ii_on_ref_as_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_solution_" + DSC::toString(current_refinement_) + "_factor_0_" + DSC::toString(ii), false);
         }
       }
@@ -262,7 +262,6 @@ public:
         }
         return compute_norm(test_case_.reference_grid_view(), *difference, type);
       } else {
-        // get reference solution
         assert(reference_solution_vector_);
         std::unique_ptr< VectorType > difference = DSC::make_unique< VectorType >(*reference_solution_vector_);
         for (size_t ii = 0; ii < difference->size(); ++ ii) {
@@ -299,11 +298,12 @@ protected:
       reference_solution_vector_ = Stuff::Common::make_unique< VectorType >(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
+        DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
+                                               reference_solution_vector_->operator[](0).second,
+                                               "reference solution");
         for (size_t ii = 0; ii < reference_solution_vector_->size(); ++ii) {
-          const ConstDiscreteFunctionType ref_ii_as_discrete_func(reference_discretization_->fv_space(),
-                                                             reference_solution_vector_->operator[](ii).second,
-                                                             "reference solution");
-          ref_ii_as_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_reference" + "_factor_0_" + DSC::toString(ii), false);
+          tmp_discrete_func.vector() = reference_solution_vector_->operator[](ii).second;
+          tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_reference" + "_factor_0_" + DSC::toString(ii), false);
         }
       }
     }
@@ -321,16 +321,17 @@ protected:
         project(exact_solution_at_time, discrete_exact_solution_at_time);
         discrete_exact_solution.emplace_back(std::make_pair(time, discrete_exact_solution_at_time.vector()));
       }
-      exact_solution_vector_ = Stuff::Common::make_unique< VectorType >(discrete_exact_solution);
-      exact_solution_vector_computed_ = true;
       if (!visualize_prefix_.empty()) {
-        for (size_t ii = 0; ii < exact_solution_vector_->size(); ++ii) {
-          const ConstDiscreteFunctionType exact_ii_as_discrete_func(reference_discretization_->fv_space(),
-                                                                    exact_solution_vector_->operator[](ii).second,
-              "exact solution");
-          exact_ii_as_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_exact" + "_factor_0_" + DSC::toString(ii), false);
+        DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
+                                               discrete_exact_solution[0].second,
+                                               "exact solution");
+        for (size_t ii = 0; ii < discrete_exact_solution.size(); ++ii) {
+          tmp_discrete_func.vector() = discrete_exact_solution[ii].second;
+          tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_exact" + "_factor_0_" + DSC::toString(ii), false);
         }
       }
+      exact_solution_vector_ = Stuff::Common::make_unique< VectorType >(discrete_exact_solution);
+      exact_solution_vector_computed_ = true;
     }
   }
 
