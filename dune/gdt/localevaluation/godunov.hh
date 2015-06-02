@@ -200,6 +200,9 @@ public:
     RangeType positive_waves(RangeFieldType(0));
     jacobian_neg[coord].mv(delta_u, negative_waves);
     jacobian_pos[coord].mv(delta_u, positive_waves);
+    RangeFieldType vol_intersection = 1;
+    if (dimDomain != 1)
+      vol_intersection = intersection.geometry().volume();
 //    if (n_ij > 0) {
 //      for (size_t kk = 0; kk < dimRange; ++kk)
 //        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
@@ -209,10 +212,10 @@ public:
 //    }
     if (n_ij[coord] > 0) {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij[coord];
+        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij[coord]*vol_intersection;
     } else {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij[coord];
+        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij[coord]*vol_intersection;
     }
   } // void evaluate(...) const
 
@@ -411,12 +414,15 @@ public:
   //      for (size_t kk = 0; kk < dimRange; ++kk)
   //        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
   //    }
+      RangeFieldType vol_intersection = 1;
+      if (dimDomain != 1)
+        vol_intersection = intersection.geometry().volume();
       if (n_ij[coord] > 0) {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -negative_waves[kk]*n_ij[coord];
+          ret[kk][0] = -negative_waves[kk]*n_ij[coord]*vol_intersection;
       } else {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -positive_waves[kk]*n_ij[coord];
+          ret[kk][0] = -positive_waves[kk]*n_ij[coord]*vol_intersection;
       }
   } // void evaluate(...) const
 
