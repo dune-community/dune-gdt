@@ -58,7 +58,7 @@ public:
     auto tmp_vector = range.copy();
     DiscreteFunction< RS, RV > tmp_function(range.space(), tmp_vector);
     apply(source, tmp_function);
-    return range.vector().dot(tmp_vector);
+    return range.dot(tmp_function);
   }
 }; // class OperatorInterface
 
@@ -226,6 +226,8 @@ public:
     this->assemble();
     auto tmp = range.copy();
     this->matrix().mv(source.as_imp(), tmp);
+    // there's no communication of the result here -> fail
+    assert(Dune::MPIHelper::getCommunicator().size() == 1);
     return range.dot(tmp);
   }
 

@@ -92,6 +92,7 @@ public:
   {
     assemble();
     matrix_.mv(source.as_imp(), range.as_imp());
+    range_space_.communicator().copyOwnerToAll(range.as_imp(),range.as_imp());
   } // ... apply(...)
 
   static std::vector< std::string > invert_options()
@@ -110,7 +111,7 @@ public:
                      const Stuff::Common::Configuration& opts)
   {
     assemble();
-    LinearSolverType(matrix, source_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
+    LinearSolverType(matrix, range_space_.communicator()).apply(range.as_imp(), source.as_imp(), opts);
   }
 
 private:

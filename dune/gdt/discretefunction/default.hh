@@ -95,6 +95,11 @@ public:
     return vector_;
   }
 
+  typename SpaceImp::RangeFieldType dot(const ThisType& other) const
+  {
+    return other.space().communicator().dot(*this->vector().backend(), other.backend());
+  }
+
   std::unique_ptr< ConstLocalDiscreteFunctionType > local_discrete_function(const EntityType& entity) const
   {
     assert(space_->grid_view().indexSet().contains(entity));
