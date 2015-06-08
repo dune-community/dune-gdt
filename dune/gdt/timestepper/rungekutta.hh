@@ -229,7 +229,7 @@ public:
     double current_dt = initial_dt;
     size_t num_refinements = 0;
     while (num_refinements < max_refinements) {
-      std::cout << "Trying time step length dt = " << current_dt << "... ";
+      std::cout << "Trying time step length dt = " << current_dt << "... " << std::flush;
       bool unlikely_value_occured = false;
       size_t num_steps = 0;
       // do max_steps_per_dt time steps...

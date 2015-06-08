@@ -61,14 +61,15 @@ struct visualize_helper< ii, SpaceImp, VectorImp, Traits, true  > {
                                const VectorImp& vector)
   {
     assert(ii < SpaceImp::num_factors);
-    const auto factor_space = space->template factor< ii >();
-    VectorImp factor_vector(space->grid_view().size(0));
+    const auto& factor_space = space->template factor< ii >();
+    VectorImp factor_vector(factor_space.mapper().size());
     const auto it_end = space->grid_view().template end< 0 >();
     for (auto it = space->grid_view().template begin< 0 >(); it != it_end; ++it) {
       const auto& entity = *it;
-      factor_vector[factor_space.mapper().mapToGlobal(entity, 0)] = vector[space->factor_mapper().mapToGlobal(ii, entity, 0)];
+      for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
+        factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] = vector[space->factor_mapper().mapToGlobal(ii, entity, jj)];
     }
-    ConstDiscreteFunction< decltype(factor_space), VectorImp > factor_discrete_function(factor_space, factor_vector);
+    ConstDiscreteFunction< typename SpaceImp::FactorSpaceType, VectorImp > factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(filename, subsampling, vtk_output_type);
   }
 };
