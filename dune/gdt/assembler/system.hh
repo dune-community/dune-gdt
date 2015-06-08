@@ -191,25 +191,25 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
-  template< class L, class F, class V >
+  template< class L, class SS, class RS, class V >
   void add(const LocalAssembler::Codim1CouplingFV< L >& local_assembler,
-           const GDT::DiscreteFunction< F, V >& discrete_function,
-           GDT::DiscreteFunction< F, V >& discrete_function_update,
+           const GDT::DiscreteFunction< SS, V >& discrete_function,
+           GDT::DiscreteFunction< RS, V >& discrete_function_update,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::InnerIntersections< GridViewType >())
   {
-    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1CouplingFV< L >, F, V > WrapperType;
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1CouplingFV< L >, SS, RS, V > WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
   } // ... add(...)
 
-  template< class L, class F, class V >
+  template< class L, class SS, class RS, class V >
   void add(const LocalAssembler::Codim1BoundaryFV< L >& local_assembler,
-           const GDT::DiscreteFunction< F, V >& discrete_function,
-           GDT::DiscreteFunction< F, V >& discrete_function_update,
+           const GDT::DiscreteFunction< SS, V >& discrete_function,
+           GDT::DiscreteFunction< RS, V >& discrete_function_update,
            const ApplyOnWhichIntersection* where
               = new DSG::ApplyOn::BoundaryIntersections< GridViewType >())
   {
-    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1BoundaryFV< L >, F, V > WrapperType;
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1BoundaryFV< L >, SS, RS, V > WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
   } // ... add(...)
 

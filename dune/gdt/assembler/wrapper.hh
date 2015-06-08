@@ -273,7 +273,7 @@ private:
 
 
 
-template< class AssemblerType, class LocalFaceFVAssembler, class FVSpaceType, class VectorType >
+template< class AssemblerType, class LocalFaceFVAssembler, class SourceSpaceType, class FVSpaceType, class VectorType >
 class LocalFaceFVAssemblerWrapper
   : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
   , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
@@ -281,9 +281,10 @@ class LocalFaceFVAssemblerWrapper
   typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
 public:
   typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
+  typedef typename Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType > DiscreteSourceFunctionType;
   typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType > DiscreteFunctionType;
 
-  LocalFaceFVAssemblerWrapper(const DiscreteFunctionType& discreteFunction,
+  LocalFaceFVAssemblerWrapper(const DiscreteSourceFunctionType& discreteFunction,
                               DiscreteFunctionType& discreteFunctionUpdate,
       const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType >* where,
                               const LocalFaceFVAssembler& localAssembler)
@@ -313,7 +314,7 @@ public:
 private:
   const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
   const LocalFaceFVAssembler& localAssembler_;
-  const DiscreteFunctionType& discreteFunction_;
+  const DiscreteSourceFunctionType& discreteFunction_;
   DiscreteFunctionType& discreteFunctionUpdate_;
   Dune::DynamicMatrix< RangeFieldType > updateMatrix_;
 

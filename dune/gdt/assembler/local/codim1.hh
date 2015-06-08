@@ -566,19 +566,19 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class FVSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
-  void assembleLocal(const Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
-                     Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunctionUpdate,
+  template< class SourceSpaceType, class RangeSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
                      const IntersectionType& intersection,
                      Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
-                     std::vector < std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+                     std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
   {
     // check
     const size_t dimRange = discreteFunction.space().dimRange;
     assert(intersection.neighbor());
     assert(updateMatrix.cols() >= 1);
     assert(updateMatrix.rows() >= dimRange);
-    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
+    //assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
     //clear matrix
     updateMatrix *= 0.0;
     //get entity and neighbor and local discrete functions
@@ -633,9 +633,9 @@ public:
     return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
   }
 
-  template< class FVSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
-  void assembleLocal(const Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunction,
-                     Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >& discreteFunctionUpdate,
+  template< class SourceSpaceType, class RangeSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
                      const IntersectionType& intersection,
                      Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
@@ -644,7 +644,7 @@ public:
     const size_t dimRange = discreteFunction.space().dimRange;
     assert(updateMatrix.cols() >= 1);
     assert(updateMatrix.rows() >= dimRange);
-    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
+//    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
     //clear matrix
     updateMatrix *= 0.0;
     //get entity and neighbor and local discrete functions
