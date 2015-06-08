@@ -114,10 +114,12 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit Inner(const AnalyticalFluxType& analytical_flux,
-                 const LocalizableFunctionType& ratio_dt_dx,
+                 const LocalizableFunctionType& dx,
+                 const double dt,
                  const bool is_linear = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , is_linear_(is_linear)
   {
     if (!jacobians_constructed_)
@@ -127,7 +129,7 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity));
   }
 
   size_t order(const LocalfunctionTupleType& /*localFunctionsEntity*/,
@@ -173,9 +175,23 @@ public:
     const EntityType& entity = ansatzBaseEntity.entity();
     const EntityType& neighbor = ansatzBaseNeighbor.entity();
     const std::vector< RangeType > u_i
-                                 = ansatzBaseEntity.evaluate(entity.geometry().local(entity.geometry().center()));
-    const std::vector< RangeType > u_j
-                                 = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(neighbor.geometry().center()));
+                                 = ansatzBaseEntity.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/100.0*(intersection.geometry().center()-entity.geometry().center())));
+    std::vector< RangeType > u_j;
+    if (std::abs(intersection.geometry().center()[0] - neighbor.geometry().center()[0]) < 0.5)
+      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/100.0*(intersection.geometry().center()-neighbor.geometry().center())));
+    else
+      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()[0] > 0.5 ? 0.0 : 1.0));
+//    std::cout << "u_i: " << DSC::toString(u_i) << " und u_j: " << DSC::toString(u_j) << std::endl;
+
+    const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
+    const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j[0]);
+    DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
+    DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_j;
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      f_u_i[ii] = f_u_i_temp[ii];
+      f_u_j[ii] = f_u_j_temp[ii];
+    }
+
     FluxJacobianRangeType jacobian_pos = jacobian_pos_;
     FluxJacobianRangeType jacobian_neg = jacobian_neg_;
     if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
@@ -194,7 +210,7 @@ public:
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
     }
-    assert(num_zeros == dimRange - 1);
+    assert(num_zeros == dimDomain - 1);
     // calculate return vector
     RangeType negative_waves(RangeFieldType(0));
     RangeType positive_waves(RangeFieldType(0));
@@ -212,10 +228,10 @@ public:
 //    }
     if (n_ij[coord] > 0) {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -negative_waves[kk]*n_ij[coord]*vol_intersection;
+        entityNeighborRet[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
     } else {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = -positive_waves[kk]*n_ij[coord]*vol_intersection;
+        entityNeighborRet[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
     }
   } // void evaluate(...) const
 
@@ -295,7 +311,8 @@ private:
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   static FluxJacobianRangeType jacobian_neg_;
   static FluxJacobianRangeType jacobian_pos_;
   static bool jacobians_constructed_;
@@ -333,11 +350,13 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit Dirichlet(const AnalyticalFluxType& analytical_flux,
-                     const LocalizableFunctionType& ratio_dt_dx,
+                     const LocalizableFunctionType& dx,
+                     const double dt,
                      const BoundaryValueFunctionType& boundary_values,
                      const bool is_linear = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
@@ -348,7 +367,7 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity), boundary_values_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity), boundary_values_.local_function(entity));
   }
 
   template< class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
@@ -390,6 +409,14 @@ public:
       }
       const RangeType delta_u = u_i[0] - u_j;
       const auto n_ij = intersection.unitOuterNormal(localPoint);
+      const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
+      const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
+      DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
+      DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_j;
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        f_u_i[ii] = f_u_i_temp[ii];
+        f_u_j[ii] = f_u_j_temp[ii];
+      }
       // find direction of unit outer normal
       size_t coord = 0;
       size_t num_zeros = 0;
@@ -401,7 +428,7 @@ public:
         else
           DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
       }
-      assert(num_zeros == dimRange - 1);
+      assert(num_zeros == dimDomain - 1);
       // calculate return vector
       RangeType negative_waves(RangeFieldType(0));
       RangeType positive_waves(RangeFieldType(0));
@@ -419,10 +446,10 @@ public:
         vol_intersection = intersection.geometry().volume();
       if (n_ij[coord] > 0) {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -negative_waves[kk]*n_ij[coord]*vol_intersection;
+          ret[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
       } else {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = -positive_waves[kk]*n_ij[coord]*vol_intersection;
+          ret[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
       }
   } // void evaluate(...) const
 
@@ -502,7 +529,8 @@ private:
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueFunctionType& boundary_values_;
   static FluxJacobianRangeType jacobian_neg_;
   static FluxJacobianRangeType jacobian_pos_;
