@@ -97,7 +97,9 @@ public:
 
   typename SpaceImp::RangeFieldType dot(const ThisType& other) const
   {
-    return other.space().communicator().dot(*this->vector().backend(), other.backend());
+    typename SpaceImp::RangeFieldType result = typename SpaceImp::RangeFieldType(0);
+    other.space().communicator().dot(*this->vector().backend(), other.backend(), result);
+    return result;
   }
 
   std::unique_ptr< ConstLocalDiscreteFunctionType > local_discrete_function(const EntityType& entity) const
