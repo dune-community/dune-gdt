@@ -230,6 +230,13 @@ public:
     redirect_apply(range.space(), source, range);
   }
 
+  template< class R, size_t r, size_t rC, class S, class V >
+  inline void apply(const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range) const
+  {
+    redirect_apply(range.space(), source, range);
+  }
+
 private:
   template< class T, class R, size_t dimRange, class S, class V >
   inline void redirect_apply(const Spaces::CGInterface< T, dimDomain, dimRange, 1 >& /*space*/,
@@ -253,6 +260,14 @@ private:
                       DiscreteFunction< S, V >& range) const
   {
     apply_local_l2_projection(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, class S, class V >
+  void redirect_apply(const Spaces::FVInterface< T, dimDomain, dimRange, 1 >& /*space*/,
+                      const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
+                      DiscreteFunction< S, V >& range) const
+  {
+    apply_local_l2_projection_expression_checkerboard(source, range);
   }
 
   template< class T, class R, size_t dimRange, class S, class V >
@@ -336,6 +351,66 @@ private:
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
   } // ... apply_local_l2_projection(...)
+
+  template< class SourceType, class RangeFunctionType >
+  void apply_local_l2_projection_expression_checkerboard(const SourceType& source, RangeFunctionType& range) const
+  {
+    typedef typename RangeFunctionType::RangeType RangeType;
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::MatrixType LocalMatrixType;
+    typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::VectorType LocalVectorType;
+    // clear
+    range.vector() *= 0.0;
+    // walk the grid
+    std::shared_ptr< const typename SourceType::RangeType > source_expression;
+    RangeType source_value(0);
+    std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs(), RangeType(0));
+    const auto entity_it_end = grid_view_.template end< 0 >();
+    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+      // prepare
+      const auto& entity = *entity_it;
+      const auto local_basis = range.space().base_function_set(entity);
+      const auto local_source = source.local_global_function(entity);
+      auto local_range = range.local_discrete_function(entity);
+      LocalMatrixType local_matrix(local_basis.size(), local_basis.size(), FieldType(0));
+      LocalVectorType local_vector(local_basis.size(), FieldType(0));
+      LocalVectorType local_DoFs(local_basis.size(), FieldType(0));
+      // create quadrature
+      const size_t integrand_order = std::max(local_source->order(), local_basis.order()) + local_basis.order();
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(
+            entity.type(), boost::numeric_cast< int >(integrand_order + over_integrate_));
+      // loop over all quadrature points
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto integration_element = entity.geometry().integrationElement(local_point);
+        // evaluate
+        local_basis.evaluate(local_point, basis_values);
+        local_source->evaluate(local_point, source_expression);
+        source_value = source_expression->local_function(entity)->evaluate(local_point);
+        // compute integrals
+        for (size_t ii = 0; ii < local_basis.size(); ++ii) {
+          local_vector[ii] += integration_element * quadrature_weight * (source_value * basis_values[ii]);
+          for (size_t jj = 0; jj < local_basis.size(); ++jj) {
+            local_matrix.add_to_entry(ii,
+                                      jj,
+                                      integration_element * quadrature_weight * (basis_values[ii] * basis_values[jj]));
+          }
+        }
+      } // loop over all quadrature points
+      // compute local DoFs
+      try {
+        Stuff::LA::Solver< LocalMatrixType >(local_matrix).apply(local_vector, local_DoFs);
+      } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+        DUNE_THROW(Exceptions::projection_error,
+                   "L2 projection failed because a local matrix could not be inverted!\n\n"
+                   << "This was the original error: " << ee.what());
+      }
+      // set local DoFs
+      auto local_range_vector = local_range->vector();
+      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
+        local_range_vector.set(ii, local_DoFs[ii]);
+    } // walk the grid
+  } // ... apply_local_l2_projection_expression_checkerboard(...)
 
   template< class SourceType, class RangeFunctionType >
   void apply_global_l2_projection(const SourceType& source, RangeFunctionType& range) const
@@ -428,6 +503,13 @@ public:
     redirect_apply(range.space(), source, range);
   }
 
+  template< class R, size_t r, size_t rC, class S, class V >
+  inline void apply(const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range) const
+  {
+    redirect_apply(range.space(), source, range);
+  }
+
 private:
   template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
   inline void redirect_apply(const Spaces::CGInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
@@ -440,6 +522,14 @@ private:
   template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
   inline void redirect_apply(const SpaceInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
                              const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, dimRangeCols >& source,
+                             DiscreteFunction< S, V >& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
+  inline void redirect_apply(const SpaceInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
+                             const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, dimRange, dimRangeCols >& source,
                              DiscreteFunction< S, V >& range) const
   {
     l2_operator_.apply(source, range);
@@ -589,6 +679,13 @@ inline void project_l2(const Stuff::LocalizableFunctionInterface< E, D, d, R, r,
 
 template< class E, class D, size_t d, class R, size_t r, size_t rC, class S, class V >
 inline void project(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range)
+{
+  Operators::Projection< typename S::GridViewType, R >(range.space().grid_view()).apply(source, range);
+}
+
+template< class E, class D, size_t d, class RE, class RD, size_t Rd, class R, size_t r, size_t rC, class S, class V >
+inline void project(const Stuff::GlobalFunctionValuedFunctionInterface< E, D, d, RE, RD, Rd, R, r, rC >& source,
                     DiscreteFunction< S, V >& range)
 {
   Operators::Projection< typename S::GridViewType, R >(range.space().grid_view()).apply(source, range);
