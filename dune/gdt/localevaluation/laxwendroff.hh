@@ -152,16 +152,17 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool is_linear = false)
+  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const bool is_linear = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , jacobian_(analytical_flux_.jacobian(RangeType(0)))
     , is_linear_(is_linear)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity));
   }
 
   size_t order(const LocalfunctionTupleType& /*localFunctionsEntity*/,
@@ -247,7 +248,7 @@ public:
     if (dimDomain != 1) {
       vol_intersection = intersection.geometry().volume();
     }
-    const RangeFieldType ratio_dt_dx = std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity)[0];
+    const RangeFieldType ratio_dt_dx = (std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity)[0])/dt_;
     for (size_t kk = 0; kk < dimRange; ++kk)
       entityNeighborRet[kk][0] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - jacobian_multiplied[coord][kk]*ratio_dt_dx*0.5*n_ij[coord])*vol_intersection;
   } // void evaluate(...) const
@@ -271,7 +272,8 @@ private:
   } // void reinitialize_jacobian(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   FluxJacobianRangeType jacobian_;
   const bool is_linear_;
 }; // class Inner
@@ -301,9 +303,10 @@ public:
   static const unsigned int dimRange = Traits::dimRange;
 
   // lambda = Delta t / Delta x
-  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const BoundaryValueFunctionType& boundary_values, const bool is_linear = false)
+  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const BoundaryValueFunctionType& boundary_values, const bool is_linear = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , jacobian_(analytical_flux_.jacobian(RangeType(0)))
     , is_linear_(is_linear)
@@ -311,7 +314,7 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity), boundary_values_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity), boundary_values_.local_function(entity));
   }
 
   template< class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
@@ -384,7 +387,7 @@ public:
     if (dimDomain != 1) {
       vol_intersection = intersection.geometry().volume();
     }
-    const RangeFieldType ratio_dt_dx = std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0];
+    const RangeFieldType ratio_dt_dx = (std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0])/dt_;
     for (size_t kk = 0; kk < dimRange; ++kk)
       ret[kk][0] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - jacobian_multiplied[coord][kk]*ratio_dt_dx*0.5*n_ij[coord])*vol_intersection;
   } // void evaluate(...) const
@@ -408,7 +411,8 @@ private:
   } // void reinitialize_jacobian(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueFunctionType& boundary_values_;
   FluxJacobianRangeType jacobian_;
   const bool is_linear_;
@@ -435,9 +439,9 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool = false)
+  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const bool = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& /*entity*/) const
@@ -492,7 +496,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
 }; // class Absorbing
 
 } // namespace LaxWendroff
