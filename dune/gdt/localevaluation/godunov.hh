@@ -175,10 +175,10 @@ public:
     const EntityType& entity = ansatzBaseEntity.entity();
     const EntityType& neighbor = ansatzBaseNeighbor.entity();
     const std::vector< RangeType > u_i
-                                 = ansatzBaseEntity.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/100.0*(intersection.geometry().center()-entity.geometry().center())));
+                                 = ansatzBaseEntity.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center())));
     std::vector< RangeType > u_j;
     if (std::abs(intersection.geometry().center()[0] - neighbor.geometry().center()[0]) < 0.5)
-      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/100.0*(intersection.geometry().center()-neighbor.geometry().center())));
+      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-neighbor.geometry().center())));
     else
       u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()[0] > 0.5 ? 0.0 : 1.0));
 //    std::cout << "u_i: " << DSC::toString(u_i) << " und u_j: " << DSC::toString(u_j) << std::endl;
@@ -399,7 +399,8 @@ public:
                 Dune::DynamicMatrix< R >& ret) const
   {
       const EntityType& entity = ansatzBase.entity();
-      const std::vector< RangeType > u_i = ansatzBase.evaluate(entity.geometry().local(entity.geometry().center()));
+      const std::vector< RangeType > u_i
+                                   = ansatzBase.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center())));
       const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
       const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
       FluxJacobianRangeType jacobian_pos = jacobian_pos_;

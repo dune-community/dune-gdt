@@ -150,15 +150,16 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool use_local = false)
+  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const bool use_local = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity));
   }
 
   size_t order(const LocalfunctionTupleType& /*localFunctionsEntity*/,
@@ -203,10 +204,15 @@ public:
   {
     const EntityType& entity = ansatzBaseEntity.entity();
     const EntityType& neighbor = ansatzBaseNeighbor.entity();
-    const auto local_center_entity = entity.geometry().local(entity.geometry().center());
-    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_center_entity);
-    const auto local_center_neighbor = neighbor.geometry().local(neighbor.geometry().center());
-    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(local_center_neighbor);
+    const auto local_intersection_entity = entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center()));
+    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_intersection_entity);
+    std::vector< RangeType > u_j;
+    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(local_intersection_entity)[0];
+    if (std::abs(intersection.geometry().center()[0] - neighbor.geometry().center()[0]) < dx)
+      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-neighbor.geometry().center())));
+    else
+      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()[0] > dx ? 0.0 : 1.0));
+//    std::cout << "u_i: " << DSC::toString(u_i) << " und u_j: " << DSC::toString(u_j) << std::endl;
     assert(u_i.size() == 1 && u_j.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j[0]);
@@ -217,7 +223,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    RangeFieldType max_derivative = std::get< 0 >(localFunctionsEntity)->evaluate(local_center_entity)[0];
+    RangeFieldType max_derivative = dt_/dx;
     if (use_local_) {
       max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
@@ -248,7 +254,8 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const bool use_local_;
 }; // class Inner
 
@@ -275,16 +282,17 @@ public:
   static const unsigned int dimRange = Traits::dimRange;
 
   // lambda = Delta t / Delta x
-  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const BoundaryValueFunctionType& boundary_values, const bool use_local = false)
+  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const BoundaryValueFunctionType& boundary_values, const bool use_local = false)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(ratio_dt_dx_.local_function(entity), boundary_values_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity), boundary_values_.local_function(entity));
   }
 
   template< class R, unsigned long rT, unsigned long rCT, unsigned long rA, unsigned long rCA >
@@ -316,10 +324,10 @@ public:
                 Dune::DynamicMatrix< R >& ret) const
   {
     const EntityType& entity = ansatzBase.entity();
-    const auto local_center_entity = entity.geometry().local(entity.geometry().center());
-    const auto& u_i = ansatzBase.evaluate(local_center_entity);
+    const auto local_intersection_entity = entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center()));
+    const auto u_i = ansatzBase.evaluate(local_intersection_entity);
     const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
-    const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
+    const auto u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
     assert(u_i.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
@@ -330,7 +338,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0];
+    RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(local_intersection_entity)[0];
     if (use_local_) {
       max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
@@ -361,7 +369,8 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueFunctionType& boundary_values_;
   const bool use_local_;
 }; // class Dirichlet
