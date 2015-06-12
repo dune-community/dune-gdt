@@ -221,15 +221,15 @@ public:
   typedef typename LocalAssembler::Codim1BoundaryFV< LocalBoundaryOperatorType >              BoundaryAssemblerType;
 
   AdvectionLaxFriedrichsLocalizable(const AnalyticalFluxType& analytical_flux,
-                                    const LocalizableFunctionType& ratio_dt_dx,
+                                    const LocalizableFunctionType& dx,
                                     const SourceType& source,
                                     const BoundaryValueType& boundary_values,
                                     RangeType& range,
                                     const bool use_local)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , local_operator_(analytical_flux, ratio_dt_dx, use_local)
-    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values, use_local)
+    , local_operator_(analytical_flux, dx, use_local)
+    , local_boundary_operator_(analytical_flux, dx, boundary_values, use_local)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -299,13 +299,13 @@ public:
   typedef typename Traits::FVSpaceType             FVSpaceType;
 
   AdvectionLaxFriedrichs(const AnalyticalFluxType& analytical_flux,
-                         const LocalizableFunctionType& ratio_dt_dx,
+                         const LocalizableFunctionType& dx,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
                          const bool use_local = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , use_local_(use_local)
@@ -324,13 +324,13 @@ public:
                                        LocalizableFunctionType,
                                        SourceType,
                                        BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, current_boundary_values, range, use_local_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, source, current_boundary_values, range, use_local_);
     localizable_operator.apply();
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool use_local_;
@@ -376,15 +376,16 @@ public:
   typedef typename LocalAssembler::Codim1BoundaryFV< LocalBoundaryOperatorType >              BoundaryAssemblerType;
 
   AdvectionGodunovLocalizable(const AnalyticalFluxType& analytical_flux,
-                              const LocalizableFunctionType& ratio_dt_dx,
+                              const LocalizableFunctionType& dx,
+                              const double dt,
                               const SourceType& source,
                               const BoundaryValueType& boundary_values,
                               RangeType& range,
                               const bool is_linear)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , local_operator_(analytical_flux, ratio_dt_dx, is_linear)
-    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values, is_linear)
+    , local_operator_(analytical_flux, dx, dt, is_linear)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, is_linear)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -457,13 +458,15 @@ public:
   typedef typename Traits::FVSpaceType                            FVSpaceType;
 
   AdvectionGodunov(const AnalyticalFluxType& analytical_flux,
-                         const LocalizableFunctionType& ratio_dt_dx,
+                         const LocalizableFunctionType& dx,
+                         const double dt,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
                          const bool is_linear = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , is_linear_(is_linear)
@@ -475,20 +478,21 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool = false, const double = 0) const
   {
     typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, current_boundary_values, range, is_linear_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
     localizable_operator.apply();
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
@@ -534,15 +538,16 @@ public:
   typedef typename LocalAssembler::Codim1BoundaryFV< LocalBoundaryOperatorType >              BoundaryAssemblerType;
 
   AdvectionLaxWendroffLocalizable(const AnalyticalFluxType& analytical_flux,
-                              const LocalizableFunctionType& ratio_dt_dx,
-                              const SourceType& source,
-                              const BoundaryValueType& boundary_values,
-                              RangeType& range,
-                              const bool is_linear)
+                                  const LocalizableFunctionType& dx,
+                                  const double dt,
+                                  const SourceType& source,
+                                  const BoundaryValueType& boundary_values,
+                                  RangeType& range,
+                                  const bool is_linear)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , local_operator_(analytical_flux, ratio_dt_dx, is_linear)
-    , local_boundary_operator_(analytical_flux, ratio_dt_dx, boundary_values, is_linear)
+    , local_operator_(analytical_flux, dx, dt, is_linear)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, is_linear)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -615,13 +620,15 @@ public:
   typedef typename Traits::FVSpaceType                            FVSpaceType;
 
   AdvectionLaxWendroff(const AnalyticalFluxType& analytical_flux,
-                         const LocalizableFunctionType& ratio_dt_dx,
-                         const BoundaryValueType& boundary_values,
-                         const FVSpaceType& fv_space,
-                         const bool is_linear = false)
+                       const LocalizableFunctionType& dx,
+                       const double dt,
+                       const BoundaryValueType& boundary_values,
+                       const FVSpaceType& fv_space,
+                       const bool is_linear = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
+    , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , is_linear_(is_linear)
@@ -633,20 +640,21 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool = false, const double = 0) const
   {
     typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxWendroffLocalizable<   AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, ratio_dt_dx_, source, current_boundary_values, range, is_linear_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
     localizable_operator.apply();
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
@@ -684,8 +692,8 @@ public:
   typedef typename Traits::LocalizableFunctionType                                            LocalizableFunctionType;
   typedef typename Traits::BoundaryValueType                                                  BoundaryValueType;
 
-  typedef typename Dune::GDT::LocalEvaluation::Godunov::Inner< LocalizableFunctionImp >       NumericalFluxType;
-  typedef typename Dune::GDT::LocalEvaluation::Godunov::Dirichlet< LocalizableFunctionImp,
+  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Inner< LocalizableFunctionImp >       NumericalFluxType;
+  typedef typename Dune::GDT::LocalEvaluation::LaxFriedrichs::Dirichlet< LocalizableFunctionImp,
                                                                    BoundaryValueType >        NumericalBoundaryFluxType;
   typedef typename Dune::GDT::LocalOperator::Codim1FV< NumericalFluxType >                    LocalOperatorType;
   typedef typename Dune::GDT::LocalOperator::Codim1FVBoundary< NumericalBoundaryFluxType >    LocalBoundaryOperatorType;
@@ -713,7 +721,6 @@ public:
                                                 const bool is_linear)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , dx_(dx)
     , local_operator_(analytical_flux, dx, dt, is_linear)
     , boundary_values_(boundary_values)
     , local_boundary_operator_(analytical_flux, dx, dt, boundary_values_, is_linear)
@@ -753,17 +760,19 @@ using AssemblerBaseType::assemble;
 
   void apply()
   {
-    const ReconstructedDiscreteFunctionType reconstruction(reconstruction_);
-    this->add(inner_assembler_, reconstruction, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
-    this->add(inner_assembler_, reconstruction, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
-    this->add(boundary_assembler_, reconstruction, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+    this->add(inner_assembler_, reconstruction_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
+    this->add(inner_assembler_, reconstruction_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
+    this->add(boundary_assembler_, reconstruction_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
     this->assemble();
+  }
+
+  void visualize_reconstruction(const size_t save_counter) {
+    reconstruction_.template visualize_factor< 0 >("reconstruction_" + DSC::toString(save_counter));
   }
 
 private:
   void reconstruct_linear() {
     // take slope sigma_i, then reconstruct linear on entity x as u_i + sigma_i*(x-(x+dx/2))
-    // possible slopes:
 
     // walk the grid to reconstruct
     const auto it_end = grid_view_.template end< 0 >();
@@ -842,36 +851,30 @@ private:
       const auto u_right = on_right_boundary ? right_boundary_value : source_.local_discrete_function(*right_neighbor_ptr)->evaluate(right_neighbor_ptr->geometry().local(right_neighbor_ptr->geometry().center()));
       const auto u_entity = source_.local_discrete_function(*entity_ptr)->evaluate(entity_ptr->geometry().local(entity_ptr->geometry().center()));
       // calculate slope
-      const double dx = (dx_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center())))[0];
+//      std::cout << "entity: " << DSC::toString(entity.geometry().center())  << std::endl;
+//      std::cout << "u_left: " << DSC::toString(u_left) << " and u_right" << DSC::toString(u_right) << std::endl;
+//      std::cout << "left neighbor: " << DSC::toString(left_neighbor_ptr->geometry().center()) << " and right " << DSC::toString(right_neighbor_ptr->geometry().center()) << std::endl;
       for (size_t factor_index = 0; factor_index < dimRange; ++factor_index) {
         RangeFieldType slope_left = u_entity[factor_index] - u_left[factor_index];
-        slope_left *= 1.0/dx;
         RangeFieldType slope_right = u_right[factor_index] - u_entity[factor_index];
-        slope_right *= 1.0/dx;
         RangeFieldType centered_slope = u_right[factor_index] - u_left[factor_index];
-        centered_slope *= 1.0/(2.0*dx);
         RangeFieldType slope = minmod(slope_left, slope_right, centered_slope);
-        RangeFieldType local_slope = slope*dx;
-        //      std::cout << "entity: " << DSC::toString(entity.geometry().center()) << " and slope: " << local_slope << std::endl;
-        //      std::cout << "u_left: " << u_left << " and u_right" << u_right << std::endl;
-        //      std::cout << "left neighbor: " << DSC::toString(left_neighbor_ptr->geometry().center()) << " and right " << DSC::toString(right_neighbor_ptr->geometry().center()) << std::endl;
+//        std::cout << " slope on " << DSC::toString(factor_index) << "th factor: " << slope << std::endl;
         // calculate value of the reconstruction on left and right side of the (reference) entity
-        const RangeFieldType value_left = u_entity[factor_index] - 0.5*local_slope;
-        const RangeFieldType value_right = u_entity[factor_index] + 0.5*local_slope;
+        const RangeFieldType value_left = u_entity[factor_index] - 0.5*slope;
+        const RangeFieldType value_right = u_entity[factor_index] + 0.5*slope;
         // set values on dofs, dof with local index 0 for each factor space corresponds to 1 - x, local index 1 to x
         reconstruction_.vector().set_entry(reconstruction_.space().factor_mapper().mapToGlobal(factor_index, entity, 0), value_left);
         reconstruction_.vector().set_entry(reconstruction_.space().factor_mapper().mapToGlobal(factor_index, entity, 1), value_right);
-//        if (factor_index == 0)
-//          reconstruction_.template visualize_factor< 0 >("reconstructed" + DSC::toString(step_number), false);
       }
+
     }
-    ++step_number;
   }
 
   RangeFieldType minmod(const RangeFieldType slope_left, const RangeFieldType slope_right, const RangeFieldType /*centered_slope*/ = RangeFieldType(0)) const
   {
-    RangeFieldType slope_left_abs = std::abs(slope_left);
-    RangeFieldType slope_right_abs = std::abs(slope_right);
+    const RangeFieldType slope_left_abs = std::abs(slope_left);
+    const RangeFieldType slope_right_abs = std::abs(slope_right);
     if (slope_left_abs < slope_right_abs && slope_left*slope_right > 0)
       return slope_left;
     else if (DSC::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left*slope_right > 0)
@@ -882,14 +885,19 @@ private:
 
   RangeFieldType maxmod(const RangeFieldType slope_left, const RangeFieldType slope_right, const RangeFieldType /*centered_slope*/ = RangeFieldType(0)) const
   {
-    RangeFieldType slope_left_abs = std::abs(slope_left);
-    RangeFieldType slope_right_abs = std::abs(slope_right);
+    const RangeFieldType slope_left_abs = std::abs(slope_left);
+    const RangeFieldType slope_right_abs = std::abs(slope_right);
     if (slope_left_abs > slope_right_abs && slope_left*slope_right > 0)
       return slope_left;
     else if (DSC::FloatCmp::le(slope_left_abs, slope_right_abs) && slope_left*slope_right > 0)
       return slope_right;
     else
       return 0.0;
+  }
+
+  RangeFieldType zero(const RangeFieldType slope_left, const RangeFieldType slope_right, const RangeFieldType /*centered_slope*/ = RangeFieldType(0))
+  {
+    return 0.0;
   }
 
   RangeFieldType superbee(const RangeFieldType slope_left, const RangeFieldType slope_right, const RangeFieldType /*centered_slope*/ = RangeFieldType(0)) const
@@ -902,7 +910,6 @@ private:
     return minmod(minmod(2.0*slope_left, 2.0*slope_right), centered_slope);
   }
 
-  const LocalizableFunctionType& dx_;
   const LocalOperatorType local_operator_;
   const LocalBoundaryOperatorType local_boundary_operator_;
   const InnerAssemblerType inner_assembler_;
@@ -913,11 +920,8 @@ private:
   const GridViewType& grid_view_;
   const DGSpaceType dg_space_;
   ReconstructedDiscreteFunctionType reconstruction_;
-  static size_t step_number;
 }; // class AdvectionGodunovWithReconstructionLocalizable
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
-size_t AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::step_number = 0;
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
 class AdvectionGodunovWithReconstruction
@@ -963,7 +967,7 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool visualize = false, const size_t save_counter = 0) const
   {
     typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxType,
@@ -971,7 +975,10 @@ public:
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
                                        RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
-    localizable_operator.apply();
+    if (!visualize)
+      localizable_operator.apply();
+    else
+      localizable_operator.visualize_reconstruction(save_counter);
   }
 
 private:
