@@ -62,6 +62,7 @@ public:
   RungeKutta(OperatorType& space_operator,
              const DiscreteFunctionType& initial_values,
              const SourceFunctionType& source_function,
+             const double dx,
              const MatrixType A = DSC::fromString< MatrixType >("[0]"),
              const VectorType b = DSC::fromString< VectorType >("[1]"),
              const VectorType c = DSC::fromString< VectorType >("[0]"))
@@ -70,6 +71,7 @@ public:
     , u_n_(initial_values_)
     , source_function_(source_function)
     , t_(0.0)
+    , dx_(dx)
     , A_(A)
     , b_(b)
     , c_(c)
@@ -134,8 +136,19 @@ public:
       // augment time
       t_ += dt;
 
+      //calculate new dt <= dx/(2*max_j abs(u_j)) (for TVD MUSCL, see FiniteVolumenLiteratur/TVD-RungeKutta-Schemes)
+      RangeFieldType max_u_j_abs = 0;
+      for (auto& u_j : u_n_.vector()) {
+        const auto u_j_abs = std::abs(u_j);
+        if (u_j_abs > max_u_j_abs)
+          max_u_j_abs = u_j_abs;
+      }
+      auto dt_new = dt;
+      if (dt > dx_/(2.0* max_u_j_abs))
+        dt_new = dx_/(2.0* max_u_j_abs);
+
       // return
-      return dt;
+      return dt_new;
   } // ... step(...)
 
   void solve(const double t_end,
@@ -160,6 +173,8 @@ public:
     if (output)
       std::cout << "Visualizing initial values..." << std::endl;
     u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_0", false);
+    DiscreteFunctionType u_tmp(u_n_);
+    space_operator_.apply(u_n_ , u_tmp , t_, true, 0);
     }
 
     if (save_solution) {
@@ -177,8 +192,11 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (t_ >= next_save_time) {
-        if (visualize)
+        if (visualize) {
           u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), false);
+          DiscreteFunctionType u_tmp(u_n_);
+          space_operator_.apply(u_n_ , u_tmp , t_, true, save_step_counter);
+        }
         if (save_solution) {
           solution.emplace_back(std::make_pair(t_, u_n_));
         }
@@ -267,6 +285,7 @@ private:
   DiscreteFunctionType u_n_;
   const SourceFunctionType& source_function_;
   double t_;
+  double dx_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
