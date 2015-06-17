@@ -148,10 +148,10 @@ class AdvectionLaxWendroffLocalizableTraits
 {
 public:
   typedef AdvectionLaxWendroffLocalizable< AnalyticalFluxImp,
-                                             LocalizableFunctionImp,
-                                             SourceImp,
-                                             BoundaryValueImp,
-                                             RangeImp >           derived_type;
+                                           LocalizableFunctionImp,
+                                           SourceImp,
+                                           BoundaryValueImp,
+                                           RangeImp >           derived_type;
 }; // class AdvectionLaxWendroffLocalizableTraits
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
@@ -168,11 +168,11 @@ class AdvectionGodunovWithReconstructionLocalizableTraits
 {
 public:
   typedef AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp,
-                                             LocalizableFunctionImp,
-                                             SourceImp,
-                                             BoundaryValueImp,
-                                             RangeImp,
-                                             slopeLimiter >           derived_type;
+                                                         LocalizableFunctionImp,
+                                                         SourceImp,
+                                                         BoundaryValueImp,
+                                                         RangeImp,
+                                                         slopeLimiter >           derived_type;
 }; // class AdvectionGodunovWithReconstructionLocalizableTraits
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
@@ -185,7 +185,7 @@ public:
                                               BoundaryValueImp,
                                               FVSpaceImp,
                                               slopeLimiter > derived_type;
-}; // class AdvectionLaxWendroffTraits
+}; // class AdvectionGodunovWithReconstructionTraits
 
 
 } // namespace internal
