@@ -202,17 +202,10 @@ public:
                 Dune::DynamicMatrix< RangeFieldType >& entityNeighborRet,
                 Dune::DynamicMatrix< RangeFieldType >& /*neighborEntityRet*/) const
   {
-    const EntityType& entity = ansatzBaseEntity.entity();
-    const EntityType& neighbor = ansatzBaseNeighbor.entity();
-    const auto local_intersection_entity = entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center()));
-    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(local_intersection_entity);
-    std::vector< RangeType > u_j;
-    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(local_intersection_entity)[0];
-    if (std::abs(intersection.geometry().center()[0] - neighbor.geometry().center()[0]) < dx)
-      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-neighbor.geometry().center())));
-    else
-      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()[0] > dx ? 0.0 : 1.0));
-//    std::cout << "u_i: " << DSC::toString(u_i) << " und u_j: " << DSC::toString(u_j) << std::endl;
+    const auto intersection_center_entity = intersection.geometryInInside().center();
+    const auto intersection_center_neighbor = intersection.geometryInOutside().center();
+    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(intersection_center_entity);
+    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(intersection_center_neighbor);
     assert(u_i.size() == 1 && u_j.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j[0]);
@@ -223,6 +216,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
+    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
     RangeFieldType max_derivative = dt_/dx;
     if (use_local_) {
       max_derivative = 0;
@@ -245,7 +239,8 @@ public:
     int num_neighbors = 2;
     if (dimDomain != 1) {
       vol_intersection = intersection.geometry().volume();
-      const auto& reference_element = Dune::ReferenceElements< DomainFieldType, dimDomain >::general(entity.geometry().type());
+      const auto& reference_element
+          = Dune::ReferenceElements< DomainFieldType, dimDomain >::general(ansatzBaseEntity.entity().geometry().type());
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
@@ -323,11 +318,9 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const EntityType& entity = ansatzBase.entity();
-    const auto local_intersection_entity = entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center()));
-    const auto u_i = ansatzBase.evaluate(local_intersection_entity);
-    const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
-    const auto u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
+    const auto intersection_center_local = intersection.geometryInInside().center();
+    const auto u_i = ansatzBase.evaluate(intersection_center_local);
+    const auto u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
     assert(u_i.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
@@ -338,7 +331,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(local_intersection_entity)[0];
+    RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(intersection_center_local)[0];
     if (use_local_) {
       max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
@@ -360,7 +353,8 @@ public:
     int num_neighbors = 2;
     if (dimDomain != 1) {
       vol_intersection = intersection.geometry().volume();
-      const auto& reference_element = Dune::ReferenceElements< DomainFieldType, dimDomain >::general(entity.geometry().type());
+      const auto& reference_element
+          = Dune::ReferenceElements< DomainFieldType, dimDomain >::general(ansatzBase.entity().geometry().type());
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
@@ -396,10 +390,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& ratio_dt_dx, const bool use_local)
+  explicit Absorbing(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& /*dx*/, const double /*dt*/, const bool /*use_local*/)
     : analytical_flux_(analytical_flux)
-    , ratio_dt_dx_(ratio_dt_dx)
-    , use_local_(use_local)
   {}
 
   LocalfunctionTupleType localFunctions(const EntityType& /*entity*/) const
@@ -433,9 +425,7 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-    const EntityType& entity = ansatzBase.entity();
-    const auto local_center_entity = entity.geometry().local(entity.geometry().center());
-    const auto& u_i = ansatzBase.evaluate(local_center_entity);
+    const auto& u_i = ansatzBase.evaluate(intersection.geometryInInside().center());
     assert(u_i.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
@@ -453,8 +443,6 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& ratio_dt_dx_;
-  const bool use_local_;
 }; // class Absorbing
 
 } // namespace LaxFriedrichs

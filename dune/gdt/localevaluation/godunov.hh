@@ -172,17 +172,11 @@ public:
                 Dune::DynamicMatrix< RangeFieldType >& entityNeighborRet,
                 Dune::DynamicMatrix< RangeFieldType >& /*neighborEntityRet*/) const
   {
-    const EntityType& entity = ansatzBaseEntity.entity();
-    const EntityType& neighbor = ansatzBaseNeighbor.entity();
-    const std::vector< RangeType > u_i
-                                 = ansatzBaseEntity.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center())));
-    std::vector< RangeType > u_j;
-    if (std::abs(intersection.geometry().center()[0] - neighbor.geometry().center()[0]) < 0.5)
-      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-neighbor.geometry().center())));
-    else
-      u_j = ansatzBaseNeighbor.evaluate(neighbor.geometry().local(intersection.geometry().center()[0] > 0.5 ? 0.0 : 1.0));
-//    std::cout << "u_i: " << DSC::toString(u_i) << " und u_j: " << DSC::toString(u_j) << std::endl;
-
+    // get function values
+    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(intersection.geometryInInside().center());
+    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(intersection.geometryInOutside().center());
+    // get flux values and convert them to a FieldMatrix (without conversion we had to differentiate between
+    // dimDomain == 1 and dimDomain > 1
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j[0]);
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
@@ -192,12 +186,15 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
 
+    // get positive and negative parts of the jacobian (corresponding to negative and positive eigenvalues)
     FluxJacobianRangeType jacobian_pos = jacobian_pos_;
     FluxJacobianRangeType jacobian_neg = jacobian_neg_;
     if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
       reinitialize_jacobians(u_i[0], u_j[0], jacobian_neg, jacobian_pos);
     }
+    // get jump at the intersection
     const RangeType delta_u = u_i[0] - u_j[0];
+    // get unit outer normal
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     // find direction of unit outer normal
     size_t coord = 0;
@@ -398,11 +395,8 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-      const EntityType& entity = ansatzBase.entity();
-      const std::vector< RangeType > u_i
-                                   = ansatzBase.evaluate(entity.geometry().local(intersection.geometry().center()-1.0/1000.0*(intersection.geometry().center()-entity.geometry().center())));
-      const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
-      const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
+      const std::vector< RangeType > u_i = ansatzBase.evaluate(intersection.geometryInInside().center());
+      const auto& u_j = std::get< 1 >(localFunctions)->evaluate(intersection.geometryInInside().center());
       FluxJacobianRangeType jacobian_pos = jacobian_pos_;
       FluxJacobianRangeType jacobian_neg = jacobian_neg_;
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
