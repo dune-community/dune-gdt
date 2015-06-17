@@ -139,13 +139,11 @@ public:
       //calculate new dt <= dx/(2*max_j abs(u_j)) (for TVD MUSCL, see FiniteVolumenLiteratur/TVD-RungeKutta-Schemes)
       RangeFieldType max_u_j_abs = 0;
       for (auto& u_j : u_n_.vector()) {
-        const auto u_j_abs = std::abs(u_j);
+        const RangeFieldType u_j_abs = std::abs(u_j);
         if (u_j_abs > max_u_j_abs)
           max_u_j_abs = u_j_abs;
       }
-      auto dt_new = dt;
-      if (dt > dx_/(2.0* max_u_j_abs))
-        dt_new = dx_/(2.0* max_u_j_abs);
+      double dt_new = 0.99*dx_/(2.0* max_u_j_abs);
 
       // return
       return dt_new;
