@@ -19,6 +19,7 @@ namespace LocalEvaluation {
 namespace SWIPDG {
 
 
+//! \todo Make use of InnerPenalty
 template <class DiffusionFactorType, class DiffusionTensorType>
 class Inner
     : public LocalEvaluation::Codim1Interface<internal::InnerTraits<DiffusionFactorType, DiffusionTensorType>, 4>
