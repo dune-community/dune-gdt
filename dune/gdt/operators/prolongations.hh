@@ -60,8 +60,7 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
  *
- *  \todo Create a Redirect class templatized with space/vector to check that its a const/discrete function with a
- *        method which extracts the correct space if needed. This should give better compile errors.
+ *  \todo refactor like projections, drop note above
  */
 template <class GridViewType>
 class L2Prolongation
@@ -224,6 +223,8 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
 }\endcode
  *        but that gave compile errors (the compiler just could not match the first argument for whatever reason). This
  *        is why we need all combinations of spaces below which are just compile time checks and forwards.
+ *
+ *  \todo refactor like projections, drop note above
  */
 template <class GridViewType>
 class LagrangeProlongation
