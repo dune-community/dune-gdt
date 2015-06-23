@@ -118,7 +118,6 @@ public:
               // evalaute
               local_basis.evaluate(xx_entity, basis_values);
               const auto& basis_value = basis_values[local_DoF_index];
-              tmp_matrix *= 0.0;
               tmp_matrix_en_en *= 0.0;
               tmp_matrix_en_ne *= 0.0;
               inner_evaluation.evaluate(*local_diffusion_factor,
@@ -187,8 +186,8 @@ public:
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
-          assert(!(range_vector[global_DoF_index] < infinity));
           // and make sure we are the first to do so
+          assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
           DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
