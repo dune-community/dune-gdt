@@ -825,7 +825,7 @@ public:
                                                 const LocalizableFunctionType& dx,
                                                 const double dt,
                                                 const SourceType& source,
-                                                const BoundaryValueType& boundary_values,
+                                                const BoundaryValueType boundary_values,
                                                 RangeType& range,
                                                 const bool is_linear)
     : OperatorBaseType()
@@ -880,7 +880,7 @@ public:
   }
 
   void visualize_reconstruction(const size_t save_counter) {
-    reconstruction_->template visualize_factor< 0 >("reconstruction_" + DSC::toString(save_counter));
+    reconstruction_->template visualize_factor< 0 >("reconstruction_" + DSC::toString(save_counter), true);
   }
 
 private:
@@ -906,8 +906,8 @@ private:
       const auto i_it_end = grid_view_.iend(entity);
       for (auto i_it = grid_view_.ibegin(entity); i_it != i_it_end; ++i_it) {
         const auto& intersection = *i_it;
-        const auto& neighbor = intersection.neighbor() ? *(intersection.outside()) : entity;
         if (intersection.neighbor()) {
+          const auto& neighbor = *(intersection.outside());
           if ((neighbor.geometry().center()[0] < entity_center[0] && !(intersection.boundary())) || (neighbor.geometry().center()[0] > entity_center[0] && intersection.boundary()))
             left_neighbor_ptr = EntityPointerType(neighbor);
           else
@@ -943,7 +943,7 @@ private:
           for (size_t jj = 0; jj < dimRange; ++jj)
             assert(eigen_eigenvectors(ii,jj).imag() < 1e-15);
 #  endif
-        const EigenMatrixType eigenvectors(eigen_eigenvectors.real()); // <- this should be an Eigen matrix of std::complex
+        const EigenMatrixType eigenvectors(eigen_eigenvectors.real());
         const EigenMatrixType eigenvectors_inverse(eigen_eigenvectors.inverse().real());
         eigenvectors_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors));
         eigenvectors_inverse_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors_inverse));
@@ -960,8 +960,10 @@ private:
       const StuffFieldVectorType w_slope_left = w_entity - w_left;
       const StuffFieldVectorType w_slope_right = w_right - w_entity;
       const StuffFieldVectorType w_centered_slope = w_right*RangeFieldType(0.5) - w_left*RangeFieldType(0.5);
-      const StuffFieldVectorType w_slope = internal::ChooseLimiter< slopeLimiter, StuffFieldVectorType >::limit(w_slope_left, w_slope_right, w_centered_slope);
-
+      const StuffFieldVectorType w_slope = internal::ChooseLimiter< slopeLimiter,
+                                                                    StuffFieldVectorType >::limit(w_slope_left,
+                                                                                                  w_slope_right,
+                                                                                                  w_centered_slope);
       const StuffFieldVectorType w_value_left = w_entity - w_slope*RangeFieldType(0.5);
       const StuffFieldVectorType w_value_right = w_entity + w_slope*RangeFieldType(0.5);
 
@@ -980,9 +982,9 @@ private:
 
   const AnalyticalFluxType& analytical_flux_;
   const LocalOperatorType local_operator_;
+  const BoundaryValueType boundary_values_;
   const LocalBoundaryOperatorType local_boundary_operator_;
   const InnerAssemblerType inner_assembler_;
-  const BoundaryValueType& boundary_values_;
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
@@ -1046,7 +1048,7 @@ public:
   AdvectionGodunovWithReconstruction(const AnalyticalFluxType& analytical_flux,
                          const LocalizableFunctionType& dx,
                          const double dt,
-                         const BoundaryValueType& boundary_values,
+                         const BoundaryValueType boundary_values,
                          const FVSpaceType& fv_space,
                          const bool is_linear = false)
     : OperatorBaseType()
@@ -1064,6 +1066,7 @@ public:
     return fv_space_.grid_view();
   }
 
+  // TODO: dt should be given to apply in each timestep and not in the constructor of the operator
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool visualize = false, const size_t save_counter = 0) const
   {
@@ -1085,7 +1088,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& dx_;
   const double dt_;
-  const BoundaryValueType& boundary_values_;
+  const BoundaryValueType boundary_values_;
   mutable typename BoundaryValueType::ExpressionFunctionType current_boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
