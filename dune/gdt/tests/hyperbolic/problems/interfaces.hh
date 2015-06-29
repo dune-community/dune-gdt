@@ -76,6 +76,11 @@ public:
 
   virtual double ratio_dt_dx() const = 0;
 
+  virtual bool is_linear() const
+  {
+    return false;
+  }
+
   template< class G >
   void visualize(/*const GridView< G >& grid_view, std::string filename, other types*/) const
   {

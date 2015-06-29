@@ -153,7 +153,13 @@ public:
     else
       return 4.0*/;
   }
+
+  virtual bool is_linear() const override
+  {
+    return false;
+  }
 };
+
 
 
 } // namespace Problems

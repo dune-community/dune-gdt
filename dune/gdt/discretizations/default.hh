@@ -239,7 +239,7 @@ public:
 
   using BaseType::solve;
 
-  void solve(VectorType& solution) const
+  void solve(VectorType& solution, const bool is_linear/* = false*/) const
   {
     try {
       static const size_t dimDomain = ProblemType::dimDomain;
@@ -271,11 +271,11 @@ public:
       const double dx = dimensions.entity_width.max();
       const double dt = ratio_dt_dx*dx;
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 > ConstantFunctionType;
-      ConstantFunctionType ratio_dt_dx_function(ratio_dt_dx);
+      ConstantFunctionType dx_function(dx);
 
       //create operator
-      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs< AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType > OperatorType;
-      OperatorType advection_operator(*analytical_flux, ratio_dt_dx_function, *boundary_values, fv_space_, true);
+      typedef typename Dune::GDT::Operators::AdvectionGodunov< AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType/*, Operators::SlopeLimiters::mc*/ > OperatorType;
+      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear);
 
       //create butcher_array
       // forward euler
@@ -289,7 +289,7 @@ public:
       //    Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::toString(1.0/6.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/6.0) + "]"));
 
       //create timestepper
-      Dune::GDT::TimeStepper::RungeKutta< OperatorType, DiscreteFunctionType, SourceType > timestepper(advection_operator, u, *source, A, b);
+      Dune::GDT::TimeStepper::RungeKutta< OperatorType, DiscreteFunctionType, SourceType > timestepper(advection_operator, u, *source, dx, A, b);
 
       // now do the time steps
       std::vector< std::pair< double, DiscreteFunctionType > > solution_as_discrete_function;

@@ -238,9 +238,9 @@ public:
     return this->as_imp().fv_space();
   }
 
-  void solve(VectorType& solution) const
+  void solve(VectorType& solution, const bool is_linear) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().solve(solution));
+    CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, is_linear));
   }
 
   /// \}
@@ -252,10 +252,10 @@ public:
     return VectorType(fv_space().mapper().size());
   }
 
-  VectorType solve() const
+  VectorType solve(const bool is_linear) const
   {
     VectorType solution;
-    solve(solution);
+    solve(solution, is_linear);
     return solution;
   }
 

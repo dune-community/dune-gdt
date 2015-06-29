@@ -187,7 +187,7 @@ public:
           = Stuff::Common::make_unique< DiscretizationType >(Discretizer::discretize(test_case_,
                                                                                      test_case_.problem(),
                                                                                      test_case_.level_of(current_refinement_)));
-      current_solution_vector_on_level_ = Stuff::Common::make_unique< VectorType >(current_discretization_->solve());
+      current_solution_vector_on_level_ = Stuff::Common::make_unique< VectorType >(current_discretization_->solve(test_case_.problem().is_linear()));
       time_to_solution_ = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
@@ -295,7 +295,7 @@ protected:
           = Stuff::Common::make_unique< DiscretizationType >(Discretizer::discretize(test_case_,
                                                                                      test_case_.problem(),
                                                                                      test_case_.reference_level()));
-      reference_solution_vector_ = Stuff::Common::make_unique< VectorType >(reference_discretization_->solve());
+      reference_solution_vector_ = Stuff::Common::make_unique< VectorType >(reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
