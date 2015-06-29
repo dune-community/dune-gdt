@@ -198,16 +198,18 @@ public:
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     // find direction of unit outer normal
     size_t coord = 0;
-    size_t num_zeros = 0;
-    for (size_t ii = 0; ii < n_ij.size(); ++ii) {
-      if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
-        coord = ii;
-      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
-        ++num_zeros;
-      else
-        DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
+    if (dimDomain != 1) {
+      size_t num_zeros = 0;
+      for (size_t ii = 0; ii < n_ij.size(); ++ii) {
+        if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+          coord = ii;
+        else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
+          ++num_zeros;
+        else
+          DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
+      }
+      assert(num_zeros == dimDomain - 1);
     }
-    assert(num_zeros == dimDomain - 1);
     // calculate return vector
     RangeType negative_waves(RangeFieldType(0));
     RangeType positive_waves(RangeFieldType(0));
@@ -216,20 +218,20 @@ public:
     RangeFieldType vol_intersection = 1;
     if (dimDomain != 1)
       vol_intersection = intersection.geometry().volume();
-//    if (n_ij > 0) {
-//      for (size_t kk = 0; kk < dimRange; ++kk)
-//        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-//    } else {
-//      for (size_t kk = 0; kk < dimRange; ++kk)
-//        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-//    }
-    if (n_ij[coord] > 0) {
+    if (n_ij > 0) {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
+        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
     } else {
       for (size_t kk = 0; kk < dimRange; ++kk)
-        entityNeighborRet[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
+        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
     }
+//    if (n_ij[coord] > 0) {
+//      for (size_t kk = 0; kk < dimRange; ++kk)
+//        entityNeighborRet[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
+//    } else {
+//      for (size_t kk = 0; kk < dimRange; ++kk)
+//        entityNeighborRet[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
+//    }
   } // void evaluate(...) const
 
 private:
@@ -395,8 +397,9 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
-      const std::vector< RangeType > u_i = ansatzBase.evaluate(intersection.geometryInInside().center());
-      const auto& u_j = std::get< 1 >(localFunctions)->evaluate(intersection.geometryInInside().center());
+      const auto intersection_center_local = intersection.geometryInInside().center();
+      const std::vector< RangeType > u_i = ansatzBase.evaluate(intersection_center_local);
+      const RangeType u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
       FluxJacobianRangeType jacobian_pos = jacobian_pos_;
       FluxJacobianRangeType jacobian_neg = jacobian_neg_;
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
@@ -429,23 +432,23 @@ public:
       RangeType positive_waves(RangeFieldType(0));
       jacobian_neg[coord].mv(delta_u, negative_waves);
       jacobian_pos[coord].mv(delta_u, positive_waves);
-  //    if (n_ij > 0) {
-  //      for (size_t kk = 0; kk < dimRange; ++kk)
-  //        entityNeighborRet[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-  //    } else {
-  //      for (size_t kk = 0; kk < dimRange; ++kk)
-  //        entityNeighborRet[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
-  //    }
-      RangeFieldType vol_intersection = 1;
-      if (dimDomain != 1)
-        vol_intersection = intersection.geometry().volume();
-      if (n_ij[coord] > 0) {
+      if (n_ij > 0) {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
+          ret[kk][0] = (f_u_i[kk] + f_u_j[kk] + (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
       } else {
         for (size_t kk = 0; kk < dimRange; ++kk)
-          ret[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
+          ret[kk][0] = (f_u_i[kk] +  f_u_j[kk] - (positive_waves[kk] - negative_waves[kk]))*n_ij*0.5;
       }
+//      RangeFieldType vol_intersection = 1;
+//      if (dimDomain != 1)
+//        vol_intersection = intersection.geometry().volume();
+//      if (n_ij[coord] > 0) {
+//        for (size_t kk = 0; kk < dimRange; ++kk)
+//          ret[kk][0] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
+//      } else {
+//        for (size_t kk = 0; kk < dimRange; ++kk)
+//          ret[kk][0] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
+//      }
   } // void evaluate(...) const
 
 private:
