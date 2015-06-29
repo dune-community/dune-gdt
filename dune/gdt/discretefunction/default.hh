@@ -48,7 +48,6 @@ struct visualize_helper
     assert( ii == 0 );
     ConstDiscreteFunction< SpaceImp, VectorImp > discrete_function(space, vector);
     discrete_function.visualize(filename, subsampling, vtk_output_type);
-    std::cout << std::is_base_of< typename Dune::GDT::ProductSpaceInterface< Traits >, SpaceImp >::value;
   }
 };
 
