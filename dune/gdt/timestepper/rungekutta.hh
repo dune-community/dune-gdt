@@ -65,7 +65,7 @@ public:
              const double dx,
              const MatrixType A = DSC::fromString< MatrixType >("[0]"),
              const VectorType b = DSC::fromString< VectorType >("[1]"),
-             const VectorType c = DSC::fromString< VectorType >("[0]"))
+             const VectorType c = DSC::fromString< VectorType >("0"))
     : space_operator_(space_operator)
     , initial_values_(initial_values)
     , u_n_(initial_values_)
@@ -85,7 +85,7 @@ public:
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
         for (size_t jj = ii; jj < A_.cols(); ++jj) {
           assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0) &&
-                 "A has to be a lower triangular matrix with 0 on the diagonal (implicit methods are not supported)");
+                 "A has to be a lower triangular matrix with 0 on the diagonal (implicit methods are not implemented)");
         }
     }
 #endif //NDEBUG
@@ -103,13 +103,16 @@ public:
       for (size_t ii = 0; ii < num_stages_; ++ii) {
         u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
         u_tmp.vector() = u_n_.vector();
-        for (size_t jj = 0; jj < num_stages_; ++jj) {
-          u_tmp.vector() += u_intermediate_stages_[jj].vector()*dt*A_[ii][jj];
+        for (size_t jj = 0; jj < ii; ++jj) {
+          u_tmp.vector() += u_intermediate_stages_[jj].vector()*dt*(A_[ii][jj]);
         }
-        space_operator_.apply(u_tmp , u_intermediate_stages_[ii], t_);
+//        std::cout << "u_n_   vector[" << DSC::toString(ii) << "]: " << DSC::toString(u_n_.vector()) << std::endl;
+//        std::cout << "u_tmp  vector[" << DSC::toString(ii) << "]: " << DSC::toString(u_tmp.vector()) << std::endl;
+        space_operator_.apply(u_tmp , u_intermediate_stages_[ii], t_ + dt*c_[ii]);
       };
 
       for (size_t ii = 0; ii < num_stages_; ++ii) {
+        // there is a -1.0 here because u_t = - L(u) and we worked with L(u) instead of -L
         u_n_.vector() += u_intermediate_stages_[ii].vector()*(-1.0*dt)*b_[ii];
       }
 
@@ -143,7 +146,7 @@ public:
         if (u_j_abs > max_u_j_abs)
           max_u_j_abs = u_j_abs;
       }
-      double dt_new = 0.99*dx_/(2.0* max_u_j_abs);
+      double dt_new = dt; //0.99*dx_/(8.0*max_u_j_abs);
 
       // return
       return dt_new;
@@ -162,7 +165,7 @@ public:
     size_t time_step_counter = 0;
 
     const double save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
-    double next_save_time = t_ + save_interval;
+    double next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
     size_t save_step_counter = 1;
 
     const size_t factor_to_be_visualized = 0;
@@ -189,9 +192,9 @@ public:
       dt = step(dt);
 
       // check if data should be written in this timestep (and write)
-      if (t_ >= next_save_time) {
+      if (DSC::FloatCmp::ge(t_,next_save_time)) {
         if (visualize) {
-          u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), false);
+          u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), true);
           DiscreteFunctionType u_tmp(u_n_);
           space_operator_.apply(u_n_ , u_tmp , t_, true, save_step_counter);
         }
@@ -275,6 +278,10 @@ public:
       ++num_refinements;
     }
     return std::make_pair(bool(false), current_dt);
+  }
+
+  const std::vector< std::pair< double, DiscreteFunctionType > > solution() const {
+    return solution_;
   }
 
 private:
