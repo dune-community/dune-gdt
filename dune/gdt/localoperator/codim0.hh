@@ -49,33 +49,29 @@ public:
 } // namespace internal
 
 
-template< class BinaryEvaluationImp >
+template< class BinaryEvaluationType >
 class Codim0Integral
-  : public LocalOperator::Codim0Interface< internal::Codim0IntegralTraits< BinaryEvaluationImp > >
+  : public LocalOperator::Codim0Interface< internal::Codim0IntegralTraits< BinaryEvaluationType > >
 {
-public:
-  typedef internal::Codim0IntegralTraits< BinaryEvaluationImp > Traits;
-  typedef BinaryEvaluationImp                                   BinaryEvaluationType;
-
-private:
   static const size_t numTmpObjectsRequired_ = 1;
-
 public:
+  typedef internal::Codim0IntegralTraits< BinaryEvaluationType > Traits;
+
   template< class... Args >
   explicit Codim0Integral(Args&& ...args)
-    : evaluation_(std::forward< Args >(args)...)
+    : integrand_(std::forward< Args >(args)...)
     , over_integrate_(0)
   {}
 
   template< class... Args >
   explicit Codim0Integral(const int over_integrate, Args&& ...args)
-    : evaluation_(std::forward< Args >(args)...)
+    : integrand_(std::forward< Args >(args)...)
     , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
   {}
 
   template< class... Args >
   explicit Codim0Integral(const size_t over_integrate, Args&& ...args)
-    : evaluation_(std::forward< Args >(args)...)
+    : integrand_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
   {}
 
@@ -91,13 +87,11 @@ public:
              std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
   {
     const auto& entity = ansatzBase.entity();
-    const auto localFunctions = evaluation_.localFunctions(entity);
+    const auto localFunctions = integrand_.localFunctions(entity);
     // quadrature
-    typedef Dune::QuadratureRules< D, d > VolumeQuadratureRules;
-    typedef Dune::QuadratureRule< D, d > VolumeQuadratureType;
-    const size_t integrand_order = evaluation_.order(localFunctions, ansatzBase, testBase) + over_integrate_;
-    const VolumeQuadratureType& volumeQuadrature = VolumeQuadratureRules::rule(entity.type(),
-                                                                               boost::numeric_cast< int >(integrand_order));
+    const size_t integrand_order = integrand_.order(localFunctions, ansatzBase, testBase) + over_integrate_;
+    const auto& volumeQuadrature = QuadratureRules< D, d >::rule(entity.type(),
+                                                                 boost::numeric_cast< int >(integrand_order));
     // check matrix and tmp storage
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
@@ -107,14 +101,13 @@ public:
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
     auto& evaluationResult = tmpLocalMatrices[0];
     // loop over all quadrature points
-    const auto quadPointEndIt = volumeQuadrature.end();
-    for (auto quadPointIt = volumeQuadrature.begin(); quadPointIt != quadPointEndIt; ++quadPointIt) {
-      const Dune::FieldVector< D, d > x = quadPointIt->position();
+    for (const auto& quadPoint : volumeQuadrature) {
+      const auto x = quadPoint.position();
       // integration factors
-      const double integrationFactor = entity.geometry().integrationElement(x);
-      const double quadratureWeight = quadPointIt->weight();
-      // evaluate the local operation
-      evaluation_.evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
+      const auto integrationFactor = entity.geometry().integrationElement(x);
+      const auto quadratureWeight = quadPoint.weight();
+      // evaluate the integrand
+      integrand_.evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& retRow = ret[ii];
@@ -126,7 +119,7 @@ public:
   } // ... apply(...)
 
 private:
-  const BinaryEvaluationType evaluation_;
+  const BinaryEvaluationType integrand_;
   const size_t over_integrate_;
 }; // class Codim0Integral
 
