@@ -377,8 +377,8 @@ public:
     assert(entityEntityRet.cols() >= 1);
     assert(neighborNeighborRet.rows() >= 1);
     assert(neighborNeighborRet.cols() >= 1);
-    assert(entityNeighborRet.rows() >= dimRange);
-    assert(entityNeighborRet.cols() >= 1);
+    assert(entityNeighborRet.cols() >= dimRange);
+    assert(entityNeighborRet.rows() >= 1);
     assert(neighborEntityRet.rows() >= 1);
     assert(neighborEntityRet.cols() >= 1);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
@@ -390,10 +390,10 @@ public:
     const auto localPoint = intersection.geometry().local(intersection.geometry().center());
     //evaluate
     flux_.evaluate(localFunctionsEn, localFunctionsNe,
-                         entityTestBase, entityAverage,
-                         neighborTestBase, neighborAverage,
-                         intersection, localPoint,
-                         entityEntityRet,neighborNeighborRet, entityNeighborRet, neighborEntityRet);
+                   entityTestBase, entityAverage,
+                   neighborTestBase, neighborAverage,
+                   intersection, localPoint,
+                   entityEntityRet,neighborNeighborRet, entityNeighborRet, neighborEntityRet);
     entityNeighborRet /= entity.geometry().volume();
   } // void apply(...) const
 
@@ -474,8 +474,8 @@ public:
     // check local function
     assert(entityAverage.size() == 1);
     // check matrices
-    assert(ret.rows() >= dimRange);
-    assert(ret.cols() >= 1);
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= dimRange);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
     // get entities and local functions
     const auto& entity = entityAverage.entity();

@@ -576,9 +576,8 @@ public:
     // check
     const size_t dimRange = discreteFunction.space().dimRange;
     assert(intersection.neighbor());
-    assert(updateMatrix.cols() >= 1);
-    assert(updateMatrix.rows() >= dimRange);
-    //assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
+    assert(updateMatrix.cols() >= dimRange);
+    assert(updateMatrix.rows() >= 1);
     //clear matrix
     updateMatrix *= 0.0;
     //get entity and neighbor and local discrete functions
@@ -598,8 +597,10 @@ public:
                          updateMatrix,
                          tmpLocalMatrices[0]);
     // write value from updateMatrix to discreteFunctionUpdate
+    auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
+    auto& local_vector = local_update_entity->vector();
     for (size_t kk = 0; kk < dimRange; ++kk)
-      discreteFunctionUpdate.local_discrete_function(entity)->vector().add(kk, updateMatrix[kk][0]);
+      local_vector.add(kk, updateMatrix[0][kk]);
   } // void assembleLocal(...) const
 
 private:
@@ -642,8 +643,8 @@ public:
   {
     // check
     const size_t dimRange = discreteFunction.space().dimRange;
-    assert(updateMatrix.cols() >= 1);
-    assert(updateMatrix.rows() >= dimRange);
+    assert(updateMatrix.rows() >= 1);
+    assert(updateMatrix.cols() >= dimRange);
 //    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
     //clear matrix
     updateMatrix *= 0.0;
@@ -654,8 +655,10 @@ public:
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(*entityAverage, *entityAverage, intersection, updateMatrix, tmpLocalMatrices[0]);
     // write value from updateMatrix to discreteFunctionUpdate
+    auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
+    auto& local_vector = local_update_entity->vector();
     for (size_t kk = 0; kk < dimRange; ++kk)
-      discreteFunctionUpdate.local_discrete_function(entity)->vector().add(kk, updateMatrix[kk][0]);
+      local_vector.add(kk, updateMatrix[0][kk]);
   } // void assembleLocal(...) const
 
 private:
