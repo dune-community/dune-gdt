@@ -106,8 +106,6 @@ public:
         for (size_t jj = 0; jj < ii; ++jj) {
           u_tmp.vector() += u_intermediate_stages_[jj].vector()*dt*(A_[ii][jj]);
         }
-//        std::cout << "u_n_   vector[" << DSC::toString(ii) << "]: " << DSC::toString(u_n_.vector()) << std::endl;
-//        std::cout << "u_tmp  vector[" << DSC::toString(ii) << "]: " << DSC::toString(u_tmp.vector()) << std::endl;
         space_operator_.apply(u_tmp , u_intermediate_stages_[ii], t_ + dt*c_[ii]);
       };
 
@@ -126,7 +124,9 @@ public:
         const auto it_end = u_n_.space().grid_view().template end< 0 >();
         for (auto it = u_n_.space().grid_view().template begin< 0 >(); it != it_end; ++it) {
           const auto& entity = *it;
-          const auto source_value = source_function_.local_global_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()), u_tmp.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center())));
+          const auto local_center = entity.geometry().local(entity.geometry().center());
+          const auto source_value = source_function_.local_global_function(entity)
+                                    ->evaluate(local_center, u_tmp.local_function(entity)->evaluate(local_center));
           for (size_t kk = 0; kk < source_value.size(); ++kk)
             u_intermediate_stages_[ii].local_discrete_function(entity)->vector().set(kk, source_value[kk]);
         }
@@ -155,9 +155,6 @@ public:
   void solve(const double t_end,
              const double first_dt,
              const double save_step,
-             const bool output,
-             const bool visualize,
-             const bool save_solution,
              std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
     double dt = first_dt;
@@ -165,42 +162,23 @@ public:
     size_t time_step_counter = 0;
 
     const double save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
+    const double output_interval = 0.2;
     double next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
+    double next_output_time = t_ + output_interval;
     size_t save_step_counter = 1;
 
-    const size_t factor_to_be_visualized = 0;
+    // clear solution
+    solution.clear();
+    solution.emplace_back(std::make_pair(t_, u_n_));
 
-    if (visualize) {
-    if (output)
-      std::cout << "Visualizing initial values..." << std::endl;
-    u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_0", false);
-    DiscreteFunctionType u_tmp(u_n_);
-    space_operator_.apply(u_n_ , u_tmp , t_, true, 0);
-    }
-
-    if (save_solution) {
-      // clear solution
-      solution.clear();
-      solution.emplace_back(std::make_pair(t_, u_n_));
-    }
-
-    if (output)
-      std::cout << "Starting time loop..." << std::endl;
     while (t_ < t_end)
     {
       // do a timestep
       dt = step(dt);
 
       // check if data should be written in this timestep (and write)
-      if (DSC::FloatCmp::ge(t_,next_save_time)) {
-        if (visualize) {
-          u_n_.template visualize_factor< factor_to_be_visualized >("factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(save_step_counter), true);
-          DiscreteFunctionType u_tmp(u_n_);
-          space_operator_.apply(u_n_ , u_tmp , t_, true, save_step_counter);
-        }
-        if (save_solution) {
-          solution.emplace_back(std::make_pair(t_, u_n_));
-        }
+      if (DSC::FloatCmp::ge(t_, next_save_time)) {
+        solution.emplace_back(std::make_pair(t_, u_n_));
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -209,19 +187,18 @@ public:
       ++time_step_counter;
 
       // print info about time, timestep size and counter
-      if (output)
+      if (DSC::FloatCmp::ge(t_, next_output_time)) {
         std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
+        next_output_time += output_interval;
+      }
     } // while (t_ < t_end)
   } // ... solve(...)
 
   void solve(const double t_end,
              const double first_dt,
-             const double save_step = 0.0,
-             const bool output = false,
-             const bool visualize = true,
-             const bool save_solution = false)
+             const double save_step = 0.0)
   {
-    solve(t_end, first_dt, save_step, output, visualize, save_solution, solution_);
+    solve(t_end, first_dt, save_step, solution_);
   }
 
   double current_time() const
@@ -232,6 +209,17 @@ public:
   const DiscreteFunctionType& current_solution() const
   {
     return u_n_;
+  }
+
+  template< size_t factor_to_be_visualized = 0 >
+  void visualize_solution() const
+  {
+    for (size_t ii = 0; ii < solution_.size(); ++ii) {
+      auto& pair = solution_[ii];
+      pair.second.template visualize_factor< factor_to_be_visualized >("factor_"
+                                                                       + DSC::toString(factor_to_be_visualized)
+                                                                       + "_" + DSC::toString(ii), true);
+    }
   }
 
   const std::pair< bool, double > find_suitable_dt(const double initial_dt,
