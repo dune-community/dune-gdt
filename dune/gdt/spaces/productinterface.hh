@@ -19,10 +19,15 @@ template< class Traits >
 class ProductSpaceInterface
     : public SpaceInterface< Traits, Traits::dimDomain, Traits::dimRange, Traits::dimRangeCols >
 {
+  typedef SpaceInterface< Traits, Traits::dimDomain, Traits::dimRange, Traits::dimRangeCols > BaseType;
 public:
+  using typename BaseType::EntityType;
+  using typename BaseType::PatternType;
+  using typename BaseType::RangeFieldType;
   typedef typename Traits::FactorMapperType FactorMapperType;
   typedef typename Traits::SpaceTupleType SpaceTupleType;
   static const size_t num_factors = std::tuple_size< SpaceTupleType >::value;
+
   /**
    * \defgroup interface ´´These methods have to be implemented in addition to the SpaceInterface methods!''
    * @{

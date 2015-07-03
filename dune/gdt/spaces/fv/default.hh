@@ -73,6 +73,7 @@ public:
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::RangeFieldType;
 private:
   typedef typename Traits::CommunicationChooserType CommunicationChooserType;
 public:
@@ -124,7 +125,6 @@ public:
 
 protected:
   const GridViewType grid_view_;
-private:
   const MapperType mapper_;
   const std::unique_ptr< CommunicatorType > communicator_;
 }; // class Default< ..., 1, 1 >

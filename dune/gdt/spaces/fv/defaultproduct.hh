@@ -12,8 +12,6 @@
 
 #include <dune/gdt/mapper/default/productfv.hh>
 
-#include <dune/gdt/spaces/productinterface.hh>
-
 #include "default.hh"
 #include "interface.hh"
 
@@ -73,6 +71,7 @@ class DefaultProductTraits
 public:
   typedef DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   using typename BaseType::GridViewType;
+  using typename BaseType::EntityType;
   static const size_t dimDomain = GridViewType::dimension;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
@@ -88,37 +87,39 @@ public:
 
 template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >
-  : public Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
-  , public Dune::GDT::ProductSpaceInterface< internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >
+  : public Dune::GDT::Spaces::ProductFVInterface< internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >
 {
   typedef DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >                          ThisType;
-  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >                                 BaseType;
-  typedef typename Dune::GDT::ProductSpaceInterface<
-      internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >            ProductInterfaceType;
+  typedef Dune::GDT::Spaces::ProductFVInterface
+        < internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > >        BaseType;
 public:
-  typedef typename internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 > Traits;
-  // We need all these using declarations because DefaultProduct is derived from two versions of SpaceInterface with
-  // different Traits. Removing these results in an "ambiguous name lookup" compiler error.
+  using typename BaseType::Traits;
   using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
   using typename BaseType::EntityType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::DomainFieldType;
   using typename BaseType::BaseFunctionSetType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
+  using typename BaseType::RangeFieldType;
+private:
+  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+public:
+  using typename BaseType::CommunicatorType;
   typedef typename Traits::FactorMapperType FactorMapperType;
   typedef typename Traits::SpaceTupleType   SpaceTupleType;
   typedef typename Traits::FactorSpaceType  FactorSpaceType;
 
   DefaultProduct(GridViewType gv)
-    : BaseType(gv)
+    : grid_view_(gv)
+    , mapper_(grid_view_)
+    , communicator_(CommunicationChooserType::create(grid_view_))
     , factor_space_(grid_view_)
     , factor_mapper_(grid_view_)
   {}
 
   DefaultProduct(const ThisType& other)
-    : BaseType(other)
+    : grid_view_(other.grid_view_)
+    , mapper_(other.mapper_)
+    , communicator_(CommunicationChooserType::create(grid_view_))
     , factor_space_(other.factor_space_)
     , factor_mapper_(other.factor_mapper_)
   {}
@@ -128,12 +129,6 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
 
   ThisType& operator=(ThisType&& source) = delete;
-
-  using BaseType::grid_view;
-  using BaseType::backend;
-  using BaseType::mapper;
-  using BaseType::base_function_set;
-  using BaseType::communicator;
 
   const FactorMapperType& factor_mapper() const
   {
@@ -146,10 +141,38 @@ public:
     return factor_space_;
   }
 
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
+  }
+
+  const BackendType& backend() const
+  {
+    return grid_view_.indexSet();
+  }
+
+  const MapperType& mapper() const
+  {
+    return mapper_;
+  }
+
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  {
+    return BaseFunctionSetType(entity);
+  }
+
+  CommunicatorType& communicator() const
+  {
+    // no need to prepare the communicator, since we are not pdelab based
+    return *communicator_;
+  }
+
 private:
-    using BaseType::grid_view_;
-    const FactorSpaceType factor_space_;
-    const FactorMapperType factor_mapper_;
+  const GridViewType grid_view_;
+  const MapperType mapper_;
+  const std::unique_ptr< CommunicatorType > communicator_;
+  const FactorSpaceType factor_space_;
+  const FactorMapperType factor_mapper_;
 }; // class DefaultProduct< ..., 1 >
 
 

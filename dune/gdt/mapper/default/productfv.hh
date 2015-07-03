@@ -84,7 +84,7 @@ public:
   {
     if (ret.size() < dimRange)
       ret.resize(dimRange);
-    const size_t base = dimRange * backend_.index(entity);
+    const size_t base = dimRange*(backend_.index(entity));
     for (size_t ii = 0; ii < dimRange; ++ii)
       ret[ii] = base + ii;
   } // ... globalIndices(...)
@@ -96,7 +96,7 @@ public:
     assert(factor_index < dimRange);
     if (ret.size() < 1)
       ret.resize(1);
-    const size_t base = dimRange * backend_.index(entity);
+    const size_t base = dimRange*(backend_.index(entity));
       ret[0] = base + factor_index;
   } // ... globalIndices(...)
 
@@ -110,14 +110,14 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     assert(localIndex < numDofs(entity));
-    return (dimRange * backend_.index(entity)) + localIndex;
+    return (dimRange*(backend_.index(entity))) + localIndex;
   }
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
   {
     assert(localIndex == 0);
     assert(factor_index < numDofs(entity));
-    return (dimRange * backend_.index(entity)) + factor_index;
+    return (dimRange*(backend_.index(entity))) + factor_index;
   }
 
 private:

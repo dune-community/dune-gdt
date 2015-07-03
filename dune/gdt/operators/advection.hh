@@ -488,7 +488,7 @@ public:
   }
 
   template< class SourceType, class RangeType >
-  void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool = false, const double = 0) const
+  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
     typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
