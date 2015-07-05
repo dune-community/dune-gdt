@@ -320,6 +320,48 @@ private:
 
 }; // class LocalFaceFVAssemblerWrapper
 
+template< class AssemblerType, class LocalEvaluationAssembler, class SourceSpaceType, class FVSpaceType, class VectorType >
+class LocalEvaluationAssemblerWrapper
+  : public Stuff::Grid::internal::Codim0Object< typename AssemblerType::GridViewType >
+  , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
+{
+  typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+public:
+  typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
+  typedef typename Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType > DiscreteSourceFunctionType;
+  typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >     DiscreteFunctionType;
+
+  LocalEvaluationAssemblerWrapper(const DiscreteSourceFunctionType& discreteFunction,
+                                  DiscreteFunctionType& discreteFunctionUpdate,
+                                  const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType >* where,
+                                  const LocalEvaluationAssembler& localAssembler)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, DiscreteFunctionType::dimRange)
+    , where_(where)
+    , localAssembler_(localAssembler)
+    , discreteFunction_(discreteFunction)
+    , discreteFunctionUpdate_(discreteFunctionUpdate)
+  {}
+
+  virtual ~LocalEvaluationAssemblerWrapper() {}
+
+  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
+                        const typename AssemblerType::EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
+  {
+    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, entity, this->matrices());
+  }
+
+private:
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const LocalEvaluationAssembler& localAssembler_;
+  const DiscreteSourceFunctionType& discreteFunction_;
+  DiscreteFunctionType& discreteFunctionUpdate_;
+
+}; // class LocalEvaluationAssemblerWrapper
 } // namespace internal
 } // namespace GDT
 } // namespace Dune

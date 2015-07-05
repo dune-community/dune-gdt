@@ -9,6 +9,8 @@
 #include <memory>
 #include <type_traits>
 
+# include <dune/grid/utility/partitioning/ranged.hh>
+
 #include <dune/stuff/aliases.hh>
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/common/string.hh>
@@ -62,6 +64,12 @@ class AdvectionGodunovWithReconstructionLocalizable;
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
 class AdvectionGodunovWithReconstruction;
+
+template< class SourceFunctionImp, class SourceImp, class RangeImp >
+class AdvectionSourceLocalizable;
+
+template< class SourceFunctionImp, class FVSpaceImp >
+class AdvectionSource;
 
 
 namespace internal {
@@ -186,6 +194,29 @@ public:
                                               FVSpaceImp,
                                               slopeLimiter > derived_type;
 }; // class AdvectionGodunovWithReconstructionTraits
+
+template< class SourceFunctionImp, class SourceImp, class RangeImp >
+class AdvectionSourceLocalizableTraits
+{
+public:
+  typedef AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >  derived_type;
+  typedef SourceFunctionImp                                                     SourceFunctionType;
+  typedef SourceImp                                                             SourceType;
+  typedef RangeImp                                                              RangeType;
+  typedef typename RangeType::SpaceType::GridViewType                           GridViewType;
+  typedef typename GridViewType::ctype                                          FieldType;
+}; // class AdvectionGodunovLocalizableTraits
+
+template< class SourceFunctionImp, class FVSpaceImp >
+class AdvectionSourceTraits
+{
+public:
+  typedef AdvectionSource< SourceFunctionImp, FVSpaceImp >                                      derived_type;
+  typedef SourceFunctionImp                                                                     SourceFunctionType;
+  typedef FVSpaceImp                                                                            FVSpaceType;
+  typedef typename FVSpaceType::GridViewType                                                    GridViewType;
+  typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
+}; // class AdvectionGodunovTraits
 
 
 } // namespace internal
@@ -1093,6 +1124,135 @@ private:
   const FVSpaceType& fv_space_;
   const bool is_linear_;
 }; // class AdvectionGodunovWithReconstruction
+
+
+
+template< class SourceFunctionImp, class SourceImp, class RangeImp >
+class AdvectionSourceLocalizable
+  : public Dune::GDT::LocalizableOperatorInterface<
+                             internal::AdvectionSourceLocalizableTraits< SourceFunctionImp,
+                                                                         SourceImp,
+                                                                         RangeImp > >
+  , public SystemAssembler< typename RangeImp::SpaceType >
+{
+  typedef Dune::GDT::LocalizableOperatorInterface
+   < internal::AdvectionSourceLocalizableTraits< SourceFunctionImp, SourceImp, RangeImp > >   OperatorBaseType;
+  typedef SystemAssembler< typename RangeImp::SpaceType >                                     AssemblerBaseType;
+public:
+  typedef internal::AdvectionSourceLocalizableTraits< SourceFunctionImp,
+                                                      SourceImp,
+                                                      RangeImp >                              Traits;
+
+  typedef typename Traits::GridViewType                                                       GridViewType;
+  typedef typename Traits::SourceType                                                         SourceType;
+  typedef typename Traits::RangeType                                                          RangeType;
+  typedef typename Traits::SourceFunctionType                                                 SourceFunctionType;
+
+  typedef typename Dune::GDT::LocalEvaluation::Godunov::SourceEvaluation< SourceFunctionType >  LocalEvaluationType;
+  typedef typename Dune::GDT::LocalOperator::Codim0Evaluation< LocalEvaluationType >                LocalOperatorType;
+  typedef typename LocalAssembler::Codim0Evaluation< LocalOperatorType >                            LocalAssemblerType;
+
+  AdvectionSourceLocalizable(const SourceFunctionType& source_function,
+                             const SourceType& source,
+                             RangeType& range)
+    : OperatorBaseType()
+    , AssemblerBaseType(range.space())
+    , local_operator_(source_function)
+    , local_assembler_(local_operator_)
+    , source_(source)
+    , range_(range)
+  {}
+
+  const GridViewType& grid_view() const
+  {
+    return range_.space().grid_view();
+  }
+
+  const SourceType& source() const
+  {
+    return source_;
+  }
+
+  const RangeType& range() const
+  {
+    return range_;
+  }
+
+  RangeType& range()
+  {
+    return range_;
+  }
+
+using AssemblerBaseType::add;
+using AssemblerBaseType::assemble;
+
+  void apply()
+  {
+    if (!partitioned_) {
+      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                  * DS::threadManager().current_threads();
+      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
+      partitioned_ = true;
+    }
+    this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
+    this->assemble(*partitioning_);
+  }
+
+private:
+  const LocalOperatorType local_operator_;
+  const LocalAssemblerType local_assembler_;
+  const SourceType& source_;
+  RangeType& range_;
+  static bool partitioned_;
+  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
+}; // class AdvectionSourceLocalizable
+
+template< class SourceFunctionImp, class SourceImp, class RangeImp >
+bool
+AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitioned_(false);
+
+template< class SourceFunctionImp, class SourceImp, class RangeImp >
+std::unique_ptr< RangedPartitioning< typename AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::GridViewType, 0 > >
+AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitioning_;
+
+template< class SourceFunctionImp, class FVSpaceImp >
+class AdvectionSource
+  : public Dune::GDT::OperatorInterface< internal::AdvectionSourceTraits< SourceFunctionImp,
+                                                                          FVSpaceImp > >
+{
+  typedef Dune::GDT::OperatorInterface< internal::AdvectionSourceTraits<  SourceFunctionImp,
+                                                                          FVSpaceImp > >      OperatorBaseType;
+
+public:
+  typedef internal::AdvectionSourceTraits< SourceFunctionImp,
+                                           FVSpaceImp >           Traits;
+  typedef typename Traits::GridViewType                           GridViewType;
+  typedef typename Traits::SourceFunctionType                     SourceFunctionType;
+  typedef typename Traits::FVSpaceType                            FVSpaceType;
+
+  AdvectionSource(const SourceFunctionType& source_function,
+                  const FVSpaceType& fv_space)
+    : OperatorBaseType()
+    , source_function_(source_function)
+    , fv_space_(fv_space)
+  {}
+
+  const GridViewType& grid_view() const
+  {
+    return fv_space_.grid_view();
+  }
+
+  template< class SourceType, class RangeType >
+  void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
+  {
+    AdvectionSourceLocalizable< SourceFunctionType, SourceType, RangeType > localizable_operator(source_function_, source, range);
+    localizable_operator.apply();
+  }
+
+private:
+  const SourceFunctionType& source_function_;
+  const FVSpaceType& fv_space_;
+}; // class AdvectionSource
 
 
 } // namespace Operators

@@ -31,6 +31,9 @@ namespace LocalOperator {
 template< class BinaryEvaluationImp >
 class Codim0Integral;
 
+template< class EvaluationImp >
+class Codim0Evaluation;
+
 
 namespace internal {
 
@@ -43,6 +46,18 @@ class Codim0IntegralTraits
                 "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
 public:
   typedef Codim0Integral< BinaryEvaluationImp > derived_type;
+};
+
+template< class EvaluationImp >
+class Codim0EvaluationTraits
+{
+  static_assert(std::is_base_of< LocalEvaluation::Codim0Interface< typename EvaluationImp::Traits, 1 >,
+                                 EvaluationImp >::value,
+                "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
+public:
+  typedef Codim0Evaluation< EvaluationImp > derived_type;
+  static const size_t dimDomain = EvaluationImp::dimDomain;
+  static const size_t dimRange = EvaluationImp::dimRange;
 };
 
 
@@ -130,6 +145,49 @@ private:
   const size_t over_integrate_;
 }; // class Codim0Integral
 
+template< class EvaluationImp >
+class Codim0Evaluation
+  : public LocalOperator::Codim0Interface< internal::Codim0EvaluationTraits< EvaluationImp > >
+{
+public:
+  typedef internal::Codim0EvaluationTraits< EvaluationImp >       Traits;
+  typedef EvaluationImp                                           EvaluationType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+
+private:
+  static const size_t numTmpObjectsRequired_ = 0;
+
+public:
+  template< class... Args >
+  explicit Codim0Evaluation(Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+  {}
+
+  size_t numTmpObjectsRequired() const
+  {
+    return numTmpObjectsRequired_;
+  }
+
+  template< class E, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
+  void apply(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& /*testBase*/,
+             const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase,
+             Dune::DynamicMatrix< R >& ret,
+             std::vector< Dune::DynamicMatrix< R > >& /*tmpLocalMatrices*/) const
+  {
+    const auto& entity = ansatzBase.entity();
+    const auto localFunctions = evaluation_.localFunctions(entity);
+    const auto localPoint = entity.geometry().local(entity.geometry().center());
+    // check matrix and tmp storage
+    ret *= 0.0;
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= dimRange);
+    evaluation_.evaluate(localFunctions, ansatzBase, localPoint, ret[0]);
+  } // ... apply(...)
+
+private:
+  const EvaluationType evaluation_;
+}; // class Codim0Evaluation
 
 } // namespace LocalOperator
 } // namespace GDT
