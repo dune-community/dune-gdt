@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
 #define DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
 
+#include <algorithm>
+
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
 
@@ -88,7 +90,7 @@ public:
   virtual void evaluate(const DomainType& /*xx*/, std::vector< RangeType >& ret) const override final
   {
     assert(ret.size() >= 0);
-    ret[0] = 1.0;
+    ret[0] = RangeFieldImp(1.0);
   }
 
   using BaseType::evaluate;
@@ -96,7 +98,7 @@ public:
   virtual void jacobian(const DomainType& /*xx*/, std::vector< JacobianRangeType >& ret) const override final
   {
     assert(ret.size() >= 0);
-    ret[0] *= 0.0;
+    ret[0] = JacobianRangeType(0);
   }
 
   using BaseType::jacobian;
@@ -153,8 +155,8 @@ public:
   virtual void evaluate(const DomainType& /*xx*/, std::vector< RangeType >& ret) const override final
   {
     assert(ret.size() >= dimRange);
+    std::fill(ret.begin(), ret.end(), RangeType(0));
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      ret[ii] *= 0.0;
       ret[ii][ii] = 1.0;
     }
   } // ... evaluate(...)
@@ -164,8 +166,7 @@ public:
   virtual void jacobian(const DomainType& /*xx*/, std::vector< JacobianRangeType >& ret) const override final
   {
     assert(ret.size() >= dimRange);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      ret[ii] *= 0.0;
+    std::fill(ret.begin(), ret.end(), JacobianRangeType(0));
   } // ... jacobian(...)
 
   using BaseType::jacobian;
