@@ -461,7 +461,17 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+    if (!partitioned_) {
+      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                  * DS::threadManager().current_threads();
+      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
+      partitioned_ = true;
+    }
+    this->assemble(*partitioning_);
+#else
     this->assemble();
+#endif
   }
 
 private:
@@ -471,9 +481,21 @@ private:
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+  static bool partitioned_;
+  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
 }; // class AdvectionGodunovLocalizable
 
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+bool
+AdvectionGodunovLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioned_(false);
 
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+std::unique_ptr< RangedPartitioning< typename AdvectionGodunovLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::GridViewType, 0 > >
+AdvectionGodunovLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioning_;
+#else
+}; // class AdvectionGodunovLocalizable
+#endif
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueImp, class FVSpaceImp >
 class AdvectionGodunov
@@ -1188,14 +1210,18 @@ using AssemblerBaseType::assemble;
 
   void apply()
   {
+    this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
     if (!partitioned_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
       partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
       partitioned_ = true;
     }
-    this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
     this->assemble(*partitioning_);
+#else
+    this->assemble();
+#endif
   }
 
 private:
@@ -1203,6 +1229,7 @@ private:
   const LocalAssemblerType local_assembler_;
   const SourceType& source_;
   RangeType& range_;
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
   static bool partitioned_;
   static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
 }; // class AdvectionSourceLocalizable
@@ -1214,6 +1241,9 @@ AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitione
 template< class SourceFunctionImp, class SourceImp, class RangeImp >
 std::unique_ptr< RangedPartitioning< typename AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::GridViewType, 0 > >
 AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitioning_;
+#else
+}; // class AdvectionSourceLocalizable
+#endif
 
 template< class SourceFunctionImp, class FVSpaceImp >
 class AdvectionSource
