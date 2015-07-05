@@ -288,12 +288,11 @@ public:
                               DiscreteFunctionType& discreteFunctionUpdate,
       const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType >* where,
                               const LocalFaceFVAssembler& localAssembler)
-    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, 1)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, DiscreteFunctionType::dimRange)
     , where_(where)
     , localAssembler_(localAssembler)
     , discreteFunction_(discreteFunction)
     , discreteFunctionUpdate_(discreteFunctionUpdate)
-    , updateMatrix_(1, discreteFunction.space().dimRange)
   {}
 
   virtual ~LocalFaceFVAssemblerWrapper() {}
@@ -308,7 +307,7 @@ public:
                            const typename AssemblerType::EntityType& /*inside_entity*/,
                            const typename AssemblerType::EntityType& /*outside_entity*/) override final
   {
-    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, intersection, updateMatrix_, this->matrices());
+    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, intersection, this->matrices());
   }
 
 private:
@@ -316,8 +315,6 @@ private:
   const LocalFaceFVAssembler& localAssembler_;
   const DiscreteSourceFunctionType& discreteFunction_;
   DiscreteFunctionType& discreteFunctionUpdate_;
-  Dune::DynamicMatrix< RangeFieldType > updateMatrix_;
-
 }; // class LocalFaceFVAssemblerWrapper
 
 template< class AssemblerType, class LocalEvaluationAssembler, class SourceSpaceType, class FVSpaceType, class VectorType >
@@ -362,6 +359,7 @@ private:
   DiscreteFunctionType& discreteFunctionUpdate_;
 
 }; // class LocalEvaluationAssemblerWrapper
+
 } // namespace internal
 } // namespace GDT
 } // namespace Dune

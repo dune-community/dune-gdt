@@ -570,16 +570,14 @@ public:
   void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
                      Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
                      const IntersectionType& intersection,
-                     Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
   {
     // check
-    const size_t dimRange = discreteFunction.space().dimRange;
+    auto& local_operator_result = tmpLocalMatrices[0][0];
+    auto& tmp_matrices          = tmpLocalMatrices[1];
     assert(intersection.neighbor());
-    assert(updateMatrix.cols() >= dimRange);
-    assert(updateMatrix.rows() >= 1);
-    //clear matrix
-    updateMatrix *= 0.0;
+    //set first row of matrix local_operator_result to zero
+    std::fill(local_operator_result[0].begin(), local_operator_result[0].end(), RangeFieldType(0));
     //get entity and neighbor and local discrete functions
     const auto entityPtr = intersection.inside();
     const auto& entity = *entityPtr;
@@ -591,16 +589,16 @@ public:
     localOperator_.apply(*entityAverage, *entityAverage,
                          *neighborAverage, *neighborAverage,
                          intersection,
-                         updateMatrix,
-                         updateMatrix,
-                         updateMatrix,
-                         updateMatrix,
-                         tmpLocalMatrices[0]);
+                         local_operator_result,
+                         local_operator_result,
+                         local_operator_result,
+                         local_operator_result,
+                         tmp_matrices);
     // write value from updateMatrix to discreteFunctionUpdate
     auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
     auto& local_vector = local_update_entity->vector();
-    for (size_t kk = 0; kk < dimRange; ++kk)
-      local_vector.add(kk, updateMatrix[0][kk]);
+    for (size_t kk = 0; kk < discreteFunctionUpdate.dimRange; ++kk)
+      local_vector.add(kk, local_operator_result[0][kk]);
   } // void assembleLocal(...) const
 
 private:
@@ -638,27 +636,23 @@ public:
   void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
                      Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
                      const IntersectionType& intersection,
-                     Dune::DynamicMatrix< RangeFieldType >& updateMatrix,
                      std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
   {
-    // check
-    const size_t dimRange = discreteFunction.space().dimRange;
-    assert(updateMatrix.rows() >= 1);
-    assert(updateMatrix.cols() >= dimRange);
-//    assert(discreteFunction.vector().size() == discreteFunctionUpdate.vector().size());
-    //clear matrix
-    updateMatrix *= 0.0;
+    auto& local_operator_result = tmpLocalMatrices[0][0];
+    auto& tmp_matrices          = tmpLocalMatrices[1];
+    //set first row of matrix local_operator_result to zero
+    std::fill(local_operator_result[0].begin(), local_operator_result[0].end(), RangeFieldType(0));
     //get entity and neighbor and local discrete functions
     const auto entityPtr = intersection.inside();
     const auto& entity = *entityPtr;
     const auto entityAverage = discreteFunction.local_discrete_function(entity);
     // apply local operator (results are in local*Matrix)
-    localOperator_.apply(*entityAverage, *entityAverage, intersection, updateMatrix, tmpLocalMatrices[0]);
+    localOperator_.apply(*entityAverage, *entityAverage, intersection, local_operator_result, tmp_matrices);
     // write value from updateMatrix to discreteFunctionUpdate
     auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
     auto& local_vector = local_update_entity->vector();
-    for (size_t kk = 0; kk < dimRange; ++kk)
-      local_vector.add(kk, updateMatrix[0][kk]);
+    for (size_t kk = 0; kk < discreteFunctionUpdate.dimRange; ++kk)
+      local_vector.add(kk, local_operator_result[0][kk]);
   } // void assembleLocal(...) const
 
 private:

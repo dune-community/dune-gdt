@@ -373,15 +373,8 @@ public:
     assert(entityAverage.size() == 1);
     assert(neighborAverage.size() == 1);
     // check matrices, set ignored matrices to 0
-    assert(entityEntityRet.rows() >= 1);
-    assert(entityEntityRet.cols() >= 1);
-    assert(neighborNeighborRet.rows() >= 1);
-    assert(neighborNeighborRet.cols() >= 1);
     assert(entityNeighborRet.cols() >= dimRange);
     assert(entityNeighborRet.rows() >= 1);
-    assert(neighborEntityRet.rows() >= 1);
-    assert(neighborEntityRet.cols() >= 1);
-    assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
     // get entities and local functions
     const auto& entity = entityAverage.entity();
     const auto localFunctionsEn = flux_.localFunctions(entity);
