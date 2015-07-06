@@ -875,7 +875,7 @@ public:
 
     void calculate_jacobians(EigenMatrixType& jacobian) const
     {
-  #if HAVE_EIGEN
+#if HAVE_EIGEN
       EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
       EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
       diag_jacobian_pos_tmp.scal(RangeFieldType(0));
@@ -912,9 +912,9 @@ public:
       jacobian_pos_function_ = DSC::make_unique< AffineFunctionType >(jacobian_pos_, RangeType(0), true);
 # endif
       }
-  #else
+#else
       static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-  #endif
+#endif
     } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
@@ -1009,7 +1009,6 @@ public:
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
-//    RangeType fieldvector_ret = local_source_function[0]->evaluate(localPoint, testBase.evaluate(localPoint)[0]);
     ret = std::get< 0 >(local_source_function)->evaluate(localPoint, entityAverage.evaluate(localPoint)[0]);
   }
 
