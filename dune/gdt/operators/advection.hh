@@ -22,6 +22,7 @@
 
 #include <dune/stuff/aliases.hh>
 #include <dune/stuff/common/memory.hh>
+#include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/expression.hh>
@@ -34,7 +35,9 @@
 #include <dune/gdt/localevaluation/godunov.hh>
 #include <dune/gdt/localevaluation/laxfriedrichs.hh>
 #include <dune/gdt/localevaluation/laxwendroff.hh>
+#include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
+#include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -970,9 +973,13 @@ public:
 #endif
       first_run_ = false;
     }
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning_->partitions());
     Body< RangedPartitioning< GridViewType, 0 >, ThisType > body(*this);
     tbb::parallel_reduce(blocked_range, body);
+#else
+    reconstruct_linear(DSC::EntityRange< GridViewType >(grid_view_));
+#endif
   }
 
   const GridViewType& grid_view() const
@@ -1041,7 +1048,6 @@ private:
 
     AdvectionOperator& advection_operator_;
   }; // struct Body
-
 #endif //HAVE_TBB
 
   template< class EntityRange >
@@ -1169,7 +1175,7 @@ private:
 #endif
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
   static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
-}; // class AdvectionLaxWendroffLocalizable
+}; // class AdvectionGodunovWithReconstructionLocalizable
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp, SlopeLimiters slopeLimiter >
 std::unique_ptr< RangedPartitioning< typename AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp, slopeLimiter >::GridViewType, 0 > >
@@ -1299,8 +1305,8 @@ public:
   typedef typename Traits::SourceFunctionType                                                 SourceFunctionType;
 
   typedef typename Dune::GDT::LocalEvaluation::Godunov::SourceEvaluation< SourceFunctionType >  LocalEvaluationType;
-  typedef typename Dune::GDT::LocalOperator::Codim0Evaluation< LocalEvaluationType >                LocalOperatorType;
-  typedef typename LocalAssembler::Codim0Evaluation< LocalOperatorType >                            LocalAssemblerType;
+  typedef typename Dune::GDT::LocalOperator::Codim0Evaluation< LocalEvaluationType >            LocalOperatorType;
+  typedef typename LocalAssembler::Codim0Evaluation< LocalOperatorType >                        LocalAssemblerType;
 
   AdvectionSourceLocalizable(const SourceFunctionType& source_function,
                              const SourceType& source,
