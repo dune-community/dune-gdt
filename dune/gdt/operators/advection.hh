@@ -9,7 +9,16 @@
 #include <memory>
 #include <type_traits>
 
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
 # include <dune/grid/utility/partitioning/ranged.hh>
+# include <dune/stuff/common/parallel/threadmanager.hh>
+#endif
+
+#if HAVE_TBB
+# include <tbb/blocked_range.h>
+# include <tbb/parallel_reduce.h>
+# include <tbb/tbb_stddef.h>
+#endif
 
 #include <dune/stuff/aliases.hh>
 #include <dune/stuff/common/memory.hh>
@@ -305,7 +314,17 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+    if (!partitioned_) {
+      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                  * DS::threadManager().current_threads();
+      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
+      partitioned_ = true;
+    }
+    this->assemble(*partitioning_);
+#else
     this->assemble();
+#endif
   }
 
 private:
@@ -315,7 +334,21 @@ private:
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+  static bool partitioned_;
+  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
 }; // class AdvectionLaxFriedrichsLocalizable
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+bool
+AdvectionLaxFriedrichsLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioned_(false);
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+std::unique_ptr< RangedPartitioning< typename AdvectionLaxFriedrichsLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::GridViewType, 0 > >
+AdvectionLaxFriedrichsLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioning_;
+#else
+}; // class AdvectionLaxFriedrichsLocalizable
+#endif
 
 
 
@@ -645,7 +678,17 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+    if (!partitioned_) {
+      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                  * DS::threadManager().current_threads();
+      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
+      partitioned_ = true;
+    }
+    this->assemble(*partitioning_);
+#else
     this->assemble();
+#endif
   }
 
 private:
@@ -655,7 +698,21 @@ private:
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+  static bool partitioned_;
+  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
 }; // class AdvectionLaxWendroffLocalizable
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+bool
+AdvectionLaxWendroffLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioned_(false);
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
+std::unique_ptr< RangedPartitioning< typename AdvectionLaxWendroffLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::GridViewType, 0 > >
+AdvectionLaxWendroffLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp >::partitioning_;
+#else
+}; // class AdvectionLaxWendroffLocalizable
+#endif
 
 
 
@@ -730,17 +787,17 @@ namespace internal {
 template< SlopeLimiters slopeLimiter, class VectorType >
 struct ChooseLimiter
 {
-  static VectorType limit(const VectorType slope_left,
-                          const VectorType slope_right,
-                          const VectorType centered_slope);
+  static VectorType&& limit(const VectorType& slope_left,
+                            const VectorType& slope_right,
+                            const VectorType& centered_slope);
 };
 
 template< class VectorType >
 struct ChooseLimiter< SlopeLimiters::minmod, VectorType >
 {
-  static VectorType limit(const VectorType slope_left,
-                          const VectorType slope_right,
-                          const VectorType /*centered_slope*/ = VectorType(0))
+  static VectorType&& limit(const VectorType& slope_left,
+                            const VectorType& slope_right,
+                            const VectorType& /*centered_slope*/)
   {
     VectorType ret;
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
@@ -753,23 +810,24 @@ struct ChooseLimiter< SlopeLimiters::minmod, VectorType >
       else
         ret[ii] = 0.0;
     }
-    return ret;
+    return std::move(ret);
   }
 };
 
 template< class VectorType >
 struct ChooseLimiter< SlopeLimiters::superbee, VectorType >
 {
-  static VectorType limit(const VectorType slope_left,
-                          const VectorType slope_right,
-                          const VectorType /*centered_slope*/)
+  static VectorType&& limit(const VectorType& slope_left,
+                            const VectorType& slope_right,
+                            const VectorType& centered_slope)
   {
     typedef ChooseLimiter< SlopeLimiters::minmod, VectorType > MinmodType;
-    return maxmod(MinmodType::limit(slope_left, slope_right*2.0), MinmodType::limit(slope_left*2.0, slope_right));
+    return maxmod(MinmodType::limit(slope_left, slope_right*2.0, centered_slope),
+                  MinmodType::limit(slope_left*2.0, slope_right, centered_slope));
   }
 
-  static VectorType maxmod(const VectorType slope_left,
-                           const VectorType slope_right)
+  static VectorType&& maxmod(const VectorType& slope_left,
+                             const VectorType& slope_right)
   {
     VectorType ret;
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
@@ -782,28 +840,30 @@ struct ChooseLimiter< SlopeLimiters::superbee, VectorType >
       else
         ret[ii] = 0.0;
     }
-    return ret;
+    return std::move(ret);
   }
 };
 
 template< class VectorType >
 struct ChooseLimiter< SlopeLimiters::mc, VectorType >
 {
-  static VectorType limit(const VectorType slope_left,
-                          const VectorType slope_right,
-                          const VectorType centered_slope)
+  static VectorType&& limit(const VectorType& slope_left,
+                            const VectorType& slope_right,
+                            const VectorType& centered_slope)
   {
     typedef ChooseLimiter< SlopeLimiters::minmod, VectorType > MinmodType;
-    return MinmodType::limit(MinmodType::limit(slope_left*2.0, slope_right*2.0), centered_slope);
+    return MinmodType::limit(MinmodType::limit(slope_left*2.0, slope_right*2.0, centered_slope),
+                             centered_slope,
+                             centered_slope);
   }
 };
 
 template< class VectorType >
 struct ChooseLimiter< SlopeLimiters::no_slope, VectorType >
 {
-  static VectorType limit(const VectorType /*slope_left*/,
-                          const VectorType /*slope_right*/,
-                          const VectorType /*centered_slope*/)
+  static VectorType&& limit(const VectorType& /*slope_left*/,
+                            const VectorType& /*slope_right*/,
+                            const VectorType& /*centered_slope*/)
   {
     return VectorType(0);
   }
@@ -832,6 +892,12 @@ class AdvectionGodunovWithReconstructionLocalizable
                                                                                             RangeImp,
                                                                                             slopeLimiter > > OperatorBaseType;
   typedef SystemAssembler< typename RangeImp::SpaceType >                                     AssemblerBaseType;
+  typedef AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp,
+                                                         LocalizableFunctionImp,
+                                                         SourceImp,
+                                                         BoundaryValueImp,
+                                                         RangeImp,
+                                                         slopeLimiter >                     ThisType;
 public:
   typedef internal::AdvectionGodunovWithReconstructionLocalizableTraits< AnalyticalFluxImp,
                                                        LocalizableFunctionImp,
@@ -884,9 +950,10 @@ public:
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , analytical_flux_(analytical_flux)
-    , local_operator_(analytical_flux, dx, dt, is_linear)
+    , is_linear_(is_linear)
+    , local_operator_(analytical_flux, dx, dt, is_linear_)
     , boundary_values_(boundary_values)
-    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values_, is_linear)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values_, is_linear_)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -896,9 +963,16 @@ public:
     if (first_run_) {
       dg_space_ = DSC::make_unique< DGSpaceType >(grid_view_);
       reconstruction_ = DSC::make_unique< ReconstructedDiscreteFunctionType >(*dg_space_, "reconstructed");
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                  * DS::threadManager().current_threads();
+      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
+#endif
       first_run_ = false;
     }
-    reconstruct_linear(is_linear);
+    tbb::blocked_range< std::size_t > blocked_range(0, partitioning_->partitions());
+    Body< RangedPartitioning< GridViewType, 0 >, ThisType > body(*this);
+    tbb::parallel_reduce(blocked_range, body);
   }
 
   const GridViewType& grid_view() const
@@ -929,7 +1003,11 @@ public:
     this->add(inner_assembler_, *reconstruction_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, *reconstruction_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, *reconstruction_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+    this->assemble(*partitioning_);
+#else
     this->assemble();
+#endif
   }
 
   void visualize_reconstruction(const size_t save_counter) {
@@ -937,12 +1015,37 @@ public:
   }
 
 private:
-  void reconstruct_linear(const bool is_linear) {
-    const auto it_end = grid_view_.template end< 0 >();
-    auto it = grid_view_.template begin< 0 >();
-    // create EntityPointers for current entity and two neighbors to the right and left
-    EntityPointerType left_neighbor_ptr(*it);
-    EntityPointerType right_neighbor_ptr(*it);
+#if HAVE_TBB
+  template< class PartioningType, class AdvectionOperator >
+  struct Body
+  {
+    Body(AdvectionOperator& advection_operator)
+      : advection_operator_(advection_operator)
+    {}
+
+    Body(Body& other, tbb::split /*split*/)
+      : advection_operator_(other.advection_operator_)
+    {}
+
+    void operator()(const tbb::blocked_range< std::size_t > &range) const
+    {
+      // for all partitions in tbb-range
+      for(std::size_t p = range.begin(); p != range.end(); ++p) {
+        auto partition = advection_operator_.partitioning_->partition(p);
+        advection_operator_.reconstruct_linear(partition);
+      }
+    }
+
+    void join(Body& /*other*/)
+    {}
+
+    AdvectionOperator& advection_operator_;
+  }; // struct Body
+
+#endif //HAVE_TBB
+
+  template< class EntityRange >
+  void reconstruct_linear(const EntityRange& entity_range) {
     // create vectors to store boundary values on left and right boundary
     typename SourceType::RangeType right_boundary_value;
     typename SourceType::RangeType left_boundary_value;
@@ -950,8 +1053,16 @@ private:
     auto& reconstruction_vector = reconstruction_->vector();
     const auto& reconstruction_mapper = reconstruction_->space().factor_mapper();
     // walk the grid to reconstruct
-    for (; it != it_end; ++it) {
-      const auto& entity = *it;
+#ifdef __INTEL_COMPILER
+    const auto it_end = entity_range.end();
+    for (auto it = entity_range.begin(); it != it_end; ++it) {
+      const EntityType& entity = *it;
+#else
+    for (const EntityType& entity : entity_range) {
+#endif
+      // create EntityPointers for neighbors to the right and left
+      EntityPointerType left_neighbor_ptr(entity);
+      EntityPointerType right_neighbor_ptr(entity);
       bool on_left_boundary(false);
       bool on_right_boundary(false);
       const auto entity_center = entity.geometry().center();
@@ -961,7 +1072,9 @@ private:
         const auto& intersection = *i_it;
         if (intersection.neighbor()) {
           const auto& neighbor = *(intersection.outside());
-          if ((neighbor.geometry().center()[0] < entity_center[0] && !(intersection.boundary())) || (neighbor.geometry().center()[0] > entity_center[0] && intersection.boundary()))
+          const auto neighbor_center = neighbor.geometry().center()[0];
+          const bool boundary = intersection.boundary();
+          if ((neighbor_center < entity_center[0] && !boundary) || (neighbor_center > entity_center[0] && boundary))
             left_neighbor_ptr = EntityPointerType(neighbor);
           else
             right_neighbor_ptr = EntityPointerType(neighbor);
@@ -1000,7 +1113,7 @@ private:
         const EigenMatrixType eigenvectors_inverse(eigen_eigenvectors.inverse().real());
         eigenvectors_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors));
         eigenvectors_inverse_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors_inverse));
-        if (is_linear)
+        if (is_linear_)
           eigenvectors_calculated_ = true;
 #else
         static_assert(AlwaysFalse< bool >::value, "You are missing eigen!");
@@ -1017,8 +1130,9 @@ private:
                                                                     StuffFieldVectorType >::limit(w_slope_left,
                                                                                                   w_slope_right,
                                                                                                   w_centered_slope);
-      const StuffFieldVectorType w_value_left = w_entity - w_slope*RangeFieldType(0.5);
-      const StuffFieldVectorType w_value_right = w_entity + w_slope*RangeFieldType(0.5);
+      const StuffFieldVectorType half_w_slope = w_slope*RangeFieldType(0.5);
+      const StuffFieldVectorType w_value_left = w_entity - half_w_slope;
+      const StuffFieldVectorType w_value_right = w_entity + half_w_slope;
 
       const StuffFieldVectorType reconstructed_value_left(eigenvectors_*w_value_left);
       const StuffFieldVectorType reconstructed_value_right(eigenvectors_*w_value_right);
@@ -1030,10 +1144,11 @@ private:
         reconstruction_vector.set_entry(reconstruction_mapper.mapToGlobal(factor_index, entity, 1),
                                         reconstructed_value_right[factor_index]);
       }
-    }
-  }
+    } // walk entity range
+  } // void reconstruct_linear(...)
 
   const AnalyticalFluxType& analytical_flux_;
+  const bool is_linear_;
   const LocalOperatorType local_operator_;
   const BoundaryValueType boundary_values_;
   const LocalBoundaryOperatorType local_boundary_operator_;
@@ -1048,7 +1163,20 @@ private:
   static StuffFieldMatrixType eigenvectors_;
   static StuffFieldMatrixType eigenvectors_inverse_;
   static bool eigenvectors_calculated_;
+#if HAVE_TBB
+  template< class PartitioningType, class AdvectionOperator >
+  friend struct Body;
+#endif
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
+}; // class AdvectionLaxWendroffLocalizable
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp, SlopeLimiters slopeLimiter >
+std::unique_ptr< RangedPartitioning< typename AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp, slopeLimiter >::GridViewType, 0 > >
+AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxImp, LocalizableFunctionImp, SourceImp, BoundaryValueImp, RangeImp, slopeLimiter >::partitioning_;
+#else
 }; // class AdvectionGodunovWithReconstructionLocalizable
+#endif
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp, SlopeLimiters slopeLimiter >
 bool
