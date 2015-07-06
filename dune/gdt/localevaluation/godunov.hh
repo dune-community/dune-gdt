@@ -18,7 +18,6 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/dynmatrix.hh>
-#include <dune/common/fmatrixev.hh>
 #include <dune/common/typetraits.hh>
 
 #include <dune/grid/yaspgrid.hh>
@@ -1003,13 +1002,20 @@ public:
    *  \tparam rC  dimRangeCols of the testBase
    *  \attention ret is assumed to be zero!
    */
-  template< class R, size_t r, size_t rC >
+  template< class R, size_t rC >
   void evaluate(const LocalfunctionTupleType& local_source_function,
-                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& entityAverage,
+                const Stuff::LocalfunctionSetInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, rC >& entityAverage,
                 const Dune::FieldVector< DomainFieldType, dimDomain >& localPoint,
                 Dune::DynamicVector< R >& ret) const
   {
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
     ret = std::get< 0 >(local_source_function)->evaluate(localPoint, entityAverage.evaluate(localPoint)[0]);
+#else
+    const auto fieldvector_ret = std::get< 0 >(local_source_function)->evaluate(localPoint,
+                                                                                entityAverage.evaluate(localPoint)[0]);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[ii] = fieldvector_ret[ii];
+#endif
   }
 
 private:
