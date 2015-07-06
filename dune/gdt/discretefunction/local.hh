@@ -197,12 +197,12 @@ public:
 
   virtual void evaluate(const DomainType& xx, RangeType& ret) const override final
   {
-    evaluate(xx, ret, GDT::is_fv_space< SpaceType >::value);
+    evaluate(xx, ret, GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value);
   }
 
   virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override final
   {
-    jacobian(xx, ret, GDT::is_fv_space< SpaceType >::value);
+    jacobian(xx, ret, GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value);
   }
 
   void evaluate(const DomainType& xx, RangeType& ret, const bool is_fv) const
@@ -232,8 +232,7 @@ public:
       base_->jacobian(xx, tmpBaseJacobianValues);
       for (size_t ii = 0; ii < localVector_->size(); ++ii)
         ret.axpy(localVector_->get(ii), tmpBaseJacobianValues[ii]);
-    }
-    else {
+    } else {
       ret = JacobianRangeType(0);
     }
   } // ... jacobian(...)

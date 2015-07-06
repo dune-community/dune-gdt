@@ -105,9 +105,18 @@ struct is_fv_space
                           , S >
 {};
 
-
 template< class S >
 struct is_fv_space< S, false >
+  : public std::false_type
+{};
+
+template< class S, bool candidate = internal::is_fv_space_helper< S >::is_candidate >
+struct is_product_fv_space
+  : public std::is_base_of< Spaces::ProductFVInterface< typename S::Traits >, S >
+{};
+
+template< class S >
+struct is_product_fv_space< S, false >
   : public std::false_type
 {};
 
