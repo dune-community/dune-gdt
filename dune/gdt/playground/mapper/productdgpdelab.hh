@@ -86,9 +86,14 @@ public:
   {
     if (ret.size() < numDofs(entity))
       ret.resize(numDofs(entity));
+    const auto factor_num_dofs = factor_mapper_.numDofs(entity);
+    const auto factor_mapper_size = factor_mapper_.size();
+    const auto factor_global_indices = factor_mapper_.globalIndices(entity);
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      for (size_t jj = 0; jj < factor_mapper_.numDofs(entity); ++jj) {
-        ret[ii*factor_mapper_.numDofs(entity)+jj] = factor_mapper_.globalIndices(entity)[jj] + ii*factor_mapper_.size();
+      const auto factor_num_dofs_times_ii = factor_num_dofs*ii;
+      const auto factor_mapper_size_times_ii = factor_mapper_size*ii;
+      for (size_t jj = 0; jj < factor_num_dofs; ++jj) {
+        ret[factor_num_dofs_times_ii + jj] = factor_global_indices[jj] + factor_mapper_size_times_ii;
       }
     }
   } // ... globalIndices(...)
@@ -98,10 +103,13 @@ public:
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
   {
     assert(factor_index < dimRange);
-    if (ret.size() < factor_mapper_.numDofs(entity))
-      ret.resize(factor_mapper_.numDofs(entity));
-    for (size_t jj = 0; jj < factor_mapper_.numDofs(entity); ++jj)
-      ret[jj] = factor_mapper_.globalIndices(entity)[jj] + factor_index*factor_mapper_.size();
+    const auto factor_mapper_num_dofs = factor_mapper_.numDofs(entity);
+    if (ret.size() < factor_mapper_num_dofs)
+      ret.resize(factor_mapper_num_dofs);
+    const auto factor_mapper_size_times_factor_index = factor_mapper_.size()*factor_index;
+    const auto factor_mapper_global_indices = factor_mapper_.globalIndices(entity);
+    for (size_t jj = 0; jj < factor_mapper_num_dofs; ++jj)
+      ret[jj] = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
   } // ... globalIndices(...)
 
   Dune::DynamicVector< size_t > globalIndices(const size_t factor_index, const EntityType& entity) const
@@ -115,18 +123,19 @@ public:
   {
     assert(localIndex < numDofs(entity));
     size_t factor_index = 0;
-    while (localIndex >= factor_mapper_.numDofs(entity)) {
-      localIndex -= factor_mapper_.numDofs(entity);
+    const auto factor_mapper_num_dofs = factor_mapper_.numDofs(entity);
+    while (localIndex >= factor_mapper_num_dofs) {
+      localIndex -= factor_mapper_num_dofs;
       ++factor_index;
     }
-    return factor_mapper_.globalIndices(entity)[localIndex] + factor_index*factor_mapper_.size();
+    return factor_mapper_.mapToGlobal(entity, localIndex) + factor_index*factor_mapper_.size();
   }
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& localIndex) const
   {
     assert(localIndex < factor_mapper_.numDofs(entity));
     assert(factor_index < dimRange);
-    return factor_mapper_.globalIndices(entity)[localIndex] + factor_index*factor_mapper_.size();
+    return factor_mapper_.mapToGlobal(entity, localIndex) + factor_index*factor_mapper_.size();
   }
 
 private:
