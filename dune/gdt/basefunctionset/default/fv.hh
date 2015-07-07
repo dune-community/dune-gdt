@@ -89,7 +89,7 @@ public:
 
   virtual void evaluate(const DomainType& /*xx*/, std::vector< RangeType >& ret) const override final
   {
-    assert(ret.size() >= 0);
+    assert(ret.size() > 0);
     ret[0] = RangeFieldImp(1.0);
   }
 
@@ -97,7 +97,7 @@ public:
 
   virtual void jacobian(const DomainType& /*xx*/, std::vector< JacobianRangeType >& ret) const override final
   {
-    assert(ret.size() >= 0);
+    assert(ret.size() > 0);
     ret[0] = JacobianRangeType(0);
   }
 
