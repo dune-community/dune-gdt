@@ -22,6 +22,8 @@
 # include <dune/grid/alugrid.hh>
 #endif
 
+#include <dune/stuff/test/gtest/gtest.h>
+
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>

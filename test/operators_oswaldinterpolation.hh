@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_OSWALDINTERPOLATION_HH
 #define DUNE_GDT_TEST_OPERATORS_OSWALDINTERPOLATION_HH
 
+#include <dune/stuff/test/gtest/gtest.h>
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/la/container/common.hh>
