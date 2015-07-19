@@ -244,7 +244,7 @@ public:
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
-      entityNeighborRet[kk][0] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j[0] - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
+      entityNeighborRet[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j[0] - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
   } // void evaluate(...) const
 
 private:
@@ -322,8 +322,10 @@ public:
     const auto u_i = ansatzBase.evaluate(intersection_center_local);
     const auto u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
     assert(u_i.size() == 1);
+    std::cout << "before " << std::endl;
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
+    std::cout << "after " << std::endl;
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_j;
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -358,7 +360,7 @@ public:
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[kk][0] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
+      ret[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
   } // void evaluate(...) const
 
 private:
@@ -438,7 +440,7 @@ public:
       vol_intersection = intersection.geometry().volume();
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[kk][0] = (f_u_i[kk] + f_u_i[kk])*n_ij*0.5*vol_intersection;
+      ret[0][kk] = (f_u_i[kk] + f_u_i[kk])*n_ij*0.5*vol_intersection;
   } // void evaluate(...) const
 
 private:
