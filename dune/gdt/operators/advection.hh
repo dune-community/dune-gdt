@@ -275,14 +275,15 @@ public:
 
   AdvectionLaxFriedrichsLocalizable(const AnalyticalFluxType& analytical_flux,
                                     const LocalizableFunctionType& dx,
+                                    const double dt,
                                     const SourceType& source,
                                     const BoundaryValueType& boundary_values,
                                     RangeType& range,
                                     const bool use_local)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
-    , local_operator_(analytical_flux, dx, use_local)
-    , local_boundary_operator_(analytical_flux, dx, boundary_values, use_local)
+    , local_operator_(analytical_flux, dx, dt, use_local)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, use_local)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
@@ -377,12 +378,14 @@ public:
 
   AdvectionLaxFriedrichs(const AnalyticalFluxType& analytical_flux,
                          const LocalizableFunctionType& dx,
+                         const double dt,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
                          const bool use_local = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , dx_(dx)
+    , dt_(dt)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , use_local_(use_local)
@@ -401,13 +404,14 @@ public:
                                        LocalizableFunctionType,
                                        SourceType,
                                        BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, source, current_boundary_values, range, use_local_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, use_local_);
     localizable_operator.apply();
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& dx_;
+  const double dt_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool use_local_;
