@@ -195,16 +195,6 @@ public:
     return base_->order();
   }
 
-//  virtual void evaluate(const DomainType& xx, RangeType& ret) const override final
-//  {
-//    evaluate(xx, ret, GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value);
-//  }
-
-//  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override final
-//  {
-//    jacobian(xx, ret, GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value);
-//  }
-
   void evaluate(const DomainType& xx, RangeType& ret) const override final
   {
     assert(this->is_a_valid_point(xx));
