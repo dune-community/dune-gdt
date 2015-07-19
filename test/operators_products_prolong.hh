@@ -9,6 +9,7 @@
 #include "operators_products_prolong.hh"
 
 #include <dune/stuff/grid/provider.hh>
+#include <dune/stuff/test/gtest/gtest.h>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/discretefunction/default.hh>

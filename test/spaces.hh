@@ -2,6 +2,8 @@
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+#ifndef DUNE_GDT_TEST_SPACES_HH
+#define DUNE_GDT_TEST_SPACES_HH
 
 #ifndef DUNE_GDT_TEST_SPACES_RT_CHECK
 # define DUNE_GDT_TEST_SPACES_RT_CHECK 0
@@ -383,3 +385,5 @@ protected:
   ProviderType grid_provider_;
   SpaceType space_;
 }; // struct SpaceBase
+
+#endif // DUNE_GDT_TEST_SPACES_HH
