@@ -51,6 +51,7 @@ public:
   typedef typename Dune::DynamicMatrix< RangeFieldType >  MatrixType;
   typedef typename Dune::DynamicVector< RangeFieldType >  VectorType;
   typedef typename Dune::DynamicVector< TimeFieldType >   TimeVectorType;
+  typedef typename std::vector< std::pair< TimeFieldType, DiscreteFunctionType > > SolutionType;
 
   /**
    * \brief Constructor for RungeKutta time stepper
@@ -102,8 +103,14 @@ public:
 
   TimeFieldType step(const TimeFieldType dt)
   {
+//      DiscreteFunctionType u_n_copy(u_n_);
       apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
-      apply_RK_scheme(source_operator_,dt, 1.0);       // evaluate source terms d_t u = q(u)
+      apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
+
+      // unsplit method (comment second apply_RK_scheme above and uncomment definition of u_n_copy)
+//      u_intermediate_stages_[0].vector() *= RangeFieldType(0);
+//      source_operator_.apply(u_n_copy, u_intermediate_stages_[0], t_);
+//      u_n_.vector() += u_intermediate_stages_[0].vector()*dt;
 
       t_ += dt;                                        // augment time
 
@@ -136,6 +143,12 @@ public:
     }
   } // void apply_RK_scheme(...)
 
+  void reset()
+  {
+    t_ = 0.0;
+    u_n_.vector() = initial_values_.vector();
+  }
+
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
              const TimeFieldType save_step,
@@ -146,7 +159,7 @@ public:
     size_t time_step_counter = 0;
 
     const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
-    const TimeFieldType output_interval = 0.02;
+    const TimeFieldType output_interval = 0.01;
     TimeFieldType next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
     TimeFieldType next_output_time = t_ + output_interval;
     size_t save_step_counter = 1;
@@ -155,13 +168,13 @@ public:
     solution.clear();
     solution.emplace_back(std::make_pair(t_, u_n_));
 
-    while (t_ < t_end)
+    while (t_ + dt < t_end)
     {
       // do a timestep
       dt = step(dt);
 
       // check if data should be written in this timestep (and write)
-      if (DSC::FloatCmp::ge(t_, next_save_time)) {
+      if (DSC::FloatCmp::ge(t_, next_save_time - 0.0000001)) {
         solution.emplace_back(std::make_pair(t_, u_n_));
         next_save_time += save_interval;
         ++save_step_counter;
@@ -176,6 +189,12 @@ public:
         next_output_time += output_interval;
       }
     } // while (t_ < t_end)
+
+    // do last step s.t. it matches t_end exactly
+    if (!DSC::FloatCmp::ge(t_, t_end - 0.0000001)) {
+      step(t_end - t_);
+      solution.emplace_back(std::make_pair(t_, u_n_));
+    }
   } // ... solve(...)
 
   void solve(const TimeFieldType t_end,
@@ -252,7 +271,7 @@ public:
     return std::make_pair(bool(false), current_dt);
   }
 
-  const std::vector< std::pair< TimeFieldType, DiscreteFunctionType > > solution() const {
+  const SolutionType solution() const {
     return solution_;
   }
 
@@ -269,7 +288,7 @@ private:
   const VectorType c_;
   std::vector< DiscreteFunctionType > u_intermediate_stages_;
   const size_t num_stages_;
-  std::vector< std::pair< TimeFieldType, DiscreteFunctionType > > solution_;
+  SolutionType solution_;
 };
 
 } // namespace TimeStepper
