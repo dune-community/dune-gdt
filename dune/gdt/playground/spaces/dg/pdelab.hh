@@ -20,6 +20,7 @@
 #endif // HAVE_DUNE_PDELAB
 
 #include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/common/unused.hh>
 #include <dune/stuff/la/container/istl.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
@@ -150,7 +151,7 @@ public:
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& DUNE_UNUSED(comm) = this->communicator();
+      const auto& DSC_UNUSED(comm) = this->communicator();
   }
 
   /**
@@ -192,7 +193,7 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard< std::mutex > DUNE_UNUSED(gg)(communicator_mutex_);
+    std::lock_guard< std::mutex > DSC_UNUSED(gg)(communicator_mutex_);
     if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     return *communicator_;
