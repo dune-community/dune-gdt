@@ -35,7 +35,7 @@ protected:
   static const size_t                         dimRange = SpaceType::dimRange;
   typedef Dune::Stuff::Functions::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange > FunctionType;
-  typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_backend >::VectorType VectorType;
+  typedef typename Dune::Stuff::LA::Container< RangeFieldType, Dune::Stuff::LA::default_backend >::VectorType VectorType;
 
 public:
   ProjectionOperatorBase()

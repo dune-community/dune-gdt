@@ -33,7 +33,6 @@ struct ProductBase
   {
     // static tests
     // * of the derived type
-    typedef typename ProductType::Traits        Traits;
     typedef typename ProductType::GridViewType  D_GridViewType;
     typedef typename ProductType::FieldType     D_FieldType;
     // * of the derived type as the interface

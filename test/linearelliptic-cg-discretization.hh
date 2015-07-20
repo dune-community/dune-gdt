@@ -2,6 +2,8 @@
 //   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+#ifndef DUNE_GDT_TEST_LIN_ELL_CG_DISC
+#define DUNE_GDT_TEST_LIN_ELL_CG_DISC
 
 #ifndef THIS_IS_A_BUILDBOT_BUILD
 # define THIS_IS_A_BUILDBOT_BUILD 0
@@ -10,6 +12,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/tests/linearelliptic/eocstudy.hh>
 #include <dune/gdt/tests/linearelliptic/discretizers/cg.hh>
+#include <dune/stuff/test/common.hh>
 
 #include "linearelliptic-testcases.hh"
 
@@ -38,7 +41,8 @@ struct linearelliptic_CG_discretization
                                            typename TestCaseType::ProblemType::RangeFieldType,
                                            1 >                                                 Discretizer;
     Tests::LinearEllipticEocStudy< TestCaseType, Discretizer > eoc_study(test_case);
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 
 }; // linearelliptic_CG_discretization
+#endif // #ifndef DUNE_GDT_TEST_LIN_ELL_CG_DISC
