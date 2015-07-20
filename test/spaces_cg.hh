@@ -67,7 +67,6 @@ struct P1Q1_CG_Space
     std::vector< DomainType > lagrange_points = this->space_.lagrange_points(entity);
     EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
-    typedef typename SpaceType::RangeFieldType RangeFieldType;
     Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
     std::set< size_t > local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
     Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_set(boundary_info,

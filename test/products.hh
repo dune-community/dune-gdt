@@ -74,7 +74,6 @@ struct LocalizableProductBase
   {
     // static tests
     // * of the derived type
-    typedef typename ProductType::Traits        Traits;
     typedef typename ProductType::GridViewType  D_GridViewType;
     typedef typename ProductType::RangeType     D_RangeType;
     typedef typename ProductType::SourceType    D_SourceType;
@@ -127,7 +126,6 @@ struct AssemblableProductBase
   {
     // static tests
     // * of the derived type
-    typedef typename ProductType::Traits          Traits;
     typedef typename ProductType::GridViewType    D_GridViewType;
     typedef typename ProductType::RangeSpaceType  D_RangeSpaceType;
     typedef typename ProductType::SourceSpaceType D_SourceSpaceType;
