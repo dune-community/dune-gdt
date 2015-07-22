@@ -35,15 +35,12 @@ public:
   typedef ProblemImp                         ProblemType;
   typedef typename ProblemType::FunctionType FunctionType;
   typedef typename ProblemType::SolutionType SolutionType;
-private:
-  static_assert(Stuff::is_localizable_function< FunctionType >::value,
-                "ProblemImp::FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
 
 public:
   template< class... Args >
   NonStationaryTestCase(Args&& ...args)
     : EocBaseType(std::forward< Args >(args)...)
-    , zero_("x", "0")
+    , zero_()
   {}
 
   virtual ~NonStationaryTestCase() {}
@@ -65,7 +62,7 @@ public:
     return false;
   }
 
-  virtual const SolutionType& exact_solution() const
+  virtual const std::shared_ptr< const SolutionType > exact_solution() const
   {
     if (provides_exact_solution())
       DUNE_THROW(Stuff::Exceptions::you_have_to_implement_this,
@@ -77,8 +74,8 @@ public:
   }
 
 private:
-  const SolutionType zero_;
-}; // class StationaryTestCase
+  const std::shared_ptr< const SolutionType > zero_;
+}; // class NonStationaryTestCase
 
 
 template< class TestCaseImp, class DiscretizerImp >
@@ -256,7 +253,7 @@ public:
         compute_exact_solution_vector();
         assert(exact_solution_vector_);
         std::unique_ptr< VectorType > difference = DSC::make_unique< VectorType >(*exact_solution_vector_);
-        for (size_t ii = 0; ii < difference->size(); ++ ii) {
+        for (size_t ii = 0; ii < difference->size(); ++ii) {
           assert(DSC::FloatCmp::eq(difference->operator[](ii).first, current_solution_vector_->operator[](ii).first) && "Time steps must be the same");
           difference->operator[](ii).second = difference->operator[](ii).second - current_solution_vector_->operator[](ii).second;
         }
@@ -264,7 +261,7 @@ public:
       } else {
         assert(reference_solution_vector_);
         std::unique_ptr< VectorType > difference = DSC::make_unique< VectorType >(*reference_solution_vector_);
-        for (size_t ii = 0; ii < difference->size(); ++ ii) {
+        for (size_t ii = 0; ii < difference->size(); ++ii) {
           assert(DSC::FloatCmp::eq(difference->operator[](ii).first, current_solution_vector_->operator[](ii).first) && "Time steps must be the same");
           difference->operator[](ii).second = difference->operator[](ii).second - current_solution_vector_->operator[](ii).second;
         }
@@ -312,13 +309,14 @@ protected:
   void compute_exact_solution_vector()
   {
     if (!exact_solution_vector_computed_) {
+      compute_reference_solution();
       const auto exact_solution = test_case_.exact_solution();
       VectorType discrete_exact_solution;
       for (size_t ii = 0; ii < reference_solution_vector_->size(); ++ii) {
         const double time = reference_solution_vector_->operator[](ii).first;
-        const auto exact_solution_at_time = exact_solution.evaluate_at_time(time);
+        const auto exact_solution_at_time = exact_solution->evaluate_at_time(time);
         DiscreteFunctionType discrete_exact_solution_at_time(reference_discretization_->fv_space(), "exact solution at time " + DSC::toString(time));
-        project(exact_solution_at_time, discrete_exact_solution_at_time);
+        project(*exact_solution_at_time, discrete_exact_solution_at_time);
         discrete_exact_solution.emplace_back(std::make_pair(time, discrete_exact_solution_at_time.vector()));
       }
       if (!visualize_prefix_.empty()) {
@@ -327,10 +325,11 @@ protected:
                                                "exact solution");
         for (size_t ii = 0; ii < discrete_exact_solution.size(); ++ii) {
           tmp_discrete_func.vector() = discrete_exact_solution[ii].second;
-          tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_exact" + "_factor_0_" + DSC::toString(ii), false);
+          tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_exact_solution" + "_factor_0_" + DSC::toString(ii), false);
         }
       }
       exact_solution_vector_ = Stuff::Common::make_unique< VectorType >(discrete_exact_solution);
+//      std::cout << "norm: " << compute_norm(test_case_.reference_grid_view(), *exact_solution_vector_, "L1") << std::endl;
       exact_solution_vector_computed_ = true;
     }
   }
@@ -365,7 +364,7 @@ protected:
   std::unique_ptr< VectorType > current_solution_vector_;
   std::unique_ptr< VectorType > exact_solution_vector_;
   const std::string visualize_prefix_;
-}; // class StationaryEocStudy
+}; // class NonStationaryEocStudy
 
 
 } // namespace Tests
