@@ -13,7 +13,6 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/common/static_assert.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/geometry/quadraturerules.hh>
 

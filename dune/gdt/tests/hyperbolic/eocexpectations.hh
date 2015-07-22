@@ -33,7 +33,7 @@ public:
       return 0;
     }
   } // ... rate(...)
-}; // class LinearEllipticEocExpectationsBase
+}; // class HyperbolicEocExpectationsBase
 
 
 } // namespace internal

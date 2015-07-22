@@ -33,7 +33,6 @@ public:
   using typename BaseType::DiscretizationType;
   using typename BaseType::GridViewType;
   using typename BaseType::VectorType;
-public:
 
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
   HyperbolicEocStudy(TestCaseType& test_case,
@@ -52,16 +51,16 @@ public:
   virtual size_t expected_rate(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
-    // specialization of LinearEllipticEocExpectations!
+    // specialization of HyperbolicEocExpectations!
     // For a new TestCaseType you have to add a specialization in a separate object file
     // (see linearelliptic-block-swipdg-expectations_os2014_2daluconform.cxx for example) and adjust the
     // CMakeLists.txt accordingly. For a new polOrder or Discretizer::type add
-    //     template class LinearEllipticEocExpectations< TestCasesType, Discretizer::type, polOrder >;
+    //     template class HyperbolicEocExpectations< TestCasesType, Discretizer::type, GridViewType::dimension >;
     // in the appropriate (existing) object file and implement a specialization for this polOrder and Discretizer::type,
     // if needed!
     //
     // Oh: and do not forget to add
-    //   'extern template class LinearEllipticEocExpectations< ... >'
+    //   'extern template class HyperbolicEocExpectations< ... >'
     // to each test source using these results!
     return HyperbolicEocExpectations< TestCaseType, Discretizer::type, GridViewType::dimension >::rate(type);
   } // ... expected_rate(...)
@@ -90,14 +89,10 @@ public:
           const auto& entity = *it;
           double value = std::abs(function[ii].second[grid_view.indexSet().index(entity)]);
           spatial_integral += value*entity.geometry().volume();
-//          std::cout << "value: " << value <<  "entity.geometry.volume: " << entity.geometry().volume() << std::endl;
         }
-//        const double dt = ii == 0 ? function[ii].first : function[ii].first - function[ii-1].first;
         const double dt = (ii == function.size() - 1) ? function[ii].first - function[ii-1].first : function[ii+1].first - function[ii].first;
         norm += dt*spatial_integral;
-//        std::cout << "dt = " << dt << ", spatial: " << spatial_integral << std::endl;
       }
-//      std::cout << "norm: " << norm << std::endl;
       return norm;
     }
     else {

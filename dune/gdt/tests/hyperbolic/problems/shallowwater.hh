@@ -8,8 +8,6 @@
 
 #include <memory>
 
-#include <dune/common/static_assert.hh>
-
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 

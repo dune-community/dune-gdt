@@ -367,7 +367,7 @@ public:
              Dune::DynamicMatrix< R >& neighborNeighborRet,
              Dune::DynamicMatrix< R >& entityNeighborRet,
              Dune::DynamicMatrix< R >& neighborEntityRet,
-             std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
+             std::vector< Dune::DynamicMatrix< R > >& /*tmpLocalMatrices*/) const
   {
     // check local functions
     assert(entityAverage.size() == 1);

@@ -8,8 +8,6 @@
 
 #include <memory>
 
-#include <dune/common/static_assert.hh>
-
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 
@@ -35,8 +33,9 @@ public:
   using BaseType::dimRange;
   typedef typename Dune::Stuff::Functions::Expression
                 < FluxSourceEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, dimDomain > DefaultFluxType;
-  typedef typename Dune::Stuff::Functions::Expression
-                < EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1 > DefaultFunctionType;
+  typedef typename Dune::Stuff::Functions::ExpressionCheckerboard< EntityImp, DomainFieldImp, dimDomain,
+                                                                   EntityImp, RangeFieldImp, dimDomain,
+                                                                   RangeFieldImp, dimRange, 1 > DefaultFunctionType;
   typedef typename BaseType::BoundaryValueType                                       DefaultBoundaryValueType;
 
   using typename BaseType::FluxType;
@@ -186,7 +185,7 @@ public:
     return 1.0;
   }
 
-  virtual double ratio_dt_dx() const override
+  virtual double CFL() const override
   {
     return 0.5;
   }

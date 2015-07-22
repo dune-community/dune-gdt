@@ -10,8 +10,6 @@
 #include <vector>
 #include <string>
 
-#include <dune/common/static_assert.hh>
-
 #include <dune/stuff/common/fvector.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 
@@ -136,7 +134,7 @@ public:
                boundary_values)
   {}
 
-  virtual double ratio_dt_dx() const override
+  virtual double CFL() const override
   {
     if (dimDomain == 1)
       return 0.5;

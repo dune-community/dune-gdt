@@ -8,9 +8,7 @@
 
 #include <memory>
 #include <vector>
-#include <string>
-
-#include <dune/common/static_assert.hh>
+#include <string>>
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/checkerboard.hh>
