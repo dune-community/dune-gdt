@@ -28,6 +28,9 @@ set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_sgrid
                         test_linearelliptic-cg-discretization_pdelab_istl_sgrid
                         test_linearelliptic-cg-discretization_fem_eigen_sgrid
                         test_linearelliptic-cg-discretization_fem_istl_sgrid
+                        test_linearelliptic-cg-discretization_fem_istl_alugrid
+                        test_linearelliptic-cg-discretization_fem_eigen_alugrid
+                        test_elliptic-swipdg-discretization
     PROPERTIES TIMEOUT 360 )
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
