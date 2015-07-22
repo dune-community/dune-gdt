@@ -336,7 +336,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface
@@ -349,7 +349,7 @@ public:
     const auto local_center_entity = entity.geometry().local(entity.geometry().center());
     const auto& u_i = ansatzBase.evaluate(local_center_entity);
     const auto local_center_intersection = entity.geometry().local(intersection.geometry().center());
-    const auto& u_j = std::get< 1 >(localFunctions)->evaluate(local_center_intersection);
+    const auto& u_j = std::get< 1 >(localFuncs)->evaluate(local_center_intersection);
     assert(u_i.size() == 1);
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
@@ -387,7 +387,7 @@ public:
     if (dimDomain != 1) {
       vol_intersection = intersection.geometry().volume();
     }
-    const RangeFieldType ratio_dt_dx = (std::get< 0 >(localFunctions)->evaluate(local_center_entity)[0])/dt_;
+    const RangeFieldType ratio_dt_dx = (std::get< 0 >(localFuncs)->evaluate(local_center_entity)[0])/dt_;
     for (size_t kk = 0; kk < dimRange; ++kk)
       ret[kk][0] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - jacobian_multiplied[coord][kk]*ratio_dt_dx*0.5*n_ij[coord])*vol_intersection;
   } // void evaluate(...) const

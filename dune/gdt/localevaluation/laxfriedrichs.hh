@@ -309,7 +309,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface
@@ -320,7 +320,7 @@ public:
   {
     const auto intersection_center_local = intersection.geometryInInside().center();
     const auto u_i = ansatzBase.evaluate(intersection_center_local);
-    const auto u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
+    const auto u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
     assert(u_i.size() == 1);
     std::cout << "before " << std::endl;
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
@@ -333,7 +333,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    RangeFieldType max_derivative = std::get< 0 >(localFunctions)->evaluate(intersection_center_local)[0];
+    RangeFieldType max_derivative = std::get< 0 >(localFuncs)->evaluate(intersection_center_local)[0];
     if (use_local_) {
       max_derivative = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);

@@ -112,7 +112,7 @@ public:
 
 
 
-#define PAPERFLUX 1
+#define PAPERFLUX 0
 
 template< class LocalizableFunctionImp, size_t domainDim = LocalizableFunctionImp::dimDomain >
 class Inner
@@ -208,14 +208,14 @@ public:
     size_t coord = 0;
 #ifndef NDEBUG
     size_t num_zeros = 0;
-#endif NDEBUG
+#endif //NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
       if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
       else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
         ++num_zeros;
-#endif NDEBUG
+#endif //NDEBUG
       }
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
@@ -427,11 +427,11 @@ public:
     if (n_ij > 0) {
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_function_->evaluate(u_j - u_i, negative_waves);
-      entityNeighborRet[0] = f_u_i + negative_waves;
+      entityNeighborRet[0] = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_function_->evaluate(u_i - u_j, positive_waves);
-      entityNeighborRet[0] = positive_waves - f_u_i;
+      entityNeighborRet[0] = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
     }
 #endif
   } // void evaluate(...) const
@@ -603,7 +603,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface
@@ -614,7 +614,7 @@ public:
   {
       const auto intersection_center_local = intersection.geometryInInside().center();
       const RangeType u_i = ansatzBase.evaluate(intersection_center_local)[0];
-      const RangeType u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
+      const RangeType u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
       // get flux values
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
       const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j);
@@ -630,14 +630,14 @@ public:
       size_t coord = 0;
   #ifndef NDEBUG
       size_t num_zeros = 0;
-  #endif NDEBUG
+  #endif // NDEBUG
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
           coord = ii;
         else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
   #ifndef NDEBUG
           ++num_zeros;
-  #endif NDEBUG
+  #endif // NDEBUG
         }
         else
           DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
@@ -802,7 +802,7 @@ public:
    *  \attention ret is assumed to be zero!
    */
   template< class IntersectionType, class R >
-  void evaluate(const LocalfunctionTupleType& localFunctions,
+  void evaluate(const LocalfunctionTupleType& localFuncs,
                 const Stuff::LocalfunctionSetInterface
                     < EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& /*testBase*/,
                 const Stuff::LocalfunctionSetInterface
@@ -813,7 +813,7 @@ public:
   {
       const auto intersection_center_local = intersection.geometryInInside().center();
       const RangeType u_i = ansatzBase.evaluate(intersection_center_local)[0];
-      const RangeType u_j = std::get< 1 >(localFunctions)->evaluate(intersection_center_local);
+      const RangeType u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
 
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
         reinitialize_jacobians(u_i, u_j);
@@ -841,11 +841,11 @@ public:
       if (n_ij > 0) {
         RangeType negative_waves(RangeFieldType(0));
         jacobian_neg_function_->evaluate(u_j - u_i, negative_waves);
-        ret[0] = f_u_i + negative_waves;
+        ret[0] = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
       } else {
         RangeType positive_waves(RangeFieldType(0));
         jacobian_pos_function_->evaluate(u_i - u_j, positive_waves);
-        ret[0] = positive_waves - f_u_i;
+        ret[0] = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
       }
   #endif
     }  // void evaluate(...) const
@@ -1009,7 +1009,7 @@ public:
                 Dune::DynamicVector< R >& ret) const
   {
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    ret = std::get< 0 >(local_source_function)->evaluate(localPoint, entityAverage.evaluate(localPoint)[0]);
+    ret = Dune::DynamicVector< R >(std::get< 0 >(local_source_function)->evaluate(localPoint, entityAverage.evaluate(localPoint)[0]));
 #else
     const auto fieldvector_ret = std::get< 0 >(local_source_function)->evaluate(localPoint,
                                                                                 entityAverage.evaluate(localPoint)[0]);
