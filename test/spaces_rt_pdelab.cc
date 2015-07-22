@@ -49,6 +49,6 @@ TYPED_TEST(RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interfa
 
 #else // HAVE_ALUGRID
 
-TYPED_TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface) {}
+//TYPED_TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface) {}
 
 #endif // HAVE_ALUGRID

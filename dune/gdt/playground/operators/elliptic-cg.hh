@@ -146,10 +146,10 @@ public:
 
   EllipticCG(const DiffusionFactorType& diffusion_factor,
              const DiffusionTensorType& diffusion_tensor,
-             const SourceSpaceType& source_space)
-    : StorageBaseType(new MatrixType(source_space.mapper().size(), source_space.mapper().size(), pattern(source_space)))
-    , OperatorBaseType(this->access(), source_space)
-    , AssemblerBaseType(source_space)
+             const SourceSpaceType& source_space_in)
+    : StorageBaseType(new MatrixType(source_space_in.mapper().size(), source_space_in.mapper().size(), pattern(source_space_in)))
+    , OperatorBaseType(this->access(), source_space_in)
+    , AssemblerBaseType(source_space_in)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , local_operator_(diffusion_factor_, diffusion_tensor_)

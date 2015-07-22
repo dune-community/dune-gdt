@@ -98,8 +98,8 @@ public:
                       "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])",
                       ProblemType::default_integration_order,
                       "exact solution",
-                      {{"-8.0*pi*sin(8.0*pi*x[0])",
-                        "-8.0*pi*sin(8.0*pi*x[1])"}})
+                      {"-8.0*pi*sin(8.0*pi*x[0])",
+                        "-8.0*pi*sin(8.0*pi*x[1])"})
   {}
 
   virtual const ProblemType& problem() const override final

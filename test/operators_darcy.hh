@@ -16,10 +16,12 @@
 #include <dune/gdt/products/h1.hh>
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/fv.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/rt.hh>
 
 using namespace Dune;
-using namespace GDT;
+using namespace Dune::GDT;
 
 
 /**
