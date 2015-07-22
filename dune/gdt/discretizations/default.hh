@@ -242,40 +242,37 @@ public:
   void solve(VectorType& solution, const bool is_linear/* = false*/) const
   {
     try {
+      DSC_CONFIG.set("threading.partition_factor", 1, true);
+      // set dimensions
       static const size_t dimDomain = ProblemType::dimDomain;
       static const size_t dimRange = ProblemType::dimRange;
 
-      //get analytical flux and initial values
-      typedef typename ProblemType::FluxType            AnalyticalFluxType;
-      typedef typename ProblemType::SourceType          SourceType;
-      typedef typename ProblemType::FunctionType        FunctionType;
-      typedef typename ProblemType::BoundaryValueType   BoundaryValueType;
-      typedef typename FunctionType::DomainFieldType    DomainFieldType;
-      typedef typename ProblemType::RangeFieldType      RangeFieldType;
-      const std::shared_ptr< const FunctionType > initial_values = problem_.initial_values();
+      //get analytical flux, initial and boundary values
+      typedef typename ProblemType::FluxType              AnalyticalFluxType;
+      typedef typename ProblemType::SourceType            SourceType;
+      typedef typename ProblemType::FunctionType          FunctionType;
+      typedef typename ProblemType::BoundaryValueType     BoundaryValueType;
+      typedef typename FunctionType::DomainFieldType      DomainFieldType;
+      typedef typename ProblemType::RangeFieldType        RangeFieldType;
       const std::shared_ptr< const AnalyticalFluxType > analytical_flux = problem_.flux();
+      const std::shared_ptr< const FunctionType > initial_values = problem_.initial_values();
       const std::shared_ptr< const BoundaryValueType > boundary_values = problem_.boundary_values();
       const std::shared_ptr< const SourceType > source = problem_.source();
 
       // allocate a discrete function for the concentration and another one to temporary store the update in each step
-      DiscreteFunctionType u(fv_space_, "solution");
+      typedef DiscreteFunction< FVSpaceType, Dune::Stuff::LA::CommonDenseVector< RangeFieldType > > FVFunctionType;
+      FVFunctionType u(fv_space_, "solution");
 
       //project initial values
       project(*initial_values, u);
 
       const double t_end = problem_.t_end();
-      const double ratio_dt_dx = problem_.ratio_dt_dx();
+      const double CFL = problem_.CFL();
 
-      //calculate h and then dt from the fixed CFL ratio
+      //calculate dx and choose t_end and initial dt
       Dune::Stuff::Grid::Dimensions< typename FVSpaceType::GridViewType > dimensions(fv_space_.grid_view());
       const double dx = dimensions.entity_width.max();
-      const double dt = ratio_dt_dx*dx;
-      typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 > ConstantFunctionType;
-      ConstantFunctionType dx_function(dx);
-
-      //create operator
-      typedef typename Dune::GDT::Operators::AdvectionGodunov< AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType/*, Operators::SlopeLimiters::mc*/ > OperatorType;
-      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear);
+      double dt = CFL*dx;
 
       //create butcher_array
       // forward euler
@@ -288,13 +285,44 @@ public:
       //    Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]"));
       //    Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::toString(1.0/6.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/6.0) + "]"));
 
+
+
+
+      // define operator types
+      typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
+                                                         DomainFieldType, dimDomain,
+                                                         RangeFieldType, dimRange, 1 >        ConstantFunctionType;
+      typedef typename Dune::GDT::Operators::AdvectionGodunov
+          < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType/*, Dune::GDT::Operators::SlopeLimiters::mc*/ > OperatorType;
+      typedef typename Dune::GDT::Operators::AdvectionSource< SourceType, FVSpaceType > SourceOperatorType;
+      typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, SourceOperatorType, FVFunctionType, double > TimeStepperType;
+
+      // create source operator, is independent of dt
+      SourceOperatorType source_operator(*source, fv_space_);
+
+      //search suitable time step length
+      std::pair< bool, double > dtpair = std::make_pair(bool(false), dt);
+      while (!(dtpair.first)) {
+        ConstantFunctionType dx_function(dx);
+        OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, true);
+        TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);
+        dtpair = timestepper.find_suitable_dt(dt, 2, 500, 1000);
+        dt = dtpair.second;
+      }
+
+      std::cout << "dt/dx = " << dt/dx << std::endl;
+
+      //create advection operator
+      ConstantFunctionType dx_function(dx);
+      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear);
+
       //create timestepper
-      Dune::GDT::TimeStepper::RungeKutta< OperatorType, DiscreteFunctionType, SourceType > timestepper(advection_operator, u, *source, dx, A, b);
+      TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);
 
       // now do the time steps
       std::vector< std::pair< double, DiscreteFunctionType > > solution_as_discrete_function;
 
-      const double saveInterval = t_end/500 > dt ? t_end/500 : dt;
+      const double saveInterval = t_end/1000 > dt ? t_end/1000 : dt;
       timestepper.solve(t_end, dt, saveInterval, solution_as_discrete_function);
       solution.clear();
       const size_t num_time_steps = solution_as_discrete_function.size();
@@ -302,6 +330,7 @@ public:
         StationaryVectorType stationary_vector(solution_as_discrete_function[ii].second.vector());
         solution.emplace_back(std::make_pair(solution_as_discrete_function[ii].first, stationary_vector));
       }
+
     } catch (Dune::Exception& e) {
       std::cerr << "Dune reported: " << e.what() << std::endl;
       std::abort();
