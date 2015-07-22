@@ -276,18 +276,20 @@ public:
   AdvectionLaxFriedrichsLocalizable(const AnalyticalFluxType& analytical_flux,
                                     const LocalizableFunctionType& dx,
                                     const double dt,
-                                    const SourceType& source,
+                                    const SourceType& source_discrete_function,
                                     const BoundaryValueType& boundary_values,
-                                    RangeType& range,
-                                    const bool use_local)
+                                    RangeType& range_discrete_function,
+                                    const bool use_local,
+                                    const bool save_partitioning)
     : OperatorBaseType()
-    , AssemblerBaseType(range.space())
+    , AssemblerBaseType(range_discrete_function.space())
     , local_operator_(analytical_flux, dx, dt, use_local)
     , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, use_local)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
-    , source_(source)
-    , range_(range)
+    , source_(source_discrete_function)
+    , range_(range_discrete_function)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -319,13 +321,16 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    if (!partitioned_) {
+    if (!partitioned_ && save_partitioning_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
       partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
       partitioned_ = true;
     }
-    this->assemble(*partitioning_);
+    if (save_partitioning_)
+      this->assemble(*partitioning_);
+    else
+      this->assemble();
 #else
     this->assemble();
 #endif
@@ -338,6 +343,7 @@ private:
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
+  const bool save_partitioning_;
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
   static bool partitioned_;
   static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
@@ -381,7 +387,8 @@ public:
                          const double dt,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
-                         const bool use_local = false)
+                         const bool use_local = false,
+                         const bool save_partitioning = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , dx_(dx)
@@ -389,6 +396,7 @@ public:
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , use_local_(use_local)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -399,12 +407,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, use_local_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, use_local_, save_partitioning_);
     localizable_operator.apply();
   }
 
@@ -415,6 +423,7 @@ private:
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool use_local_;
+  const bool save_partitioning_;
 }; // class AdvectionLaxFriedrichs
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
@@ -462,7 +471,8 @@ public:
                               const SourceType& source,
                               const BoundaryValueType& boundary_values,
                               RangeType& range,
-                              const bool is_linear)
+                              const bool is_linear,
+                              const bool save_partitioning)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , local_operator_(analytical_flux, dx, dt, is_linear)
@@ -471,6 +481,7 @@ public:
     , boundary_assembler_(local_boundary_operator_)
     , source_(source)
     , range_(range)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -502,13 +513,16 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    if (!partitioned_) {
+    if (!partitioned_ && save_partitioning_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
       partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
       partitioned_ = true;
     }
-    this->assemble(*partitioning_);
+    if (save_partitioning_)
+      this->assemble(*partitioning_);
+    else
+      this->assemble();
 #else
     this->assemble();
 #endif
@@ -521,6 +535,7 @@ private:
   const BoundaryAssemblerType boundary_assembler_;
   const SourceType& source_;
   RangeType& range_;
+  const bool save_partitioning_;
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
   static bool partitioned_;
   static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
@@ -565,7 +580,8 @@ public:
                          const double dt,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
-                         const bool is_linear = false)
+                         const bool is_linear = false,
+                         const bool save_partitioning = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , dx_(dx)
@@ -573,6 +589,7 @@ public:
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
     , is_linear_(is_linear)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -583,12 +600,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_, save_partitioning_);
     localizable_operator.apply();
   }
 
@@ -599,6 +616,7 @@ private:
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
+  const bool save_partitioning_;
 }; // class AdvectionGodunov
 
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class SourceImp, class BoundaryValueImp, class RangeImp >
@@ -953,7 +971,8 @@ public:
                                                 const SourceType& source,
                                                 const BoundaryValueType boundary_values,
                                                 RangeType& range,
-                                                const bool is_linear)
+                                                const bool is_linear,
+                                                const bool save_partitioning)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , analytical_flux_(analytical_flux)
@@ -966,8 +985,9 @@ public:
     , source_(source)
     , range_(range)
     , grid_view_(source.space().grid_view())
+    , save_partitioning_(save_partitioning)
   {
-    if (first_run_) {
+    //if (first_run_) {
       dg_space_ = DSC::make_unique< DGSpaceType >(grid_view_);
       reconstruction_ = DSC::make_unique< ReconstructedDiscreteFunctionType >(*dg_space_, "reconstructed");
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
@@ -976,7 +996,7 @@ public:
       partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
 #endif
       first_run_ = false;
-    }
+    //}
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning_->partitions());
     Body< RangedPartitioning< GridViewType, 0 >, ThisType > body(*this);
@@ -1015,7 +1035,10 @@ public:
     this->add(inner_assembler_, *reconstruction_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, *reconstruction_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    this->assemble(*partitioning_);
+    if (save_partitioning_)
+      this->assemble(*partitioning_);
+    else
+      this->assemble();
 #else
     this->assemble();
 #endif
@@ -1173,6 +1196,7 @@ private:
   static StuffFieldMatrixType eigenvectors_;
   static StuffFieldMatrixType eigenvectors_inverse_;
   static bool eigenvectors_calculated_;
+  const bool save_partitioning_;
 #if HAVE_TBB
   template< class PartitioningType, class AdvectionOperator >
   friend struct Body;
@@ -1237,19 +1261,21 @@ public:
   typedef typename Traits::FVSpaceType                            FVSpaceType;
 
   AdvectionGodunovWithReconstruction(const AnalyticalFluxType& analytical_flux,
-                         const LocalizableFunctionType& dx,
-                         const double dt,
-                         const BoundaryValueType boundary_values,
-                         const FVSpaceType& fv_space,
-                         const bool is_linear = false)
+                                     const LocalizableFunctionType& dx,
+                                     const double dt,
+                                     const BoundaryValueType boundary_values,
+                                     const FVSpaceType& fv_space,
+                                     const bool is_linear = false,
+                                     const bool save_partitioning = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , dx_(dx)
     , dt_(dt)
     , boundary_values_(boundary_values)
-    , current_boundary_values_(boundary_values_.evaluate_at_time(0.0))
+    , current_boundary_values_(*boundary_values_.evaluate_at_time(0.0))
     , fv_space_(fv_space)
     , is_linear_(is_linear)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -1261,13 +1287,13 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool visualize = false, const size_t save_counter = 0) const
   {
-    current_boundary_values_ = boundary_values_.evaluate_at_time(time);
+    current_boundary_values_ = *boundary_values_.evaluate_at_time(time);
     AdvectionGodunovWithReconstructionLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
                                        RangeType,
-                                       slopeLimiter > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values_, range, is_linear_);
+                                       slopeLimiter > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values_, range, is_linear_, save_partitioning_);
     // hack to be able to visualize reconstruction in timestepper
     if (!visualize)
       localizable_operator.apply();
@@ -1283,6 +1309,7 @@ private:
   mutable typename BoundaryValueType::ExpressionFunctionType current_boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
+  const bool save_partitioning_;
 }; // class AdvectionGodunovWithReconstruction
 
 
@@ -1314,13 +1341,15 @@ public:
 
   AdvectionSourceLocalizable(const SourceFunctionType& source_function,
                              const SourceType& source,
-                             RangeType& range)
+                             RangeType& range,
+                             const bool save_partitioning)
     : OperatorBaseType()
     , AssemblerBaseType(range.space())
     , local_operator_(source_function)
     , local_assembler_(local_operator_)
     , source_(source)
     , range_(range)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -1350,13 +1379,16 @@ using AssemblerBaseType::assemble;
   {
     this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-    if (!partitioned_) {
+    if (!partitioned_ && save_partitioning_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
       partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
       partitioned_ = true;
     }
-    this->assemble(*partitioning_);
+    if (save_partitioning_)
+      this->assemble(*partitioning_);
+    else
+      this->assemble();
 #else
     this->assemble();
 #endif
@@ -1367,6 +1399,7 @@ private:
   const LocalAssemblerType local_assembler_;
   const SourceType& source_;
   RangeType& range_;
+  const bool save_partitioning_;
 #if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
   static bool partitioned_;
   static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
@@ -1399,10 +1432,12 @@ public:
   typedef typename Traits::FVSpaceType                            FVSpaceType;
 
   AdvectionSource(const SourceFunctionType& source_function,
-                  const FVSpaceType& fv_space)
+                  const FVSpaceType& fv_space,
+                  const bool save_partitioning = false)
     : OperatorBaseType()
     , source_function_(source_function)
     , fv_space_(fv_space)
+    , save_partitioning_(save_partitioning)
   {}
 
   const GridViewType& grid_view() const
@@ -1413,13 +1448,14 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
   {
-    AdvectionSourceLocalizable< SourceFunctionType, SourceType, RangeType > localizable_operator(source_function_, source, range);
+    AdvectionSourceLocalizable< SourceFunctionType, SourceType, RangeType > localizable_operator(source_function_, source, range, save_partitioning_);
     localizable_operator.apply();
   }
 
 private:
   const SourceFunctionType& source_function_;
   const FVSpaceType& fv_space_;
+  const bool save_partitioning_;
 }; // class AdvectionSource
 
 
