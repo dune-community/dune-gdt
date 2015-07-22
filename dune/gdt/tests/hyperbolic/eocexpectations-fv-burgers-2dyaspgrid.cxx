@@ -5,8 +5,6 @@
 
 #include "config.h"
 
-#if HAVE_ALUGRID
-
 # include <dune/grid/yaspgrid.hh>
 
 # include <dune/gdt/tests/hyperbolic/discretizers/fv.hh>
@@ -50,5 +48,3 @@ template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase< Dune::Yas
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
-
-#endif // HAVE_ALUGRID

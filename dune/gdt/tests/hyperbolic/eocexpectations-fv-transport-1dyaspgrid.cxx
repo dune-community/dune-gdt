@@ -5,14 +5,12 @@
 
 #include "config.h"
 
-#if HAVE_ALUGRID
+#include <dune/grid/yaspgrid.hh>
 
-# include <dune/grid/yaspgrid.hh>
+#include <dune/gdt/tests/hyperbolic/discretizers/fv.hh>
 
-# include <dune/gdt/tests/hyperbolic/discretizers/fv.hh>
-
-# include "problems/transport.hh"
-# include "eocexpectations.hh"
+#include "problems/transport.hh"
+#include "eocexpectations.hh"
 
 
 namespace Dune {
@@ -50,5 +48,3 @@ template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase< Dune::Y
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
-
-#endif // HAVE_ALUGRID
