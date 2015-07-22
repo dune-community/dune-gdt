@@ -10,10 +10,11 @@
 #include <vector>
 #include <string>
 
-#include <dune/common/static_assert.hh>
-
+#include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/global.hh>
+#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/provider/cube.hh>
+#include <dune/stuff/playground/functions/composition.hh>
 
 #include <dune/gdt/tests/nonstationary-eocstudy.hh>
 
@@ -22,6 +23,148 @@
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
+
+template< class EntityImp, class DomainFieldImp, size_t domainDim >
+class PeriodicTransportFunction
+  : public DS::GlobalFunctionInterface< EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1 >
+{
+  typedef DS::GlobalFunctionInterface< EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1 > BaseType;
+  typedef PeriodicTransportFunction< EntityImp, DomainFieldImp, domainDim >      ThisType;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
+
+  using typename BaseType::LocalfunctionType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+
+  static const bool available = true;
+
+  static std::string static_id()
+  {
+    return BaseType::static_id() + ".periodictransport";
+  }
+
+  explicit PeriodicTransportFunction(const DomainType velocity,
+                                     const double t,
+                                     const DomainType lower_left,
+                                     const DomainType upper_right,
+                                     const std::string nm = static_id())
+    : velocity_(velocity)
+    , t_(t)
+    , lower_left_(lower_left)
+    , upper_right_(upper_right)
+    , name_(nm)
+  {}
+
+  PeriodicTransportFunction(const ThisType& other) = default;
+
+  virtual std::string type() const override final
+  {
+    return BaseType::static_id() + ".periodictransport";
+  }
+
+  virtual size_t order() const override final
+  {
+    return 1;
+  }
+
+  virtual void evaluate(const DomainType& x, RangeType& ret) const override final
+  {
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      ret[ii] = x[ii] - velocity_[ii]*t_;
+      if (ret[ii] < lower_left_[ii] || ret[ii] > upper_right_[ii])
+        ret[ii] = ret[ii] - std::floor(ret[ii]);
+    }
+  }
+
+  virtual void jacobian(const DomainType& /*x*/, JacobianRangeType& ret) const override final
+  {
+    ret = JacobianRangeType(1);
+  }
+
+  virtual std::string name() const override final
+  {
+    return name_;
+  }
+
+private:
+  const DomainType velocity_;
+  const double t_;
+  const DomainType lower_left_;
+  const DomainType upper_right_;
+  const std::string name_;
+};
+
+
+template< class LocalizableFunctionType, class GridViewType >
+class TransportSolution
+    : public DS::TimeDependentFunctionInterface
+                      < typename DS::LocalizableFunctionInterface< typename LocalizableFunctionType::EntityType,
+                                                                   typename LocalizableFunctionType::DomainFieldType,
+                                                                   LocalizableFunctionType::dimDomain,
+                                                                   typename LocalizableFunctionType::RangeFieldType,
+                                                                   LocalizableFunctionType::dimRange,
+                                                                   LocalizableFunctionType::dimRangeCols >,
+                        double >
+{
+  typedef typename DS::TimeDependentFunctionInterface
+                            < typename DS::LocalizableFunctionInterface< typename LocalizableFunctionType::EntityType,
+                                                                         typename LocalizableFunctionType::DomainFieldType,
+                                                                         LocalizableFunctionType::dimDomain,
+                                                                         typename LocalizableFunctionType::RangeFieldType,
+                                                                         LocalizableFunctionType::dimRange,
+                                                                         LocalizableFunctionType::dimRangeCols >,
+                              double >                                                                      BaseType;
+  using typename BaseType::TimeIndependentFunctionType;
+  typedef PeriodicTransportFunction< typename LocalizableFunctionType::EntityType,
+                                     typename LocalizableFunctionType::DomainFieldType,
+                                     LocalizableFunctionType::dimDomain >                   DomainTransportFunctionType;
+
+  typedef typename DomainTransportFunctionType::DomainType DomainType;
+
+public:
+  TransportSolution(const LocalizableFunctionType localizable_func,
+                    const GridViewType& grid_view,
+                    const DomainType velocity,
+                    const DomainType lower_left,
+                    const DomainType upper_right)
+    : localizable_func_(localizable_func)
+    , grid_view_(grid_view)
+    , velocity_(velocity)
+    , lower_left_(lower_left)
+    , upper_right_(upper_right)
+  {}
+
+  virtual std::unique_ptr< TimeIndependentFunctionType > evaluate_at_time(const double t) const
+  {
+    DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
+    typedef typename DS::Functions::Composition< DomainTransportFunctionType,
+                                                 LocalizableFunctionType,
+                                                 GridViewType >                 CompositionType;
+    return DSC::make_unique< CompositionType >(x_minus_t, localizable_func_, grid_view_);
+  }
+
+  virtual std::string type() const
+  {
+    return "gdt.transportsolution";
+  }
+
+  virtual std::string name() const
+  {
+    return "gdt.transportsolution";
+  }
+
+private:
+  LocalizableFunctionType localizable_func_;
+  const GridViewType& grid_view_;
+  const DomainType velocity_;
+  const DomainType lower_left_;
+  const DomainType upper_right_;
+};
+
 namespace Problems {
 
 
@@ -96,20 +239,34 @@ public:
     ConfigType flux_config = DefaultFluxType::default_config();
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["variable"] = "u";
-    flux_config["expression"] = "[u[0] u[0] 3*u[0]; 4*u[0] 5*u[0] 6*u[0]; 7*u[0] 8*u[0] 9*u[0]]";
+    if (dimDomain == 1) {
+      flux_config["expression"] = "u[0]";
+      flux_config["gradient"] = "1";
+    } else if (dimDomain == 2) {
+      flux_config["expression"] = "[u[0] 2*u[0]]";
+      flux_config["gradient"] = "[1 0]";
+      flux_config["gradient.1"] = "[2 0]";
+    }
     flux_config["order"] = "1";
-    flux_config["gradient"] = "[1 0 0; 4 0 0; 7 0 0]";
-    flux_config["gradient.0"] = "[1 0 0; 4 0 0; 7 0 0]";
-    flux_config["gradient.1"] = "[1 0 0; 5 0 0; 8 0 0]";
-    flux_config["gradient.2"] = "[3 0 0; 6 0 0; 9 0 0]";
     config.add(flux_config, "flux", true);
-    ConfigType initial_value_config = DefaultFunctionType::default_config();
-    initial_value_config["type"] = DefaultFunctionType::static_id();
-    initial_value_config["variable"] = "x";
+    ConfigType initial_value_config;
+    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
+    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
     if (dimDomain == 1)
-      initial_value_config["expression"] = "[sin(pi*x[0]) sin(pi*x[0]) sin(pi*x[0])]";            // simple sine wave
+      initial_value_config["num_elements"] = "[5]";
     else
-      initial_value_config["expression"] = "[1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))]"; //bump, only in 2D or higher
+      initial_value_config["num_elements"] = "[5 5 1]";
+    initial_value_config["variable"] = "x";
+    initial_value_config["name"] = static_id();
+    if (dimDomain == 1)
+      initial_value_config["values"] = "[0.0 10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2)) 0.0 1.0 0.0]"; //"[0 sin(pi/2+5*pi*(x[0]-0.3))*exp(-(200*(x[0]-0.3)*(x[0]-0.3))) 0 1.0 0.0]";
+    else
+      initial_value_config["values"] = std::string("[0 0 0 0 0 ") +
+                                       std::string( "0 10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2))*10000*((x[1]-0.2)^2)*((x[1]-0.4)^2)*exp(0.02-((x[1]-0.2)^2)-((x[1]-0.4)^2)) 0 0 0 ") +
+                                       std::string( "0 0 0 0 0 ") +
+                                       std::string( "0 0 0 1 0 ") +
+                                       std::string( "0 0 0 0 0]");
+                                       //"[1.0/40.0*exp(1-((2*pi*x[0]-pi)^2)-((2*pi*x[1]-pi)^2))]"; //bump, only in 2D or higher
     initial_value_config["order"] = "10";
     config.add(initial_value_config, "initial_values", true);
     if (sub_name.empty())
@@ -135,12 +292,12 @@ public:
                boundary_values)
   {}
 
-  virtual double ratio_dt_dx() const override
+  virtual double CFL() const override
   {
     if (dimDomain == 1)
       return 0.5;
     else
-      return 0.005;
+      return 0.1;
   }
 
 
@@ -168,26 +325,27 @@ class TransportTestCase
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 public:
-  typedef Problems::Transport< E, D, d, R, r > ProblemType;
+  typedef typename Problems::Transport< E, D, d, R, r > ProblemType;
 private:
-  typedef Tests::NonStationaryTestCase< G, ProblemType > BaseType;
+  typedef typename Dune::GDT::Tests::NonStationaryTestCase< G, ProblemType > BaseType;
 public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
+  using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = 2)
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+    , reference_grid_view_(BaseType::reference_grid_view())
     , problem_()
   {
-    DSC::Configuration solution_config;
-    solution_config["variable"] = "x";
-    if (d == 1)
-      solution_config["expression"] = "[sin(pi*((x[0]-t))]";
-    else
-      solution_config["expression"] = "[1.0/40.0*exp(1-(2*pi*(x[0]-t)-pi)*(2*pi*(x[0]-t)-pi)-(2*pi*(x[1]-t)-pi)*(2*pi*(x[1]-t)-pi))]";
-    solution_config["order"] = "10";
-    solution_config["name"] = "exact_solution";
-    exact_solution_ = SolutionType::create(solution_config);
+    typedef typename DS::Functions::LocalizableWrapper< typename ProblemType::FunctionType > LocalizableInitialValueType;
+    LocalizableInitialValueType localizable_initial_values(*problem_.initial_values());
+    exact_solution_ = std::make_shared< TransportSolution< LocalizableInitialValueType,
+                                                           LevelGridViewType > >(localizable_initial_values,
+                                                                                 reference_grid_view_,
+                                                                                 DSC::fromString< typename DSC::FieldVector< D, d > >("[1.0 2.0]"),
+                                                                                 DSC::fromString< typename DSC::FieldVector< D, d > >(problem_.grid_config()["lower_left"]),
+                                                                                 DSC::fromString< typename DSC::FieldVector< D, d > >(problem_.grid_config()["upper_right"]));
   }
 
   virtual const ProblemType& problem() const override final
@@ -197,12 +355,12 @@ public:
 
   virtual bool provides_exact_solution() const override final
   {
-    return false;
+    return true;
   }
 
-  virtual const SolutionType& exact_solution() const override final
+  virtual const std::shared_ptr< const SolutionType > exact_solution() const override final
   {
-    return *exact_solution_;
+    return std::shared_ptr< const SolutionType >(exact_solution_);
   }
 
   virtual void print_header(std::ostream& out = std::cout) const override final
@@ -225,8 +383,9 @@ public:
   }
 
 private:
+  const LevelGridViewType reference_grid_view_;
   const ProblemType problem_;
-  std::unique_ptr< SolutionType > exact_solution_;
+  std::shared_ptr< const SolutionType > exact_solution_;
 }; // class TransportTestCase
 
 

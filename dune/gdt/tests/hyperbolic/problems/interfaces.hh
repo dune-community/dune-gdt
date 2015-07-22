@@ -37,16 +37,22 @@ public:
 //  we do not have a grid for the range space, but still need an EntityType with dimension dimRange for FluxType and
 //  SourceType, so just choose an arbitrary one
   typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity           FluxSourceEntityType;
-  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType, RangeFieldType, dimRange, RangeFieldType, dimRange, dimDomain > FluxType;
+  typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
+                                                RangeFieldType, dimRange,
+                                                RangeFieldType, dimRange, dimDomain >                   FluxType;
   typedef Dune::Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain,
                                                               FluxSourceEntityType, RangeFieldType, dimRange,
                                                               RangeFieldType, dimRange, 1 >             SourceType;
-  typedef Dune::Stuff::LocalizableFunctionInterface
-      < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >  FunctionType;
+  typedef Dune::Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain,
+                                                              EntityType, DomainFieldType, dimDomain,
+                                                              RangeFieldType, dimRange, 1 >             FunctionType;
   typedef typename Dune::Stuff::Functions::TimeDependentExpression
-                < EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, double > BoundaryValueType;
-  typedef Dune::Stuff::Common::Configuration                                                 ConfigType;
-  typedef BoundaryValueType                                                                  SolutionType;
+                < EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, double >            BoundaryValueType;
+  typedef Dune::Stuff::Common::Configuration                                                            ConfigType;
+  typedef DS::TimeDependentFunctionInterface
+                  < typename DS::LocalizableFunctionInterface < EntityType,
+                                                                DomainFieldType, dimDomain,
+                                                                RangeFieldType, dimRange, 1 > >         SolutionType;
 
   virtual ~ProblemInterface() {}
 
@@ -74,18 +80,12 @@ public:
 
   virtual double t_end() const = 0;
 
-  virtual double ratio_dt_dx() const = 0;
+  virtual double CFL() const = 0;
 
   virtual bool is_linear() const
   {
     return false;
   }
-
-  template< class G >
-  void visualize(/*const GridView< G >& grid_view, std::string filename, other types*/) const
-  {
-    // TODO: implement
-  } // ... visualize(...) const
 
   virtual void report(std::ostream& out, std::string prefix = "") const
   {
