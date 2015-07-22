@@ -183,11 +183,11 @@ public:
       // augment time step counter
       ++time_step_counter;
 
-      // print info about time, timestep size and counter
-      if (DSC::FloatCmp::ge(t_, next_output_time)) {
-        std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
-        next_output_time += output_interval;
-      }
+//      // print info about time, timestep size and counter
+//      if (DSC::FloatCmp::ge(t_, next_output_time)) {
+//        std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
+//        next_output_time += output_interval;
+//      }
     } // while (t_ < t_end)
 
     // do last step s.t. it matches t_end exactly
@@ -215,11 +215,11 @@ public:
   }
 
   template< size_t factor_to_be_visualized = 0 >
-  void visualize_solution() const
+  void visualize_solution(const std::string prefix = "") const
   {
     for (size_t ii = 0; ii < solution_.size(); ++ii) {
       auto& pair = solution_[ii];
-      pair.second.template visualize_factor< factor_to_be_visualized >("factor_"
+      pair.second.template visualize_factor< factor_to_be_visualized >(prefix + "factor_"
                                                                        + DSC::toString(factor_to_be_visualized)
                                                                        + "_" + DSC::toString(ii), true);
     }
