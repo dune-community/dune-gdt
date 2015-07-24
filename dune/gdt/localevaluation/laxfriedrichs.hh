@@ -446,7 +446,7 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
+    const RangeFieldType dx = std::get< 0 >(localFuncs)->evaluate(intersection_center_local)[0];
     RangeFieldType max_derivative = dx/dt_;
     if (use_local_) {
       max_derivative = 0;
