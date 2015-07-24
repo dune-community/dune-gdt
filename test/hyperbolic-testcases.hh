@@ -12,10 +12,10 @@
 #include <dune/gdt/tests/hyperbolic/problems/transport.hh>
 
 
-typedef testing::Types<   Dune::GDT::Hyperbolic::BurgersTestCase< Dune::YaspGrid< 1 > >
-//                        , Dune::GDT::Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 > >
+typedef testing::Types<  /* Dune::GDT::Hyperbolic::BurgersTestCase< Dune::YaspGrid< 1 > >
+                        , Dune::GDT::Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 > >
                         , Dune::GDT::Hyperbolic::TransportTestCase< Dune::YaspGrid< 1 > >
-//                        , Dune::GDT::Hyperbolic::TransportTestCase< Dune::YaspGrid< 2 > >
+                        ,*/  Dune::GDT::Hyperbolic::TransportTestCase< Dune::YaspGrid< 2 > >
                       > YaspGridTestCases;
 
 
