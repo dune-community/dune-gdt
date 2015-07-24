@@ -104,8 +104,8 @@ public:
   TimeFieldType step(const TimeFieldType dt)
   {
 //      DiscreteFunctionType u_n_copy(u_n_);
-      apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
-      apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
+    apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
+    apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
 
       // unsplit method (comment second apply_RK_scheme above and uncomment definition of u_n_copy)
 //      u_intermediate_stages_[0].vector() *= RangeFieldType(0);
@@ -159,7 +159,7 @@ public:
     size_t time_step_counter = 0;
 
     const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
-    const TimeFieldType output_interval = 0.01;
+    const TimeFieldType output_interval = 0.001;
     TimeFieldType next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
     TimeFieldType next_output_time = t_ + output_interval;
     size_t save_step_counter = 1;
@@ -174,7 +174,7 @@ public:
       dt = step(dt);
 
       // check if data should be written in this timestep (and write)
-      if (DSC::FloatCmp::ge(t_, next_save_time - 0.0000001)) {
+      if (DSC::FloatCmp::ge(t_, next_save_time - 1e-10)) {
         solution.emplace_back(std::make_pair(t_, u_n_));
         next_save_time += save_interval;
         ++save_step_counter;
@@ -183,7 +183,7 @@ public:
       // augment time step counter
       ++time_step_counter;
 
-//      // print info about time, timestep size and counter
+      // print info about time, timestep size and counter
 //      if (DSC::FloatCmp::ge(t_, next_output_time)) {
 //        std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
 //        next_output_time += output_interval;
@@ -191,7 +191,7 @@ public:
     } // while (t_ < t_end)
 
     // do last step s.t. it matches t_end exactly
-    if (!DSC::FloatCmp::ge(t_, t_end - 0.0000001)) {
+    if (!DSC::FloatCmp::ge(t_, t_end - 1e-10)) {
       step(t_end - t_);
       solution.emplace_back(std::make_pair(t_, u_n_));
     }
