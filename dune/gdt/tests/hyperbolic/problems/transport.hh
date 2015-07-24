@@ -176,7 +176,15 @@ class Transport
   typedef Default< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim > BaseType;
 
 public:
-  using typename BaseType::DefaultFluxType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::FluxSourceEntityType;
+  typedef typename Dune::Stuff::Functions::Affine< FluxSourceEntityType,
+                                                   RangeFieldImp,
+                                                   dimRange,
+                                                   RangeFieldImp,
+                                                   dimRange,
+                                                   dimDomain >                      DefaultFluxType;
   using typename BaseType::DefaultFunctionType;
   using typename BaseType::DefaultSourceType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -186,9 +194,6 @@ public:
   using typename BaseType::FunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ConfigType;
-
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
 
   static std::string static_id()
   {
@@ -238,16 +243,9 @@ public:
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType flux_config = DefaultFluxType::default_config();
     flux_config["type"] = DefaultFluxType::static_id();
-    flux_config["variable"] = "u";
-    if (dimDomain == 1) {
-      flux_config["expression"] = "u[0]";
-      flux_config["gradient"] = "1";
-    } else if (dimDomain == 2) {
-      flux_config["expression"] = "[u[0] 2*u[0]]";
-      flux_config["gradient"] = "[1 0]";
-      flux_config["gradient.1"] = "[2 0]";
-    }
-    flux_config["order"] = "1";
+    flux_config["A.0"] = "[1]";
+    flux_config["A.1"] = "[2]";
+    flux_config["b"] = "[0 0; 0 0]";
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config;
     initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
