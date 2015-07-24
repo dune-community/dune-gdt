@@ -31,7 +31,7 @@ namespace LaxFriedrichs {
 
 
 // forwards
-template< class LocalizableFunctionImp >
+template< class LocalizableFunctionImp, size_t domainDim >
 class Inner;
 
 template< class LocalizableFunctionImp, class BoundaryValueFunctionImp >
@@ -54,14 +54,14 @@ class InnerTraits
                 "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
 public:
   typedef LocalizableFunctionImp                                    LocalizableFunctionType;
-  typedef Inner< LocalizableFunctionType >                          derived_type;
+  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
+  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
+  typedef Inner< LocalizableFunctionType, dimDomain >               derived_type;
   typedef typename LocalizableFunctionType::EntityType              EntityType;
   typedef typename LocalizableFunctionType::DomainFieldType         DomainFieldType;
   typedef typename LocalizableFunctionType::RangeFieldType          RangeFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType       LocalfunctionType;
   typedef std::tuple< std::shared_ptr< LocalfunctionType > >        LocalfunctionTupleType;
-  static const unsigned int dimDomain = LocalizableFunctionType::dimDomain;
-  static const unsigned int dimRange = LocalizableFunctionType::dimRange;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::YaspGrid< dimRange >::template Codim< 0 >::Entity              FluxSourceEntityType;
   typedef Dune::Stuff::GlobalFunctionInterface< FluxSourceEntityType,
@@ -133,7 +133,7 @@ public:
 /**
  *  \brief  Lax-Friedrichs flux evaluation for inner intersections and periodic boundary intersections.
  */
-template< class LocalizableFunctionImp >
+template< class LocalizableFunctionImp, size_t domainDim = LocalizableFunctionImp::dimDomain >
 class Inner
   : public LocalEvaluation::Codim1Interface< internal::InnerTraits< LocalizableFunctionImp >, 4 >
 {
@@ -204,24 +204,17 @@ public:
   {
     const auto intersection_center_entity = intersection.geometryInInside().center();
     const auto intersection_center_neighbor = intersection.geometryInOutside().center();
-    const std::vector< RangeType > u_i = ansatzBaseEntity.evaluate(intersection_center_entity);
-    const std::vector< RangeType > u_j = ansatzBaseNeighbor.evaluate(intersection_center_neighbor);
-    assert(u_i.size() == 1 && u_j.size() == 1);
-    const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
-    const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j[0]);
-    DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
-    DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_j;
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      f_u_i[ii] = f_u_i_temp[ii];
-      f_u_j[ii] = f_u_j_temp[ii];
-    }
+    const RangeType u_i = ansatzBaseEntity.evaluate(intersection_center_entity)[0];
+    const RangeType u_j = ansatzBaseNeighbor.evaluate(intersection_center_neighbor)[0];
+    const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
+    const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j);
     const auto n_ij = intersection.unitOuterNormal(localPoint);
     const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
-    RangeFieldType max_derivative = dt_/dx;
+    RangeFieldType max_derivative = dx/dt_;
     if (use_local_) {
       max_derivative = 0;
-      const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
-      const auto jacobian_u_j = analytical_flux_.jacobian(u_j[0]);
+      const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
+      const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
       // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
       // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
       for (auto& derivative_i : jacobian_u_i) {
@@ -244,7 +237,7 @@ public:
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
-      entityNeighborRet[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j[0] - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
+      entityNeighborRet[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 + (u_j - u_i)[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
   } // void evaluate(...) const
 
 private:
@@ -253,6 +246,125 @@ private:
   const double dt_;
   const bool use_local_;
 }; // class Inner
+
+/**
+ *  \brief  Lax-Friedrichs flux evaluation for inner intersections and periodic boundary intersections.
+ */
+template< class LocalizableFunctionImp >
+class Inner< LocalizableFunctionImp, 1 >
+  : public LocalEvaluation::Codim1Interface< internal::InnerTraits< LocalizableFunctionImp >, 4 >
+{
+public:
+  typedef internal::InnerTraits< LocalizableFunctionImp >           Traits;
+  typedef typename Traits::LocalizableFunctionType                  LocalizableFunctionType;
+  typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
+  typedef typename Traits::EntityType                               EntityType;
+  typedef typename Traits::DomainFieldType                          DomainFieldType;
+  typedef typename Traits::RangeFieldType                           RangeFieldType;
+  typedef typename Traits::AnalyticalFluxType                       AnalyticalFluxType;
+  typedef typename Traits::FluxRangeType                            FluxRangeType;
+  typedef typename Traits::RangeType                                RangeType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+
+  explicit Inner(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const bool use_local = false)
+    : analytical_flux_(analytical_flux)
+    , dx_(dx)
+    , dt_(dt)
+    , use_local_(use_local)
+  {}
+
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(dx_.local_function(entity));
+  }
+
+  size_t order(const LocalfunctionTupleType& /*localFunctionsEntity*/,
+               const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseEntity*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*ansatzBaseEntity*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*testBaseNeighbor*/,
+               const Stuff::LocalfunctionSetInterface
+                   < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1 >& /*ansatzBaseNeighbor*/) const
+  {
+    DUNE_THROW(NotImplemented, "Not meant to be integrated");
+  }
+
+  /**
+   *  \brief  Computes a quaternary codim 1 evaluation.
+   *  \tparam IntersectionType      A model of Dune::Intersection< ... >
+   *  \tparam R                     RangeFieldType
+   *  \tparam r{T,A}                dimRange of the {testBase*,ansatzBase*}
+   *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
+   *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
+   */
+  template< class IntersectionType >
+  void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
+                const LocalfunctionTupleType& /*localFunctionsNeighbor*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& /*testBaseEntity*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& ansatzBaseEntity,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& /*testBaseNeighbor*/,
+                const Stuff::LocalfunctionSetInterface
+                    < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& ansatzBaseNeighbor,
+                const IntersectionType& intersection,
+                const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& localPoint,
+                Dune::DynamicMatrix< RangeFieldType >& /*entityEntityRet*/,
+                Dune::DynamicMatrix< RangeFieldType >& /*neighborNeighborRet*/,
+                Dune::DynamicMatrix< RangeFieldType >& entityNeighborRet,
+                Dune::DynamicMatrix< RangeFieldType >& /*neighborEntityRet*/) const
+  {
+    const auto intersection_center_entity = intersection.geometryInInside().center();
+    const auto intersection_center_neighbor = intersection.geometryInOutside().center();
+    RangeType u_i = ansatzBaseEntity.evaluate(intersection_center_entity)[0];
+    const RangeType u_j = ansatzBaseNeighbor.evaluate(intersection_center_neighbor)[0];
+
+    const auto n_ij = intersection.unitOuterNormal(localPoint);
+    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
+    RangeFieldType max_derivative = dx/dt_;
+    if (use_local_) {
+      max_derivative = 0;
+      const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
+      const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
+      // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
+      // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
+      for (auto& derivative_i : jacobian_u_i) {
+        if (derivative_i.infinity_norm() > max_derivative) {
+          max_derivative = derivative_i.infinity_norm();
+        }
+      }
+      for (auto& derivative_j : jacobian_u_j) {
+        if (derivative_j.infinity_norm() > max_derivative) {
+          max_derivative = derivative_j.infinity_norm();
+        }
+      }
+    }
+    // entityNeighborRet[0] = 0.5*((f(u_i) + f(u_j))*n_ij + max_derivative*(u_i - u_j)) where max_derivative = dx/dt if
+    // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the expression.
+    // calculate n_ij*(f(u_i) + f(u_j)) first
+    entityNeighborRet[0] = Dune::DynamicVector< RangeFieldType >(analytical_flux_.evaluate(u_i));
+    entityNeighborRet[0] += analytical_flux_.evaluate(u_j);
+    if (n_ij < 0)
+      entityNeighborRet[0] *= n_ij;
+    // add max_derivative*(u_i - u_j)
+    u_i -= u_j;
+    entityNeighborRet[0].axpy(max_derivative, u_i);
+    // multiply by 0.5
+    entityNeighborRet[0] *= 0.5;
+  } // void evaluate(...) const
+
+private:
+  const AnalyticalFluxType& analytical_flux_;
+  const LocalizableFunctionType& dx_;
+  const double dt_;
+  const bool use_local_;
+}; // class Inner< ... , 1 >
+
 
 /**
  *  \brief  Lax-Friedrichs flux evaluation for Dirichlet boundary intersections.
@@ -277,7 +389,11 @@ public:
   static const unsigned int dimRange = Traits::dimRange;
 
   // lambda = Delta t / Delta x
-  explicit Dirichlet(const AnalyticalFluxType& analytical_flux, const LocalizableFunctionType& dx, const double dt, const BoundaryValueFunctionType& boundary_values, const bool use_local = false)
+  explicit Dirichlet(const AnalyticalFluxType& analytical_flux,
+                     const LocalizableFunctionType& dx,
+                     const double dt,
+                     const BoundaryValueFunctionType& boundary_values,
+                     const bool use_local = false)
     : analytical_flux_(analytical_flux)
     , dx_(dx)
     , dt_(dt)
@@ -319,13 +435,10 @@ public:
                 Dune::DynamicMatrix< R >& ret) const
   {
     const auto intersection_center_local = intersection.geometryInInside().center();
-    const auto u_i = ansatzBase.evaluate(intersection_center_local);
-    const auto u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
-    assert(u_i.size() == 1);
-    std::cout << "before " << std::endl;
-    const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i[0]);
+    const auto u_i = ansatzBase.evaluate(intersection_center_local)[0];
+    const auto u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local)[0];
+    const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i);
     const FluxRangeType f_u_j_temp = analytical_flux_.evaluate(u_j);
-    std::cout << "after " << std::endl;
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_i;
     DSC::FieldMatrix< RangeFieldType, dimRange, dimDomain > f_u_j;
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -333,10 +446,11 @@ public:
       f_u_j[ii] = f_u_j_temp[ii];
     }
     const auto n_ij = intersection.unitOuterNormal(localPoint);
-    RangeFieldType max_derivative = std::get< 0 >(localFuncs)->evaluate(intersection_center_local)[0];
+    const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
+    RangeFieldType max_derivative = dx/dt_;
     if (use_local_) {
       max_derivative = 0;
-      const auto jacobian_u_i = analytical_flux_.jacobian(u_i[0]);
+      const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
       const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
       // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
       // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
@@ -360,7 +474,7 @@ public:
       num_neighbors = reference_element.size(1);
     }
     for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i[0])[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
+      ret[0][kk] = ((f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i)[kk]*max_derivative*1.0/num_neighbors)*vol_intersection;
   } // void evaluate(...) const
 
 private:
