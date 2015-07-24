@@ -112,7 +112,7 @@ public:
 
 
 
-#define PAPERFLUX 0
+#define PAPERFLUX 1
 
 template< class LocalizableFunctionImp, size_t domainDim = LocalizableFunctionImp::dimDomain >
 class Inner
@@ -617,7 +617,6 @@ public:
       const RangeType u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
       // get flux values
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
-      const FluxRangeType f_u_j = analytical_flux_.evaluate(u_j);
 
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
         reinitialize_jacobians(u_i, u_j);
