@@ -330,7 +330,7 @@ using AssemblerBaseType::assemble;
     if (save_partitioning_)
       this->assemble(*partitioning_);
     else
-      this->assemble();
+      this->assemble(true);
 #else
     this->assemble();
 #endif
@@ -521,8 +521,9 @@ using AssemblerBaseType::assemble;
     }
     if (save_partitioning_)
       this->assemble(*partitioning_);
-    else
-      this->assemble();
+    else {
+      this->assemble(true);
+    }
 #else
     this->assemble();
 #endif
@@ -576,12 +577,12 @@ public:
   typedef typename Traits::FVSpaceType                            FVSpaceType;
 
   AdvectionGodunov(const AnalyticalFluxType& analytical_flux,
-                         const LocalizableFunctionType& dx,
-                         const double dt,
-                         const BoundaryValueType& boundary_values,
-                         const FVSpaceType& fv_space,
-                         const bool is_linear = false,
-                         const bool save_partitioning = false)
+                   const LocalizableFunctionType& dx,
+                   const double dt,
+                   const BoundaryValueType& boundary_values,
+                   const FVSpaceType& fv_space,
+                   const bool is_linear = false,
+                   const bool save_partitioning = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
     , dx_(dx)
@@ -1038,7 +1039,7 @@ public:
     if (save_partitioning_)
       this->assemble(*partitioning_);
     else
-      this->assemble();
+      this->assemble(true);
 #else
     this->assemble();
 #endif
@@ -1388,7 +1389,7 @@ using AssemblerBaseType::assemble;
     if (save_partitioning_)
       this->assemble(*partitioning_);
     else
-      this->assemble();
+      this->assemble(true);
 #else
     this->assemble();
 #endif
