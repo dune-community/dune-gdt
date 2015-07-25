@@ -30,7 +30,7 @@ struct hyperbolic_FV_discretization
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
     typedef Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double, 1, true >  Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, "test");
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, "");
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 
