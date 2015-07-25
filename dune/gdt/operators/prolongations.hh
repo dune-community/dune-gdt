@@ -174,7 +174,7 @@ private:
       // for all partitions in tbb-range
       for(std::size_t p = range.begin(); p != range.end(); ++p) {
         auto partition = partitioning_.partition(p);
-        projection_operator_.walk_grid_parallel(source_, range_, partition);
+        projection_operator_.walk_grid_parallel_fv(source_, range_, partition);
       }
     }
 
@@ -189,7 +189,7 @@ private:
 #endif //HAVE_TBB
 
   template< class SourceFunctionType, class RangeFunctionType, class EntityRange >
-  void walk_grid_parallel(const SourceFunctionType& source, RangeFunctionType& range, const EntityRange& entity_range) const
+  void walk_grid_parallel_fv(const SourceFunctionType& source, RangeFunctionType& range, const EntityRange& entity_range) const
   {
     typedef typename RangeFunctionType::DomainType DomainType;
     typedef typename RangeFunctionType::RangeType RangeType;
@@ -200,11 +200,9 @@ private:
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
     EntitySearch entity_search(source.space().grid_view());
-    // guess the polynomial order of the source by hoping that they are the same for all entities
-    const size_t source_order = source.local_function(*source.space().grid_view().template begin< 0 >())->order();
+    // guess the polynomial order of the source by hoping that they are the same for all entities);
     // walk the grid
     RangeType source_value(0);
-    std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
 #ifdef __INTEL_COMPILER
     const auto it_end = entity_range.end();
     for (auto it = entity_range.begin(); it != it_end; ++it) {
@@ -215,44 +213,28 @@ private:
       // prepare
       auto local_range = range.local_discrete_function(entity);
       LocalVectorType local_vector(RangeFunctionType::dimRange, RangeFieldType(0));
-      // create quadrature
-      const auto integrand_order = source_order;
-      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
-                                                                                   boost::numeric_cast< int >(integrand_order));
       // get global quadrature points
-      std::vector< DomainType > quadrature_points;
-      for (const auto& quadrature_point : quadrature)
-        quadrature_points.emplace_back(entity.geometry().global(quadrature_point.position()));
+      std::vector< DomainType > quadrature_points(1, entity.geometry().center());
       // get source entities
       const auto source_entity_ptr_unique_ptrs = entity_search(quadrature_points);
-      assert(source_entity_ptr_unique_ptrs.size() >= quadrature_points.size());
-      // loop over all quadrature points
-      size_t pp = 0;
-      for (const auto& quadrature_point : quadrature) {
-        const auto local_point = quadrature_point.position();
-        const auto quadrature_weight = quadrature_point.weight();
-        const auto integration_element = entity.geometry().integrationElement(local_point);
-        // evaluate source
-        const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[pp];
-        if (source_entity_ptr_unique_ptr) {
+      assert(source_entity_ptr_unique_ptrs.size() >= 1);
+      const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[0];
+      if (source_entity_ptr_unique_ptr) {
           const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
           const auto& source_entity = *source_entity_ptr;
           const auto local_source = source.local_function(source_entity);
-          local_source->evaluate(source_entity.geometry().local(entity.geometry().global(local_point)), source_value);
+          local_source->evaluate(source_entity.geometry().local(entity.geometry().center()), source_value);
         } else
           source_value *= 0.0;
         // compute integrals
         local_vector = source_value;
-        local_vector *= integration_element*quadrature_weight;
-        ++pp;
-      } // loop over all quadrature points
       // set local DoFs
       auto local_range_vector = local_range->vector();
       assert(local_range_vector.size() == local_range_vector.size());
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_vector.get_entry(ii));
     } // walk the grid
-  } // void walk_grid_parallel
+  } // void walk_grid_parallel_fv
 
   template< class SourceFunctionType, class RangeFunctionType >
   void prolong_onto_dg_fem_localfunctions_wrapper_fv(const SourceFunctionType& source, RangeFunctionType& range) const
