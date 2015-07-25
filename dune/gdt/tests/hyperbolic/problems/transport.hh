@@ -98,6 +98,53 @@ private:
   const std::string name_;
 };
 
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
+class InitialValues
+    : public DS::GlobalFunctionInterface< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols >
+{
+  typedef typename DS::GlobalFunctionInterface< EntityImp,
+                                                DomainFieldImp, domainDim,
+                                                RangeFieldImp, rangeDim, rangeDimCols >     BaseType;
+public:
+  using BaseType::dimDomain;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  InitialValues()
+  {}
+
+  virtual size_t order() const override
+  {
+   return 2;
+  }
+
+  virtual void evaluate(const DomainType& xx, RangeType& ret) const override
+  {
+    evaluate_helper(xx, ret, DS::Functions::internal::ChooseVariant< dimDomain >());
+  }
+
+private:
+  void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant< 1 >) const
+  {
+    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
+      ret[0] = 10000*std::pow(xx[0]-0.2,2)*std::pow(xx[0]-0.4,2)*std::exp(0.02-std::pow(xx[0]-0.2,2)-std::pow(xx[0]-0.4,2));
+    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
+      ret[0] = 1;
+    else
+      ret[0] = 0;
+  }
+
+  void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant< 2 >) const
+  {
+    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && DSC::FloatCmp::ge(xx[1], 0.2) && xx[1] < 0.4)
+      ret[0] = 10000*std::pow(xx[0]-0.2,2)*std::pow(xx[0]-0.4,2)*std::exp(0.02-std::pow(xx[0]-0.2,2)-std::pow(xx[0]-0.4,2))*10000*std::pow(xx[1]-0.2,2)*std::pow(xx[1]-0.4,2)*std::exp(0.02-std::pow(xx[1]-0.2,2)-std::pow(xx[1]-0.4,2));
+    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && DSC::FloatCmp::ge(xx[1], 0.6) && xx[1] < 0.8)
+      ret[0] = 1;
+    else
+      ret[0] = 0;
+  }
+};
+
 
 template< class LocalizableFunctionType, class GridViewType >
 class TransportSolution
@@ -336,10 +383,10 @@ public:
     , reference_grid_view_(BaseType::reference_grid_view())
     , problem_()
   {
-    typedef typename DS::Functions::LocalizableWrapper< typename ProblemType::FunctionType > LocalizableInitialValueType;
-    LocalizableInitialValueType localizable_initial_values(*problem_.initial_values());
+    typedef InitialValues< E, D, d, R, r, 1 > LocalizableInitialValueType;
+    const LocalizableInitialValueType initial_values;
     exact_solution_ = std::make_shared< TransportSolution< LocalizableInitialValueType,
-                                                           LevelGridViewType > >(localizable_initial_values,
+                                                           LevelGridViewType > >(initial_values,
                                                                                  reference_grid_view_,
                                                                                  DSC::fromString< typename DSC::FieldVector< D, d > >("[1.0 2.0]"),
                                                                                  DSC::fromString< typename DSC::FieldVector< D, d > >(problem_.grid_config()["lower_left"]),
