@@ -25,7 +25,7 @@ struct hyperbolic_FV_discretization
 #if THIS_IS_A_BUILDBOT_BUILD
     TestCaseType test_case(/*num_refs = */ 1);
 #else
-    TestCaseType test_case(5);
+    TestCaseType test_case(6);
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;

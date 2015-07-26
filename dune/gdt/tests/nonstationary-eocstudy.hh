@@ -294,7 +294,7 @@ protected:
                                                                                      test_case_.reference_level()));
       reference_solution_vector_ = Stuff::Common::make_unique< VectorType >(reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
-      if (!visualize_prefix_.empty()) {
+      if (true) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                reference_solution_vector_->operator[](0).second,
                                                "reference solution");
@@ -319,7 +319,7 @@ protected:
         project(*exact_solution_at_time, discrete_exact_solution_at_time);
         discrete_exact_solution.emplace_back(std::make_pair(time, discrete_exact_solution_at_time.vector()));
       }
-      if (!visualize_prefix_.empty()) {
+      if (true) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                discrete_exact_solution[0].second,
                                                "exact solution");
