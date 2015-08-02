@@ -148,6 +148,7 @@ public:
   typedef typename Traits::FluxRangeType                            FluxRangeType;
   typedef typename Traits::RangeType                                RangeType;
   typedef typename LocalizableFunctionType::DomainType              DomainType;
+  typedef typename Dune::Stuff::LA::EigenDenseMatrix< RangeFieldType >                  EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
@@ -165,14 +166,30 @@ public:
     , entity_geometries_equal_(entity_geometries_equal)
   {
     if (is_linear_ && use_local_ && !max_derivative_calculated_) {
+      max_derivative_ = 0;
       const auto jacobian_u_i = analytical_flux_.jacobian(RangeType(0));
-      // jacobian_u_i is FieldVector< FieldMatrix, ... >
-      for (size_t ii = 0; ii < dimDomain; ++ii) {
-        auto& derivative_i = jacobian_u_i[ii];
-        if (derivative_i.infinity_norm() > max_derivative_[ii]) {
-          max_derivative_[ii] = derivative_i.infinity_norm();
+      std::vector< EigenMatrixType > jacobian_u_i_eigen;
+      for (size_t ii = 0; ii < dimDomain; ++ii)
+        jacobian_u_i_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i[ii], 15)));
+    #if HAVE_EIGEN
+        for (size_t ii = 0; ii < dimDomain; ++ii) {
+          // create EigenSolver
+          ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
+              eigen_solver_u_i(jacobian_u_i_eigen[ii].backend());
+          assert(eigen_solver_u_i.info() == ::Eigen::Success);
+          const auto eigenvalues_u_i = eigen_solver_u_i.eigenvalues(); // <- this should be an Eigen vector of std::complex
+          assert(boost::numeric_cast< size_t >(eigenvalues_u_i.size()) == dimRange);
+          for (size_t jj = 0; jj < dimRange; ++jj) {
+            // assert this is real
+            assert(std::abs(eigenvalues_u_i[jj].imag()) < 1e-15);
+            const RangeFieldType eigenvalue = eigenvalues_u_i[jj].real();
+            if (std::abs(eigenvalue) > max_derivative_[ii])
+              max_derivative_[ii] = std::abs(eigenvalue);
+          }
         }
-      }
+    #else
+        static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
+    #endif
       max_derivative_calculated_ = true;
     }
     geometry_evaluated_ = false;
@@ -259,20 +276,43 @@ public:
         max_derivative_ = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        // jacobian_u_i is either a FieldMatrix or a FieldVector< FieldMatrix, ... >, so derivative_i is either a row of
-        // the FieldMatrix (i.e. a FieldVector) or a FieldMatrix. In both cases, the correct infinity norm is obtained.
+        std::vector< EigenMatrixType > jacobian_u_i_eigen;
+        std::vector< EigenMatrixType > jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          auto& derivative_i = jacobian_u_i[ii];
-          if (derivative_i.infinity_norm() > max_derivative_[ii]) {
-            max_derivative_[ii] = derivative_i.infinity_norm();
-          }
+          jacobian_u_i_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_j[ii], 15)));
         }
-        for (size_t ii = 0; ii < dimDomain; ++ii) {
-          auto& derivative_j = jacobian_u_j[ii];
-          if (derivative_j.infinity_norm() > max_derivative_[ii]) {
-            max_derivative_[ii] = derivative_j.infinity_norm();
+      #if HAVE_EIGEN
+          for (size_t ii = 0; ii < dimDomain; ++ii) {
+            // create EigenSolver
+            ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
+                eigen_solver_u_i(jacobian_u_i_eigen[ii].backend());
+            assert(eigen_solver_u_i.info() == ::Eigen::Success);
+            ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
+                eigen_solver_u_j(jacobian_u_j_eigen[ii].backend());
+            assert(eigen_solver_u_j.info() == ::Eigen::Success);
+            const auto eigenvalues_u_i = eigen_solver_u_i.eigenvalues(); // <- this should be an Eigen vector of std::complex
+            assert(boost::numeric_cast< size_t >(eigenvalues_u_i.size()) == dimRange);
+            const auto eigenvalues_u_j = eigen_solver_u_j.eigenvalues(); // <- this should be an Eigen vector of std::complex
+            assert(boost::numeric_cast< size_t >(eigenvalues_u_j.size()) == dimRange);
+            for (size_t jj = 0; jj < dimRange; ++jj) {
+              // assert this is real
+              assert(std::abs(eigenvalues_u_i[jj].imag()) < 1e-15);
+              const RangeFieldType eigenvalue = eigenvalues_u_i[jj].real();
+              if (std::abs(eigenvalue) > max_derivative_[ii])
+                max_derivative_[ii] = std::abs(eigenvalue);
+            }
+            for (size_t jj = 0; jj < dimRange; ++jj) {
+              // assert this is real
+              assert(std::abs(eigenvalues_u_j[jj].imag()) < 1e-15);
+              const RangeFieldType eigenvalue = eigenvalues_u_j[jj].real();
+              if (std::abs(eigenvalue) > max_derivative_[ii])
+                max_derivative_[ii] = std::abs(eigenvalue);
+            }
           }
-        }
+      #else
+          static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
+      #endif
       }
     }
     if (!entity_geometries_equal_ || !geometry_evaluated_) {
