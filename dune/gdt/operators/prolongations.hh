@@ -194,13 +194,10 @@ private:
     typedef typename RangeFunctionType::DomainType DomainType;
     typedef typename RangeFunctionType::RangeType RangeType;
     typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
-    typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_dense_backend >::VectorType
-        LocalVectorType;
     // create search in the source grid part
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
     EntitySearch entity_search(source.space().grid_view());
-    // guess the polynomial order of the source by hoping that they are the same for all entities);
     // walk the grid
     RangeType source_value(0);
 #ifdef __INTEL_COMPILER
@@ -212,7 +209,7 @@ private:
 #endif
       // prepare
       auto local_range = range.local_discrete_function(entity);
-      LocalVectorType local_vector(RangeFunctionType::dimRange, RangeFieldType(0));
+      RangeType local_vector;
       // get global quadrature points
       std::vector< DomainType > quadrature_points(1, entity.geometry().center());
       // get source entities
@@ -230,9 +227,9 @@ private:
         local_vector = source_value;
       // set local DoFs
       auto local_range_vector = local_range->vector();
-      assert(local_range_vector.size() == local_range_vector.size());
-      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-        local_range_vector.set(ii, local_vector.get_entry(ii));
+      assert(local_range_vector.size() == RangeFunctionType::dimRange);
+      for (size_t ii = 0; ii < RangeFunctionType::dimRange; ++ii)
+        local_range_vector.set(ii, local_vector[ii]);
     } // walk the grid
   } // void walk_grid_parallel_fv
 
