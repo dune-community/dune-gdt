@@ -152,6 +152,9 @@ public:
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
              const TimeFieldType save_step,
+             const bool save_solution,
+             const bool write_solution,
+             const std::string filename_prefix,
              std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
     TimeFieldType dt = first_dt;
@@ -165,8 +168,12 @@ public:
     size_t save_step_counter = 1;
 
     // clear solution
-    solution.clear();
-    solution.emplace_back(std::make_pair(t_, u_n_));
+    if (save_solution) {
+      solution.clear();
+      solution.emplace_back(std::make_pair(t_, u_n_));
+    }
+    if (write_solution)
+      u_n_.template visualize_factor< 0 >(filename_prefix + "factor_0_0");
 
     while (t_ + dt < t_end)
     {
@@ -175,7 +182,10 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (DSC::FloatCmp::ge(t_, next_save_time - 1e-10)) {
-        solution.emplace_back(std::make_pair(t_, u_n_));
+        if (save_solution)
+          solution.emplace_back(std::make_pair(t_, u_n_));
+        if (write_solution)
+          u_n_.template visualize_factor< 0 >(filename_prefix + "factor_0_" + DSC::toString(save_step_counter));
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -199,9 +209,20 @@ public:
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step = 0.0)
+             const TimeFieldType save_step = 0.0,
+             const bool save_solution = false,
+             const bool write_solution = true,
+             const std::string filename_prefix = "")
   {
-    solve(t_end, first_dt, save_step, solution_);
+    solve(t_end, first_dt, save_step, save_solution, write_solution, filename_prefix, solution_);
+  }
+
+  void solve(const TimeFieldType t_end,
+             const TimeFieldType first_dt,
+             const TimeFieldType save_step,
+             std::vector< std::pair< double, DiscreteFunctionType > >& solution)
+  {
+    solve(t_end, first_dt, save_step, true, false, "", solution);
   }
 
   TimeFieldType current_time() const
