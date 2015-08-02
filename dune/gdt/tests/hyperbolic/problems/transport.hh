@@ -342,7 +342,7 @@ public:
     if (dimDomain == 1)
       return 0.5;
     else
-      return 0.1;
+      return 0.3;
   }
 
 
