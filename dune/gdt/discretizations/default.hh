@@ -271,7 +271,7 @@ public:
 
       //calculate dx and choose t_end and initial dt
       Dune::Stuff::Grid::Dimensions< typename FVSpaceType::GridViewType > dimensions(fv_space_.grid_view());
-      const double dx = dimensions.entity_width.max();
+      const double dx = dimensions.entity_width.max()/std::sqrt(2);
       double dt = CFL*dx;
 
       //create butcher_array
@@ -292,7 +292,7 @@ public:
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
                                                          DomainFieldType, dimDomain,
                                                          RangeFieldType, dimRange, 1 >        ConstantFunctionType;
-      typedef typename Dune::GDT::Operators::AdvectionGodunov
+      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
           < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType/*, Dune::GDT::Operators::SlopeLimiters::mc*/ > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionSource< SourceType, FVSpaceType > SourceOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, SourceOperatorType, FVFunctionType, double > TimeStepperType;
@@ -314,7 +314,7 @@ public:
 
       //create advection operator
       const ConstantFunctionType dx_function(dx);
-      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, true);
+      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, true, false, true);
 
       //create timestepper
       TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);
