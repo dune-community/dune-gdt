@@ -298,7 +298,7 @@ protected:
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                reference_solution_vector_->operator[](0).second,
                                                "reference solution");
-        for (size_t ii = 0; ii < reference_solution_vector_->size(); ++ii) {
+        for (size_t ii = reference_solution_vector_->size() - 1; ii < reference_solution_vector_->size(); ++ii) {
           tmp_discrete_func.vector() = reference_solution_vector_->operator[](ii).second;
           tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_reference" + "_factor_0_" + DSC::toString(ii), false);
         }
@@ -319,7 +319,7 @@ protected:
         project(*exact_solution_at_time, discrete_exact_solution_at_time);
         discrete_exact_solution.emplace_back(std::make_pair(time, discrete_exact_solution_at_time.vector()));
       }
-      if (true) {
+      if (false) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                discrete_exact_solution[0].second,
                                                "exact solution");
