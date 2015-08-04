@@ -16,11 +16,11 @@
 #include <dune/gdt/tests/linearelliptic/problems/spe10.hh>
 
 
-typedef testing::Types< Dune::GDT::LinearElliptic::AO2013TestCase< Dune::SGrid< 2, 2 > >
-                      , Dune::GDT::LinearElliptic::ER2007TestCase< Dune::SGrid< 2, 2 > >
-                      , Dune::GDT::LinearElliptic::ESV2007TestCase< Dune::SGrid< 2, 2 > >
-                      , Dune::GDT::LinearElliptic::MixedBoundaryTestCase< Dune::SGrid< 2, 2 > >
-                      , Dune::GDT::LinearElliptic::Spe10Model1TestCase< Dune::SGrid< 2, 2 > >
+typedef testing::Types< Dune::GDT::LinearElliptic::AO2013TestCase< Dune::YaspGrid< 2 > >
+                      , Dune::GDT::LinearElliptic::ER2007TestCase< Dune::YaspGrid< 2 > >
+                      , Dune::GDT::LinearElliptic::ESV2007TestCase< Dune::YaspGrid< 2 > >
+                      , Dune::GDT::LinearElliptic::MixedBoundaryTestCase< Dune::YaspGrid< 2 > >
+                      , Dune::GDT::LinearElliptic::Spe10Model1TestCase< Dune::YaspGrid< 2 > >
                       > SGridTestCases;
 
 
@@ -48,23 +48,23 @@ namespace GDT {
 namespace Tests {
 
 
-extern template class LinearEllipticEocExpectations< LinearElliptic::AO2013TestCase< SGrid< 2, 2 >, double, 1 >,
+extern template class LinearEllipticEocExpectations< LinearElliptic::AO2013TestCase< YaspGrid< 2 >, double, 1 >,
                                                      LinearElliptic::ChooseDiscretizer::cg,
                                                      1 >;
 
-extern template class LinearEllipticEocExpectations< LinearElliptic::ER2007TestCase< SGrid< 2, 2 >, double, 1 >,
+extern template class LinearEllipticEocExpectations< LinearElliptic::ER2007TestCase< YaspGrid< 2 >, double, 1 >,
                                                      LinearElliptic::ChooseDiscretizer::cg,
                                                      1 >;
 
-extern template class LinearEllipticEocExpectations< LinearElliptic::ESV2007TestCase< SGrid< 2, 2 >, double, 1 >,
+extern template class LinearEllipticEocExpectations< LinearElliptic::ESV2007TestCase< YaspGrid< 2 >, double, 1 >,
                                                      LinearElliptic::ChooseDiscretizer::cg,
                                                      1 >;
 
-extern template class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< SGrid< 2, 2 >, double, 1 >,
+extern template class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2 >, double, 1 >,
                                                      LinearElliptic::ChooseDiscretizer::cg,
                                                      1 >;
 
-extern template class LinearEllipticEocExpectations< LinearElliptic::Spe10Model1TestCase< SGrid< 2, 2 >, double, 1 >,
+extern template class LinearEllipticEocExpectations< LinearElliptic::Spe10Model1TestCase< YaspGrid< 2 >, double, 1 >,
                                                      LinearElliptic::ChooseDiscretizer::cg,
                                                      1 >;
 

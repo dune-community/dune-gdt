@@ -338,7 +338,7 @@ public:
 private:
   static std::unique_ptr< GridProviderType > create_initial_grid()
   {
-    if (std::is_same< GridType, Dune::SGrid< 2, 2 > >::value) {
+    if (std::is_same< GridType, Dune::YaspGrid< 2 > >::value) {
       return DSC::make_unique<GridProviderType>(-1, 1, 8);
 #if HAVE_ALUGRID
     } else if (std::is_same< GridType, Dune::ALUConformGrid< 2, 2 > >::value

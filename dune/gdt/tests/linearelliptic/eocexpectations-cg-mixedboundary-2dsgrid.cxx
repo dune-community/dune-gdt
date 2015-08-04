@@ -17,13 +17,13 @@ namespace Tests {
 
 
 template< bool anything >
-class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< SGrid< 2, 2 >, double, 1 >,
+class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2 >, double, 1 >,
                                      LinearElliptic::ChooseDiscretizer::cg,
                                      1,
                                      anything >
   : public internal::LinearEllipticEocExpectationsBase< 1 >
 {
-  typedef LinearElliptic::MixedBoundaryTestCase< SGrid< 2, 2 >, double, 1 > TestCaseType;
+  typedef LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2 >, double, 1 > TestCaseType;
 public:
   static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
@@ -44,7 +44,7 @@ public:
 }; // LinearEllipticEocExpectations
 
 
-template class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< SGrid< 2, 2 >, double, 1 >,
+template class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2 >, double, 1 >,
                                               LinearElliptic::ChooseDiscretizer::cg,
                                               1 >;
 

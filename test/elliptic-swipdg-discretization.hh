@@ -408,7 +408,7 @@ public:
   std::vector< double > expected_results(const std::string type) const override
   {
     using namespace Dune;
-    if (std::is_same< TestCase, EllipticTestCase::ESV07< SGrid< 2, 2 > > >::value) {
+    if (std::is_same< TestCase, EllipticTestCase::ESV07< YaspGrid< 2 > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
