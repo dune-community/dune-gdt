@@ -5,9 +5,9 @@
 
 #include "config.h"
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
-#include "problems/AO2013.hh"
+#include "problems/mixedboundary.hh"
 #include "eocexpectations.hh"
 
 
@@ -17,31 +17,26 @@ namespace Tests {
 
 
 template< bool anything >
-class LinearEllipticEocExpectations< LinearElliptic::AO2013TestCase< YaspGrid< 2 >, double, 1 >,
+class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2, EquidistantOffsetCoordinates<double, 2> >, double, 1 >,
                                      LinearElliptic::ChooseDiscretizer::cg,
                                      1,
                                      anything >
   : public internal::LinearEllipticEocExpectationsBase< 1 >
 {
-  typedef LinearElliptic::AO2013TestCase< YaspGrid< 2 >, double, 1 > TestCaseType;
+  typedef LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2, EquidistantOffsetCoordinates<double, 2> >, double, 1 > TestCaseType;
 public:
   static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L2") {
       if (test_case.num_refinements() == 1)
-        return {7.21e-03, 1.82e-03};
+        return {2.86e-03, 6.32e-04};
       else
-        return {7.42e-03, 2.09e-03, 5.39e-04, 1.40e-04};
-    } else if (type == "H1_semi") {
+        return {2.96e-03, 7.44e-04, 1.81e-04, 3.95e-05};
+    } else if (type == "H1_semi" || type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {4.75e-01, 2.11e-01};
+        return {5.57e-02, 2.48e-02};
       else
-        return {4.91e-01, 2.42e-01, 1.23e-01, 6.11e-02};
-    } else if (type == "energy") {
-      if (test_case.num_refinements() == 1)
-        return {8.73e-02, 5.14e-02};
-      else
-        return {9.00e-02, 5.90e-02, 4.15e-02, 2.81e-02};
+        return {5.75e-02, 2.84e-02, 1.39e-02, 6.20e-03};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -49,7 +44,7 @@ public:
 }; // LinearEllipticEocExpectations
 
 
-template class LinearEllipticEocExpectations< LinearElliptic::AO2013TestCase< YaspGrid< 2 >, double, 1 >,
+template class LinearEllipticEocExpectations< LinearElliptic::MixedBoundaryTestCase< YaspGrid< 2, EquidistantOffsetCoordinates<double, 2> >, double, 1 >,
                                               LinearElliptic::ChooseDiscretizer::cg,
                                               1 >;
 

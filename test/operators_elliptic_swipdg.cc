@@ -8,7 +8,7 @@
 
 #if HAVE_DUNE_FEM && HAVE_EIGEN
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/functions/constant.hh>

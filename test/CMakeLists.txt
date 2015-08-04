@@ -16,18 +16,18 @@ endforeach (test ${testnames})
 END_TESTCASES()
 
 target_link_libraries(test_linearelliptic-cg-discretization_fem_eigen_alugrid    lib_test_linearelliptic_cg_discretizations_alugrid)
-target_link_libraries(test_linearelliptic-cg-discretization_fem_eigen_sgrid      lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_fem_eigen_yaspgrid      lib_test_linearelliptic_cg_discretizations_yaspgrid)
 target_link_libraries(test_linearelliptic-cg-discretization_fem_istl_alugrid     lib_test_linearelliptic_cg_discretizations_alugrid)
-target_link_libraries(test_linearelliptic-cg-discretization_fem_istl_sgrid       lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_fem_istl_yaspgrid       lib_test_linearelliptic_cg_discretizations_yaspgrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_alugrid lib_test_linearelliptic_cg_discretizations_alugrid)
-target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_sgrid   lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_yaspgrid   lib_test_linearelliptic_cg_discretizations_yaspgrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
-target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_yaspgrid    lib_test_linearelliptic_cg_discretizations_yaspgrid)
 
-set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_sgrid 
-                        test_linearelliptic-cg-discretization_pdelab_istl_sgrid
-                        test_linearelliptic-cg-discretization_fem_eigen_sgrid
-                        test_linearelliptic-cg-discretization_fem_istl_sgrid
+set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_yaspgrid
+                        test_linearelliptic-cg-discretization_pdelab_istl_yaspgrid
+                        test_linearelliptic-cg-discretization_fem_eigen_yaspgrid
+                        test_linearelliptic-cg-discretization_fem_istl_yaspgrid
                         test_linearelliptic-cg-discretization_fem_istl_alugrid
                         test_linearelliptic-cg-discretization_fem_eigen_alugrid
                         test_linearelliptic-cg-discretization_pdelab_eigen_alugrid
