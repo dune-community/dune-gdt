@@ -34,6 +34,7 @@ set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_yaspg
                         test_linearelliptic-cg-discretization_pdelab_istl_alugrid
                         test_elliptic-swipdg-discretization
     PROPERTIES TIMEOUT 720 )
+
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
   set (SPE10MODEL1DATA_TARGET_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/perm_case1.dat")
@@ -42,9 +43,9 @@ if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
   endif(NOT EXISTS ${SPE10MODEL1DATA_TARGET_FILENAME})
 else()
 message(STATUS FOOBAR ${SPE10MODEL1DATA})
-    execute_process(COMMAND wget http://wwwmath.uni-muenster.de/num/ohlberger/research/software/perm_case1.zip
+    execute_process(COMMAND wget -nc http://wwwmath.uni-muenster.de/num/ohlberger/research/software/perm_case1.zip
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    execute_process(COMMAND unzip perm_case1.zip
+    execute_process(COMMAND unzip -o perm_case1.zip
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     set (SPE10MODEL1DATA_TARGET_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/perm_case1.dat")
 endif (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
