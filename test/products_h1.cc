@@ -38,9 +38,9 @@ TYPED_TEST(H1SemiLocalizableProduct, quadratic_arguments) {
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 3)
-                      , SPACE_DG_FEM_SGRID(2, 1, 3)
-                      , SPACE_DG_FEM_SGRID(3, 1, 3)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(2, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(3, 1, 3)
                       > CubicSpaces;
 
 TYPED_TEST_CASE(H1SemiAssemblableProduct, CubicSpaces);

@@ -34,9 +34,9 @@ TYPED_TEST(WeightedL2LocalizableProduct, quadratic_arguments) {
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 2)
-                      , SPACE_DG_FEM_SGRID(2, 1, 2)
-                      , SPACE_DG_FEM_SGRID(3, 1, 2)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 2)
+                      , SPACE_DG_FEM_YASPGRID(2, 1, 2)
+                      , SPACE_DG_FEM_YASPGRID(3, 1, 2)
                       > QuadraticSpaces;
 
 TYPED_TEST_CASE(WeightedL2AssemblableProduct, QuadraticSpaces);

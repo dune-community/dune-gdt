@@ -12,7 +12,7 @@
 #include <dune/common/version.hh>
 #include <dune/common/typetraits.hh>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#if DUNE_VERSION_NEWER(DUNE_COMMON,2,3) 
 # include <dune/geometry/referenceelements.hh>
 #else
 # include <dune/geometry/genericreferenceelements.hh>

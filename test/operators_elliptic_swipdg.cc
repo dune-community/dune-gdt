@@ -25,7 +25,7 @@ using namespace Dune::GDT;
 TEST(EllipticSWIPDGOperator, is_affinely_decomposable)
 {
   static const size_t d = 2;
-  typedef SGrid< d, d > GridType;
+  typedef YaspGrid< d, EquidistantOffsetCoordinates<double,d>> GridType;
   typedef GridType::template Codim< 0 >::Entity E;
   typedef GridType::ctype D;
   typedef double R;

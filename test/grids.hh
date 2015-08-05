@@ -7,7 +7,6 @@
 #define DUNE_GDT_TEST_GRIDS_HH
 
 #include <dune/grid/yaspgrid.hh>
-#include <dune/grid/yaspgrid.hh>
 #if HAVE_ALUGRID
 # include <dune/grid/alugrid.hh>
 #endif
