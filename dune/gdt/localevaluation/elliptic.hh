@@ -220,11 +220,11 @@ public:
   /// \name Actual implementations of evaluate
   /// \{
 
-  template< class R >
+  template< class R, size_t r >
   void evaluate(const Stuff::LocalfunctionInterface   < E, D, d, R, 1, 1 >& local_diffusion_factor,
                 const Stuff::LocalfunctionInterface   < E, D, d, R, d, d >& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& test_base,
-                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatz_base,
+                const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& test_base,
+                const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& ansatz_base,
                 const Dune::FieldVector< D, d >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
