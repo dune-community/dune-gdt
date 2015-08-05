@@ -17,6 +17,7 @@
 
 #include <dune/common/exceptions.hh>
 
+//silence sgrid deprecation warning temporarily
 #define DUNE_AVOID_SGRID_DEPRE_WARNING_BECAUSE_I_KNOW_WHAT_IM_DOING 1
 #  include <dune/grid/io/file/dgfparser.hh>
 #undef DUNE_AVOID_SGRID_DEPRE_WARNING_BECAUSE_I_KNOW_WHAT_IM_DOING
