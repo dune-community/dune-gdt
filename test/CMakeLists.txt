@@ -42,7 +42,6 @@ if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
     execute_process(COMMAND ln -s "${SPE10MODEL1DATA}" "${SPE10MODEL1DATA_TARGET_FILENAME}")
   endif(NOT EXISTS ${SPE10MODEL1DATA_TARGET_FILENAME})
 else()
-message(STATUS FOOBAR ${SPE10MODEL1DATA})
     execute_process(COMMAND wget -nc http://wwwmath.uni-muenster.de/num/ohlberger/research/software/perm_case1.zip
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     execute_process(COMMAND unzip -o perm_case1.zip
