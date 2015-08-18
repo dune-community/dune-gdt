@@ -270,7 +270,7 @@ public:
 
     if (!use_local_) {
       const RangeFieldType dx = std::get< 0 >(localFunctionsEntity)->evaluate(intersection_center_entity)[0];
-      max_derivative_ = dx/dt_;
+      max_derivative_ = DomainType(dx/dt_);
     } else {
       if (!is_linear_) {
         max_derivative_ = 0;
