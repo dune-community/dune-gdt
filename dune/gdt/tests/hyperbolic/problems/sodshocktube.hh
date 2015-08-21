@@ -160,7 +160,10 @@ private:
   const double rho_4_;
 };
 
-
+// see Lora-Clavijo, F.D. et al, Exact solution of the 1D Riemann problem in Newtonian and relativistic hydrodynamics,
+// Rev.Mex.Fis. E59 (2013) 1, 28-50 arXiv:1303.3999, http://www.scielo.org.mx/pdf/rmfe/v59n1/v59n1a5.pdf
+// pp. 32-34
+// Solution here is not in primitive variables, i.e. u = (rho, rho v, E).
 template< class EntityType, class DomainFieldType, class RangeFieldType >
 class ShocktubeSolution
     : public DS::TimeDependentFunctionInterface
@@ -393,7 +396,7 @@ public:
         << "|+====================================================================================================+|\n"
         << "||  Testcase: Shock Tube                                                                              ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
-        << "||  domain = [0, 10]                                                                                  ||\n"
+        << "||  domain = [0, 1]                                                                                  ||\n"
         << "||  flux = [u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]       ||\n"
         << "||  source = 0                                                                                        ||\n"
         << "||  reference solution: semianalytic solution                                                         ||\n"
