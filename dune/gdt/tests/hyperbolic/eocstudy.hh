@@ -82,11 +82,14 @@ public:
   {
     if (type == "L1") {
       double norm = 0;
+      // walk over time steps
       for (size_t ii = 0; ii < function.size(); ++ii) {
         double spatial_integral = 0;
+        // walk over all entities
         const auto it_end = grid_view.template end< 0 >();
         for (auto it = grid_view.template begin< 0 >(); it != it_end; ++it) {
           const auto& entity = *it;
+          // this gives only the value of the 0-th factor (first component) for vector-valued functions
           double value = std::abs(function[ii].second[grid_view.indexSet().index(entity)]);
           spatial_integral += value*entity.geometry().volume();
         }

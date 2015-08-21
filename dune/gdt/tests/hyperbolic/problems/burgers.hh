@@ -172,6 +172,7 @@ class BurgersTestCase
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 public:
+  static const size_t dimRange = r;
   typedef Problems::Burgers< E, D, d, R, r > ProblemType;
 private:
   typedef Tests::NonStationaryTestCase< G, ProblemType > BaseType;
