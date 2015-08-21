@@ -11,6 +11,10 @@
 #include <tuple>
 #include <memory>
 
+# if HAVE_EIGEN
+#   include <Eigen/Eigenvalues>
+# endif
+
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 
@@ -21,6 +25,7 @@
 #include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
+#include <dune/stuff/la/container/eigen.hh>
 
 #include "interface.hh"
 
