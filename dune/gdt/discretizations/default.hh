@@ -294,7 +294,7 @@ public:
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
                                                          DomainFieldType, dimDomain,
                                                          RangeFieldType, dimRange, 1 >        ConstantFunctionType;
-      typedef typename Dune::GDT::Operators::AdvectionGodunov
+      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
           < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionSource< SourceType, FVSpaceType > SourceOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, SourceOperatorType, FVFunctionType, double > TimeStepperType;
@@ -316,7 +316,7 @@ public:
 
       //create advection operator
       const ConstantFunctionType dx_function(dx);
-      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear/*, false, true*/);
+      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear, false, true);
 
       //create timestepper
       TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);

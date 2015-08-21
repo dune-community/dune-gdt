@@ -25,12 +25,12 @@ struct hyperbolic_FV_discretization
 #if THIS_IS_A_BUILDBOT_BUILD
     TestCaseType test_case(/*num_refs = */ 1);
 #else
-    TestCaseType test_case(9);
+    TestCaseType test_case(6);
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double, TestCaseType::dimRange, false >  Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, "shocktube");
+    typedef Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double, TestCaseType::dimRange, true >  Discretizer;
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, "2dtransport");
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 
