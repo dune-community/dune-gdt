@@ -286,7 +286,7 @@ public:
     : OperatorBaseType()
     , AssemblerBaseType(range_discrete_function.space())
     , local_operator_(analytical_flux, dx, dt, is_linear, use_local, entity_geometries_equal)
-    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, use_local)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, is_linear, use_local, entity_geometries_equal)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source_discrete_function)
