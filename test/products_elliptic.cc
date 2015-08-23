@@ -15,9 +15,9 @@
 #include "products_elliptic.hh"
 
 
-typedef testing::Types< SPACE_FV_SGRID(1, 1)
-                      , SPACE_FV_SGRID(2, 1)
-                      , SPACE_FV_SGRID(3, 1)
+typedef testing::Types< SPACE_FV_YASPGRID(1, 1)
+                      , SPACE_FV_YASPGRID(2, 1)
+                      , SPACE_FV_YASPGRID(3, 1)
                       > ConstantSpaces;
 
 TYPED_TEST_CASE(EllipticLocalizableProduct, ConstantSpaces);
@@ -52,9 +52,9 @@ TYPED_TEST(SimplifiedEllipticLocalizableProduct, quadratic_arguments) {
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 3)
-                      , SPACE_DG_FEM_SGRID(2, 1, 3)
-                      , SPACE_DG_FEM_SGRID(3, 1, 3)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(2, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(3, 1, 3)
                       > CubicSpaces;
 
 TYPED_TEST_CASE(EllipticAssemblableProduct, CubicSpaces);
@@ -88,9 +88,9 @@ TYPED_TEST(SimplifiedEllipticAssemblableProduct, quadratic_arguments) {
 #elif HAVE_DUNE_PDELAB // HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_CG_PDELAB_SGRID(1, 1, 1)
-                      , SPACE_CG_PDELAB_SGRID(2, 1, 1)
-                      , SPACE_CG_PDELAB_SGRID(3, 1, 1)
+                        SPACE_CG_PDELAB_YASPGRID(1, 1, 1)
+                      , SPACE_CG_PDELAB_YASPGRID(2, 1, 1)
+                      , SPACE_CG_PDELAB_YASPGRID(3, 1, 1)
                       > LinearSpaces;
 
 TYPED_TEST_CASE(EllipticAssemblableProduct, LinearSpaces);

@@ -12,18 +12,11 @@
 
 #if HAVE_DUNE_FEM
 
-
-#define SPACE_DG_FEM_SGRID(dd, rr, pp) \
-  Dune::GDT::Spaces::DG::FemBased< S ## dd ## dLeafGridPartType, pp, double, rr >
-
 #define SPACE_DG_FEM_YASPGRID(dd, rr, pp) \
   Dune::GDT::Spaces::DG::FemBased< Yasp ## dd ## dLeafGridPartType, pp, double, rr >
 
 #define SPACES_DG_FEM(pp) \
-    SPACE_DG_FEM_SGRID(1, 1, pp) \
-  , SPACE_DG_FEM_SGRID(2, 1, pp) \
-  , SPACE_DG_FEM_SGRID(3, 1, pp) \
-  , SPACE_DG_FEM_YASPGRID(1, 1, pp) \
+    SPACE_DG_FEM_YASPGRID(1, 1, pp) \
   , SPACE_DG_FEM_YASPGRID(2, 1, pp) \
   , SPACE_DG_FEM_YASPGRID(3, 1, pp)
 

@@ -11,9 +11,9 @@
 #include "products_l2.hh"
 
 
-typedef testing::Types< SPACE_FV_SGRID(1, 1)
-                      , SPACE_FV_SGRID(2, 1)
-                      , SPACE_FV_SGRID(3, 1)
+typedef testing::Types< SPACE_FV_YASPGRID(1, 1)
+                      , SPACE_FV_YASPGRID(2, 1)
+                      , SPACE_FV_YASPGRID(3, 1)
                       > ConstantSpaces;
 
 TYPED_TEST_CASE(L2LocalizableProduct, ConstantSpaces);
@@ -40,9 +40,9 @@ TYPED_TEST(L2LocalizableProduct, quadratic_arguments) {
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 2)
-                      , SPACE_DG_FEM_SGRID(2, 1, 2)
-                      , SPACE_DG_FEM_SGRID(3, 1, 2)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 2)
+                      , SPACE_DG_FEM_YASPGRID(2, 1, 2)
+                      , SPACE_DG_FEM_YASPGRID(3, 1, 2)
                       > QuadraticSpaces;
 
 TYPED_TEST_CASE(L2AssemblableProduct, QuadraticSpaces);

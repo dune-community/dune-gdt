@@ -17,7 +17,11 @@
 
 #include <dune/common/exceptions.hh>
 
-#include <dune/grid/io/file/dgfparser.hh>
+//silence sgrid deprecation warning temporarily
+#define DUNE_AVOID_SGRID_DEPRE_WARNING_BECAUSE_I_KNOW_WHAT_IM_DOING 1
+#  include <dune/grid/io/file/dgfparser.hh>
+#undef DUNE_AVOID_SGRID_DEPRE_WARNING_BECAUSE_I_KNOW_WHAT_IM_DOING
+
 #if HAVE_ALUGRID
 # include <dune/grid/alugrid.hh>
 #endif
@@ -338,7 +342,7 @@ public:
 private:
   static std::unique_ptr< GridProviderType > create_initial_grid()
   {
-    if (std::is_same< GridType, Dune::SGrid< 2, 2 > >::value) {
+    if (std::is_same< GridType, Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates<double,2> > >::value) {
       return DSC::make_unique<GridProviderType>(-1, 1, 8);
 #if HAVE_ALUGRID
     } else if (std::is_same< GridType, Dune::ALUConformGrid< 2, 2 > >::value
