@@ -103,14 +103,14 @@ public:
 
   TimeFieldType step(const TimeFieldType dt)
   {
-//      DiscreteFunctionType u_n_copy(u_n_);
+    DiscreteFunctionType u_n_copy(u_n_);
     apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
-    apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
+//    apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
 
       // unsplit method (comment second apply_RK_scheme above and uncomment definition of u_n_copy)
-//      u_intermediate_stages_[0].vector() *= RangeFieldType(0);
-//      source_operator_.apply(u_n_copy, u_intermediate_stages_[0], t_);
-//      u_n_.vector() += u_intermediate_stages_[0].vector()*dt;
+      u_intermediate_stages_[0].vector() *= RangeFieldType(0);
+      source_operator_.apply(u_n_copy, u_intermediate_stages_[0], t_);
+      u_n_.vector() += u_intermediate_stages_[0].vector()*dt;
 
       t_ += dt;                                        // augment time
 
@@ -134,7 +134,7 @@ public:
       u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
       u_tmp_.vector() = u_n_.vector();
       for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*(A_[ii][jj]));
+        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*factor*(A_[ii][jj]));
       op.apply(u_tmp_, u_intermediate_stages_[ii], t_ + dt*c_[ii]);
     }
 
