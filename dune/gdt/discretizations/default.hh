@@ -278,11 +278,17 @@ public:
 
       //create butcher_array
       // forward euler
-      Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0]"));
-      Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1]"));
+//      Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0]"));
+//      Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1]"));
+//      Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0]"));
       // generic second order, x = 1 (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
-//          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0; 1 0]"));
-//          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]"));
+          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0; 1 0]"));
+          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]"));
+          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0 1]"));
+      // optimal third order SSP
+//          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0; 1 0 0; 0.25 0.25 0]"));
+//          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1.0/6.0 1.0/6.0 2.0/3.0]"));
+//          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0 1 0.5]"));
       // classic fourth order RK
       //    Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]"));
       //    Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::toString(1.0/6.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/6.0) + "]"));
@@ -294,8 +300,8 @@ public:
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
                                                          DomainFieldType, dimDomain,
                                                          RangeFieldType, dimRange, 1 >        ConstantFunctionType;
-      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
-          < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType > OperatorType;
+      typedef typename Dune::GDT::Operators::AdvectionGodunovWithReconstruction
+          < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType, Dune::GDT::Operators::SlopeLimiters::mc > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionSource< SourceType, FVSpaceType > SourceOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, SourceOperatorType, FVFunctionType, double > TimeStepperType;
 
@@ -316,10 +322,10 @@ public:
 
       //create advection operator
       const ConstantFunctionType dx_function(dx);
-      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear, false, true);
+      OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear/*, true, true*/);
 
       //create timestepper
-      TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);
+      TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b, c);
 
       // now do the time steps
       std::vector< std::pair< double, DiscreteFunctionType > > solution_as_discrete_function;
