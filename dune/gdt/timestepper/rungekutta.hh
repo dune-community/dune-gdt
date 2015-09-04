@@ -151,7 +151,7 @@ public:
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step,
+             const TimeFieldType save_step_length,
              const bool save_solution,
              const bool write_solution,
              const std::string filename_prefix,
@@ -161,7 +161,7 @@ public:
     assert(t_end - t_ >= dt);
     size_t time_step_counter = 0;
 
-    const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
+    const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step_length, 0.0) ? dt : save_step_length;
     const TimeFieldType output_interval = 0.001;
     TimeFieldType next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
     TimeFieldType next_output_time = t_ + output_interval;
@@ -209,20 +209,20 @@ public:
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step = 0.0,
+             const TimeFieldType save_step_length = 0.0,
              const bool save_solution = false,
              const bool write_solution = true,
              const std::string filename_prefix = "")
   {
-    solve(t_end, first_dt, save_step, save_solution, write_solution, filename_prefix, solution_);
+    solve(t_end, first_dt, save_step_length, save_solution, write_solution, filename_prefix, solution_);
   }
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step,
+             const TimeFieldType save_step_length,
              std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
-    solve(t_end, first_dt, save_step, true, false, "", solution);
+    solve(t_end, first_dt, save_step_length, true, false, "", solution);
   }
 
   TimeFieldType current_time() const

@@ -300,8 +300,8 @@ public:
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
                                                          DomainFieldType, dimDomain,
                                                          RangeFieldType, dimRange, 1 >        ConstantFunctionType;
-      typedef typename Dune::GDT::Operators::AdvectionGodunovWithReconstruction
-          < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType, Dune::GDT::Operators::SlopeLimiters::mc > OperatorType;
+      typedef typename Dune::GDT::Operators::AdvectionGodunov
+          < AnalyticalFluxType, ConstantFunctionType, BoundaryValueType, FVSpaceType/*, Dune::GDT::Operators::SlopeLimiters::mc*/ > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionSource< SourceType, FVSpaceType > SourceOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, SourceOperatorType, FVFunctionType, double > TimeStepperType;
 

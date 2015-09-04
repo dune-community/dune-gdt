@@ -413,7 +413,7 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
@@ -422,7 +422,7 @@ public:
                                                                         dx_,
                                                                         dt_,
                                                                         source,
-                                                                        current_boundary_values,
+                                                                        *current_boundary_values,
                                                                         range,
                                                                         is_linear_,
                                                                         use_local_,
@@ -618,12 +618,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_, save_partitioning_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, *current_boundary_values, range, is_linear_, save_partitioning_);
     localizable_operator.apply();
   }
 
@@ -805,12 +805,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool = false, const double = 0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
+    auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxWendroffLocalizable<   AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, *current_boundary_values, range, is_linear_);
     localizable_operator.apply();
   }
 
