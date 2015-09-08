@@ -126,8 +126,9 @@ template< class DiffusionFactorImp, class DiffusionTensorImp >
 class Elliptic
   : public LocalEvaluation::Codim0Interface< internal::EllipticTraits< DiffusionFactorImp, DiffusionTensorImp >, 2 >
 {
-  typedef LocalEvaluation::Codim0Interface< internal::EllipticTraits< DiffusionFactorImp, DiffusionTensorImp >, 2 >
-      BaseType;
+  typedef LocalEvaluation::Codim0Interface
+      < internal::EllipticTraits< DiffusionFactorImp, DiffusionTensorImp >, 2 > BaseType;
+  typedef Elliptic< DiffusionFactorImp, DiffusionTensorImp >                    ThisType;
 public:
   typedef internal::EllipticTraits< DiffusionFactorImp, DiffusionTensorImp > Traits;
   typedef typename Traits::DiffusionFactorType    DiffusionFactorType;
@@ -162,6 +163,9 @@ public:
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion_tensor)
   {}
+
+  Elliptic(const ThisType& other) = default;
+  Elliptic(ThisType&& source) = default;
 
   /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
   /// \{
