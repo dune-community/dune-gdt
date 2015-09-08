@@ -159,9 +159,9 @@ public:
   template< typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
           , typename = typename std::enable_if< (std::is_same< DiffusionType, DiffusionTensorType >::value) // and the ctors
                                                 && (dimDomain > 1) && sizeof(DiffusionType) >::type >       // ambiguous.
-  Elliptic(const DiffusionType& diffusion_tensor)
+  Elliptic(const DiffusionType& diffusion)
     : diffusion_factor_(new DiffusionFactorType(1.))
-    , diffusion_tensor_(diffusion_tensor)
+    , diffusion_tensor_(diffusion)
   {}
 
   Elliptic(const ThisType& other) = default;
