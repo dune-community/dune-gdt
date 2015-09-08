@@ -131,6 +131,7 @@ class Elliptic
 {
   typedef LocalEvaluation::Codim0Interface<internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>, 2>
       BaseType;
+  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> ThisType;
 
 public:
   typedef internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
@@ -172,6 +173,9 @@ public:
     , diffusion_tensor_(diffusion_tensor)
   {
   }
+
+  Elliptic(const ThisType& other) = default;
+  Elliptic(ThisType&& source) = default;
 
   /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
   /// \{
