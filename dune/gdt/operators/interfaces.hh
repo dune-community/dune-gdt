@@ -8,6 +8,7 @@
 
 #include <type_traits>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/fvector.hh>
 
@@ -28,43 +29,84 @@ namespace GDT {
 
 
 template <class Traits>
-class OperatorInterface : public ProductInterface<Traits>
+class OperatorInterface : public Stuff::CRTPInterface<OperatorInterface<Traits>, Traits>
 {
-  typedef ProductInterface<Traits> BaseType;
-
 public:
-  using typename BaseType::GridViewType;
-  using typename BaseType::FieldType;
+  typedef typename Traits::derived_type derived_type;
+  typedef typename Traits::FieldType FieldType;
+  //  typedef typename Traits::JacobianType JacobianType;
+
+  /// \name Methods that have to be implemented by any derived class
+  /// \{
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range) const
   {
-    CHECK_CRTP(this->as_imp(*this).apply(source, range));
-    return this->as_imp(*this).apply(source, range);
+    CHECK_CRTP(this->as_imp().apply(source, range));
   }
 
-  template <class S, class R>
-  FieldType apply2(const Stuff::LA::VectorInterface<S, FieldType>& source,
-                   const Stuff::LA::VectorInterface<R, FieldType>& range) const
+  template <class RangeType, class SourceType>
+  FieldType apply2(const RangeType& range, const SourceType& source) const
   {
-    auto tmp = range.copy();
-    apply(source.as_imp(source), tmp);
-    return range.dot(tmp);
-  } // ... apply2(...)
-
-  template <class SS, class SV, class RS, class RV>
-  FieldType apply2(const ConstDiscreteFunction<SS, SV>& source, const ConstDiscreteFunction<RS, RV>& range) const
-  {
-    auto tmp_vector = range.copy();
-    DiscreteFunction<RS, RV> tmp_function(range.space(), tmp_vector);
-    apply(source, tmp_function);
-    return range.vector().dot(tmp_vector);
+    CHECK_CRTP(this->as_imp().apply2(range, source));
+    return this->as_imp().apply2(range, source);
   }
+
+  //  template< class SourceType >
+  //  JacobianType jacobian(const SourceType& source) const
+  //  {
+  //    CHECK_CRTP(this->as_imp().jacobian(source));
+  //    return this->as_imp().jacobian(source);
+  //  }
+
+  template <class RangeType, class SourceType>
+  void apply_inverse(const RangeType& range, SourceType& source, const Stuff::Common::Configuration& opts) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp().apply_inverse(range, source, opts));
+  }
+
+  std::vector<std::string> invert_options() const
+  {
+    CHECK_CRTP(this->as_imp().invert_options());
+    return this->as_imp().invert_options();
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& type) const
+  {
+    CHECK_CRTP(this->as_imp().invert_options(type));
+    return this->as_imp().invert_options(type);
+  }
+
+  /// \}
+  /// \name Provided by the interface for convenience
+  /// \{
+
+  template <class RangeType, class SourceType>
+  void apply_inverse(const RangeType& range, SourceType& source, const std::string& type) const
+  {
+    apply_inverse(range, source, invert_options(type));
+  }
+
+  template <class RangeType, class SourceType>
+  void apply_inverse(const RangeType& range, SourceType& source) const
+  {
+    auto type = invert_options();
+    apply_inverse(range, source, type.size() > 0 ? type[0] : "");
+  }
+
+  template <class RangeType>
+  FieldType induced_norm(const RangeType& range) const
+  {
+    return std::sqrt(apply2(range, range));
+  }
+
+  /// \}
 }; // class OperatorInterface
 
 
 template <class Traits>
-class LocalizableOperatorInterface : public Stuff::CRTPInterface<LocalizableOperatorInterface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Derive from LocalizableOperatorDefault instead (04.07.2015)!") LocalizableOperatorInterface
+    : public Stuff::CRTPInterface<LocalizableOperatorInterface<Traits>, Traits>
 {
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::GridViewType GridViewType;
@@ -124,7 +166,8 @@ public:
 
 
 template <class Traits>
-class AssemblableOperatorInterface : public AssemblableProductInterface<Traits>
+class DUNE_DEPRECATED_MSG("Derive from MatrixOperatorDefault instead (04.07.2015)!") AssemblableOperatorInterface
+    : public AssemblableProductInterface<Traits>
 {
   typedef AssemblableProductInterface<Traits> BaseType;
 
@@ -230,6 +273,32 @@ public:
     return apply2(range.vector(), source.vector());
   }
 }; // class AssemblableOperatorInterface
+
+
+namespace internal {
+
+
+template <class Tt>
+struct is_operator_helper
+{
+  DSC_has_typedef_initialize_once(Traits)
+
+      static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+};
+
+
+} // namespace internal
+
+
+template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
+struct is_operator : public std::is_base_of<OperatorInterface<typename T::Traits>, T>
+{
+};
+
+template <class T>
+struct is_operator<T, false> : public std::false_type
+{
+};
 
 
 } // namespace GDT
