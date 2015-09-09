@@ -98,7 +98,7 @@ private:
   struct Helper< false, true, anything >
   {
     typedef Stuff::Functions::Constant< E, D, d, D, 1, 1 > FactorType;
-    typedef DiffusionTensorImp                             TensorType;
+    typedef DiffusionFactorImp                             TensorType;
   };
 
   static const bool single_factor_given =    DiffusionFactorImp::dimRange == 1
