@@ -51,7 +51,7 @@ public:
   static const size_t dimDomain = DiffusionFactorImp::dimDomain;
 
   // we need to distinguish three cases here (since DiffusionTensorImp may be void):
-  // given a two functions, a factor and a tensor
+  // given two functions, a factor and a tensor
   // given a single factor (then set the tensor to default)
   // given a dingle tensor (then set the factor to default)
 private:
