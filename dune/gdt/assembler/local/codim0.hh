@@ -17,6 +17,7 @@
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/walker/functors.hh>
+#include <dune/stuff/grid/walker/wrapper.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localoperator/interface.hh>
@@ -25,6 +26,89 @@
 
 namespace Dune {
 namespace GDT {
+template< class GridViewImp, class LocalVolumeTwoFormType, class TestFunctionType, class AnsatzFunctionType, class FieldType >
+class LocalVolumeTwoFormAccumulator
+  : public Stuff::Grid::internal::Codim0ReturnObject< GridViewImp, FieldType >
+{
+  static_assert(std::is_base_of< LocalVolumeTwoFormInterface< typename LocalVolumeTwoFormType::Traits >,
+                                 LocalVolumeTwoFormType >::value,
+                "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
+  static_assert(Stuff::is_localizable_function< TestFunctionType >::value,
+                "TestFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(Stuff::is_localizable_function< AnsatzFunctionType >::value,
+                "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+
+  typedef LocalVolumeTwoFormAccumulator
+      < GridViewImp, LocalVolumeTwoFormType, TestFunctionType, AnsatzFunctionType, FieldType > ThisType;
+  typedef Stuff::Grid::internal::Codim0ReturnObject< GridViewImp, FieldType >                  BaseType;
+public:
+  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::EntityType   EntityType;
+
+  LocalVolumeTwoFormAccumulator(const GridViewType& grd_vw,
+                                const LocalVolumeTwoFormType& local_op,
+                                const TestFunctionType& test_function,
+                                const AnsatzFunctionType& ansatz_function,
+                                const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >& where)
+    : grid_view_(grd_vw)
+    , local_operator_(local_op)
+    , test_function_(test_function)
+    , ansatz_function_(ansatz_function)
+    , result_(0)
+    , finalized_(false)
+    , where_(where)
+  {}
+
+  LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
+  virtual ~LocalVolumeTwoFormAccumulator()             = default;
+
+  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const override final
+  {
+    return where_.apply_on(grid_view, entity);
+  }
+
+  virtual FieldType compute_locally(const EntityType& entity) override final
+  {
+    DynamicMatrix< FieldType > local_twoform_result(1, 1, 0.);
+    this->local_operator_.apply2(*test_function_.local_function(entity),
+                                 *ansatz_function_.local_function(entity),
+                                 local_twoform_result);
+    return local_twoform_result[0][0];
+  } // ... compute_locally(...)
+
+  virtual void apply_local(const EntityType& entity) override
+  {
+    *result_ += compute_locally(entity);
+  }
+
+  virtual void finalize() override
+  {
+    if (!finalized_) {
+      finalized_result_ = result_.sum();
+      finalized_result_ = grid_view_.comm().sum(finalized_result_);
+      finalized_ = true;
+    }
+  } // ... finalize(...)
+
+  virtual FieldType result() const override final
+  {
+    if (!finalized_)
+      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
+    return finalized_result_;
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalVolumeTwoFormType& local_operator_;
+  const TestFunctionType& test_function_;
+  const AnsatzFunctionType& ansatz_function_;
+  DS::PerThreadValue< FieldType > result_;
+  bool finalized_;
+  const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >& where_;
+  FieldType finalized_result_;
+}; // class LocalVolumeTwoFormAccumulator
+
+
 namespace LocalAssembler {
 
 
