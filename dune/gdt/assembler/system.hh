@@ -74,6 +74,8 @@ public:
     , ansatz_space_(test)
   {}
 
+  SystemAssembler(ThisType&& source) = default;
+
   const TestSpaceType& test_space() const
   {
     return *test_space_;
