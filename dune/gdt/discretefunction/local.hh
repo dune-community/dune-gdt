@@ -9,6 +9,8 @@
 #include <vector>
 #include <type_traits>
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
@@ -179,7 +181,14 @@ public:
 
   virtual ~ConstLocalDiscreteFunction() {}
 
-  const BaseFunctionSetType& base() const
+  const
+    DUNE_DEPRECATED_MSG("Use basis() instead (05.07.2015)!")
+        BaseFunctionSetType& base() const
+  {
+    return basis();
+  }
+
+  const BaseFunctionSetType& basis() const
   {
     return *base_;
   }
