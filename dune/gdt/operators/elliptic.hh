@@ -581,6 +581,39 @@ private:
 }; // class EllipticOperator
 
 
+// ////////////////////// //
+// make_elliptic_operator //
+// ////////////////////// //
+
+template< class GridViewType, class DiffusionType >
+    typename std::enable_if< Stuff::is_localizable_function< DiffusionType >::value
+                           , std::unique_ptr< EllipticOperator< DiffusionType, void, GridViewType,
+                                                                typename DiffusionType::RangeFieldType > >
+                           >::type
+make_elliptic_operator(const GridViewType& grid_view,
+                       const DiffusionType& diffusion,
+                       const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticOperator< DiffusionType, void, GridViewType, typename DiffusionType::RangeFieldType > >
+      (over_integrate, grid_view, diffusion);
+}
+
+template< class GridViewType, class DiffusionFactorType, class DiffusionTensorType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                           , std::unique_ptr< EllipticOperator< DiffusionFactorType, DiffusionTensorType, GridViewType,
+                                                                typename DiffusionFactorType::RangeFieldType > >
+                           >::type
+make_elliptic_operator(const GridViewType& grid_view,
+                       const DiffusionFactorType& diffusion_factor,
+                       const DiffusionTensorType& diffusion_tensor,
+                       const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticOperator< DiffusionFactorType, DiffusionTensorType, GridViewType, typename DiffusionFactorType::RangeFieldType > >
+      (over_integrate, grid_view, diffusion_factor, diffusion_tensor);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
