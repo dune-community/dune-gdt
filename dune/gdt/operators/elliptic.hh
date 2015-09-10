@@ -16,6 +16,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
 
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/operators/interfaces.hh>
@@ -440,6 +441,116 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix
                                                  SourceSpaceType>>(
       over_integrate, diffusion, matrix, range_space, source_space, grid_view);
 }
+
+
+// //////////////// //
+// EllipticOperator //
+// //////////////// //
+
+// forward, needed for the traits
+template <class DiffusionFactorType, typename DiffusionTensorType, class GridView,
+          class Field = typename DiffusionFactorType::RangeFieldType>
+class EllipticOperator;
+
+
+namespace internal {
+
+
+template <class DiffusionFactorType, typename DiffusionTensorType, class GridViewType, class Field>
+class EllipticOperatorTraits
+{
+public:
+  typedef EllipticOperator<DiffusionFactorType, DiffusionTensorType, GridViewType, Field> derived_type;
+  typedef Field FieldType;
+};
+
+
+} // namespace internal
+
+
+template <class DiffusionFactorType,
+          typename DiffusionTensorType, // may be void
+          class GridViewType, class Field>
+class EllipticOperator
+    : public OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
+                                                                Field>>
+{
+  typedef OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
+                                                             Field>> BaseType;
+  typedef LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType> LocalEvaluationType;
+
+public:
+  using typename BaseType::FieldType;
+
+  template <class... Args>
+  EllipticOperator(const size_t over_integrate, GridViewType grid_view, Args&&... args)
+    : data_functions_(std::forward<Args>(args)...)
+    , grid_view_(grid_view)
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  template <class... Args>
+  EllipticOperator(GridViewType grid_view, Args&&... args)
+    : data_functions_(std::forward<Args>(args)...)
+    , grid_view_(grid_view)
+    , over_integrate_(0)
+  {
+  }
+
+  template <class SourceSpaceType, class VectorType, class RangeSpaceType>
+  void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
+             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+  {
+    typedef typename Stuff::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+        MatrixType;
+    auto op = make_elliptic_matrix_operator<MatrixType>(data_functions_.diffusion_factor(),
+                                                        data_functions_.diffusion_tensor(),
+                                                        source.space(),
+                                                        range.space(),
+                                                        grid_view_,
+                                                        over_integrate_);
+    op->apply(source, range);
+  }
+
+  template <class E, class D, size_t d, class R, size_t r, size_t rC>
+  FieldType apply2(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
+                   const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+  {
+    auto product = make_elliptic_localizable_product(data_functions_.diffusion_factor(),
+                                                     data_functions_.diffusion_tensor(),
+                                                     grid_view_,
+                                                     range,
+                                                     source,
+                                                     over_integrate_);
+    return product->apply2();
+  }
+
+  using BaseType::apply_inverse;
+
+  template <class RangeType, class SourceType>
+  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
+                     const Stuff::Common::Configuration& /*opts*/) const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+  }
+
+  std::vector<std::string> invert_options() const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+    return {"depends_on_the_vector_type_of_the_discrete_function"};
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+  }
+
+private:
+  const LocalEvaluationType data_functions_; // We use the local evaluation to store the data functions since it can
+  GridViewType grid_view_; // handle the case of single diffusion factor, single diffusion tensor and
+  const size_t over_integrate_; // both factor and tensor and creates the required missing data function.
+}; // class EllipticOperator
 
 
 } // namespace GDT
