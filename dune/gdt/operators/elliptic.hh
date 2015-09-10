@@ -24,6 +24,10 @@ namespace Dune {
 namespace GDT {
 
 
+// ////////////////////////// //
+// EllipticLocalizableProduct //
+// ////////////////////////// //
+
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
           class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
@@ -102,6 +106,10 @@ private:
   const LocalEllipticOperatorType local_elliptic_operator_;
 }; // class EllipticLocalizableProduct
 
+
+// ///////////////////////////////// //
+// make_elliptic_localizable_product //
+// ///////////////////////////////// //
 
 /**
  * \sa EllipticLocalizableProduct, especially for the role of diffusion.
