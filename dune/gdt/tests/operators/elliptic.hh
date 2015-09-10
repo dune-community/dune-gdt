@@ -597,6 +597,79 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
 }; // struct EllipticMatrixOperatorTest
 
 
+template <class SpaceType>
+struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public OperatorBase<SpaceType>
+{
+  typedef EllipticProductBase<SpaceType> EllipticBaseType;
+  typedef OperatorBase<SpaceType> OperatorBaseType;
+  using typename OperatorBaseType::GridViewType;
+  using typename EllipticBaseType::ExpressionFunctionType;
+  using typename OperatorBaseType::DiscreteFunctionType;
+  using typename OperatorBaseType::ScalarFunctionType;
+  using typename OperatorBaseType::TensorFunctionType;
+  using typename OperatorBaseType::RangeFieldType;
+  using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::VectorType;
+
+  void constructible_by_ctor()
+  {
+    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_tensor = this->tensor_function_;
+    const auto& grid_view        = this->space_.grid_view();
+
+    EllipticOperator<ExpressionFunctionType, void, GridViewType> DUNE_UNUSED(only_factor)(grid_view, diffusion_factor);
+    EllipticOperator<ExpressionFunctionType, void, GridViewType> DUNE_UNUSED(only_factor_w_over)(
+        1, grid_view, diffusion_factor);
+
+    EllipticOperator<TensorFunctionType, void, GridViewType> DUNE_UNUSED(only_tensor)(grid_view, diffusion_tensor);
+    EllipticOperator<TensorFunctionType, void, GridViewType> DUNE_UNUSED(only_tensor_w_over)(
+        1, grid_view, diffusion_tensor);
+
+    EllipticOperator<ExpressionFunctionType, TensorFunctionType, GridViewType> DUNE_UNUSED(both)(
+        grid_view, diffusion_factor, diffusion_tensor);
+    EllipticOperator<ExpressionFunctionType, TensorFunctionType, GridViewType> DUNE_UNUSED(both_w_over)(
+        1, grid_view, diffusion_factor, diffusion_tensor);
+  } // ... constructible_by_ctor(...)
+
+  void constructible_by_factory()
+  {
+    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_tensor = this->tensor_function_;
+    const auto& grid_view        = this->space_.grid_view();
+
+    auto only_factor        = make_elliptic_operator(grid_view, diffusion_factor);
+    auto only_factor_w_over = make_elliptic_operator(grid_view, diffusion_factor, 1);
+
+    auto only_tensor        = make_elliptic_operator(grid_view, diffusion_tensor);
+    auto only_tensor_w_over = make_elliptic_operator(grid_view, diffusion_tensor, 1);
+
+    auto both        = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
+    auto both_w_over = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor, 1);
+  } // ... constructible_by_factory()
+
+  virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
+  {
+    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_tensor = this->tensor_function_;
+    const auto& grid_view        = this->space_.grid_view();
+
+    return make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor)->apply2(function, function);
+  } // ... compute(...)
+
+  void apply_is_callable()
+  {
+    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_tensor = this->tensor_function_;
+    const auto& grid_view        = this->space_.grid_view();
+    auto& source                 = this->discrete_function_;
+    auto range                   = make_discrete_function<VectorType>(this->space_);
+
+    auto op = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
+    op->apply(source, range);
+  } // ... apply_is_callable(...)
+}; // struct EllipticOperatorTest
+
+
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
