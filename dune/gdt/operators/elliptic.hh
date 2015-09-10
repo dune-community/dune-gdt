@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_OPERATORS_ELLIPTIC_HH
 #define DUNE_GDT_OPERATORS_ELLIPTIC_HH
 
+#include <type_traits>
+
 #include <dune/grid/common/gridview.hh>
 
 #include <dune/stuff/common/configuration.hh>
@@ -234,6 +236,244 @@ public:
 private:
   const LocalEllipticOperatorType local_elliptic_operator_;
 }; // class EllipticMatrixOperator
+
+
+// ///////////////////////////// //
+// make_elliptic_matrix_operator //
+// ///////////////////////////// //
+
+// both diffusion factor and tensor, without matrix
+
+template< class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && is_space< SpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      SpaceType, MatrixType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              const SpaceType& space,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType > >(
+      over_integrate, diffusion_factor, diffusion_tensor, space);
+}
+
+template< class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && is_space< SpaceType >::value
+                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      SpaceType, MatrixType, GridViewType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType, GridViewType > >
+          (over_integrate, diffusion_factor, diffusion_tensor, space, grid_view);
+}
+
+template< class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      RangeSpaceType, MatrixType, GridViewType,
+                                                                      SourceSpaceType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionFactorType, DiffusionTensorType, RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+          (over_integrate, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
+}
+
+// both diffusion factor and tensor, with matrix
+
+template< class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      SpaceType, MatrixType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              MatrixType& matrix,
+                              const SpaceType& space,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType > >(
+      over_integrate, diffusion_factor, diffusion_tensor, matrix, space);
+}
+
+template< class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      SpaceType, MatrixType, GridViewType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              MatrixType& matrix,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType, GridViewType > >
+          (over_integrate, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
+}
+
+template< class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
+                             && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
+                                                                      RangeSpaceType, MatrixType, GridViewType,
+                                                                      SourceSpaceType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              MatrixType& matrix,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionFactorType, DiffusionTensorType, RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+          (over_integrate, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
+}
+
+// single diffusion, without matrix
+
+template< class MatrixType, class DiffusionType, class SpaceType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionType >::value
+                             && is_space< SpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              const SpaceType& space,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType > >
+      (over_integrate, diffusion, space);
+}
+
+template< class MatrixType, class DiffusionType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionType >::value
+                             && is_space< SpaceType >::value
+                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType,
+                                                                      GridViewType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType, GridViewType > >
+      (over_integrate, diffusion, space, grid_view);
+}
+
+template< class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && Stuff::is_localizable_function< DiffusionType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, RangeSpaceType, MatrixType,
+                                                                      GridViewType, SourceSpaceType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionType, void, RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+          (over_integrate, diffusion, range_space, source_space, grid_view);
+}
+
+// single diffusion, with matrix
+
+template< class DiffusionType, class MatrixType, class SpaceType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              MatrixType& matrix,
+                              const SpaceType& space,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType > >(
+      over_integrate, diffusion, matrix, space);
+}
+
+template< class DiffusionType, class MatrixType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType,
+                                              GridViewType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              MatrixType& matrix,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionType, void, SpaceType, MatrixType, GridViewType > >
+          (over_integrate, diffusion, matrix, space, grid_view);
+}
+
+template< class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::is_localizable_function< DiffusionType >::value
+                             && Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                           , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, RangeSpaceType, MatrixType,
+                                                                      GridViewType, SourceSpaceType > >
+                           >::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              MatrixType& matrix,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
+{
+  return DSC::make_unique< EllipticMatrixOperator
+      < DiffusionType, void, RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+          (over_integrate, diffusion, matrix, range_space, source_space, grid_view);
+}
 
 
 } // namespace GDT
