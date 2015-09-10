@@ -40,6 +40,7 @@ struct OperatorBaseTraits
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange >             FunctionType;
   typedef Dune::Stuff::Functions::Constant
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain > TensorFunctionType;
+  typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_backend >::MatrixType MatrixType;
   typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_backend >::VectorType VectorType;
   typedef DiscreteFunction< SpaceType, VectorType >                                               DiscreteFunctionType;
 }; // class OperatorBaseTraits
@@ -60,6 +61,8 @@ struct OperatorBase
   typedef typename Traits::FunctionType         FunctionType;
   typedef typename Traits::TensorFunctionType   TensorFunctionType;
   typedef typename Traits::DiscreteFunctionType DiscreteFunctionType;
+  typedef typename Traits::MatrixType MatrixType;
+  typedef typename Traits::VectorType VectorType;
   static const size_t dimDomain = Traits::dimDomain;
 
   OperatorBase()
@@ -100,6 +103,29 @@ struct LocalizableProductBase
 
     auto DUNE_UNUSED(result) = prod.apply2();
   } // ... localizable_product_test(...)
+}; // class LocalizableProductBase
+
+
+template< class SpaceType >
+struct MatrixOperatorBase
+  : public OperatorBase< SpaceType >
+{
+  typedef OperatorBase< SpaceType > BaseType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::MatrixType;
+
+  template< class OperatorImp >
+  void matrix_operator_test(OperatorImp& op)
+  {
+    const auto& DUNE_UNUSED(matrix) = op.matrix();
+    auto& DUNE_UNUSED(non_const_matrix) = op.matrix();
+    const auto& DUNE_UNUSED(source_space) = op.source_space();
+    const auto& DUNE_UNUSED(range_space) = op.range_space();
+
+    Stuff::Grid::Walker< GridViewType > walker(this->space_.grid_view());
+    walker.add(op);
+    walker.walk();
+  } // ... matrix_operator_test(...)
 }; // class LocalizableProductBase
 
 
