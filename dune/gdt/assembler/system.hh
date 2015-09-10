@@ -49,8 +49,8 @@ public:
   typedef DSG::ApplyOn::WhichEntity<GridViewType> ApplyOnWhichEntity;
   typedef DSG::ApplyOn::WhichIntersection<GridViewType> ApplyOnWhichIntersection;
 
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridViewType grid_view)
-    : BaseType(grid_view)
+  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridViewType grd_vw)
+    : BaseType(grd_vw)
     , test_space_(test)
     , ansatz_space_(ansatz)
   {
@@ -70,8 +70,8 @@ public:
   {
   }
 
-  SystemAssembler(TestSpaceType test, GridViewType grid_view_in)
-    : BaseType(grid_view_in)
+  SystemAssembler(TestSpaceType test, GridViewType grd_vw)
+    : BaseType(grd_vw)
     , test_space_(test)
     , ansatz_space_(test)
   {
