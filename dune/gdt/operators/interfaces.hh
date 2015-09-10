@@ -28,6 +28,10 @@ namespace Dune {
 namespace GDT {
 
 
+/**
+ * \note The methods apply() and apply2() do not support threaded assembly atm, else we would have to add a use_tbb
+ *       switch (to a lot of methods). Either this gets merged with the new Parameter or we need a different paradigm.
+ */
 template< class Traits >
 class OperatorInterface
   : public Stuff::CRTPInterface< OperatorInterface< Traits >, Traits >
