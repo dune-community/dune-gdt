@@ -311,8 +311,7 @@ public:
   }
 
   template <class S, class R>
-  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source,
-             ConstDiscreteFunction<RangeSpaceType, R>& range) const
+  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source, DiscreteFunction<RangeSpaceType, R>& range) const
   {
     apply(source.vector(), range.vector());
   }
