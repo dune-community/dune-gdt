@@ -21,11 +21,71 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localoperator/interface.hh>
+#include <dune/gdt/localoperator/interfaces.hh>
 #include <dune/gdt/localfunctional/interface.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
+
+
+template< class LocalVolumeTwoFormType >
+class LocalVolumeTwoFormAssembler
+{
+  static_assert(is_local_volume_twoform< LocalVolumeTwoFormType >::value,
+                "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
+
+public:
+  explicit LocalVolumeTwoFormAssembler(const LocalVolumeTwoFormType& local_twoform)
+    : local_volume_twoform_(local_twoform)
+  {}
+
+  /**
+   *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
+   *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
+   *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam EntityType  A model of Dune::Entity< 0 >
+   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the type of global_matrix
+   *  \tparam R           RangeFieldType, i.e. double
+   */
+  template< class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType, class M, class R >
+  void assemble(const SpaceInterface< T, Td, Tr, TrC >& test_space,
+                const SpaceInterface< A, Ad, Ar, ArC >& ansatz_space,
+                const EntityType& entity,
+                Stuff::LA::MatrixInterface< M, R >& global_matrix) const
+  {
+    // prepare
+    const size_t rows = test_space.mapper().numDofs(entity);
+    const size_t cols = ansatz_space.mapper().numDofs(entity);
+    Dune::DynamicMatrix< R > local_matrix(rows, cols, 0.);
+    // apply local two-form
+    const auto test_base   = test_space.base_function_set(entity);
+    const auto ansatz_base = ansatz_space.base_function_set(entity);
+    assert(test_base.size()   == rows);
+    assert(ansatz_base.size() == cols);
+    local_volume_twoform_.apply2(test_base, ansatz_base, local_matrix);
+    // write local matrix to global
+    const auto global_row_indices = test_space.mapper().globalIndices(entity);
+    const auto global_col_indices = ansatz_space.mapper().globalIndices(entity);
+    assert(global_row_indices.size() == rows);
+    assert(global_col_indices.size() == cols);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      const auto& local_matrix_row = local_matrix[ii];
+      const size_t global_ii = global_row_indices[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        const size_t global_jj = global_col_indices[jj];
+        global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
+      }
+    } // write local matrix to global
+  } // ... assembleLocal(...)
+
+private:
+  const LocalVolumeTwoFormType& local_volume_twoform_;
+}; // class LocalVolumeTwoFormAssembler
+
+
 template< class GridViewImp, class LocalVolumeTwoFormType, class TestFunctionType, class AnsatzFunctionType, class FieldType >
 class LocalVolumeTwoFormAccumulator
   : public Stuff::Grid::internal::Codim0ReturnObject< GridViewImp, FieldType >
