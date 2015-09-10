@@ -260,6 +260,20 @@ public:
   } // ... evaluate(...)
 
   /// \}
+  /// \name Access to data functions (allows the evaluation to be used as traits handling multiple szenarios).
+  /// \{
+
+  const DiffusionFactorType& diffusion_factor() const
+  {
+    return diffusion_factor_.access();
+  }
+
+  const DiffusionTensorType& diffusion_tensor() const
+  {
+    return diffusion_tensor_.access();
+  }
+
+  /// \}
 
 private:
   const DiffusionFactorProvider diffusion_factor_;
