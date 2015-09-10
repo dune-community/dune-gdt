@@ -158,6 +158,84 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
 }
 
 
+// ////////////////////// //
+// EllipticMatrixOperator //
+// ////////////////////// //
+
+template< class DiffusionFactorType,
+          typename DiffusionTensorType, // may be void
+          class RangeSpace,
+          class Matrix = typename Stuff::LA::Container< typename RangeSpace::RangeFieldType >::MatrixType,
+          class GridView = typename RangeSpace::GridViewType,
+          class SourceSpace = RangeSpace,
+          class Field = typename RangeSpace::RangeFieldType >
+class EllipticMatrixOperator
+  : public MatrixOperatorDefault< Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume >
+{
+  typedef MatrixOperatorDefault< Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume > BaseType;
+  typedef LocalVolumeIntegralOperator
+      < LocalEvaluation::Elliptic< DiffusionFactorType, DiffusionTensorType > > LocalEllipticOperatorType;
+public:
+  // see the ctors of EllipticLocalizableProduct
+  template< typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
+          , typename = typename std::enable_if<    (std::is_same< DiffusionTensorType, void >::value) //
+                                                && (std::is_same< DiffusionImp, DiffusionFactorType >::value)
+                                                && sizeof(DiffusionImp) >::type
+          , class ...Args >
+  explicit EllipticMatrixOperator(const DiffusionImp& diffusion, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_elliptic_operator_(diffusion)
+  {
+    this->add(local_elliptic_operator_);
+  }
+
+  template< typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
+          , typename = typename std::enable_if<    (std::is_same< DiffusionTensorType, void >::value)
+                                                && (std::is_same< DiffusionImp, DiffusionFactorType >::value)
+                                                && sizeof(DiffusionImp) >::type
+          , class ...Args >
+  explicit EllipticMatrixOperator(const size_t over_integrate, const DiffusionImp& diffusion, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_elliptic_operator_(over_integrate, diffusion)
+  {
+    this->add(local_elliptic_operator_);
+  }
+
+  template< typename DiffusionFactorImp // This ctor is only enabled
+          , typename DiffusionTensorImp // if we are given two diffusion data functions (factor and tensor).
+          , typename = typename std::enable_if<    (!std::is_same< DiffusionTensorType, void >::value)
+                                                && (std::is_same< DiffusionFactorImp, DiffusionFactorType >::value)
+                                                && sizeof(DiffusionFactorImp) >::type
+          , class ...Args >
+  explicit EllipticMatrixOperator(const DiffusionFactorImp& diffusion_factor,
+                                  const DiffusionTensorImp& diffusion_tensor,
+                                  Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
+  {
+    this->add(local_elliptic_operator_);
+  }
+
+  template< typename DiffusionFactorImp // This ctor is only enabled
+          , typename DiffusionTensorImp // if we are given two diffusion data functions (factor and tensor).
+          , typename = typename std::enable_if<    (!std::is_same< DiffusionTensorType, void >::value)
+                                                && (std::is_same< DiffusionFactorImp, DiffusionFactorType >::value)
+                                                && sizeof(DiffusionFactorImp) >::type
+          , class ...Args >
+  explicit EllipticMatrixOperator(const size_t over_integrate,
+                                  const DiffusionFactorImp& diffusion_factor,
+                                  const DiffusionTensorImp& diffusion_tensor,
+                                  Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
+  {
+    this->add(local_elliptic_operator_);
+  }
+private:
+  const LocalEllipticOperatorType local_elliptic_operator_;
+}; // class EllipticMatrixOperator
+
+
 } // namespace GDT
 } // namespace Dune
 
