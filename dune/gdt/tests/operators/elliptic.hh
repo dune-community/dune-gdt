@@ -21,7 +21,6 @@ namespace Tests {
  */
 template< class SpaceType >
 struct EllipticProductBase
-  : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid      GridType;
