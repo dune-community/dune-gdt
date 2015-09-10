@@ -83,6 +83,50 @@ private:
 }; // class ConstraintsWrapper
 
 
+template <class AssemblerType, class LocalTwoFormType, class MatrixType>
+class LocalVolumeTwoFormWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+{
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+
+  LocalVolumeTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                            const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                            const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                            const LocalTwoFormType& local_twoform, MatrixType& matrix)
+    : test_space_(test_space)
+    , ansatz_space_(ansatz_space)
+    , where_(where)
+    , local_twoform_(local_twoform)
+    , matrix_(matrix)
+    , local_assembler_(local_twoform_)
+  {
+  }
+
+  virtual ~LocalVolumeTwoFormWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity) override final
+  {
+    local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
+  }
+
+private:
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const LocalTwoFormType& local_twoform_;
+  MatrixType& matrix_;
+  const LocalVolumeTwoFormAssembler<LocalTwoFormType> local_assembler_;
+}; // class LocalVolumeTwoFormWrapper
+
+
 template <class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType>
 class LocalVolumeMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
