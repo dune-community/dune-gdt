@@ -142,9 +142,15 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    return make_elliptic_localizable_product(
-               this->one_, this->tensor_function_, this->space_.grid_view(), function, function)
-        ->apply2();
+    auto product = make_elliptic_localizable_product(
+        this->one_, this->tensor_function_, this->space_.grid_view(), function, function);
+    const auto result = product->apply2();
+    auto product_tbb = make_elliptic_localizable_product(
+        this->one_, this->tensor_function_, this->space_.grid_view(), function, function);
+    product_tbb->walk(true);
+    const auto result_tbb = product_tbb->apply2();
+    EXPECT_EQ(result_tbb, result);
+    return result;
   }
 
   void is_localizable_product()
