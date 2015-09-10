@@ -50,7 +50,7 @@ struct OperatorBaseTraits
 
 
 template <class SpaceType>
-struct OperatorBase
+struct OperatorBase : public ::testing::Test
 {
   typedef internal::OperatorBaseTraits<SpaceType> Traits;
   typedef typename Traits::GridViewType GridViewType;
