@@ -15,6 +15,9 @@ namespace GDT {
 namespace Tests {
 
 
+/**
+ * \note The values in correct_for_constant_arguments(), etc., are valid for the d-dimendional unit cube.
+ */
 template <class SpaceType>
 struct EllipticProductBase : public ::testing::Test
 {
