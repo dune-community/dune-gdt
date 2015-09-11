@@ -57,7 +57,8 @@ class FemLocalfunctionsBasedTraits
 public:
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
-  static const int polOrder = polynomialOrder;
+  static const int polOrder    = polynomialOrder;
+  static const bool continuous = false;
 
 private:
   typedef typename GridPartType::ctype DomainFieldType;

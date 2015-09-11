@@ -57,7 +57,8 @@ class PdelabBasedTraits
 public:
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
-  static const int polOrder = polynomialOrder;
+  static const int polOrder    = polynomialOrder;
+  static const bool continuous = false;
   static_assert(polOrder == 0, "Untested!");
   static_assert(rangeDim == GridViewType::dimension, "Untested!");
   static_assert(rangeDimCols == 1, "Untested!");
