@@ -42,6 +42,7 @@ class DefaultTraits
 public:
   typedef Default< GridViewImp, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   static const int  polOrder = 0;
+  static const bool continuous = false;
   typedef GridViewImp                     GridViewType;
   typedef typename GridViewType::IndexSet BackendType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;

@@ -81,6 +81,7 @@ class SpaceInterface
 public:
   typedef typename Traits::derived_type         derived_type;
   static const int                              polOrder = Traits::polOrder;
+  static const bool                             continuous = Traits::continuous;
   typedef typename Traits::BackendType          BackendType;
   typedef typename Traits::MapperType           MapperType;
   typedef typename Traits::BaseFunctionSetType  BaseFunctionSetType;

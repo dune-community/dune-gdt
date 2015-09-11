@@ -55,6 +55,7 @@ public:
   typedef PdelabBased< GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols > derived_type;
   typedef GridViewImp                   GridViewType;
   static const int                      polOrder = polynomialOrder;
+  static const bool                     continuous = false;
 private:
   typedef typename GridViewType::ctype  DomainFieldType;
   static const size_t                   dimDomain = GridViewType::dimension;

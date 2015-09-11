@@ -44,6 +44,7 @@ class BlockTraits
 public:
   typedef Block< LocalSpaceType > derived_type;
   static const int                                      polOrder = LocalSpaceType::polOrder;
+  static const bool                                     continuous = false;
   typedef typename LocalSpaceType::BackendType          BackendType;
   typedef Mapper::Block< LocalSpaceType >               MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType  BaseFunctionSetType;

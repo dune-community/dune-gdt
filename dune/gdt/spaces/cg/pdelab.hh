@@ -59,6 +59,7 @@ public:
   typedef GridViewImp                   GridViewType;
   static const int                      polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
+  static const bool                     continuous = true;
 private:
   typedef typename GridViewType::ctype  DomainFieldType;
   static const size_t                   dimDomain = GridViewType::dimension;
