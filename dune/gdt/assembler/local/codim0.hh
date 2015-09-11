@@ -369,7 +369,7 @@ private:
 
 
 template <class GridViewImp, class LocalOperatorType, class TestFunctionType, class AnsatzFunctionType, class FieldType>
-class Codim0OperatorAccumulateFunctor : public Stuff::Grid::Functor::Codim0<GridViewImp>
+class Codim0OperatorAccumulateFunctor : public Stuff::Grid::Codim0Functor<GridViewImp>
 {
   static_assert(
       std::is_base_of<LocalOperator::Codim0Interface<typename LocalOperatorType::Traits>, LocalOperatorType>::value,
@@ -381,7 +381,7 @@ class Codim0OperatorAccumulateFunctor : public Stuff::Grid::Functor::Codim0<Grid
 
   typedef Codim0OperatorAccumulateFunctor<GridViewImp, LocalOperatorType, TestFunctionType, AnsatzFunctionType,
                                           FieldType> ThisType;
-  typedef Stuff::Grid::Functor::Codim0<GridViewImp> BaseType;
+  typedef Stuff::Grid::Codim0Functor<GridViewImp> BaseType;
   typedef DSC::TmpMatricesStorage<FieldType> TmpMatricesProviderType;
 
 public:
