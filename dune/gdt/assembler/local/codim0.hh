@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
@@ -219,7 +220,9 @@ namespace LocalAssembler {
 
 
 template< class LocalOperatorImp >
-class Codim0Matrix
+class
+  DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssembler instead (10.09.2015)!")
+      Codim0Matrix
 {
   static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
                                  LocalOperatorImp >::value,
