@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
@@ -20,7 +22,6 @@
 namespace Dune {
 namespace GDT {
 namespace internal {
-
 
 
 template< class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType >
@@ -127,7 +128,9 @@ private:
 
 
 template< class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType >
-class LocalVolumeMatrixAssemblerWrapper
+class
+  DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormWrapper instead (10.09.2015)!")
+      LocalVolumeMatrixAssemblerWrapper
   : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
   , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
 {
