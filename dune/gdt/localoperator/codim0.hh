@@ -107,7 +107,7 @@ public:
       const auto integrationFactor = entity.geometry().integrationElement(x);
       const auto quadratureWeight = quadPoint.weight();
       // evaluate the integrand
-      integrand_.evaluate(localFunctions, ansatzBase, testBase, x, evaluationResult);
+      integrand_.evaluate(localFunctions, testBase, ansatzBase, x, evaluationResult);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& retRow = ret[ii];
