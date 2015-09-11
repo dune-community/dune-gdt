@@ -106,6 +106,34 @@ public:
 }; // class LocalCouplingTwoFormInterface
 
 
+template <class Traits>
+class LocalBoundaryTwoFormInterface : public Stuff::CRTPInterface<LocalBoundaryTwoFormInterface<Traits>, Traits>
+{
+public:
+  typedef typename Traits::derived_type derived_type;
+
+  /**
+   *  \brief Applies the local operator associated with boundary faces as a two-form.
+   *  \tparam T       Traits of the test Stuff::LocalfunctionSetInterface implementation
+   *  \tparam A       Traits of the ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam IntersectionType
+   *  \tparam D       DomainFieldType
+   *  \tparam d       dimDomain
+   *  \tparam R       RangeFieldType
+   *  \tparam r{T,A}  dimRange of the of the {test_base,ansatz_base}
+   *  \tparam rC{T,a} dimRangeCols of the {test_base,ansatz_base}
+   */
+  template <class T, class A, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
+            size_t rCA>
+  void apply2(const Stuff::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
+              const Stuff::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
+              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, intersection, ret));
+  }
+}; // class LocalBoundaryTwoFormInterface
+
+
 namespace internal {
 
 
