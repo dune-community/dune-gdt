@@ -3,11 +3,14 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#warning This header is deprecated, include <dune/gdt/localoperator/interfaces.hh> instead (08.09.2015)!
+
 #ifndef DUNE_GDT_LOCALOPERATOR_INTERFACE_HH
 #define DUNE_GDT_LOCALOPERATOR_INTERFACE_HH
 
 #include <vector>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/stuff/common/crtp.hh>
@@ -20,7 +23,8 @@ namespace LocalOperator {
 
 
 template <class Traits>
-class Codim0Interface : public Stuff::CRTPInterface<Codim0Interface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Use LocalOperatorInterface or LocalVolumeTwoFormInterface instead (08.09.2015)!")
+    Codim0Interface : public Stuff::CRTPInterface<Codim0Interface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -52,7 +56,8 @@ public:
 
 
 template <class Traits>
-class Codim1CouplingInterface : public Stuff::CRTPInterface<Codim1CouplingInterface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormInterface instead (08.09.2015)!") Codim1CouplingInterface
+    : public Stuff::CRTPInterface<Codim1CouplingInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -101,7 +106,8 @@ public:
 
 
 template <class Traits>
-class Codim1BoundaryInterface : public Stuff::CRTPInterface<Codim1BoundaryInterface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormInterface instead (08.09.2015)!") Codim1BoundaryInterface
+    : public Stuff::CRTPInterface<Codim1BoundaryInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
