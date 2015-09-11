@@ -376,6 +376,86 @@ private:
 }; // class MatrixOperatorDefault
 
 
+template <class GridViewImp, class SourceImp, class RangeImp>
+class LocalizableOperatorDefault : public Stuff::Grid::Walker<GridViewImp>
+{
+  typedef Stuff::Grid::Walker<GridViewImp> BaseType;
+
+public:
+  using typename BaseType::GridViewType;
+  using typename BaseType::EntityType;
+  typedef SourceImp SourceType;
+  typedef RangeImp RangeType;
+
+private:
+  static_assert(Stuff::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value, "Have to match!");
+  static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value, "Have to match!");
+  static_assert(std::is_same<typename SourceType::DomainFieldType, typename GridViewType::ctype>::value,
+                "Have to match!");
+  static_assert(std::is_same<typename RangeType::DomainFieldType, typename GridViewType::ctype>::value,
+                "Have to match!");
+  static_assert(SourceType::dimDomain == GridViewType::dimension, "Have to match!");
+  static_assert(RangeType::dimDomain == GridViewType::dimension, "Have to match!");
+
+public:
+  LocalizableOperatorDefault(GridViewType grid_view, const SourceType& source, RangeType& range)
+    : BaseType(grid_view)
+    , source_(source)
+    , range_(range)
+    , walked_(false)
+  {
+  }
+
+  const SourceType& source() const
+  {
+    return source_;
+  }
+
+  const RangeType& range() const
+  {
+    return range_;
+  }
+
+  RangeType& range()
+  {
+    return range_;
+  }
+
+  using BaseType::add;
+
+  template <class L>
+  void add(const LocalOperatorInterface<L>& local_operator,
+           const DSG::ApplyOn::WhichEntity<GridViewType>* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  {
+    typedef LocalOperatorApplicator<GridViewType,
+                                    typename LocalOperatorInterface<L>::derived_type,
+                                    SourceType,
+                                    RangeType> Applicator;
+    local_operators_.emplace_back(new Applicator(grid_view_, local_operator.as_imp(), source_, range_, *where));
+    BaseType::add(*local_operators_.back(), where);
+  } // ... add(...)
+
+  void apply()
+  {
+    if (!walked_) {
+      this->walk();
+      walked_ = true;
+    }
+  } // ... apply(...)
+
+private:
+  using BaseType::grid_view_;
+
+  const SourceType& source_;
+  RangeType& range_;
+  std::vector<std::unique_ptr<DSG::internal::Codim0Object<GridViewType>>> local_operators_;
+  bool walked_;
+}; // class LocalizableOperatorDefault
+
+
 } // namespace GDT
 } // namespace Dune
 
