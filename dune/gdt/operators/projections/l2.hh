@@ -101,6 +101,71 @@ private:
 }; // class L2LocalProjectionLocalizableOperator
 
 
+template< class GridViewImp, class FieldImp >
+class L2LocalProjectionOperator
+  : public OperatorInterface< internal::L2LocalProjectionOperatorTraits< GridViewImp, FieldImp > >
+{
+  typedef OperatorInterface< internal::L2LocalProjectionOperatorTraits< GridViewImp, FieldImp > > BaseType;
+public:
+  typedef internal::L2LocalProjectionOperatorTraits< GridViewImp, FieldImp > Traits;
+  typedef GridViewImp GridViewType;
+  using typename BaseType::FieldType;
+private:
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type E;
+  typedef typename GridViewType::ctype D;
+  static const size_t d = GridViewType::dimension;
+
+public:
+  L2LocalProjectionOperator(const size_t over_integrate, GridViewType grid_view)
+    : grid_view_(grid_view)
+    , over_integrate_(over_integrate)
+  {}
+
+  L2LocalProjectionOperator(GridViewType grid_view)
+    : grid_view_(grid_view)
+    , over_integrate_(0)
+  {}
+
+  template< class R, size_t r, size_t rC, class S, class V >
+  void apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source,
+             DiscreteFunction< S, V >& range) const
+  {
+    typedef Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC > SourceType;
+    L2LocalProjectionLocalizableOperator< GridViewType, SourceType, DiscreteFunction< S, V > >
+        op(over_integrate_, grid_view_, source, range);
+    op.apply();
+  }
+
+  template< class RangeType, class SourceType >
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  template< class RangeType, class SourceType >
+  void apply_inverse(const RangeType& /*range*/,
+                     SourceType& /*source*/,
+                     const Stuff::Common::Configuration& /*opts*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  std::vector< std::string > invert_options() const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+private:
+  GridViewType grid_view_;
+  const size_t over_integrate_;
+}; // class L2LocalProjectionOperator
+
+
 } // namespace GDT
 } // namespace Dune
 
