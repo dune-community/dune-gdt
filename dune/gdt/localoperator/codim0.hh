@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#warning This header is deprecated, include <dune/gdt/localoperator/integrals.hh> instead (08.09.2015)!
+
 #ifndef DUNE_GDT_LOCALOPERATOR_INTEGRAL_HH
 #define DUNE_GDT_LOCALOPERATOR_INTEGRAL_HH
 
@@ -13,6 +15,7 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/densematrix.hh>
 
 #include <dune/geometry/quadraturerules.hh>
@@ -51,7 +54,8 @@ public:
 
 
 template <class BinaryEvaluationType>
-class Codim0Integral : public LocalOperator::Codim0Interface<internal::Codim0IntegralTraits<BinaryEvaluationType>>
+class DUNE_DEPRECATED_MSG("Use LocalVolumeIntegralOperator instead (08.09.2015)!") Codim0Integral
+    : public LocalOperator::Codim0Interface<internal::Codim0IntegralTraits<BinaryEvaluationType>>
 {
   static const size_t numTmpObjectsRequired_ = 1;
 
