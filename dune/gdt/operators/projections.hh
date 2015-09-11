@@ -465,14 +465,14 @@ template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp>
 class DirichletProjectionLocalizable
     : public LocalizableOperatorInterface<internal::DirichletProjectionLocalizableTraits<GridViewImp, SourceImp,
                                                                                          RangeImp, FieldImp>>,
-      public Stuff::Grid::Functor::Codim0<GridViewImp>
+      public Stuff::Grid::Codim0Functor<GridViewImp>
 {
 public:
   typedef internal::DirichletProjectionLocalizableTraits<GridViewImp, SourceImp, RangeImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::SourceType SourceType;
   typedef typename Traits::RangeType RangeType;
-  typedef typename Stuff::Grid::Functor::Codim0<GridViewImp>::EntityType EntityType;
+  typedef typename Stuff::Grid::Codim0Functor<GridViewImp>::EntityType EntityType;
   typedef Stuff::Grid::BoundaryInfoInterface<typename GridViewType::Intersection> BoundaryInfoType;
 
   DirichletProjectionLocalizable(const GridViewType& grd_vw, const BoundaryInfoType& boundary_info,
