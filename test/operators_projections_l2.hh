@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
-#define DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
+#ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
+#define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
 
 #include <dune/gdt/operators/projections.hh>
 
@@ -29,4 +29,4 @@ public:
 };
 
 
-#endif // DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
+#endif // DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
