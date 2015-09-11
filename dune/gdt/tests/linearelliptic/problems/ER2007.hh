@@ -90,7 +90,7 @@ public:
     : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_cfg())->grid_ptr(), num_refs)
     , problem_()
     , exact_solution_("x", "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])", ProblemType::default_integration_order,
-                      "exact solution", {{"-8.0*pi*sin(8.0*pi*x[0])", "-8.0*pi*sin(8.0*pi*x[1])"}})
+                      "exact solution", {"-8.0*pi*sin(8.0*pi*x[0])", "-8.0*pi*sin(8.0*pi*x[1])"})
   {
   }
 
