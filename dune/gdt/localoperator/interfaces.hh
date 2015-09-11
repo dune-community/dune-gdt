@@ -67,6 +67,48 @@ public:
 }; // class LocalVolumeTwoFormInterface
 
 
+template< class Traits >
+class LocalCouplingTwoFormInterface
+  : public Stuff::CRTPInterface< LocalCouplingTwoFormInterface< Traits >, Traits >
+{
+public:
+  typedef typename Traits::derived_type derived_type;
+
+  /**
+   *  \brief Applies the local operator associated with inner faces as a two-form.
+   *  \tparam TE      Traits of the entity test Stuff::LocalfunctionSetInterface implementation
+   *  \tparam AE      Traits of the entity ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam TN      Traits of the neighbor test Stuff::LocalfunctionSetInterface implementation
+   *  \tparam AN      Traits of the neighbor ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam IntersectionType
+   *  \tparam D       DomainFieldType
+   *  \tparam d       dimDomain
+   *  \tparam R       RangeFieldType
+   *  \tparam r{T,A}  dimRange of the of the {test_base*,ansatz_base*}
+   *  \tparam rC{T,a} dimRangeCols of the {test_base*,ansatz_base*}
+   */
+  template< class TE, class AE, class TN, class AN,
+            class IntersectionType,
+            class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
+  void apply2(const Stuff::LocalfunctionSetInterface< TE, D, d, R, rT, rCT >& test_base_entity,
+              const Stuff::LocalfunctionSetInterface< AE, D, d, R, rA, rCA >& ansatz_base_entity,
+              const Stuff::LocalfunctionSetInterface< TN, D, d, R, rT, rCT >& test_base_neighbor,
+              const Stuff::LocalfunctionSetInterface< AN, D, d, R, rA, rCA >& ansatz_base_neighbor,
+              const IntersectionType& intersection,
+              Dune::DynamicMatrix< R >& entityEntityRet,
+              Dune::DynamicMatrix< R >& neighborNeighborRet,
+              Dune::DynamicMatrix< R >& entityNeighborRet,
+              Dune::DynamicMatrix< R >& neighborEntityRet) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base_entity, ansatz_base_entity,
+                                              test_base_neighbor, ansatz_base_neighbor,
+                                              intersection,
+                                              entityEntityRet, neighborNeighborRet,
+                                              entityNeighborRet, neighborEntityRet));
+  }
+}; // class LocalCouplingTwoFormInterface
+
+
 namespace internal {
 
 
