@@ -49,6 +49,14 @@ static constexpr ChooseSpaceBackend default_space_backend =
 #endif
 
 
+enum class ChoosePattern
+{
+    volume
+  , face
+  , face_and_volume
+}; // enum class ChoosePattern
+
+
 template< ChooseSpaceBackend type >
 struct ChooseGridPartView;
 
