@@ -350,8 +350,7 @@ private:
         // evaluate source function
         const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[ii];
         if (source_entity_ptr_unique_ptr) {
-          const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
-          const auto& source_entity = *source_entity_ptr;
+          const auto source_entity = *source_entity_ptr_unique_ptr;
           const auto local_source_point = source_entity.geometry().local(global_point);
           const auto local_source = source.local_function(source_entity);
           const auto source_value = local_source->evaluate(local_source_point);

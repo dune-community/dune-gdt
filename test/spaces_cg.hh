@@ -88,8 +88,8 @@ struct P1Q1_CG_Space
     for (auto entity_it = this->space_.grid_view().template begin< 0 >(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (auto cc : DSC::valueRange(entity.template count< dimDomain >())) {
-        const auto vertex_ptr = entity.template subEntity< dimDomain >(cc);
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex_entity = entity.template subEntity< dimDomain >(cc);
+        const DomainType vertex = vertex_entity.geometry().center();
         vertex_to_indices_map[convert_vector(vertex)] = std::set< size_t >();
       }
     }
@@ -100,8 +100,8 @@ struct P1Q1_CG_Space
       const auto basis = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex_ptr = entity.template subEntity< dimDomain >(boost::numeric_cast< int >(cc));
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex_entity = entity.template subEntity< dimDomain >(boost::numeric_cast< int >(cc));
+        const DomainType vertex = vertex_entity.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
         EXPECT_EQ(basis_values.size(), num_vertices);

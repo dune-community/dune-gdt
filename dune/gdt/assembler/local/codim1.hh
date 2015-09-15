@@ -83,10 +83,8 @@ public:
     localNeighborEntityMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entities
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
-    const auto neighborPtr = intersection.outside();
-    const auto& neighbor = *neighborPtr;
+    const auto entity = intersection.inside();
+    const auto neighbor = intersection.outside();
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpaceEntity.base_function_set(entity), ansatzSpaceEntity.base_function_set(entity),
                          testSpaceNeighbor.base_function_set(neighbor), ansatzSpaceNeighbor.base_function_set(neighbor),
@@ -218,8 +216,7 @@ public:
     localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entity
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
+    const auto entity = intersection.inside();
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpace.base_function_set(entity), ansatzSpace.base_function_set(entity),
                          intersection,
@@ -293,8 +290,7 @@ public:
     localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorsContainer[1];
     // get entity
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
+    const auto entity = intersection.inside();
     // apply local functional (results are in localVector)
     localFunctional_.apply(testSpace.base_function_set(entity), intersection, localVector, tmpFunctionalVectors);
     // write local vectors to global
