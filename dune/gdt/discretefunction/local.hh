@@ -167,6 +167,8 @@ public:
     , space_(space)
     , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
     , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
+    , tmpBaseJacobianValues_(base_->size(), JacobianRangeType(0))
+    , tmpBaseValues_(base_->size(), RangeType(0))
   {
     assert(localVector_->size() == base_->size());
   }
@@ -198,12 +200,11 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= 0.0;
-    std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
-    assert(localVector_->size() == tmpBaseValues.size());
-    base_->evaluate(xx, tmpBaseValues);
+    assert(localVector_->size() == tmpBaseValues_.size());
+    base_->evaluate(xx, tmpBaseValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseValues[ii] *= localVector_->get(ii);
-      ret += tmpBaseValues[ii];
+      tmpBaseValues_[ii] *= localVector_->get(ii);
+      ret += tmpBaseValues_[ii];
     }
   } // ... evaluate(...)
 
@@ -211,12 +212,11 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     ret *= RangeFieldType(0);
-    std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
-    assert(localVector_->size() == tmpBaseJacobianValues.size());
-    base_->jacobian(xx, tmpBaseJacobianValues);
+    assert(localVector_->size() == tmpBaseJacobianValues_.size());
+    base_->jacobian(xx, tmpBaseJacobianValues_);
     for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseJacobianValues[ii] *= localVector_->get(ii);
-      ret += tmpBaseJacobianValues[ii];
+      tmpBaseJacobianValues_[ii] *= localVector_->get(ii);
+      ret += tmpBaseJacobianValues_[ii];
     }
   } // ... jacobian(...)
 
@@ -227,6 +227,8 @@ protected:
   const SpaceType& space_;
   std::unique_ptr< const BaseFunctionSetType > base_;
   std::unique_ptr< const ConstLocalDoFVectorType > localVector_;
+  mutable std::vector<JacobianRangeType> tmpBaseJacobianValues_;
+  mutable std::vector<RangeType> tmpBaseValues_;
 }; // class ConstLocalDiscreteFunction
 
 
