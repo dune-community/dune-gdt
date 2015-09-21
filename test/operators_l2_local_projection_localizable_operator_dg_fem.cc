@@ -19,7 +19,7 @@ using namespace Dune::GDT::Tests;
 typedef testing::Types< SPACES_DG_FEM(1)
 #if HAVE_ALUGRID
                       , SPACES_DG_FEM_ALUGRID(1)
-#endif // HAVE_ALUGRID
+#endif
                       > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
