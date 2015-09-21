@@ -18,7 +18,7 @@ typedef testing::Types<SPACES_DG_PDELAB(1)
 #if HAVE_ALUGRID
                            ,
                        SPACES_DG_PDELAB_ALUGRID(1)
-#endif // HAVE_ALUGRID
+#endif
                        > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
