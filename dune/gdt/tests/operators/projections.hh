@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_HH
 #define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_HH
 
+#include <dune/common/unused.hh>
+
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
 
@@ -45,7 +47,7 @@ public:
 
   void constructible_by_ctor()
   {
-    LocalizableProjectionOperatorType projection_operator(
+    LocalizableProjectionOperatorType DUNE_UNUSED(projection_operator)(
         this->space_.grid_view(), this->function_, this->discrete_function_);
   }
 
