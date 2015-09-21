@@ -120,7 +120,7 @@ public:
     ret *= 0.0;
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
-    Dune::DynamicMatrix< R > evaluation_result(rows, cols, 0.);
+    Dune::DynamicMatrix< R > evaluation_result(rows, cols, 0.);  // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();
