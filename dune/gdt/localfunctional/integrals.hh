@@ -1,0 +1,109 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
+#define DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
+
+#include <dune/gdt/localevaluation/interface.hh>
+
+#include "interfaces.hh"
+
+namespace Dune {
+namespace GDT {
+
+
+// forward
+template <class UnaryEvaluationImp>
+class LocalVolumeIntegralFunctional;
+
+
+namespace internal {
+
+
+template <class UnaryEvaluationImp>
+class LocalVolumeIntegralFunctionalTraits
+{
+  static_assert(std::is_base_of<LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1>,
+                                UnaryEvaluationImp>::value,
+                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
+
+public:
+  typedef LocalVolumeIntegralFunctional<UnaryEvaluationImp> derived_type;
+};
+
+
+} // namespace internal
+
+
+template <class UnaryEvaluationType>
+class LocalVolumeIntegralFunctional
+    : public LocalFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>>
+{
+  typedef LocalVolumeIntegralFunctional<UnaryEvaluationType> ThisType;
+
+public:
+  typedef internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType> Traits;
+
+  template <class... Args>
+  explicit LocalVolumeIntegralFunctional(Args&&... args)
+    : integrand_(std::forward<Args>(args)...)
+    , over_integrate_(0)
+  {
+  }
+
+  template <class... Args>
+  explicit LocalVolumeIntegralFunctional(const int over_integrate, Args&&... args)
+    : integrand_(std::forward<Args>(args)...)
+    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
+  {
+  }
+
+  template <class... Args>
+  explicit LocalVolumeIntegralFunctional(const size_t over_integrate, Args&&... args)
+    : integrand_(std::forward<Args>(args)...)
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  LocalVolumeIntegralFunctional(const ThisType& other) = default;
+  LocalVolumeIntegralFunctional(ThisType&& source) = default;
+
+  template <class E, class D, size_t d, class R, size_t r, size_t rC>
+  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base, Dune::DynamicVector<R>& ret) const
+  {
+    const auto& entity         = test_base.entity();
+    const auto local_functions = integrand_.localFunctions(entity);
+    // create quadrature
+    const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
+    const auto& quadrature       = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    // prepare storage
+    const size_t size = test_base.size();
+    ret *= 0.0;
+    assert(ret.size() >= size);
+    Dune::DynamicVector<R> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
+    // loop over all quadrature points
+    for (const auto& quadrature_point : quadrature) {
+      const auto xx = quadrature_point.position();
+      // integration factors
+      const auto integration_factor = entity.geometry().integrationElement(xx);
+      const auto quadrature_weight  = quadrature_point.weight();
+      // evaluate the integrand
+      integrand_.evaluate(local_functions, test_base, xx, evaluation_result);
+      // compute integral
+      for (size_t ii = 0; ii < size; ++ii)
+        ret[ii] += evaluation_result[ii] * integration_factor * quadrature_weight;
+    } // loop over all quadrature points
+  } // ... apply(...)
+
+private:
+  const UnaryEvaluationType integrand_;
+  const size_t over_integrate_;
+}; // class LocalVolumeIntegralFunctional
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
