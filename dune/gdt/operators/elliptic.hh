@@ -41,11 +41,11 @@ class EllipticLocalizableProduct : public LocalizableProductDefault<GridView, Ra
       LocalEllipticOperatorType;
 
 public:
-  // Usually, we only hace to hold the data functions for the local operator and perfect forward the rest of the
-  // arguments to BaseType. Here, it is a bit more complicated, since DiffusionTensorType might be void (and
+  // Usually, we only have to hold the data functions for the local operator and perfect forward the rest of the
+  // arguments to BaseType. Here it is a bit more complicated, since DiffusionTensorType might be void (and
   // DiffusionFactorType is the the only diffusion). To handle this case we require the enable_if hacks below to
   // disable half of the ctors if DiffusionTensorType is void. In addition we require each ctor twice, once with
-  // over_integrate, once without (since the perfect forwarding does not allow for default arguments).
+  // over_integrate and once without (since the perfect forwarding does not allow for default arguments).
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
             ,
