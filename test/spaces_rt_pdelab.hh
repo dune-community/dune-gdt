@@ -12,10 +12,10 @@
 
 
 #define SPACE_RT_PDELAB_SGRID(dd) \
-  Spaces::RT::PdelabBased< S ## dd ## dLeafGridViewType, 0, double, dd >
+  Dune::GDT::Spaces::RT::PdelabBased< S ## dd ## dLeafGridViewType, 0, double, dd >
 
 #define SPACE_RT_PDELAB_YASPGRID(dd) \
-  Spaces::RT::PdelabBased< Yasp ## dd ## dLeafGridViewType, 0, double, dd >
+  Dune::GDT::Spaces::RT::PdelabBased< Yasp ## dd ## dLeafGridViewType, 0, double, dd >
 
 #define SPACES_RT_PDELAB \
     SPACE_RT_PDELAB_SGRID(2) \
@@ -26,10 +26,10 @@
 #if HAVE_ALUGRID
 
 #define SPACE_RT_PDELAB_ALUCONFORMGRID(dd) \
-    Spaces::RT::PdelabBased< AluConform ## dd ## dLeafGridViewType, 0, double, dd >
+    Dune::GDT::Spaces::RT::PdelabBased< AluConform ## dd ## dLeafGridViewType, 0, double, dd >
 
 #define SPACE_RT_PDELAB_ALUCUBEGRID(dd) \
-    Spaces::RT::PdelabBased< AluCube ## dd ## dLeafGridViewType, 0, double, dd >
+    Dune::GDT::Spaces::RT::PdelabBased< AluCube ## dd ## dLeafGridViewType, 0, double, dd >
 
 #define SPACES_RT_PDELAB_ALUGRID \
     SPACE_RT_PDELAB_ALUCONFORMGRID(2) \
