@@ -40,6 +40,8 @@ struct EllipticProductBase
   {
   }
 
+  virtual ~EllipticProductBase() = default;
+
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const = 0;
 
   void correct_for_constant_arguments() const
