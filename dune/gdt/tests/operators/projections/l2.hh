@@ -27,6 +27,13 @@ class L2LocalProjectionLocalizableOperatorTest
 };
 
 
+template <class SpaceType>
+class L2LocalProjectionOperatorTest
+    : public ProjectionOperatorBase<SpaceType, L2LocalProjectionOperator<typename SpaceType::GridViewType, double>>
+{
+};
+
+
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
