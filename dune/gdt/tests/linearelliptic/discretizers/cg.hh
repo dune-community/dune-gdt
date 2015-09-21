@@ -107,13 +107,12 @@ public:
     assembler.add(dirichlet_projection);
     assembler.add(dirichlet_constraints);
     assembler.assemble();
-    // assemble the dirichlet shift
+    // apply the dirichlet shift
     auto& system_matrix = elliptic_operator->matrix();
-    auto& dirichlet_shift = dirichlet_function.vector();
-    rhs_vector -= system_matrix * dirichlet_shift;
+    rhs_vector -= system_matrix * dirichlet_function.vector();
     dirichlet_constraints.apply(system_matrix, rhs_vector);
     // create the discretization (no copy of the containers done here, bc. of cow)
-    return DiscretizationType(problem, space, system_matrix, rhs_vector, dirichlet_shift);
+    return DiscretizationType(problem, space, system_matrix, rhs_vector, dirichlet_function.vector());
   } // ... discretize(...)
 }; // class CGDiscretizer
 
