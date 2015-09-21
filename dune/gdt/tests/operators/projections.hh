@@ -16,13 +16,14 @@
 namespace Dune {
 namespace GDT {
 namespace Tests {
+namespace internal {
 
 
 /**
  * \note This test assumes that Products::L2 does the right thing!
  */
 template <class SpaceType, class ProjectionOperatorType>
-struct ProjectionOperatorsBase : public OperatorBase<SpaceType>
+struct ProjectionOperatorBase : public OperatorBase<SpaceType>
 {
   typedef OperatorBase<SpaceType> BaseType;
   using typename BaseType::RangeFieldType;
@@ -34,13 +35,17 @@ struct ProjectionOperatorsBase : public OperatorBase<SpaceType>
     const auto l2_error = l2_product_operator.induced_norm(this->function_ - this->discrete_function_);
     EXPECT_LE(l2_error, tolerance);
   }
-}; // struct ProjectionOperatorsBase
+}; // struct ProjectionOperatorBase
+
+
+} // namespace internal
 
 
 template <class SpaceType, class LocalizableProjectionOperatorType>
-class LocalizableProjectionOperatorBase : public ProjectionOperatorsBase<SpaceType, LocalizableProjectionOperatorType>
+class LocalizableProjectionOperatorBase
+    : public internal::ProjectionOperatorBase<SpaceType, LocalizableProjectionOperatorType>
 {
-  typedef ProjectionOperatorsBase<SpaceType, LocalizableProjectionOperatorType> BaseType;
+  typedef internal::ProjectionOperatorBase<SpaceType, LocalizableProjectionOperatorType> BaseType;
 
 public:
   using typename BaseType::RangeFieldType;
