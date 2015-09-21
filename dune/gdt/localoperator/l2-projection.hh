@@ -79,13 +79,14 @@ public:
         local_l2_functional(over_integrate_, source);
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
-    Stuff::LA::CommonDenseMatrix< R > local_matrix(local_basis.size(), local_basis.size());
-    Stuff::LA::CommonDenseVector< R > local_vector(local_basis.size());
+    const size_t size = local_basis.size();
+    Stuff::LA::CommonDenseMatrix< R > local_matrix(size, size);
+    Stuff::LA::CommonDenseVector< R > local_vector(size);
     // assemble
     local_l2_operator.apply2(local_basis,  local_basis, local_matrix.backend());
     local_l2_functional.apply(local_basis, local_vector.backend());
     // solve
-    Stuff::LA::CommonDenseVector< R > local_solution(local_basis.size());
+    Stuff::LA::CommonDenseVector< R > local_solution(size);
     try {
       Stuff::LA::Solver< Stuff::LA::CommonDenseMatrix< R > >(local_matrix).apply(local_vector, local_solution);
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
