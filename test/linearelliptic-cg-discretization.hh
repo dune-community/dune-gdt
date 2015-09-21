@@ -23,7 +23,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
 #if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1);
+    TestCaseType test_case(/*num_refs = */ 1); // As in: only 1!
 #else
     TestCaseType test_case;
 #endif
