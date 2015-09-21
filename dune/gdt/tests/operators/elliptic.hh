@@ -39,6 +39,8 @@ struct EllipticProductBase
    , quadratic_gradient_("x", "fake_value", 3, ", quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}})
   {}
 
+  virtual ~EllipticProductBase() = default;
+
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const = 0;
 
   void correct_for_constant_arguments() const
