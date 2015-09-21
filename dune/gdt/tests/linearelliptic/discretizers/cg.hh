@@ -18,6 +18,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/playground/operators/elliptic-cg.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/constraints.hh>
@@ -76,7 +77,7 @@ public:
     logger.info() << "Assembling... " << std::endl;
     VectorType rhs_vector(space.mapper().size(), 0.0);
     auto elliptic_operator =
-        Operators::make_elliptic_cg<MatrixType>(problem.diffusion_factor(), problem.diffusion_tensor(), space);
+        make_elliptic_matrix_operator<MatrixType>(problem.diffusion_factor(), problem.diffusion_tensor(), space);
     auto l2_force_functional = Functionals::make_l2_volume(problem.force(), rhs_vector, space);
     auto l2_neumann_functional =
         Functionals::make_l2_face(problem.neumann(),
