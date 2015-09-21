@@ -69,6 +69,29 @@ public:
 }; // class LocalizableProjectionOperatorBase
 
 
+template< class SpaceType, class ProjectionOperatorType >
+class ProjectionOperatorBase
+  : public internal::ProjectionOperatorBase< SpaceType, ProjectionOperatorType >
+{
+  typedef internal::ProjectionOperatorBase< SpaceType, ProjectionOperatorType > BaseType;
+public:
+  using typename BaseType::RangeFieldType;
+
+  void constructible_by_ctor()
+  {
+    ProjectionOperatorType DUNE_UNUSED(projection_operator)(this->space_.grid_view());
+  }
+
+  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  {
+    this->discrete_function_.vector() *= 0.0;
+    ProjectionOperatorType projection_operator(this->space_.grid_view());
+    projection_operator.apply(this->function_, this->discrete_function_);
+    this->measure_error(tolerance);
+  }
+}; // class ProjectionOperatorBase
+
+
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
