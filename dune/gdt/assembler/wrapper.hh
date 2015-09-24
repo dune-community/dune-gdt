@@ -129,6 +129,46 @@ private:
 }; // class LocalVolumeTwoFormWrapper
 
 
+template <class AssemblerType, class LocalFunctionalType, class VectorType>
+class LocalVolumeFunctionalWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+{
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  typedef typename AssemblerType::EntityType EntityType;
+
+  LocalVolumeFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                               const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                               const LocalFunctionalType& local_functional, VectorType& vector)
+    : test_space_(test_space)
+    , where_(where)
+    , local_functional_(local_functional)
+    , vector_(vector)
+    , local_assembler_(local_functional_)
+  {
+  }
+
+  virtual ~LocalVolumeFunctionalWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity) override final
+  {
+    local_assembler_.assemble(*test_space_, entity, vector_);
+  }
+
+private:
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const LocalFunctionalType& local_functional_;
+  VectorType& vector_;
+  const LocalVolumeFunctionalAssembler<LocalFunctionalType> local_assembler_;
+}; // class LocalVolumeFunctionalWrapper
+
+
 template <class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormWrapper instead (10.09.2015)!") LocalVolumeMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
