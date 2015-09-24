@@ -25,6 +25,7 @@
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localoperator/interfaces.hh>
 #include <dune/gdt/localfunctional/interface.hh>
+#include <dune/gdt/localfunctional/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -212,6 +213,51 @@ private:
   RangeType& range_;
   const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
 }; // class LocalOperatorApplicator
+
+
+template <class LocalVolumeFunctionalType>
+class LocalVolumeFunctionalAssembler
+{
+  static_assert(is_local_volume_functional<LocalVolumeFunctionalType>::value,
+                "LocalVolumeFunctionalType has to be derived from LocalVolumeFunctionalInterface!");
+
+public:
+  explicit LocalVolumeFunctionalAssembler(const LocalVolumeFunctionalType& local_volume_functional)
+    : local_volume_functional_(local_volume_functional)
+  {
+  }
+
+  /**
+   *  \tparam S          Traits of the SpaceInterface implementation, representing the type of test_space
+   *  \tparam d          dimDomain of test_space
+   *  \tparam r          dimRange of test_space
+   *  \tparam rC         dimRangeCols of test_space
+   *  \tparam EntityType A model of Dune::Entity< 0 >
+   *  \tparam V          Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type
+   * of global_vector
+   *  \tparam R          RangeFieldType, i.e. double
+   */
+  template <class S, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
+  void assemble(const SpaceInterface<S, d, r, rC>& test_space, const EntityType& entity,
+                Stuff::LA::VectorInterface<V, R>& global_vector) const
+  {
+    // prepare
+    const size_t size = test_space.mapper().numDofs(entity);
+    Dune::DynamicVector<R> local_vector(size, 0.);
+    // apply local functional
+    const auto test_basis = test_space.base_function_set(entity);
+    assert(test_basis.size() == rows);
+    local_volume_functional_.apply(test_basis, local_vector);
+    // write local vector to global
+    const auto global_indices = test_space.mapper().globalIndices(entity);
+    assert(global_indices.size() == size);
+    for (size_t jj = 0; jj < size; ++jj)
+      global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
+  } // ... assemble(...)
+
+private:
+  const LocalVolumeFunctionalType& local_volume_functional_;
+}; // class LocalVolumeFunctionalAssembler
 
 
 namespace LocalAssembler {
