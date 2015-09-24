@@ -81,7 +81,7 @@ public:
         global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
       }
     } // write local matrix to global
-  } // ... assembleLocal(...)
+  } // ... assemble(...)
 
 private:
   const LocalVolumeTwoFormType& local_volume_twoform_;
