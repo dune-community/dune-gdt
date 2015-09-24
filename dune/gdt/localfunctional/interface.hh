@@ -3,8 +3,12 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#warning This header is deprecated, include <dune/gdt/localfunctional/interfaces.hh> instead (24.09.2015)!
+
 #ifndef DUNE_GDT_LOCALFUNCTIONAL_INTERFACE_HH
 #define DUNE_GDT_LOCALFUNCTIONAL_INTERFACE_HH
+
+#include <dune/common/deprecated.hh>
 
 #include <vector>
 
@@ -14,13 +18,16 @@
 
 #include <dune/gdt/basefunctionset/interface.hh>
 
+#include "interfaces.hh"
+
 namespace Dune {
 namespace GDT {
 namespace LocalFunctional {
 
 
 template <class Traits>
-class Codim0Interface : public Stuff::CRTPInterface<Codim0Interface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Use LocalVolumeFunctionalInterface instead (24.09.2015)!") Codim0Interface
+    : public Stuff::CRTPInterface<Codim0Interface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -50,7 +57,8 @@ public:
 
 
 template <class Traits>
-class Codim1Interface : public Stuff::CRTPInterface<Codim1Interface<Traits>, Traits>
+class DUNE_DEPRECATED_MSG("Use LocalFaceFunctionalInterface instead (24.09.2015)!") Codim1Interface
+    : public Stuff::CRTPInterface<Codim1Interface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
