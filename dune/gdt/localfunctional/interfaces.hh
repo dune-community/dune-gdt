@@ -48,6 +48,32 @@ public:
 }; // class LocalFaceFunctionalInterface
 
 
+namespace internal {
+
+
+template <class Tt>
+struct is_local_volume_functional_helper
+{
+  DSC_has_typedef_initialize_once(Traits)
+
+      static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+};
+
+
+} // namespace internal
+
+
+template <class T, bool candidate = internal::is_local_volume_functional_helper<T>::is_candidate>
+struct is_local_volume_functional : public std::is_base_of<LocalVolumeFunctionalInterface<typename T::Traits>, T>
+{
+};
+
+template <class T>
+struct is_local_volume_functional<T, false> : public std::false_type
+{
+};
+
+
 } // namespace GDT
 } // namespace Dune
 
