@@ -78,7 +78,7 @@ public:
     VectorType rhs_vector(space.mapper().size(), 0.0);
     auto elliptic_operator =
         make_elliptic_matrix_operator<MatrixType>(problem.diffusion_factor(), problem.diffusion_tensor(), space);
-    auto l2_force_functional = Functionals::make_l2_volume(problem.force(), rhs_vector, space);
+    auto l2_force_functional = make_l2_volume_vector_functional(problem.force(), rhs_vector, space);
     auto l2_neumann_functional =
         Functionals::make_l2_face(problem.neumann(),
                                   rhs_vector,
