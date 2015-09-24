@@ -18,14 +18,12 @@ namespace GDT {
 template <class Traits>
 class FunctionalInterface : public Stuff::CRTPInterface<FunctionalInterface<Traits>, Traits>
 {
-  typedef typename Traits::derived_type derived_type;
-
 public:
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename Traits::ScalarType ScalarType;
+  typedef typename Traits::derived_type derived_type;
+  typedef typename Traits::FieldType FieldType;
 
   template <class SourceType>
-  ScalarType apply(const SourceType& source) const
+  FieldType apply(const SourceType& source) const
   {
     CHECK_CRTP(this->as_imp().apply(source));
     return this->as_imp().apply(source);
