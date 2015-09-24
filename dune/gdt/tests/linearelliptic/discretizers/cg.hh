@@ -65,8 +65,8 @@ public:
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::cg;
   static const int polOrder = pol;
 
-  static std::string static_id()
-  {                                                                                // int() needed, otherwise we get a linker error
+  static std::string static_id()                                                   // int() needed, otherwise we get a
+  {                                                                                // linker error
     return std::string("gdt.linearelliptic.discretization.cg.order_") + DSC::toString(int(polOrder));
   }
 
