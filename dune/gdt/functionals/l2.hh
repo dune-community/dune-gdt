@@ -58,6 +58,56 @@ private:
 }; // class L2VolumeVectorFunctional
 
 
+template <class VectorType, class FunctionType, class SpaceType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_volume_vector_functional(const FunctionType& function, const SpaceType& space, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType>>(
+      over_integrate, function, space);
+}
+
+template <class VectorType, class FunctionType, class SpaceType, class GridViewType>
+typename std::
+    enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                  && is_space<SpaceType>::value
+                  && !std::is_integral<GridViewType>::value // needed for disambiguation with above specialization
+              ,
+              std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>>::type
+    make_l2_volume_vector_functional(const FunctionType& function, const SpaceType& space,
+                                     const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, function, space, grid_view);
+}
+
+template <class FunctionType, class VectorType, class SpaceType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_volume_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                                 const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType>>(
+      over_integrate, function, vector, space);
+}
+
+template <class FunctionType, class VectorType, class SpaceType, class GridViewType>
+typename std::
+    enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                  && is_space<SpaceType>::value
+                  && !std::is_integral<GridViewType>::value // needed for disambiguation with above specialization
+              ,
+              std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>>::type
+    make_l2_volume_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                                     const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, function, vector, space, grid_view);
+}
+
+
 namespace Functionals {
 
 
