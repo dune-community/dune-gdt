@@ -6,19 +6,60 @@
 #ifndef DUNE_GDT_FUNCTIONALS_L2_HH
 #define DUNE_GDT_FUNCTIONALS_L2_HH
 
+#include <type_traits>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
+#include <dune/gdt/localfunctional/integrals.hh>
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/assembler/system.hh>
 
 #include "base.hh"
+#include "default.hh"
 
 namespace Dune {
 namespace GDT {
+
+
+/**
+ * \todo Unit tests are missing for this class.
+ */
+template< class FunctionType,
+          class Space,
+          class Vector = typename Stuff::LA::Container< typename Space::RangeFieldType >::VectorType,
+          class GridView = typename Space::GridViewType,
+          class Field = typename Space::RangeFieldType>
+class L2VolumeVectorFunctional
+  : public VectorFunctionalDefault< Vector, Space, GridView, Field >
+{
+  typedef VectorFunctionalDefault< Vector, Space, GridView, Field > BaseType;
+public:
+  template< class ...Args >
+  explicit L2VolumeVectorFunctional(const FunctionType& function, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(function)
+  {
+  this->add(local_l2_functional_);
+  }
+
+  template< class ...Args >
+  explicit L2VolumeVectorFunctional(const size_t over_integrate, const FunctionType& function, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(over_integrate, function)
+  {
+  this->add(local_l2_functional_);
+  }
+
+private:
+  const LocalVolumeIntegralFunctional< LocalEvaluation::Product< FunctionType > > local_l2_functional_;
+}; // class L2VolumeVectorFunctional
+
+
 namespace Functionals {
 
 
