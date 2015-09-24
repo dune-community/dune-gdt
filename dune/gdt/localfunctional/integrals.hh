@@ -39,7 +39,7 @@ public:
 
 template <class UnaryEvaluationType>
 class LocalVolumeIntegralFunctional
-    : public LocalFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>>
+    : public LocalVolumeFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>>
 {
   typedef LocalVolumeIntegralFunctional<UnaryEvaluationType> ThisType;
 

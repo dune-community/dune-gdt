@@ -20,7 +20,7 @@ namespace GDT {
 
 
 template <class Traits>
-class LocalFunctionalInterface : public Stuff::CRTPInterface<LocalFunctionalInterface<Traits>, Traits>
+class LocalVolumeFunctionalInterface : public Stuff::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
