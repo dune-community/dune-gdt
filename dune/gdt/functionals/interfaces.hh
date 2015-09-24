@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_FUNCTIONALS_INTERFACES_HH
 #define DUNE_GDT_FUNCTIONALS_INTERFACES_HH
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/crtp.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -34,7 +36,9 @@ public:
 
 //! \note derive from FunctionalInterface
 template< class Traits >
-class AssemblableFunctionalInterface
+class
+  DUNE_DEPRECATED_MSG("Use FunctionalInterface and VectorFunctionalDefault instead (24.09.2015)!")
+      AssemblableFunctionalInterface
   : protected Stuff::CRTPInterface< AssemblableFunctionalInterface< Traits >, Traits >
 {
 public:
