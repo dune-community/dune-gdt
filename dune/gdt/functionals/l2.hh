@@ -8,6 +8,8 @@
 
 #include <type_traits>
 
+#include <dune/common/deprecated.hh>
+
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
@@ -166,7 +168,9 @@ public:
 
 
 template< class FunctionType, class VectorImp, class SpaceImp, class GridViewImp, class LocalEvaluationType >
-class L2Volume
+class
+  DUNE_DEPRECATED_MSG("Use L2VolumeVectorFunctional instead (24.09.2015)!")
+      L2Volume
   : public Functionals::VectorBased< internal::L2VolumeTraits< FunctionType, VectorImp, SpaceImp, GridViewImp,
                                                                LocalEvaluationType> >
   , public SystemAssembler< SpaceImp, GridViewImp, SpaceImp >
