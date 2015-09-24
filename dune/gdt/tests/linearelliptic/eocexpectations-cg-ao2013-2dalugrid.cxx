@@ -12,7 +12,6 @@
 #include "problems/AO2013.hh"
 #include "eocexpectations.hh"
 
-
 namespace Dune {
 namespace GDT {
 namespace Tests {
