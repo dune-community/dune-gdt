@@ -15,6 +15,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
+#include "local.hh"
 #include "local/codim0.hh"
 #include "local/codim1.hh"
 #include "tmp-storage.hh"
