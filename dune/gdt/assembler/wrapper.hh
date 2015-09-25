@@ -55,7 +55,7 @@ public:
     , thread_local_constraints_(constraints_.boundary_info(), constraints_.size())
   {}
 
-  virtual ~ConstraintsWrapper() {}
+  virtual ~ConstraintsWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
@@ -241,7 +241,7 @@ public:
     , matrix_(matrix)
   {}
 
-  virtual ~LocalVolumeMatrixAssemblerWrapper() {}
+  virtual ~LocalVolumeMatrixAssemblerWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
@@ -290,7 +290,7 @@ public:
     , matrix_(matrix)
   {}
 
-  virtual ~LocalFaceMatrixAssemblerWrapper() {}
+  virtual ~LocalFaceMatrixAssemblerWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
   {
@@ -338,7 +338,7 @@ public:
     , vector_(vector)
   {}
 
-  virtual ~LocalVolumeVectorAssemblerWrapper() {}
+  virtual ~LocalVolumeVectorAssemblerWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
   {
@@ -381,7 +381,7 @@ public:
     , vector_(vector)
   {}
 
-  virtual ~LocalFaceVectorAssemblerWrapper() {}
+  virtual ~LocalFaceVectorAssemblerWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
   {
