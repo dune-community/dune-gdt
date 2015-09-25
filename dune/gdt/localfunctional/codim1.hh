@@ -51,7 +51,8 @@ public:
 
 
 template <class UnaryEvaluationImp>
-class Codim1Integral : public LocalFunctional::Codim1Interface<internal::Codim1IntegralTraits<UnaryEvaluationImp>>
+class DUNE_DEPRECATED_MSG("Use LocalFaceIntegralFunctional instead (25.09.2015)!") Codim1Integral
+    : public LocalFunctional::Codim1Interface<internal::Codim1IntegralTraits<UnaryEvaluationImp>>
 {
 public:
   typedef internal::Codim1IntegralTraits<UnaryEvaluationImp> Traits;
