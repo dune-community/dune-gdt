@@ -254,6 +254,45 @@ private:
 }; // class LocalVolumeFunctionalAssembler
 
 
+template <class LocalFunctionalType>
+class LocalFaceFunctionalAssembler
+{
+  static_assert(
+      std::is_base_of<LocalFaceFunctionalInterface<typename LocalFunctionalType::Traits>, LocalFunctionalType>::value,
+      "LocalFunctionalType has to be derived from LocalFaceFunctionalInterface!");
+
+public:
+  explicit LocalFaceFunctionalAssembler(const LocalFunctionalType& local_face_functional)
+    : local_face_functional_(local_face_functional)
+  {
+  }
+
+  template <class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R>
+  void assemble(const SpaceInterface<T, d, r, rC>& test_space, const IntersectionType& intersection,
+                Stuff::LA::VectorInterface<V, R>& global_vector) const
+  {
+    // prepare
+    const auto entity_ptr = intersection.inside();
+    const auto& entity    = *entity_ptr;
+    const size_t size = test_space.mapper().numDofs(entity);
+    Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
+    // apply local functional
+    const auto test_basis = test_space.base_function_set(entity);
+    assert(test_basis.size() == size);
+    local_face_functional_.apply(test_basis, intersection, local_vector);
+    // write local vector to global
+    const auto global_indices =
+        test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    assert(global_indices.size() == size);
+    for (size_t jj = 0; jj < size; ++jj)
+      global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
+  } // ... assemble(...)
+
+private:
+  const LocalFunctionalType& local_face_functional_;
+}; // class LocalFaceFunctionalAssembler
+
+
 } // namespace GDT
 } // namespace Dune
 
