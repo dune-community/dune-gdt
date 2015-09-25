@@ -88,10 +88,10 @@ public:
                                                                          space);
     auto l2_force_functional = make_l2_volume_vector_functional(problem.force(), rhs_vector, space);
     auto l2_neumann_functional
-        = Functionals::make_l2_face(problem.neumann(),
-                                    rhs_vector,
-                                    space,
-                                    new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(*boundary_info));
+        = make_l2_face_vector_functional(problem.neumann(),
+                                         rhs_vector,
+                                         space,
+                                         new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(*boundary_info));
     // prepare the dirichlet projection
     auto dirichlet_function = make_discrete_function< VectorType >(space, "dirichlet values");
     auto dirichlet_projection = Operators::make_localizable_dirichlet_projection(space.grid_view(),
