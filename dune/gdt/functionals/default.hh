@@ -115,6 +115,16 @@ public:
           new WrapperType(this->test_space_, where, local_volume_functional.as_imp(), vector_.access()));
   }
 
+  template< class F >
+  void add(const LocalFaceFunctionalInterface< F >& local_face_functional,
+           const DSG::ApplyOn::WhichIntersection< GridViewType >* where = new DSG::ApplyOn::AllIntersections< GridViewType >())
+  {
+    typedef internal::LocalFaceFunctionalWrapper
+        < ThisType, typename LocalFaceFunctionalInterface< F >::derived_type, VectorType > WrapperType;
+    this->codim1_functors_.emplace_back(
+          new WrapperType(this->test_space_, where, local_face_functional.as_imp(), vector_.access()));
+  }
+
   template< class S >
   FieldType apply(const Stuff::LA::VectorInterface< S >& source) const
   {
