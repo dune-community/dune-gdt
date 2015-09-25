@@ -119,6 +119,67 @@ make_l2_volume_vector_functional(const FunctionType& function,
 }
 
 
+// ////////////////////// //
+// L2FaceVectorFunctional //
+// ////////////////////// //
+
+/**
+ * \todo Unit tests are missing for this class.
+ */
+template< class FunctionType,
+          class Space,
+          class Vector = typename Stuff::LA::Container< typename Space::RangeFieldType >::VectorType,
+          class GridView = typename Space::GridViewType,
+          class Field = typename Space::RangeFieldType>
+class L2FaceVectorFunctional
+  : public VectorFunctionalDefault< Vector, Space, GridView, Field >
+{
+  typedef VectorFunctionalDefault< Vector, Space, GridView, Field > BaseType;
+public:
+  using typename BaseType::GridViewType;
+
+  template< class ...Args >
+  explicit L2FaceVectorFunctional(const FunctionType& function, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(function)
+  {
+    this->add(local_l2_functional_);
+  }
+
+  template< class ...Args >
+  explicit L2FaceVectorFunctional(const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* which_intersections,
+                                  const FunctionType& function,
+                                  Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(function)
+  {
+    this->add(local_l2_functional_, which_intersections);
+  }
+
+  template< class ...Args >
+  explicit L2FaceVectorFunctional(const size_t over_integrate, const FunctionType& function, Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(over_integrate, function)
+  {
+    this->add(local_l2_functional_);
+  }
+
+  template< class ...Args >
+  explicit L2FaceVectorFunctional(const size_t over_integrate,
+                                  const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >* which_intersections,
+                                  const FunctionType& function,
+                                  Args&& ...args)
+    : BaseType(std::forward< Args >(args)...)
+    , local_l2_functional_(over_integrate, function)
+  {
+    this->add(local_l2_functional_, which_intersections);
+  }
+
+private:
+  const LocalFaceIntegralFunctional< LocalEvaluation::Product< FunctionType > > local_l2_functional_;
+}; // class L2FaceVectorFunctional
+
+
 namespace Functionals {
 
 
