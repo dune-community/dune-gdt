@@ -27,9 +27,14 @@
 namespace Dune {
 namespace GDT {
 
+// //////////////////////// //
+// L2VolumeVectorFunctional //
+// //////////////////////// //
 
 /**
  * \todo Unit tests are missing for this class.
+ * \note We could add additional ctors which accept Stuff::Grid::ApplyOn::WhichIntersection, analogously to
+ *       L2FaceVectorFunctional (see below), but we did not need this until now.
  */
 template< class FunctionType,
           class Space,
@@ -46,7 +51,7 @@ public:
     : BaseType(std::forward< Args >(args)...)
     , local_l2_functional_(function)
   {
-  this->add(local_l2_functional_);
+    this->add(local_l2_functional_);
   }
 
   template< class ...Args >
@@ -54,7 +59,7 @@ public:
     : BaseType(std::forward< Args >(args)...)
     , local_l2_functional_(over_integrate, function)
   {
-  this->add(local_l2_functional_);
+    this->add(local_l2_functional_);
   }
 
 private:
