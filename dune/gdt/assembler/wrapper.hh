@@ -215,7 +215,7 @@ private:
 
 
 template <class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType>
-class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormWrapper instead (10.09.2015)!") LocalVolumeMatrixAssemblerWrapper
+class LocalVolumeMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
       DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
