@@ -43,7 +43,7 @@ class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
   typedef Spaces::DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
 
 public:
-  typedef typename BaseType::EntityType EntityType;
+  using typename BaseType::EntityType;
 
   ConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                      const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -87,11 +87,13 @@ private:
 template <class AssemblerType, class LocalTwoFormType, class MatrixType>
 class LocalVolumeTwoFormWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
+  using typename BaseType::EntityType;
 
   LocalVolumeTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                             const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -131,10 +133,12 @@ private:
 template <class AssemblerType, class LocalFunctionalType, class VectorType>
 class LocalVolumeFunctionalWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
+  using typename BaseType::EntityType;
 
   LocalVolumeFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
@@ -217,13 +221,14 @@ class LocalVolumeMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
       DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
   typedef DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpMatricesProvider;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
+  using typename BaseType::EntityType;
 
   LocalVolumeMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                                     const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -266,14 +271,15 @@ class LocalFaceMatrixAssemblerWrapper
     : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>,
       DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
+  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
   typedef DSC::TmpMatricesStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpMatricesProvider;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
-  typedef typename Stuff::Grid::internal::Codim1Object<GridViewType>::IntersectionType IntersectionType;
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
 
   LocalFaceMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                                   const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -317,12 +323,13 @@ class LocalVolumeVectorAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>,
       DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
   typedef DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
+  using typename BaseType::EntityType;
 
   LocalVolumeVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
                                     const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
@@ -360,13 +367,14 @@ class LocalFaceVectorAssemblerWrapper
     : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>,
       DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType>
 {
+  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
   typedef DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  typedef typename AssemblerType::EntityType EntityType;
-  typedef typename Stuff::Grid::internal::Codim1Object<GridViewType>::IntersectionType IntersectionType;
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
 
   LocalFaceVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
                                   const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
