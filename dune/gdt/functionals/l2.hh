@@ -167,6 +167,149 @@ private:
 }; // class L2FaceVectorFunctional
 
 
+// ////////////////////////////// //
+// make_l2_face_vector_functional //
+// ////////////////////////////// //
+
+template <class VectorType, class FunctionType, class SpaceType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(over_integrate, function, space);
+}
+
+template <class VectorType, class FunctionType, class SpaceType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(where, function, space);
+}
+
+template <class VectorType, class FunctionType, class SpaceType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const size_t over_integrate,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
+      over_integrate, where, function, space);
+}
+
+template <class VectorType, class FunctionType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>>::
+    type
+    make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const GridViewType& grid_view,
+                                   const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, function, space, grid_view);
+}
+
+template <class VectorType, class FunctionType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType,
+                                                               GridViewType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const GridViewType& grid_view,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      where, function, space, grid_view);
+}
+
+template <class VectorType, class FunctionType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<FunctionType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType,
+                                                               GridViewType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const GridViewType& grid_view,
+                               const size_t over_integrate,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, where, function, space, grid_view);
+}
+
+template <class FunctionType, class VectorType, class SpaceType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                               const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
+      over_integrate, function, vector, space);
+}
+
+template <class FunctionType, class VectorType, class SpaceType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(where, function, vector, space);
+}
+
+template <class FunctionType, class VectorType, class SpaceType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                               const size_t over_integrate,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
+      over_integrate, where, function, vector, space);
+}
+
+template <class FunctionType, class VectorType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>>::
+    type
+    make_l2_face_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                                   const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, function, vector, space, grid_view);
+}
+
+template <class FunctionType, class VectorType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>>::
+    type
+    make_l2_face_vector_functional(
+        const FunctionType& function, VectorType& vector, const SpaceType& space, const GridViewType& grid_view,
+        const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      where, function, vector, space, grid_view);
+}
+
+template <class FunctionType, class VectorType, class SpaceType, class GridViewType>
+typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && Stuff::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType,
+                                                               GridViewType>>>::type
+make_l2_face_vector_functional(const FunctionType& function, VectorType& vector, const SpaceType& space,
+                               const GridViewType& grid_view, const size_t over_integrate,
+                               const Stuff::Grid::ApplyOn::WhichIntersection<typename SpaceType::GridViewType>* where)
+{
+  return DSC::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridViewType>>(
+      over_integrate, where, function, vector, space, grid_view);
+}
+
+
 namespace Functionals {
 
 
