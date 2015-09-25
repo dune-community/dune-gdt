@@ -12,6 +12,7 @@
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
@@ -67,6 +68,10 @@ private:
 }; // class L2VolumeVectorFunctional
 
 
+// //////////////////////////////// //
+// make_l2_volume_vector_functional //
+// //////////////////////////////// //
+
 template< class VectorType, class FunctionType, class SpaceType >
     typename std::enable_if<    Stuff::LA::is_vector< VectorType >::value
                              && Stuff::is_localizable_function< FunctionType >::value
@@ -82,7 +87,7 @@ template< class VectorType, class FunctionType, class SpaceType, class GridViewT
     typename std::enable_if<    Stuff::LA::is_vector< VectorType >::value
                              && Stuff::is_localizable_function< FunctionType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< L2VolumeVectorFunctional< FunctionType, SpaceType, VectorType, GridViewType > > >::type
 make_l2_volume_vector_functional(const FunctionType& function,
                                  const SpaceType& space,
@@ -111,7 +116,7 @@ template< class FunctionType, class VectorType, class SpaceType, class GridViewT
     typename std::enable_if<    Stuff::is_localizable_function< FunctionType >::value
                              && Stuff::LA::is_vector< VectorType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< L2VolumeVectorFunctional< FunctionType, SpaceType, VectorType, GridViewType > > >::type
 make_l2_volume_vector_functional(const FunctionType& function,
                                  VectorType& vector,
