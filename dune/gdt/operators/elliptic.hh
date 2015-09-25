@@ -14,6 +14,7 @@
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -121,6 +122,7 @@ private:
  */
 template< class DiffusionType, class GridViewType, class RangeType, class SourceType >
     typename std::enable_if<    Stuff::is_localizable_function< DiffusionType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                              && Stuff::is_localizable_function< RangeType >::value
                              && Stuff::is_localizable_function< SourceType >::value
                             , std::unique_ptr< EllipticLocalizableProduct< DiffusionType, void, GridViewType,
@@ -143,6 +145,7 @@ make_elliptic_localizable_product(const DiffusionType& diffusion,
 template< class DiffusionFactorType, class DiffusionTensorType, class GridViewType, class RangeType, class SourceType >
     typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
                              && Stuff::is_localizable_function< DiffusionTensorType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                              && Stuff::is_localizable_function< RangeType >::value
                              && Stuff::is_localizable_function< SourceType >::value
                            , std::unique_ptr< EllipticLocalizableProduct< DiffusionFactorType, DiffusionTensorType,
@@ -267,7 +270,7 @@ template< class MatrixType, class DiffusionFactorType, class DiffusionTensorType
                              && Stuff::is_localizable_function< DiffusionFactorType >::value
                              && Stuff::is_localizable_function< DiffusionTensorType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
                                                                       SpaceType, MatrixType, GridViewType > >
                            >::type
@@ -288,6 +291,7 @@ template< class MatrixType, class DiffusionFactorType, class DiffusionTensorType
                              && Stuff::is_localizable_function< DiffusionTensorType >::value
                              && is_space< RangeSpaceType >::value
                              && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
                                                                       RangeSpaceType, MatrixType, GridViewType,
                                                                       SourceSpaceType > >
@@ -329,7 +333,7 @@ template< class DiffusionFactorType, class DiffusionTensorType, class MatrixType
                              && Stuff::is_localizable_function< DiffusionTensorType >::value
                              && Stuff::LA::is_matrix< MatrixType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
                                                                       SpaceType, MatrixType, GridViewType > >
                            >::type
@@ -351,6 +355,7 @@ template< class DiffusionFactorType, class DiffusionTensorType, class MatrixType
                              && Stuff::LA::is_matrix< MatrixType >::value
                              && is_space< RangeSpaceType >::value
                              && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionFactorType, DiffusionTensorType,
                                                                       RangeSpaceType, MatrixType, GridViewType,
                                                                       SourceSpaceType > >
@@ -388,7 +393,7 @@ template< class MatrixType, class DiffusionType, class SpaceType, class GridView
     typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
                              && Stuff::is_localizable_function< DiffusionType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType,
                                                                       GridViewType > >
                            >::type
@@ -406,6 +411,7 @@ template< class MatrixType, class DiffusionType, class RangeSpaceType, class Sou
                              && Stuff::is_localizable_function< DiffusionType >::value
                              && is_space< RangeSpaceType >::value
                              && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, RangeSpaceType, MatrixType,
                                                                       GridViewType, SourceSpaceType > >
                            >::type
@@ -441,7 +447,7 @@ template< class DiffusionType, class MatrixType, class SpaceType, class GridView
     typename std::enable_if<    Stuff::is_localizable_function< DiffusionType >::value
                              && Stuff::LA::is_matrix< MatrixType >::value
                              && is_space< SpaceType >::value
-                             && !std::is_integral< GridViewType >::value // needed for disambiguation with above specialization
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, SpaceType, MatrixType,
                                               GridViewType > >
                            >::type
@@ -461,6 +467,7 @@ template< class DiffusionType, class MatrixType, class RangeSpaceType, class Sou
                              && Stuff::LA::is_matrix< MatrixType >::value
                              && is_space< RangeSpaceType >::value
                              && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
                            , std::unique_ptr< EllipticMatrixOperator< DiffusionType, void, RangeSpaceType, MatrixType,
                                                                       GridViewType, SourceSpaceType > >
                            >::type
@@ -586,7 +593,8 @@ private:
 // ////////////////////// //
 
 template< class GridViewType, class DiffusionType >
-    typename std::enable_if< Stuff::is_localizable_function< DiffusionType >::value
+    typename std::enable_if<    Stuff::Grid::is_grid_layer< GridViewType >::value
+                             && Stuff::is_localizable_function< DiffusionType >::value
                            , std::unique_ptr< EllipticOperator< DiffusionType, void, GridViewType,
                                                                 typename DiffusionType::RangeFieldType > >
                            >::type
@@ -599,7 +607,8 @@ make_elliptic_operator(const GridViewType& grid_view,
 }
 
 template< class GridViewType, class DiffusionFactorType, class DiffusionTensorType >
-    typename std::enable_if<    Stuff::is_localizable_function< DiffusionFactorType >::value
+    typename std::enable_if<    Stuff::Grid::is_grid_layer< GridViewType >::value
+                             && Stuff::is_localizable_function< DiffusionFactorType >::value
                              && Stuff::is_localizable_function< DiffusionTensorType >::value
                            , std::unique_ptr< EllipticOperator< DiffusionFactorType, DiffusionTensorType, GridViewType,
                                                                 typename DiffusionFactorType::RangeFieldType > >
