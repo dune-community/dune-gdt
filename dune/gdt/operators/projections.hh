@@ -9,6 +9,7 @@
 #include <vector>
 #include <limits>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/stuff/common/type_utils.hh>
@@ -451,7 +452,9 @@ private:
 
 
 template< class GridViewImp, class SourceImp, class RangeImp, class FieldImp >
-class DirichletProjectionLocalizable
+class
+  DUNE_DEPRECATED_MSG("Use DirichletProjectionLocalizableOperator in dune/gdt/operators/projections/dirichlet.hh instead (29.09.2015)!")
+      DirichletProjectionLocalizable
   : public LocalizableOperatorInterface
         < internal::DirichletProjectionLocalizableTraits< GridViewImp, SourceImp, RangeImp, FieldImp > >
   , public Stuff::Grid::Codim0Functor< GridViewImp >
