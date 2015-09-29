@@ -18,6 +18,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/operators/projections/dirichlet.hh>
 #include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/playground/operators/elliptic-cg.hh>
 #include <dune/gdt/spaces/cg.hh>
@@ -86,7 +87,7 @@ public:
                                        new Stuff::Grid::ApplyOn::NeumannIntersections<GridViewType>(*boundary_info));
     // prepare the dirichlet projection
     auto dirichlet_function   = make_discrete_function<VectorType>(space, "dirichlet values");
-    auto dirichlet_projection = Operators::make_localizable_dirichlet_projection(
+    auto dirichlet_projection = make_localizable_dirichlet_projection_operator(
         space.grid_view(), *boundary_info, problem.dirichlet(), dirichlet_function);
     Spaces::DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());
     // register everything for assembly in one grid walk
@@ -94,7 +95,7 @@ public:
     assembler.add(*elliptic_operator);
     assembler.add(*l2_force_functional);
     assembler.add(*l2_neumann_functional);
-    assembler.add(dirichlet_projection);
+    assembler.add(*dirichlet_projection);
     assembler.add(dirichlet_constraints);
     assembler.assemble();
     // apply the dirichlet shift
