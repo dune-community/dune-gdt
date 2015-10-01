@@ -19,6 +19,16 @@
   SPACE_RT_PDELAB_SGRID(2)                                                                                             \
   , SPACE_RT_PDELAB_SGRID(3), SPACE_RT_PDELAB_YASPGRID(2), SPACE_RT_PDELAB_YASPGRID(3)
 
+
+#define SPACE_RT_PDELAB_SGRID_LEVEL(dd) Dune::GDT::Spaces::RT::PdelabBased<S##dd##dLevelGridViewType, 0, double, dd>
+
+#define SPACE_RT_PDELAB_YASPGRID_LEVEL(dd)                                                                             \
+  Dune::GDT::Spaces::RT::PdelabBased<Yasp##dd##dLevelGridViewType, 0, double, dd>
+
+#define SPACES_RT_PDELAB_LEVEL                                                                                         \
+  SPACE_RT_PDELAB_SGRID_LEVEL(2)                                                                                       \
+  , SPACE_RT_PDELAB_SGRID_LEVEL(3), SPACE_RT_PDELAB_YASPGRID_LEVEL(2), SPACE_RT_PDELAB_YASPGRID_LEVEL(3)
+
 #if HAVE_ALUGRID
 
 #define SPACE_RT_PDELAB_ALUCONFORMGRID(dd)                                                                             \
@@ -30,6 +40,17 @@
 #define SPACES_RT_PDELAB_ALUGRID                                                                                       \
   SPACE_RT_PDELAB_ALUCONFORMGRID(2)                                                                                    \
   , SPACE_RT_PDELAB_ALUCUBEGRID(2), SPACE_RT_PDELAB_ALUCUBEGRID(3)
+
+
+#define SPACE_RT_PDELAB_ALUCONFORMGRID_LEVEL(dd)                                                                       \
+  Dune::GDT::Spaces::RT::PdelabBased<AluConform##dd##dLevelGridViewType, 0, double, dd>
+
+#define SPACE_RT_PDELAB_ALUCUBEGRID_LEVEL(dd)                                                                          \
+  Dune::GDT::Spaces::RT::PdelabBased<AluCube##dd##dLevelGridViewType, 0, double, dd>
+
+#define SPACES_RT_PDELAB_ALUGRID_LEVEL                                                                                 \
+  SPACE_RT_PDELAB_ALUCONFORMGRID_LEVEL(2)                                                                              \
+  , SPACE_RT_PDELAB_ALUCUBEGRID_LEVEL(2), SPACE_RT_PDELAB_ALUCUBEGRID_LEVEL(3)
 
 #endif // HAVE_ALUGRID
 
