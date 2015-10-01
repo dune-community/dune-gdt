@@ -94,26 +94,26 @@ public:
                                          space,
                                          new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(*boundary_info));
     // prepare the dirichlet projection
-    auto dirichlet_function = make_discrete_function< VectorType >(space, "dirichlet values");
-    auto dirichlet_projection = make_localizable_dirichlet_projection_operator(space.grid_view(),
-                                                                               *boundary_info,
-                                                                               problem.dirichlet(),
-                                                                               dirichlet_function);
+    auto dirichlet_projection = make_discrete_function< VectorType >(space, "dirichlet values");
+    auto dirichlet_projection_operator = make_localizable_dirichlet_projection_operator(space.grid_view(),
+                                                                                        *boundary_info,
+                                                                                        problem.dirichlet(),
+                                                                                        dirichlet_projection);
     Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints(*boundary_info, space.mapper().size());
     // register everything for assembly in one grid walk
     SystemAssembler< SpaceType > assembler(space);
     assembler.add(*elliptic_operator);
     assembler.add(*l2_force_functional);
     assembler.add(*l2_neumann_functional);
-    assembler.add(*dirichlet_projection);
+    assembler.add(*dirichlet_projection_operator);
     assembler.add(dirichlet_constraints);
     assembler.assemble();
     // apply the dirichlet shift
     auto& system_matrix = elliptic_operator->matrix();
-    rhs_vector -= system_matrix * dirichlet_function.vector();
+    rhs_vector -= system_matrix * dirichlet_projection.vector();
     dirichlet_constraints.apply(system_matrix, rhs_vector);
     // create the discretization (no copy of the containers done here, bc. of cow)
-    return DiscretizationType(problem, space, system_matrix, rhs_vector, dirichlet_function.vector());
+    return DiscretizationType(problem, space, system_matrix, rhs_vector, dirichlet_projection.vector());
   } // ... discretize(...)
 }; // class CGDiscretizer
 
