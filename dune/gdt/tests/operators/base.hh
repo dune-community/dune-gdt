@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_HH
-#define DUNE_GDT_TEST_OPERATORS_HH
+#ifndef DUNE_GDT_TEST_OPERATORS_BASE_HH
+#define DUNE_GDT_TEST_OPERATORS_BASE_HH
 
 #include <dune/common/unused.hh>
 
@@ -134,4 +134,4 @@ struct MatrixOperatorBase
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_HH
+#endif // DUNE_GDT_TEST_OPERATORS_BASE_HH
