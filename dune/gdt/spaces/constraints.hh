@@ -8,6 +8,8 @@
 
 #include <mutex>
 
+#include <dune/common/unused.hh>
+
 #include <dune/stuff/common/crtp.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container/interfaces.hh>
@@ -95,6 +97,7 @@ public:
 
   inline void insert(const size_t DoF)
   {
+    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(mutex_);
     assert(DoF < size_);
     dirichlet_DoFs_.insert(DoF);
   }
