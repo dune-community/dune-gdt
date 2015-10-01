@@ -28,6 +28,21 @@
   , SPACE_DG_PDELAB_YASPGRID(3, 1, pp)
 
 
+#define SPACE_DG_PDELAB_SGRID_LEVEL(dd, rr, pp) \
+  Dune::GDT::Spaces::DG::PdelabBased< S ## dd ## dLevelGridViewType, pp, double, rr >
+
+#define SPACE_DG_PDELAB_YASPGRID_LEVEL(dd, rr, pp) \
+  Dune::GDT::Spaces::DG::PdelabBased< Yasp ## dd ## dLevelGridViewType, pp, double, rr >
+
+#define SPACES_DG_PDELAB_LEVEL(pp) \
+    SPACE_DG_PDELAB_SGRID_LEVEL(1, 1, pp) \
+  , SPACE_DG_PDELAB_SGRID_LEVEL(2, 1, pp) \
+  , SPACE_DG_PDELAB_SGRID_LEVEL(3, 1, pp) \
+  , SPACE_DG_PDELAB_YASPGRID_LEVEL(1, 1, pp) \
+  , SPACE_DG_PDELAB_YASPGRID_LEVEL(2, 1, pp) \
+  , SPACE_DG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
+
+
 # if HAVE_ALUGRID
 
 
@@ -37,6 +52,14 @@
 #define SPACES_DG_PDELAB_ALUGRID(pp) \
     SPACE_DG_PDELAB_ALUCUBEGRID(2, 1, pp) \
   , SPACE_DG_PDELAB_ALUCUBEGRID(3, 1, pp)
+
+
+#define SPACE_DG_PDELAB_ALUCUBEGRID_LEVEL(dd, rr, pp) \
+  Dune::GDT::Spaces::DG::PdelabBased< AluCube ## dd ## dLevelGridViewType, pp, double, rr >
+
+#define SPACES_DG_PDELAB_ALUGRID_LEVEL(pp) \
+    SPACE_DG_PDELAB_ALUCUBEGRID_LEVEL(2, 1, pp) \
+  , SPACE_DG_PDELAB_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
 # endif // HAVE_ALUGRID
