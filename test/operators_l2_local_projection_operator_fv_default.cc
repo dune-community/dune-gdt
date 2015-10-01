@@ -3,8 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#define DUNE_STUFF_TEST_MAIN_ENABLE_TIMED_LOGGING 1
-
 #include <dune/stuff/test/main.hxx>
 
 #include <dune/gdt/tests/operators/projections/l2.hh>
