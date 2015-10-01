@@ -8,7 +8,7 @@
 
 #include <dune/gdt/operators/projections/l2.hh>
 
-#include "../projections.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
