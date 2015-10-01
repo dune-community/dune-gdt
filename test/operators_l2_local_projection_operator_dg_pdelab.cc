@@ -22,10 +22,10 @@ typedef testing::Types< SPACES_DG_PDELAB(1)
 
 TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
 TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor) {
- this->constructible_by_ctor();
+  this->constructible_by_ctor();
 }
 TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results) {
- this->produces_correct_results();
+  this->produces_correct_results();
 }
 
 

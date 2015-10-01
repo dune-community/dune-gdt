@@ -3,8 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#define DUNE_STUFF_TEST_MAIN_ENABLE_TIMED_LOGGING 1
-
 #include <dune/stuff/test/main.hxx>
 
 #include <dune/gdt/tests/operators/projections/l2.hh>
@@ -24,10 +22,10 @@ typedef testing::Types< SPACES_DG_FEM(1)
 
 TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
 TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor) {
- this->constructible_by_ctor();
+  this->constructible_by_ctor();
 }
 TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results) {
- this->produces_correct_results();
+  this->produces_correct_results();
 }
 
 
