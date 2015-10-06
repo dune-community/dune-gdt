@@ -40,7 +40,10 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
-template class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1 >, double, 3 >,
+template class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase
+                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
+                                                   double,
+                                                   3 >,
                                           Hyperbolic::ChooseDiscretizer::fv,
                                           1 >;
 
