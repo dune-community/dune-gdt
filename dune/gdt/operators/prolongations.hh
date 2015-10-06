@@ -193,7 +193,6 @@ private:
   {
     typedef typename RangeFunctionType::DomainType DomainType;
     typedef typename RangeFunctionType::RangeType RangeType;
-    typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
     // create search in the source grid part
     typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
     typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
@@ -215,10 +214,9 @@ private:
       // get source entities
       const auto source_entity_ptr_unique_ptrs = entity_search(quadrature_points);
       assert(source_entity_ptr_unique_ptrs.size() >= 1);
-      const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[0];
-      if (source_entity_ptr_unique_ptr) {
-          const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
-          const auto& source_entity = *source_entity_ptr;
+      const auto& source_entity_unique_ptr = source_entity_ptr_unique_ptrs[0];
+      if (source_entity_unique_ptr) {
+          const auto source_entity = *source_entity_unique_ptr;
           const auto local_source = source.local_function(source_entity);
           local_source->evaluate(source_entity.geometry().local(entity.geometry().center()), source_value);
         } else
@@ -238,14 +236,18 @@ private:
   {
     // clear
     std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
     // create partitioning
     const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                 * DS::threadManager().current_threads();
-    RangedPartitioning< GridViewType, 0 > partitioning(grid_view_, num_partitions);
+    RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
     Body< SourceFunctionType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
-   // walk the grid
+    // walk the grid
     tbb::parallel_reduce(blocked_range, body);
+#else // HAVE_TBB
+    walk_grid_parallel_fv(source, range, GridViewType::elements(range.space().grid_view()));
+#endif // HAVE_TBB
   } // ... prolong_onto_dg_fem_localfunctions_wrapper_fv(...)
 
   template< class SourceFunctionType, class RangeFunctionType >
@@ -455,20 +457,19 @@ private:
   template< class SourceType, class LagrangePointsType, class EntityPointers, class LocalDoFVectorType >
   void apply_local(const SourceType& source,
                    const LagrangePointsType& lagrange_points,
-                   const EntityPointers& source_entity_ptr_unique_ptrs,
+                   const EntityPointers& source_entity_unique_ptrs,
                    LocalDoFVectorType& range_DoF_vector) const
   {
     static const size_t dimRange = SourceType::dimRange;
     size_t kk = 0;
-    assert(source_entity_ptr_unique_ptrs.size() >= lagrange_points.size());
+    assert(source_entity_unique_ptrs.size() >= lagrange_points.size());
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
       if (std::isinf(range_DoF_vector.get(kk))) {
         const auto& global_point = lagrange_points[ii];
         // evaluate source function
-        const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[ii];
-        if (source_entity_ptr_unique_ptr) {
-          const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
-          const auto& source_entity = *source_entity_ptr;
+        const auto& source_entity_unique_ptr = source_entity_unique_ptrs[ii];
+        if (source_entity_unique_ptr) {
+          const auto source_entity = *source_entity_unique_ptr;
           const auto local_source_point = source_entity.geometry().local(global_point);
           const auto local_source = source.local_function(source_entity);
           const auto source_value = local_source->evaluate(local_source_point);
