@@ -143,7 +143,7 @@ public:
     , dt_(dt)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_)
+    if (!jacobians_constructed_ && is_linear_)
       initialize_jacobians();
   }
 
@@ -349,7 +349,7 @@ public:
     , dt_(dt)
     , is_linear_(is_linear)
   {
-    if (!(*jacobians_constructed_))
+    if (!(*jacobians_constructed_) && is_linear_)
       initialize_jacobians();
   }
 
@@ -401,9 +401,6 @@ public:
     // get function values
     const RangeType u_i = ansatzBaseEntity.evaluate(intersection.geometryInInside().center())[0];
     const RangeType u_j = ansatzBaseNeighbor.evaluate(intersection.geometryInOutside().center())[0];
-
-    if (!(*jacobians_constructed_))
-      initialize_jacobians();
 
     if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
       reinitialize_jacobians(u_i, u_j);
@@ -580,7 +577,7 @@ public:
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_)
+    if (!jacobians_constructed_ && is_linear_)
       initialize_jacobians();
   }
 
@@ -778,7 +775,7 @@ public:
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_)
+    if (!jacobians_constructed_ && is_linear_)
       initialize_jacobians();
   }
 

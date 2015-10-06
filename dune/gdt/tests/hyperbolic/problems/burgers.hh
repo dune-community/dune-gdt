@@ -91,7 +91,7 @@ public:
     ConfigType config = BaseType::default_config();
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType flux_config = DefaultFluxType::default_config();
+    ConfigType flux_config;
     flux_config["type"] = FluxType::static_id();
     flux_config["variable"] = "u";
     flux_config["expression"] = "[1.0/2.0*u[0]*u[0] 1.0/2.0*u[0]*u[0] 1.0/2.0*u[0]*u[0]]";
@@ -101,14 +101,16 @@ public:
     flux_config["gradient.1"] = "[u[0] 0 0]";
     flux_config["gradient.2"] = "[u[0] 0 0]";
     config.add(flux_config, "flux", true);
-    ConfigType initial_value_config = DefaultFunctionType::default_config();
-    initial_value_config["type"] = DefaultFunctionType::static_id();
+    ConfigType initial_value_config;
+    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
+    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
+    initial_value_config["num_elements"] = "[1 1 1]";
     initial_value_config["variable"] = "x";
-    if (domainDim == 1)
-      initial_value_config["expression"] = "[sin(pi*x[0]) sin(pi*x[0]) sin(pi*x[0])]";            // simple sine wave
+    if (dimDomain == 1)
+      initial_value_config["values"] = "sin(pi*x[0])";
     else
-      initial_value_config["expression"] = "[1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))]"; //bump, only in 2D or higher
-//    initial_value_config["expression"] = "sin(pi*(x[0]-4)*(x[0]-10))*exp(-(x[0]-8)^4)";     // waves for 1D, domain [0,16] or the like
+      initial_value_config["values.0"] = "1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))"; //bump, only in 2D or higher
+    initial_value_config["name"] = static_id();
     initial_value_config["order"] = "10";
     config.add(initial_value_config, "initial_values", true);
     if (sub_name.empty())
@@ -142,14 +144,9 @@ public:
       return 0.1;
   }
 
-
   virtual double t_end() const override
   {
     return 1.0;
-/*    if (dimDomain == 1)
-      return 1.0;
-    else
-      return 4.0*/;
   }
 
   virtual bool is_linear() const override
@@ -157,7 +154,6 @@ public:
     return false;
   }
 };
-
 
 
 } // namespace Problems

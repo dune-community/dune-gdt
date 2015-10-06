@@ -278,13 +278,13 @@ public:
 
       //create butcher_array
       // forward euler
-//      Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0]"));
-//      Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1]"));
-//      Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0]"));
+      Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0]"));
+      Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1]"));
+      Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0]"));
       // generic second order, x = 1 (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
-          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0; 1 0]"));
-          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]"));
-          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0 1]"));
+//          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0; 1 0]"));
+//          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]"));
+//          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0 1]"));
       // optimal third order SSP
 //          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0; 1 0 0; 0.25 0.25 0]"));
 //          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[1.0/6.0 1.0/6.0 2.0/3.0]"));
@@ -292,8 +292,6 @@ public:
       // classic fourth order RK
       //    Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]"));
       //    Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::toString(1.0/6.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/6.0) + "]"));
-
-
 
 
       // define operator types
@@ -307,18 +305,6 @@ public:
 
       // create source operator, is independent of dt
       SourceOperatorType source_operator(*source, fv_space_);
-
-      //search suitable time step length
-//      std::pair< bool, double > dtpair = std::make_pair(bool(false), dt);
-//      while (!(dtpair.first)) {
-//        ConstantFunctionType dx_function(dx);
-//        OperatorType advection_operator(*analytical_flux, dx_function, dt, *boundary_values, fv_space_, true);
-//        TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b);
-//        dtpair = timestepper.find_suitable_dt(dt, 2, 500, 1000);
-//        dt = dtpair.second;
-//      }
-
-//      std::cout << "dt/dx = " << dt/dx << std::endl;
 
       //create advection operator
       const ConstantFunctionType dx_function(dx);

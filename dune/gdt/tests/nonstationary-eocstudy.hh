@@ -225,7 +225,7 @@ public:
       }
       last_computed_refinement_ = current_refinement_;
       // visualize
-      if (false /*!visualize_prefix_.empty()*/) {
+      if (!visualize_prefix_.empty()) {
         DiscreteFunctionType curr_ii_on_ref_as_discrete_func(reference_discretization_->fv_space(),
                                                              current_solution_vector_->operator[](0).second,
                                                              "solution on reference level");
@@ -294,11 +294,11 @@ protected:
                                                                                      test_case_.reference_level()));
       reference_solution_vector_ = Stuff::Common::make_unique< VectorType >(reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
-      if (true) {
+      if (!visualize_prefix_.empty()) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                reference_solution_vector_->operator[](0).second,
                                                "reference solution");
-        for (size_t ii = reference_solution_vector_->size() - 1; ii < reference_solution_vector_->size(); ++ii) {
+        for (size_t ii = 0; ii < reference_solution_vector_->size(); ++ii) {
           tmp_discrete_func.vector() = reference_solution_vector_->operator[](ii).second;
           tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_reference" + "_factor_0_" + DSC::toString(ii), false);
 //          tmp_discrete_func.template visualize_factor< 1 >(visualize_prefix_ + "_reference" + "_factor_1_" + DSC::toString(ii), false);
@@ -321,7 +321,7 @@ protected:
         project(*exact_solution_at_time, discrete_exact_solution_at_time);
         discrete_exact_solution.emplace_back(std::make_pair(time, discrete_exact_solution_at_time.vector()));
       }
-      if (false) {
+      if (!visualize_prefix_.empty()) {
         DiscreteFunctionType tmp_discrete_func(reference_discretization_->fv_space(),
                                                discrete_exact_solution[0].second,
                                                "exact solution");
