@@ -146,10 +146,6 @@ private:
     ret[2] = 0.25;
   }
 
-  const DomainType V_head_;
-  const DomainType V_tail_;
-  const DomainType V_contact_;
-  const DomainType V_shock_;
   const double t_;
   const DomainType lower_left_;
   const DomainType upper_right_;
@@ -158,6 +154,10 @@ private:
   const double v_ast_;
   const double rho_3_;
   const double rho_4_;
+  const DomainType V_head_;
+  const DomainType V_tail_;
+  const DomainType V_contact_;
+  const DomainType V_shock_;
 };
 
 // see Lora-Clavijo, F.D. et al, Exact solution of the 1D Riemann problem in Newtonian and relativistic hydrodynamics,
