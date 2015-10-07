@@ -9,12 +9,6 @@
 #include <vector>
 #include <limits>
 
-#if HAVE_TBB
-# include <tbb/blocked_range.h>
-# include <tbb/parallel_reduce.h>
-# include <tbb/tbb_stddef.h>
-#endif
-
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/dynmatrix.hh>
@@ -72,7 +66,6 @@ void apply(const ConstDiscreteFunction< SpaceInterface< T >, VS >& source,
 template< class GridViewType >
 class L2Prolongation
 {
-  typedef L2Prolongation< GridViewType > ThisType;
   typedef typename GridViewType::template Codim< 0 >::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const size_t dimDomain = GridViewType::dimension;
@@ -147,128 +140,10 @@ public:
                     < Spaces::FV::DefaultProduct
                       < GVR, RR, rR, rCR >, VR >& range) const
   {
-    prolong_onto_dg_fem_localfunctions_wrapper_fv(source, range);
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
 
 private:
-#if HAVE_TBB
-  template< class SourceFunctionType, class RangeFunctionType, class PartitioningType >
-  struct Body
-  {
-    Body(const ThisType& projection_operator, const PartitioningType& partitioning, const SourceFunctionType& source, RangeFunctionType& range)
-      : projection_operator_(projection_operator)
-      , partitioning_(partitioning)
-      , source_(source)
-      , range_(range)
-    {}
-
-    Body(Body& other, tbb::split /*split*/)
-      : projection_operator_(other.projection_operator_)
-      , partitioning_(other.partitioning_)
-      , source_(other.source_)
-      , range_(other.range_)
-    {}
-
-    void operator()(const tbb::blocked_range< std::size_t > &range) const
-    {
-      // for all partitions in tbb-range
-      for(std::size_t p = range.begin(); p != range.end(); ++p) {
-        auto partition = partitioning_.partition(p);
-        projection_operator_.walk_grid_parallel(source_, range_, partition);
-      }
-    }
-
-    void join(Body& /*other*/)
-    {}
-
-    const ThisType& projection_operator_;
-    const PartitioningType& partitioning_;
-    const SourceFunctionType& source_;
-    RangeFunctionType& range_;
-  }; // struct Body
-#endif //HAVE_TBB
-
-  template< class SourceFunctionType, class RangeFunctionType, class EntityRange >
-  void walk_grid_parallel(const SourceFunctionType& source, RangeFunctionType& range, const EntityRange& entity_range) const
-  {
-    typedef typename RangeFunctionType::DomainType DomainType;
-    typedef typename RangeFunctionType::RangeType RangeType;
-    typedef typename RangeFunctionType::RangeFieldType RangeFieldType;
-    typedef typename Stuff::LA::Container< RangeFieldType, Stuff::LA::default_dense_backend >::VectorType
-        LocalVectorType;
-    // create search in the source grid part
-    typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
-    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
-    EntitySearch entity_search(source.space().grid_view());
-    // guess the polynomial order of the source by hoping that they are the same for all entities
-    const size_t source_order = source.local_function(*source.space().grid_view().template begin< 0 >())->order();
-    // walk the grid
-    RangeType source_value(0);
-    std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs());
-#ifdef __INTEL_COMPILER
-    const auto it_end = entity_range.end();
-    for (auto it = entity_range.begin(); it != it_end; ++it) {
-      const EntityType& entity = *it;
-#else
-    for (const EntityType& entity : entity_range) {
-#endif
-      // prepare
-      auto local_range = range.local_discrete_function(entity);
-      LocalVectorType local_vector(RangeFunctionType::dimRange, RangeFieldType(0));
-      // create quadrature
-      const auto integrand_order = source_order;
-      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(entity.type(),
-                                                                                   boost::numeric_cast< int >(integrand_order));
-      // get global quadrature points
-      std::vector< DomainType > quadrature_points;
-      for (const auto& quadrature_point : quadrature)
-        quadrature_points.emplace_back(entity.geometry().global(quadrature_point.position()));
-      // get source entities
-      const auto source_entity_ptr_unique_ptrs = entity_search(quadrature_points);
-      assert(source_entity_ptr_unique_ptrs.size() >= quadrature_points.size());
-      // loop over all quadrature points
-      size_t pp = 0;
-      for (const auto& quadrature_point : quadrature) {
-        const auto local_point = quadrature_point.position();
-        const auto quadrature_weight = quadrature_point.weight();
-        const auto integration_element = entity.geometry().integrationElement(local_point);
-        // evaluate source
-        const auto& source_entity_ptr_unique_ptr = source_entity_ptr_unique_ptrs[pp];
-        if (source_entity_ptr_unique_ptr) {
-          const auto source_entity_ptr = *source_entity_ptr_unique_ptr;
-          const auto& source_entity = *source_entity_ptr;
-          const auto local_source = source.local_function(source_entity);
-          local_source->evaluate(source_entity.geometry().local(entity.geometry().global(local_point)), source_value);
-        } else
-          source_value *= 0.0;
-        // compute integrals
-        local_vector = source_value;
-        local_vector *= integration_element*quadrature_weight;
-        ++pp;
-      } // loop over all quadrature points
-      // set local DoFs
-      auto local_range_vector = local_range->vector();
-      assert(local_range_vector.size() == local_range_vector.size());
-      for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-        local_range_vector.set(ii, local_vector.get_entry(ii));
-    } // walk the grid
-  } // void walk_grid_parallel
-
-  template< class SourceFunctionType, class RangeFunctionType >
-  void prolong_onto_dg_fem_localfunctions_wrapper_fv(const SourceFunctionType& source, RangeFunctionType& range) const
-  {
-    // clear
-    std::fill(range.vector().begin(), range.vector().end(), 0.0);
-    // create partitioning
-    const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
-                                * DS::threadManager().current_threads();
-    RangedPartitioning< GridViewType, 0 > partitioning(grid_view_, num_partitions);
-    tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
-    Body< SourceFunctionType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
-   // walk the grid
-    tbb::parallel_reduce(blocked_range, body);
-  } // ... prolong_onto_dg_fem_localfunctions_wrapper_fv(...)
-
   template< class SourceFunctionType, class RangeFunctionType >
   void prolong_onto_dg_fem_localfunctions_wrapper(const SourceFunctionType& source, RangeFunctionType& range) const
   {
