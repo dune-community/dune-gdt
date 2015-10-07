@@ -529,7 +529,7 @@ using AssemblerBaseType::assemble;
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, source_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB //EXADUNE
     if (!partitioned_ && save_partitioning_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
@@ -1396,7 +1396,7 @@ using AssemblerBaseType::assemble;
   void apply()
   {
     this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB //EXADUNE
     if (!partitioned_ && save_partitioning_) {
       const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                   * DS::threadManager().current_threads();
