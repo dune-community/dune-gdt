@@ -301,6 +301,8 @@ protected:
         for (size_t ii = 0; ii < reference_solution_vector_->size(); ++ii) {
           tmp_discrete_func.vector() = reference_solution_vector_->operator[](ii).second;
           tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_reference" + "_factor_0_" + DSC::toString(ii), false);
+//          tmp_discrete_func.template visualize_factor< 1 >(visualize_prefix_ + "_reference" + "_factor_1_" + DSC::toString(ii), false);
+//          tmp_discrete_func.template visualize_factor< 2 >(visualize_prefix_ + "_reference" + "_factor_2_" + DSC::toString(ii), false);
         }
       }
     }
@@ -326,6 +328,8 @@ protected:
         for (size_t ii = 0; ii < discrete_exact_solution.size(); ++ii) {
           tmp_discrete_func.vector() = discrete_exact_solution[ii].second;
           tmp_discrete_func.template visualize_factor< 0 >(visualize_prefix_ + "_exact_solution" + "_factor_0_" + DSC::toString(ii), false);
+//          tmp_discrete_func.template visualize_factor< 1 >(visualize_prefix_ + "_exact_solution" + "_factor_1_" + DSC::toString(ii), false);
+//          tmp_discrete_func.template visualize_factor< 2 >(visualize_prefix_ + "_exact_solution" + "_factor_2_" + DSC::toString(ii), false);
         }
       }
       exact_solution_vector_ = Stuff::Common::make_unique< VectorType >(discrete_exact_solution);

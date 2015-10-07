@@ -11,9 +11,9 @@
 
 #include "products_swipdgpenalty.hh"
 
-typedef testing::Types< SPACE_FV_SGRID(1, 1)
-//                      , SPACE_FV_SGRID(2, 1)
-//                      , SPACE_FV_SGRID(3, 1)
+typedef testing::Types< SPACE_FV_YASPGRID(1, 1)
+//                      , SPACE_FV_YASPGRID(2, 1)
+//                      , SPACE_FV_YASPGRID(3, 1)
                       > ConstantSpaces;
 
 TYPED_TEST_CASE(SwipdgPenaltyLocalizableProduct, ConstantSpaces);
@@ -33,9 +33,9 @@ TEST(DISABLED_SwipdgPenaltyLocalizableProduct, dim_3) {}
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 1)
-//                      , SPACE_DG_FEM_SGRID(2, 1, 1)
-//                      , SPACE_DG_FEM_SGRID(3, 1, 1)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 1)
+//                      , SPACE_DG_FEM_YASPGRID(2, 1, 1)
+//                      , SPACE_DG_FEM_YASPGRID(3, 1, 1)
                       > LinearSpaces;
 
 TYPED_TEST_CASE(SwipdgPenaltyAssemblableProduct, LinearSpaces);

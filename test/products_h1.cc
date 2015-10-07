@@ -15,9 +15,9 @@
 #include "products_h1.hh"
 
 
-typedef testing::Types< SPACE_FV_SGRID(1, 1)
-                      , SPACE_FV_SGRID(2, 1)
-                      , SPACE_FV_SGRID(3, 1)
+typedef testing::Types< SPACE_FV_YASPGRID(1, 1)
+                      , SPACE_FV_YASPGRID(2, 1)
+                      , SPACE_FV_YASPGRID(3, 1)
                       > ConstantSpaces;
 
 TYPED_TEST_CASE(H1SemiLocalizableProduct, ConstantSpaces);
@@ -38,9 +38,9 @@ TYPED_TEST(H1SemiLocalizableProduct, quadratic_arguments) {
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_DG_FEM_SGRID(1, 1, 3)
-                      , SPACE_DG_FEM_SGRID(2, 1, 3)
-                      , SPACE_DG_FEM_SGRID(3, 1, 3)
+                        SPACE_DG_FEM_YASPGRID(1, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(2, 1, 3)
+                      , SPACE_DG_FEM_YASPGRID(3, 1, 3)
                       > CubicSpaces;
 
 TYPED_TEST_CASE(H1SemiAssemblableProduct, CubicSpaces);
@@ -60,9 +60,9 @@ TYPED_TEST(H1SemiAssemblableProduct, quadratic_arguments) {
 #elif HAVE_DUNE_PDELAB // HAVE_DUNE_FEM
 
 typedef testing::Types<
-                        SPACE_CG_PDELAB_SGRID(1, 1, 1)
-                      , SPACE_CG_PDELAB_SGRID(2, 1, 1)
-                      , SPACE_CG_PDELAB_SGRID(3, 1, 1)
+                        SPACE_CG_PDELAB_YASPGRID(1, 1, 1)
+                      , SPACE_CG_PDELAB_YASPGRID(2, 1, 1)
+                      , SPACE_CG_PDELAB_YASPGRID(3, 1, 1)
                       > LinearSpaces;
 
 TYPED_TEST_CASE(H1SemiAssemblableProduct, LinearSpaces);

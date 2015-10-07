@@ -8,7 +8,7 @@
 
 #if HAVE_DUNE_FEM && HAVE_EIGEN
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/functions/constant.hh>
@@ -25,7 +25,7 @@ using namespace Dune::GDT;
 TEST(EllipticSWIPDGOperator, is_affinely_decomposable)
 {
   static const size_t d = 2;
-  typedef SGrid< d, d > GridType;
+  typedef YaspGrid< d, EquidistantOffsetCoordinates<double,d>> GridType;
   typedef GridType::template Codim< 0 >::Entity E;
   typedef GridType::ctype D;
   typedef double R;

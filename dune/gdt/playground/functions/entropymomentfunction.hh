@@ -236,9 +236,8 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  // these should be template arguments?
   typedef double                                                                    VelocityFieldImp;
-  typedef typename Dune::SGrid< 1, 1, VelocityFieldImp >            VelocityGridType;
+  typedef typename Dune::YaspGrid< 1 >                                              VelocityGridType;
   typedef Dune::Stuff::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
   typedef typename VelocityGridType::LeafGridView                                   VelocityGridViewType;
   typedef typename VelocityGridType::template Codim< 0 >::Entity                    VelocityEntityType;

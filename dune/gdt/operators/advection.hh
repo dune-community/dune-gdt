@@ -279,12 +279,14 @@ public:
                                     const SourceType& source_discrete_function,
                                     const BoundaryValueType& boundary_values,
                                     RangeType& range_discrete_function,
+                                    const bool is_linear,
                                     const bool use_local,
+                                    const bool entity_geometries_equal,
                                     const bool save_partitioning)
     : OperatorBaseType()
     , AssemblerBaseType(range_discrete_function.space())
-    , local_operator_(analytical_flux, dx, dt, use_local)
-    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, use_local)
+    , local_operator_(analytical_flux, dx, dt, is_linear, use_local, entity_geometries_equal)
+    , local_boundary_operator_(analytical_flux, dx, dt, boundary_values, is_linear, use_local, entity_geometries_equal)
     , inner_assembler_(local_operator_)
     , boundary_assembler_(local_boundary_operator_)
     , source_(source_discrete_function)
@@ -387,7 +389,9 @@ public:
                          const double dt,
                          const BoundaryValueType& boundary_values,
                          const FVSpaceType& fv_space,
+                         const bool is_linear = false,
                          const bool use_local = false,
+                         const bool entity_geometries_equal = false,
                          const bool save_partitioning = false)
     : OperatorBaseType()
     , analytical_flux_(analytical_flux)
@@ -395,7 +399,9 @@ public:
     , dt_(dt)
     , boundary_values_(boundary_values)
     , fv_space_(fv_space)
+    , is_linear_(is_linear)
     , use_local_(use_local)
+    , entity_geometries_equal_(entity_geometries_equal)
     , save_partitioning_(save_partitioning)
   {}
 
@@ -407,12 +413,21 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
+    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        BoundaryValueType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, use_local_, save_partitioning_);
+                                       RangeType > localizable_operator(analytical_flux_,
+                                                                        dx_,
+                                                                        dt_,
+                                                                        source,
+                                                                        *current_boundary_values,
+                                                                        range,
+                                                                        is_linear_,
+                                                                        use_local_,
+                                                                        entity_geometries_equal_,
+                                                                        save_partitioning_);
     localizable_operator.apply();
   }
 
@@ -422,7 +437,9 @@ private:
   const double dt_;
   const BoundaryValueType&  boundary_values_;
   const FVSpaceType& fv_space_;
+  const bool is_linear_;
   const bool use_local_;
+  const bool entity_geometries_equal_;
   const bool save_partitioning_;
 }; // class AdvectionLaxFriedrichs
 
@@ -601,12 +618,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = *boundary_values_.evaluate_at_time(time);
+    auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionGodunovLocalizable<       AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_, save_partitioning_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, *current_boundary_values, range, is_linear_, save_partitioning_);
     localizable_operator.apply();
   }
 
@@ -788,12 +805,12 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0, const bool = false, const double = 0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
+    auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxWendroffLocalizable<   AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
                                        typename BoundaryValueType::ExpressionFunctionType,
-                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, current_boundary_values, range, is_linear_);
+                                       RangeType > localizable_operator(analytical_flux_, dx_, dt_, source, *current_boundary_values, range, is_linear_);
     localizable_operator.apply();
   }
 

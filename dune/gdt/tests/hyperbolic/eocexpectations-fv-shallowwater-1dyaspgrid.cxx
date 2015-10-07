@@ -9,7 +9,7 @@
 
 #include <dune/gdt/tests/hyperbolic/discretizers/fv.hh>
 
-#include "problems/transport.hh"
+#include "problems/shallowwater.hh"
 #include "eocexpectations.hh"
 
 
@@ -19,13 +19,13 @@ namespace Tests {
 
 
 template< bool anything >
-class HyperbolicEocExpectations< Hyperbolic::TransportTestCase< Dune::YaspGrid< 1 >, double, 1 >,
+class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase< Dune::YaspGrid< 1 >, double, 2 >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  1,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 1 >
 {
-  typedef Hyperbolic::TransportTestCase< Dune::YaspGrid< 1 >, double, 1 > TestCaseType;
+  typedef Hyperbolic::ShallowWaterTestCase< Dune::YaspGrid< 1 >, double, 2 > TestCaseType;
 public:
   static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
@@ -40,10 +40,10 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
-template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
+template class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase
                                                  < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
                                                    double,
-                                                   1 >,
+                                                   2 >,
                                           Hyperbolic::ChooseDiscretizer::fv,
                                           1 >;
 

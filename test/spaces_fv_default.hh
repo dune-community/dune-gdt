@@ -10,24 +10,11 @@
 
 #include <dune/gdt/spaces/fv/default.hh>
 
-
-#define SPACE_FV_SGRID(dd, rr) \
-  Spaces::FV::Default< S ## dd ## dLeafGridViewType, double, rr >
-
 #define SPACE_FV_YASPGRID(dd, rr) \
   Spaces::FV::Default< Yasp ## dd ## dLeafGridViewType, double, rr >
 
 #define SPACES_FV \
-    SPACE_FV_SGRID(1, 1) \
-  , SPACE_FV_SGRID(1, 2) \
-  , SPACE_FV_SGRID(1, 3) \
-  , SPACE_FV_SGRID(2, 1) \
-  , SPACE_FV_SGRID(2, 2) \
-  , SPACE_FV_SGRID(2, 3) \
-  , SPACE_FV_SGRID(3, 1) \
-  , SPACE_FV_SGRID(3, 2) \
-  , SPACE_FV_SGRID(3, 2) \
-  , SPACE_FV_YASPGRID(1, 1) \
+    SPACE_FV_YASPGRID(1, 1) \
   , SPACE_FV_YASPGRID(1, 2) \
   , SPACE_FV_YASPGRID(1, 3) \
   , SPACE_FV_YASPGRID(2, 1) \

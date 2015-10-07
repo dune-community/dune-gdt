@@ -12,18 +12,11 @@
 
 #if HAVE_DUNE_PDELAB
 
-
-#define SPACE_DG_PDELAB_SGRID(dd, rr, pp) \
-  Spaces::DG::PdelabBased< S ## dd ## dLeafGridViewType, pp, double, rr >
-
 #define SPACE_DG_PDELAB_YASPGRID(dd, rr, pp) \
   Spaces::DG::PdelabBased< Yasp ## dd ## dLeafGridViewType, pp, double, rr >
 
 #define SPACES_DG_PDELAB(pp) \
-    SPACE_DG_PDELAB_SGRID(1, 1, pp) \
-  , SPACE_DG_PDELAB_SGRID(2, 1, pp) \
-  , SPACE_DG_PDELAB_SGRID(3, 1, pp) \
-  , SPACE_DG_PDELAB_YASPGRID(1, 1, pp) \
+    SPACE_DG_PDELAB_YASPGRID(1, 1, pp) \
   , SPACE_DG_PDELAB_YASPGRID(2, 1, pp) \
   , SPACE_DG_PDELAB_YASPGRID(3, 1, pp)
 

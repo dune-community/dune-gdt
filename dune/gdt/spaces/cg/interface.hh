@@ -14,7 +14,7 @@
 #include <dune/common/version.hh>
 #include <dune/common/typetraits.hh>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#if DUNE_VERSION_NEWER(DUNE_COMMON,2,3)
 # include <dune/geometry/referenceelements.hh>
 #else
 # include <dune/geometry/genericreferenceelements.hh>
@@ -233,8 +233,8 @@ private:
       if (recursion_level > 0) {
         // also call myself on all neighbors
         if (intersection.neighbor()) {
-          const auto neighbor_ptr = intersection.outside();
-          add_dirichlet_vertices(boundaryInfo, *neighbor_ptr, recursion_level - 1, dirichlet_vertices);
+          const auto neighbor = intersection.outside();
+          add_dirichlet_vertices(boundaryInfo, neighbor, recursion_level - 1, dirichlet_vertices);
         }
       } // if (level > 0)
     } // loop over all intersections

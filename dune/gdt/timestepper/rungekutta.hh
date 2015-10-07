@@ -103,7 +103,7 @@ public:
 
   TimeFieldType step(const TimeFieldType dt)
   {
-//      DiscreteFunctionType u_n_copy(u_n_);
+//    DiscreteFunctionType u_n_copy(u_n_);
     apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
     apply_RK_scheme(source_operator_,dt, 1.0);      // evaluate source terms d_t u = q(u)
 
@@ -134,7 +134,7 @@ public:
       u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
       u_tmp_.vector() = u_n_.vector();
       for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*(A_[ii][jj]));
+        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*factor*(A_[ii][jj]));
       op.apply(u_tmp_, u_intermediate_stages_[ii], t_ + dt*c_[ii]);
     }
 
@@ -151,22 +151,29 @@ public:
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step,
+             const TimeFieldType save_step_length,
+             const bool save_solution,
+             const bool write_solution,
+             const std::string filename_prefix,
              std::vector< std::pair< double, DiscreteFunctionType > >& solution)
   {
     TimeFieldType dt = first_dt;
     assert(t_end - t_ >= dt);
     size_t time_step_counter = 0;
 
-    const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step, 0.0) ? dt : save_step;
+    const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step_length, 0.0) ? dt : save_step_length;
     const TimeFieldType output_interval = 0.001;
     TimeFieldType next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
     TimeFieldType next_output_time = t_ + output_interval;
     size_t save_step_counter = 1;
 
     // clear solution
-    solution.clear();
-    solution.emplace_back(std::make_pair(t_, u_n_));
+    if (save_solution) {
+      solution.clear();
+      solution.emplace_back(std::make_pair(t_, u_n_));
+    }
+    if (write_solution)
+      u_n_.template visualize_factor< 0 >(filename_prefix + "factor_0_0");
 
     while (t_ + dt < t_end)
     {
@@ -175,7 +182,10 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (DSC::FloatCmp::ge(t_, next_save_time - 1e-10)) {
-        solution.emplace_back(std::make_pair(t_, u_n_));
+        if (save_solution)
+          solution.emplace_back(std::make_pair(t_, u_n_));
+        if (write_solution)
+          u_n_.template visualize_factor< 0 >(filename_prefix + "factor_0_" + DSC::toString(save_step_counter));
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -199,9 +209,20 @@ public:
 
   void solve(const TimeFieldType t_end,
              const TimeFieldType first_dt,
-             const TimeFieldType save_step = 0.0)
+             const TimeFieldType save_step_length = 0.0,
+             const bool save_solution = false,
+             const bool write_solution = true,
+             const std::string filename_prefix = "")
   {
-    solve(t_end, first_dt, save_step, solution_);
+    solve(t_end, first_dt, save_step_length, save_solution, write_solution, filename_prefix, solution_);
+  }
+
+  void solve(const TimeFieldType t_end,
+             const TimeFieldType first_dt,
+             const TimeFieldType save_step_length,
+             std::vector< std::pair< double, DiscreteFunctionType > >& solution)
+  {
+    solve(t_end, first_dt, save_step_length, true, false, "", solution);
   }
 
   TimeFieldType current_time() const

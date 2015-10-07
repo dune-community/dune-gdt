@@ -10,17 +10,11 @@
 
 #include "grids.hh"
 
-
-#define SPACE_RT_PDELAB_SGRID(dd) \
-  Spaces::RT::PdelabBased< S ## dd ## dLeafGridViewType, 0, double, dd >
-
 #define SPACE_RT_PDELAB_YASPGRID(dd) \
   Spaces::RT::PdelabBased< Yasp ## dd ## dLeafGridViewType, 0, double, dd >
 
 #define SPACES_RT_PDELAB \
-    SPACE_RT_PDELAB_SGRID(2) \
-  , SPACE_RT_PDELAB_SGRID(3) \
-  , SPACE_RT_PDELAB_YASPGRID(2) \
+    SPACE_RT_PDELAB_YASPGRID(2) \
   , SPACE_RT_PDELAB_YASPGRID(3)
 
 #if HAVE_ALUGRID

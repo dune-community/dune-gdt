@@ -107,8 +107,8 @@ public:
     initial_value_config["expression"] = "[0 0 0]";
     initial_value_config["order"] = "0";
     config.add(initial_value_config, "initial_values");
-    ConfigType boundary_value_config = DefaultFunctionType::default_config();
-    boundary_value_config["type"] = DefaultFunctionType::static_id();
+    ConfigType boundary_value_config = DefaultBoundaryValueType::default_config();
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = "[0 0 0]";
     boundary_value_config["order"] = "1";
