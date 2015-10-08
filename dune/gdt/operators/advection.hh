@@ -413,7 +413,7 @@ public:
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    typename BoundaryValueType::ExpressionFunctionType current_boundary_values = boundary_values_.evaluate_at_time(time);
+    auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLaxFriedrichsLocalizable< AnalyticalFluxType,
                                        LocalizableFunctionType,
                                        SourceType,
@@ -435,7 +435,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& dx_;
   const double dt_;
-  const BoundaryValueType&  boundary_values_;
+  const BoundaryValueType& boundary_values_;
   const FVSpaceType& fv_space_;
   const bool is_linear_;
   const bool use_local_;
@@ -970,7 +970,6 @@ public:
 
   typedef typename GridViewType::Grid                                                         GridType;
   typedef typename GridType::template Codim< 0 >::Entity                                      EntityType;
-  typedef typename GridType::template Codim< 0 >::EntityPointer                               EntityPointerType;
   static const size_t dimRange = SourceType::dimRange;
   static const size_t dimRangeCols = SourceType::dimRangeCols;
   typedef typename DSC::FieldMatrix< RangeFieldType, dimRange, dimRange >                     StuffFieldMatrixType;
@@ -1052,7 +1051,7 @@ public:
     this->add(inner_assembler_, *reconstruction_, range_, new DSG::ApplyOn::InnerIntersections< GridViewType >());
     this->add(inner_assembler_, *reconstruction_, range_, new DSG::ApplyOn::PeriodicIntersections< GridViewType >());
     this->add(boundary_assembler_, *reconstruction_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
+#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB //EXADUNE
     if (save_partitioning_)
       this->assemble(*partitioning_);
     else
@@ -1112,8 +1111,8 @@ private:
     for (const EntityType& entity : entity_range) {
 #endif
       // create EntityPointers for neighbors to the right and left
-      EntityPointerType left_neighbor_ptr(entity);
-      EntityPointerType right_neighbor_ptr(entity);
+      EntityType left_neighbor(entity);
+      EntityType right_neighbor(entity);
       bool on_left_boundary(false);
       bool on_right_boundary(false);
       const auto entity_center = entity.geometry().center();
@@ -1122,13 +1121,13 @@ private:
       for (auto i_it = grid_view_.ibegin(entity); i_it != i_it_end; ++i_it) {
         const auto& intersection = *i_it;
         if (intersection.neighbor()) {
-          const auto& neighbor = *(intersection.outside());
+          const auto neighbor = intersection.outside();
           const auto neighbor_center = neighbor.geometry().center()[0];
           const bool boundary = intersection.boundary();
           if ((neighbor_center < entity_center[0] && !boundary) || (neighbor_center > entity_center[0] && boundary))
-            left_neighbor_ptr = EntityPointerType(neighbor);
+            left_neighbor = neighbor;
           else
-            right_neighbor_ptr = EntityPointerType(neighbor);
+            right_neighbor = neighbor;
         } else {
           if (intersection.geometry().center()[0] < entity_center[0]) {
             on_left_boundary = true;
@@ -1142,10 +1141,10 @@ private:
       // get values of discrete function
       const auto u_left = on_left_boundary
                           ? left_boundary_value
-                          : source_.local_discrete_function(*left_neighbor_ptr)->evaluate(left_neighbor_ptr->geometry().local(left_neighbor_ptr->geometry().center()));
+                          : source_.local_discrete_function(left_neighbor)->evaluate(left_neighbor.geometry().local(left_neighbor.geometry().center()));
       const auto u_right = on_right_boundary
                            ? right_boundary_value
-                           : source_.local_discrete_function(*right_neighbor_ptr)->evaluate(right_neighbor_ptr->geometry().local(right_neighbor_ptr->geometry().center()));
+                           : source_.local_discrete_function(right_neighbor)->evaluate(right_neighbor.geometry().local(right_neighbor.geometry().center()));
       const auto u_entity = source_.local_discrete_function(entity)->evaluate(entity.geometry().local(entity_center));
 
       // diagonalize the system of equations from u_t + A*u_x = 0 to w_t + D*w_x = 0 where D = R^(-1)*A*R, w = R^(-1)*u and R matrix of eigenvectors of A
