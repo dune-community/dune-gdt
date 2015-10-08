@@ -236,20 +236,17 @@ private:
   {
     // clear
     std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
     // create partitioning
     const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                 * DS::threadManager().current_threads();
     RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
-#if HAVE_TBB
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
     Body< SourceFunctionType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
     // walk the grid
     tbb::parallel_reduce(blocked_range, body);
 #else // HAVE_TBB
-    for (std::size_t p = 0; p < partitioning.partitions(); ++p) {
-      auto partition = partitioning.partition(p);
-      walk_grid_parallel_fv(source, range, partition);
-    }
+      walk_grid_parallel_fv(source, range, DSC::EntityRange< GridViewType >(range.space().grid_view()));
 #endif // HAVE_TBB
   } // ... prolong_onto_dg_fem_localfunctions_wrapper_fv(...)
 

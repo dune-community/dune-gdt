@@ -17,6 +17,7 @@
 
 #include <dune/common/fvector.hh>
 
+#include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/functions/interfaces.hh>
@@ -498,20 +499,17 @@ private:
   {
     // clear
     std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
     // create partitioning
     const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                 * DS::threadManager().current_threads();
     RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
-#if HAVE_TBB
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
     Body< SourceType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
    // walk the grid
     tbb::parallel_reduce(blocked_range, body);
 #else // HAVE_TBB
-    for (std::size_t p = 0; p < partitioning.partitions(); ++p) {
-      auto partition = partitioning.partition(p);
-      walk_grid_parallel(source, range, partition);
-    }
+      walk_grid_parallel(source, range, DSC::EntityRange< GridViewType >(range.space().grid_view()));
 #endif // HAVE_TBB
   } // ... apply_local_l2_projection(...)
 
@@ -520,20 +518,17 @@ private:
   {
     // clear
     std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
     // create partitioning
     const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
                                 * DS::threadManager().current_threads();
     RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
-#if HAVE_TBB
     tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
     BodyFV< SourceType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
     // walk the grid
     tbb::parallel_reduce(blocked_range, body);
 #else // HAVE_TBB
-    for (std::size_t p = 0; p < partitioning.partitions(); ++p) {
-      auto partition = partitioning.partition(p);
-      walk_grid_parallel_expression_checkerboard_fv(source, range, partition);
-    }
+      walk_grid_parallel_expression_checkerboard_fv(source, range, DSC::EntityRange< GridViewType >(range.space().grid_view()));
 #endif // HAVE_TBB
   } // ... apply_local_l2_projection_expression_checkerboard(...)
 

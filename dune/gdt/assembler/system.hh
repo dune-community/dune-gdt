@@ -229,11 +229,13 @@ public:
     this->walk(use_tbb);
   }
 
+#if HAVE_TBB
   template< class Partitioning >
   void assemble(const Partitioning& partitioning)
   {
     this->walk(partitioning);
   }
+#endif // HAVE_TBB
 
 
 private:
