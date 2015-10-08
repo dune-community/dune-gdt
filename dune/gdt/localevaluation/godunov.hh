@@ -113,7 +113,7 @@ public:
 
 
 
-#define PAPERFLUX 1
+#define PAPERFLUX 0
 
 template< class LocalizableFunctionImp, size_t domainDim = LocalizableFunctionImp::dimDomain >
 class Inner
@@ -402,6 +402,9 @@ public:
     const RangeType u_i = ansatzBaseEntity.evaluate(intersection.geometryInInside().center())[0];
     const RangeType u_j = ansatzBaseNeighbor.evaluate(intersection.geometryInOutside().center())[0];
 
+    if (!(*jacobians_constructed_) && is_linear_)
+      initialize_jacobians();
+
     if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
       reinitialize_jacobians(u_i, u_j);
     }
@@ -423,7 +426,6 @@ public:
       jacobian_abs_function_->evaluate(u_j - u_i, waves);
       entityNeighborRet[0].axpy(RangeFieldType(-0.5), f_u_i_plus_f_u_j + waves);
     }
-    //std::cout << DSC::toString(*jacobian_abs_) << std::endl;
 #else
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
     if (n_ij > 0) {
@@ -686,7 +688,7 @@ public:
 
     void calculate_jacobians(std::vector< EigenMatrixType >&& jacobian) const
     {
-  #if HAVE_EIGEN
+#if HAVE_EIGEN
       EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
       EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
       for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -714,9 +716,9 @@ public:
         jacobian_neg_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
         jacobian_pos_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
       }
-  #else
+#else
       static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-  #endif
+#endif
     } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
@@ -816,13 +818,16 @@ public:
       const RangeType u_i = ansatzBase.evaluate(intersection_center_local)[0];
       const RangeType u_j = std::get< 1 >(localFuncs)->evaluate(intersection_center_local);
 
+      if (!(*jacobians_constructed_) && is_linear_)
+        initialize_jacobians();
+
       if (!is_linear_) { // use simple linearized Riemann solver, LeVeque p.316
         reinitialize_jacobians(u_i, u_j);
       }
       // get unit outer normal
       const RangeFieldType n_ij = intersection.unitOuterNormal(localPoint)[0];
       // calculate return vector
-  #if PAPERFLUX
+#if PAPERFLUX
       //get flux values, FluxRangeType should be FieldVector< ..., dimRange >
       const FluxRangeType f_u_i_plus_f_u_j = is_linear_
                                              ? analytical_flux_.evaluate(u_i + u_j)
@@ -837,7 +842,7 @@ public:
         jacobian_abs_function_->evaluate(u_j - u_i, waves);
         ret[0].axpy(RangeFieldType(-0.5), f_u_i_plus_f_u_j + waves);
       }
-  #else
+#else
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
       if (n_ij > 0) {
         RangeType negative_waves(RangeFieldType(0));
@@ -848,16 +853,16 @@ public:
         jacobian_pos_function_->evaluate(u_i - u_j, positive_waves);
         ret[0] = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
       }
-  #endif
-    }  // void evaluate(...) const
+#endif
+  } // void evaluate(...) const
 
   private:
     void initialize_jacobians() const
     {
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
-      EigenMatrixType jacobian_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian)));
-      calculate_jacobians(jacobian_eigen);
-      jacobians_constructed_ = true;
+      EigenMatrixType jacobian_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15)));
+      calculate_jacobians(std::move(jacobian_eigen));
+      *jacobians_constructed_ = true;
     } // void initialize_jacobians()
 
     void reinitialize_jacobians(const RangeType& u_i,
@@ -867,13 +872,13 @@ public:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
-      EigenMatrixType jacobian_eigen = DSC::fromString< EigenMatrixType >(DSC::toString(jacobian));
+      EigenMatrixType jacobian_eigen = DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15));
 
       // calculate jacobian_neg and jacobian_pos
-      calculate_jacobians(jacobian_eigen);
+      calculate_jacobians(std::move(jacobian_eigen));
     } // void reinitialize_jacobians(...)
 
-    void calculate_jacobians(EigenMatrixType& jacobian) const
+    void calculate_jacobians(EigenMatrixType&& jacobian) const
     {
 #if HAVE_EIGEN
       EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
@@ -899,17 +904,17 @@ public:
         EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
         EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
         // set jacobian_neg_ and jacobian_pos_
-        jacobian_neg_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
-        jacobian_pos_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
+        *jacobian_neg_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen, 15));
+        *jacobian_pos_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen, 15));
         // jacobian_abs_ = jacobian_pos_ - jacobian_neg_;
-        jacobian_abs_ = jacobian_neg_;
-        jacobian_abs_ *= RangeFieldType(-1.0);
-        jacobian_abs_ += jacobian_pos_;
+        *jacobian_abs_ = *jacobian_neg_;
+        *jacobian_abs_ *= RangeFieldType(-1.0);
+        *jacobian_abs_ += *jacobian_pos_;
 # if PAPERFLUX
-      jacobian_abs_function_ = DSC::make_unique< AffineFunctionType >(jacobian_abs_, RangeType(0), true);
+        *jacobian_abs_function_ = AffineFunctionType(*jacobian_abs_, RangeType(0), true);
 # else
-      jacobian_neg_function_ = DSC::make_unique< AffineFunctionType >(jacobian_neg_, RangeType(0), true);
-      jacobian_pos_function_ = DSC::make_unique< AffineFunctionType >(jacobian_pos_, RangeType(0), true);
+        *jacobian_neg_function_ = AffineFunctionType(*jacobian_neg_, RangeType(0), true);
+        *jacobian_pos_function_ = AffineFunctionType(*jacobian_pos_, RangeType(0), true);
 # endif
       }
 #else
@@ -917,46 +922,46 @@ public:
 #endif
     } // void calculate_jacobians(...)
 
-  const AnalyticalFluxType& analytical_flux_;
-  const LocalizableFunctionType& dx_;
-  const double dt_;
-  const BoundaryValueFunctionType& boundary_values_;
-  static FluxJacobianRangeType jacobian_neg_;
-  static FluxJacobianRangeType jacobian_pos_;
-  static FluxJacobianRangeType jacobian_abs_;
-  static std::unique_ptr< AffineFunctionType > jacobian_neg_function_;
-  static std::unique_ptr< AffineFunctionType > jacobian_pos_function_;
-  static std::unique_ptr< AffineFunctionType > jacobian_abs_function_;
-  static bool jacobians_constructed_;
-  const bool is_linear_;
-}; // class Dirichlet< ..., 1 >
+    const AnalyticalFluxType& analytical_flux_;
+    const LocalizableFunctionType& dx_;
+    const double dt_;
+    const BoundaryValueFunctionType& boundary_values_;
+    static typename DS::PerThreadValue< FluxJacobianRangeType > jacobian_neg_;
+    static typename DS::PerThreadValue< FluxJacobianRangeType > jacobian_pos_;
+    static typename DS::PerThreadValue< FluxJacobianRangeType > jacobian_abs_;
+    static typename DS::PerThreadValue< AffineFunctionType > jacobian_neg_function_;
+    static typename DS::PerThreadValue< AffineFunctionType > jacobian_pos_function_;
+    static typename DS::PerThreadValue< AffineFunctionType > jacobian_abs_function_;
+    static typename DS::PerThreadValue< bool > jacobians_constructed_;
+    const bool is_linear_;
+  }; // class Dirichlet< ..., 1 >
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_neg_(0);
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_neg_{typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType()};
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_pos_(0);
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_pos_{typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType()};
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_abs_(0);
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_abs_{typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType()};
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-std::unique_ptr< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_neg_function_;
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_neg_function_(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType(0)));
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-std::unique_ptr< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_pos_function_;
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_pos_function_(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType(0)));
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-std::unique_ptr< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
-Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_abs_function_;
+typename DS::PerThreadValue< typename Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType >
+Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobian_abs_function_(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::AffineFunctionType(Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::FluxJacobianRangeType(0)));
 
 template < class LocalizableFunctionImp, class BoundaryValueFunctionImp >
-bool
+typename DS::PerThreadValue< bool >
 Dirichlet< LocalizableFunctionImp, BoundaryValueFunctionImp, 1 >::jacobians_constructed_(false);
 
 
