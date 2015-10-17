@@ -232,7 +232,7 @@ struct is_const_discrete_function_helper
   DSC_has_typedef_initialize_once(SpaceType)
   DSC_has_typedef_initialize_once(VectorType)
 
-  static const bool is_candidate = DSC_has_typedef(SpaceType)< D >::value && DSC_has_typedef(SpaceType)< D >::value;
+  static const bool is_candidate = DSC_has_typedef(SpaceType)< D >::value && DSC_has_typedef(VectorType)< D >::value;
 };
 
 
