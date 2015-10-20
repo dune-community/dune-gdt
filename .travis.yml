@@ -1,0 +1,115 @@
+sudo: false
+language: cpp
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    - george-edison55-precise-backports
+    - llvm-toolchain-precise-3.7
+    packages:
+    - gcc-4.9
+    - g++-4.9
+    - gcc-5
+    - g++-5
+    - clang-3.7
+    - clang-format-3.7
+    - clang-modernize-3.7
+    - cmake
+    - cmake-data
+    - doxygen
+    - texlive-base
+    - python-virtualenv
+    - libboost1.55-all-dev
+    - python-pip
+    - libtbb-dev
+    - ccache
+    - libparmetis-dev
+    - libsuitesparse-dev
+    - lcov
+    - curl
+
+before_install:
+  - cmake --version
+  - export PATH=/usr/lib/ccache:$PATH
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="/usr/bin/gcc-4.9"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
+  - cd $HOME
+  - test -d src || git clone --branch=travis https://github.com/pymor/dune-gdt-demos src
+  - cd $HOME/src
+  - git submodule update --init --recursive
+  - cp config.opts/travis $HOME/travis.opts && export DCONTROL_ARG="--builddir=${DUNE_BUILD_DIR}  --opts=${HOME}/travis.opts"
+  - echo removing modules ${MODULES_TO_DELETE}
+  # ensures ${MY_MODULE} from travis own checkout is used
+  - rm -rf ${MODULES_TO_DELETE} ${MY_MODULE}
+  # install Eigen
+  - mkdir -p ${DUNE_BUILD_DIR}/eigen/build
+  - wget -qO- http://bitbucket.org/eigen/eigen/get/3.2.4.tar.gz | tar xz -C ${DUNE_BUILD_DIR}/eigen --strip-components=1
+  - cd ${DUNE_BUILD_DIR}/eigen/build
+  - cmake .. -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+  - make install
+  # workarounds for dune-testtools issue
+  - cd $HOME/src
+  - ./dune-common/bin/dunecontrol ${DCONTROL_ARG} --module=dune-python configure
+  - ${DUNE_BUILD_DIR}/dune-python/python2-env/bin/pip install -U pip
+  - ${DUNE_BUILD_DIR}/dune-python/python3-env/bin/pip install -U pip
+  - ${DUNE_BUILD_DIR}/dune-python/python2-env/bin/pip install -U distribute six
+  - ${DUNE_BUILD_DIR}/dune-python/python3-env/bin/pip install -U distribute six
+
+# command to install dependencies
+install:
+  - cd $HOME/src
+  - pip install --user cpp-coveralls
+  - ./dune-common/bin/dunecontrol ${DCONTROL_ARG} --only=dune-common all : make install : bexec "rm -rf *" : exec "rm -rf *" > /dev/null
+  - ~/dune/bin/dunecontrol ${DCONTROL_ARG} all : make install : bexec "rm -rf *" : exec "rm -rf *" > /dev/null
+  - rm -rf ${DUNE_BUILD_DIR} $HOME/src
+
+# # command to run tests
+script:
+    - cd ${TRAVIS_BUILD_DIR}
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} configure
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec make
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec make test_binaries
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec make test
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec make headercheck -k
+    # reset for ctest
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec make clean
+    - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
+    # ctest errors on coverage gathering, this should NOT fail our entire build
+    - ~/dune/bin/dunecontrol ${DCONTROL_ARG} --only=${MY_MODULE} bexec ctest ${CTEST_ARG} || echo "CTest Failed"
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+  webhooks:
+    - https://buildtimetrend.herokuapp.com/travis
+
+#after_success:
+#- coveralls
+
+branches:
+  except:
+    - gh-pages
+
+cache:
+  directories:
+    - $HOME/dune
+    - $HOME/.ccache
+
+os:
+  - linux
+  #- osx
+
+matrix:
+  allow_failures:
+    - os: osx
+
+env:
+  global:
+    - MY_MODULE=dune-gdt DUNE_BUILD_DIR=${HOME}/dune_build/ INSTALL_DIR=$HOME/dune
+
