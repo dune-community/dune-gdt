@@ -64,8 +64,8 @@ before_install:
 install:
   - cd $HOME/src
   - pip install --user cpp-coveralls
-  - ./dune-common/bin/dunecontrol ${DCONTROL_ARG} --only=dune-common all : make install : bexec "rm -rf *" : exec "rm -rf *" > /dev/null
-  - ~/dune/bin/dunecontrol ${DCONTROL_ARG} all : make install : bexec "rm -rf *" : exec "rm -rf *" > /dev/null
+  - ./dune-common/bin/dunecontrol ${DCONTROL_ARG} --only=dune-common all ':' make install ':' bexec "rm -rf *" ':' exec "rm -rf *" > /dev/null
+  - ~/dune/bin/dunecontrol ${DCONTROL_ARG} all ':' make install ':' bexec "rm -rf *" ':' exec "rm -rf *" > /dev/null
   - rm -rf ${DUNE_BUILD_DIR} $HOME/src
 
 # # command to run tests
