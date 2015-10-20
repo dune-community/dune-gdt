@@ -39,7 +39,7 @@ before_install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="/usr/bin/gcc-4.9"; fi
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
   - cd $HOME
-  - test -d src || git clone --branch=travis https://github.com/pymor/dune-gdt-demos src
+  - test -d src || git clone https://github.com/pymor/dune-gdt-demos src
   - cd $HOME/src
   - git submodule update --init --recursive
   - cp config.opts/travis $HOME/travis.opts && export DCONTROL_ARG="--builddir=${DUNE_BUILD_DIR}  --opts=${HOME}/travis.opts"
