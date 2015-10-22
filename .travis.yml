@@ -42,23 +42,14 @@ before_install:
   - test -d src || git clone https://github.com/pymor/dune-gdt-demos src
   - cd $HOME/src
   - git submodule update --init --recursive
-  - cp config.opts/travis $HOME/travis.opts && export DCONTROL_ARG="--builddir=${DUNE_BUILD_DIR}  --opts=${HOME}/travis.opts"
-  - echo removing modules ${MODULES_TO_DELETE}
+  - cp config.opts/travis $HOME/travis.opts
+  - export OPTS=${HOME}/travis.opts
+  - export DCONTROL_ARG="--builddir=${DUNE_BUILD_DIR}  --opts=${OPTS}"
+  - ./local/bin/download_external_libraries.py
+  - ./local/bin/build_external_libraries.py
   # ensures ${MY_MODULE} from travis own checkout is used
+  - echo removing modules ${MODULES_TO_DELETE}
   - rm -rf ${MODULES_TO_DELETE} ${MY_MODULE}
-  # install Eigen
-  - mkdir -p ${DUNE_BUILD_DIR}/eigen/build
-  - wget -qO- http://bitbucket.org/eigen/eigen/get/3.2.4.tar.gz | tar xz -C ${DUNE_BUILD_DIR}/eigen --strip-components=1
-  - cd ${DUNE_BUILD_DIR}/eigen/build
-  - cmake .. -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-  - make install
-  # workarounds for dune-testtools issue
-  - cd $HOME/src
-  - ./dune-common/bin/dunecontrol ${DCONTROL_ARG} --module=dune-python configure
-  - ${DUNE_BUILD_DIR}/dune-python/python2-env/bin/pip install -U pip
-  - ${DUNE_BUILD_DIR}/dune-python/python3-env/bin/pip install -U pip
-  - ${DUNE_BUILD_DIR}/dune-python/python2-env/bin/pip install -U distribute six
-  - ${DUNE_BUILD_DIR}/dune-python/python3-env/bin/pip install -U distribute six
 
 # command to install dependencies
 install:
@@ -98,18 +89,13 @@ branches:
 
 cache:
   directories:
-    - $HOME/dune
     - $HOME/.ccache
 
 os:
   - linux
-  #- osx
-
-matrix:
-  allow_failures:
-    - os: osx
 
 env:
   global:
     - MY_MODULE=dune-gdt DUNE_BUILD_DIR=${HOME}/dune_build/ INSTALL_DIR=$HOME/dune
+    - MODULES_TO_DELETE="dune-python dune-testtools"
 
