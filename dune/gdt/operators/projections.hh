@@ -9,8 +9,15 @@
 #include <vector>
 #include <limits>
 
+#if HAVE_TBB
+# include <tbb/blocked_range.h>
+# include <tbb/parallel_reduce.h>
+# include <tbb/tbb_stddef.h>
+#endif
+
 #include <dune/common/fvector.hh>
 
+#include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/common/vector.hh>
 #include <dune/stuff/functions/interfaces.hh>
@@ -204,6 +211,7 @@ template< class GridViewImp, class FieldImp >
 class L2Projection
 {
 public:
+  typedef L2Projection< GridViewImp, FieldImp >        ThisType;
   typedef internal::L2ProjectionTraits< GridViewImp, FieldImp > Traits;
   typedef typename Traits::GridViewType                         GridViewType;
   typedef typename Traits::FieldType                            FieldType;
@@ -225,6 +233,13 @@ public:
    */
   template< class R, size_t r, size_t rC, class S, class V >
   inline void apply(const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range) const
+  {
+    redirect_apply(range.space(), source, range);
+  }
+
+  template< class R, size_t r, size_t rC, class S, class V >
+  inline void apply(const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
                     DiscreteFunction< S, V >& range) const
   {
     redirect_apply(range.space(), source, range);
@@ -256,6 +271,30 @@ private:
   }
 
   template< class T, class R, size_t dimRange, class S, class V >
+  void redirect_apply(const Spaces::FVInterface< T, dimDomain, dimRange, 1 >& /*space*/,
+                      const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
+                      DiscreteFunction< S, V >& range) const
+  {
+    apply_local_l2_projection_expression_checkerboard(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, class S, class V >
+  void redirect_apply(const Spaces::ProductFVInterface< T >& /*space*/,
+                      const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
+                      DiscreteFunction< S, V >& range) const
+  {
+    apply_local_l2_projection(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, class S, class V >
+  void redirect_apply(const Spaces::ProductFVInterface< T >& /*space*/,
+                      const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
+                      DiscreteFunction< S, V >& range) const
+  {
+    apply_local_l2_projection_expression_checkerboard_fv(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, class S, class V >
   void redirect_apply(const Spaces::RTInterface< T, dimDomain, dimRange, 1 >& /*space*/,
                       const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
                       DiscreteFunction< S, V >& range) const
@@ -279,21 +318,100 @@ private:
 #endif // HAVE_DUNE_GRID_MULTISCALE
 
 private:
-  template< class SourceType, class RangeFunctionType >
-  void apply_local_l2_projection(const SourceType& source, RangeFunctionType& range) const
+#if HAVE_TBB
+  template< class SourceType, class RangeFunctionType, class PartitioningType >
+  struct Body
+  {
+    Body(const ThisType& projection_operator,
+         const PartitioningType& partitioning,
+         const SourceType& source,
+         RangeFunctionType& range)
+      : projection_operator_(projection_operator)
+      , partitioning_(partitioning)
+      , source_(source)
+      , range_(range)
+    {}
+
+    Body(Body& other, tbb::split /*split*/)
+      : projection_operator_(other.projection_operator_)
+      , partitioning_(other.partitioning_)
+      , source_(other.source_)
+      , range_(other.range_)
+    {}
+
+    void operator()(const tbb::blocked_range< std::size_t > &range) const
+    {
+      // for all partitions in tbb-range
+      for(std::size_t p = range.begin(); p != range.end(); ++p) {
+        auto partition = partitioning_.partition(p);
+        projection_operator_.walk_grid_parallel(source_, range_, partition);
+      }
+    }
+
+    void join(Body& /*other*/)
+    {}
+
+    const ThisType& projection_operator_;
+    const PartitioningType& partitioning_;
+    const SourceType& source_;
+    RangeFunctionType& range_;
+  }; // struct Body
+
+  template< class SourceType, class RangeFunctionType, class PartitioningType >
+  struct BodyFV
+  {
+    BodyFV(const ThisType& projection_operator,
+         const PartitioningType& partitioning,
+         const SourceType& source,
+         RangeFunctionType& range)
+      : projection_operator_(projection_operator)
+      , partitioning_(partitioning)
+      , source_(source)
+      , range_(range)
+    {}
+
+    BodyFV(BodyFV& other, tbb::split /*split*/)
+      : projection_operator_(other.projection_operator_)
+      , partitioning_(other.partitioning_)
+      , source_(other.source_)
+      , range_(other.range_)
+    {}
+
+    void operator()(const tbb::blocked_range< std::size_t > &range) const
+    {
+      // for all partitions in tbb-range
+      for(std::size_t p = range.begin(); p != range.end(); ++p) {
+        auto partition = partitioning_.partition(p);
+        projection_operator_.walk_grid_parallel_expression_checkerboard_fv(source_, range_, partition);
+      }
+    }
+
+    void join(BodyFV& /*other*/)
+    {}
+
+    const ThisType& projection_operator_;
+    const PartitioningType& partitioning_;
+    const SourceType& source_;
+    RangeFunctionType& range_;
+  }; // struct BodyFV
+#endif //HAVE_TBB
+
+  template< class SourceType, class RangeFunctionType, class EntityRange >
+  void walk_grid_parallel(const SourceType& source, RangeFunctionType& range, const EntityRange& entity_range) const
   {
     typedef typename RangeFunctionType::RangeType RangeType;
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::MatrixType LocalMatrixType;
     typedef typename Stuff::LA::Container< FieldType, Stuff::LA::default_dense_backend >::VectorType LocalVectorType;
-    // clear
-    range.vector() *= 0.0;
-    // walk the grid
     RangeType source_value(0);
     std::vector< RangeType > basis_values(range.space().mapper().maxNumDofs(), RangeType(0));
-    const auto entity_it_end = grid_view_.template end< 0 >();
-    for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
+#ifdef __INTEL_COMPILER
+    const auto it_end = entity_range.end();
+    for (auto it = entity_range.begin(); it != it_end; ++it) {
+      const EntityType& entity = *it;
+#else
+    for (const EntityType& entity : entity_range) {
+#endif
       // prepare
-      const auto& entity = *entity_it;
       const auto local_basis = range.space().base_function_set(entity);
       const auto local_source = source.local_function(entity);
       auto local_range = range.local_discrete_function(entity);
@@ -335,7 +453,84 @@ private:
       for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
         local_range_vector.set(ii, local_DoFs[ii]);
     } // walk the grid
+  } // void walk_grid_parallel
+
+  template< class SourceType, class RangeFunctionType, class EntityRange >
+  void walk_grid_parallel_expression_checkerboard_fv(const SourceType& source, RangeFunctionType& range, const EntityRange& entity_range) const
+  {
+    typedef typename RangeFunctionType::RangeType RangeType;
+    std::shared_ptr< const typename SourceType::RangeType > source_expression;
+    RangeType source_value(0);
+#ifdef __INTEL_COMPILER
+    const auto it_end = entity_range.end();
+    for (auto it = entity_range.begin(); it != it_end; ++it) {
+      const EntityType& entity = *it;
+#else
+    for (const EntityType& entity : entity_range) {
+#endif
+      // prepare
+      const auto local_source = source.local_global_function(entity);
+      auto local_range = range.local_discrete_function(entity);
+      RangeType local_vector(0);
+      // create quadrature
+      const size_t integrand_order = local_source->order();
+      const auto& quadrature = QuadratureRules< DomainFieldType, dimDomain >::rule(
+            entity.type(), boost::numeric_cast< int >(integrand_order));
+      // loop over all quadrature points
+      for (const auto& quadrature_point : quadrature) {
+        const auto local_point = quadrature_point.position();
+        const auto quadrature_weight = quadrature_point.weight();
+      // evaluate
+      local_source->evaluate(local_point, source_expression);
+      // compute integrals
+      source_expression->evaluate(entity.geometry().global(local_point), source_value);
+      local_vector.axpy(quadrature_weight, source_value);
+      }
+      // set local DoFs
+      auto local_range_vector = local_range->vector();
+      assert(local_range_vector.size() == RangeFunctionType::dimRange);
+      for (size_t ii = 0; ii < RangeFunctionType::dimRange; ++ii)
+        local_range_vector.set(ii, local_vector[ii]);
+    } // walk the grid
+  } // void walk_grid_parallel_expression_checkerboard_fv
+
+  template< class SourceType, class RangeFunctionType >
+  void apply_local_l2_projection(const SourceType& source, RangeFunctionType& range) const
+  {
+    // clear
+    std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
+    // create partitioning
+    const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                * DS::threadManager().current_threads();
+    RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
+    tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
+    Body< SourceType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
+   // walk the grid
+    tbb::parallel_reduce(blocked_range, body);
+#else // HAVE_TBB
+      walk_grid_parallel(source, range, DSC::EntityRange< GridViewType >(range.space().grid_view()));
+#endif // HAVE_TBB
   } // ... apply_local_l2_projection(...)
+
+  template< class SourceType, class RangeFunctionType >
+  void apply_local_l2_projection_expression_checkerboard_fv(const SourceType& source, RangeFunctionType& range) const
+  {
+    // clear
+    std::fill(range.vector().begin(), range.vector().end(), 0.0);
+#if HAVE_TBB
+    // create partitioning
+    const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
+                                * DS::threadManager().current_threads();
+    RangedPartitioning< GridViewType, 0 > partitioning(range.space().grid_view(), num_partitions);
+    tbb::blocked_range< std::size_t > blocked_range(0, partitioning.partitions());
+    BodyFV< SourceType, RangeFunctionType, RangedPartitioning< GridViewType, 0 > > body(*this, partitioning, source, range);
+    // walk the grid
+    tbb::parallel_reduce(blocked_range, body);
+#else // HAVE_TBB
+      walk_grid_parallel_expression_checkerboard_fv(source, range, DSC::EntityRange< GridViewType >(range.space().grid_view()));
+#endif // HAVE_TBB
+  } // ... apply_local_l2_projection_expression_checkerboard(...)
 
   template< class SourceType, class RangeFunctionType >
   void apply_global_l2_projection(const SourceType& source, RangeFunctionType& range) const
@@ -428,6 +623,13 @@ public:
     redirect_apply(range.space(), source, range);
   }
 
+  template< class R, size_t r, size_t rC, class S, class V >
+  inline void apply(const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range) const
+  {
+    redirect_apply(range.space(), source, range);
+  }
+
 private:
   template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
   inline void redirect_apply(const Spaces::CGInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
@@ -440,6 +642,14 @@ private:
   template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
   inline void redirect_apply(const SpaceInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
                              const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, dimRangeCols >& source,
+                             DiscreteFunction< S, V >& range) const
+  {
+    l2_operator_.apply(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, size_t dimRangeCols, class S, class V >
+  inline void redirect_apply(const SpaceInterface< T, dimDomain, dimRange, dimRangeCols >& /*space*/,
+                             const Stuff::GlobalFunctionValuedFunctionInterface< EntityType, DomainFieldType, dimDomain, EntityType, DomainFieldType, dimDomain, R, dimRange, dimRangeCols >& source,
                              DiscreteFunction< S, V >& range) const
   {
     l2_operator_.apply(source, range);
@@ -589,6 +799,13 @@ inline void project_l2(const Stuff::LocalizableFunctionInterface< E, D, d, R, r,
 
 template< class E, class D, size_t d, class R, size_t r, size_t rC, class S, class V >
 inline void project(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source,
+                    DiscreteFunction< S, V >& range)
+{
+  Operators::Projection< typename S::GridViewType, R >(range.space().grid_view()).apply(source, range);
+}
+
+template< class E, class D, size_t d, class RE, class RD, size_t Rd, class R, size_t r, size_t rC, class S, class V >
+inline void project(const Stuff::GlobalFunctionValuedFunctionInterface< E, D, d, RE, RD, Rd, R, r, rC >& source,
                     DiscreteFunction< S, V >& range)
 {
   Operators::Projection< typename S::GridViewType, R >(range.space().grid_view()).apply(source, range);

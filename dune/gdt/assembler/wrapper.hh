@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include <dune/common/dynmatrix.hh>
+
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
@@ -269,6 +271,94 @@ private:
   VectorType& vector_;
 }; // class LocalFaceVectorAssemblerWrapper
 
+
+
+template< class AssemblerType, class LocalFaceFVAssembler, class SourceSpaceType, class FVSpaceType, class VectorType >
+class LocalFaceFVAssemblerWrapper
+  : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+  , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
+{
+  typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+public:
+  typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
+  typedef typename Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType > DiscreteSourceFunctionType;
+  typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType > DiscreteFunctionType;
+
+  LocalFaceFVAssemblerWrapper(const DiscreteSourceFunctionType& discreteFunction,
+                              DiscreteFunctionType& discreteFunctionUpdate,
+      const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType >* where,
+                              const LocalFaceFVAssembler& localAssembler)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, DiscreteFunctionType::dimRange)
+    , where_(where)
+    , localAssembler_(localAssembler)
+    , discreteFunction_(discreteFunction)
+    , discreteFunctionUpdate_(discreteFunctionUpdate)
+  {}
+
+  virtual ~LocalFaceFVAssemblerWrapper() {}
+
+  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
+                        const typename AssemblerType::IntersectionType& intersection) const override final
+  {
+    return where_->apply_on(gv, intersection);
+  }
+
+  virtual void apply_local(const typename AssemblerType::IntersectionType& intersection,
+                           const typename AssemblerType::EntityType& /*inside_entity*/,
+                           const typename AssemblerType::EntityType& /*outside_entity*/) override final
+  {
+    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, intersection, this->matrices());
+  }
+
+private:
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichIntersection< typename AssemblerType::GridViewType > > where_;
+  const LocalFaceFVAssembler& localAssembler_;
+  const DiscreteSourceFunctionType& discreteFunction_;
+  DiscreteFunctionType& discreteFunctionUpdate_;
+}; // class LocalFaceFVAssemblerWrapper
+
+template< class AssemblerType, class LocalEvaluationAssembler, class SourceSpaceType, class FVSpaceType, class VectorType >
+class LocalEvaluationAssemblerWrapper
+  : public Stuff::Grid::internal::Codim0Object< typename AssemblerType::GridViewType >
+  , DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType >
+{
+  typedef DSC::TmpMatricesStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpMatricesProvider;
+public:
+  typedef typename AssemblerType::TestSpaceType::RangeFieldType RangeFieldType;
+  typedef typename Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType > DiscreteSourceFunctionType;
+  typedef typename Dune::GDT::DiscreteFunction< FVSpaceType, VectorType >     DiscreteFunctionType;
+
+  LocalEvaluationAssemblerWrapper(const DiscreteSourceFunctionType& discreteFunction,
+                                  DiscreteFunctionType& discreteFunctionUpdate,
+                                  const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType >* where,
+                                  const LocalEvaluationAssembler& localAssembler)
+    : TmpMatricesProvider(localAssembler.numTmpObjectsRequired(), 1, DiscreteFunctionType::dimRange)
+    , where_(where)
+    , localAssembler_(localAssembler)
+    , discreteFunction_(discreteFunction)
+    , discreteFunctionUpdate_(discreteFunctionUpdate)
+  {}
+
+  virtual ~LocalEvaluationAssemblerWrapper() {}
+
+  virtual bool apply_on(const typename AssemblerType::GridViewType& gv,
+                        const typename AssemblerType::EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const typename AssemblerType::EntityType& entity) override final
+  {
+    localAssembler_.assembleLocal(discreteFunction_, discreteFunctionUpdate_, entity, this->matrices());
+  }
+
+private:
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< typename AssemblerType::GridViewType > > where_;
+  const LocalEvaluationAssembler& localAssembler_;
+  const DiscreteSourceFunctionType& discreteFunction_;
+  DiscreteFunctionType& discreteFunctionUpdate_;
+
+}; // class LocalEvaluationAssemblerWrapper
 
 } // namespace internal
 } // namespace GDT

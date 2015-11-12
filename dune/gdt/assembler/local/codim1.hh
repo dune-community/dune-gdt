@@ -14,8 +14,10 @@
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/common/tmp-storage.hh>
 
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -83,10 +85,8 @@ public:
     localNeighborEntityMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entities
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
-    const auto neighborPtr = intersection.outside();
-    const auto& neighbor = *neighborPtr;
+    const auto entity = intersection.inside();
+    const auto neighbor = intersection.outside();
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpaceEntity.base_function_set(entity), ansatzSpaceEntity.base_function_set(entity),
                          testSpaceNeighbor.base_function_set(neighbor), ansatzSpaceNeighbor.base_function_set(neighbor),
@@ -218,8 +218,7 @@ public:
     localMatrix *= 0.0;
     auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
     // get entity
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
+    const auto entity = intersection.inside();
     // apply local operator (results are in local*Matrix)
     localOperator_.apply(testSpace.base_function_set(entity), ansatzSpace.base_function_set(entity),
                          intersection,
@@ -293,8 +292,7 @@ public:
     localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorsContainer[1];
     // get entity
-    const auto entityPtr = intersection.inside();
-    const auto& entity = *entityPtr;
+    const auto entity = intersection.inside();
     // apply local functional (results are in localVector)
     localFunctional_.apply(testSpace.base_function_set(entity), intersection, localVector, tmpFunctionalVectors);
     // write local vectors to global
@@ -536,6 +534,123 @@ private:
   FieldType finalized_result_;
 }; // class Codim1BoundaryOperatorAccumulateFunctor
 
+
+template< class LocalOperatorImp >
+class Codim1CouplingFV
+{
+  static_assert(std::is_base_of< LocalOperator::Codim1CouplingInterface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1CouplingInterface!");
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  explicit Codim1CouplingFV(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector< size_t > numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
+  }
+
+  template< class SourceSpaceType, class RangeSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
+                     const IntersectionType& intersection,
+                     std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+  {
+    // check
+    auto& local_operator_result = tmpLocalMatrices[0][0];
+    auto& tmp_matrices          = tmpLocalMatrices[1];
+    assert(intersection.neighbor());
+    //set first row of matrix local_operator_result to zero
+    std::fill(local_operator_result[0].begin(), local_operator_result[0].end(), RangeFieldType(0));
+    //get entity and neighbor and local discrete functions
+    const auto entity = intersection.inside();
+    const auto neighbor = intersection.outside();
+    const auto entityAverage = discreteFunction.local_discrete_function(entity);
+    const auto neighborAverage = discreteFunction.local_discrete_function(neighbor);
+    // apply local operator (results are in local*Matrix)
+    localOperator_.apply(*entityAverage, *entityAverage,
+                         *neighborAverage, *neighborAverage,
+                         intersection,
+                         local_operator_result,
+                         local_operator_result,
+                         local_operator_result,
+                         local_operator_result,
+                         tmp_matrices);
+    // write value from updateMatrix to discreteFunctionUpdate
+    auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
+    auto& local_vector = local_update_entity->vector();
+    for (size_t kk = 0; kk < discreteFunctionUpdate.dimRange; ++kk)
+      local_vector.add(kk, local_operator_result[0][kk]);
+  } // void assembleLocal(...) const
+
+private:
+  const LocalOperatorType& localOperator_;
+}; // class Codim1CouplingFV
+
+template< class LocalOperatorImp >
+class Codim1BoundaryFV
+{
+  static_assert(std::is_base_of< LocalOperator::Codim1BoundaryInterface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim1CouplingInterface!");
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  explicit Codim1BoundaryFV(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector< size_t > numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
+  }
+
+  template< class SourceSpaceType, class RangeSpaceType, class VectorType, class IntersectionType, class RangeFieldType >
+  void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
+                     const IntersectionType& intersection,
+                     std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+  {
+    auto& local_operator_result = tmpLocalMatrices[0][0];
+    auto& tmp_matrices          = tmpLocalMatrices[1];
+    //set first row of matrix local_operator_result to zero
+    std::fill(local_operator_result[0].begin(), local_operator_result[0].end(), RangeFieldType(0));
+    //get entity and neighbor and local discrete functions
+    const auto entity = intersection.inside();
+    const auto entityAverage = discreteFunction.local_discrete_function(entity);
+    // apply local operator (results are in local*Matrix)
+    localOperator_.apply(*entityAverage, *entityAverage, intersection, local_operator_result, tmp_matrices);
+    // write value from updateMatrix to discreteFunctionUpdate
+    auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
+    auto& local_vector = local_update_entity->vector();
+    for (size_t kk = 0; kk < discreteFunctionUpdate.dimRange; ++kk)
+      local_vector.add(kk, local_operator_result[0][kk]);
+  } // void assembleLocal(...) const
+
+private:
+  const LocalOperatorType& localOperator_;
+}; // class Codim1BoundaryFV
 
 } // namespace LocalAssembler
 } // namespace GDT

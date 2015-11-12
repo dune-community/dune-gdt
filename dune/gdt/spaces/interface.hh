@@ -74,11 +74,12 @@ struct ChooseGridPartView< ChooseSpaceBackend::fem >
 };
 
 
-template< class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
+template< class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
 class SpaceInterface
-  : public Stuff::CRTPInterface< SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols >, Traits >
+  : public Stuff::CRTPInterface< SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >, ImpTraits >
 {
 public:
+  typedef ImpTraits                             Traits;
   typedef typename Traits::derived_type         derived_type;
   static const int                              polOrder = Traits::polOrder;
   typedef typename Traits::BackendType          BackendType;
@@ -300,8 +301,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
@@ -354,8 +354,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);

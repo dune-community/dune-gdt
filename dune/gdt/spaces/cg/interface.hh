@@ -6,19 +6,22 @@
 #ifndef DUNE_GDT_SPACES_CG_INTERFACE_HH
 #define DUNE_GDT_SPACES_CG_INTERFACE_HH
 
+#include <algorithm>
+
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/version.hh>
 #include <dune/common/typetraits.hh>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON,2,3) 
+#if DUNE_VERSION_NEWER(DUNE_COMMON,2,3)
 # include <dune/geometry/referenceelements.hh>
 #else
 # include <dune/geometry/genericreferenceelements.hh>
 #endif
 
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/type_utils.hh>
 
 #include "../interface.hh"
@@ -80,10 +83,14 @@ public:
    * \defgroup provided ´´These methods are provided by the interface for convenience.''
    * @{
    **/
+
+  /**
+   * \todo Use our FloatCmp with the correct comparison method gainst 0 and 1!
+   */
   std::vector< DomainType > lagrange_points_order_1(const EntityType& entity) const
   {
     // check
-    static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    static_assert(polOrder == 1, "Does not work for higher polynomial orders!");
     if (dimRange != 1) DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     assert(this->grid_view().indexSet().contains(entity));
     // get the basis and reference element
@@ -120,8 +127,12 @@ public:
     return local_vertices;
   } // ... lagrange_points_order_1(...)
 
-  std::set< size_t > local_dirichlet_DoFs_order_1(const EntityType& entity,
-                                                  const BoundaryInfoType& boundaryInfo) const
+  /**
+   * \attention The current search strategy is not rubust with respect to the grid (see note)!
+   * \note      We only look in the intersections of entity and its direct neighbors for dirichlet vertices and might
+   *            miss some (see also https://github.com/pymor/dune-gdt/issues/51)!
+   */
+  std::set< size_t > local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1) DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
@@ -129,30 +140,26 @@ public:
     assert(this->grid_view().indexSet().contains(entity));
     // prepare
     std::set< size_t > localDirichletDofs;
+    std::vector< DomainType > global_dirichlet_vertices;
+    // find all dirichlet vertices of this entity and its neighbors (in global coordinates)
+    add_dirichlet_vertices(boundaryInfo, entity, /*recursion_level = */ 1, global_dirichlet_vertices);
+    // keep those local to this entity
     std::vector< DomainType > dirichlet_vertices;
-    // get all dirichlet vertices of this entity, therefore
-    // * loop over all intersections
-    const auto intersection_it_end = this->grid_view().iend(entity);
-    for (auto intersection_it = this->grid_view().ibegin(entity);
-         intersection_it != intersection_it_end;
-         ++intersection_it) {
-      // only work on dirichlet ones
-      const auto& intersection = *intersection_it;
-      // actual dirichlet intersections + process boundaries for parallel runs
-      if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
-        // and get the vertices of the intersection
-        const auto geometry = intersection.geometry();
-        for (auto cc : DSC::valueRange(geometry.corners()))
-          dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
-      } // only work on dirichlet ones
-    } // loop over all intersections
+    const auto& reference_element = ReferenceElements< DomainFieldType, dimDomain >::general(entity.type());
+    for (const auto& global_vertex : global_dirichlet_vertices) {
+      auto local_vertex = entity.geometry().local(global_vertex);
+      if (reference_element.checkInside(local_vertex) && std::find(dirichlet_vertices.begin(),
+                                                                   dirichlet_vertices.end(),
+                                                                   local_vertex) == dirichlet_vertices.end())
+        dirichlet_vertices.push_back(local_vertex);
+    }
     // find the corresponding basis functions
     const auto basis = this->base_function_set(entity);
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
     std::vector< RangeType > tmp_basis_values(basis.size(), RangeType(0));
-    for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
+    for (const auto& dirichlet_vertex : dirichlet_vertices) {
       // find the basis function that evaluates to one here (has to be only one!)
-      basis.evaluate(dirichlet_vertices[cc], tmp_basis_values);
+      basis.evaluate(dirichlet_vertex, tmp_basis_values);
       size_t ones = 0;
       size_t zeros = 0;
       size_t failures = 0;
@@ -202,6 +209,36 @@ public:
     }
   } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
   /** @} */
+
+private:
+  void add_dirichlet_vertices(const BoundaryInfoType& boundaryInfo,
+                              const EntityType& entity,
+                              const ssize_t recursion_level,
+                              std::vector< DomainType >& dirichlet_vertices) const
+  {
+    // get all dirichlet vertices of this entity, therefore
+    // * loop over all intersections
+    const auto intersection_it_end = this->grid_view().iend(entity);
+    for (auto intersection_it = this->grid_view().ibegin(entity);
+         intersection_it != intersection_it_end;
+         ++intersection_it) {
+      const auto& intersection = *intersection_it;
+      // only work on dirichlet intersections + process boundaries for parallel runs
+      if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
+        // and get the vertices of the intersection
+        const auto geometry = intersection.geometry();
+        for (auto cc : DSC::valueRange(geometry.corners()))
+          dirichlet_vertices.emplace_back(geometry.corner(cc));
+      } // only work on dirichlet intersections + process boundaries for parallel runs
+      if (recursion_level > 0) {
+        // also call myself on all neighbors
+        if (intersection.neighbor()) {
+          const auto neighbor = intersection.outside();
+          add_dirichlet_vertices(boundaryInfo, neighbor, recursion_level - 1, dirichlet_vertices);
+        }
+      } // if (level > 0)
+    } // loop over all intersections
+  } // ... add_dirichlet_vertices(...)
 }; // class CGInterface
 
 

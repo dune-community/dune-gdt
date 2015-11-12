@@ -13,6 +13,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
+#include <dune/gdt/spaces/fv/defaultproduct.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/mapper/interface.hh>
 
@@ -194,29 +195,35 @@ public:
     return base_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, RangeType& ret) const override
+  void evaluate(const DomainType& xx, RangeType& ret) const override final
   {
     assert(this->is_a_valid_point(xx));
-    ret *= 0.0;
-    std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
-    assert(localVector_->size() == tmpBaseValues.size());
-    base_->evaluate(xx, tmpBaseValues);
-    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseValues[ii] *= localVector_->get(ii);
-      ret += tmpBaseValues[ii];
+    if (!(GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value)) {
+      std::fill(ret.begin(), ret.end(), RangeFieldType(0));
+      std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
+      assert(localVector_->size() == tmpBaseValues.size());
+      base_->evaluate(xx, tmpBaseValues);
+      for (size_t ii = 0; ii < localVector_->size(); ++ii) {
+        ret.axpy(localVector_->get(ii), tmpBaseValues[ii]);
+      }
+    } else {
+      for (size_t ii = 0; ii < localVector_->size(); ++ii)
+        ret[ii] = localVector_->get(ii);
     }
   } // ... evaluate(...)
 
-  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override
+  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override final
   {
     assert(this->is_a_valid_point(xx));
-    ret *= RangeFieldType(0);
-    std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
-    assert(localVector_->size() == tmpBaseJacobianValues.size());
-    base_->jacobian(xx, tmpBaseJacobianValues);
-    for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-      tmpBaseJacobianValues[ii] *= localVector_->get(ii);
-      ret += tmpBaseJacobianValues[ii];
+    if (!(GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value)) {
+      std::fill(ret.begin(), ret.end(), RangeFieldType(0));
+      std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
+      assert(localVector_->size() == tmpBaseJacobianValues.size());
+      base_->jacobian(xx, tmpBaseJacobianValues);
+      for (size_t ii = 0; ii < localVector_->size(); ++ii)
+        ret.axpy(localVector_->get(ii), tmpBaseJacobianValues[ii]);
+    } else {
+      ret = JacobianRangeType(0);
     }
   } // ... jacobian(...)
 

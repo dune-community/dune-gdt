@@ -23,6 +23,7 @@ target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_alugrid
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_eigen_yaspgrid   lib_test_linearelliptic_cg_discretizations_yaspgrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic-cg-discretization_pdelab_istl_yaspgrid    lib_test_linearelliptic_cg_discretizations_yaspgrid)
+target_link_libraries(test_hyperbolic-fv-discretization_yaspgrid    lib_test_hyperbolic_fv_discretizations_yaspgrid)
 
 set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_yaspgrid
                         test_linearelliptic-cg-discretization_pdelab_istl_yaspgrid
@@ -33,6 +34,7 @@ set_tests_properties(   test_linearelliptic-cg-discretization_pdelab_eigen_yaspg
                         test_linearelliptic-cg-discretization_pdelab_eigen_alugrid
                         test_linearelliptic-cg-discretization_pdelab_istl_alugrid
                         test_elliptic-swipdg-discretization
+			test_hyperbolic-fv-discretization_yaspgrid
     PROPERTIES TIMEOUT 720 )
 
 # link spe10 data file if present
@@ -42,7 +44,6 @@ if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
     execute_process(COMMAND ln -s "${SPE10MODEL1DATA}" "${SPE10MODEL1DATA_TARGET_FILENAME}")
   endif(NOT EXISTS ${SPE10MODEL1DATA_TARGET_FILENAME})
 else()
-message(STATUS FOOBAR ${SPE10MODEL1DATA})
     execute_process(COMMAND wget -nc http://wwwmath.uni-muenster.de/num/ohlberger/research/software/perm_case1.zip
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     execute_process(COMMAND unzip -o perm_case1.zip

@@ -9,6 +9,8 @@
 # define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
+#include <dune/stuff/test/common.hh>
+
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/tests/linearelliptic/eocstudy.hh>
 #include <dune/gdt/tests/linearelliptic/discretizers/cg.hh>

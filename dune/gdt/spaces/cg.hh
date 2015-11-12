@@ -22,6 +22,10 @@
 #include "cg/fem.hh"
 #include "cg/pdelab.hh"
 
+#if HAVE_DUNE_GRID_MULTISCALE
+ #include <dune/grid/multiscale/provider/interface.hh>
+#endif
+
 
 namespace Dune {
 namespace GDT {

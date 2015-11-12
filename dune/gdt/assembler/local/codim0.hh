@@ -19,6 +19,7 @@
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/interface.hh>
 #include <dune/gdt/localfunctional/interface.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -272,6 +273,60 @@ private:
   bool finalized_;
   FieldType finalized_result_;
 }; // class Codim0OperatorAccumulateFunctor
+
+template< class LocalOperatorImp >
+class Codim0Evaluation
+{
+  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
+public:
+  typedef LocalOperatorImp LocalOperatorType;
+
+  explicit Codim0Evaluation(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
+  {
+    return localOperator_;
+  }
+
+private:
+  static const size_t numTmpObjectsRequired_ = 1;
+
+public:
+  std::vector< size_t > numTmpObjectsRequired() const
+  {
+    return {numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired()};
+  }
+
+  template< class SourceSpaceType, class RangeSpaceType, class VectorType, class EntityType, class RangeFieldType >
+  void assembleLocal(const Dune::GDT::DiscreteFunction< SourceSpaceType, VectorType >& discreteFunction,
+                     Dune::GDT::DiscreteFunction< RangeSpaceType, VectorType >& discreteFunctionUpdate,
+                     const EntityType& entity,
+                     std::vector< std::vector< Dune::DynamicMatrix< RangeFieldType > > >& tmpLocalMatrices) const
+  {
+    // check
+    auto& ret = tmpLocalMatrices[0][0];
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= discreteFunctionUpdate.dimRange);
+    //set first row of matrix ret to zero
+    std::fill(ret[0].begin(), ret[0].end(), RangeFieldType(0));
+    //get entity and neighbor and local discrete functions
+    const auto entityAverage = discreteFunction.local_discrete_function(entity);
+    // apply local operator
+    localOperator_.apply(*entityAverage, *entityAverage, ret, tmpLocalMatrices[1]);
+    // write value from updateMatrix to discreteFunctionUpdate
+    auto local_update_entity = discreteFunctionUpdate.local_discrete_function(entity);
+    auto& local_vector = local_update_entity->vector();
+    for (size_t kk = 0; kk < discreteFunctionUpdate.dimRange; ++kk)
+      local_vector.add(kk, ret[0][kk]);
+  } // void assembleLocal(...) const
+
+private:
+  const LocalOperatorType& localOperator_;
+}; // class Codim0Evaluation
 
 
 } // namespace LocalAssembler

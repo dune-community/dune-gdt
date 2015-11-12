@@ -26,12 +26,61 @@
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/productinterface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 
 #include "local.hh"
 
 namespace Dune {
 namespace GDT {
+
+//forward
+template< class SpaceImp, class VectorImp >
+class ConstDiscreteFunction;
+
+
+namespace internal {
+
+
+template< size_t ii, class SpaceImp, class VectorImp, class Traits, bool is_factor_space = false >
+struct visualize_helper
+{
+  static void visualize_factor(const std::string filename,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
+                               const DS::PerThreadValue< SpaceImp >& space,
+                               const VectorImp& vector)
+  {
+    assert( ii == 0 );
+    ConstDiscreteFunction< SpaceImp, VectorImp > discrete_function(space, vector);
+    discrete_function.visualize(filename, subsampling, vtk_output_type);
+  }
+};
+
+template< size_t ii, class SpaceImp, class VectorImp, class Traits >
+struct visualize_helper< ii, SpaceImp, VectorImp, Traits, true  > {
+  static void visualize_factor(const std::string filename,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
+                               const DS::PerThreadValue< SpaceImp >& space,
+                               const VectorImp& vector)
+  {
+    assert(ii < SpaceImp::num_factors);
+    const auto& factor_space = space->template factor< ii >();
+    VectorImp factor_vector(factor_space.mapper().size());
+    const auto it_end = space->grid_view().template end< 0 >();
+    for (auto it = space->grid_view().template begin< 0 >(); it != it_end; ++it) {
+      const auto& entity = *it;
+      for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
+        factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] = vector[space->factor_mapper().mapToGlobal(ii, entity, jj)];
+    }
+    ConstDiscreteFunction< typename SpaceImp::FactorSpaceType, VectorImp > factor_discrete_function(factor_space, factor_vector);
+    factor_discrete_function.visualize(filename, subsampling, vtk_output_type);
+  }
+};
+
+
+} // namespace internal
 
 
 template< class SpaceImp, class VectorImp >
@@ -52,9 +101,10 @@ class ConstDiscreteFunction
   typedef ConstDiscreteFunction< SpaceImp, VectorImp > ThisType;
 public:
   typedef SpaceImp                             SpaceType;
+  typedef typename SpaceImp::Traits            SpaceTraits;
   typedef VectorImp                            VectorType;
-  typedef typename BaseType::EntityType        EntityType;
-  typedef typename BaseType::LocalfunctionType LocalfunctionType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
 
   typedef ConstLocalDiscreteFunction< SpaceType, VectorType > ConstLocalDiscreteFunctionType;
 
@@ -124,6 +174,20 @@ public:
   {
     redirect_visualize(*space_, filename, subsampling, vtk_output_type);
   }
+
+  template< size_t ii >
+  void visualize_factor(const std::string filename,
+                        const bool subsampling = (SpaceType::polOrder > 1),
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  {
+    internal::visualize_helper
+        < ii,
+          SpaceType,
+          VectorType,
+          SpaceTraits,
+          std::is_base_of< typename Dune::GDT::ProductSpaceInterface< SpaceTraits >, SpaceType >::value >
+                              ::visualize_factor(filename, subsampling, vtk_output_type, space_, vector_);
+  } // ... visualize_factor< ii >(...)
 
   bool dofs_valid() const
   {

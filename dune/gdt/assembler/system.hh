@@ -179,6 +179,17 @@ public:
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
+  template< class L, class SS, class RS, class V >
+  void add(const LocalAssembler::Codim0Evaluation< L >& local_assembler,
+           const GDT::DiscreteFunction< SS, V >& discrete_function,
+           GDT::DiscreteFunction< RS, V >& discrete_function_update,
+           const ApplyOnWhichEntity* where
+              = new DSG::ApplyOn::AllEntities< GridViewType >())
+  {
+    typedef internal::LocalEvaluationAssemblerWrapper< ThisType, LocalAssembler::Codim0Evaluation< L >, SS, RS, V > WrapperType;
+    this->codim0_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
+  } // ... add(...)
+
   template< class L, class V >
   void add(const LocalAssembler::Codim1Vector< L >& local_assembler,
            Stuff::LA::VectorInterface< V, RangeFieldType >& vector,
@@ -191,16 +202,40 @@ public:
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
+  template< class L, class SS, class RS, class V >
+  void add(const LocalAssembler::Codim1CouplingFV< L >& local_assembler,
+           const GDT::DiscreteFunction< SS, V >& discrete_function,
+           GDT::DiscreteFunction< RS, V >& discrete_function_update,
+           const ApplyOnWhichIntersection* where
+              = new DSG::ApplyOn::InnerIntersections< GridViewType >())
+  {
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1CouplingFV< L >, SS, RS, V > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
+  } // ... add(...)
+
+  template< class L, class SS, class RS, class V >
+  void add(const LocalAssembler::Codim1BoundaryFV< L >& local_assembler,
+           const GDT::DiscreteFunction< SS, V >& discrete_function,
+           GDT::DiscreteFunction< RS, V >& discrete_function_update,
+           const ApplyOnWhichIntersection* where
+              = new DSG::ApplyOn::BoundaryIntersections< GridViewType >())
+  {
+    typedef internal::LocalFaceFVAssemblerWrapper< ThisType, LocalAssembler::Codim1BoundaryFV< L >, SS, RS, V > WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(discrete_function, discrete_function_update, where, local_assembler));
+  } // ... add(...)
+
   void assemble(const bool use_tbb = false)
   {
     this->walk(use_tbb);
   }
 
+#if HAVE_TBB
   template< class Partitioning >
   void assemble(const Partitioning& partitioning)
   {
     this->walk(partitioning);
   }
+#endif // HAVE_TBB
 
 
 private:

@@ -10,6 +10,7 @@
 #include <vector>
 #include <type_traits>
 #include <limits>
+#include <tuple>
 
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -18,9 +19,12 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
+#include <dune/stuff/functions/constant.hh>
 
 #include "../localevaluation/interface.hh"
 #include "interface.hh"
+
+#include <dune/stuff/common/string.hh>
 
 namespace Dune {
 namespace GDT {
@@ -290,6 +294,195 @@ private:
   const BinaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class Codim1BoundaryIntegral
+
+
+// forward, to be used in the traits
+template< class QuaternaryEvaluationImp >
+class Codim1FV;
+
+
+template< class QuaternaryEvaluationImp >
+class Codim1FVTraits
+{
+  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationImp::Traits, 4 >,
+                                  QuaternaryEvaluationImp >::value,
+                "QuaternaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
+public:
+  typedef Codim1FV< QuaternaryEvaluationImp > derived_type;
+  typedef QuaternaryEvaluationImp QuaternaryEvaluationType;
+  static const size_t dimDomain = QuaternaryEvaluationType::dimDomain;
+  static const size_t dimRange = QuaternaryEvaluationType::dimRange;
+};
+
+/** LocalOperator for FV schemes for hyperbolic equation of the form \delta_t u + div f(u) = q(u), where u: R^d \to R,
+ * f: R \to R^d and q: R \to R. The corresponding FV scheme thus takes the form
+ * u_i^{n+1} = u_i^{n} - \frac{\Delta t}{|T_i|} \sum_{j \in N(i)} g_{ij}^n(u_i^n, u_j^n),
+ * where u_i^n = \frac{1}{|T_i|} \int_{T_i} u(x, t^n) dx, T_i is the i-th entity, t^n is the n-th timestep, N(i) is the
+ * set of all neighbors T_j of T_i and g_{ij}^n is a numerical flux that corresponds to evaluation_ in this
+ * implementation. The Codim1FV Operator calculates \frac{1}{|T_i|} g_{ij}^n{u_i^n, u_j^n}. */
+template< class QuaternaryEvaluationImp >
+class Codim1FV
+  : public LocalOperator::Codim1CouplingInterface< Codim1FVTraits< QuaternaryEvaluationImp > >
+{
+public:
+  typedef Codim1FVTraits< QuaternaryEvaluationImp > Traits;
+  typedef typename Traits::QuaternaryEvaluationType QuaternaryEvaluationType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+
+private:
+  static const size_t numTmpObjectsRequired_ = 0;
+
+public:
+  template< class... Args >
+  Codim1FV(Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(0)
+  {}
+
+  template< class... Args >
+  Codim1FV(const size_t over_integrate, Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(over_integrate)
+  {}
+
+  template< class... Args >
+  Codim1FV(const int over_integrate, Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+  {}
+
+  size_t numTmpObjectsRequired() const
+  {
+    return numTmpObjectsRequired_;
+  }
+
+  template< class E, class N, class IntersectionType, class D, class R >
+  void apply(const Stuff::LocalfunctionSetInterface< E, D, dimDomain, R, dimRange, 1 >& entityTestBase,
+             const Stuff::LocalfunctionSetInterface< E, D, dimDomain, R, dimRange, 1 >& entityAverage,
+             const Stuff::LocalfunctionSetInterface< N, D, dimDomain, R, dimRange, 1 >& neighborTestBase,
+             const Stuff::LocalfunctionSetInterface< N, D, dimDomain, R, dimRange, 1 >& neighborAverage,
+             const IntersectionType& intersection,
+             Dune::DynamicMatrix< R >& entityEntityRet,
+             Dune::DynamicMatrix< R >& neighborNeighborRet,
+             Dune::DynamicMatrix< R >& entityNeighborRet,
+             Dune::DynamicMatrix< R >& neighborEntityRet,
+             std::vector< Dune::DynamicMatrix< R > >& /*tmpLocalMatrices*/) const
+  {
+    // check local functions
+    assert(entityAverage.size() == 1);
+    assert(neighborAverage.size() == 1);
+    // check matrices, set ignored matrices to 0
+    assert(entityNeighborRet.cols() >= dimRange);
+    assert(entityNeighborRet.rows() >= 1);
+    // get entities and local functions
+    const auto& entity = entityAverage.entity();
+    const auto localFunctionsEn = flux_.localFunctions(entity);
+    const auto& neighbor = neighborAverage.entity();
+    const auto localFunctionsNe = flux_.localFunctions(neighbor);
+    const auto localPoint = intersection.geometry().local(intersection.geometry().center());
+    //evaluate
+    flux_.evaluate(localFunctionsEn, localFunctionsNe,
+                   entityTestBase, entityAverage,
+                   neighborTestBase, neighborAverage,
+                   intersection, localPoint,
+                   entityEntityRet,neighborNeighborRet, entityNeighborRet, neighborEntityRet);
+    entityNeighborRet /= entity.geometry().volume();
+  } // void apply(...) const
+
+private:
+  const QuaternaryEvaluationType flux_;
+  const size_t over_integrate_;
+}; // class Codim1FV
+
+
+// forward, to be used in the traits
+template< class BinaryEvaluationImp >
+class Codim1FVBoundary;
+
+
+template< class BinaryEvaluationImp >
+class Codim1FVBoundaryTraits
+{
+  static_assert(std::is_base_of<  LocalEvaluation::Codim1Interface< typename BinaryEvaluationImp::Traits, 2 >,
+                                  BinaryEvaluationImp >::value,
+                "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
+public:
+  typedef Codim1FVBoundary< BinaryEvaluationImp > derived_type;
+  typedef BinaryEvaluationImp BinaryEvaluationType;
+  static const size_t dimDomain = BinaryEvaluationType::dimDomain;
+  static const size_t dimRange = BinaryEvaluationType::dimRange;
+};
+
+/** LocalOperator for FV schemes for hyperbolic equation of the form \delta_t u + div f(u) = q(u), where u: R^d \to R,
+ * f: R \to R^d and q: R \to R. The corresponding FV scheme thus takes the form
+ * u_i^{n+1} = u_i^{n} - \frac{\Delta t}{|T_i|} \sum_{j \in N(i)} g_{ij}^n(u_i^n, u_j^n),
+ * where u_i^n = \frac{1}{|T_i|} \int_{T_i} u(x, t^n) dx, T_i is the i-th entity, t^n is the n-th timestep, N(i) is the
+ * set of all neighbors T_j of T_i and g_{ij}^n is a numerical flux that corresponds to evaluation_ in this
+ * implementation. The Codim1FV Operator calculates \frac{1}{|T_i|} g_{ij}^n{u_i^n, u_j^n}. */
+template< class BinaryEvaluationImp >
+class Codim1FVBoundary
+  : public LocalOperator::Codim1BoundaryInterface< Codim1FVBoundaryTraits< BinaryEvaluationImp > >
+{
+public:
+  typedef Codim1FVBoundaryTraits< BinaryEvaluationImp > Traits;
+  typedef typename Traits::BinaryEvaluationType BinaryEvaluationType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+
+private:
+  static const size_t numTmpObjectsRequired_ = 0;
+
+public:
+  template< class... Args >
+  Codim1FVBoundary(Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(0)
+  {}
+
+  template< class... Args >
+  Codim1FVBoundary(const size_t over_integrate, Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(over_integrate)
+  {}
+
+  template< class... Args >
+  Codim1FVBoundary(const int over_integrate, Args&& ...args)
+    : flux_(std::forward< Args >(args)...)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+  {}
+
+  size_t numTmpObjectsRequired() const
+  {
+    return numTmpObjectsRequired_;
+  }
+
+  template< class T, class A, class IntersectionType, class D, class R >
+  void apply(const Stuff::LocalfunctionSetInterface< T, D, dimDomain, R, dimRange, 1 >& testBase,
+             const Stuff::LocalfunctionSetInterface< A, D, dimDomain, R, dimRange, 1 >& entityAverage,
+             const IntersectionType& intersection,
+             Dune::DynamicMatrix< R >& ret,
+             std::vector< Dune::DynamicMatrix< R > >& tmpLocalMatrices) const
+  {
+    // check local function
+    assert(entityAverage.size() == 1);
+    // check matrices
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= dimRange);
+    assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
+    // get entities and local functions
+    const auto& entity = entityAverage.entity();
+    const auto localFunctions = flux_.localFunctions(entity);
+    const auto localPoint = intersection.geometry().local(intersection.geometry().center());
+    //evaluate
+    flux_.evaluate(localFunctions, testBase, entityAverage, intersection, localPoint, ret);
+    ret /= entity.geometry().volume();
+  } // void apply(...) const
+
+private:
+  const BinaryEvaluationType flux_;
+  const size_t over_integrate_;
+}; // class Codim1FVBoundary
 
 
 } // namespace LocalOperator
