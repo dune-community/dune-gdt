@@ -9,6 +9,7 @@
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
 
 #include <memory>
+#include <vector>
 #include <type_traits>
 
 #include <dune/common/exceptions.hh>
@@ -16,12 +17,17 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
+#include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/memory.hh>
+#include <dune/stuff/common/ranges.hh>
+#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/productinterface.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 
 #include "local.hh"
 
@@ -107,8 +113,11 @@ public:
     , vector_(vec)
     , name_(nm)
   {
-    assert(vector_.size() == space_->mapper().size() && "Given vector has wrong size!");
-  }
+    if (vector_.size() != space_->mapper().size())
+      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+                      " vector.size()         = " << vector_.size() << "\n"
+                 << "   space.mapper().size() = " << space_->mapper().size());
+  } // ConstDiscreteFunction(...)
 
   ConstDiscreteFunction(const ThisType& other)
     : space_(other.space())
@@ -152,15 +161,19 @@ public:
     return local_discrete_function(entity);
   }
 
-  void visualize(const std::string filename,
-                 const bool subsampling = (SpaceType::polOrder > 1),
-                 const VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  /**
+   * \brief Visualizes the function using Dune::Stuff::LocalizableFunctionInterface::visualize on the grid view
+   *        associated with the space.
+   * \sa    Dune::Stuff::LocalizableFunctionInterface::visualize
+   * \note  Subsampling is disabled for Finite Volume functions and enabled by default for functions of order higher
+   *        than one.
+   */
+  inline void visualize(const std::string filename,
+                        const bool subsampling = (SpaceType::polOrder > 1),
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    BaseType::template visualize< typename SpaceType::GridViewType >(space().grid_view(),
-                                                                     filename,
-                                                                     subsampling,
-                                                                     vtk_output_type);
-  } // ... visualize(...)
+    redirect_visualize(*space_, filename, subsampling, vtk_output_type);
+  }
 
   template< size_t ii >
   void visualize_factor(const std::string filename,
@@ -182,6 +195,33 @@ public:
   }
 
 protected:
+  template< class S, size_t d, size_t r, size_t rC >
+  void redirect_visualize(const SpaceInterface< S, d, r, rC >& /*space*/,
+                          const std::string filename,
+                          const bool subsampling,
+                          const VTK::OutputType vtk_output_type) const
+  {
+    BaseType::template visualize< typename SpaceType::GridViewType >(space_->grid_view(),
+                                                                     filename,
+                                                                     subsampling,
+                                                                     vtk_output_type);
+  } // ... redirect_visualize(...)
+
+  template< class S, size_t d, size_t r, size_t rC >
+  void redirect_visualize(const Spaces::FVInterface< S, d, r, rC >& space,
+                          const std::string filename,
+                          const bool /*subsampling*/,
+                          const VTK::OutputType vtk_output_type) const
+  {
+    const auto& grid_view = space.grid_view();
+    std::vector< typename Spaces::FVInterface< S, d, r, rC >::RangeFieldType > values(grid_view.indexSet().size(0));
+    for (const auto& entity : DSC::entityRange(grid_view))
+      values[grid_view.indexSet().index(entity)] = vector_[space.mapper().mapToGlobal(entity, 0)];
+    VTKWriter< typename Spaces::FVInterface< S, d, r, rC >::GridViewType > vtk_writer(grid_view);
+    vtk_writer.addCellData(values, this->name());
+    vtk_writer.write(filename, vtk_output_type);
+  } // ... redirect_visualize< Spaces::FV, ... >(...)
+
   const DS::PerThreadValue< SpaceType > space_;
 private:
   const VectorType& vector_;
@@ -297,7 +337,7 @@ struct is_const_discrete_function_helper
   DSC_has_typedef_initialize_once(SpaceType)
   DSC_has_typedef_initialize_once(VectorType)
 
-  static const bool is_candidate = DSC_has_typedef(SpaceType)< D >::value && DSC_has_typedef(SpaceType)< D >::value;
+  static const bool is_candidate = DSC_has_typedef(SpaceType)< D >::value && DSC_has_typedef(VectorType)< D >::value;
 };
 
 
