@@ -84,13 +84,12 @@ struct WeightedL2LocalizableProductTest
   : public WeightedL2ProductBase< SpaceType >
   , public LocalizableProductBase< SpaceType >
 {
-  typedef WeightedL2ProductBase< SpaceType > EllipticBaseType;
+  typedef WeightedL2ProductBase< SpaceType >  WeightedL2BaseType;
   typedef LocalizableProductBase< SpaceType > LocalizableBaseType;
-  typedef typename LocalizableBaseType::GridViewType   GridViewType;
-  typedef typename EllipticBaseType::ExpressionFunctionType ExpressionFunctionType;
-  typedef typename LocalizableBaseType::ScalarFunctionType     ScalarFunctionType;
-  typedef typename LocalizableBaseType::TensorFunctionType     TensorFunctionType;
-  typedef typename LocalizableBaseType::RangeFieldType RangeFieldType;
+  using typename LocalizableBaseType::GridViewType;
+  using typename WeightedL2BaseType::ExpressionFunctionType;
+  using typename LocalizableBaseType::ScalarFunctionType;
+  using typename LocalizableBaseType::RangeFieldType;
 
   void constructible_by_ctor()
   {
