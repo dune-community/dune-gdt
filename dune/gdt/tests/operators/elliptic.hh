@@ -544,14 +544,14 @@ struct EllipticOperatorTest
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto only_factor        = make_elliptic_operator(grid_view, diffusion_factor);
-    auto only_factor_w_over = make_elliptic_operator(grid_view, diffusion_factor, 1);
+    auto DUNE_UNUSED(only_factor)        = make_elliptic_operator(grid_view, diffusion_factor);
+    auto DUNE_UNUSED(only_factor_w_over) = make_elliptic_operator(grid_view, diffusion_factor, 1);
 
-    auto only_tensor        = make_elliptic_operator(grid_view, diffusion_tensor);
-    auto only_tensor_w_over = make_elliptic_operator(grid_view, diffusion_tensor, 1);
+    auto DUNE_UNUSED(only_tensor)        = make_elliptic_operator(grid_view, diffusion_tensor);
+    auto DUNE_UNUSED(only_tensor_w_over) = make_elliptic_operator(grid_view, diffusion_tensor, 1);
 
-    auto both        = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
-    auto both_w_over = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor, 1);
+    auto DUNE_UNUSED(both)        = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
+    auto DUNE_UNUSED(both_w_over) = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
