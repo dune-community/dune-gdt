@@ -6,10 +6,12 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_ELLIPTIC_HH
 #define DUNE_GDT_TEST_OPERATORS_ELLIPTIC_HH
 
+#include <dune/stuff/test/gtest/gtest.h>
+
 #include <dune/gdt/operators/projections.hh>
 #include <dune/gdt/operators/elliptic.hh>
 
-#include "../operators.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
