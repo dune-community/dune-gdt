@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_WEIGHTED_L2_HH
 #define DUNE_GDT_TEST_OPERATORS_WEIGHTED_L2_HH
 
+#include <dune/stuff/common/string.hh>
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/projections.hh>
@@ -34,10 +35,13 @@ struct WeightedL2ProductBase
   typedef Stuff::Functions::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > ExpressionFunctionType;
 
-  WeightedL2ProductBase()
-   : one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
-   , linear_("x", "x[0] - 1.0", 1)
-   , quadratic_("x", "x[0]*x[0]", 2)
+  static const int weight_value = 42;
+
+  WeightedL2ProductBase() // linker error if int(...) is missing, at least with clang
+    : weight_("x", DSC::toString(int(weight_value)), 0)
+    , constant_("x", "1.0", 0)
+    , linear_("x", "x[0] - 1.0", 1)
+    , quadratic_("x", "x[0]*x[0]", 2)
   {}
 
   virtual ~WeightedL2ProductBase() = default;
@@ -46,20 +50,20 @@ struct WeightedL2ProductBase
 
   void correct_for_constant_arguments() const
   {
-    check(compute(one_), 1.0);
+    check(compute(constant_), weight_value*1.0);
   }
 
   void correct_for_linear_arguments() const
   {
-    check(compute(linear_), 1.0/3.0);
+    check(compute(linear_), weight_value*(1.0/3.0));
   }
 
   void correct_for_quadratic_arguments() const
   {
-    check(compute(quadratic_), 1.0/5.0);
+    check(compute(quadratic_), weight_value*(1.0/5.0));
   }
 
-  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 1e-14) const
+  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 2.14e-14) const
   {
     const auto error = std::abs(expected - result);
     EXPECT_LE(error, epsilon)
@@ -68,7 +72,8 @@ struct WeightedL2ProductBase
         << "difference: " << std::scientific << error;
   } // ... check(...)
 
-  const ExpressionFunctionType one_;
+  const ExpressionFunctionType weight_;
+  const ExpressionFunctionType constant_;
   const ExpressionFunctionType linear_;
   const ExpressionFunctionType quadratic_;
 }; // struct WeightedL2ProductBase
@@ -89,7 +94,7 @@ struct WeightedL2LocalizableProductTest
 
   void constructible_by_ctor()
   {
-    const auto& weight = this->one_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
@@ -103,7 +108,7 @@ struct WeightedL2LocalizableProductTest
 
   void constructible_by_factory()
   {
-    const auto& weight = this->one_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
@@ -114,7 +119,7 @@ struct WeightedL2LocalizableProductTest
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& weight = this->one_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
     auto product = make_weighted_l2_localizable_product(weight, grid_view, function, function);
@@ -130,7 +135,7 @@ struct WeightedL2LocalizableProductTest
 
   void is_localizable_product()
   {
-    const auto& weight = this->one_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
