@@ -278,6 +278,58 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
 }; // struct WeightedL2MatrixOperatorTest
 
 
+template <class SpaceType>
+struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public OperatorBase<SpaceType>
+{
+  typedef WeightedL2ProductBase<SpaceType> WeightedL2BaseType;
+  typedef OperatorBase<SpaceType> OperatorBaseType;
+  using typename OperatorBaseType::GridViewType;
+  using typename WeightedL2BaseType::ExpressionFunctionType;
+  using typename OperatorBaseType::DiscreteFunctionType;
+  using typename OperatorBaseType::ScalarFunctionType;
+  using typename OperatorBaseType::RangeFieldType;
+  using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::VectorType;
+
+  void constructible_by_ctor()
+  {
+    const auto& weight    = this->weight_;
+    const auto& grid_view = this->space_.grid_view();
+
+    WeightedL2Operator<ExpressionFunctionType, GridViewType> DUNE_UNUSED(wo_over_integrate)(weight, grid_view);
+    WeightedL2Operator<ExpressionFunctionType, GridViewType> DUNE_UNUSED(with_over_integrate)(weight, grid_view, 1);
+  } // ... constructible_by_ctor(...)
+
+  void constructible_by_factory()
+  {
+    const auto& weight    = this->weight_;
+    const auto& grid_view = this->space_.grid_view();
+
+    auto DUNE_UNUSED(wo_over_integrate) = make_weighted_l2_operator(weight, grid_view);
+    auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_operator(weight, grid_view, 1);
+  } // ... constructible_by_factory()
+
+  virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
+  {
+    const auto& weight    = this->weight_;
+    const auto& grid_view = this->space_.grid_view();
+
+    return make_weighted_l2_operator(weight, grid_view)->apply2(function, function);
+  }
+
+  void apply_is_callable()
+  {
+    const auto& weight    = this->weight_;
+    const auto& grid_view = this->space_.grid_view();
+    auto& source          = this->discrete_function_;
+    auto range            = make_discrete_function<VectorType>(this->space_);
+
+    auto op = make_weighted_l2_operator(weight, grid_view);
+    op->apply(source, range);
+  } // ... apply_is_callable(...)
+}; // struct WeightedL2OperatorTest
+
+
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
