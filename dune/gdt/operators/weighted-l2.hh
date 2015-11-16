@@ -76,6 +76,167 @@ make_weighted_l2_localizable_product(const WeightFunctionType& weight, const Gri
 }
 
 
+// //////////////////////// //
+// WeightedL2MatrixOperator //
+// //////////////////////// //
+
+template <class WeightFunctionType, class RangeSpace,
+          class Matrix   = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
+          class Field = typename RangeSpace::RangeFieldType>
+class WeightedL2MatrixOperator
+    : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
+{
+  typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
+  typedef LocalVolumeIntegralOperator<LocalEvaluation::Product<WeightFunctionType>> LocalWeightedL2OperatorType;
+
+public:
+  template <class... Args>
+  explicit WeightedL2MatrixOperator(const WeightFunctionType& weight, Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+    , local_weighted_l2_operator_(weight)
+  {
+    this->add(local_weighted_l2_operator_);
+  }
+
+  template <class... Args>
+  explicit WeightedL2MatrixOperator(const size_t over_integrate, const WeightFunctionType& weight, Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+    , local_weighted_l2_operator_(over_integrate, weight)
+  {
+    this->add(local_weighted_l2_operator_);
+  }
+
+private:
+  const LocalWeightedL2OperatorType local_weighted_l2_operator_;
+}; // class WeightedL2MatrixOperator
+
+
+// //////////////////////////////// //
+// make_weighted_l2_matrix_operator //
+// //////////////////////////////// //
+
+// without matrix
+
+/**
+ * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically,
+ *        source and range space are given by space, grid_view of the space is used).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space);
+\endcode
+ */
+template <class MatrixType, class WeightFunctionType, class SpaceType>
+typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
+                            && Stuff::is_localizable_function<WeightFunctionType>::value && is_space<SpaceType>::value,
+                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const SpaceType& space,
+                                 const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>(
+      over_integrate, weight, space);
+}
+
+/**
+ * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically,
+ *        source and range space are given by space).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space, grid_view);
+\endcode
+ */
+template <class MatrixType, class WeightFunctionType, class SpaceType, class GridViewType>
+typename std::
+    enable_if<Stuff::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<WeightFunctionType>::value
+                  && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>>::type
+    make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const SpaceType& space,
+                                     const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
+      over_integrate, weight, space, grid_view);
+}
+
+/**
+ * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, range_space, source_space, grid_view);
+\endcode
+ */
+template <class MatrixType, class WeightFunctionType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
+typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
+                            && Stuff::is_localizable_function<WeightFunctionType>::value
+                            && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
+                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType,
+                                                                 GridViewType, SourceSpaceType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const RangeSpaceType& range_space,
+                                 const SourceSpaceType& source_space, const GridViewType& grid_view,
+                                 const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
+                                                   RangeSpaceType,
+                                                   MatrixType,
+                                                   GridViewType,
+                                                   SourceSpaceType>>(
+      over_integrate, weight, range_space, source_space, grid_view);
+}
+
+// with matrix
+
+/**
+ * \brief Creates a weighted L2 matrix operator (source and range space are given by space, grid_view of the space is
+ *        used).
+ */
+template <class WeightFunctionType, class MatrixType, class SpaceType>
+typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
+                            && Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix, const SpaceType& space,
+                                 const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>(
+      over_integrate, weight, matrix, space);
+}
+
+/**
+ * \brief Creates a weighted L2 matrix operator (source and range space are given by space).
+ */
+template <class WeightFunctionType, class MatrixType, class SpaceType, class GridViewType>
+typename std::
+    enable_if<Stuff::is_localizable_function<WeightFunctionType>::value && Stuff::LA::is_matrix<MatrixType>::value
+                  && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>>::type
+    make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix, const SpaceType& space,
+                                     const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
+      over_integrate, weight, matrix, space, grid_view);
+}
+
+/**
+ * \brief Creates a weighted L2 matrix operator.
+ */
+template <class WeightFunctionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
+typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
+                            && Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType,
+                                                                 GridViewType, SourceSpaceType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix,
+                                 const RangeSpaceType& range_space, const SourceSpaceType& source_space,
+                                 const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
+                                                   RangeSpaceType,
+                                                   MatrixType,
+                                                   GridViewType,
+                                                   SourceSpaceType>>(
+      over_integrate, weight, matrix, range_space, source_space, grid_view);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
