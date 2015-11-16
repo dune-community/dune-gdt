@@ -35,10 +35,9 @@ struct WeightedL2ProductBase
   typedef Stuff::Functions::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > ExpressionFunctionType;
 
-  static const int weight_value = 42;
-
-  WeightedL2ProductBase() // linker error if int(...) is missing, at least with clang
-    : weight_("x", DSC::toString(int(weight_value)), 0)
+  WeightedL2ProductBase(const double weight_value = 42)
+    : weight_value_(weight_value)
+    , weight_("x", DSC::toString(double(weight_value_)), 0) // linker error if double(...) is missing
     , constant_("x", "1.0", 0)
     , linear_("x", "x[0] - 1.0", 1)
     , quadratic_("x", "x[0]*x[0]", 2)
@@ -50,17 +49,17 @@ struct WeightedL2ProductBase
 
   void correct_for_constant_arguments() const
   {
-    check(compute(constant_), weight_value*1.0);
+    check(compute(constant_), weight_value_*1.0);
   }
 
   void correct_for_linear_arguments() const
   {
-    check(compute(linear_), weight_value*(1.0/3.0));
+    check(compute(linear_), weight_value_*(1.0/3.0));
   }
 
   void correct_for_quadratic_arguments() const
   {
-    check(compute(quadratic_), weight_value*(1.0/5.0));
+    check(compute(quadratic_), weight_value_*(1.0/5.0));
   }
 
   void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 2.14e-14) const
@@ -72,6 +71,7 @@ struct WeightedL2ProductBase
         << "difference: " << std::scientific << error;
   } // ... check(...)
 
+  const double weight_value_;
   const ExpressionFunctionType weight_;
   const ExpressionFunctionType constant_;
   const ExpressionFunctionType linear_;
