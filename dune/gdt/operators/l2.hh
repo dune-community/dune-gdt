@@ -258,8 +258,7 @@ make_l2_matrix_operator(const RangeSpaceType& range_space,
  *        used).
  */
 template< class MatrixType, class SpaceType >
-    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
-                             && is_space< SpaceType >::value
+    typename std::enable_if< Stuff::LA::is_matrix< MatrixType >::value && is_space< SpaceType >::value
                            , std::unique_ptr< L2MatrixOperator< SpaceType, MatrixType > >
                            >::type
 make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
