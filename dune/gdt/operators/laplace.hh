@@ -296,6 +296,103 @@ make_laplace_matrix_operator(MatrixType& matrix,
 }
 
 
+// /////////////// //
+// LaplaceOperator //
+// /////////////// //
+
+// forward, needed for the traits
+template< class GridView, class Field = double >
+class LaplaceOperator;
+
+
+namespace internal {
+
+
+template< class GridViewType, class Field >
+class LaplaceOperatorTraits
+{
+public:
+  typedef LaplaceOperator< GridViewType, Field > derived_type;
+  typedef Field FieldType;
+};
+
+
+} // namespace internal
+
+
+template< class GridViewType, class Field >
+class LaplaceOperator
+  : public OperatorInterface< internal::LaplaceOperatorTraits< GridViewType, Field > >
+{
+  typedef OperatorInterface< internal::LaplaceOperatorTraits< GridViewType, Field > > BaseType;
+public:
+  using typename BaseType::FieldType;
+
+  template< class ...Args >
+  LaplaceOperator(GridViewType grid_view, const size_t over_integrate = 0)
+    : grid_view_(grid_view)
+    , over_integrate_(over_integrate)
+  {}
+
+  template< class SourceSpaceType, class VectorType, class RangeSpaceType >
+  void apply(const DiscreteFunction< SourceSpaceType, VectorType >& source,
+             DiscreteFunction< RangeSpaceType, VectorType >& range) const
+  {
+    typedef typename Stuff::LA::Container< typename VectorType::ScalarType, VectorType::sparse_matrix_type >::MatrixType
+        MatrixType;
+    auto op = make_laplace_matrix_operator< MatrixType >(source.space(), range.space(), grid_view_, over_integrate_);
+    op->apply(source, range);
+  }
+
+  template< class E, class D, size_t d, class R, size_t r, size_t rC >
+  FieldType apply2(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& range,
+                   const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source) const
+  {
+    auto product = make_laplace_localizable_product(grid_view_, range, source, over_integrate_);
+    return product->apply2();
+  }
+
+  using BaseType::apply_inverse;
+
+  template< class RangeType, class SourceType >
+  void apply_inverse(const RangeType& /*range*/,
+                     SourceType& /*source*/,
+                     const Stuff::Common::Configuration& /*opts*/) const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+  }
+
+  std::vector< std::string > invert_options() const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+    return {"depends_on_the_vector_type_of_the_discrete_function"};
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  {
+    DUNE_THROW(NotImplemented, "yet");
+  }
+
+private:
+  GridViewType grid_view_;
+  const size_t over_integrate_;
+}; // class LaplaceOperator
+
+
+// ///////////////////// //
+// make_laplace_operator //
+// ///////////////////// //
+
+template< class GridViewType >
+    typename std::enable_if< Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LaplaceOperator< GridViewType > >
+                           >::type
+make_laplace_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceOperator< GridViewType > >(grid_view, over_integrate);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
