@@ -107,7 +107,7 @@ public:
 
   virtual double estimate(const VectorType& /*vector*/, const std::string /*type*/) const override final
   {
-    std::abort();
+    DUNE_THROW(NotImplemented, "Do not call me if available_estimators().size() == 0!");
   }
 
 private:
