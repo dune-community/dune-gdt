@@ -34,11 +34,12 @@ struct EllipticProductBase
   typedef Stuff::Functions::Expression
       < EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > ExpressionFunctionType;
 
-  EllipticProductBase()
-   : one_("x", "1.0", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
-   , constant_gradient_("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
-   , linear_gradient_("x", "fake_value", 2, "affine gradient", {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}})
-   , quadratic_gradient_("x", "fake_value", 3, ", quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}})
+  EllipticProductBase(const double factor_value = 42.)
+    : factor_value_(factor_value)
+    , factor_("x", DSC::toString(factor_value_), 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
+    , constant_gradient_( "x", "fake_value", 1, "constant gradient",  {{"1.0",        "1.0",        "1.0"}})
+    , linear_gradient_(   "x", "fake_value", 2, "affine gradient",    {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}})
+    , quadratic_gradient_("x", "fake_value", 3, "quadratic gradient", {{"x[0]*x[0]",  "x[0]*x[0]",  "x[0]*x[0]"}})
   {}
 
   virtual ~EllipticProductBase() = default;
@@ -47,17 +48,17 @@ struct EllipticProductBase
 
   void correct_for_constant_arguments() const
   {
-    check(compute(constant_gradient_), dimDomain*1.0);
+    check(compute(constant_gradient_), factor_value_*dimDomain*1.0, 4.27e-14);
   }
 
   void correct_for_linear_arguments() const
   {
-    check(compute(linear_gradient_), dimDomain*(1.0/3.0));
+    check(compute(linear_gradient_), factor_value_*dimDomain*(1.0/3.0), 1.43e-14);
   }
 
   void correct_for_quadratic_arguments() const
   {
-    check(compute(quadratic_gradient_), dimDomain*(1.0/5.0));
+    check(compute(quadratic_gradient_), factor_value_*dimDomain*(1.0/5.0));
   }
 
   void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 1e-14) const
@@ -69,7 +70,8 @@ struct EllipticProductBase
         << "difference: " << std::scientific << error;
   } // ... check(...)
 
-  const ExpressionFunctionType one_;
+  const double factor_value_;
+  const ExpressionFunctionType factor_;
   const ExpressionFunctionType constant_gradient_;
   const ExpressionFunctionType linear_gradient_;
   const ExpressionFunctionType quadratic_gradient_;
@@ -91,7 +93,7 @@ struct EllipticLocalizableProductTest
 
   void constructible_by_ctor()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
@@ -118,7 +120,7 @@ struct EllipticLocalizableProductTest
 
   void constructible_by_factory()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
@@ -140,10 +142,10 @@ struct EllipticLocalizableProductTest
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    auto product = make_elliptic_localizable_product(this->one_, this->tensor_function_, this->space_.grid_view(),
+    auto product = make_elliptic_localizable_product(this->factor_, this->tensor_function_, this->space_.grid_view(),
                                                      function, function);
     const auto result = product->apply2();
-    auto product_tbb = make_elliptic_localizable_product(this->one_, this->tensor_function_, this->space_.grid_view(),
+    auto product_tbb = make_elliptic_localizable_product(this->factor_, this->tensor_function_, this->space_.grid_view(),
                                                          function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
@@ -153,7 +155,7 @@ struct EllipticLocalizableProductTest
 
   void is_localizable_product()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
     const auto& source = this->scalar_function_;
@@ -183,9 +185,13 @@ struct EllipticMatrixOperatorTest
   using typename MatrixBaseType::RangeFieldType;
   using typename MatrixBaseType::MatrixType;
 
+  EllipticMatrixOperatorTest(const double factor_value = 42.)
+    : EllipticBaseType(factor_value)
+  {}
+
   void constructible_by_ctor()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
@@ -386,7 +392,7 @@ struct EllipticMatrixOperatorTest
 
   void constructible_by_factory()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
@@ -441,9 +447,9 @@ struct EllipticMatrixOperatorTest
     auto DUNE_UNUSED(op_36) = make_elliptic_matrix_operator(diffusion_tensor, matrix, space, space, grid_view, 1);
   } // ... constructible_by_factory()
 
-  virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
+  virtual RangeFieldType compute(const ExpressionFunctionType& function) const override
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& space = this->space_;
     auto op = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
@@ -465,7 +471,7 @@ struct EllipticMatrixOperatorTest
   void correct_for_constant_arguments() const
   {
     const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
-    this->check(compute(constant_gradient), 1.0, 1e-13);
+    this->check(compute(constant_gradient), factor_value_*1.0, 5.76e-13);
   }
 
   /**
@@ -475,7 +481,7 @@ struct EllipticMatrixOperatorTest
   {
     const ExpressionFunctionType linear_gradient("x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient",
                                                  {{"x[0] - 1.0", "0.0", "0.0"}});
-    this->check(compute(linear_gradient), 1.0/3.0, 1e-13);
+    this->check(compute(linear_gradient), factor_value_*1.0/3.0, 1.92e-13);
   }
 
   /**
@@ -485,18 +491,20 @@ struct EllipticMatrixOperatorTest
   {
     const ExpressionFunctionType quadratic_gradient("x", "(1.0/3.0) * x[0] * x[0] * x[0]", 3, ", quadratic gradient",
                                                     {{"x[0]*x[0]", "0.0", "0.0"}});
-    this->check(compute(quadratic_gradient), 1.0/5.0);
+    this->check(compute(quadratic_gradient), factor_value_*1.0/5.0, 6.04e-14);
   }
 
   void is_matrix_operator()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& space = this->space_;
 
     auto op = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
     this->matrix_operator_test(*op);
   } // ... is_matrix_operator(...)
+
+  using EllipticBaseType::factor_value_;
 }; // struct EllipticMatrixOperatorTest
 
 
@@ -518,7 +526,7 @@ struct EllipticOperatorTest
 
   void constructible_by_ctor()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
 
@@ -540,7 +548,7 @@ struct EllipticOperatorTest
 
   void constructible_by_factory()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
 
@@ -556,7 +564,7 @@ struct EllipticOperatorTest
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
 
@@ -565,7 +573,7 @@ struct EllipticOperatorTest
 
   void apply_is_callable()
   {
-    const auto& diffusion_factor = this->one_;
+    const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view = this->space_.grid_view();
     auto& source = this->discrete_function_;
