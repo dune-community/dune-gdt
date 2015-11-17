@@ -8,9 +8,9 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
+#include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/operators/laplace.hh>
-#include <dune/gdt/products/elliptic.hh>
 
 #include "../stationary-eocstudy.hh"
 #include "eocexpectations.hh"
@@ -89,10 +89,10 @@ public:
     else if (type == "H1_semi")
       return make_laplace_operator(grid_view, over_integrate_)->induced_norm(function);
     else if (type == "energy")
-      return Products::make_elliptic< double >(grid_view,
-                                               this->test_case_.problem().diffusion_factor(),
-                                               this->test_case_.problem().diffusion_tensor(),
-                                               over_integrate_).induced_norm(function);
+      return make_elliptic_operator(grid_view,
+                                    this->test_case_.problem().diffusion_factor(),
+                                    this->test_case_.problem().diffusion_tensor(),
+                                    over_integrate_)->induced_norm(function);
     else
       DUNE_THROW(Stuff::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
