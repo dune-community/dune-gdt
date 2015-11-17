@@ -107,6 +107,195 @@ make_laplace_localizable_product(const GridViewType& grid_view,
 }
 
 
+// ///////////////////// //
+// LaplaceMatrixOperator //
+// ///////////////////// //
+
+template< class RangeSpace,
+          class Matrix = typename Stuff::LA::Container< typename RangeSpace::RangeFieldType >::MatrixType,
+          class GridView = typename RangeSpace::GridViewType,
+          class SourceSpace = RangeSpace,
+          class Field = typename RangeSpace::RangeFieldType >
+class LaplaceMatrixOperator
+  : Stuff::Common::ConstStorageProvider<
+        Stuff::Functions::Constant< typename Stuff::Grid::Entity< GridView >::type,
+                                    typename GridView::ctype, GridView::dimension, Field, 1 > >
+  , public EllipticMatrixOperator<
+        Stuff::Functions::Constant< typename Stuff::Grid::Entity< GridView >::type, typename GridView::ctype,
+                                    GridView::dimension, Field, 1 >,
+        void, RangeSpace, Matrix, GridView, SourceSpace, Field >
+{
+  typedef Stuff::Common::ConstStorageProvider
+      < Stuff::Functions::Constant< typename Stuff::Grid::Entity< GridView >::type, typename GridView::ctype,
+                                    GridView::dimension, Field, 1 > > FunctionProvider;
+  typedef EllipticMatrixOperator<
+      Stuff::Functions::Constant< typename Stuff::Grid::Entity< GridView >::type, typename GridView::ctype,
+                                  GridView::dimension, Field, 1 >,
+      void, RangeSpace, Matrix, GridView, SourceSpace, Field >BaseType;
+
+  // We suffer from the same problem as in L2LocalizableProduct, see there for an explanation.
+  template< bool anything >
+  struct tag{ explicit tag(int) {}};
+
+  template< class ...Args >
+  explicit LaplaceMatrixOperator(tag< false >, Args&& ...args)
+    : FunctionProvider(1.)
+    , BaseType(FunctionProvider::access(), std::forward< Args >(args)...)
+  {}
+
+  template< class ...Args >
+  explicit LaplaceMatrixOperator(tag< true >, const size_t over_integrate, Args&& ...args)
+    : FunctionProvider(1.)
+    , BaseType(over_integrate, FunctionProvider::access(), std::forward< Args >(args)...)
+  {}
+
+public:
+  /**
+   * \brief Creates a matrix-based Laplace operator.
+   *
+   *        We suffer from the same problems as L2LocalizableProduct, see also the documentation of
+   *        \sa L2LocalizableProduct::L2LocalizableProduct(). This ctor can be used as follows, where over_integrate is
+   *        a non-negative integer and ...args are the arguments for MatrixOperatorDefault (i.e., possibly a matrix,
+   *        a range space, possibly a grid_view and possibly a source space):
+\code
+LaplaceLocalizableProduct(over_integrate, ...args);
+LaplaceLocalizableProduct(...args);
+\endcode
+   *        If no matrix is provided, an appropriate matrix of given MatrixType will be created and is accessible via
+   *        matrix().
+   */
+  template< typename possibly_int_t,
+            class ...Args,
+            typename std::enable_if< !std::is_same< possibly_int_t, tag< true > >::value, int >::type = 0 >
+  explicit LaplaceMatrixOperator(possibly_int_t&& possibly_over_integrate, Args&& ...args)
+    : LaplaceMatrixOperator(tag< std::numeric_limits< typename std::decay< possibly_int_t >::type >::is_integer >(0),
+                            std::forward< possibly_int_t >(possibly_over_integrate),
+                            std::forward< Args >(args)...)
+  {}
+}; // class LaplaceMatrixOperator
+
+
+// /////////////////////// //
+// make_laplace_matrix_operator //
+// /////////////////////// //
+
+// without matrix
+
+/**
+ * \brief Creates a Laplace matrix operator (MatrixType has to be supllied, a matrix is created automatically, source
+ *        and range space are given by space, grid_view of the space is used).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_laplace_matrix_operator< MatrixType >(space);
+\endcode
+ */
+template< class MatrixType, class SpaceType >
+    typename std::enable_if< Stuff::LA::is_matrix< MatrixType >::value && is_space< SpaceType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< SpaceType, MatrixType > >
+                           >::type
+make_laplace_matrix_operator(const SpaceType& space, const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< SpaceType, MatrixType > >(over_integrate, space);
+}
+
+/**
+ * \brief Creates a Laplace matrix operator (MatrixType has to be supllied, a matrix is created automatically, source
+ *        and range space are given by space).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_laplace_matrix_operator< MatrixType >(space, grid_view);
+\endcode
+ */
+template< class MatrixType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< SpaceType, MatrixType, GridViewType > >
+                           >::type
+make_laplace_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< SpaceType, MatrixType, GridViewType > >
+      (over_integrate, space, grid_view);
+}
+
+/**
+ * \brief Creates a Laplace matrix operator (MatrixType has to be supllied, a matrix is created automatically).
+ * \note  MatrixType has to be supplied, i.e., use like
+\code
+auto op = make_laplace_matrix_operator< MatrixType >(range_space, source_space, grid_view);
+\endcode
+ */
+template< class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< RangeSpaceType, MatrixType, GridViewType,
+                                                                SourceSpaceType > >
+                           >::type
+make_laplace_matrix_operator(const RangeSpaceType& range_space,
+                             const SourceSpaceType& source_space,
+                             const GridViewType& grid_view,
+                             const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+      (over_integrate, range_space, source_space, grid_view);
+}
+
+// with matrix
+
+/**
+ * \brief Creates a Laplace matrix operator (source and range space are given by space, grid_view of the space is used).
+ */
+template< class MatrixType, class SpaceType >
+    typename std::enable_if< Stuff::LA::is_matrix< MatrixType >::value && is_space< SpaceType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< SpaceType, MatrixType > >
+                           >::type
+make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< SpaceType, MatrixType > >(over_integrate, matrix, space);
+}
+
+/**
+ * \brief Creates a Laplace matrix operator (source and range space are given by space).
+ */
+template< class MatrixType, class SpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< SpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< SpaceType, MatrixType, GridViewType > >
+                           >::type
+make_laplace_matrix_operator(MatrixType& matrix,
+                             const SpaceType& space,
+                             const GridViewType& grid_view,
+                             const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< SpaceType, MatrixType, GridViewType > >
+      (over_integrate, matrix, space, grid_view);
+}
+
+/**
+ * \brief Creates a Laplace matrix operator.
+ */
+template< class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType >
+    typename std::enable_if<    Stuff::LA::is_matrix< MatrixType >::value
+                             && is_space< RangeSpaceType >::value
+                             && is_space< SourceSpaceType >::value
+                             && Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LaplaceMatrixOperator< RangeSpaceType, MatrixType, GridViewType,
+                                                                SourceSpaceType > >
+                           >::type
+make_laplace_matrix_operator(MatrixType& matrix,
+                             const RangeSpaceType& range_space,
+                             const SourceSpaceType& source_space,
+                             const GridViewType& grid_view,
+                             const size_t over_integrate = 0)
+{
+  return DSC::make_unique< LaplaceMatrixOperator< RangeSpaceType, MatrixType, GridViewType, SourceSpaceType > >
+      (over_integrate, matrix, range_space, source_space, grid_view);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
