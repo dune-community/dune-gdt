@@ -93,7 +93,6 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
   using typename MatrixBaseType::GridViewType;
   using typename WeightedL2BaseType::ExpressionFunctionType;
   using typename MatrixBaseType::DiscreteFunctionType;
-  using typename MatrixBaseType::ScalarFunctionType;
   using typename MatrixBaseType::RangeFieldType;
   using typename MatrixBaseType::MatrixType;
 
