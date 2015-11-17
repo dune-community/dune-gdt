@@ -7,8 +7,6 @@
 #include <dune/stuff/test/main.hxx>
 
 #include "spaces_fv_default.hh"
-#include "spaces_dg_fem.hh"
-#include "spaces_cg_pdelab.hh"
 
 #include <dune/gdt/tests/operators/l2.hh>
 
