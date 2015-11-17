@@ -21,6 +21,7 @@
 #include "interface.hh"
 #include "cg/fem.hh"
 #include "cg/pdelab.hh"
+#include "cg/virtual_pdelab.hh"
 
 
 namespace Dune {

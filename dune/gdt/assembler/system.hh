@@ -12,6 +12,10 @@
 #include <dune/common/deprecated.hh>
 #include <dune/common/version.hh>
 
+#include <dune/patches/utility/gridviewpatchfactory.hh>
+#include <dune/patches/cube/unconnected/patch.hh>
+#include <dune/patches/finiteelementmap/refinedq1fem.hh>
+
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/common/parallel/helper.hh>
 
@@ -201,6 +205,8 @@ public:
   {
     this->walk(partitioning);
   }
+
+
 
 
 private:

@@ -38,7 +38,7 @@ class EllipticCG;
 namespace internal {
 
 
-template< class DiffusionFactorType
+template< class DiffusionFactorImp
         , class MatrixImp
         , class SourceSpaceImp
         , class RangeSpaceImp
@@ -46,7 +46,7 @@ template< class DiffusionFactorType
         , class DiffusionTensorType = void >
 class EllipticCGTraits
 {
-  static_assert(Stuff::is_localizable_function< DiffusionFactorType >::value,
+  static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
                 "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
   static_assert(Stuff::is_localizable_function< DiffusionTensorType >::value
                 || std::is_same< void, DiffusionTensorType>::value,
@@ -56,12 +56,13 @@ class EllipticCGTraits
   static_assert(is_space< SourceSpaceImp >::value, "SourceSpaceImp has to be derived from SpaceInterface!");
   static_assert(is_space< RangeSpaceImp >::value,  "RangeSpaceImp has to be derived from SpaceInterface!");
 public:
-  typedef EllipticCG< DiffusionFactorType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, DiffusionTensorType >
+  typedef EllipticCG< DiffusionFactorImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, DiffusionTensorType >
       derived_type;
   typedef MatrixImp       MatrixType;
   typedef SourceSpaceImp  SourceSpaceType;
   typedef RangeSpaceImp   RangeSpaceType;
   typedef GridViewImp     GridViewType;
+  typedef DiffusionFactorImp DiffusionFactorType;
 }; // class EllipticCGTraits
 
 
