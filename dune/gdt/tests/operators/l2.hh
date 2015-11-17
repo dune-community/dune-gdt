@@ -96,7 +96,6 @@ struct L2MatrixOperatorTest
   using typename MatrixBaseType::GridViewType;
   using typename WeightedL2BaseType::ExpressionFunctionType;
   using typename MatrixBaseType::DiscreteFunctionType;
-  using typename MatrixBaseType::ScalarFunctionType;
   using typename MatrixBaseType::RangeFieldType;
   using typename MatrixBaseType::MatrixType;
 
