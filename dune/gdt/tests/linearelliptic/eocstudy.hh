@@ -8,9 +8,9 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
+#include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/products/elliptic.hh>
 #include <dune/gdt/products/h1.hh>
-#include <dune/gdt/products/l2.hh>
 
 #include "../stationary-eocstudy.hh"
 #include "eocexpectations.hh"
@@ -85,7 +85,7 @@ public:
                               const std::string type) const override final
   {
     if (type == "L2")
-      return Products::L2< GridViewType, double >(grid_view, over_integrate_).induced_norm(function);
+      return make_l2_operator(grid_view, over_integrate_)->induced_norm(function);
     else if (type == "H1_semi")
       return Products::H1Semi< GridViewType, double >(grid_view, over_integrate_).induced_norm(function);
     else if (type == "energy")
