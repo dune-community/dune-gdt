@@ -15,6 +15,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/codim0.hh>
+#include <dune/gdt/localoperator/virtual_codim0.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/virtual_codim0.hh>
 #include <dune/gdt/assembler/system.hh>
@@ -57,9 +58,10 @@ public:
 
 template <class RealEllipticOperatorImp>
 class VirtualRefinedEllipticCG
-    : Stuff::Common::StorageProvider< typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType >
-    , public Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>>
-    , public internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType
+    : Stuff::Common::StorageProvider<
+          typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType>,
+      public Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>>,
+      public internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType
 {
 
 public:
@@ -67,13 +69,15 @@ public:
   using DiffusionType = typename Traits::DiffusionFactorType;
 
 private:
-  typedef typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType AssemblerBaseType;
+  typedef
+      typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType AssemblerBaseType;
   typedef Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>> OperatorBaseType;
-    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >        RealLocalOperatorType;
-    typedef LocalAssembler::Codim0Matrix< RealLocalOperatorType >                                  RealLocalAssemblerType;
-  typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionType > >        LocalOperatorType;
-  typedef LocalAssembler::VirtualCodim0Matrix< LocalOperatorType >                                  LocalAssemblerType;
-  typedef Stuff::Common::StorageProvider< typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType > StorageProvider;
+  typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> RealLocalOperatorType;
+  typedef LocalOperator::VirtualRefinedCodim0Integral<LocalEvaluation::Elliptic<DiffusionType>> LocalOperatorType;
+  typedef LocalAssembler::Codim0Matrix<RealLocalOperatorType> RealLocalAssemblerType;
+  typedef LocalAssembler::VirtualCodim0Matrix<LocalAssemblerType> LocalAssemblerType;
+  typedef Stuff::Common::StorageProvider<
+      typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType> StorageProvider;
 
 public:
   typedef typename Traits::MatrixType MatrixType;
@@ -82,19 +86,18 @@ public:
   typedef typename Traits::GridViewType GridViewType;
 
 
-  VirtualRefinedEllipticCG(  const DiffusionType& diffusion,
-                             MatrixType& mtrx,
-                             const SourceSpaceType& src_spc)
-                    : StorageProvider(mtrx)
-                    , OperatorBaseType(this->storage_access(), src_spc)
-                    , AssemblerBaseType(src_spc)
-                    , diffusion_(diffusion)
-                    , local_operator_(diffusion_)
-                    , local_assembler_(local_operator_)
-                    , assembled_(false)
-                  {
-                    this->add(local_assembler_, this->matrix());
-                  }
+  VirtualRefinedEllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc)
+    : StorageProvider(mtrx)
+    , OperatorBaseType(this->storage_access(), src_spc)
+    , AssemblerBaseType(src_spc)
+    , diffusion_(diffusion)
+    , local_operator_(diffusion_)
+    , local_assembler_(local_operator_)
+    , real_local_assembler_(local_assembler_)
+    , assembled_(false)
+  {
+    this->add(local_assembler_, this->matrix());
+  }
   virtual void assemble() override final
   {
     if (!assembled_) {
@@ -106,6 +109,7 @@ private:
   const DiffusionType& diffusion_;
   const RealLocalOperatorType local_operator_;
   const RealLocalAssemblerType local_assembler_;
+  const LocalAssemblerType real_local_assembler_;
   bool assembled_;
 }; // class VirtualRefinedEllipticCG
 

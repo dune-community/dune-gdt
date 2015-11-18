@@ -23,36 +23,38 @@
 #include <dune/gdt/localfunctional/interface.hh>
 #include <dune/gdt/spaces/interface.hh>
 
-namespace Dune {
-namespace GDT {
-namespace LocalAssembler {
+namespace Dune
+{
+namespace GDT
+{
+namespace LocalAssembler
+{
 
 
-template< class LocalOperatorImp >
+template <class Codim0MatrixImp>
 class VirtualCodim0Matrix
 {
-  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
-                                 LocalOperatorImp >::value,
-                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
+  //  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
+  //                                 LocalOperatorImp >::value,
+  //                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
 public:
-  typedef LocalOperatorImp LocalOperatorType;
+  typedef Codim0MatrixImp Codim0MatrixType;
+  typedef typename Codim0MatrixImp::LocalOperatorType LocalOperatorType;
 
-  explicit VirtualCodim0Matrix(const LocalOperatorType& op)
-    : localOperator_(op)
-  {}
-
-  const LocalOperatorType& localOperator() const
+  explicit VirtualCodim0Matrix(const Codim0MatrixType& assembler)
+    : local_assembler_(assembler)
   {
-    return localOperator_;
   }
+
+  const LocalOperatorType& localOperator() const { return local_assembler_.localOperator_; }
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  std::vector< size_t > numTmpObjectsRequired() const
+  std::vector<size_t> numTmpObjectsRequired() const
   {
-    return { numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired() };
+    return {numTmpObjectsRequired_, localOperator().numTmpObjectsRequired()};
   }
 
   /**
@@ -62,50 +64,89 @@ public:
    *  \tparam *r          dimRange of testSpace (* == T) or ansatzSpace (* == A)
    *  \tparam *rC         dimRangeCols of testSpace (* == T) or ansatzSpace (* == A)
    *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the type of systemMatrix
+   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the
+   * type of systemMatrix
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType, class M, class R >
-  void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
-                     const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
+  template <class T,
+            size_t Td,
+            size_t Tr,
+            size_t TrC,
+            class A,
+            size_t Ad,
+            size_t Ar,
+            size_t ArC,
+            class EntityType,
+            class M,
+            class R>
+  void assembleLocal(const SpaceInterface<T, Td, Tr, TrC>& testSpace,
+                     const SpaceInterface<A, Ad, Ar, ArC>& ansatzSpace,
                      const EntityType& entity,
-                     Dune::Stuff::LA::MatrixInterface< M, R >& systemMatrix,
-                     std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
-                     std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
+                     Dune::Stuff::LA::MatrixInterface<M, R>& systemMatrix,
+                     std::vector<std::vector<Dune::DynamicMatrix<R>>>& tmpLocalMatricesContainer,
+                     std::vector<Dune::DynamicVector<size_t>>& tmpIndicesContainer) const
   {
+    using Patch = Dune::Patches::Cube::Unconnected::Patch<R, Td>;
+    typedef decltype(ansatzSpace.grid_view()) GridView;
+    auto& gfs = ansatzSpace.backend();
+    using Factory = Dune::Patches::GridViewPatchFactory<GridView>;
+
+    Factory factory(gfs.gridView());
+
+    using LFS = Dune::PDELab::LocalFunctionSpace<typename std::remove_const<decltype(gfs)>::type>;
+    LFS lfs(gfs);
+
+    using LFSCache = Dune::PDELab::LFSIndexCache<LFS>;
+    LFSCache lfsCache(lfs);
+
+    //    using LocalView = typename V::template LocalView<LFSCache>;
+    //    LocalView localView(v);
+
+    auto patchp = factory.template create<Patch>(makeIteratorRange(&entity, &entity + 1));
+    unsigned level = 0;
+    for (auto subdiv = lfs.finiteElement().subDivisions(); subdiv > 1; subdiv /= 2)
+      ++level;
+    if (1u << level != lfs.finiteElement().subDivisions())
+      DUNE_THROW(Dune::NotImplemented, "Refinements with non-power-of-2 subdivisions");
+    auto pv = patchp->levelGridView(level);
+    auto is = pv.indexSet();
+
+    for (auto& patch_entity : pv) {
+      local_assembler_.assembleLocal(testSpace, ansatzSpace, patch_entity, systemMatrix, tmpLocalMatricesContainer,
+                                     tmpIndicesContainer);
+    }
 
   } // ... assembleLocal(...)
 
 private:
-  const LocalOperatorType& localOperator_;
+  const Codim0MatrixType& local_assembler_;
 }; // class VirtualCodim0Matrix
 
 
-template< class LocalFunctionalImp >
+template <class LocalFunctionalImp>
 class VirtualCodim0Vector
 {
-  static_assert(std::is_base_of< LocalFunctional::Codim0Interface< typename LocalFunctionalImp::Traits >,
-                                 LocalFunctionalImp >::value,
-                "LocalFunctionalImp has to be derived from LocalFunctional::Codim0Interface!");
+  static_assert(
+      std::is_base_of<LocalFunctional::Codim0Interface<typename LocalFunctionalImp::Traits>, LocalFunctionalImp>::value,
+      "LocalFunctionalImp has to be derived from LocalFunctional::Codim0Interface!");
+
 public:
   typedef LocalFunctionalImp LocalFunctionalType;
 
   explicit VirtualCodim0Vector(const LocalFunctionalType& func)
     : localFunctional_(func)
-  {}
-
-  const LocalFunctionalType& localFunctional() const
   {
-    return localFunctional_;
   }
+
+  const LocalFunctionalType& localFunctional() const { return localFunctional_; }
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  std::vector< size_t > numTmpObjectsRequired() const
+  std::vector<size_t> numTmpObjectsRequired() const
   {
-    return { numTmpObjectsRequired_, localFunctional_.numTmpObjectsRequired() };
+    return {numTmpObjectsRequired_, localFunctional_.numTmpObjectsRequired()};
   }
 
   /**
@@ -114,15 +155,16 @@ public:
    *  \tparam r           dimRange of testSpace
    *  \tparam rC          dimRangeCols of testSpace
    *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam V           Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type of systemVector
+   *  \tparam V           Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the
+   * type of systemVector
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template< class T, size_t d, size_t r, size_t rC, class EntityType, class V, class R >
-  void assembleLocal(const SpaceInterface< T, d, r, rC >& testSpace,
+  template <class T, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
+  void assembleLocal(const SpaceInterface<T, d, r, rC>& testSpace,
                      const EntityType& entity,
-                     Dune::Stuff::LA::VectorInterface< V, R >& systemVector,
-                     std::vector< std::vector< Dune::DynamicVector< R > > >& tmpLocalVectorContainer,
-                     Dune::DynamicVector< size_t >& tmpIndices) const
+                     Dune::Stuff::LA::VectorInterface<V, R>& systemVector,
+                     std::vector<std::vector<Dune::DynamicVector<R>>>& tmpLocalVectorContainer,
+                     Dune::DynamicVector<size_t>& tmpIndices) const
   {
     // check
     assert(tmpLocalVectorContainer.size() >= 2);
@@ -133,9 +175,7 @@ public:
     localVector *= 0.0;
     auto& tmpFunctionalVectors = tmpLocalVectorContainer[1];
     // apply local functional (result is in localVector)
-    localFunctional_.apply(testSpace.base_function_set(entity),
-                           localVector,
-                           tmpFunctionalVectors);
+    localFunctional_.apply(testSpace.base_function_set(entity), localVector, tmpFunctionalVectors);
     // write local vector to global
     const size_t size = testSpace.mapper().numDofs(entity);
     assert(tmpIndices.size() >= size);
@@ -143,7 +183,7 @@ public:
     for (size_t ii = 0; ii < size; ++ii) {
       systemVector.add_to_entry(tmpIndices[ii], localVector[ii]);
     } // write local matrix to global
-  } // ... assembleLocal(...)
+  }   // ... assembleLocal(...)
 
 private:
   const LocalFunctionalType& localFunctional_;
