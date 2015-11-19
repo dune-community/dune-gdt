@@ -32,51 +32,54 @@ namespace LocalOperator {
 
 
 // forward, to be used in the traits
-template< class BinaryEvaluationImp >
+template< class SourceSpaceImp, class BinaryEvaluationImp >
 class VirtualRefinedCodim0Integral;
 
 
 namespace internal {
 
 
-template< class BinaryEvaluationImp >
+template< class SourceSpaceImp, class BinaryEvaluationImp >
 class VirtualRefinedCodim0IntegralTraits
 {
   static_assert(std::is_base_of< LocalEvaluation::Codim0Interface< typename BinaryEvaluationImp::Traits, 2 >,
                                  BinaryEvaluationImp >::value,
                 "BinaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
 public:
-  typedef VirtualRefinedCodim0Integral< BinaryEvaluationImp > derived_type;
+  typedef VirtualRefinedCodim0Integral< SourceSpaceImp, BinaryEvaluationImp > derived_type;
 };
 
 
 } // namespace internal
 
 
-template< class BinaryEvaluationType >
+template< class SourceSpaceImp, class BinaryEvaluationType >
 class VirtualRefinedCodim0Integral
-  : public LocalOperator::Codim0Interface< internal::VirtualRefinedCodim0IntegralTraits< BinaryEvaluationType > >
+  : public LocalOperator::Codim0Interface< internal::VirtualRefinedCodim0IntegralTraits< SourceSpaceImp, BinaryEvaluationType > >
 {
   static const size_t numTmpObjectsRequired_ = 1;
 public:
-  typedef internal::VirtualRefinedCodim0IntegralTraits< BinaryEvaluationType > Traits;
+  typedef internal::VirtualRefinedCodim0IntegralTraits< SourceSpaceImp, BinaryEvaluationType > Traits;
 
   template< class... Args >
-  explicit VirtualRefinedCodim0Integral(Args&& ...args)
+  explicit VirtualRefinedCodim0Integral(const SourceSpaceImp& space, Args&& ...args)
     : integrand_(std::forward< Args >(args)...)
     , over_integrate_(0)
+    , space_(space)
   {}
 
   template< class... Args >
-  explicit VirtualRefinedCodim0Integral(const int over_integrate, Args&& ...args)
+  explicit VirtualRefinedCodim0Integral(const SourceSpaceImp& space,const int over_integrate, Args&& ...args)
     : integrand_(std::forward< Args >(args)...)
     , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+    , space_(space)
   {}
 
   template< class... Args >
-  explicit VirtualRefinedCodim0Integral(const size_t over_integrate, Args&& ...args)
+  explicit VirtualRefinedCodim0Integral(const SourceSpaceImp& space,const size_t over_integrate, Args&& ...args)
     : integrand_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
+    , space_(space)
   {}
 
   size_t numTmpObjectsRequired() const
@@ -95,13 +98,13 @@ public:
     {
       using Patch = Dune::Patches::Cube::Unconnected::Patch<R, d>;
 
-      auto& gfs = testBase.backend().gfs();
-      typedef typename std::remove_const<decltype(gfs)>::type GridView;
+      auto& gfs = space_.backend();
+      typedef typename DSC::remove_const_reference<decltype(gfs.gridView())>::type GridView;
       using Factory = Dune::Patches::GridViewPatchFactory<GridView>;
 
       Factory factory(gfs.gridView());
 
-      using LFS = Dune::PDELab::LocalFunctionSpace<typename std::remove_const<decltype(gfs)>::type>;
+      using LFS = Dune::PDELab::LocalFunctionSpace<typename DSC::remove_const_reference<decltype(gfs)>::type>;
       LFS lfs(gfs);
 
       using LFSCache = Dune::PDELab::LFSIndexCache<LFS>;
@@ -110,7 +113,7 @@ public:
       //    using LocalView = typename V::template LocalView<LFSCache>;
       //    LocalView localView(v);
 
-      auto patchp = factory.template create<Patch>(makeIteratorRange(&original_entity, &original_entity + 1));
+      auto patchp = factory.template create<Patch>( Dune::Patches::makeIteratorRange(&original_entity, &original_entity + 1));
       unsigned level = 0;
       for (auto subdiv = lfs.finiteElement().subDivisions(); subdiv > 1; subdiv /= 2)
         ++level;
@@ -123,12 +126,13 @@ public:
       const size_t integrand_order = integrand_.order(original_localFunctions, ansatzBase, testBase) + over_integrate_;
       const auto& volumeQuadrature = QuadratureRules< D, d >::rule(original_entity.type(),
                                                                    boost::numeric_cast< int >(integrand_order));
-      for (auto& entity : pv) {
+      for (const auto& entity : Dune::entityRange<0>(pv)) {
         const auto localFunctions = integrand_.localFunctions(entity);
 
 
         const size_t rows = lfs.size();
-        const size_t cols = ansatzBase.size();
+        const size_t cols = lfs.size();
+
       }
 
     } // ... assembleLocal(...)
@@ -163,6 +167,7 @@ public:
 private:
   const BinaryEvaluationType integrand_;
   const size_t over_integrate_;
+  const SourceSpaceImp& space_;
 }; // class VirtualRefinedCodim0Integral
 
 

@@ -82,7 +82,7 @@ namespace internal
     typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >                      AssemblerBaseType;
     typedef Operators::MatrixBased< internal::VirtualRefinedEllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp
                                                               , RangeSpaceImp, GridViewImp > > OperatorBaseType;
-    typedef LocalOperator::VirtualRefinedCodim0Integral< LocalEvaluation::Elliptic< DiffusionType > >        VirtualRefinedLocalOperatorType;
+    typedef LocalOperator::VirtualRefinedCodim0Integral< SourceSpaceImp, LocalEvaluation::Elliptic< DiffusionType > >        VirtualRefinedLocalOperatorType;
     typedef LocalAssembler::Codim0Matrix< VirtualRefinedLocalOperatorType >                                  LocalAssemblerType;
   public:
     typedef internal::VirtualRefinedEllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
@@ -107,7 +107,7 @@ namespace internal
     , OperatorBaseType(this->storage_access(), src_spc)
     , AssemblerBaseType(src_spc)
     , diffusion_(diffusion)
-    , local_operator_(diffusion_)
+    , local_operator_(src_spc, diffusion_)
     , local_assembler_(local_operator_)
     , assembled_(false)
   {
