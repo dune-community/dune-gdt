@@ -31,7 +31,8 @@ namespace Operators
 
 
 // forward
-template <class RealEllipticOperatorImp>
+template< class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp,
+          class GridViewImp, class DiffusionTensorType = void>
 class VirtualRefinedEllipticCG;
 
 
@@ -39,55 +40,67 @@ namespace internal
 {
 
 
-template <class RealEllipticOperatorImp>
-class VirtualRefinedEllipticCGTraits
-{
-public:
-  typedef VirtualRefinedEllipticCG<RealEllipticOperatorImp> derived_type;
-  typedef typename RealEllipticOperatorImp::MatrixType MatrixType;
-  typedef typename RealEllipticOperatorImp::SourceSpaceType SourceSpaceType;
-  typedef typename RealEllipticOperatorImp::RangeSpaceType RangeSpaceType;
-  typedef typename RealEllipticOperatorImp::GridViewType GridViewType;
-  typedef typename RealEllipticOperatorImp::Traits::DiffusionFactorType DiffusionFactorType;
-  typedef SystemAssembler<RangeSpaceType, GridViewType, SourceSpaceType> SystemAssemblerType;
-}; // class VirtualRefinedEllipticCGTraits
+  template< class DiffusionFactorImp
+          , class MatrixImp
+          , class SourceSpaceImp
+          , class RangeSpaceImp
+          , class GridViewImp
+          , class DiffusionTensorType = void >
+  class VirtualRefinedEllipticCGTraits
+  {
+    static_assert(Stuff::is_localizable_function< DiffusionFactorImp >::value,
+                  "DiffusionFactorType has to be derived from Stuff::LocalizableFunctionInterface!");
+    static_assert(Stuff::is_localizable_function< DiffusionTensorType >::value
+                  || std::is_same< void, DiffusionTensorType>::value,
+                  "DiffusionTensorType has to be void or derived from Stuff::LocalizableFunctionInterface!");
+    static_assert(Stuff::LA::is_matrix< MatrixImp >::value,
+                  "MatrixImp has to be derived from Stuff::LA::MatrixInterface!");
+    static_assert(is_space< SourceSpaceImp >::value, "SourceSpaceImp has to be derived from SpaceInterface!");
+    static_assert(is_space< RangeSpaceImp >::value,  "RangeSpaceImp has to be derived from SpaceInterface!");
+  public:
+    typedef VirtualRefinedEllipticCG< DiffusionFactorImp, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, DiffusionTensorType >
+        derived_type;
+    typedef MatrixImp       MatrixType;
+    typedef SourceSpaceImp  SourceSpaceType;
+    typedef RangeSpaceImp   RangeSpaceType;
+    typedef GridViewImp     GridViewType;
+    typedef DiffusionFactorImp DiffusionFactorType;
+  }; // class EllipticCGTraits
 
 
-} // namespace internal
+  } // namespace internal
 
 
-template <class RealEllipticOperatorImp>
-class VirtualRefinedEllipticCG
-    : Stuff::Common::StorageProvider<
-          typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType>,
-      public Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>>,
-      public internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType
-{
+  template< class DiffusionType, class MatrixImp, class SourceSpaceImp, class RangeSpaceImp, class GridViewImp >
+  class VirtualRefinedEllipticCG< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
+    : Stuff::Common::StorageProvider< MatrixImp >
+    , public Operators::MatrixBased< internal::VirtualRefinedEllipticCGTraits< DiffusionType, MatrixImp
+                                                               , SourceSpaceImp, RangeSpaceImp, GridViewImp, void > >
+    , public SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >
+  {
+    typedef Stuff::Common::StorageProvider< MatrixImp >                                        StorageProvider;
+    typedef SystemAssembler< RangeSpaceImp, GridViewImp, SourceSpaceImp >                      AssemblerBaseType;
+    typedef Operators::MatrixBased< internal::VirtualRefinedEllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp
+                                                              , RangeSpaceImp, GridViewImp > > OperatorBaseType;
+    typedef LocalOperator::VirtualRefinedCodim0Integral< LocalEvaluation::Elliptic< DiffusionType > >        VirtualRefinedLocalOperatorType;
+    typedef LocalAssembler::Codim0Matrix< VirtualRefinedLocalOperatorType >                                  LocalAssemblerType;
+  public:
+    typedef internal::VirtualRefinedEllipticCGTraits< DiffusionType, MatrixImp, SourceSpaceImp, RangeSpaceImp, GridViewImp, void >
+        Traits;
 
-public:
-  typedef internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp> Traits;
-  using DiffusionType = typename Traits::DiffusionFactorType;
+    typedef typename Traits::MatrixType      MatrixType;
+    typedef typename Traits::SourceSpaceType SourceSpaceType;
+    typedef typename Traits::RangeSpaceType  RangeSpaceType;
+    typedef typename Traits::GridViewType    GridViewType;
 
-private:
-  typedef
-      typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType AssemblerBaseType;
-  typedef Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>> OperatorBaseType;
-  
-//  typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> RealLocalOperatorType;
-//    typedef LocalAssembler::Codim0Matrix<RealLocalOperatorType> RealLocalAssemblerType;
-  
-  typedef LocalOperator::VirtualRefinedCodim0Integral<LocalEvaluation::Elliptic<DiffusionType>> VirtualRefinedLocalOperatorType;
-  typedef LocalAssembler::VirtualRefinedCodim0Matrix<VirtualRefinedLocalOperatorType> VirtualRefinedLocalAssemblerType;
-  
-  typedef Stuff::Common::StorageProvider<
-      typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType> StorageProvider;
+    using OperatorBaseType::pattern;
 
-public:
-  typedef typename Traits::MatrixType MatrixType;
-  typedef typename Traits::SourceSpaceType SourceSpaceType;
-  typedef typename Traits::RangeSpaceType RangeSpaceType;
-  typedef typename Traits::GridViewType GridViewType;
-
+    static Stuff::LA::SparsityPatternDefault pattern(const RangeSpaceType& range_space,
+                                                     const SourceSpaceType& source_space,
+                                                     const GridViewType& grid_view)
+    {
+      return range_space.compute_volume_pattern(grid_view, source_space);
+    }
 
   VirtualRefinedEllipticCG(const DiffusionType& diffusion, MatrixType& mtrx, const SourceSpaceType& src_spc)
     : StorageProvider(mtrx)
@@ -95,11 +108,10 @@ public:
     , AssemblerBaseType(src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
-//    , local_assembler_(local_operator_)
-    , real_local_assembler_(local_operator_)
+    , local_assembler_(local_operator_)
     , assembled_(false)
   {
-    this->add(real_local_assembler_, this->matrix());
+    this->add(local_assembler_, this->matrix());
   }
   virtual void assemble() override final
   {
@@ -111,8 +123,7 @@ public:
 private:
   const DiffusionType& diffusion_;
   const VirtualRefinedLocalOperatorType local_operator_;
-//  const RealLocalAssemblerType local_assembler_;
-  VirtualRefinedLocalAssemblerType real_local_assembler_;
+  LocalAssemblerType local_assembler_;
   bool assembled_;
 }; // class VirtualRefinedEllipticCG
 
