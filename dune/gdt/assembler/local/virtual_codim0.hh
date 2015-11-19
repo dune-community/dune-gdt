@@ -31,30 +31,31 @@ namespace LocalAssembler
 {
 
 
-template <class Codim0MatrixImp>
-class VirtualCodim0Matrix
+template< class LocalOperatorImp >
+class VirtualRefinedCodim0Matrix
 {
-  //  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
-  //                                 LocalOperatorImp >::value,
-  //                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
+  static_assert(std::is_base_of< LocalOperator::Codim0Interface< typename LocalOperatorImp::Traits >,
+                                 LocalOperatorImp >::value,
+                "LocalOperatorImp has to be derived from LocalOperator::Codim0Interface!");
 public:
-  typedef Codim0MatrixImp Codim0MatrixType;
-  typedef typename Codim0MatrixImp::LocalOperatorType LocalOperatorType;
+  typedef LocalOperatorImp LocalOperatorType;
 
-  explicit VirtualCodim0Matrix(const Codim0MatrixType& assembler)
-    : local_assembler_(assembler)
+  explicit VirtualRefinedCodim0Matrix(const LocalOperatorType& op)
+    : localOperator_(op)
+  {}
+
+  const LocalOperatorType& localOperator() const
   {
+    return localOperator_;
   }
-
-  const LocalOperatorType& localOperator() const { return local_assembler_.localOperator_; }
 
 private:
   static const size_t numTmpObjectsRequired_ = 1;
 
 public:
-  std::vector<size_t> numTmpObjectsRequired() const
+  std::vector< size_t > numTmpObjectsRequired() const
   {
-    return {numTmpObjectsRequired_, localOperator().numTmpObjectsRequired()};
+    return { numTmpObjectsRequired_, localOperator_.numTmpObjectsRequired() };
   }
 
   /**
@@ -64,64 +65,53 @@ public:
    *  \tparam *r          dimRange of testSpace (* == T) or ansatzSpace (* == A)
    *  \tparam *rC         dimRangeCols of testSpace (* == T) or ansatzSpace (* == A)
    *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the
-   * type of systemMatrix
+   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the type of systemMatrix
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template <class T,
-            size_t Td,
-            size_t Tr,
-            size_t TrC,
-            class A,
-            size_t Ad,
-            size_t Ar,
-            size_t ArC,
-            class EntityType,
-            class M,
-            class R>
-  void assembleLocal(const SpaceInterface<T, Td, Tr, TrC>& testSpace,
-                     const SpaceInterface<A, Ad, Ar, ArC>& ansatzSpace,
+  template< class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType, class M, class R >
+  void assembleLocal(const SpaceInterface< T, Td, Tr, TrC >& testSpace,
+                     const SpaceInterface< A, Ad, Ar, ArC >& ansatzSpace,
                      const EntityType& entity,
-                     Dune::Stuff::LA::MatrixInterface<M, R>& systemMatrix,
-                     std::vector<std::vector<Dune::DynamicMatrix<R>>>& tmpLocalMatricesContainer,
-                     std::vector<Dune::DynamicVector<size_t>>& tmpIndicesContainer) const
+                     Dune::Stuff::LA::MatrixInterface< M, R >& systemMatrix,
+                     std::vector< std::vector< Dune::DynamicMatrix< R > > >& tmpLocalMatricesContainer,
+                     std::vector< Dune::DynamicVector< size_t > >& tmpIndicesContainer) const
   {
-    using Patch = Dune::Patches::Cube::Unconnected::Patch<R, Td>;
-    typedef decltype(ansatzSpace.grid_view()) GridView;
-    auto& gfs = ansatzSpace.backend();
-    using Factory = Dune::Patches::GridViewPatchFactory<GridView>;
-
-    Factory factory(gfs.gridView());
-
-    using LFS = Dune::PDELab::LocalFunctionSpace<typename std::remove_const<decltype(gfs)>::type>;
-    LFS lfs(gfs);
-
-    using LFSCache = Dune::PDELab::LFSIndexCache<LFS>;
-    LFSCache lfsCache(lfs);
-
-    //    using LocalView = typename V::template LocalView<LFSCache>;
-    //    LocalView localView(v);
-
-    auto patchp = factory.template create<Patch>(makeIteratorRange(&entity, &entity + 1));
-    unsigned level = 0;
-    for (auto subdiv = lfs.finiteElement().subDivisions(); subdiv > 1; subdiv /= 2)
-      ++level;
-    if (1u << level != lfs.finiteElement().subDivisions())
-      DUNE_THROW(Dune::NotImplemented, "Refinements with non-power-of-2 subdivisions");
-    auto pv = patchp->levelGridView(level);
-    auto is = pv.indexSet();
-
-    for (auto& patch_entity : pv) {
-      local_assembler_.assembleLocal(testSpace, ansatzSpace, patch_entity, systemMatrix, tmpLocalMatricesContainer,
-                                     tmpIndicesContainer);
-    }
-
+    // check
+    assert(tmpLocalMatricesContainer.size() >= 1);
+    assert(tmpLocalMatricesContainer[0].size() >= numTmpObjectsRequired_);
+    assert(tmpLocalMatricesContainer[1].size() >= localOperator_.numTmpObjectsRequired());
+    assert(tmpIndicesContainer.size() >= 2);
+    // get and clear matrix
+    auto& localMatrix = tmpLocalMatricesContainer[0][0];
+    localMatrix *= 0.0;
+    auto& tmpOperatorMatrices = tmpLocalMatricesContainer[1];
+    // apply local operator (result is in localMatrix)
+    localOperator_.apply(testSpace.base_function_set(entity),
+                         ansatzSpace.base_function_set(entity),
+                         localMatrix,
+                         tmpOperatorMatrices);
+    // write local matrix to global
+    auto& globalRows = tmpIndicesContainer[0];
+    auto& globalCols = tmpIndicesContainer[1];
+    const size_t rows = testSpace.mapper().numDofs(entity);
+    const size_t cols = ansatzSpace.mapper().numDofs(entity);
+    assert(globalRows.size() >= rows);
+    assert(globalCols.size() >= cols);
+    testSpace.mapper().globalIndices(entity, globalRows);
+    ansatzSpace.mapper().globalIndices(entity, globalCols);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      const auto& localRow = localMatrix[ii];
+      const size_t globalII = globalRows[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        const size_t globalJJ = globalCols[jj];
+        systemMatrix.add_to_entry(globalII, globalJJ, localRow[jj]);
+      }
+    } // write local matrix to global
   } // ... assembleLocal(...)
 
 private:
-  const Codim0MatrixType& local_assembler_;
-}; // class VirtualCodim0Matrix
-
+  const LocalOperatorType& localOperator_;
+}; // class VirtualRefinedCodim0Matrix
 
 template <class LocalFunctionalImp>
 class VirtualCodim0Vector

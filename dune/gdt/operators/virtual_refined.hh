@@ -72,10 +72,13 @@ private:
   typedef
       typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::SystemAssemblerType AssemblerBaseType;
   typedef Operators::MatrixBased<internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>> OperatorBaseType;
-  typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> RealLocalOperatorType;
-  typedef LocalOperator::VirtualRefinedCodim0Integral<LocalEvaluation::Elliptic<DiffusionType>> LocalOperatorType;
-  typedef LocalAssembler::Codim0Matrix<RealLocalOperatorType> RealLocalAssemblerType;
-  typedef LocalAssembler::VirtualCodim0Matrix<LocalAssemblerType> LocalAssemblerType;
+  
+//  typedef LocalOperator::Codim0Integral<LocalEvaluation::Elliptic<DiffusionType>> RealLocalOperatorType;
+//    typedef LocalAssembler::Codim0Matrix<RealLocalOperatorType> RealLocalAssemblerType;
+  
+  typedef LocalOperator::VirtualRefinedCodim0Integral<LocalEvaluation::Elliptic<DiffusionType>> VirtualRefinedLocalOperatorType;
+  typedef LocalAssembler::VirtualRefinedCodim0Matrix<VirtualRefinedLocalOperatorType> VirtualRefinedLocalAssemblerType;
+  
   typedef Stuff::Common::StorageProvider<
       typename internal::VirtualRefinedEllipticCGTraits<RealEllipticOperatorImp>::MatrixType> StorageProvider;
 
@@ -92,11 +95,11 @@ public:
     , AssemblerBaseType(src_spc)
     , diffusion_(diffusion)
     , local_operator_(diffusion_)
-    , local_assembler_(local_operator_)
-    , real_local_assembler_(local_assembler_)
+//    , local_assembler_(local_operator_)
+    , real_local_assembler_(local_operator_)
     , assembled_(false)
   {
-    this->add(local_assembler_, this->matrix());
+    this->add(real_local_assembler_, this->matrix());
   }
   virtual void assemble() override final
   {
@@ -107,9 +110,9 @@ public:
   } // ... assemble(...)
 private:
   const DiffusionType& diffusion_;
-  const RealLocalOperatorType local_operator_;
-  const RealLocalAssemblerType local_assembler_;
-  const LocalAssemblerType real_local_assembler_;
+  const VirtualRefinedLocalOperatorType local_operator_;
+//  const RealLocalAssemblerType local_assembler_;
+  VirtualRefinedLocalAssemblerType real_local_assembler_;
   bool assembled_;
 }; // class VirtualRefinedEllipticCG
 
