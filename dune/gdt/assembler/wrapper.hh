@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include <dune/common/unused.hh>
+
 #include <dune/stuff/common/tmp-storage.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
@@ -67,7 +69,7 @@ public:
 
   virtual void finalize() override final
   {
-    std::lock_guard< std::mutex > DSC_UNUSED(mutex_guard)(constraints_.mutex_);
+    std::lock_guard< std::mutex > DUNE_UNUSED(mutex_guard)(constraints_.mutex_);
     constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
                                         thread_local_constraints_->dirichlet_DoFs_.end());
   }
