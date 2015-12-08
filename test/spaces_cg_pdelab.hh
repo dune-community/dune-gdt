@@ -19,8 +19,8 @@
   Dune::GDT::Spaces::CG::PdelabBased<Yasp##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACES_CG_PDELAB(pp)                                                                                           \
-  SPACE_CG_PDELAB_SGRID(1, pp, 1)                                                                                      \
-  , SPACE_CG_PDELAB_SGRID(2, 1, pp), SPACE_CG_PDELAB_SGRID(3, 1, pp), SPACE_CG_PDELAB_YASPGRID(1, pp, 1),              \
+  SPACE_CG_PDELAB_SGRID(1, 1, pp)                                                                                      \
+  , SPACE_CG_PDELAB_SGRID(2, 1, pp), SPACE_CG_PDELAB_SGRID(3, 1, pp), SPACE_CG_PDELAB_YASPGRID(1, 1, pp),              \
       SPACE_CG_PDELAB_YASPGRID(2, 1, pp), SPACE_CG_PDELAB_YASPGRID(3, 1, pp)
 
 

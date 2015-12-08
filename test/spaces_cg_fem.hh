@@ -18,8 +18,8 @@
 #define SPACE_CG_FEM_YASPGRID(dd, rr, pp) Dune::GDT::Spaces::CG::FemBased<Yasp##dd##dLeafGridPartType, pp, double, rr>
 
 #define SPACES_CG_FEM(pp)                                                                                              \
-  SPACE_CG_FEM_SGRID(1, pp, 1)                                                                                         \
-  , SPACE_CG_FEM_SGRID(2, 1, pp), SPACE_CG_FEM_SGRID(3, 1, pp), SPACE_CG_FEM_YASPGRID(1, pp, 1),                       \
+  SPACE_CG_FEM_SGRID(1, 1, pp)                                                                                         \
+  , SPACE_CG_FEM_SGRID(2, 1, pp), SPACE_CG_FEM_SGRID(3, 1, pp), SPACE_CG_FEM_YASPGRID(1, 1, pp),                       \
       SPACE_CG_FEM_YASPGRID(2, 1, pp), SPACE_CG_FEM_YASPGRID(3, 1, pp)
 
 
