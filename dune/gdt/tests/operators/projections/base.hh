@@ -42,12 +42,10 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
 
 
 template <class SpaceType, class LocalizableProjectionOperatorType>
-class LocalizableProjectionOperatorBase
+struct LocalizableProjectionOperatorBase
     : public internal::ProjectionOperatorBase<SpaceType, LocalizableProjectionOperatorType>
 {
   typedef internal::ProjectionOperatorBase<SpaceType, LocalizableProjectionOperatorType> BaseType;
-
-public:
   using typename BaseType::RangeFieldType;
 
   void constructible_by_ctor()
@@ -68,11 +66,9 @@ public:
 
 
 template <class SpaceType, class ProjectionOperatorType>
-class ProjectionOperatorBase : public internal::ProjectionOperatorBase<SpaceType, ProjectionOperatorType>
+struct ProjectionOperatorBase : public internal::ProjectionOperatorBase<SpaceType, ProjectionOperatorType>
 {
   typedef internal::ProjectionOperatorBase<SpaceType, ProjectionOperatorType> BaseType;
-
-public:
   using typename BaseType::RangeFieldType;
 
   void constructible_by_ctor()
