@@ -13,6 +13,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/fvector.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
@@ -45,6 +46,7 @@ class DarcyOperatorTraits
   static_assert(std::is_same<typename GridViewImp::ctype, typename FunctionImp::DomainFieldType>::value,
                 "Types do not match!");
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
+  static_assert(FunctionImp::dimRange == FunctionImp::dimRangeCols, "Dimensions do not match!");
 
 public:
   typedef DarcyOperator<GridViewImp, FunctionImp> derived_type;
@@ -91,6 +93,27 @@ public:
   }
 
 private:
+  template <class R, size_t r, size_t rC>
+  struct Helper
+  {
+    static_assert(AlwaysFalse<R>::value, "This should not happen (see check in Traits)!");
+  };
+
+  template <class R, size_t r>
+  struct Helper<R, r, r>
+  {
+    typedef Stuff::Common::FieldMatrix<R, r, r> type;
+  };
+
+  template <class R>
+  struct Helper<R, 1, 1>
+  {
+    typedef Stuff::Common::FieldVector<R, 1> type;
+  };
+
+  typedef typename Helper<typename FunctionImp::RangeFieldType, FunctionImp::dimRange, FunctionImp::dimRangeCols>::type
+      ValueType;
+
   /**
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
@@ -100,11 +123,10 @@ private:
       const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
-    typedef typename Stuff::LA::Container<FieldType>::MatrixType MatrixType;
-    typedef typename Stuff::LA::Container<FieldType>::VectorType VectorType;
+    typedef typename Stuff::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(
         range.space().mapper().size(), range.space().mapper().size(), range.space().compute_volume_pattern());
-    VectorType rhs(range.space().mapper().size());
+    V rhs(range.space().mapper().size());
 
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
@@ -123,14 +145,14 @@ private:
         const auto xx                  = quadrature_it->position();
         const auto quadrature_weight   = quadrature_it->weight();
         const auto integration_element = entity.geometry().integrationElement(xx);
-        const auto function_value      = local_function->evaluate(xx);
+        const ValueType function_value = local_function->evaluate(xx);
         const auto source_gradient     = local_source->jacobian(xx);
         const auto basis_value = basis.evaluate(xx);
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
           rhs.add_to_entry(global_ii,
-                           integration_element * quadrature_weight * -1.0 * function_value
-                               * (source_gradient[0] * basis_value[ii]));
+                           integration_element * quadrature_weight * -1.0
+                               * ((function_value * source_gradient[0]) * basis_value[ii]));
           for (size_t jj = 0; jj < basis.size(); ++jj) {
             const size_t global_jj = range.space().mapper().mapToGlobal(entity, jj);
             lhs.add_to_entry(
@@ -201,21 +223,21 @@ private:
               const auto xx_entity               = intersection.geometryInInside().global(xx_intersection);
               const auto xx_neighbor             = intersection.geometryInOutside().global(xx_intersection);
               // evaluate
-              auto function_value = local_function->evaluate(xx_entity);
+              ValueType function_value = local_function->evaluate(xx_entity);
               function_value *= 0.5;
-              auto function_value_neighbor = local_function_neighbor->evaluate(xx_neighbor);
+              ValueType function_value_neighbor = local_function_neighbor->evaluate(xx_neighbor);
               function_value_neighbor *= 0.5;
               function_value += function_value_neighbor;
-              auto source_gradient = local_source->jacobian(xx_entity);
+              auto source_gradient = local_source->jacobian(xx_entity)[0];
               source_gradient *= 0.5;
-              auto source_gradient_neighbor = local_source_neighbor->jacobian(xx_neighbor);
+              auto source_gradient_neighbor = local_source_neighbor->jacobian(xx_neighbor)[0];
               source_gradient_neighbor *= 0.5;
               source_gradient += source_gradient_neighbor;
               const auto basis_values = local_basis.evaluate(xx_entity);
               const auto basis_value  = basis_values[local_DoF_index];
               // compute integrals
               lhs += integration_factor * weigth * (basis_value * normal);
-              rhs += integration_factor * weigth * -1.0 * function_value * (source_gradient[0] * normal);
+              rhs += integration_factor * weigth * -1.0 * ((function_value * source_gradient) * normal);
             } // do a face quadrature
             // set DoF
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
@@ -239,13 +261,13 @@ private:
             const auto weigth             = quadrature_it->weight();
             const auto xx_entity          = intersection.geometryInInside().global(xx_intersection);
             // evalaute
-            const auto function_value  = local_function->evaluate(xx_entity);
-            const auto source_gradient = local_source->jacobian(xx_entity);
-            const auto basis_values    = local_basis.evaluate(xx_entity);
-            const auto basis_value     = basis_values[local_DoF_index];
+            const ValueType function_value = local_function->evaluate(xx_entity);
+            const auto source_gradient     = local_source->jacobian(xx_entity)[0];
+            const auto basis_values        = local_basis.evaluate(xx_entity);
+            const auto basis_value         = basis_values[local_DoF_index];
             // compute integrals
             lhs += integration_factor * weigth * (basis_value * normal);
-            rhs += integration_factor * weigth * -1.0 * function_value * (source_gradient[0] * normal);
+            rhs += integration_factor * weigth * -1.0 * ((function_value * source_gradient) * normal);
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
