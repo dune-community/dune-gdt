@@ -60,7 +60,7 @@ private:
   typedef Dune::Fem::FunctionSpace< DomainFieldType, RangeFieldType, dimDomain, rangeDim > FunctionSpaceType;
 public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace< FunctionSpaceType, GridPartType, polOrder > BackendType;
-  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType, 1 > MapperType;
+  typedef Mapper::FemDofWrapper< typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize > MapperType;
   typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
   typedef BaseFunctionSet::FemWrapper
       < typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType, dimDomain,
@@ -69,21 +69,21 @@ public:
   static const bool needs_grid_view = false;
   typedef CommunicationChooser< GridViewType, false > CommunicationChooserType;
   typedef typename CommunicationChooserType::Type     CommunicatorType;
-}; // class SpaceWrappedFemContinuousLagrangeTraits
+}; // class FemBasedTraits
 
 
 // untested for the vector-valued case, especially Spaces::CGInterface
-template< class GridPartImp, int polynomialOrder, class RangeFieldImp >
-class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >
-  : public Spaces::CGInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                                GridPartImp::dimension, 1, 1 >
+template< class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t r >
+class FemBased< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 >
+  : public Spaces::CGInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 >,
+                                GridPartImp::dimension, r, 1 >
 {
-  typedef Spaces::CGInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 >,
-                               GridPartImp::dimension, 1, 1 >           BaseType;
-  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > ThisType;
+  typedef Spaces::CGInterface< FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 >,
+                               GridPartImp::dimension, r, 1 >           BaseType;
+  typedef FemBased< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > ThisType;
 
 public:
-  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, 1, 1 > Traits;
+  typedef FemBasedTraits< GridPartImp, polynomialOrder, RangeFieldImp, r, 1 > Traits;
 
   static const int                      polOrder = Traits::polOrder;
   static const size_t                   dimDomain = BaseType::dimDomain;
