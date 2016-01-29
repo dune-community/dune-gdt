@@ -101,6 +101,11 @@ public:
     dirichlet_DoFs_.insert(DoF);
   }
 
+  const std::set< size_t >& dirichlet_DoFs() const
+  {
+    return dirichlet_DoFs_;
+  }
+
   template< class M >
   void apply(Stuff::LA::MatrixInterface< M >& matrix) const
   {
