@@ -145,6 +145,7 @@ private:
 }; // class LocalVolumeIntegralOperator
 
 
+#if 0
 template< class QuaternaryEvaluationType >
 class LocalCouplingIntegralOperator
     : public LocalOperator::Codim1CouplingInterface< internal::LocalCouplingIntegralOperatorTraits< QuaternaryEvaluationType > >
@@ -350,6 +351,7 @@ private:
   const BinaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class LocalBoundaryIntegralOperator
+#endif // 0
 
 
 } // namespace GDT
