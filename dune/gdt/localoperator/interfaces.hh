@@ -61,6 +61,18 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, ret));
   }
+
+  /**
+   * \sa apply2
+   */
+  template <class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  Dune::DynamicMatrix<R> apply2(const Stuff::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
+                                const Stuff::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base) const
+  {
+    Dune::DynamicMatrix<R> ret(test_base.size(), ansatz_base.size(), 0.);
+    apply2(test_base, ansatz_base, ret);
+    return ret;
+  }
 }; // class LocalVolumeTwoFormInterface
 
 
