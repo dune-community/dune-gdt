@@ -151,57 +151,54 @@ private:
 }; // class LocalVolumeIntegralOperator
 
 
-template <class QuaternaryEvaluationType>
+#if 0
+template< class QuaternaryEvaluationType >
 class LocalCouplingIntegralOperator
-    : public LocalOperator::
-          Codim1CouplingInterface<internal::LocalCouplingIntegralOperatorTraits<QuaternaryEvaluationType>>
+    : public LocalOperator::Codim1CouplingInterface< internal::LocalCouplingIntegralOperatorTraits< QuaternaryEvaluationType > >
 {
 public:
-  typedef internal::LocalCouplingIntegralOperatorTraits<QuaternaryEvaluationType> Traits;
+  typedef internal::LocalCouplingIntegralOperatorTraits< QuaternaryEvaluationType > Traits;
 
-  template <class... Args>
-  explicit LocalCouplingIntegralOperator(Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
+  template< class... Args >
+  explicit LocalCouplingIntegralOperator(Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
-  template <class... Args>
-  explicit LocalCouplingIntegralOperator(const int over_integrate, Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
+  template< class... Args >
+  explicit LocalCouplingIntegralOperator(const int over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
-  template <class... Args>
-  explicit LocalCouplingIntegralOperator(const size_t over_integrate, Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  template< class... Args >
+  explicit LocalCouplingIntegralOperator(const size_t over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+  {}
 
-  template <class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
-            size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& entityTestBase,
-              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& entityAnsatzBase,
-              const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& neighborTestBase,
-              const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& neighborAnsatzBase,
-              const IntersectionType& intersection, Dune::DynamicMatrix<R>& entityEntityRet,
-              Dune::DynamicMatrix<R>& neighborNeighborRet, Dune::DynamicMatrix<R>& entityNeighborRet,
-              Dune::DynamicMatrix<R>& neighborEntityRet) const
+  template< class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
+  void apply2(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& entityTestBase,
+             const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& entityAnsatzBase,
+             const Stuff::LocalfunctionSetInterface< N, D, d, R, rT, rCT >& neighborTestBase,
+             const Stuff::LocalfunctionSetInterface< N, D, d, R, rA, rCA >& neighborAnsatzBase,
+             const IntersectionType& intersection,
+             Dune::DynamicMatrix< R >& entityEntityRet,
+             Dune::DynamicMatrix< R >& neighborNeighborRet,
+             Dune::DynamicMatrix< R >& entityNeighborRet,
+             Dune::DynamicMatrix< R >& neighborEntityRet) const
   {
     // local inducing function
-    const auto& entity          = entityTestBase.entity();
+    const auto& entity = entityTestBase.entity();
     const auto localFunctionsEn = evaluation_.localFunctions(entity);
-    const auto& neighbor        = neighborTestBase.entity();
+    const auto& neighbor = neighborTestBase.entity();
     const auto localFunctionsNe = evaluation_.localFunctions(neighbor);
     // quadrature
-    const size_t integrand_order =
-        evaluation_.order(
-            localFunctionsEn, localFunctionsNe, entityTestBase, entityAnsatzBase, neighborTestBase, neighborAnsatzBase)
-        + over_integrate_;
-    const auto& faceQuadrature =
-        QuadratureRules<D, d - 1>::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
+    const size_t integrand_order = evaluation_.order(localFunctionsEn, localFunctionsNe,
+                                                     entityTestBase, entityAnsatzBase,
+                                                     neighborTestBase, neighborAnsatzBase) + over_integrate_;
+    const auto& faceQuadrature = QuadratureRules< D, d - 1 >::rule(intersection.type(),
+                                                                   boost::numeric_cast< int >(integrand_order));
     // check matrices
     entityEntityRet *= 0.0;
     neighborNeighborRet *= 0.0;
@@ -220,24 +217,20 @@ public:
     assert(neighborEntityRet.rows() >= rowsEn);
     assert(neighborEntityRet.cols() >= colsEn);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
-    auto& entityEntityVals     = tmpLocalMatrices[0];
+    auto& entityEntityVals = tmpLocalMatrices[0];
     auto& neighborNeighborVals = tmpLocalMatrices[1];
-    auto& entityNeighborVals   = tmpLocalMatrices[2];
-    auto& neighborEntityVals   = tmpLocalMatrices[3];
+    auto& entityNeighborVals = tmpLocalMatrices[2];
+    auto& neighborEntityVals = tmpLocalMatrices[3];
     // loop over all quadrature points
     for (auto quadPoint = faceQuadrature.begin(); quadPoint != faceQuadrature.end(); ++quadPoint) {
-      const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
-      const auto integrationFactor                 = intersection.geometry().integrationElement(localPoint);
-      const auto quadratureWeight                  = quadPoint->weight();
+      const Dune::FieldVector< D, d - 1 > localPoint = quadPoint->position();
+      const auto integrationFactor = intersection.geometry().integrationElement(localPoint);
+      const auto quadratureWeight = quadPoint->weight();
       // evaluate local
-      evaluation_.evaluate(localFunctionsEn,
-                           localFunctionsNe,
-                           entityTestBase,
-                           entityAnsatzBase,
-                           neighborTestBase,
-                           neighborAnsatzBase,
-                           intersection,
-                           localPoint,
+      evaluation_.evaluate(localFunctionsEn, localFunctionsNe,
+                           entityTestBase, entityAnsatzBase,
+                           neighborTestBase, neighborAnsatzBase,
+                           intersection, localPoint,
                            entityEntityVals,
                            neighborNeighborVals,
                            entityNeighborVals,
@@ -253,9 +246,9 @@ public:
       assert(neighborEntityVals.cols() >= colsEn);
       // loop over all entity test basis functions
       for (size_t ii = 0; ii < rowsEn; ++ii) {
-        auto& entityEntityret_row         = entityEntityRet[ii];
-        const auto& entityEntityValsRow   = entityEntityVals[ii];
-        auto& entityNeighborret_row       = entityNeighborRet[ii];
+        auto& entityEntityret_row = entityEntityRet[ii];
+        const auto& entityEntityValsRow = entityEntityVals[ii];
+        auto& entityNeighborret_row = entityNeighborRet[ii];
         const auto& entityNeighborValsRow = entityNeighborVals[ii];
         // loop over all entity ansatz basis functions
         for (size_t jj = 0; jj < colsEn; ++jj) {
@@ -268,10 +261,10 @@ public:
       } // loop over all entity test basis functions
       // loop over all neighbor test basis functions
       for (size_t ii = 0; ii < rowsNe; ++ii) {
-        auto& neighborNeighborret_row       = neighborNeighborRet[ii];
+        auto& neighborNeighborret_row = neighborNeighborRet[ii];
         const auto& neighborNeighborValsRow = neighborNeighborVals[ii];
-        auto& neighborEntityret_row         = neighborEntityRet[ii];
-        const auto& neighborEntityValsRow   = neighborEntityVals[ii];
+        auto& neighborEntityret_row = neighborEntityRet[ii];
+        const auto& neighborEntityValsRow = neighborEntityVals[ii];
         // loop over all neighbor ansatz basis functions
         for (size_t jj = 0; jj < colsNe; ++jj) {
           neighborNeighborret_row[jj] += neighborNeighborValsRow[jj] * integrationFactor * quadratureWeight;
@@ -290,48 +283,46 @@ private:
 }; // class LocalCouplingIntegralOperator
 
 
-template <class BinaryEvaluationType>
+template< class BinaryEvaluationType >
 class LocalBoundaryIntegralOperator
-    : public LocalOperator::Codim1BoundaryInterface<internal::LocalBoundaryIntegralOperatorTraits<BinaryEvaluationType>>
+  : public LocalOperator::Codim1BoundaryInterface< internal::LocalBoundaryIntegralOperatorTraits< BinaryEvaluationType > >
 {
 public:
-  typedef internal::LocalBoundaryIntegralOperatorTraits<BinaryEvaluationType> Traits;
+  typedef internal::LocalBoundaryIntegralOperatorTraits< BinaryEvaluationType > Traits;
 
-  template <class... Args>
-  LocalBoundaryIntegralOperator(Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
+  template< class... Args >
+  LocalBoundaryIntegralOperator(Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
-  template <class... Args>
-  LocalBoundaryIntegralOperator(const int over_integrate, Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
+  template< class... Args >
+  LocalBoundaryIntegralOperator(const int over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
-  template <class... Args>
-  LocalBoundaryIntegralOperator(const size_t over_integrate, Args&&... args)
-    : evaluation_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  template< class... Args >
+  LocalBoundaryIntegralOperator(const size_t over_integrate, Args&& ...args)
+    : evaluation_(std::forward< Args >(args)...)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+  {}
 
-  template <class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret) const
+  template< class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
+  void apply2(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& testBase,
+             const Stuff::LocalfunctionSetInterface< E, D, d, R, rA, rCA >& ansatzBase,
+             const IntersectionType& intersection,
+             Dune::DynamicMatrix< R >& ret) const
   {
     // local inducing function
-    const auto& entity        = testBase.entity();
+    const auto& entity = testBase.entity();
     const auto localFunctions = evaluation_.localFunctions(entity);
     // quadrature
-    typedef Dune::QuadratureRules<D, d - 1> FaceQuadratureRules;
-    typedef Dune::QuadratureRule<D, d - 1> FaceQuadratureType;
+    typedef Dune::QuadratureRules< D, d - 1 > FaceQuadratureRules;
+    typedef Dune::QuadratureRule< D, d - 1 > FaceQuadratureType;
     const auto integrand_order = evaluation_.order(localFunctions, testBase, ansatzBase) + over_integrate_;
-    const FaceQuadratureType& faceQuadrature =
-        FaceQuadratureRules::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
+    const FaceQuadratureType& faceQuadrature = FaceQuadratureRules::rule(intersection.type(),
+                                                                         boost::numeric_cast< int >(integrand_order));
     // check matrix and tmp storage
     ret *= 0.0;
     const size_t rows = testBase.size();
@@ -339,12 +330,12 @@ public:
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
     assert(tmpLocalMatrices.size() >= numTmpObjectsRequired_);
-    Dune::DynamicMatrix<R>& localMatrix = tmpLocalMatrices[0];
+    Dune::DynamicMatrix< R >& localMatrix = tmpLocalMatrices[0];
     // loop over all quadrature points
     for (auto quadPoint = faceQuadrature.begin(); quadPoint != faceQuadrature.end(); ++quadPoint) {
-      const Dune::FieldVector<D, d - 1> localPoint = quadPoint->position();
-      const R integrationFactor                    = intersection.geometry().integrationElement(localPoint);
-      const R quadratureWeight                     = quadPoint->weight();
+      const Dune::FieldVector< D, d - 1 > localPoint = quadPoint->position();
+      const R integrationFactor = intersection.geometry().integrationElement(localPoint);
+      const R quadratureWeight = quadPoint->weight();
       // evaluate local
       evaluation_.evaluate(localFunctions, testBase, ansatzBase, intersection, localPoint, localMatrix);
       // compute integral
@@ -352,7 +343,7 @@ public:
       assert(localMatrix.cols() >= cols);
       // loop over all test basis functions
       for (size_t ii = 0; ii < rows; ++ii) {
-        auto& ret_row              = ret[ii];
+        auto& ret_row = ret[ii];
         const auto& localMatrixRow = localMatrix[ii];
         // loop over all ansatz basis functions
         for (size_t jj = 0; jj < cols; ++jj) {
@@ -366,6 +357,7 @@ private:
   const BinaryEvaluationType evaluation_;
   const size_t over_integrate_;
 }; // class LocalBoundaryIntegralOperator
+#endif // 0
 
 
 } // namespace GDT
