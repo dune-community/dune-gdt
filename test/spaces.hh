@@ -80,7 +80,8 @@ public:
   void fulfills_interface() const
   {
     static_assert(Dune::GDT::is_space<SpaceType>::value, "");
-    using namespace Stuff;
+    using namespace Dune::Stuff;
+    using namespace Dune::GDT;
     // static checks
     // * as the derived type
     typedef typename SpaceType::Traits Traits;
@@ -243,7 +244,9 @@ public:
     */
   void mapper_fulfills_interface() const
   {
-    using namespace Stuff;
+    using namespace Dune;
+    using namespace Dune::Stuff;
+    using namespace Dune::GDT;
     // static checks
     // * as the derived type
     typedef typename SpaceType::MapperType MapperType;
@@ -309,7 +312,9 @@ public:
     */
   void basefunctionset_fulfills_interface() const
   {
-    using namespace Stuff;
+    using namespace Dune;
+    using namespace Dune::Stuff;
+    using namespace Dune::GDT;
     // static checks
     // * as the derived type
     typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
