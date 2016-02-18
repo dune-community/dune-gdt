@@ -71,6 +71,32 @@ public:
 }; // class MapperInterface
 
 
+class IsProductMapper
+{
+};
+
+template< class Traits >
+class ProductMapperInterface
+  : public MapperInterface< Traits >
+  , IsProductMapper
+{
+  typedef MapperInterface< Traits > BaseType;
+public:
+  using typename BaseType::EntityType;
+
+  void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(factor_index, entity, ret));
+  }
+
+  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
+  {
+    CHECK_CRTP(this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor));
+    return this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor);
+  }
+}; // class ProductMapperInterface
+
+
 } // namespace GDT
 } // namespace Dune
 
