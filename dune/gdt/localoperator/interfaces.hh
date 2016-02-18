@@ -146,6 +146,32 @@ public:
 }; // class LocalBoundaryTwoFormInterface
 
 
+template <class Traits>
+class LocalCouplingOperatorInterface : Stuff::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>
+{
+public:
+  template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
+  void apply(const SourceType& source, const IntersectionType& intersection,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor)
+  {
+    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor);
+  }
+};
+
+template <class Traits>
+class LocalBoundaryOperatorInterface : Stuff::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>
+{
+public:
+  template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
+  void apply(const SourceType& source, const IntersectionType& intersection,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity)
+  {
+    this->as_imp().apply(source, intersection, local_range_entity);
+  }
+};
+
+
 namespace internal {
 
 
