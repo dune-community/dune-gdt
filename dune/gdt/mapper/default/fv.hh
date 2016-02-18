@@ -47,61 +47,6 @@ public:
 } // namespace internal
 
 
-template< class GridViewImp >
-class FiniteVolume< GridViewImp, 1, 1 >
-  : public MapperInterface< internal::FiniteVolumeTraits< GridViewImp, 1, 1 > >
-{
-  typedef MapperInterface< internal::FiniteVolumeTraits< GridViewImp, 1, 1 > > InterfaceType;
-public:
-  typedef internal::FiniteVolumeTraits< GridViewImp, 1, 1 > Traits;
-  typedef typename Traits::GridViewType                     GridViewType;
-  typedef typename Traits::BackendType                      BackendType;
-  typedef typename Traits::EntityType                       EntityType;
-
-  FiniteVolume(const GridViewType& grid_view)
-    : backend_(grid_view.indexSet())
-  {}
-
-  const BackendType& backend() const
-  {
-    return backend_;
-  }
-
-  size_t size() const
-  {
-    return backend_.size(0);
-  }
-
-  size_t numDofs(const EntityType& /*entity*/) const
-  {
-    return 1;
-  }
-
-  size_t maxNumDofs() const
-  {
-    return 1;
-  }
-
-  void globalIndices(const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
-  {
-    if (ret.size() < 1)
-      ret.resize(1);
-    ret[0] = mapToGlobal(entity, 0);
-  } // ... globalIndices(...)
-
-  using InterfaceType::globalIndices;
-
-  size_t mapToGlobal(const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
-  {
-    assert(localIndex == 0);
-    return backend_.index(entity);
-  }
-
-private:
-  const BackendType& backend_;
-}; // class FiniteVolume< ..., 1, 1 >
-
-
 template< class GridViewImp, size_t rangeDim >
 class FiniteVolume< GridViewImp, rangeDim, 1 >
   : public MapperInterface< internal::FiniteVolumeTraits< GridViewImp, rangeDim, 1 > >
@@ -158,6 +103,61 @@ public:
 private:
   const BackendType& backend_;
 }; // class FiniteVolume< ..., rangeDim, 1 >
+
+
+template< class GridViewImp >
+class FiniteVolume< GridViewImp, 1, 1 >
+  : public MapperInterface< internal::FiniteVolumeTraits< GridViewImp, 1, 1 > >
+{
+  typedef MapperInterface< internal::FiniteVolumeTraits< GridViewImp, 1, 1 > > InterfaceType;
+public:
+  typedef internal::FiniteVolumeTraits< GridViewImp, 1, 1 > Traits;
+  typedef typename Traits::GridViewType                     GridViewType;
+  typedef typename Traits::BackendType                      BackendType;
+  typedef typename Traits::EntityType                       EntityType;
+
+  FiniteVolume(const GridViewType& grid_view)
+    : backend_(grid_view.indexSet())
+  {}
+
+  const BackendType& backend() const
+  {
+    return backend_;
+  }
+
+  size_t size() const
+  {
+    return backend_.size(0);
+  }
+
+  size_t numDofs(const EntityType& /*entity*/) const
+  {
+    return 1;
+  }
+
+  size_t maxNumDofs() const
+  {
+    return 1;
+  }
+
+  void globalIndices(const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
+  {
+    if (ret.size() < 1)
+      ret.resize(1);
+    ret[0] = mapToGlobal(entity, 0);
+  } // ... globalIndices(...)
+
+  using InterfaceType::globalIndices;
+
+  size_t mapToGlobal(const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
+  {
+    assert(localIndex == 0);
+    return backend_.index(entity);
+  }
+
+private:
+  const BackendType& backend_;
+}; // class FiniteVolume< ..., 1, 1 >
 
 
 } // namespace Mapper
