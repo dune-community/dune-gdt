@@ -3,5 +3,5 @@
 # Copyright holders: Felix Schindler
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(test EXCLUDE_FROM_ALL)
 

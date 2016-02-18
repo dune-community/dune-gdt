@@ -64,7 +64,6 @@ add_subdirectory(m4)
 add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
-add_subdirectory(test EXCLUDE_FROM_ALL)
 
 # finalize the dune project, e.g., generate config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
