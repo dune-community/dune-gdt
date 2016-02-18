@@ -25,6 +25,8 @@
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
+#include <dune/gdt/mapper/interface.hh>
+
 #include "constraints.hh"
 
 namespace Dune {
@@ -463,6 +465,48 @@ public:
 
   /* @} */
 }; // class SpaceInterface
+
+class IsProductSpace
+{};
+
+/** Interface for function spaces that can be written as a product of several function spaces with the same domain. For
+ * example, a function space containing all functions f: \mathbb{R}^d \to \mathbb{R}^r can also be seen as r times the
+ * function space containing all functions f: \mathbb{R}^d \to \mathbb{R}.
+ * rangeDim and rangeDimCols are the respective dimensions of the product function space. If rangeDimCols is not the
+ * same for all factors, e.g. if the functions map to \mathbb{R} \times \mathbb{R}^{2 \times 2}, the range is regarded
+ * as a vector, i.e. rangeDimCols has to be specified as 1 and the dimensions have to be added up in rangeDim. In the
+ * example, this gives rangeDim = 5;
+ * */
+template< class Traits, size_t domainDim, size_t rangeDim, rangeDimCols = 1 >
+class ProductSpaceInterface
+    : public SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols >
+    , IsProductSpace
+{
+  typedef SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols > BaseType;
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::PatternType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::MapperType;
+  static_assert(std::is_base_of< IsProductMapper, MapperType>::value, "MapperType has to be derived from ProductMapperInterface");
+  typedef typename Traits::SpaceTupleType SpaceTupleType;
+  static const size_t num_factors = std::tuple_size< SpaceTupleType >::value;
+
+  /**
+   * \defgroup interface This method has to be implemented in addition to the SpaceInterface methods!''
+   * @{
+   **/
+  template< size_t ii >
+  const typename std::tuple_element< ii, SpaceTupleType >::type& factor() const
+  {
+    static_assert(ii < num_factors, "This factor does not exist!") ;
+    CHECK_CRTP(this->as_imp().template factor< ii >());
+    return this->as_imp().template factor< ii >();
+  }
+  /**
+    }
+   **/
+}; // class ProductSpaceInterface< ... >
 
 
 template< class Traits, size_t d, size_t r, size_t rC, size_t codim = 0 >
