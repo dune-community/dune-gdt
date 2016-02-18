@@ -6,8 +6,6 @@
 #ifndef DUNE_GDT_SPACES_FV_DEFAULT_HH
 #define DUNE_GDT_SPACES_FV_DEFAULT_HH
 
-#include <dune/common/deprecated.hh>
-
 #include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/basefunctionset/default/fv.hh>
@@ -125,7 +123,7 @@ public:
     return *communicator_;
   }
 
-private:
+protected:
   const GridViewType grid_view_;
   const MapperType mapper_;
   const std::unique_ptr< CommunicatorType > communicator_;
