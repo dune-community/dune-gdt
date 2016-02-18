@@ -8,12 +8,12 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/tests/linearelliptic/eocexpectations.hh>
-#include <dune/gdt/tests/linearelliptic/problems/AO2013.hh>
-#include <dune/gdt/tests/linearelliptic/problems/ER2007.hh>
-#include <dune/gdt/tests/linearelliptic/problems/ESV2007.hh>
-#include <dune/gdt/tests/linearelliptic/problems/mixedboundary.hh>
-#include <dune/gdt/tests/linearelliptic/problems/spe10.hh>
+#include "eocexpectations.hh"
+#include "problems/AO2013.hh"
+#include "problems/ER2007.hh"
+#include "problems/ESV2007.hh"
+#include "problems/mixedboundary.hh"
+#include "problems/spe10.hh"
 
 
 typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 2>>,

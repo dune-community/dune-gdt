@@ -6,8 +6,8 @@
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/main.hxx>
 
-#include "spaces_fv.hh"
-#include "spaces_fv_default.hh"
+#include "spaces/fv.hh"
+#include "spaces/fv/default.hh"
 
 
 typedef testing::Types<SPACES_FV

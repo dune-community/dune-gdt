@@ -8,7 +8,7 @@
 
 #include <dune/gdt/spaces/rt/pdelab.hh>
 
-#include "grids.hh"
+#include <dune/gdt/test/grids.hh>
 
 
 #define SPACE_RT_PDELAB_SGRID(dd) Dune::GDT::Spaces::RT::PdelabBased<S##dd##dLeafGridViewType, 0, double, dd>

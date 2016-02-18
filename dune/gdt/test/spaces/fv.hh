@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_TEST_SPACES_FV_HH
 #define DUNE_GDT_TEST_SPACES_FV_HH
 
-#include "spaces.hh"
+#include "base.hh"
 
 
 template <class SpaceType>

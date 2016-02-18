@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/tests/stationary-eocstudy.hh>
+#include <dune/gdt/test/stationary-eocstudy.hh>
 
 #include "base.hh"
 
@@ -69,8 +69,8 @@ public:
 
 template <class G, class R = double, int r = 1>
 class ER2007TestCase
-    : public Tests::StationaryTestCase<G, LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity,
-                                                                        typename G::ctype, G::dimension, R, r>>
+    : public Test::StationaryTestCase<G, LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity,
+                                                                       typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -81,7 +81,7 @@ public:
   typedef LinearElliptic::ER2007Problem<E, D, d, R, r> ProblemType;
 
 private:
-  typedef Tests::StationaryTestCase<G, ProblemType> BaseType;
+  typedef Test::StationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

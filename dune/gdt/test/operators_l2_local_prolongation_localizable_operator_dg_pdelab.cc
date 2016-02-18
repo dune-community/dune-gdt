@@ -5,11 +5,10 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include <dune/gdt/tests/operators/prolongations/l2.hh>
+#include "operators/prolongations/l2.hh"
+#include "spaces/dg/pdelab.hh"
 
-#include "spaces_dg_pdelab.hh"
-
-using namespace Dune::GDT::Tests;
+using namespace Dune::GDT::Test;
 
 #if HAVE_DUNE_PDELAB
 

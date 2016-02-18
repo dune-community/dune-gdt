@@ -8,8 +8,8 @@
 // This one has to come first (includes the config.h)!
 #include <dune/stuff/test/main.hxx>
 
-#include "spaces_rt.hh"
-#include "spaces_rt_pdelab.hh"
+#include "spaces/rt.hh"
+#include "spaces/rt/pdelab.hh"
 
 
 typedef testing::Types<SPACES_RT_PDELAB

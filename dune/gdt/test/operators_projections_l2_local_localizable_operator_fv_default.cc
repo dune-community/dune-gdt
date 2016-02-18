@@ -5,11 +5,10 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include <dune/gdt/tests/operators/projections/l2.hh>
+#include "operators/projections/l2.hh"
+#include "spaces/fv/default.hh"
 
-#include "spaces_fv_default.hh"
-
-using namespace Dune::GDT::Tests;
+using namespace Dune::GDT::Test;
 
 
 typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRID(3, 1), SPACE_FV_YASPGRID(1, 1),

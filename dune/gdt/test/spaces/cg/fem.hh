@@ -8,7 +8,7 @@
 
 #include <dune/gdt/spaces/cg/fem.hh>
 
-#include "grids.hh"
+#include <dune/gdt/test/grids.hh>
 
 #if HAVE_DUNE_FEM
 
