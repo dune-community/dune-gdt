@@ -44,6 +44,17 @@ public:
 }; // class FVInterface
 
 
+template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
+class ProductFVInterface : public ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
+{
+  typedef ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
+
+public:
+  using BaseType::compute_pattern;
+  using BaseType::local_constraints;
+}; // class ProductFVInterface
+
+
 } // namespace Spaces
 namespace internal {
 
@@ -69,9 +80,20 @@ struct is_fv_space
 {
 };
 
-
 template <class S>
 struct is_fv_space<S, false> : public std::false_type
+{
+};
+
+template <class S, bool candidate = internal::is_fv_space_helper<S>::is_candidate>
+struct is_product_fv_space
+    : public std::is_base_of<Spaces::ProductFVInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>,
+                             S>
+{
+};
+
+template <class S>
+struct is_product_fv_space<S, false> : public std::false_type
 {
 };
 
