@@ -9,6 +9,7 @@
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
 
 #include <memory>
+#include <vector>
 #include <type_traits>
 
 #include <dune/common/exceptions.hh>
@@ -16,16 +17,69 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
+#include <dune/stuff/common/exceptions.hh>
+#include <dune/stuff/common/memory.hh>
+#include <dune/stuff/common/ranges.hh>
+#include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/productinterface.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 
 #include "local.hh"
 
 namespace Dune {
 namespace GDT {
+
+// forward
+template <class SpaceImp, class VectorImp>
+class ConstDiscreteFunction;
+
+
+namespace internal {
+
+
+template <size_t ii, class SpaceImp, class VectorImp, class Traits, bool is_factor_space = false>
+struct visualize_helper
+{
+  static void visualize_factor(const std::string filename, const bool subsampling,
+                               const VTK::OutputType vtk_output_type, const DS::PerThreadValue<SpaceImp>& space,
+                               const VectorImp& vector)
+  {
+    static_assert(ii == 0, "SpaceImp is not a product space, so there is no factor other than 0.");
+    ConstDiscreteFunction<SpaceImp, VectorImp> discrete_function(space, vector);
+    discrete_function.visualize(filename, subsampling, vtk_output_type);
+  }
+};
+
+template <size_t ii, class SpaceImp, class VectorImp, class Traits>
+struct visualize_helper<ii, SpaceImp, VectorImp, Traits, true>
+{
+  static void visualize_factor(const std::string filename, const bool subsampling,
+                               const VTK::OutputType vtk_output_type, const DS::PerThreadValue<SpaceImp>& space,
+                               const VectorImp& vector)
+  {
+    static_assert(ii < SpaceImp::num_factors, "This factor does not exist.");
+    const auto& factor_space = space->template factor<ii>();
+    VectorImp factor_vector(factor_space.mapper().size());
+    const auto it_end = space->grid_view().template end<0>();
+    for (auto it = space->grid_view().template begin<0>(); it != it_end; ++it) {
+      const auto& entity = *it;
+      for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
+        factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
+            vector[space->product_mapper().mapToGlobal(ii, entity, jj)];
+    }
+    ConstDiscreteFunction<typename SpaceImp::FactorSpaceType, VectorImp> factor_discrete_function(factor_space,
+                                                                                                  factor_vector);
+    factor_discrete_function.visualize(filename, subsampling, vtk_output_type);
+  }
+};
+
+
+} // namespace internal
 
 
 template <class SpaceImp, class VectorImp>
@@ -45,9 +99,10 @@ class ConstDiscreteFunction
 
 public:
   typedef SpaceImp SpaceType;
+  typedef typename SpaceImp::Traits SpaceTraits;
   typedef VectorImp VectorType;
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::LocalfunctionType LocalfunctionType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
 
   typedef ConstLocalDiscreteFunction<SpaceType, VectorType> ConstLocalDiscreteFunctionType;
 
@@ -105,12 +160,27 @@ public:
     return local_discrete_function(entity);
   }
 
+  /**
+   * \brief Visualizes the function using Dune::Stuff::LocalizableFunctionInterface::visualize on the grid view
+   *        associated with the space.
+   * \sa    Dune::Stuff::LocalizableFunctionInterface::visualize
+   * \note  Subsampling is disabled for Finite Volume functions and enabled by default for functions of order higher
+   *        than one.
+   */
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    BaseType::template visualize<typename SpaceType::GridViewType>(
-        space().grid_view(), filename, subsampling, vtk_output_type);
-  } // ... visualize(...)
+    redirect_visualize(space(), filename, subsampling, vtk_output_type);
+  }
+
+  template <size_t ii>
+  void visualize_factor(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  {
+    internal::
+        visualize_helper<ii, SpaceType, VectorType, SpaceTraits, std::is_base_of<IsProductSpace, SpaceType>::value>::
+            visualize_factor(filename, subsampling, vtk_output_type, space_, vector_);
+  } // ... visualize_factor< ii >(...)
 
   bool dofs_valid() const
   {
@@ -118,6 +188,29 @@ public:
   }
 
 protected:
+  template <class S, size_t d, size_t r, size_t rC>
+  void redirect_visualize(const SpaceInterface<S, d, r, rC>& /*space*/, const std::string filename,
+                          const bool subsampling, const VTK::OutputType vtk_output_type) const
+  {
+    BaseType::template visualize<typename SpaceType::GridViewType>(
+        space_->grid_view(), filename, subsampling, vtk_output_type);
+  } // ... redirect_visualize(...)
+
+
+  // TODO: Why is this specialization needed for FV spaces??? Performance?
+  template <class S, size_t d, size_t r, size_t rC>
+  void redirect_visualize(const Spaces::FVInterface<S, d, r, rC>& space, const std::string filename,
+                          const bool /*subsampling*/, const VTK::OutputType vtk_output_type) const
+  {
+    const auto& grid_view = space.grid_view();
+    std::vector<typename Spaces::FVInterface<S, d, r, rC>::RangeFieldType> values(grid_view.indexSet().size(0));
+    for (const auto& entity : DSC::entityRange(grid_view))
+      values[grid_view.indexSet().index(entity)] = vector_[space.mapper().mapToGlobal(entity, 0)];
+    VTKWriter<typename Spaces::FVInterface<S, d, r, rC>::GridViewType> vtk_writer(grid_view);
+    vtk_writer.addCellData(values, this->name());
+    vtk_writer.write(filename, vtk_output_type);
+  } // ... redirect_visualize< Spaces::FV, ... >(...)
+
   const DS::PerThreadValue<SpaceType> space_;
 
 private:
@@ -238,7 +331,7 @@ struct is_const_discrete_function_helper
 {
   DSC_has_typedef_initialize_once(SpaceType) DSC_has_typedef_initialize_once(VectorType)
 
-      static const bool is_candidate = DSC_has_typedef(SpaceType)<D>::value && DSC_has_typedef(SpaceType)<D>::value;
+      static const bool is_candidate = DSC_has_typedef(SpaceType)<D>::value && DSC_has_typedef(VectorType)<D>::value;
 };
 
 
