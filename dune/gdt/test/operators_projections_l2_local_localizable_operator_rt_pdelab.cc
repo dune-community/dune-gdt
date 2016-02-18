@@ -5,11 +5,10 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include <dune/gdt/tests/operators/projections/l2.hh>
+#include "operators/projections/l2.hh"
+#include "spaces/rt/pdelab.hh"
 
-#include "spaces_rt_pdelab.hh"
-
-using namespace Dune::GDT::Tests;
+using namespace Dune::GDT::Test;
 
 #if HAVE_DUNE_PDELAB
 

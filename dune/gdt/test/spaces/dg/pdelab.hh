@@ -8,7 +8,7 @@
 
 #include <dune/gdt/playground/spaces/dg/pdelab.hh>
 
-#include "grids.hh"
+#include <dune/gdt/test/grids.hh>
 
 #if HAVE_DUNE_PDELAB
 

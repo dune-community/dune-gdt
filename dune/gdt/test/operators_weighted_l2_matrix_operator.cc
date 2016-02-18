@@ -3,16 +3,14 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-// this one has to come first
-#include <dune/stuff/test/main.hxx>
+#include <dune/stuff/test/main.hxx> // <- this one has to come first
 
-#include "spaces_fv_default.hh"
-#include "spaces_dg_fem.hh"
-#include "spaces_cg_pdelab.hh"
+#include "operators/weighted-l2.hh"
+#include "spaces/fv/default.hh"
+#include "spaces/dg/fem.hh"
+#include "spaces/cg/pdelab.hh"
 
-#include <dune/gdt/tests/operators/weighted-l2.hh>
-
-using namespace Dune::GDT::Tests;
+using namespace Dune::GDT::Test;
 
 
 #if HAVE_DUNE_FEM

@@ -12,7 +12,7 @@
 
 #include <dune/gdt/spaces/rt/interface.hh>
 
-#include "spaces.hh"
+#include "base.hh"
 
 
 template< class SpaceType >

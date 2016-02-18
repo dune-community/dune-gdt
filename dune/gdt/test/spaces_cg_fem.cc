@@ -5,8 +5,8 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "spaces_cg.hh"
-#include "spaces_cg_fem.hh"
+#include "spaces/cg.hh"
+#include "spaces/cg/fem.hh"
 
 #if HAVE_DUNE_FEM
 

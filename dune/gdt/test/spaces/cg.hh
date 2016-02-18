@@ -20,7 +20,7 @@
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
-#include "spaces.hh"
+#include "base.hh"
 
 
 template< class SpaceType >
@@ -68,14 +68,14 @@ struct P1Q1_CG_Space
     EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
     typedef typename SpaceType::RangeFieldType RangeFieldType;
-    Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
+    Dune::Stuff::Grid::BoundaryInfos::AllDirichlet< IntersectionType > boundary_info;
     std::set< size_t > local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
-    Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_set(boundary_info,
-                                                                               this->space_.mapper().size(),
-                                                                               true);
-    Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_clear(boundary_info,
-                                                                                 this->space_.mapper().size(),
-                                                                                 false);
+    Dune::GDT::Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_set(boundary_info,
+                                                                                          this->space_.mapper().size(),
+                                                                                          true);
+    Dune::GDT::Spaces::DirichletConstraints< IntersectionType > dirichlet_constraints_clear(boundary_info,
+                                                                                            this->space_.mapper().size(),
+                                                                                            false);
     this->space_.local_constraints(entity, dirichlet_constraints_set);
     this->space_.local_constraints(entity, dirichlet_constraints_clear);
   }

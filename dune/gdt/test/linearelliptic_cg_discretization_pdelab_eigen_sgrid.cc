@@ -7,10 +7,9 @@
 # define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include "linearelliptic-cg-discretization.hh"
+#include "linearelliptic/cg-discretization.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;

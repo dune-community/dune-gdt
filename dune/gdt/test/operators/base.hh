@@ -16,6 +16,7 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/tools.hh>
 
 namespace Dune {
 namespace GDT {

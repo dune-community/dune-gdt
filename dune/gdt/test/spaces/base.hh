@@ -18,7 +18,7 @@
 #include <dune/gdt/mapper/interface.hh>
 #include <dune/gdt/basefunctionset/interface.hh>
 
-#include "grids.hh"
+#include <dune/gdt/test/grids.hh>
 
 
 // these two should trigger a segfault if copying fails, i.e. the one fixed in 6b3ff6d

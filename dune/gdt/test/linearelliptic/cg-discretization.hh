@@ -7,11 +7,13 @@
 # define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/tests/linearelliptic/eocstudy.hh>
-#include <dune/gdt/tests/linearelliptic/discretizers/cg.hh>
+#include <dune/stuff/test/common.hh>
 
-#include "linearelliptic-testcases.hh"
+#include <dune/gdt/spaces/interface.hh>
+
+#include "eocstudy.hh"
+#include "discretizers/cg.hh"
+#include "problems.hh"
 
 
 template< class TestCaseType >
@@ -37,7 +39,7 @@ struct linearelliptic_CG_discretization
                                            1,
                                            typename TestCaseType::ProblemType::RangeFieldType,
                                            1 > Discretizer;
-    Tests::LinearEllipticEocStudy< TestCaseType, Discretizer > eoc_study(test_case);
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    Dune::GDT::Test::LinearEllipticEocStudy< TestCaseType, Discretizer > eoc_study(test_case);
+    Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // linearelliptic_CG_discretization

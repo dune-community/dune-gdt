@@ -8,7 +8,7 @@
 
 #include <dune/gdt/spaces/fv/default.hh>
 
-#include "grids.hh"
+#include <dune/gdt/test/grids.hh>
 
 
 #define SPACE_FV_SGRID(dd, rr) \

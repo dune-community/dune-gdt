@@ -3,14 +3,12 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-// this one has to come first
-#include <dune/stuff/test/main.hxx>
+#include <dune/stuff/test/main.hxx> // <- this one has to come first
 
-#include "spaces_fv_default.hh"
+#include "operators/l2.hh"
+#include "spaces/fv/default.hh"
 
-#include <dune/gdt/tests/operators/l2.hh>
-
-using namespace Dune::GDT::Tests;
+using namespace Dune::GDT::Test;
 
 typedef testing::Types< SPACE_FV_SGRID(1, 1)
                       , SPACE_FV_SGRID(2, 1)

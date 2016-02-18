@@ -11,7 +11,7 @@
 #include <dune/stuff/common/print.hh>
 #include <dune/stuff/common/ranges.hh>
 
-#include "spaces.hh"
+#include "base.hh"
 
 
 template< class SpaceType >

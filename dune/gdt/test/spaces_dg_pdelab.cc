@@ -7,8 +7,8 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "spaces_dg.hh"
-#include "spaces_dg_pdelab.hh"
+#include "spaces/dg.hh"
+#include "spaces/dg/pdelab.hh"
 
 #if HAVE_DUNE_PDELAB
 
