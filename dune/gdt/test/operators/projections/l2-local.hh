@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
 #define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
 
-#include <dune/gdt/operators/projections/l2.hh>
+#include <dune/gdt/operators/projections/l2-local.hh>
 
 #include "base.hh"
 
