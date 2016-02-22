@@ -143,7 +143,7 @@ public:
     return result;
   }
 
-private:
+protected:
   using BaseType::grid_view_;
 
   const RangeType& range_;
@@ -428,7 +428,7 @@ public:
     }
   } // ... apply(...)
 
-private:
+protected:
   using BaseType::grid_view_;
 
   const SourceType& source_;
