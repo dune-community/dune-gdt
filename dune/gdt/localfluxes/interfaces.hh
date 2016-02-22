@@ -30,7 +30,7 @@ public:
                       const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple_entity,
-                                       local_functions_tuple_neigbhor,
+                                       local_functions_tuple_neighbor,
                                        local_source_entity,
                                        local_source_neighbor,
                                        intersection,
@@ -64,8 +64,7 @@ public:
                       const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection));
-    this->as_imp().evaluate(
-        local_functions_tuple, local_source_entity, local_source_neighbor, intersection, x_intersection);
+    return this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection);
   }
 }; // class NumericalBoundaryFluxInterface
 
