@@ -3,6 +3,9 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#ifndef DUNE_GDT_TEST_LINEARELLIPTIC_CG_DISCRETIZATION_HH
+#define DUNE_GDT_TEST_LINEARELLIPTIC_CG_DISCRETIZATION_HH
+
 #ifndef THIS_IS_A_BUILDBOT_BUILD
 # define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
@@ -43,3 +46,5 @@ struct linearelliptic_CG_discretization
     Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // linearelliptic_CG_discretization
+
+#endif // DUNE_GDT_TEST_LINEARELLIPTIC_CG_DISCRETIZATION_HH

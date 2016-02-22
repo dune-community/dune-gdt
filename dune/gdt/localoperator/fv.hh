@@ -1,3 +1,6 @@
+#ifndef DUNE_GDT_LOCALOPERATOR_FV_HH
+#define DUNE_GDT_LOCALOPERATOR_FV_HH
+
 #include "interfaces.hh"
 
 namespace Dune {
@@ -94,4 +97,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-
+#endif // DUNE_GDT_LOCALOPERATOR_FV_HH

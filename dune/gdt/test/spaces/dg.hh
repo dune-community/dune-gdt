@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_DG_COMMON_HH
-#define DUNE_GDT_SPACES_DG_COMMON_HH
+#ifndef DUNE_GDT_TEST_SPACES_DG_HH
+#define DUNE_GDT_TEST_SPACES_DG_HH
 
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -114,4 +114,4 @@ struct P1Q1_DG_Space
 }; // struct P1Q1_DG_Space
 
 
-#endif // DUNE_GDT_SPACES_DG_COMMON_HH
+#endif // DUNE_GDT_TEST_SPACES_DG_HH
