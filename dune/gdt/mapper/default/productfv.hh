@@ -35,7 +35,7 @@ class ProductFiniteVolumeTraits
     : internal::FiniteVolumeTraits< GridViewImp, rangeDim, rangeDimCols >
 {
 public:
-  typedef ProductFiniteVolume< GridViewType, rangeDim, rangeDimCols> derived_type;
+  typedef ProductFiniteVolume< GridViewImp, rangeDim, rangeDimCols> derived_type;
 };
 
 
@@ -49,21 +49,17 @@ class ProductFiniteVolume< GridViewImp, rangeDim, 1 >
 {
   typedef ProductMapperInterface< internal::ProductFiniteVolumeTraits< GridViewImp, rangeDim, 1 > > InterfaceType;
   typedef FiniteVolume< GridViewImp, rangeDim, 1 > BaseType;
-  static const size_t dimRange = rangeDim;
+  using BaseType::dimRange;
 public:
   typedef internal::ProductFiniteVolumeTraits< GridViewImp, rangeDim, 1 > Traits;
-  typedef typename Traits::GridViewType                            GridViewType;
-  typedef typename Traits::BackendType                             BackendType;
-  typedef typename Traits::EntityType                              EntityType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::EntityType;
 
   ProductFiniteVolume(const GridViewType& grid_view)
     : BaseType(grid_view)
   {}
 
-  using BaseType::backend;
-  using BaseType::size;
   using BaseType::numDofs;
-  using BaseType::maxNumDofs;
   using BaseType::globalIndices;
 
   Dune::DynamicVector< size_t > globalIndices(const size_t factor_index, const EntityType& entity) const
@@ -79,6 +75,9 @@ public:
     assert(factor_index < numDofs(entity));
     return (dimRange*(backend_.index(entity))) + factor_index;
   }
+
+private:
+  using BaseType::backend_;
 }; // class ProductFiniteVolume< ..., rangeDim, 1 >
 
 
