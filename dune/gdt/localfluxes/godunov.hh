@@ -24,7 +24,7 @@
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/affine.hh>
+//#include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/la/container/eigen.hh>
 #include <dune/stuff/common/parallel/threadstorage.hh>
 
@@ -50,8 +50,8 @@ namespace internal {
 template< class AnalyticalCouplingFluxImp, size_t domainDim = AnalyticalCouplingFluxImp::dimDomain >
 class GodunovNumericalCouplingFluxTraits
 {
-  static_assert(std::is_base_of< Dune::GDT::IsAnalyticalFlux, AnalyticalFluxImp >::value,
-                "AnalyticalFluxImp has to be derived from GDT::IsAnalyticalFlux.");
+//  static_assert(std::is_base_of< Dune::GDT::IsAnalyticalFlux, AnalyticalFluxImp >::value, // <- should be implemented as is_analytical_flux< AnalyticalCouplingFluxImp >::value
+//                "AnalyticalFluxImp has to be derived from GDT::IsAnalyticalFlux.");
 public:
   typedef AnalyticalCouplingFluxImp                            AnalyticalFluxType;
   typedef GodunovNumericalCouplingFlux< AnalyticalFluxType, domainDim >               derived_type;
@@ -88,6 +88,9 @@ public:
 
 
 #define PAPERFLUX 0
+
+
+#if 0
 
 template< class AnalyticalCouplingFluxImp, size_t domainDim = AnalyticalCouplingFluxImp::dimDomain >
 class GodunovNumericalCouplingFlux
@@ -810,6 +813,7 @@ template < class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp >
 thread_local bool
 GodunovNumericalBoundaryFlux< AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1 >::jacobians_constructed_(false);
 
+#endif // 0
 
 } // namespace GDT
 } // namespace Dune
