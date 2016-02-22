@@ -100,13 +100,13 @@ class PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 
     : public Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
                                                                                  RangeFieldImp, rangeDim, 1>,
                                               GridViewImp::dimension, rangeDim, 1>,
-      public PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+      public PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
 {
   typedef PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
   typedef typename Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
                                                                                        RangeFieldImp, rangeDim, 1>,
                                                     GridViewImp::dimension, rangeDim, 1> InterfaceType;
-  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
   using typename InterfaceType::Traits;
