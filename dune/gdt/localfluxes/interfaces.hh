@@ -62,14 +62,8 @@ public:
 }; // class NumericalBoundaryFluxInterface
 
 
-template< bool gradient = false >
-class IsAnalyticalFlux
-{
-};
-
 template< class E, class D, size_t d, class R, size_t r, size_t rC = 1, bool gradient = false>
 class AnalyticalFluxInterface
-    : IsAnalyticalFlux<gradient>
 {
 public:
   typedef /*??*/double FluxRangeType;
@@ -86,7 +80,6 @@ public:
 
 template< class E, class D, size_t d, class R, size_t r, size_t rC >
 class AnalyticalFluxInterface< E, D, d, R, r, rC, true >
-    : IsAnalyticalFlux<true>
 {
 public:
   typedef E EntityType;
@@ -107,11 +100,6 @@ public:
                                  const double t_ = 0) const = 0;
 }; // class AnalyticalFluxInterface<..., true>
 
-class IsAutonomousAnalyticalFlux
-    : IsAnalyticalFlux
-{
-
-};
 
 /**
  * Interface for analytical fluxes that do not depend explicitly on the spatial variable x or the temporal variable t
@@ -119,7 +107,6 @@ class IsAutonomousAnalyticalFlux
 template< class E, class D, size_t d, class R, size_t r, size_t rC = 1>
 class AutonomousAnalyticalFluxInterface
     : public AnalyticalFluxInterface< E, D, d, R, r, rC, false >
-    , IsAutonomousAnalyticalFlux
 {
    typedef AnalyticalFluxInterface< E, D, d, R, r, rC, false > BaseType;
 public:
