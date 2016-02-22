@@ -477,7 +477,7 @@ class IsProductSpace
  * as a vector, i.e. rangeDimCols has to be specified as 1 and the dimensions have to be added up in rangeDim. In the
  * example, this gives rangeDim = 5;
  * */
-template< class Traits, size_t domainDim, size_t rangeDim, rangeDimCols = 1 >
+template< class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
 class ProductSpaceInterface
     : public SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols >
     , IsProductSpace
