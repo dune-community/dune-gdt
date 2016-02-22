@@ -18,7 +18,7 @@ namespace GDT {
 
 
 /**
- * \brief Carries out a prolongation using a local L2 projection (in a localized manner).
+ * \brief Carries out a prolongation (in a localized manner) using a local L2 projection.
  *
  *        This is done by reinterpreting the source on the range grid view and applying a
  *        L2LocalProjectionLocalizableOperator.
@@ -28,7 +28,7 @@ class L2LocalProlongationLocalizableOperator
   : Stuff::Common::ConstStorageProvider< ReinterpretDiscreteFunction< SourceImp > >
   , public L2LocalProjectionLocalizableOperator< GridViewImp, ReinterpretDiscreteFunction< SourceImp >, RangeImp >
 {
-  typedef Stuff::Common::ConstStorageProvider< ReinterpretDiscreteFunction< SourceImp > > BaseStorageType;
+  typedef Stuff::Common::ConstStorageProvider< ReinterpretDiscreteFunction< SourceImp > > SourceStorage;
   typedef L2LocalProjectionLocalizableOperator
       < GridViewImp, ReinterpretDiscreteFunction< SourceImp >, RangeImp >                 BaseOperatorType;
 public:
@@ -40,13 +40,13 @@ public:
                                          GridViewType grid_view,
                                          const SourceType& source,
                                          RangeType& range)
-    : BaseStorageType(new ReinterpretDiscreteFunction< SourceType >(source))
-    , BaseOperatorType(over_integrate, grid_view, BaseStorageType::access(), range)
+    : SourceStorage(new ReinterpretDiscreteFunction< SourceType >(source))
+    , BaseOperatorType(over_integrate, grid_view, SourceStorage::access(), range)
   {}
 
   L2LocalProlongationLocalizableOperator(GridViewType grid_view, const SourceType& source, RangeType& range)
-    : BaseStorageType(new ReinterpretDiscreteFunction< SourceType >(source))
-    , BaseOperatorType(grid_view, BaseStorageType::access(), range)
+    : SourceStorage(new ReinterpretDiscreteFunction< SourceType >(source))
+    , BaseOperatorType(grid_view, SourceStorage::access(), range)
   {}
 
   ///! Calls L2LocalProjectionLocalizableOperator::apply and gives a meaningful error message.
