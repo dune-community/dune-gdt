@@ -26,7 +26,6 @@
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/productinterface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 
 #include "local.hh"
