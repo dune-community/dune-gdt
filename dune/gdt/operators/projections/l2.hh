@@ -87,6 +87,7 @@ private:
     {
       DSC::TimedLogger().get("gdt.l2localprojectionlocalizableoperator").warn()
           << "You are using this operator to project onto a continuous discrete function space (see below)!\n"
+          << "Consider to use L2GlobalProjectionLocalizableOperator instead!\n"
           << "You can disable this warning by defining "
           << "DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING\n"
           << "at compile time or by disabling the Dune::Stuff::Common::TimedLogger() instance at runtime.\n"
@@ -97,7 +98,7 @@ private:
   template <class S>
   static inline void issue_warning(const S&)
   {
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_DISABLE_WARNING
+#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING
     Warning<S, S::continuous>::issue();
 #endif
   }
