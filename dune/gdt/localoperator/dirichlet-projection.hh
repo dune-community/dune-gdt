@@ -38,6 +38,9 @@ public:
 } // namespace internal
 
 
+/**
+ * \note Only sets the Dirichlet DoFs and thus assumes, that all (other) DoFs have been set to 0 beforehand
+ */
 template< class BoundaryInfoType >
 class LocalDirichletProjectionOperator
     : public LocalOperatorInterface< internal::LocalDirichletProjectionOperatorTraits< BoundaryInfoType > >
