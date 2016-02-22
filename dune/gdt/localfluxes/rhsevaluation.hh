@@ -1,5 +1,7 @@
-#include <dune/gdt/localevaluation/interface.hh>
+#ifndef DUNE_GDT_LOCALFLUXES_RHSEVALUATION_HH
+#define DUNE_GDT_LOCALFLUXES_RHSEVALUATION_HH
 
+#include <dune/gdt/localevaluation/interface.hh>
 
 namespace Dune {
 namespace GDT {
@@ -98,3 +100,5 @@ private:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // DUNE_GDT_LOCALFLUXES_RHSEVALUATION_HH

@@ -5,8 +5,8 @@
 //
 // Contributors: Tobias Leibner
 
-#ifndef DUNE_GDT_EVALUATION_GODUNOV_HH
-#define DUNE_GDT_EVALUATION_GODUNOV_HH
+#ifndef DUNE_GDT_LOCALFLUXES_GODUNOV_HH
+#define DUNE_GDT_LOCALFLUXES_GODUNOV_HH
 
 #include <tuple>
 #include <memory>
@@ -857,4 +857,4 @@ thread_local bool
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_EVALUATION_GODUNOV_HH
+#endif // DUNE_GDT_LOCALFLUXES_GODUNOV_HH
