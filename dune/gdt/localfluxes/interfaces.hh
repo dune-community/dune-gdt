@@ -78,8 +78,8 @@ template <class E, class D, size_t d, class R, size_t r, size_t rC = 1, bool gra
 class AnalyticalFluxInterface : IsAnalyticalFlux<gradient>
 {
 public:
-  typedef ? ? FluxRangeType;
-  typedef ? ? FluxJacobianRangeType;
+  typedef /*??*/ double FluxRangeType;
+  typedef /*??*/ double FluxJacobianRangeType;
 
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
@@ -98,8 +98,8 @@ public:
   typedef D DomainFieldType;
   typedef R RangeFieldType;
 
-  typedef ? ? FluxRangeType;
-  typedef ? ? FluxJacobianRangeType;
+  typedef /*??*/ double FluxRangeType;
+  typedef /*??*/ double FluxJacobianRangeType;
 
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
@@ -107,6 +107,7 @@ public:
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::JacobianRangeType
       JacobianRangeType; // of gradient of u, FieldMatrix or FieldVector< FieldMatrix > depending on dimensions
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
+
   virtual FluxRangeType evaluate(const RangeType& u, const JacobianRangeType& grad_u, const E& entity,
                                  const DomainType& x_local, const double t_ = 0) const = 0;
 }; // class AnalyticalFluxInterface<..., true>
@@ -119,14 +120,15 @@ class IsAutonomousAnalyticalFlux : IsAnalyticalFlux
  * Interface for analytical fluxes that do not depend explicitly on the spatial variable x or the temporal variable t
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class AutonomousAnalyticalFluxInterface : AnalyticalFluxInterface<E, D, d, R, r, rC, false>, IsAutonomousAnalyticalFlux
+class AutonomousAnalyticalFluxInterface : public AnalyticalFluxInterface<E, D, d, R, r, rC, false>,
+                                          IsAutonomousAnalyticalFlux
 {
   typedef AnalyticalFluxInterface<E, D, d, R, r, rC, false> BaseType;
 
 public:
-  using BaseType::RangeType;
-  using BaseType::FluxRangeType;
-  using BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::FluxRangeType;
+  using typename BaseType::DomainType;
 
   virtual FluxRangeType evaluate(const RangeType& u, const E& /*entity*/, const DomainType& /*x_local*/,
                                  const double /*t_*/ = 0) const
