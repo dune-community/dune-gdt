@@ -34,7 +34,7 @@ namespace GDT {
 
 /**
  * \todo Unit tests are missing for this class.
- * \note We could add additional ctors which accept Stuff::Grid::ApplyOn::WhichIntersection, analogously to
+ * \note We could add additional ctors which accept Stuff::Grid::ApplyOn::WhichEntity, analogously to
  *       L2FaceVectorFunctional (see below), but we did not need this until now.
  */
 template< class FunctionType,
