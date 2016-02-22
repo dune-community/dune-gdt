@@ -16,7 +16,7 @@ namespace Test {
 
 
 template <class SpaceType>
-class L2LocalProjectionLocalizableOperatorTest
+struct L2LocalProjectionLocalizableOperatorTest
     : public LocalizableProjectionOperatorBase<SpaceType,
                                                L2LocalProjectionLocalizableOperator<
                                                    typename SpaceType::GridViewType,
@@ -28,7 +28,7 @@ class L2LocalProjectionLocalizableOperatorTest
 
 
 template <class SpaceType>
-class L2LocalProjectionOperatorTest
+struct L2LocalProjectionOperatorTest
     : public ProjectionOperatorBase<SpaceType, L2LocalProjectionOperator<typename SpaceType::GridViewType, double>>
 {
 };
