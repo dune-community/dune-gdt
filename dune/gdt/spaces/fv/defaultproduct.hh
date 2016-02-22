@@ -92,12 +92,13 @@ public:
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1>
     : public Dune::GDT::Spaces::ProductFVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim,
-                                                                                  1>>,
+                                                                                  1>,
+                                                   GridViewImp::dimension, rangeDim, 1>,
       public Default<GridViewImp, RangeFieldImp, rangeDim, 1>
 {
   typedef DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Dune::GDT::Spaces::ProductFVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>>
-      InterfaceType;
+  typedef Dune::GDT::Spaces::ProductFVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+                                                GridViewImp::dimension, rangeDim, 1> InterfaceType;
   typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
@@ -115,14 +116,12 @@ public:
   DefaultProduct(GridViewType gv)
     : BaseType(gv)
     , factor_space_(grid_view_)
-    , product_mapper_(grid_view_)
   {
   }
 
   DefaultProduct(const ThisType& other)
     : BaseType(other)
     , factor_space_(other.factor_space_)
-    , product_mapper_(other.product_mapper_)
   {
   }
 
@@ -149,8 +148,10 @@ public:
   using BaseType::communicator;
 
 private:
-  const FactorSpaceType factor_space_;
+  using BaseType::grid_view_;
   using BaseType::mapper_;
+
+  const FactorSpaceType factor_space_;
 }; // class DefaultProduct< ..., 1 >
 
 
