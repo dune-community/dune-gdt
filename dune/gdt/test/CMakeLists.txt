@@ -7,13 +7,12 @@ enable_testing()
 
 BEGIN_TESTCASES()
 
+END_TESTCASES()
+
 foreach (test ${testnames})
-  add_dune_mpi_flags(${test})
   add_dune_alugrid_flags(${test})
   TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
 endforeach (test ${testnames})
-
-END_TESTCASES()
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
@@ -25,11 +24,11 @@ endif (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
 
 add_subdirectory(linearelliptic)
 
-#target_link_libraries(test_linearelliptic_cg_discretization_fem_eigen_alugrid    lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic_cg_discretization_fem_eigen_alugrid    lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_fem_eigen_sgrid      lib_test_linearelliptic_cg_discretizations_sgrid)
-#target_link_libraries(test_linearelliptic_cg_discretization_fem_istl_alugrid     lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic_cg_discretization_fem_istl_alugrid     lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_fem_istl_sgrid       lib_test_linearelliptic_cg_discretizations_sgrid)
-#target_link_libraries(test_linearelliptic_cg_discretization_pdelab_eigen_alugrid lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic_cg_discretization_pdelab_eigen_alugrid lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_eigen_sgrid   lib_test_linearelliptic_cg_discretizations_sgrid)
-#target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
+target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
