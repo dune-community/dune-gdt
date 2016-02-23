@@ -162,25 +162,22 @@ make_lagrange_projection_operator(const GridViewType& grid_view)
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridViewType, SourceType,
-                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
-    project_lagrange(const GridViewType& grid_view, const SourceType& source,
-                     DiscreteFunction<SpaceType, VectorType>& range)
+typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
+                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && Stuff::LA::is_vector<VectorType>::value,
+                        void>::type
+project_lagrange(const GridViewType& grid_view, const SourceType& source,
+                 DiscreteFunction<SpaceType, VectorType>& range)
 {
   make_lagrange_projection_operator(grid_view)->apply(source, range);
 }
 
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                  && Stuff::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
-                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
-    project_lagrange(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range)
+typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && Stuff::LA::is_vector<VectorType>::value,
+                        void>::type
+project_lagrange(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range)
 {
   make_lagrange_projection_operator(range.space().grid_view())->apply(source, range);
 }
