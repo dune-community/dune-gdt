@@ -43,7 +43,12 @@ struct linearelliptic_CG_discretization
                                            typename TestCaseType::ProblemType::RangeFieldType,
                                            1 > Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy< TestCaseType, Discretizer > eoc_study(test_case);
-    Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    try {
+      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    } catch(Dune::Stuff::Exceptions::spe10_data_file_missing&) {
+      Dune::Stuff::Common::TimedLogger().get("gdt.test.linearelliptic.cg.discretization").warn()
+          << "missing SPE10 data file!" << std::endl;
+    }
   } // ... eoc_study()
 }; // linearelliptic_CG_discretization
 
