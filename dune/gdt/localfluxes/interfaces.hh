@@ -7,9 +7,13 @@
 namespace Dune {
 namespace GDT {
 
+class IsNumericalCouplingFlux
+{
+};
 
 template <class Traits>
-class NumericalCouplingFluxInterface : Stuff::CRTPInterface<NumericalCouplingFluxInterface<Traits>, Traits>
+class NumericalCouplingFluxInterface : Stuff::CRTPInterface<NumericalCouplingFluxInterface<Traits>, Traits>,
+                                       IsNumericalCouplingFlux
 {
   typedef typename Traits::ResultType ResultType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -44,8 +48,13 @@ public:
   }
 }; // class NumericalCouplingFluxInterface
 
+class IsNumericalBoundaryFlux
+{
+};
+
 template <class Traits>
-class NumericalBoundaryFluxInterface : Stuff::CRTPInterface<NumericalBoundaryFluxInterface<Traits>, Traits>
+class NumericalBoundaryFluxInterface : Stuff::CRTPInterface<NumericalBoundaryFluxInterface<Traits>, Traits>,
+                                       IsNumericalBoundaryFlux
 {
   typedef typename Traits::ResultType ResultType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
