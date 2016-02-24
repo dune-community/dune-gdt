@@ -212,6 +212,69 @@ public:
 }; // class ContainerBasedStationaryDiscretizationInterface
 
 
+template <class Traits>
+class NonStationaryDiscretizationInterface
+    : public Stuff::CRTPInterface<NonStationaryDiscretizationInterface<Traits>, Traits>
+{
+  typedef Stuff::CRTPInterface<NonStationaryDiscretizationInterface<Traits>, Traits> BaseType;
+
+public:
+  using typename BaseType::derived_type;
+  typedef typename Traits::ProblemType ProblemType;
+  typedef typename Traits::FVSpaceType FVSpaceType;
+  typedef typename Traits::VectorType VectorType;
+  typedef typename Traits::DiscreteFunctionType DiscreteFunctionType;
+  typedef typename Traits::StationaryVectorType StationaryVectorType;
+
+private:
+  static_assert(is_space<FVSpaceType>::value, "FVSpaceType has to be derived from SpaceInterface!");
+
+public:
+  /// \name Have to be implemented by any derived class.
+  /// \{
+
+  const ProblemType& problem() const
+  {
+    CHECK_CRTP(this->as_imp().problem());
+    return this->as_imp().problem();
+  }
+
+  const FVSpaceType& fv_space() const
+  {
+    CHECK_CRTP(this->as_imp().fv_space());
+    return this->as_imp().fv_space();
+  }
+
+  void solve(VectorType& solution, const bool is_linear) const
+  {
+    CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, is_linear));
+  }
+
+  /// \}
+  /// \name Provided by the interface for convenience.
+  /// \{
+
+  VectorType create_vector() const
+  {
+    return VectorType(fv_space().mapper().size());
+  }
+
+  VectorType solve(const bool is_linear) const
+  {
+    VectorType solution;
+    solve(solution, is_linear);
+    return solution;
+  }
+
+  void visualize(const VectorType& vector, const std::string filename, const std::string name) const
+  {
+    make_const_discrete_function(this->fv_space(), vector, name).visualize(filename);
+  }
+
+  /// \}
+}; // class NonStationaryDiscretizationInterface
+
+
 namespace internal {
 
 
