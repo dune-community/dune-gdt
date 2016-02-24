@@ -44,28 +44,25 @@ class GodunovNumericalBoundaryFlux;
 
 namespace internal {
 
-/**
- *  \brief  Traits for the Lax-Friedrichs flux evaluation.
- */
-template< class AnalyticalCouplingFluxImp, size_t domainDim = AnalyticalCouplingFluxImp::dimDomain >
+
+template< class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain >
 class GodunovNumericalCouplingFluxTraits
 {
-//  static_assert(std::is_base_of< Dune::GDT::IsAnalyticalFlux, AnalyticalFluxImp >::value, // <- should be implemented as is_analytical_flux< AnalyticalCouplingFluxImp >::value
+//  static_assert(std::is_base_of< Dune::GDT::IsAnalyticalFlux, AnalyticalFluxImp >::value, // <- should be implemented as is_analytical_flux< AnalyticalFluxImp >::value
 //                "AnalyticalFluxImp has to be derived from GDT::IsAnalyticalFlux.");
 public:
-  typedef AnalyticalCouplingFluxImp                            AnalyticalFluxType;
+  typedef AnalyticalFluxImp                            AnalyticalFluxType;
   typedef GodunovNumericalCouplingFlux< AnalyticalFluxType, domainDim >               derived_type;
   typedef typename AnalyticalFluxType::EntityType              EntityType;
   typedef typename AnalyticalFluxType::DomainFieldType         DomainFieldType;
   typedef typename AnalyticalFluxType::RangeFieldType          RangeFieldType;
+  typedef typename AnalyticalFluxType::RangeType                                        RangeType;
+  typedef typename AnalyticalFluxType::FluxRangeType                                    FluxRangeType;
+  typedef typename AnalyticalFluxType::FluxJacobianRangeType                            FluxJacobianRangeType;
   typedef std::tuple< double >                                 LocalfunctionTupleType;
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
   static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-
-  typedef typename AnalyticalFluxType::RangeType                                        RangeType;
-  typedef typename AnalyticalFluxType::FluxRangeType                                    FluxRangeType;
-  typedef typename AnalyticalFluxType::FluxJacobianRangeType                            FluxJacobianRangeType;
   typedef typename Dune::Stuff::LA::EigenDenseMatrix< RangeFieldType >                  EigenMatrixType;
 }; // class GodunovNumericalCouplingFluxTraits
 
@@ -92,12 +89,12 @@ public:
 
 #if 0
 
-template< class AnalyticalCouplingFluxImp, size_t domainDim = AnalyticalCouplingFluxImp::dimDomain >
+template< class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain >
 class GodunovNumericalCouplingFlux
-  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp > >
+  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp > >
 {
 public:
-  typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp, domainDim >           Traits;
+  typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, domainDim >           Traits;
   typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
   typedef typename Traits::EntityType                               EntityType;
   typedef typename Traits::DomainFieldType                          DomainFieldType;
@@ -246,24 +243,24 @@ private:
   const bool is_linear_;
 }; // class GodunovNumericalCouplingFlux
 
-template < class AnalyticalCouplingFluxImp, size_t dimDomain >
-typename internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp, dimDomain >::FluxJacobianRangeType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, dimDomain >::jacobian_neg_(0);
+template < class AnalyticalFluxImp, size_t dimDomain >
+typename internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, dimDomain >::FluxJacobianRangeType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, dimDomain >::jacobian_neg_(0);
 
-template < class AnalyticalCouplingFluxImp, size_t dimDomain >
-typename internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp, dimDomain >::FluxJacobianRangeType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, dimDomain >::jacobian_pos_(0);
+template < class AnalyticalFluxImp, size_t dimDomain >
+typename internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, dimDomain >::FluxJacobianRangeType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, dimDomain >::jacobian_pos_(0);
 
-template < class AnalyticalCouplingFluxImp, size_t dimDomain >
+template < class AnalyticalFluxImp, size_t dimDomain >
 bool
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, dimDomain >::jacobians_constructed_(false);
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, dimDomain >::jacobians_constructed_(false);
 
-template< class AnalyticalCouplingFluxImp >
-class GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >
-  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp > >
+template< class AnalyticalFluxImp >
+class GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >
+  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp > >
 {
 public:
-  typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalCouplingFluxImp, 1 >        Traits;
+  typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, 1 >        Traits;
   typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
   typedef typename Traits::EntityType                               EntityType;
   typedef typename Traits::DomainFieldType                          DomainFieldType;
@@ -421,33 +418,33 @@ private:
   const bool is_linear_;
 }; // class GodunovNumericalCouplingFlux< ..., 1 >
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_neg_{typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType()};
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_neg_{typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType()};
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_pos_{typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType()};
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_pos_{typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType()};
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_abs_{typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType()};
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_abs_{typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType()};
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_neg_function_(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType(0)));
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_neg_function_(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType(0)));
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_pos_function_(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType(0)));
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_pos_function_(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType(0)));
 
-template < class AnalyticalCouplingFluxImp >
-thread_local typename GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobian_abs_function_(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::FluxJacobianRangeType(0)));
+template < class AnalyticalFluxImp >
+thread_local typename GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobian_abs_function_(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::AffineFunctionType(GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::FluxJacobianRangeType(0)));
 
-template < class AnalyticalCouplingFluxImp >
+template < class AnalyticalFluxImp >
 thread_local bool
-GodunovNumericalCouplingFlux< AnalyticalCouplingFluxImp, 1 >::jacobians_constructed_(false);
+GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >::jacobians_constructed_(false);
 
 template< class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, size_t domainDim = AnalyticalBoundaryFluxImp::dimDomain >
 class GodunovNumericalBoundaryFlux
