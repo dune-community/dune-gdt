@@ -25,8 +25,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp, class SourceImp, class RangeImp,
-          Stuff::LA::ChooseBackend container_backend = Stuff::LA::default_backend>
+template <class GridViewImp, class SourceImp, class RangeImp>
 class L2GlobalProjectionLocalizableOperator : public LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp>
 {
   static_assert(Stuff::is_localizable_function<SourceImp>::value, "");
@@ -37,13 +36,14 @@ public:
   using typename BaseType::GridViewType;
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
-  typedef typename Stuff::LA::Container<typename RangeType::RangeFieldType, container_backend>::MatrixType MatrixType;
-  typedef typename Stuff::LA::Container<typename RangeType::RangeFieldType, container_backend>::VectorType VectorType;
+  typedef typename RangeType::VectorType VectorType;
+  typedef typename Stuff::LA::Container<typename RangeType::RangeFieldType, VectorType::sparse_matrix_type>::MatrixType
+      MatrixType;
 
 private:
-  typedef L2MatrixOperator<typename RangeType::SpaceType, MatrixType, GridViewType> LhsOperatorType;
-  typedef L2VolumeVectorFunctional<SourceType, typename RangeType::SpaceType, VectorType, GridViewType>
-      RhsFunctionalType;
+  typedef typename RangeType::SpaceType SpaceType;
+  typedef L2MatrixOperator<SpaceType, MatrixType, GridViewType> LhsOperatorType;
+  typedef L2VolumeVectorFunctional<SourceType, SpaceType, VectorType, GridViewType> RhsFunctionalType;
 
 public:
   L2GlobalProjectionLocalizableOperator(GridViewType grd_vw, const SourceType& src, RangeType& rng,
@@ -116,36 +116,34 @@ private:
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
-                        std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
-                                                                              DiscreteFunction<SpaceType, VectorType>,
-                                                                              VectorType::sparse_matrix_type>>>::type
-make_global_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
-                                               DiscreteFunction<SpaceType, VectorType>& range,
-                                               const size_t over_integrate = 0)
+typename std::
+    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
+                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_global_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
+                                                   DiscreteFunction<SpaceType, VectorType>& range,
+                                                   const size_t over_integrate = 0)
 {
   return DSC::make_unique<L2GlobalProjectionLocalizableOperator<GridViewType,
                                                                 SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>,
-                                                                VectorType::sparse_matrix_type>>(
+                                                                DiscreteFunction<SpaceType, VectorType>>>(
       grid_view, source, range, over_integrate);
 } // ... make_global_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
-                        std::unique_ptr<L2GlobalProjectionLocalizableOperator<
-                            typename SpaceType::GridViewType, SourceType, DiscreteFunction<SpaceType, VectorType>,
-                            VectorType::sparse_matrix_type>>>::type
-make_global_l2_projection_localizable_operator(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
-                                               const size_t over_integrate = 0)
+typename std::
+    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                  && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_global_l2_projection_localizable_operator(const SourceType& source,
+                                                   DiscreteFunction<SpaceType, VectorType>& range,
+                                                   const size_t over_integrate = 0)
 {
   return DSC::make_unique<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType,
                                                                 SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>,
-                                                                VectorType::sparse_matrix_type>>(
+                                                                DiscreteFunction<SpaceType, VectorType>>>(
       range.space().grid_view(), source, range, over_integrate);
 } // ... make_global_l2_projection_localizable_operator(...)
 
