@@ -23,6 +23,9 @@ TYPED_TEST_CASE(L2GlobalProjectionLocalizableOperatorTest, SpaceTypes);
 TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, constructible_by_ctor) {
   this->constructible_by_ctor();
 }
+TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, constructible_by_factory) {
+  this->constructible_by_factory();
+}
 TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) {
   this->produces_correct_results();
 }
@@ -32,6 +35,7 @@ TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) 
 
 
 TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, constructible_by_ctor) {}
+TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, constructible_by_factory) {}
 TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) {}
 
 
