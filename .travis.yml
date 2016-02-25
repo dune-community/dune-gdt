@@ -6,6 +6,7 @@ addons:
   apt:
     sources: &commonsources
     packages: &commonpackages
+    - gfortran
     - cmake
     - cmake-data
     - doxygen
