@@ -38,7 +38,7 @@ before_install:
   - git checkout refactor_operators_functionals
   - git submodule update --init --recursive
   - git submodule status
-  - export DCTRL_ARG="--builddir=${DUNE_BUILD_DIR}  --opts=${OPTS}"
+  - export DCTRL_ARG="--builddir=${DUNE_BUILD_DIR} --use-cmake --opts=${OPTS}"
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
