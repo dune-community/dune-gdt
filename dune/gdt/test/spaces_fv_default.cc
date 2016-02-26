@@ -11,7 +11,7 @@
 
 
 typedef testing::Types< SPACES_FV
-#if HAVE_ALUGRID
+#if HAVE_ALUGRID && !defined(__GNUC__)
                       , SPACES_FV_ALUGRID
 #endif
                       > FV_Spaces;
