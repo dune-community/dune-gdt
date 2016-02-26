@@ -11,6 +11,8 @@
 #include "spaces/rt.hh"
 #include "spaces/rt/pdelab.hh"
 
+#if HAVE_DUNE_PDELAB
+
 
 typedef testing::Types<SPACES_RT_PDELAB
 #if HAVE_ALUGRID
@@ -54,8 +56,32 @@ TYPED_TEST(RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interfa
 
 #else // HAVE_ALUGRID
 
-TYPED_TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface)
+TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface)
 {
 }
 
 #endif // HAVE_ALUGRID
+#else // HAVE_DUNE_PDELAB
+
+
+TEST(DISABLED_RT_Space, fulfills_interface)
+{
+}
+TEST(DISABLED_RT_Space, mapper_fulfills_interface)
+{
+}
+TEST(DISABLED_RT_Space, basefunctionset_fulfills_interface)
+{
+}
+TEST(DISABLED_RT_Space, check_for_correct_copy)
+{
+}
+TEST(DISABLED_RT_Space, matches_raviart_thomas_signature)
+{
+}
+TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface)
+{
+}
+
+
+#endif // HAVE_DUNE_PDELAB
