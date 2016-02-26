@@ -177,12 +177,12 @@ struct EllipticMatrixOperatorTest
 {
   typedef EllipticProductBase< SpaceType > EllipticBaseType;
   typedef MatrixOperatorBase< SpaceType > MatrixBaseType;
-  using typename MatrixBaseType::GridViewType;
+  typedef typename MatrixBaseType::GridViewType GridViewType;
   using typename EllipticBaseType::ExpressionFunctionType;
   using typename MatrixBaseType::DiscreteFunctionType;
   using typename MatrixBaseType::ScalarFunctionType;
   using typename MatrixBaseType::TensorFunctionType;
-  using typename MatrixBaseType::RangeFieldType;
+  typedef typename MatrixBaseType::RangeFieldType RangeFieldType;
   using typename MatrixBaseType::MatrixType;
 
   EllipticMatrixOperatorTest(const double factor_value = 42.)
