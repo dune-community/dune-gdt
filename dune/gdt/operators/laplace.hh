@@ -77,7 +77,9 @@ LaplaceLocalizableProduct(...args);
 \endcode
    */
   template <typename possibly_int_t, class... Args,
-            typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value, int>::type = 0>
+            typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value
+                                        && !std::is_same<possibly_int_t, tag<false>>::value,
+                                    int>::type = 0>
   explicit LaplaceLocalizableProduct(possibly_int_t&& possibly_over_integrate, Args&&... args)
     : LaplaceLocalizableProduct(tag<std::numeric_limits<typename std::decay<possibly_int_t>::type>::is_integer>(0),
                                 std::forward<possibly_int_t>(possibly_over_integrate), std::forward<Args>(args)...)
@@ -167,7 +169,9 @@ LaplaceLocalizableProduct(...args);
    *        matrix().
    */
   template <typename possibly_int_t, class... Args,
-            typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value, int>::type = 0>
+            typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value
+                                        && !std::is_same<possibly_int_t, tag<false>>::value,
+                                    int>::type = 0>
   explicit LaplaceMatrixOperator(possibly_int_t&& possibly_over_integrate, Args&&... args)
     : LaplaceMatrixOperator(tag<std::numeric_limits<typename std::decay<possibly_int_t>::type>::is_integer>(0),
                             std::forward<possibly_int_t>(possibly_over_integrate), std::forward<Args>(args)...)
