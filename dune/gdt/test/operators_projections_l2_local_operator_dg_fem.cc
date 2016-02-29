@@ -25,6 +25,10 @@ TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
+TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
+{
+  this->constructible_by_factory();
+}
 TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
 {
   this->produces_correct_results();
@@ -35,6 +39,9 @@ TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
 
 
 TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_ctor)
+{
+}
+TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_factory)
 {
 }
 TEST(DISABLED_L2LocalProjectionOperatorTest, produces_correct_results)

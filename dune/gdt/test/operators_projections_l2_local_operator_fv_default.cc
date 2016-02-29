@@ -25,6 +25,10 @@ TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
+TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
+{
+  this->constructible_by_factory();
+}
 TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
 {
   this->produces_correct_results(0.096226);
