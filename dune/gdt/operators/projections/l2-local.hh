@@ -107,6 +107,39 @@ private:
 }; // class L2LocalProjectionLocalizableOperator
 
 
+template <class GridViewType, class SourceType, class SpaceType, class VectorType>
+typename std::
+    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2LocalProjectionLocalizableOperator<GridViewType, SourceType,
+                                                                   DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_local_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
+                                                  DiscreteFunction<SpaceType, VectorType>& range,
+                                                  const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2LocalProjectionLocalizableOperator<GridViewType,
+                                                               SourceType,
+                                                               DiscreteFunction<SpaceType, VectorType>>>(
+      over_integrate, grid_view, source, range);
+} // ... make_local_l2_projection_localizable_operator(...)
+
+template <class SourceType, class SpaceType, class VectorType>
+typename std::
+    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                  && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+                                                                   DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_local_l2_projection_localizable_operator(const SourceType& source,
+                                                  DiscreteFunction<SpaceType, VectorType>& range,
+                                                  const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType,
+                                                               SourceType,
+                                                               DiscreteFunction<SpaceType, VectorType>>>(
+      over_integrate, range.space().grid_view(), source, range);
+} // ... make_local_l2_projection_localizable_operator(...)
+
+
 template <class GridViewImp, class FieldImp>
 class L2LocalProjectionOperator
     : public OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridViewImp, FieldImp>>
@@ -172,6 +205,15 @@ private:
   GridViewType grid_view_;
   const size_t over_integrate_;
 }; // class L2LocalProjectionOperator
+
+
+template <class GridViewType>
+typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+                        std::unique_ptr<L2LocalProjectionOperator<GridViewType>>>::type
+make_local_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2LocalProjectionOperator<GridViewType>>(over_integrate, grid_view);
+}
 
 
 } // namespace GDT
