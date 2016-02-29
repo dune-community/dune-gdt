@@ -25,7 +25,7 @@ struct L2GlobalProjectionLocalizableOperatorTest
   void constructible_by_factory()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source = this->scalar_function_;
+    const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
     auto DUNE_UNUSED(w_grid_view_w_over_integrate)
