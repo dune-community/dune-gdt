@@ -66,8 +66,8 @@ private:
   typedef L2VolumeVectorFunctional<SourceType, SpaceType, VectorType, GridViewType> RhsFunctionalType;
 
 public:
-  L2GlobalProjectionLocalizableOperator(GridViewType grd_vw, const SourceType& src, RangeType& rng,
-                                        const size_t over_integrate = 0)
+  L2GlobalProjectionLocalizableOperator(const size_t over_integrate, GridViewType grd_vw, const SourceType& src,
+                                        RangeType& rng)
     : BaseType(grd_vw, src, rng)
     , lhs_operator_(over_integrate, range_.space(), grid_view_)
     , rhs_functional_(over_integrate, source_, range_.space(), grid_view_)
@@ -76,6 +76,11 @@ public:
     this->add(lhs_operator_);
     this->add(rhs_functional_);
     issue_warning(this->range().space());
+  }
+
+  L2GlobalProjectionLocalizableOperator(GridViewType grd_vw, const SourceType& src, RangeType& rng)
+    : L2GlobalProjectionLocalizableOperator(0, grd_vw, src, rng)
+  {
   }
 
   void apply()
@@ -148,7 +153,7 @@ typename std::
   return DSC::make_unique<L2GlobalProjectionLocalizableOperator<GridViewType,
                                                                 SourceType,
                                                                 DiscreteFunction<SpaceType, VectorType>>>(
-      grid_view, source, range, over_integrate);
+      over_integrate, grid_view, source, range);
 } // ... make_global_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
@@ -164,7 +169,7 @@ typename std::
   return DSC::make_unique<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType,
                                                                 SourceType,
                                                                 DiscreteFunction<SpaceType, VectorType>>>(
-      range.space().grid_view(), source, range, over_integrate);
+      over_integrate, range.space().grid_view(), source, range);
 } // ... make_global_l2_projection_localizable_operator(...)
 
 
@@ -202,7 +207,7 @@ public:
   {
     typedef Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<S, V>> op(
-        grid_view_, source, range, over_integrate_);
+        over_integrate_, grid_view_, source, range);
     op.apply();
   }
 
