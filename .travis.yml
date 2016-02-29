@@ -37,9 +37,6 @@ before_install:
   - git checkout refactor_operators_functionals
   - git submodule update --init --recursive
   - git submodule status
-  - export DBG="--opts=config.opts/travis.make.debug"
-  - export REL="--opts=config.opts/travis.make.release"
-  - export ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
@@ -52,26 +49,26 @@ install:
   - cd $HOME/src
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
   - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
-  - ${SRC_DCTRL} ${__} all
+  - ${SRC_DCTRL} ${ARGS} all
   # move my travis checkout into this source tree
   - cp -ra ${TRAVIS_BUILD_DIR} .
 
 before_script:
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} configure
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} bexec ${BUILD_CMD}
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} configure
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD}
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries
 
 script:
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} bexec ${BUILD_CMD} test
-    # retry this step becuase of the implicated race condition in cloning an pushing with multiple builder running in parallel
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} test
+    # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/*/test/
 
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
 
 # runs independent of 'script' failure/success
 after_script:
     # reset for ctest
-    - ${SRC_DCTRL} ${__} --only=${MY_MODULE} bexec make clean
+    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec make clean
     - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
 
 notifications:
@@ -92,6 +89,9 @@ cache:
 env:
   global:
     - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
+    - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
+    - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
+    - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
 
 matrix:
   include:
@@ -105,15 +105,11 @@ matrix:
           packages:
           - *commonpackages
           - ['g++-4.9', 'gcc-4.9']
-      env: CXX=g++-4.9 CC=gcc-4.9
+      env: ARGS="${DBG}" CC=gcc-4.9 CXX=g++-4.9
     - os: linux
       compiler: gcc
       addons:  *gcc49
-      env: CXX=g++-4.9 __="${ARGS} ${DBG}" CC=gcc-4.9
-    - os: linux
-      compiler: gcc
-      addons:  *gcc49
-      env: CXX=g++-4.9 __="${ARGS} ${REL}" CC=gcc-4.9
+      env: ARGS="${REL}" CC=gcc-4.9 CXX=g++-4.9
 
     - os: linux
       compiler: gcc
@@ -125,14 +121,11 @@ matrix:
           packages:
           - *commonpackages
           - ['g++-5', 'gcc-5']
+      env: ARGS="${DBG}" CC=gcc-5 CXX=g++-5
     - os: linux
       compiler: gcc
       addons:  *gcc5
-      env: CXX=g++-5 __="${ARGS} ${DBG}" CC=gcc-5
-    - os: linux
-      compiler: gcc
-      addons:  *gcc5
-      env: CXX=g++-5 __="${ARGS} ${REL}" CC=gcc-5
+      env: ARGS="${REL}" CC=gcc-5 CXX=g++-5
 
     - os: linux
       compiler: clang
@@ -144,12 +137,9 @@ matrix:
           packages:
           - *commonpackages
           - ['clang-3.7']
+      env: ARGS="${DBG}" CC=clang-3.7 CXX=clang++-3.7
     - os: linux
       compiler: clang
       addons:  *clang37
-      env: CXX=clang++-3.7 __="${ARGS} ${DBG}" CC=clang-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CXX=clang++-3.7 __="${ARGS} ${REL}" CC=clang-3.7
+      env: ARGS="${REL}" CC=clang-3.7 CXX=clang++-3.7
 
