@@ -40,6 +40,20 @@ struct L2GlobalProjectionLocalizableOperatorTest
 };
 
 
+template <class SpaceType>
+struct L2GlobalProjectionOperatorTest
+    : public ProjectionOperatorBase<SpaceType, L2GlobalProjectionOperator<typename SpaceType::GridViewType, double>>
+{
+  void constructible_by_factory()
+  {
+    const auto& grid_view = this->space_.grid_view();
+
+    auto DUNE_UNUSED(w_over_integrate) = make_global_l2_projection_operator(grid_view, 1);
+    auto DUNE_UNUSED(wo_over_integrate) = make_global_l2_projection_operator(grid_view);
+  } // ... constructible_by_factory(...)
+};
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
