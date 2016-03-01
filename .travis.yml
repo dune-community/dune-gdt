@@ -49,26 +49,26 @@ install:
   - cd $HOME/src
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
   - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
-  - ${SRC_DCTRL} ${ARGS} all
+  - ${SRC_DCTRL} ${BLD} all
   # move my travis checkout into this source tree
   - cp -ra ${TRAVIS_BUILD_DIR} .
 
 before_script:
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} configure
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD}
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}
 
 script:
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} test
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} ctest -R ${TESTS}
     # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/*/test/
 
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
 
 # runs independent of 'script' failure/success
 after_script:
     # reset for ctest
-    - ${SRC_DCTRL} ${ARGS} --only=${MY_MODULE} bexec make clean
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec make clean
     - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
 
 notifications:
@@ -105,11 +105,35 @@ matrix:
           packages:
           - *commonpackages
           - ['g++-4.9', 'gcc-4.9']
-      env: ARGS="${DBG}" CC=gcc-4.9 CXX=g++-4.9
+      env: BLD=${DBG} CC=gcc-4.9 TESTS=operator CXX=g++-4.9
     - os: linux
       compiler: gcc
       addons:  *gcc49
-      env: ARGS="${REL}" CC=gcc-4.9 CXX=g++-4.9
+      env: BLD=${DBG} CC=gcc-4.9 TESTS=space CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${DBG} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${DBG} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${REL} CC=gcc-4.9 TESTS=operator CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${REL} CC=gcc-4.9 TESTS=space CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${REL} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${REL} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-4.9
 
     - os: linux
       compiler: gcc
@@ -121,11 +145,35 @@ matrix:
           packages:
           - *commonpackages
           - ['g++-5', 'gcc-5']
-      env: ARGS="${DBG}" CC=gcc-5 CXX=g++-5
+      env: BLD=${DBG} CC=gcc-5 TESTS=operator CXX=g++-5
     - os: linux
       compiler: gcc
       addons:  *gcc5
-      env: ARGS="${REL}" CC=gcc-5 CXX=g++-5
+      env: BLD=${DBG} CC=gcc-5 TESTS=space CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${DBG} CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${DBG} CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${REL} CC=gcc-5 TESTS=operator CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${REL} CC=gcc-5 TESTS=space CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${REL} CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: BLD=${REL} CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-5
 
     - os: linux
       compiler: clang
@@ -137,9 +185,33 @@ matrix:
           packages:
           - *commonpackages
           - ['clang-3.7']
-      env: ARGS="${DBG}" CC=clang-3.7 CXX=clang++-3.7
+      env: BLD=${DBG} CC=clang-3.7 TESTS=operator CXX=clang++-3.7
     - os: linux
       compiler: clang
       addons:  *clang37
-      env: ARGS="${REL}" CC=clang-3.7 CXX=clang++-3.7
+      env: BLD=${DBG} CC=clang-3.7 TESTS=space CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${DBG} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${DBG} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${REL} CC=clang-3.7 TESTS=operator CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${REL} CC=clang-3.7 TESTS=space CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${REL} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: BLD=${REL} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid CXX=clang++-3.7
 
