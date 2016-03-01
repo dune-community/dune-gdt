@@ -466,8 +466,6 @@ public:
   /* @} */
 }; // class SpaceInterface
 
-class IsProductSpace
-{};
 
 /** Interface for function spaces that can be written as a product of several function spaces with the same domain. For
  * example, a function space containing all functions f: \mathbb{R}^d \to \mathbb{R}^r can also be seen as r times the
@@ -477,13 +475,13 @@ class IsProductSpace
  * as a vector, i.e. rangeDimCols has to be specified as 1 and the dimensions have to be added up in rangeDim. In the
  * example, this gives rangeDim = 5;
  * */
-template< class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
+template< class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
 class ProductSpaceInterface
-    : public SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols >
-    , IsProductSpace
+    : public SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >
 {
-  typedef SpaceInterface< Traits, domainDim, rangeDim, rangeDimCols > BaseType;
+  typedef SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols > BaseType;
 public:
+  typedef ImpTraits Traits;
   using typename BaseType::EntityType;
   using typename BaseType::PatternType;
   using typename BaseType::RangeFieldType;
@@ -548,9 +546,18 @@ struct is_space
   : public std::is_base_of< SpaceInterface< typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols >, S >
 {};
 
-
 template< class S >
 struct is_space< S, false >
+  : public std::false_type
+{};
+
+template< class S, bool candidate = internal::is_space_helper< S >::is_candidate >
+struct is_product_space
+  : public std::is_base_of< ProductSpaceInterface< typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols >, S >
+{};
+
+template< class S >
+struct is_product_space< S, false >
   : public std::false_type
 {};
 
