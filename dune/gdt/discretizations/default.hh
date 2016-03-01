@@ -58,10 +58,10 @@ public:
   typedef ProblemImp ProblemType;
   typedef FVSpaceImp FVSpaceType;
   typedef typename FVSpaceType::RangeFieldType RangeFieldType;
-  typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> StationaryVectorType;
-  typedef DiscreteFunction<FVSpaceType, StationaryVectorType> DiscreteFunctionType;
-  typedef std::vector<std::pair<double, StationaryVectorType>> VectorType;
-}; // class StationaryContainerBasedDefaultTraits
+  typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
+  typedef DiscreteFunction<FVSpaceType, VectorType> DiscreteFunctionType;
+  typedef std::vector<std::pair<double, DiscreteFunctionType>> DiscreteSolutionType;
+}; // class NonStationaryDefaultTraits
 
 
 } // namespace internal
@@ -210,17 +210,15 @@ class NonStationaryDefault
 public:
   using typename BaseType::ProblemType;
   using typename BaseType::FVSpaceType;
+  using typename BaseType::DiscreteSolutionType;
   using typename BaseType::VectorType;
-  using typename BaseType::StationaryVectorType;
   using typename BaseType::DiscreteFunctionType;
 
-  NonStationaryDefault(const ProblemType& prblm, const FVSpaceType fvspace)
+  NonStationaryDefault(const ProblemType& prblm, const std::shared_ptr<const FVSpaceType> fv_space_ptr)
     : problem_(prblm)
-    , fv_space_(fvspace)
+    , fv_space_(fv_space_ptr)
   {
   }
-
-  NonStationaryDefault(ThisType&& /*source*/) = default;
 
   /// \name Required by NonStationaryDiscretizationInterface.
   /// \{
@@ -232,12 +230,12 @@ public:
 
   const FVSpaceType& fv_space() const
   {
-    return fv_space_;
+    return *fv_space_;
   }
 
   using BaseType::solve;
 
-  void solve(VectorType& solution, const bool is_linear) const
+  void solve(DiscreteSolutionType& solution, const bool is_linear) const
   {
     try {
       DSC_CONFIG.set("threading.partition_factor", 1, true);
@@ -247,19 +245,19 @@ public:
 
       // get analytical flux, initial and boundary values
       typedef typename ProblemType::FluxType AnalyticalFluxType;
-      typedef typename ProblemType::SourceType SourceType;
-      typedef typename ProblemType::FunctionType FunctionType;
+      typedef typename ProblemType::RHSType RHSType;
+      typedef typename ProblemType::InitialValueType InitialValueType;
       typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-      typedef typename FunctionType::DomainFieldType DomainFieldType;
+      typedef typename ProblemType::DomainFieldType DomainFieldType;
       typedef typename ProblemType::RangeFieldType RangeFieldType;
       const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem_.flux();
-      const std::shared_ptr<const FunctionType> initial_values        = problem_.initial_values();
+      const std::shared_ptr<const InitialValueType> initial_values    = problem_.initial_values();
       const std::shared_ptr<const BoundaryValueType> boundary_values  = problem_.boundary_values();
-      const std::shared_ptr<const SourceType> source                  = problem_.source();
+      const std::shared_ptr<const RHSType> rhs                        = problem_.rhs();
 
       // allocate a discrete function for the concentration and another one to temporary store the update in each step
       typedef DiscreteFunction<FVSpaceType, Dune::Stuff::LA::CommonDenseVector<RangeFieldType>> FVFunctionType;
-      FVFunctionType u(fv_space_, "solution");
+      FVFunctionType u(*fv_space_, "solution");
 
       // project initial values
       project(*initial_values, u);
@@ -268,75 +266,37 @@ public:
       const double CFL   = problem_.CFL();
 
       // calculate dx and choose t_end and initial dt
-      Dune::Stuff::Grid::Dimensions<typename FVSpaceType::GridViewType> dimensions(fv_space_.grid_view());
+      Dune::Stuff::Grid::Dimensions<typename FVSpaceType::GridViewType> dimensions(fv_space_->grid_view());
       double dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);
       double dt = CFL * dx;
 
-      // create butcher_array
-      // forward euler
-      Dune::DynamicMatrix<RangeFieldType> A(DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>("[0]"));
-      Dune::DynamicVector<RangeFieldType> b(DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[1]"));
-      Dune::DynamicVector<RangeFieldType> c(DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0]"));
-      // generic second order, x = 1 (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
-      //          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0
-      //          0; 1 0]"));
-      //          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >
-      //          >("[0.5 0.5]"));
-      //          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0
-      //          1]"));
-      // optimal third order SSP
-      //          Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0
-      //          0 0; 1 0 0; 0.25 0.25 0]"));
-      //          Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >
-      //          >("[1.0/6.0 1.0/6.0 2.0/3.0]"));
-      //          Dune::DynamicVector< RangeFieldType > c(DSC::fromString< Dune::DynamicVector< RangeFieldType > >("[0 1
-      //          0.5]"));
-      // classic fourth order RK
-      //    Dune::DynamicMatrix< RangeFieldType > A(DSC::fromString< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0 0;
-      //    0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]"));
-      //    Dune::DynamicVector< RangeFieldType > b(DSC::fromString< Dune::DynamicVector< RangeFieldType >  >("[" +
-      //    DSC::toString(1.0/6.0) + " " + DSC::toString(1.0/3.0) + " " + DSC::toString(1.0/3.0) + " " +
-      //    DSC::toString(1.0/6.0) + "]"));
-
-
       // define operator types
       typedef typename Dune::Stuff::Functions::
           Constant<typename FVSpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
               ConstantFunctionType;
-      typedef typename Dune::GDT::Operators::AdvectionGodunov<AnalyticalFluxType,
-                                                              ConstantFunctionType,
-                                                              BoundaryValueType,
-                                                              FVSpaceType /*, Dune::GDT::Operators::SlopeLimiters::mc*/>
-          OperatorType;
-      typedef typename Dune::GDT::Operators::AdvectionSource<SourceType, FVSpaceType> SourceOperatorType;
-      typedef typename Dune::GDT::TimeStepper::RungeKutta<OperatorType, SourceOperatorType, FVFunctionType, double>
+      typedef typename Dune::GDT::Operators::AdvectionGodunov<AnalyticalFluxType, BoundaryValueType> OperatorType;
+      typedef typename Dune::GDT::Operators::AdvectionRHS<RHSType> RHSOperatorType;
+      typedef typename Dune::GDT::TimeStepper::RungeKutta<OperatorType, RHSOperatorType, FVFunctionType, double>
           TimeStepperType;
 
       // create source operator, is independent of dt
-      SourceOperatorType source_operator(*source, fv_space_);
+      RHSOperatorType rhs_operator(*rhs);
 
       // create advection operator
       const ConstantFunctionType dx_function(dx);
-      OperatorType advection_operator(
-          *analytical_flux, dx_function, dt, *boundary_values, fv_space_, is_linear /*, true, true*/);
+      OperatorType advection_operator(*analytical_flux, *boundary_values, is_linear /*, true, true*/);
 
       // create timestepper
-      TimeStepperType timestepper(advection_operator, source_operator, u, dx, A, b, c);
+      TimeStepperType timestepper(advection_operator, rhs_operator, u, dx);
 
       // now do the time steps
-      std::vector<std::pair<double, DiscreteFunctionType>> solution_as_discrete_function;
 
       const double saveInterval = t_end / 1000 > dt ? t_end / 1000 : dt;
-      timestepper.solve(t_end, dt, saveInterval, solution_as_discrete_function);
 
       solution.clear();
-      const size_t num_time_steps = solution_as_discrete_function.size();
-      for (size_t ii = 0; ii < num_time_steps; ++ii) {
-        StationaryVectorType stationary_vector(solution_as_discrete_function[ii].second.vector());
-        solution.emplace_back(std::make_pair(solution_as_discrete_function[ii].first, stationary_vector));
-      }
+      timestepper.solve(t_end, dt, saveInterval, solution);
 
     } catch (Dune::Exception& e) {
       std::cerr << "Dune reported: " << e.what() << std::endl;
@@ -348,7 +308,7 @@ public:
 
 private:
   const ProblemType& problem_;
-  const FVSpaceType fv_space_;
+  const std::shared_ptr<const FVSpaceType> fv_space_;
 }; // class NonStationaryDefault
 
 
