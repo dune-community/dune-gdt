@@ -8,51 +8,51 @@ namespace GDT {
 
 
 // forward
-template <class SourceFunctionImp>
-class SourceEvaluation;
+template <class RHSFunctionImp>
+class RHSEvaluation;
 
 
 namespace internal {
 
 
-template <class SourceFunctionImp>
-class SourceEvaluationTraits
+template <class RHSFunctionImp>
+class RHSEvaluationTraits
 {
 public:
-  typedef SourceFunctionImp SourceFunctionType;
-  typedef SourceEvaluation<SourceFunctionType> derived_type;
-  typedef typename SourceFunctionType::EntityType EntityType;
-  typedef typename SourceFunctionType::LocalfunctionType LocalfunctionType;
+  typedef RHSFunctionImp RHSFunctionType;
+  typedef RHSEvaluation<RHSFunctionType> derived_type;
+  typedef typename RHSFunctionType::EntityType EntityType;
+  typedef typename RHSFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<typename std::unique_ptr<LocalfunctionType>> LocalfunctionTupleType;
-  typedef typename SourceFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = SourceFunctionType::dimDomain;
-  static const size_t dimRange  = SourceFunctionType::rangeDimRange;
+  typedef typename RHSFunctionType::DomainFieldType DomainFieldType;
+  static const size_t dimDomain = RHSFunctionType::dimDomain;
+  static const size_t dimRange  = RHSFunctionType::dimRange;
 };
 
 
 } // namespace internal
 
 
-template <class SourceFunctionImp>
-class SourceEvaluation : public LocalEvaluation::Codim0Interface<internal::SourceEvaluationTraits<SourceFunctionImp>, 1>
+template <class RHSFunctionImp>
+class RHSEvaluation : public Local
 {
 public:
-  typedef typename internal::SourceEvaluationTraits<SourceFunctionImp> Traits;
-  typedef typename Traits::SourceFunctionType SourceFunctionType;
+  typedef typename internal::RHSEvaluationTraits<RHSFunctionImp> Traits;
+  typedef typename Traits::RHSFunctionType RHSFunctionType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange  = Traits::dimRange;
 
-  explicit SourceEvaluation(const SourceFunctionType& source_function)
-    : source_function_(source_function)
+  explicit RHSEvaluation(const RHSFunctionType& rhs_function)
+    : rhs_function_(rhs_function)
   {
   }
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(source_function_.local_global_function(entity));
+    return std::make_tuple(rhs_function_.local_global_function(entity));
   }
 
   /**
