@@ -41,39 +41,72 @@ class ConstDiscreteFunction;
 namespace internal {
 
 
-template <size_t ii, class SpaceImp, class VectorImp, class Traits, bool is_factor_space = false>
+template <size_t ii, bool is_product_space = false>
 struct visualize_helper
 {
-  static void visualize_factor(const std::string filename, const bool subsampling,
-                               const VTK::OutputType vtk_output_type, const DS::PerThreadValue<SpaceImp>& space,
-                               const VectorImp& vector)
+  template <class DiscreteFunctionType>
+  static void visualize_factor(const std::string filename_prefix, const std::string filename_suffix,
+                               const bool subsampling, const VTK::OutputType vtk_output_type,
+                               const DiscreteFunctionType& discrete_function)
   {
-    static_assert(ii == 0, "SpaceImp is not a product space, so there is no factor other than 0.");
-    ConstDiscreteFunction<SpaceImp, VectorImp> discrete_function(space, vector);
-    discrete_function.visualize(filename, subsampling, vtk_output_type);
+    static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
+    discrete_function.visualize(
+        filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 
-template <size_t ii, class SpaceImp, class VectorImp, class Traits>
-struct visualize_helper<ii, SpaceImp, VectorImp, Traits, true>
+template <size_t ii>
+struct visualize_helper<ii, true>
 {
-  static void visualize_factor(const std::string filename, const bool subsampling,
-                               const VTK::OutputType vtk_output_type, const DS::PerThreadValue<SpaceImp>& space,
-                               const VectorImp& vector)
+  template <class DiscreteFunctionType>
+  static void visualize_factor(const std::string filename_prefix, const std::string filename_suffix,
+                               const bool subsampling, const VTK::OutputType vtk_output_type,
+                               const DiscreteFunctionType& discrete_function)
   {
-    static_assert(ii < SpaceImp::num_factors, "This factor does not exist.");
-    const auto& factor_space = space->template factor<ii>();
-    VectorImp factor_vector(factor_space.mapper().size());
-    const auto it_end = space->grid_view().template end<0>();
-    for (auto it = space->grid_view().template begin<0>(); it != it_end; ++it) {
+    static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
+    const auto& space        = discrete_function.space();
+    const auto& factor_space = space.template factor<ii>();
+    typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
+    const auto it_end = space.grid_view().template end<0>();
+    for (auto it = space.grid_view().template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
         factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
-            vector[space->product_mapper().mapToGlobal(ii, entity, jj)];
+            discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
     }
-    ConstDiscreteFunction<typename SpaceImp::FactorSpaceType, VectorImp> factor_discrete_function(factor_space,
-                                                                                                  factor_vector);
-    factor_discrete_function.visualize(filename, subsampling, vtk_output_type);
+    ConstDiscreteFunction<typename DiscreteFunctionType::SpaceType::FactorSpaceType,
+                          typename DiscreteFunctionType::VectorType> factor_discrete_function(factor_space,
+                                                                                              factor_vector);
+    factor_discrete_function.visualize(
+        filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+  }
+};
+
+// discrete_exact_solution_ time for loop to visualize all factors of a product space, see
+// http://stackoverflow.com/a/11081785
+template <size_t current_factor_index, size_t last_factor_index>
+struct static_for_loop
+{
+  template <class DiscreteFunctionType>
+  static void visualize(const std::string filename_prefix, const std::string filename_suffix, const bool subsampling,
+                        const VTK::OutputType vtk_output_type, const DiscreteFunctionType& discrete_function)
+  {
+    visualize_helper<current_factor_index, true>::visualize_factor(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
+    static_for_loop<current_factor_index + 1, last_factor_index>::visualize(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
+  }
+};
+
+// specialization of static for loop to end the loop
+template <size_t last_factor_index>
+struct static_for_loop<last_factor_index, last_factor_index>
+{
+  template <class DiscreteFunctionType>
+  static void visualize(const std::string /*filename*/, const std::string /*filename_suffix*/,
+                        const bool /*subsampling*/, const VTK::OutputType /*vtk_output_type*/,
+                        const DiscreteFunctionType& /*discrete_function*/)
+  {
   }
 };
 
@@ -169,17 +202,24 @@ public:
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    redirect_visualize(space(), filename, subsampling, vtk_output_type);
+    visualize(filename, "", subsampling, vtk_output_type);
+  }
+
+  void visualize(const std::string filename_prefix, const std::string filename_suffix = "",
+                 const bool subsampling                = (SpaceType::polOrder > 1),
+                 const VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  {
+    redirect_visualize(space(), filename_prefix, filename_suffix, subsampling, vtk_output_type);
   }
 
   template <size_t ii>
-  void visualize_factor(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
+  void visualize_factor(const std::string filename_prefix, const std::string filename_suffix = "",
+                        const bool subsampling                = (SpaceType::polOrder > 1),
                         const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    internal::
-        visualize_helper<ii, SpaceType, VectorType, SpaceTraits, std::is_base_of<IsProductSpace, SpaceType>::value>::
-            visualize_factor(filename, subsampling, vtk_output_type, space_, vector_);
-  } // ... visualize_factor< ii >(...)
+    internal::visualize_helper<ii, is_product_space<SpaceType>::value>::visualize_factor(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, *this);
+  }
 
   bool dofs_valid() const
   {
@@ -188,27 +228,22 @@ public:
 
 protected:
   template <class S, size_t d, size_t r, size_t rC>
-  void redirect_visualize(const SpaceInterface<S, d, r, rC>& /*space*/, const std::string filename,
-                          const bool subsampling, const VTK::OutputType vtk_output_type) const
+  void redirect_visualize(const SpaceInterface<S, d, r, rC>& space, const std::string filename_prefix,
+                          const std::string filename_suffix, const bool subsampling,
+                          const VTK::OutputType vtk_output_type) const
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
-        space_->grid_view(), filename, subsampling, vtk_output_type);
+        space.grid_view(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
   } // ... redirect_visualize(...)
 
-
-  // TODO: Why is this specialization needed for FV spaces??? Performance?
   template <class S, size_t d, size_t r, size_t rC>
-  void redirect_visualize(const Spaces::FVInterface<S, d, r, rC>& space, const std::string filename,
-                          const bool /*subsampling*/, const VTK::OutputType vtk_output_type) const
+  void redirect_visualize(const ProductSpaceInterface<S, d, r, rC>& /*space*/, const std::string filename_prefix,
+                          const std::string filename_suffix, const bool subsampling,
+                          const VTK::OutputType vtk_output_type) const
   {
-    const auto& grid_view = space.grid_view();
-    std::vector<typename Spaces::FVInterface<S, d, r, rC>::RangeFieldType> values(grid_view.indexSet().size(0));
-    for (const auto& entity : DSC::entityRange(grid_view))
-      values[grid_view.indexSet().index(entity)] = vector_[space.mapper().mapToGlobal(entity, 0)];
-    VTKWriter<typename Spaces::FVInterface<S, d, r, rC>::GridViewType> vtk_writer(grid_view);
-    vtk_writer.addCellData(values, this->name());
-    vtk_writer.write(filename, vtk_output_type);
-  } // ... redirect_visualize< Spaces::FV, ... >(...)
+    internal::static_for_loop<0, ProductSpaceInterface<S, d, r, rC>::num_factors>::visualize(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, *this);
+  } // ... redirect_visualize(...)
 
   const DS::PerThreadValue<SpaceType> space_;
 
