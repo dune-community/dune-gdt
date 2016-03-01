@@ -87,7 +87,7 @@ namespace internal {
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp>
 class AdvectionTraitsBase
 {
-  static_assert(std::is_base_of<IsAnalyticalFlux, AnalyticalFluxImp>::value,
+  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
   //  static_assert(Stuff::is_???< BoundaryValueFunctionImp >::value,
   //                "BoundaryValueFunctionImp has to be derived from ???!");
@@ -163,11 +163,11 @@ class AdvectionLocalizableDefault
   typedef Dune::GDT::LocalizableOperatorDefault<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
       BaseType;
 
-  static_assert(std::is_base_of<IsAnalyticalFlux, AnalyticalFluxImp>::value,
+  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
-  static_assert(std::is_base_of<IsNumericalCouplingFlux, NumericalCouplingFluxImp>::value,
+  static_assert(is_numerical_coupling_flux<NumericalCouplingFluxImp>::value,
                 "NumericalCouplingFluxImp has to be derived from NumericalCouplingFluxInterface!");
-  static_assert(std::is_base_of<IsNumericalBoundaryFlux, NumericalBoundaryFluxImp>::value,
+  static_assert(is_numerical_boundary_flux<NumericalBoundaryFluxImp>::value,
                 "NumericalBoundaryFluxImp has to be derived from NumericalBoundaryFluxInterface!");
   //  static_assert(std::is_base_of< ???, BoundaryValueFunctionImp >::value,
   //                "BoundaryValueFunctionImp has to be derived from ???!");
