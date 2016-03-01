@@ -20,7 +20,6 @@ addons:
     - lcov
     - curl
     - python3-requests
-    - libeigen3-dev
 
 before_install:
   - |-
@@ -33,22 +32,9 @@ before_install:
   - sudo -E pip install virtualenv cpp-coveralls
   - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
-  - sudo -E apt-get install python-pyparsing && for ii in libdune-common-2.3.1_2.3.1-1_amd64.deb libdune-common-dev_2.3.1-1_amd64.deb; do wget http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-common/$ii; done && sudo -E dpkg -i *.deb && rm *.deb
-  - for ii in libdune-geometry-2.3.1_2.3.1-1ubuntu1_amd64.deb libdune-geometry-dev_2.3.1-1ubuntu1_amd64.deb; do wget http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-geometry/$ii; done && sudo -E dpkg -i *.deb && rm *.deb
-  # dune-grid requires alberta and ug, but the presence of alberta leads to a failure in dune-pdelab
-  # we thus do not install them but require the --force-depends option to install dune-grid
-  #- for ii in libalberta4_3.0.1-1_amd64.deb libalberta-dev_3.0.1-1_amd64.deb libalberta2-dev_3.0.1-1_amd64.deb; do wget http://de.archive.ubuntu.com/ubuntu/pool/universe/a/alberta/$ii; done && sudo -E dpkg -i *.deb && rm *.deb
-  #- for ii in http://ftp.de.debian.org/debian/pool/main/u/ug/libug3.11.0_3.11.0-1_amd64.deb http://ftp.de.debian.org/debian/pool/main/u/ug/libug-dev_3.11.0-1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
-  - for ii in libdune-grid-2.3.1_2.3.1-1_amd64.deb libdune-grid-dev_2.3.1-1_amd64.deb; do wget http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-grid/$ii; done && sudo -E dpkg --force-depends -i *.deb && rm *.deb
-  - wget http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-istl/libdune-istl-dev_2.3.1-1_all.deb && sudo -E dpkg -i *.deb && rm *.deb
-  - wget http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-localfunctions/libdune-localfunctions-dev_2.3.1-1_all.deb && sudo -E dpkg -i *.deb && rm *.deb
-  - for ii in http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-typetree/libdune-typetree-2.3.1_2.3.1-1_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/d/dune-typetree/libdune-typetree-dev_2.3.1-1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
   - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
   - cd $HOME/src
   - git checkout refactor_operators_functionals
-  - git config --global user.email you@example.com
-  - git config --global user.name You
-  - for ii in dune-common dune-geometry dune-grid dune-istl dune-localfunctions dune-typetree; do git submodule deinit $ii && git rm $ii; git commit -am 'drop submodule'; done
   - git submodule update --init --recursive
   - git submodule status
   # our local scripts look for an OPTS env entry
@@ -62,7 +48,7 @@ before_install:
 install:
   - cd $HOME/src
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
-  - export SRC_DCTRL=dunecontrol
+  - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
   - ${SRC_DCTRL} ${ARGS} all
   # move my travis checkout into this source tree
   - cp -ra ${TRAVIS_BUILD_DIR} .
