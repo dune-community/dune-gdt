@@ -25,7 +25,7 @@ struct L2GlobalProjectionLocalizableOperatorTest
   void constructible_by_factory()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source = this->scalar_function_;
+    const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
     auto DUNE_UNUSED(w_grid_view_w_over_integrate)
@@ -36,6 +36,21 @@ struct L2GlobalProjectionLocalizableOperatorTest
         = make_global_l2_projection_localizable_operator(           source, range, 1);
     auto DUNE_UNUSED(wo_grid_view_wo_over_integrate)
         = make_global_l2_projection_localizable_operator(           source, range);
+  } // ... constructible_by_factory(...)
+};
+
+
+template< class SpaceType >
+struct L2GlobalProjectionOperatorTest
+  : public ProjectionOperatorBase< SpaceType
+                                 , L2GlobalProjectionOperator< typename SpaceType::GridViewType, double > >
+{
+  void constructible_by_factory()
+  {
+    const auto& grid_view = this->space_.grid_view();
+
+    auto DUNE_UNUSED(w_over_integrate)  = make_global_l2_projection_operator(grid_view, 1);
+    auto DUNE_UNUSED(wo_over_integrate) = make_global_l2_projection_operator(grid_view);
   } // ... constructible_by_factory(...)
 };
 

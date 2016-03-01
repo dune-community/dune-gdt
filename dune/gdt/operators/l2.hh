@@ -85,7 +85,8 @@ L2LocalizableProduct(...args);
    */
   template< typename possibly_int_t,
             class ...Args,
-            typename std::enable_if< !std::is_same< possibly_int_t, tag< true > >::value, int >::type = 0 >
+            typename std::enable_if<    !std::is_same< possibly_int_t, tag< true > >::value
+                                     && !std::is_same< possibly_int_t, tag< false > >::value, int >::type = 0 >
   explicit L2LocalizableProduct(possibly_int_t&& possibly_over_integrate, Args&& ...args)
     : L2LocalizableProduct(tag< std::numeric_limits< typename std::decay< possibly_int_t >::type >::is_integer >(0),
                            std::forward< possibly_int_t >(possibly_over_integrate),
@@ -176,7 +177,8 @@ L2LocalizableProduct(...args);
    */
   template< typename possibly_int_t,
             class ...Args,
-            typename std::enable_if< !std::is_same< possibly_int_t, tag< true > >::value, int >::type = 0 >
+            typename std::enable_if<    !std::is_same< possibly_int_t, tag< true > >::value
+                                     && !std::is_same< possibly_int_t, tag< false > >::value, int >::type = 0 >
   explicit L2MatrixOperator(possibly_int_t&& possibly_over_integrate, Args&& ...args)
     : L2MatrixOperator(tag< std::numeric_limits< typename std::decay< possibly_int_t >::type >::is_integer >(0),
                        std::forward< possibly_int_t >(possibly_over_integrate),

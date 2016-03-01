@@ -19,14 +19,14 @@ typedef testing::Types< SPACES_CG_FEM(1)
 #endif
                       > SpaceTypes;
 
-TYPED_TEST_CASE(L2GlobalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, constructible_by_ctor) {
+TYPED_TEST_CASE(L2GlobalProjectionOperatorTest, SpaceTypes);
+TYPED_TEST(L2GlobalProjectionOperatorTest, constructible_by_ctor) {
   this->constructible_by_ctor();
 }
-TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, constructible_by_factory) {
+TYPED_TEST(L2GlobalProjectionOperatorTest, constructible_by_factory) {
   this->constructible_by_factory();
 }
-TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) {
+TYPED_TEST(L2GlobalProjectionOperatorTest, produces_correct_results) {
   this->produces_correct_results();
 }
 
@@ -34,9 +34,9 @@ TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) 
 #else // HAVE_DUNE_FEM
 
 
-TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, constructible_by_ctor) {}
-TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, constructible_by_factory) {}
-TEST(DISABLED_L2GlobalProjectionLocalizableOperatorTest, produces_correct_results) {}
+TEST(DISABLED_L2GlobalProjectionOperatorTest, constructible_by_ctor) {}
+TEST(DISABLED_L2GlobalProjectionOperatorTest, constructible_by_factory) {}
+TEST(DISABLED_L2GlobalProjectionOperatorTest, produces_correct_results) {}
 
 
 #endif // HAVE_DUNE_FEM

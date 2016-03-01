@@ -177,12 +177,12 @@ struct EllipticMatrixOperatorTest
 {
   typedef EllipticProductBase< SpaceType > EllipticBaseType;
   typedef MatrixOperatorBase< SpaceType > MatrixBaseType;
-  using typename MatrixBaseType::GridViewType;
+  typedef typename MatrixBaseType::GridViewType GridViewType;
   using typename EllipticBaseType::ExpressionFunctionType;
   using typename MatrixBaseType::DiscreteFunctionType;
   using typename MatrixBaseType::ScalarFunctionType;
   using typename MatrixBaseType::TensorFunctionType;
-  using typename MatrixBaseType::RangeFieldType;
+  typedef typename MatrixBaseType::RangeFieldType RangeFieldType;
   using typename MatrixBaseType::MatrixType;
 
   EllipticMatrixOperatorTest(const double factor_value = 42.)
@@ -455,7 +455,7 @@ struct EllipticMatrixOperatorTest
     auto op = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
     // project the function
     DiscreteFunctionType discrete_function(space);
-    Operators::Projection< GridViewType >(space.grid_view()).apply(function, discrete_function);
+    project(space.grid_view(), function, discrete_function);
     // compute product
     const auto result = op->apply2(discrete_function, discrete_function);
     auto op_tbb = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
