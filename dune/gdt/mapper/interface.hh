@@ -82,6 +82,8 @@ class ProductMapperInterface : public MapperInterface<Traits>, IsProductMapper
 public:
   using typename BaseType::EntityType;
 
+  using BaseType::globalIndices;
+
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(factor_index, entity, ret));
