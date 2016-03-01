@@ -117,6 +117,14 @@ public:
     vector_.add_to_entry(indices_[ii], val);
   }
 
+  template <class OtherVectorImp>
+  void add(const OtherVectorImp& vector)
+  {
+    assert(vector.size() == indices_.size());
+    for (size_t ii = 0; ii < indices_.size(); ++ii)
+      add(ii, vector[ii]);
+  }
+
 private:
   using BaseType::indices_;
   VectorType& vector_;
