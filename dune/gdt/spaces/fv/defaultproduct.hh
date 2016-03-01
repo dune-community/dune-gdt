@@ -83,66 +83,75 @@ public:
 
 } // namespace internal
 
-
+/** TODO: delete copy constructor again and uncomment move constructor? */
 template< class GridViewImp, class RangeFieldImp, size_t rangeDim >
 class DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >
   : public Dune::GDT::Spaces::ProductFVInterface< internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
                                                   GridViewImp::dimension, rangeDim, 1 >
-  , public Default< GridViewImp, RangeFieldImp, rangeDim, 1 >
 {
   typedef DefaultProduct< GridViewImp, RangeFieldImp, rangeDim, 1 >                  ThisType;
   typedef Dune::GDT::Spaces::ProductFVInterface
         < internal::DefaultProductTraits< GridViewImp, RangeFieldImp, rangeDim, 1 >,
-          GridViewImp::dimension, rangeDim, 1 >                                      InterfaceType;
-  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 >                         BaseType;
+          GridViewImp::dimension, rangeDim, 1 >                                      BaseType;
+  typedef Default< GridViewImp, RangeFieldImp, rangeDim, 1 > DefaultFVSpaceType;
 public:
-  using typename InterfaceType::Traits;
-  using typename InterfaceType::GridViewType;
-  using typename InterfaceType::BackendType;
-  using typename InterfaceType::MapperType;
-  using typename InterfaceType::EntityType;
-  using typename InterfaceType::BaseFunctionSetType;
-  using typename InterfaceType::RangeFieldType;
-  using typename InterfaceType::CommunicatorType;
-  using typename InterfaceType::SpaceTupleType;
+  using typename BaseType::Traits;
+  using typename BaseType::GridViewType;
+  using typename BaseType::BackendType;
+  using typename BaseType::MapperType;
+  using typename BaseType::EntityType;
+  using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::CommunicatorType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
   DefaultProduct(GridViewType gv)
-    : BaseType(gv)
-    , factor_space_(grid_view_)
+    : default_fv_space_(gv)
+    , product_fv_mapper_(gv)
+    , factor_space_(gv)
   {}
 
-  DefaultProduct(const ThisType& other)
-    : BaseType(other)
-    , factor_space_(other.factor_space_)
-  {}
+//  DefaultProduct(ThisType&& source) = default;
 
-  DefaultProduct(ThisType&& source) = default;
+//  ThisType& operator=(const ThisType& other) = delete;
 
-  ThisType& operator=(const ThisType& other) = delete;
+//  ThisType& operator=(ThisType&& source) = delete;
 
-  ThisType& operator=(ThisType&& source) = delete;
-
-  const MapperType& product_mapper() const
-  {
-    return mapper_;
-  }
-
+  // These methods are required by ProductSpaceInterface
   template< size_t ii >
   const FactorSpaceType factor() const
   {
     return factor_space_;
   }
 
-  using BaseType::grid_view;
-  using BaseType::backend;
-  using BaseType::base_function_set;
-  using BaseType::communicator;
+  const MapperType& mapper() const
+  {
+    return product_fv_mapper_;
+  }
+
+  // The remaining methods are redirected to Default
+  const GridViewType& grid_view() const
+  {
+    return default_fv_space_.grid_view();
+  }
+
+  const BackendType& backend() const
+  {
+    return default_fv_space_.backend();
+  }
+
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  {
+    return default_fv_space_.base_function_set(entity);
+  }
+
+  CommunicatorType& communicator() const
+  {
+    return default_fv_space_.communicator();
+  }
 
 private:
-  using BaseType::grid_view_;
-  using BaseType::mapper_;
-
+  const DefaultFVSpaceType default_fv_space_;
+  const MapperType product_fv_mapper_;
   const FactorSpaceType factor_space_;
 }; // class DefaultProduct< ..., 1 >
 

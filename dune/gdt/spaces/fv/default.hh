@@ -123,7 +123,7 @@ public:
     return *communicator_;
   }
 
-protected:
+private:
   const GridViewType grid_view_;
   const MapperType mapper_;
   const std::unique_ptr< CommunicatorType > communicator_;
