@@ -218,7 +218,7 @@ public:
   typedef typename Traits::FVSpaceType     FVSpaceType;
   typedef typename Traits::VectorType      VectorType;
   typedef typename Traits::DiscreteFunctionType DiscreteFunctionType;
-  typedef typename Traits::StationaryVectorType StationaryVectorType;
+  typedef typename Traits::DiscreteSolutionType DiscreteSolutionType;
 private:
   static_assert(is_space< FVSpaceType >::value,   "FVSpaceType has to be derived from SpaceInterface!");
 
@@ -238,7 +238,7 @@ public:
     return this->as_imp().fv_space();
   }
 
-  void solve(VectorType& solution, const bool is_linear) const
+  void solve(DiscreteSolutionType& solution, const bool is_linear) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, is_linear));
   }
@@ -252,16 +252,17 @@ public:
     return VectorType(fv_space().mapper().size());
   }
 
-  VectorType solve(const bool is_linear) const
+  DiscreteSolutionType solve(const bool is_linear) const
   {
-    VectorType solution;
+    DiscreteSolutionType solution;
     solve(solution, is_linear);
     return solution;
   }
 
-  void visualize(const VectorType& vector, const std::string filename, const std::string name) const
+  void visualize(const DiscreteSolutionType& solution, const std::string filename) const
   {
-    make_const_discrete_function(this->fv_space(), vector, name).visualize(filename);
+    for (size_t ii = 0; ii < solution.size(); ++ii)
+      solution[ii].second.visualize(filename, DSC::toString(ii));
   }
 
   /// \}
