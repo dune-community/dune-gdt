@@ -24,7 +24,7 @@
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
-//#include <dune/stuff/functions/affine.hh>
+#include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/la/container/eigen.hh>
 #include <dune/stuff/common/parallel/threadstorage.hh>
 
@@ -40,6 +40,9 @@ class GodunovNumericalCouplingFlux;
 
 template< class AnalyticalFluxImp, class BoundaryValueFunctionType, size_t domainDim >
 class GodunovNumericalBoundaryFlux;
+
+//TODO: remove Eigen-dependency and use generic eigenvalue solver
+#if HAVE_EIGEN
 
 
 namespace internal {
@@ -83,11 +86,8 @@ public:
 } // namespace internal
 
 
-
+//TODO: remove this preprocessor directive
 #define PAPERFLUX 0
-
-
-#if 0
 
 template< class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain >
 class GodunovNumericalCouplingFlux
@@ -122,7 +122,7 @@ public:
   }
 
   template< class IntersectionType >
-  ResultType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
+  RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
                       const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
                       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_entity,
                       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_neighbor,
@@ -160,21 +160,21 @@ public:
     }
     assert(num_zeros == dimDomain - 1);
     // calculate return vector
-    ResultType ret;
+    RangeType ret;
     RangeFieldType vol_intersection = intersection.geometry().volume();
     if (n_ij[coord] > 0) {
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_[coord].mv(delta_u, negative_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[0][kk] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
+        ret[kk] = (f_u_i[kk][coord] - negative_waves[kk]*n_ij[coord])*vol_intersection;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_[coord].mv(delta_u, positive_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[0][kk] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
+        ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
     }
     return ret;
-  } // ResultType evaluate(...) const
+  } // RangeType evaluate(...) const
 
 private:
   void initialize_jacobians()
@@ -182,7 +182,7 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
     std::vector< EigenMatrixType > jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15)));
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15), dimRange, dimRange));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -196,14 +196,13 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
     std::vector< EigenMatrixType > jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15)));
+      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15), dimRange, dimRange));
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
   } // void reinitialize_jacobians(...)
 
   void calculate_jacobians(std::vector< EigenMatrixType >&& jacobian) const
   {
-#if HAVE_EIGEN
     EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
     EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
     for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -231,9 +230,6 @@ private:
       jacobian_neg_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen, 15));
       jacobian_pos_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen, 15));
     }
-#else
-    static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-#endif
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
@@ -291,7 +287,7 @@ public:
   }
 
   template< class IntersectionType >
-  ResultType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
+  RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
                       const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
                       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_entity,
                       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_neighbor,
@@ -311,7 +307,7 @@ public:
     // get unit outer normal
     const RangeFieldType n_ij = intersection.unitOuterNormal(x_intersection)[0];
     // calculate return vector
-    ResultType ret;
+    RangeType ret;
 #if PAPERFLUX
     //get flux values, FluxRangeType should be FieldVector< ..., dimRange >
     const FluxRangeType f_u_i_plus_f_u_j = is_linear_
@@ -339,6 +335,7 @@ public:
       ret = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
     }
 #endif
+    return ret;
   } // void evaluate(...) const
 
 private:
@@ -365,7 +362,6 @@ private:
 
   void calculate_jacobians(EigenMatrixType&& jacobian) const
   {
-#if HAVE_EIGEN
     EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
     EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
     diag_jacobian_pos_tmp.scal(RangeFieldType(0));
@@ -402,9 +398,6 @@ private:
       jacobian_pos_function_ = AffineFunctionType(jacobian_pos_, RangeType(0), true);
 # endif
     }
-#else
-    static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-#endif
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
@@ -477,21 +470,21 @@ public:
       initialize_jacobians();
   }
 
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
     return std::make_tuple(boundary_values_.local_function(entity));
   }
 
 
   template< class IntersectionType >
-  ResultType evaluate(
+  RangeType evaluate(
       const LocalfunctionTupleType& local_functions_tuple,
       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_entity,
       const IntersectionType& intersection,
       const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& x_intersection) const
   {
       const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
-      const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection_entity_coords));
+      const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
       const RangeType u_j = std::get< 0 >(local_functions_tuple)->evaluate(x_intersection_entity_coords);
       // get flux values
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
@@ -502,7 +495,7 @@ public:
       // get jump at the intersection
       const RangeType delta_u = u_i - u_j;
       // get unit outer normal
-      const auto n_ij = intersection.unitOuterNormal(localPoint);
+      const auto n_ij = intersection.unitOuterNormal(x_intersection);
       // find direction of unit outer normal
       size_t coord = 0;
   #ifndef NDEBUG
@@ -521,7 +514,7 @@ public:
       }
       assert(num_zeros == dimDomain - 1);
       // calculate return vector
-      ReturnType ret;
+      RangeType ret;
       RangeFieldType vol_intersection = intersection.geometry().volume();
       if (n_ij[coord] > 0) {
         RangeType negative_waves(RangeFieldType(0));
@@ -534,6 +527,7 @@ public:
         for (size_t kk = 0; kk < dimRange; ++kk)
           ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk]*n_ij[coord])*vol_intersection;
       }
+      return ret;
     } // void evaluate(...) const
 
   private:
@@ -563,7 +557,6 @@ public:
 
     void calculate_jacobians(std::vector< EigenMatrixType >&& jacobian) const
     {
-#if HAVE_EIGEN
       EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
       EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
       for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -591,9 +584,6 @@ public:
         jacobian_neg_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
         jacobian_pos_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
       }
-#else
-      static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-#endif
     } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
@@ -623,7 +613,6 @@ class GodunovNumericalBoundaryFlux< AnalyticalBoundaryFluxImp, BoundaryValueFunc
 public:
   typedef internal::GodunovNumericalBoundaryFluxTraits< AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1 >  Traits;
   typedef typename Traits::BoundaryValueFunctionType                BoundaryValueFunctionType;
-  typedef typename Traits::LocalizableFunctionType                  LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType                   LocalfunctionTupleType;
   typedef typename Traits::EntityType                               EntityType;
   typedef typename Traits::DomainFieldType                          DomainFieldType;
@@ -649,20 +638,20 @@ public:
       initialize_jacobians();
   }
 
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
     return std::make_tuple(boundary_values_.local_function(entity));
   }
 
   template< class IntersectionType >
-  ResultType evaluate(
+  RangeType evaluate(
       const LocalfunctionTupleType& local_functions_tuple,
       const Stuff::LocalfunctionInterface< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1 >& local_source_entity,
       const IntersectionType& intersection,
       const Dune::FieldVector< DomainFieldType, dimDomain - 1 >& x_intersection) const
   {
       const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
-      const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection_entity_coords));
+      const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
       const RangeType u_j = std::get< 0 >(local_functions_tuple)->evaluate(x_intersection_entity_coords);
 
       if (!jacobians_constructed_ && is_linear_)
@@ -672,9 +661,9 @@ public:
         reinitialize_jacobians(u_i, u_j);
       }
       // get unit outer normal
-      const RangeFieldType n_ij = intersection.unitOuterNormal(localPoint)[0];
+      const RangeFieldType n_ij = intersection.unitOuterNormal(x_intersection)[0];
       // calculate return vector
-      ReturnType ret;
+      RangeType ret;
 #if PAPERFLUX
       //get flux values, FluxRangeType should be FieldVector< ..., dimRange >
       const FluxRangeType f_u_i_plus_f_u_j = is_linear_
@@ -695,13 +684,14 @@ public:
       if (n_ij > 0) {
         RangeType negative_waves(RangeFieldType(0));
         jacobian_neg_function_.evaluate(u_j - u_i, negative_waves);
-        ret[0] = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
+        ret = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
       } else {
         RangeType positive_waves(RangeFieldType(0));
         jacobian_pos_function_.evaluate(u_i - u_j, positive_waves);
-        ret[0] = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
+        ret = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
       }
 #endif
+      return ret;
   } // void evaluate(...) const
 
   private:
@@ -728,7 +718,6 @@ public:
 
     void calculate_jacobians(EigenMatrixType&& jacobian) const
     {
-#if HAVE_EIGEN
       EigenMatrixType diag_jacobian_pos_tmp(dimRange, dimRange, RangeFieldType(0));
       EigenMatrixType diag_jacobian_neg_tmp(dimRange, dimRange, RangeFieldType(0));
       diag_jacobian_pos_tmp.scal(RangeFieldType(0));
@@ -765,9 +754,6 @@ public:
         jacobian_pos_function_ = AffineFunctionType(jacobian_pos_, RangeType(0), true);
 # endif
       }
-#else
-      static_assert(AlwaysFalse< FluxJacobianRangeType >::value, "You are missing eigen!");
-#endif
     } // void calculate_jacobians(...)
 
     const AnalyticalFluxType& analytical_flux_;
@@ -810,7 +796,23 @@ template < class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp >
 thread_local bool
 GodunovNumericalBoundaryFlux< AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1 >::jacobians_constructed_(false);
 
-#endif // 0
+
+#else // HAVE_EIGEN
+
+template< class AnalyticalFluxImp, size_t domainDim >
+class GodunovNumericalCouplingFlux
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+template< class AnalyticalFluxImp, class BoundaryValueFunctionType, size_t domainDim >
+class GodunovNumericalBoundaryFlux
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+#endif // HAVE_EIGEN
+
 
 } // namespace GDT
 } // namespace Dune
