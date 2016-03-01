@@ -12,6 +12,7 @@ END_TESTCASES()
 foreach (test ${testnames})
   add_dune_alugrid_flags(${test})
   TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
+  set_tests_properties(${test} PROPERTIES TIMEOUT 360)
 endforeach (test ${testnames})
 
 # link spe10 data file if present
@@ -35,5 +36,3 @@ target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_alugrid 
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
 target_link_libraries(test_hyperbolic-fv-discretization_yaspgrid                 lib_test_hyperbolic_fv_discretizations_yaspgrid)
 
-set_tests_properties(test_linearelliptic_cg_discretization_pdelab_istl_sgrid PROPERTIES TIMEOUT 360)
-set_tests_properties(test_linearelliptic_cg_discretization_pdelab_eigen_sgrid PROPERTIES TIMEOUT 360)

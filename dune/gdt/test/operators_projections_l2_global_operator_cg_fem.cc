@@ -3,9 +3,9 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#include <dune/stuff/test/main.hxx> // <- This one has to come first!
+#include <dune/stuff/test/main.hxx>
 
-#include "operators/projections/lagrange.hh"
+#include "operators/projections/l2-global.hh"
 #include "spaces/cg/fem.hh"
 
 using namespace Dune::GDT::Test;
@@ -20,16 +20,16 @@ typedef testing::Types<SPACES_CG_FEM(1)
 #endif
                        > SpaceTypes;
 
-TYPED_TEST_CASE(LagrangeProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, constructible_by_ctor)
+TYPED_TEST_CASE(L2GlobalProjectionOperatorTest, SpaceTypes);
+TYPED_TEST(L2GlobalProjectionOperatorTest, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, constructible_by_factory)
+TYPED_TEST(L2GlobalProjectionOperatorTest, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, produces_correct_results)
+TYPED_TEST(L2GlobalProjectionOperatorTest, produces_correct_results)
 {
   this->produces_correct_results();
 }
@@ -38,13 +38,13 @@ TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, produces_correct_results)
 #else // HAVE_DUNE_FEM
 
 
-TEST(DISABLED_LagrangeProjectionLocalizableOperatorTest, constructible_by_ctor)
+TEST(DISABLED_L2GlobalProjectionOperatorTest, constructible_by_ctor)
 {
 }
-TEST(DISABLED_LagrangeProjectionLocalizableOperatorTest, constructible_by_factory)
+TEST(DISABLED_L2GlobalProjectionOperatorTest, constructible_by_factory)
 {
 }
-TEST(DISABLED_LagrangeProjectionLocalizableOperatorTest, produces_correct_results)
+TEST(DISABLED_L2GlobalProjectionOperatorTest, produces_correct_results)
 {
 }
 

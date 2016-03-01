@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "operators/projections/l2-local.hh"
+#include "operators/projections/l2.hh"
 #include "spaces/dg/pdelab.hh"
 
 using namespace Dune::GDT::Test;
@@ -14,22 +14,26 @@ using namespace Dune::GDT::Test;
 
 
 typedef testing::Types<SPACES_DG_PDELAB(1)
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                            ,
                        SPACES_DG_PDELAB_ALUGRID(1)
 #endif
                        > SpaceTypes;
 
-TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
+TYPED_TEST_CASE(L2ProjectionOperatorTest, SpaceTypes);
+TYPED_TEST(L2ProjectionOperatorTest, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
+TYPED_TEST(L2ProjectionOperatorTest, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
+TYPED_TEST(L2ProjectionOperatorTest, free_function_callable)
+{
+  this->free_function_callable();
+}
+TYPED_TEST(L2ProjectionOperatorTest, produces_correct_results)
 {
   this->produces_correct_results();
 }
@@ -38,13 +42,16 @@ TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
 #else // HAVE_DUNE_PDELAB
 
 
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
+TEST(DISABLED_L2ProjectionOperatorTest, constructible_by_ctor)
 {
 }
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
+TEST(DISABLED_L2ProjectionOperatorTest, constructible_by_factory)
 {
 }
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
+TEST(DISABLED_L2ProjectionOperatorTest, free_function_callable)
+{
+}
+TEST(DISABLED_L2ProjectionOperatorTest, produces_correct_results)
 {
 }
 
