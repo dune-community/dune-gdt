@@ -112,6 +112,8 @@ public:
     return range_;
   }
 
+  using BaseType::grid_view;
+
   template< class V >
   void add(const LocalVolumeTwoFormInterface< V >& local_volume_twoform,
            const DSG::ApplyOn::WhichEntity< GridViewType >* where = new DSG::ApplyOn::AllEntities< GridViewType >())
@@ -119,7 +121,7 @@ public:
     typedef LocalVolumeTwoFormAccumulator
         < GridViewType, typename LocalVolumeTwoFormInterface< V >::derived_type, RangeType, SourceType, FieldType > AccumulateFunctor;
     local_volume_twoforms_.emplace_back(
-          new AccumulateFunctor(grid_view_, local_volume_twoform.as_imp(), range_, source_, *where));
+          new AccumulateFunctor(grid_view(), local_volume_twoform.as_imp(), range_, source_, *where));
     BaseType::add(*local_volume_twoforms_.back(), where);
   }
 
@@ -144,8 +146,6 @@ public:
   }
 
 protected:
-  using BaseType::grid_view_;
-
   const RangeType& range_;
   const SourceType& source_;
   std::vector< std::unique_ptr< DSG::internal::Codim0ReturnObject< GridViewType, FieldType > > > local_volume_twoforms_;
@@ -385,10 +385,10 @@ private:
   static_assert(RangeType::dimDomain  == GridViewType::dimension, "Have to match!");
 
 public:
-  LocalizableOperatorDefault(GridViewType grid_view, const SourceType& source, RangeType& range)
-    : BaseType(grid_view)
-    , source_(source)
-    , range_(range)
+  LocalizableOperatorDefault(GridViewType grd_vw, const SourceType& src, RangeType& rng)
+    : BaseType(grd_vw)
+    , source_(src)
+    , range_(rng)
     , walked_(false)
   {}
 
@@ -408,6 +408,7 @@ public:
   }
 
   using BaseType::add;
+  using BaseType::grid_view;
 
   template< class L >
   void add(const LocalOperatorInterface< L >& local_operator,
@@ -415,10 +416,33 @@ public:
   {
     typedef LocalOperatorApplicator
         < GridViewType, typename LocalOperatorInterface< L >::derived_type, SourceType, RangeType > Applicator;
-    local_operators_.emplace_back(
-          new Applicator(grid_view_, local_operator.as_imp(), source_, range_, *where));
-    BaseType::add(*local_operators_.back(), where);
+    local_operators_codim_0.emplace_back(
+          new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
+    BaseType::add(*local_operators_codim_0.back(), where);
   } // ... add(...)
+
+  template< class T >
+  void add(const LocalCouplingOperatorInterface< T >& local_operator,
+           const DSG::ApplyOn::WhichIntersection< GridViewType >* where = new DSG::ApplyOn::InnerIntersections< GridViewType >())
+  {
+    typedef LocalCouplingOperatorApplicator
+        < GridViewType, typename LocalCouplingOperatorInterface< T >::derived_type, SourceType, RangeType > Applicator;
+    local_operators_codim_1.emplace_back(
+          new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
+    BaseType::add(*local_operators_codim_1.back(), where);
+  } // ... add(...)
+
+  template< class T >
+  void add(const LocalBoundaryOperatorInterface< T >& local_operator,
+           const DSG::ApplyOn::WhichIntersection< GridViewType >* where = new DSG::ApplyOn::BoundaryIntersections< GridViewType >())
+  {
+    typedef LocalBoundaryOperatorApplicator
+        < GridViewType, typename LocalBoundaryOperatorInterface< T >::derived_type, SourceType, RangeType > Applicator;
+    local_operators_codim_1.emplace_back(
+          new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
+    BaseType::add(*local_operators_codim_1.back(), where);
+  } // ... add(...)
+
 
   void apply()
   {
@@ -429,11 +453,10 @@ public:
   } // ... apply(...)
 
 protected:
-  using BaseType::grid_view_;
-
   const SourceType& source_;
   RangeType& range_;
-  std::vector< std::unique_ptr< DSG::internal::Codim0Object< GridViewType > > > local_operators_;
+  std::vector< std::unique_ptr< DSG::internal::Codim0Object< GridViewType > > > local_operators_codim_0;
+  std::vector< std::unique_ptr< DSG::internal::Codim1Object< GridViewType > > > local_operators_codim_1;
   bool walked_;
 }; // class LocalizableOperatorDefault
 
