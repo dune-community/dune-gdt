@@ -23,6 +23,7 @@ if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
 endif (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
 
 add_subdirectory(linearelliptic)
+add_subdirectory(hyperbolic)
 
 target_link_libraries(test_linearelliptic_cg_discretization_fem_eigen_alugrid    lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_fem_eigen_sgrid      lib_test_linearelliptic_cg_discretizations_sgrid)
@@ -32,6 +33,7 @@ target_link_libraries(test_linearelliptic_cg_discretization_pdelab_eigen_alugrid
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_eigen_sgrid   lib_test_linearelliptic_cg_discretizations_sgrid)
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_alugrid  lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic_cg_discretization_pdelab_istl_sgrid    lib_test_linearelliptic_cg_discretizations_sgrid)
+target_link_libraries(test_hyperbolic-fv-discretization_yaspgrid                 lib_test_hyperbolic_fv_discretizations_yaspgrid)
 
 set_tests_properties(test_linearelliptic_cg_discretization_pdelab_istl_sgrid PROPERTIES TIMEOUT 360)
 set_tests_properties(test_linearelliptic_cg_discretization_pdelab_eigen_sgrid PROPERTIES TIMEOUT 360)
