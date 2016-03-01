@@ -37,16 +37,15 @@ public:
   using typename BaseOperatorType::RangeType;
 
   L2LocalProlongationLocalizableOperator(const size_t over_integrate,
-                                         GridViewType grid_view,
-                                         const SourceType& source,
-                                         RangeType& range)
-    : SourceStorage(new ReinterpretDiscreteFunction< SourceType >(source))
-    , BaseOperatorType(over_integrate, grid_view, SourceStorage::access(), range)
+                                         GridViewType grd_vw,
+                                         const SourceType& src,
+                                         RangeType& rng)
+    : SourceStorage(new ReinterpretDiscreteFunction< SourceType >(src))
+    , BaseOperatorType(over_integrate, grd_vw, SourceStorage::access(), rng)
   {}
 
-  L2LocalProlongationLocalizableOperator(GridViewType grid_view, const SourceType& source, RangeType& range)
-    : SourceStorage(new ReinterpretDiscreteFunction< SourceType >(source))
-    , BaseOperatorType(grid_view, SourceStorage::access(), range)
+  L2LocalProlongationLocalizableOperator(GridViewType grd_vw, const SourceType& src, RangeType& rng)
+    : L2LocalProlongationLocalizableOperator(0, grd_vw, src, rng)
   {}
 
   ///! Calls L2LocalProjectionLocalizableOperator::apply and gives a meaningful error message.
