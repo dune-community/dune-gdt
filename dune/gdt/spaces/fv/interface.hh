@@ -50,6 +50,7 @@ class ProductFVInterface : public ProductSpaceInterface<ImpTraits, domainDim, ra
   typedef ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
 
 public:
+  using typename BaseType::RangeFieldType;
   using BaseType::compute_pattern;
   using BaseType::local_constraints;
 }; // class ProductFVInterface
