@@ -19,10 +19,35 @@
 namespace Dune {
 namespace GDT {
 
+namespace internal {
+
+
+class IsLocalOperator
+{};
+
+class IsLocalCouplingOperator
+{};
+
+class IsLocalBoundaryOperator
+{};
+
+class IsLocalVolumeTwoForm
+{};
+
+class IsLocalCouplingTwoForm
+{};
+
+class IsLocalBoundaryTwoForm
+{};
+
+
+} // namespace internal
+
 
 template< class Traits >
 class LocalOperatorInterface
   : public Stuff::CRTPInterface< LocalOperatorInterface< Traits >, Traits >
+  , internal::IsLocalOperator
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -37,12 +62,46 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply(source, local_range));
   }
-}; // class LocalVolumeTwoFormInterface
+}; // class LocalOperatorInterface
+
+
+template< class Traits >
+class LocalCouplingOperatorInterface
+    : public Stuff::CRTPInterface< LocalCouplingOperatorInterface< Traits >, Traits >
+    , internal::IsLocalCouplingOperator
+{
+public:
+  template< class SourceType, class IntersectionType, class SpaceType, class VectorType >
+  void apply(const SourceType& source,
+             const IntersectionType& intersection,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
+  {
+    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor);
+  }
+}; // class LocalCouplingOperatorInterface
+
+
+template< class Traits >
+class LocalBoundaryOperatorInterface
+    : public Stuff::CRTPInterface< LocalBoundaryOperatorInterface< Traits >, Traits >
+    , internal::IsLocalBoundaryOperator
+{
+public:
+  template< class SourceType, class IntersectionType, class SpaceType, class VectorType >
+  void apply(const SourceType& source,
+             const IntersectionType& intersection,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
+  {
+    this->as_imp().apply(source, intersection, local_range_entity);
+  }
+}; // class LocalBoundaryOperatorInterface
 
 
 template< class Traits >
 class LocalVolumeTwoFormInterface
   : public Stuff::CRTPInterface< LocalVolumeTwoFormInterface< Traits >, Traits >
+  , internal::IsLocalVolumeTwoForm
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -82,6 +141,7 @@ public:
 template< class Traits >
 class LocalCouplingTwoFormInterface
   : public Stuff::CRTPInterface< LocalCouplingTwoFormInterface< Traits >, Traits >
+  , internal::IsLocalCouplingTwoForm
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -124,6 +184,7 @@ public:
 template< class Traits >
 class LocalBoundaryTwoFormInterface
   : public Stuff::CRTPInterface< LocalBoundaryTwoFormInterface< Traits >, Traits >
+  , internal::IsLocalBoundaryTwoForm
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -150,80 +211,36 @@ public:
 }; // class LocalBoundaryTwoFormInterface
 
 
-template< class Traits >
-class LocalCouplingOperatorInterface
-    : Stuff::CRTPInterface< LocalCouplingOperatorInterface< Traits >, Traits >
-{
-public:
-  template< class SourceType, class IntersectionType, class SpaceType, class VectorType >
-  void apply(const SourceType& source,
-             const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor)
-  {
-    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor);
-  }
-};
-
-template< class Traits >
-class LocalBoundaryOperatorInterface
-    : Stuff::CRTPInterface< LocalBoundaryOperatorInterface< Traits >, Traits >
-{
-public:
-  template< class SourceType, class IntersectionType, class SpaceType, class VectorType >
-  void apply(const SourceType& source,
-             const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity)
-  {
-    this->as_imp().apply(source, intersection, local_range_entity);
-  }
-};
-
-
-namespace internal {
-
-
-template< class Tt >
-struct is_local_operator_helper
-{
-  DSC_has_typedef_initialize_once(Traits)
-
-  static const bool is_candidate = DSC_has_typedef(Traits)< Tt >::value;
-};
-
-
-template< class Tt >
-struct is_local_volume_twoform_helper
-{
-  DSC_has_typedef_initialize_once(Traits)
-
-  static const bool is_candidate = DSC_has_typedef(Traits)< Tt >::value;
-};
-
-
-} // namespace internal
-
-
-template< class T, bool candidate = internal::is_local_operator_helper< T >::is_candidate >
+template< class T >
 struct is_local_operator
-  : public std::is_base_of< LocalOperatorInterface< typename T::Traits >, T >
+    : public std::is_base_of< internal::IsLocalOperator, T>
 {};
 
 template< class T >
-struct is_local_operator< T, false >
-  : public std::false_type
+struct is_local_coupling_operator
+    : public std::is_base_of< internal::IsLocalCouplingOperator, T>
 {};
 
+template< class T >
+struct is_local_boundary_operator
+    : public std::is_base_of< internal::IsLocalBoundaryOperator, T>
+{};
 
-template< class T, bool candidate = internal::is_local_volume_twoform_helper< T >::is_candidate >
+template< class T >
 struct is_local_volume_twoform
-  : public std::is_base_of< LocalVolumeTwoFormInterface< typename T::Traits >, T >
+  : public std::is_base_of< internal::IsLocalVolumeTwoForm, T >
 {};
 
 template< class T >
-struct is_local_volume_twoform< T, false >
-  : public std::false_type
+struct is_local_coupling_twoform
+  : public std::is_base_of< internal::IsLocalCouplingTwoForm, T >
 {};
+
+template< class T >
+struct is_local_boundary_twoform
+  : public std::is_base_of< internal::IsLocalBoundaryTwoForm, T >
+{};
+
 
 
 } // namespace GDT
