@@ -29,6 +29,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/cg/pdelab.hh>
+#include <dune/gdt/spaces/fv/defaultproduct.hh>
 
 
 namespace Dune {
@@ -126,6 +127,18 @@ public:
   inline void apply(const ConstDiscreteFunction
                       < Spaces::Block< Spaces::DG::FemBased< GPS, pS, R, r, rC > >, VS >& source,
                     DiscreteFunction< Spaces::DG::FemBased< GPR, pR, R, r, rC >, VR >& range) const
+  {
+    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+  }
+
+  template< class GVS, class RS, size_t rS, size_t rCS, class VS,
+            class GVR, class RR, size_t rR, size_t rCR, class VR >
+  inline void apply(const ConstDiscreteFunction
+                    < Spaces::FV::DefaultProduct
+                      < GVS, RS, rS, rCS >, VS >& source,
+                 DiscreteFunction
+                    < Spaces::FV::DefaultProduct
+                      < GVR, RR, rR, rCR >, VR >& range) const
   {
     prolong_onto_dg_fem_localfunctions_wrapper(source, range);
   }
@@ -469,6 +482,18 @@ private:
                                                     < GPR, pR, RR, rR, rCR >, VR >& range) const
   {
     lagrange_prolongation_operator_.apply(source, range);
+  }
+
+  template< class GVS, class RS, size_t rS, size_t rCS, class VS,
+            class GVR, class RR, size_t rR, size_t rCR, class VR >
+  inline void redirect_to_appropriate_operator(const ConstDiscreteFunction
+                                                  < Spaces::FV::DefaultProduct
+                                                    < GVS, RS, rS, rCS >, VS >& source,
+                                               DiscreteFunction
+                                                  < Spaces::FV::DefaultProduct
+                                                    < GVR, RR, rR, rCR >, VR >& range) const
+  {
+    l2_prolongation_operator_.apply(source, range);
   }
 
   const L2Prolongation< GridViewType > l2_prolongation_operator_;

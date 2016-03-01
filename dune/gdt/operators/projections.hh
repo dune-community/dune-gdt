@@ -257,6 +257,14 @@ private:
   }
 
   template< class T, class R, size_t dimRange, class S, class V >
+  void redirect_apply(const Spaces::ProductFVInterface< T, dimDomain, dimRange, 1 >& /*space*/,
+                      const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
+                      DiscreteFunction< S, V >& range) const
+  {
+    apply_local_l2_projection(source, range);
+  }
+
+  template< class T, class R, size_t dimRange, class S, class V >
   void redirect_apply(const Spaces::RTInterface< T, dimDomain, dimRange, 1 >& /*space*/,
                       const Stuff::LocalizableFunctionInterface< EntityType, DomainFieldType, dimDomain, R, dimRange, 1 >& source,
                       DiscreteFunction< S, V >& range) const
