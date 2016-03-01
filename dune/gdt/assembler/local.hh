@@ -207,6 +207,97 @@ private:
   const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
 }; // class LocalOperatorApplicator
 
+template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalCouplingOperatorApplicator : public Stuff::Grid::internal::Codim1Object<GridViewType>
+{
+  static_assert(is_local_coupling_operator<LocalOperatorType>::value,
+                "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
+  static_assert(Stuff::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  typedef Stuff::Grid::internal::Codim1Object<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+
+  LocalCouplingOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
+                                  const SourceType& source, RangeType& range,
+                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
+    : grid_view_(grid_view)
+    , local_operator_(local_operator)
+    , source_(source)
+    , range_(range)
+    , where_(where)
+  {
+  }
+
+  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const
+  {
+    return where_.apply_on(grid_view, intersection);
+  }
+
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
+                           const EntityType& outside_entity)
+  {
+    local_operator_.apply(source_,
+                          intersection,
+                          *range_.local_discrete_function(inside_entity),
+                          *range_.local_discrete_function(outside_entity));
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalOperatorType& local_operator_;
+  const SourceType& source_;
+  RangeType& range_;
+  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+}; // class LocalCouplingOperatorApplicator
+
+template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalBoundaryOperatorApplicator : public Stuff::Grid::internal::Codim1Object<GridViewType>
+{
+  static_assert(is_local_boundary_operator<LocalOperatorType>::value,
+                "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
+  static_assert(Stuff::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  typedef Stuff::Grid::internal::Codim1Object<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+
+  LocalBoundaryOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
+                                  const SourceType& source, RangeType& range,
+                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
+    : grid_view_(grid_view)
+    , local_operator_(local_operator)
+    , source_(source)
+    , range_(range)
+    , where_(where)
+  {
+  }
+
+  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const
+  {
+    return where_.apply_on(grid_view, intersection);
+  }
+
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
+                           const EntityType& /*outside_entity*/)
+  {
+    local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity));
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalOperatorType& local_operator_;
+  const SourceType& source_;
+  RangeType& range_;
+  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+}; // class LocalBoundaryOperatorApplicator
+
 
 template <class LocalVolumeFunctionalType>
 class LocalVolumeFunctionalAssembler
