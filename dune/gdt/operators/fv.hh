@@ -32,11 +32,13 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/localfluxes/interfaces.hh>
 #include <dune/gdt/localfluxes/godunov.hh>
 #include <dune/gdt/localfluxes/laxfriedrichs.hh>
 #include <dune/gdt/localfluxes/laxwendroff.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
+#include <dune/gdt/localoperator/fv.hh>
 #include <dune/gdt/assembler/local/codim0.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/assembler/system.hh>
@@ -46,6 +48,7 @@
 #include <dune/gdt/playground/spaces/dg/pdelabproduct.hh>
 
 #include "interfaces.hh"
+#include "default.hh"
 
 namespace Dune {
 namespace GDT {
@@ -55,100 +58,101 @@ enum class SlopeLimiters { minmod, mc, superbee, no_slope };
 
 // forwards
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
-class AdvectionLaxFriedrichs;
+//template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
+//class AdvectionLaxFriedrichs;
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
+template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
 class AdvectionGodunov;
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
-class AdvectionLaxWendroff;
+//template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
+//class AdvectionLaxWendroff;
 
-template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
-class AdvectionGodunovWithReconstruction;
+//template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
+//class AdvectionGodunovWithReconstruction;
 
-template< class SourceFunctionImp, class FVSpaceImp >
-class AdvectionSource;
+template< class RHSEvaluationImp >
+class AdvectionRHS;
 
 
 namespace internal {
 
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp >
+//TODO: add static assert once type of BoundaryValueFunctionImp is decided
+template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
 class AdvectionTraitsBase
 {
   static_assert(std::is_base_of< IsAnalyticalFlux, AnalyticalFluxImp >::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
-  static_assert(Stuff::is_???< BoundaryValueFunctionImp >::value,
-                "BoundaryValueFunctionImp has to be derived from ???!");
-  static_assert(is_space< FVSpaceImp >::value, "FVSpaceImp has to be derived from SpaceInterface!");
+//  static_assert(Stuff::is_???< BoundaryValueFunctionImp >::value,
+//                "BoundaryValueFunctionImp has to be derived from ???!");
 public:
   typedef AnalyticalFluxImp                                                                     AnalyticalFluxType;
   typedef BoundaryValueFunctionImp                                                              BoundaryValueFunctionType;
-  typedef FVSpaceImp                                                                            FVSpaceType;
-  typedef typename FVSpaceType::GridViewType                                                    GridViewType;
-  typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
+  typedef typename AnalyticalFluxType::DomainFieldType                                          FieldType;
 }; // class AdvectionTraitsBase
 
 
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp >
-class AdvectionLaxFriedrichsTraits
-    : AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp, SourceImp, RangeImp >
-{
-  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
-                "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
-public:
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef AdvectionLaxFriedrichs< AnalyticalFluxImp,
-                                  BoundaryValueFunctionImp,
-                                  LocalizableFunctionImp>                derived_type;
+//template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp >
+//class AdvectionLaxFriedrichsTraits
+//    : AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp, SourceImp, RangeImp >
+//{
+//  static_assert(Stuff::is_localizable_function< LocalizableFunctionImp >::value,
+//                "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
+//public:
+//  typedef LocalizableFunctionImp LocalizableFunctionType;
+//  typedef AdvectionLaxFriedrichs< AnalyticalFluxImp,
+//                                  BoundaryValueFunctionImp,
+//                                  LocalizableFunctionImp>                derived_type;
 
-}; // class AdvectionLaxFriedrichsLocalizableTraits
+//}; // class AdvectionLaxFriedrichsLocalizableTraits
 
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp >
+template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
 class AdvectionGodunovTraits
-    : AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp >
+    : public AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp >
 {
 public:
-  typedef AdvectionGodunov< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp > derived_type;
+  typedef AdvectionGodunov< AnalyticalFluxImp, BoundaryValueFunctionImp > derived_type;
 }; // class AdvectionGodunovTraits
 
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp, class LocalizableFunctionImp >
-class AdvectionLaxWendroffTraits
-    : public AdvectionLaxFriedrichsTraits< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp, LocalizableFunctionImp >
+//template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp, class LocalizableFunctionImp >
+//class AdvectionLaxWendroffTraits
+//    : public AdvectionLaxFriedrichsTraits< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp, LocalizableFunctionImp >
+//{
+//public:
+//  typedef AdvectionLaxWendroff< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp, LocalizableFunctionImp > derived_type;
+//}; // class AdvectionLaxWendroffTraits
+
+//template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
+//class AdvectionGodunovWithReconstructionTraits
+//    : public AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp >
+//{
+//public:
+//  typedef AdvectionGodunovWithReconstruction< AnalyticalFluxImp,
+//                                              LocalizableFunctionImp,
+//                                              BoundaryValueFunctionImp,
+//                                              FVSpaceImp,
+//                                              slopeLimiter > derived_type;
+//}; // class AdvectionGodunovWithReconstructionTraits
+
+
+template< class RHSEvaluationImp >
+class AdvectionRHSTraits
 {
 public:
-  typedef AdvectionLaxWendroff< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp, LocalizableFunctionImp > derived_type;
-}; // class AdvectionLaxWendroffTraits
-
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class FVSpaceImp, SlopeLimiters slopeLimiter >
-class AdvectionGodunovWithReconstructionTraits
-    : public AdvectionTraitsBase< AnalyticalFluxImp, BoundaryValueFunctionImp, FVSpaceImp >
-{
-public:
-  typedef AdvectionGodunovWithReconstruction< AnalyticalFluxImp,
-                                              LocalizableFunctionImp,
-                                              BoundaryValueFunctionImp,
-                                              FVSpaceImp,
-                                              slopeLimiter > derived_type;
-}; // class AdvectionGodunovWithReconstructionTraits
-
-
-template< class SourceFunctionImp, class FVSpaceImp >
-class AdvectionSourceTraits
-{
-public:
-  typedef AdvectionSource< SourceFunctionImp, FVSpaceImp >                                      derived_type;
-  typedef SourceFunctionImp                                                                     SourceFunctionType;
-  typedef FVSpaceImp                                                                            FVSpaceType;
-  typedef typename FVSpaceType::GridViewType                                                    GridViewType;
-  typedef typename FVSpaceType::DomainFieldType                                                 FieldType;
-}; // class AdvectionSourceTraits
+  typedef AdvectionRHS< RHSEvaluationImp >                                                        derived_type;
+  typedef RHSEvaluationImp                                                                        RHSEvaluationType;
+  typedef typename RHSEvaluationImp::DomainFieldType                                              FieldType;
+}; // class AdvectionRHSTraits
 
 
 } // namespace internal
 
 
-template< class AnalyticalFluxImp, class NumericalCouplingFluxImp, class NumericalBoundaryFluxImp, class BoundaryValueFunctionImp, class SourceImp, class RangeImp >
+template< class AnalyticalFluxImp,
+          class NumericalCouplingFluxImp,
+          class NumericalBoundaryFluxImp,
+          class BoundaryValueFunctionImp,
+          class SourceImp,
+          class RangeImp >
 class AdvectionLocalizableDefault
   : public Dune::GDT::LocalizableOperatorDefault< typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp >
 {
@@ -174,34 +178,30 @@ public:
   typedef typename SourceType::RangeFieldType                          RangeFieldType;
   typedef typename RangeType::SpaceType::GridViewType                  GridViewType;
   static const size_t dimDomain = GridViewType::dimension;
-  typedef typename Dune::GDT::LocalCouplingFVOperatorInterface< NumericalCouplingFluxType >   LocalCouplingOperatorType;
-  typedef typename Dune::GDT::LocalCouplingBoundaryOperator< NumericalBoundaryFluxType >      LocalBoundaryOperatorType;
+  typedef typename Dune::GDT::LocalCouplingFVOperator< NumericalCouplingFluxType >   LocalCouplingOperatorType;
+  typedef typename Dune::GDT::LocalBoundaryFVOperator< NumericalBoundaryFluxType >   LocalBoundaryOperatorType;
 
   template< class... LocalOperatorArgTypes >
   AdvectionLocalizableDefault(const AnalyticalFluxType& analytical_flux,
                               const BoundaryValueFunctionType& boundary_values,
                               const SourceType& source,
                               RangeType& range,
-                              LocalOperatorArgTypes&& ...local_operator_args)
-    : BaseType(range_.space().grid_view(), source, range)
+                              LocalOperatorArgTypes&&... local_operator_args)
+    : BaseType(range.space().grid_view(), source, range)
     , local_operator_(analytical_flux, std::forward< LocalOperatorArgTypes >(local_operator_args)...)
     , local_boundary_operator_(analytical_flux, boundary_values, std::forward< LocalOperatorArgTypes >(local_operator_args)...)
-    , source_(source)
-    , range_(range)
   {
-    this->add(local_operator_, source_, range_, new DSG::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
-    this->add(local_operator_, source_, range_, new DSG::ApplyOn::PeriodicIntersectionsPrimally< GridViewType >());
-    this->add(local_boundary_operator_, source_, range_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
+    this->add(local_operator_, new DSG::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
+    this->add(local_operator_, new DSG::ApplyOn::PeriodicIntersectionsPrimally< GridViewType >());
+    this->add(local_boundary_operator_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections< GridViewType >());
   }
 
 private:
   const LocalCouplingOperatorType local_operator_;
   const LocalBoundaryOperatorType local_boundary_operator_;
-  const SourceType& source_;
-  RangeType& range_;
 }; // class AdvectionLocalizableDefault
 
-
+#if 0
 template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp >
 class AdvectionLaxFriedrichs
   : public Dune::GDT::OperatorInterface< internal::AdvectionLaxFriedrichsTraits<  AnalyticalFluxImp,
@@ -268,7 +268,10 @@ private:
   const bool use_local_;
   const bool entity_geometries_equal_;
 }; // class AdvectionLaxFriedrichs
+#endif
 
+// TODO: remove eigen dependency of GodunovNumericalCouplingFlux/GodunovNumericalBoundaryFlux
+#if HAVE_EIGEN
 
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
 template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
@@ -279,12 +282,11 @@ class AdvectionGodunov
 public:
   typedef internal::AdvectionGodunovTraits< AnalyticalFluxImp,
                                             BoundaryValueFunctionImp >          Traits;
-  typedef typename Traits::GridViewType                           GridViewType;
   typedef typename Traits::AnalyticalFluxType                     AnalyticalFluxType;
   typedef typename Traits::BoundaryValueFunctionType              BoundaryValueFunctionType;
-  typedef typename Traits::FVSpaceType                            FVSpaceType;
+  static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   typedef typename Dune::GDT::GodunovNumericalCouplingFlux< AnalyticalFluxType, dimDomain >   NumericalCouplingFluxType;
-  typedef typename Dune::GDT::GodunovNumericalBoundaryFlux< AnalyticalFluxType, BoundaryValueFunctionType, dimDomain > NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::GodunovNumericalBoundaryFlux< AnalyticalFluxType, typename BoundaryValueFunctionType::TimeIndependentFunctionType, dimDomain > NumericalBoundaryFluxType;
 
   AdvectionGodunov(const AnalyticalFluxType& analytical_flux,
                    const BoundaryValueFunctionType& boundary_values,
@@ -299,12 +301,12 @@ public:
   {
     auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     AdvectionLocalizableDefault< AnalyticalFluxType,
-                                 NumericalCouplingFluxType,
-                                 NumericalBoundaryFluxType,
-                                 typename BoundaryValueFunctionType::ExpressionFunctionType,
-                                 SourceType,
-                                 RangeType,
-                                 > localizable_operator(analytical_flux_, *current_boundary_values, source, range, is_linear_);
+        NumericalCouplingFluxType,
+        NumericalBoundaryFluxType,
+        typename BoundaryValueFunctionType::ExpressionFunctionType,
+        SourceType,
+        RangeType
+        > localizable_operator(analytical_flux_, *current_boundary_values, source, range, is_linear_);
     localizable_operator.apply();
   }
 
@@ -314,7 +316,17 @@ private:
   const bool is_linear_;
 }; // class AdvectionGodunov
 
+#else // HAVE_EIGEN
 
+template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
+class AdvectionGodunov
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+#endif // HAVE_EIGEN
+
+#if 0
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, class BoundaryValueFunctionImp, class FVSpaceImp >
 class AdvectionLaxWendroff
   : public Dune::GDT::OperatorInterface< internal::AdvectionLaxWendroffTraits<  AnalyticalFluxImp,
@@ -884,152 +896,34 @@ private:
   const bool is_linear_;
   const bool save_partitioning_;
 }; // class AdvectionGodunovWithReconstruction
-
-
-
-template< class SourceFunctionImp, class SourceImp, class RangeImp >
-class AdvectionSourceLocalizable
-  : public Dune::GDT::LocalizableOperatorInterface<
-                             internal::AdvectionSourceLocalizableTraits< SourceFunctionImp,
-                                                                         SourceImp,
-                                                                         RangeImp > >
-  , public SystemAssembler< typename RangeImp::SpaceType >
-{
-  typedef Dune::GDT::LocalizableOperatorInterface
-   < internal::AdvectionSourceLocalizableTraits< SourceFunctionImp, SourceImp, RangeImp > >   OperatorBaseType;
-  typedef SystemAssembler< typename RangeImp::SpaceType >                                     AssemblerBaseType;
-public:
-  typedef internal::AdvectionSourceLocalizableTraits< SourceFunctionImp,
-                                                      SourceImp,
-                                                      RangeImp >                              Traits;
-
-  typedef typename Traits::GridViewType                                                       GridViewType;
-  typedef typename Traits::SourceType                                                         SourceType;
-  typedef typename Traits::RangeType                                                          RangeType;
-  typedef typename Traits::SourceFunctionType                                                 SourceFunctionType;
-
-  typedef typename Dune::GDT::LocalEvaluation::Godunov::SourceEvaluation< SourceFunctionType >  LocalEvaluationType;
-  typedef typename Dune::GDT::LocalOperator::Codim0Evaluation< LocalEvaluationType >            LocalOperatorType;
-  typedef typename LocalAssembler::Codim0Evaluation< LocalOperatorType >                        LocalAssemblerType;
-
-  AdvectionSourceLocalizable(const SourceFunctionType& source_function,
-                             const SourceType& source,
-                             RangeType& range,
-                             const bool save_partitioning)
-    : OperatorBaseType()
-    , AssemblerBaseType(range.space())
-    , local_operator_(source_function)
-    , local_assembler_(local_operator_)
-    , source_(source)
-    , range_(range)
-    , save_partitioning_(save_partitioning)
-  {}
-
-  const GridViewType& grid_view() const
-  {
-    return range_.space().grid_view();
-  }
-
-  const SourceType& source() const
-  {
-    return source_;
-  }
-
-  const RangeType& range() const
-  {
-    return range_;
-  }
-
-  RangeType& range()
-  {
-    return range_;
-  }
-
-using AssemblerBaseType::add;
-using AssemblerBaseType::assemble;
-
-  void apply()
-  {
-    this->add(local_assembler_, source_, range_, new DSG::ApplyOn::AllEntities< GridViewType >());
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) && HAVE_TBB //EXADUNE
-    if (!partitioned_ && save_partitioning_) {
-      const auto num_partitions = DSC_CONFIG_GET("threading.partition_factor", 1u)
-                                  * DS::threadManager().current_threads();
-      partitioning_ = DSC::make_unique< RangedPartitioning< GridViewType, 0 > >(source_.space().grid_view(), num_partitions);
-      partitioned_ = true;
-    }
-    if (save_partitioning_)
-      this->assemble(*partitioning_);
-    else
-      this->assemble(true);
-#else
-    this->assemble();
-#endif
-  }
-
-private:
-  const LocalOperatorType local_operator_;
-  const LocalAssemblerType local_assembler_;
-  const SourceType& source_;
-  RangeType& range_;
-  const bool save_partitioning_;
-#if DUNE_VERSION_NEWER(DUNE_COMMON,3,9) //EXADUNE
-  static bool partitioned_;
-  static std::unique_ptr< RangedPartitioning< GridViewType, 0 > > partitioning_;
-}; // class AdvectionSourceLocalizable
-
-template< class SourceFunctionImp, class SourceImp, class RangeImp >
-bool
-AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitioned_(false);
-
-template< class SourceFunctionImp, class SourceImp, class RangeImp >
-std::unique_ptr< RangedPartitioning< typename AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::GridViewType, 0 > >
-AdvectionSourceLocalizable< SourceFunctionImp, SourceImp, RangeImp >::partitioning_;
-#else
-}; // class AdvectionSourceLocalizable
 #endif
 
-template< class SourceFunctionImp, class FVSpaceImp >
-class AdvectionSource
-  : public Dune::GDT::OperatorInterface< internal::AdvectionSourceTraits< SourceFunctionImp,
-                                                                          FVSpaceImp > >
+
+template< class RHSEvaluationImp >
+class AdvectionRHS
+  : public Dune::GDT::OperatorInterface< internal::AdvectionRHSTraits< RHSEvaluationImp > >
 {
-  typedef Dune::GDT::OperatorInterface< internal::AdvectionSourceTraits<  SourceFunctionImp,
-                                                                          FVSpaceImp > >      OperatorBaseType;
-
+  static_assert(is_rhs_evaluation< RHSEvaluationImp >::value, "RHSEvaluationImp has to be derived from RHSInterface!");
 public:
-  typedef internal::AdvectionSourceTraits< SourceFunctionImp,
-                                           FVSpaceImp >           Traits;
-  typedef typename Traits::GridViewType                           GridViewType;
-  typedef typename Traits::SourceFunctionType                     SourceFunctionType;
-  typedef typename Traits::FVSpaceType                            FVSpaceType;
+  typedef internal::AdvectionRHSTraits< RHSEvaluationImp >          Traits;
+  typedef typename Traits::RHSEvaluationType                        RHSEvaluationType;
+  typedef LocalRHSFVOperator< RHSEvaluationType >                   LocalOperatorType;
 
-  AdvectionSource(const SourceFunctionType& source_function,
-                  const FVSpaceType& fv_space,
-                  const bool save_partitioning = false)
-    : OperatorBaseType()
-    , source_function_(source_function)
-    , fv_space_(fv_space)
-    , save_partitioning_(save_partitioning)
+  AdvectionRHS(const RHSEvaluationType& rhs_evaluation)
+    : local_operator_(rhs_evaluation)
   {}
-
-  const GridViewType& grid_view() const
-  {
-    return fv_space_.grid_view();
-  }
 
   template< class SourceType, class RangeType >
   void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
   {
-    AdvectionSourceLocalizable< SourceFunctionType, SourceType, RangeType > localizable_operator(source_function_, source, range, save_partitioning_);
+    LocalizableOperatorDefault< typename RangeType::SpaceType::GridViewType, SourceType, RangeType > localizable_operator(range.space().grid_view(), source, range);
+    localizable_operator.add(local_operator_);
     localizable_operator.apply();
   }
 
 private:
-  const SourceFunctionType& source_function_;
-  const FVSpaceType& fv_space_;
-  const bool save_partitioning_;
-}; // class AdvectionSource
+  const LocalOperatorType local_operator_;
+}; // class AdvectionRHS
 
 
 } // namespace Operators
