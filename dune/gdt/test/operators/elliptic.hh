@@ -455,7 +455,7 @@ struct EllipticMatrixOperatorTest
     auto op = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
     // project the function
     DiscreteFunctionType discrete_function(space);
-    Operators::Projection< GridViewType >(space.grid_view()).apply(function, discrete_function);
+    project(space.grid_view(), function, discrete_function);
     // compute product
     const auto result = op->apply2(discrete_function, discrete_function);
     auto op_tbb = make_elliptic_matrix_operator< MatrixType >(diffusion_factor, diffusion_tensor, space);
