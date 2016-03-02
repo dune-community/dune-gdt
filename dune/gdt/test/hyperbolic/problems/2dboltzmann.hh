@@ -17,16 +17,19 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/gdt/playground/functions/entropymomentfunction.hh>
 
 #include "default.hh"
 
 namespace Dune {
 namespace GDT {
+namespace Hyperbolic {
+namespace Problems {
 
 /**
- * Testcase for the Boltzmann equation in two dimensions, see
- * http://www.sciencedirect.com/science/article/pii/S0021999105002275?np=y
+ * Testcase for the Boltzmann equation in two dimensions,
+ * see Brunner, Holloway, "Two-dimensional time dependent Riemann solvers for neutron transport", Journal of
+ * Computational Physics, Volume 210, Issue 1, 2005
+ * http://dx.doi.org/10.1016/j.jcp.2005.04.011
  * */
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
 class Boltzmann2DLineSource
@@ -39,17 +42,20 @@ class Boltzmann2DLineSource
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::FluxSourceEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<FluxSourceEntityType, RangeFieldImp, dimRange, RangeFieldImp,
-                                                  dimRange, dimDomain> DefaultFluxType;
-  //  typedef typename DS::Functions::EntropyMomentFlux< FluxSourceEntityType, RangeFieldImp, dimRange, RangeFieldImp,
-  //  dimRange, dimDomain > DefaultFluxType;
+  using typename BaseType::DummyEntityType;
+  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange,
+                                                  dimDomain> FluxAffineFunctionType;
+  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
+                                                                dimDomain, RangeFieldImp, dimRange, 1> DefaultFluxType;
   typedef typename DefaultFluxType::RangeType FluxRangeType;
   typedef typename DefaultFluxType::MatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
-  typedef
-      typename DS::Functions::AffineCheckerboard<EntityImp, DomainFieldImp, dimDomain, FluxSourceEntityType,
-                                                 RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1> DefaultRHSType;
+  typedef typename DS::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
+      RHSAffineFunctionType;
+  typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
+                                                       RangeFieldImp, dimRange, 1> RHSCheckerboardFunctionType;
+  typedef typename Dune::GDT::CheckerboardBasedRHS<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp, dimDomain,
+                                                   RangeFieldImp, dimRange, 1> DefaultRHSType;
   typedef typename DefaultRHSType::RangeRangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -303,6 +309,8 @@ public:
 }; // ... Boltzmann2DLineSource ...
 
 
+} // namespace Problems
+} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

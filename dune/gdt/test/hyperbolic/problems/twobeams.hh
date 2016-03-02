@@ -17,7 +17,7 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/gdt/playground/functions/entropymomentfunction.hh>
+#include <dune/stuff/la/container.hh>
 
 #include "default.hh"
 
@@ -58,26 +58,27 @@ namespace Problems {
  * \f]
  * This is a linear hyperbolic conservation law with source term q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
  * */
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
-class TwoBeams : public Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder + 1>
+template <class E, class D, size_t d, class R, size_t momentOrder>
+class TwoBeams : public Default<E, D, d, R, momentOrder + 1>
 {
-  typedef TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> ThisType;
-  typedef Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder + 1> BaseType;
+  typedef TwoBeams<E, D, d, R, momentOrder> ThisType;
+  typedef Default<E, D, d, R, momentOrder + 1> BaseType;
 
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::FluxSourceEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<FluxSourceEntityType, RangeFieldImp, dimRange, RangeFieldImp,
-                                                  dimRange, dimDomain> DefaultFluxType;
-  //  typedef typename DS::Functions::EntropyMomentFlux< FluxSourceEntityType, RangeFieldImp, dimRange, RangeFieldImp,
-  //  dimRange, dimDomain > DefaultFluxType;
+  using typename BaseType::DummyEntityType;
+  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
+      FluxAffineFunctionType;
+  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, dimRange, 1>
+      DefaultFluxType;
   typedef typename DefaultFluxType::RangeType RangeType;
   typedef typename DefaultFluxType::MatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
-  typedef
-      typename DS::Functions::AffineCheckerboard<EntityImp, DomainFieldImp, dimDomain, FluxSourceEntityType,
-                                                 RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1> DefaultRHSType;
+  typedef typename DS::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
+  typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
+      RHSCheckerboardFunctionType;
+  typedef typename Dune::GDT::CheckerboardBasedRHS<RHSCheckerboardFunctionType, E, D, d, R, dimRange, 1> DefaultRHSType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
 
@@ -107,24 +108,23 @@ protected:
   class GetData
   {
   public:
-    typedef DomainFieldImp VelocityFieldImp;
+    typedef D VelocityFieldImp;
     typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> VelocityGridType;
     typedef Dune::Stuff::Grid::Providers::Cube<VelocityGridType> VelocityGridProviderType;
     typedef typename VelocityGridType::LeafGridView VelocityGridViewType;
     typedef typename VelocityGridType::template Codim<0>::Entity VelocityEntityType;
-    typedef typename DS::LocalizableFunctionInterface<VelocityEntityType, VelocityFieldImp, dimDomain, RangeFieldImp, 1,
-                                                      1> VelocityFunctionType;
-    typedef typename DS::Functions::Expression<VelocityEntityType, VelocityFieldImp, dimDomain, RangeFieldImp, 1, 1>
+    typedef typename DS::LocalizableFunctionInterface<VelocityEntityType, VelocityFieldImp, dimDomain, R, 1, 1>
+        VelocityFunctionType;
+    typedef typename DS::Functions::Expression<VelocityEntityType, VelocityFieldImp, dimDomain, R, 1, 1>
         VelocityExpressionFunctionType;
 
-    typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldImp> VectorType;
+    typedef typename Dune::Stuff::LA::CommonDenseVector<R> VectorType;
     typedef typename Dune::GDT::Spaces::CGProvider<VelocityGridType, DSG::ChooseLayer::leaf,
-                                                   Dune::GDT::ChooseSpaceBackend::pdelab, 1, RangeFieldImp, 1,
-                                                   1> CGProviderType;
+                                                   Dune::GDT::ChooseSpaceBackend::pdelab, 1, R, 1, 1> CGProviderType;
     typedef typename CGProviderType::Type CGSpaceType;
     typedef Dune::GDT::DiscreteFunction<CGSpaceType, VectorType> CGFunctionType;
-    typedef typename DS::Functions::Checkerboard<typename VelocityGridType::template Codim<0>::Entity, DomainFieldImp,
-                                                 dimDomain, RangeFieldImp, 1, 1> CGJacobianType;
+    typedef typename DS::Functions::Checkerboard<typename VelocityGridType::template Codim<0>::Entity, D, dimDomain, R,
+                                                 1, 1> CGJacobianType;
     static const int precision = 15; // precision for toString
 
     static void set_filename(const std::string filename)
@@ -273,7 +273,7 @@ protected:
       return M_;
     }
 
-    static const MatrixType& D()
+    static const MatrixType& DD()
     {
       calculate();
       return D_;
@@ -351,7 +351,7 @@ protected:
         for (size_t ii = 0; ii < dimRange; ++ii) {
           VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
           for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
-            basefunction_ii_values[jj] = DSC::fromString<RangeFieldImp>(basefunction_values[ii][jj]);
+            basefunction_ii_values[jj] = DSC::fromString<R>(basefunction_values[ii][jj]);
           }
           basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
           basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
@@ -388,7 +388,7 @@ protected:
         VelocityExpressionFunctionType v("v", "v[0]", 1);
         VelocityExpressionFunctionType onebeam_left_boundary("v", "3*exp(3*v[0]+3)/(exp(6)-1)", 10);
         VelocityExpressionFunctionType one_minus_v_squared("v", "1-(v[0]^2)", 2);
-        const typename Dune::GDT::Products::L2<VelocityGridViewType, RangeFieldImp> l2_product(*velocity_grid_view_);
+        const typename Dune::GDT::Products::L2<VelocityGridViewType, R> l2_product(*velocity_grid_view_);
         for (size_t ii = 0; ii < dimRange; ++ii) {
           // Note: this assumes basefunctions_[0] is the constant function with value 1!!
           base_integrated_[ii]              = l2_product.apply2(basefunctions_[0], basefunctions_[ii]);
@@ -532,63 +532,53 @@ public:
   }
 }; // ... TwoBeams ...
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::MatrixType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::M_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::MatrixType TwoBeams<E, D, d, R, rangeDim>::GetData::M_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::MatrixType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::D_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::MatrixType TwoBeams<E, D, d, R, rangeDim>::GetData::D_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::MatrixType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::S_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::MatrixType TwoBeams<E, D, d, R, rangeDim>::GetData::S_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::MatrixType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::M_inverse_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::MatrixType TwoBeams<E, D, d, R, rangeDim>::GetData::M_inverse_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::RangeType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::base_integrated_(rangeDim);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::RangeType TwoBeams<E, D, d, R, rangeDim>::GetData::base_integrated_(rangeDim);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::RangeType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::basefunctions_values_at_minusone_(
-        rangeDim);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::RangeType
+    TwoBeams<E, D, d, R, rangeDim>::GetData::basefunctions_values_at_minusone_(rangeDim);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::RangeType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::basefunctions_values_at_plusone_(
-        rangeDim);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::RangeType
+    TwoBeams<E, D, d, R, rangeDim>::GetData::basefunctions_values_at_plusone_(rangeDim);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-bool TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::is_calculated_(false);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+bool TwoBeams<E, D, d, R, rangeDim>::GetData::is_calculated_(false);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-std::string TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::filename_("");
+template <class E, class D, size_t d, class R, size_t rangeDim>
+std::string TwoBeams<E, D, d, R, rangeDim>::GetData::filename_("");
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-bool TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::exact_legendre_(true);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+bool TwoBeams<E, D, d, R, rangeDim>::GetData::exact_legendre_(true);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::RangeType
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::onebeam_left_boundary_values_(
-        rangeDim);
+template <class E, class D, size_t d, class R, size_t rangeDim>
+typename TwoBeams<E, D, d, R, rangeDim>::RangeType
+    TwoBeams<E, D, d, R, rangeDim>::GetData::onebeam_left_boundary_values_(rangeDim);
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-std::vector<typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::CGFunctionType>
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::basefunctions_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+std::vector<typename TwoBeams<E, D, d, R, rangeDim>::GetData::CGFunctionType>
+    TwoBeams<E, D, d, R, rangeDim>::GetData::basefunctions_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-std::shared_ptr<const typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                        rangeDim>::GetData::VelocityGridViewType>
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::velocity_grid_view_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+std::shared_ptr<const typename TwoBeams<E, D, d, R, rangeDim>::GetData::VelocityGridViewType>
+    TwoBeams<E, D, d, R, rangeDim>::GetData::velocity_grid_view_;
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-std::shared_ptr<const typename TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                        rangeDim>::GetData::VelocityGridType>
-    TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::velocity_grid_;
+template <class E, class D, size_t d, class R, size_t rangeDim>
+std::shared_ptr<const typename TwoBeams<E, D, d, R, rangeDim>::GetData::VelocityGridType>
+    TwoBeams<E, D, d, R, rangeDim>::GetData::velocity_grid_;
 
 } // namespace Problems
 } // namespace Hyperbolic
