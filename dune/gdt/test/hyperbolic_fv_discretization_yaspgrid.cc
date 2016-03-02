@@ -15,8 +15,15 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
+#if HAVE_EIGEN
+
 TYPED_TEST_CASE(hyperbolic_FV_discretization, YaspGridTestCases);
 TYPED_TEST(hyperbolic_FV_discretization, eoc_study_using_yaspgrid) {
   this->eoc_study();
 }
 
+#else
+
+TEST(DISABLED_hyperbolic_FV_discretization, eoc_study_using_yaspgrid) {}
+
+#endif
