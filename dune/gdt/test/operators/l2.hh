@@ -9,7 +9,7 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/l2.hh>
 
 #include "weighted-l2.hh"

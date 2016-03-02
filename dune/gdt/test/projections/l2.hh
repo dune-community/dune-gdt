@@ -1,7 +1,7 @@
-#ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
-#define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
+#ifndef DUNE_GDT_TEST_PROJECTIONS_L2_HH
+#define DUNE_GDT_TEST_PROJECTIONS_L2_HH
 
-#include <dune/gdt/operators/projections/l2.hh>
+#include <dune/gdt/projections/l2.hh>
 
 #include "base.hh"
 
@@ -61,4 +61,4 @@ struct L2ProjectionOperatorTest
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_HH
+#endif // DUNE_GDT_TEST_PROJECTIONS_L2_HH

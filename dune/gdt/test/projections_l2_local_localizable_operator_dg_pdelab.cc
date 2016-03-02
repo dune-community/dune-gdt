@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "operators/projections/l2-local.hh"
+#include "projections/l2-local.hh"
 #include "spaces/dg/pdelab.hh"
 
 using namespace Dune::GDT::Test;

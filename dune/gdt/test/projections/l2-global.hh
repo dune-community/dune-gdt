@@ -3,10 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_GLOBAL_HH
-#define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_GLOBAL_HH
+#ifndef DUNE_GDT_TEST_PROJECTIONS_L2_GLOBAL_HH
+#define DUNE_GDT_TEST_PROJECTIONS_L2_GLOBAL_HH
 
-#include <dune/gdt/operators/projections/l2-global.hh>
+#include <dune/gdt/projections/l2-global.hh>
 
 #include "base.hh"
 
@@ -58,4 +58,4 @@ struct L2GlobalProjectionOperatorTest
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROJECTIONS_L2_GLOBAL_HH
+#endif // DUNE_GDT_TEST_PROJECTIONS_L2_GLOBAL_HH
