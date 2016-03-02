@@ -9,7 +9,6 @@
 #include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/playground/functions/indicator.hh>
 #include <dune/stuff/functions/spe10.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/provider/cube.hh>
@@ -128,8 +127,7 @@ private:
   {
     auto grid_cfg = ProblemType::default_grid_cfg();
 #if HAVE_ALUGRID
-    if (std::is_same<GridType, ALUConformGrid<2, 2>>::value
-        || std::is_same<GridType, ALUGrid<2, 2, simplex, conforming>>::value)
+    if (std::is_same<GridType, ALUGrid<2, 2, simplex, conforming>>::value)
       grid_cfg["num_refinements"] = "1";
 #endif // HAVE_ALUGRID
     return Stuff::Grid::Providers::Cube<G>::create(grid_cfg)->grid_ptr();

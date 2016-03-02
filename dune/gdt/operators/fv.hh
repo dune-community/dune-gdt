@@ -9,17 +9,6 @@
 #include <memory>
 #include <type_traits>
 
-#if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) // EXADUNE
-#include <dune/grid/utility/partitioning/ranged.hh>
-#include <dune/stuff/common/parallel/threadmanager.hh>
-#endif
-
-#if HAVE_TBB
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_reduce.h>
-#include <tbb/tbb_stddef.h>
-#endif
-
 #include <dune/stuff/aliases.hh>
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/common/ranges.hh>
