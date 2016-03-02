@@ -91,8 +91,8 @@ protected:
           }
         }
         A_str += "]";
-        source_config["A." + DSC::toString(ii)] = A_str;
-        source_config["b." + DSC::toString(ii)] = DSC::toString(RangeType(0));
+        source_config["A." + DSC::to_string(ii)] = A_str;
+        source_config["b." + DSC::to_string(ii)] = DSC::to_string(RangeType(0));
       }
     } // ... create_source_values()
 
@@ -108,11 +108,11 @@ protected:
           if (rr > 0)
             str += " ";
           if (rr == 0)
-            str += DSC::toString(0.0002 - get_left_boundary_value(rr)) + "*x[0]+"
-                   + DSC::toString(get_left_boundary_value(rr));
+            str += DSC::to_string(0.0002 - get_left_boundary_value(rr)) + "*x[0]+"
+                   + DSC::to_string(get_left_boundary_value(rr));
           else
-            str += DSC::toString(0.0 - get_left_boundary_value(rr)) + "*x[0]+"
-                   + DSC::toString(get_left_boundary_value(rr));
+            str += DSC::to_string(0.0 - get_left_boundary_value(rr)) + "*x[0]+"
+                   + DSC::to_string(get_left_boundary_value(rr));
         }
         str += "]";
         return str;
@@ -121,8 +121,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::toString(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr]) + "*x[0]+"
-                 + DSC::toString(onebeam_left_boundary_values()[rr]);
+          str += DSC::to_string(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr]) + "*x[0]+"
+                 + DSC::to_string(onebeam_left_boundary_values()[rr]);
         }
         str += "]";
         return str;

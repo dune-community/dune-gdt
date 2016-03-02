@@ -42,16 +42,6 @@ struct ChooseGridView<GridType, true>
   typedef typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> type;
 };
 
-/**
- * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
- * \tparam GG GridType
- * \tparam ll layer
- * \tparam ss space_backend
- * \tparam la la_backend
- * \tparam pp polOrder
- * \tparam RR RangeFieldType
- * \tparam rr dimRange
- */
 template <class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1,
           bool use_periodic_grid_view                                                = true>
 class FVDiscretizer
@@ -66,7 +56,7 @@ public:
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error
-    return std::string("gdt.hyperbolic.discretization.fv.dim") + DSC::toString(int(GridType::dimension));
+    return std::string("gdt.hyperbolic.discretization.fv.dim") + DSC::to_string(int(GridType::dimension));
   }
 
   static DiscretizationType discretize(Stuff::Grid::ProviderInterface<GridType>& grid_provider,

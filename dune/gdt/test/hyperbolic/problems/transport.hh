@@ -391,9 +391,9 @@ public:
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         initial_values,
         reference_grid_view_,
-        DSC::fromString<typename DSC::FieldVector<D, d>>("[1.0 2.0]"),
-        DSC::fromString<typename DSC::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
-        DSC::fromString<typename DSC::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
+        DSC::from_string<typename DSC::FieldVector<D, d>>("[1.0 2.0]"),
+        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
+        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
   }
 
   virtual const ProblemType& problem() const override final

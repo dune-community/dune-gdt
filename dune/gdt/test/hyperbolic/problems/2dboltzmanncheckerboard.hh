@@ -74,7 +74,7 @@ protected:
   class GetData : public BaseType::GetData
   {
   public:
-    using BaseType::GetData::precision; // precision for toString
+    using BaseType::GetData::precision; // precision for to_string
 
     // source is q - (\Sigma_s \delta_{l0}\delta{m0} - \Sigma_t) * \psi_l^m
     // see the Checkerboard test case in http://www.sciencedirect.com/science/article/pii/S0021999105002275?np=y
@@ -117,9 +117,9 @@ protected:
             for (size_t m = 0; m <= l; ++m)
               S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
           size_t number = 7 * row + col;
-          source_config["A." + DSC::toString(number)] = DSC::toString(S, precision);
-          source_config["b." + DSC::toString(number)] = DSC::toString(q);
-          source_config["sparse." + DSC::toString(number)] = "true";
+          source_config["A." + DSC::to_string(number)] = DSC::to_string(S, precision);
+          source_config["b." + DSC::to_string(number)] = DSC::to_string(q);
+          source_config["sparse." + DSC::to_string(number)] = "true";
         }
       }
     } // ... create_source_values(...)

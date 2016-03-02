@@ -34,17 +34,17 @@ struct ButcherArrayProvider
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>("[0]");
+    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[1]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0]");
   }
 };
 
@@ -53,17 +53,17 @@ struct ButcherArrayProvider<RangeFieldType, RungeKuttaMethods::second_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 1 0]");
+    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 1 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0 1]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
   }
 };
 
@@ -72,19 +72,19 @@ struct ButcherArrayProvider<RangeFieldType, RungeKuttaMethods::third_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0; 1 0 0; 0.25 0.25 0]");
+    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0; 1 0 0; 0.25 0.25 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::toString(1.0 / 6.0, 15) + " " + DSC::toString(1.0 / 6.0, 15) + " " + DSC::toString(2.0 / 3.0, 15)
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(2.0 / 3.0, 15)
         + "]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0 1 0.5]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1 0.5]");
   }
 };
 
@@ -93,21 +93,21 @@ struct ButcherArrayProvider<RangeFieldType, RungeKuttaMethods::classic_fourth_or
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
+    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::toString(1.0 / 6.0, 15) + " " + DSC::toString(1.0 / 3.0, 15) + " " + DSC::toString(1.0 / 3.0, 15)
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15)
         + " "
-        + DSC::toString(1.0 / 6.0, 15)
+        + DSC::to_string(1.0 / 6.0, 15)
         + "]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0 0.5 0.5 1]");
+    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0 0.5 0.5 1]");
   }
 };
 
@@ -253,7 +253,7 @@ public:
         if (save_solution)
           solution.emplace_back(std::make_pair(t_, u_n_));
         if (write_solution)
-          u_n_.visualize(filename_prefix, DSC::toString(save_step_counter));
+          u_n_.visualize(filename_prefix, DSC::to_string(save_step_counter));
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -303,7 +303,7 @@ public:
     for (size_t ii = 0; ii < solution_.size(); ++ii) {
       auto& pair = solution_[ii];
       pair.second.template visualize_factor<factor_to_be_visualized>(
-          prefix + "factor_" + DSC::toString(factor_to_be_visualized) + "_" + DSC::toString(ii), true);
+          prefix + "factor_" + DSC::to_string(factor_to_be_visualized) + "_" + DSC::to_string(ii), true);
     }
   }
 

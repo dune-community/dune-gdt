@@ -51,7 +51,7 @@ struct visualize_helper
   {
     static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
     discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 
@@ -78,7 +78,7 @@ struct visualize_helper<ii, true>
                           typename DiscreteFunctionType::VectorType> factor_discrete_function(factor_space,
                                                                                               factor_vector);
     factor_discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 

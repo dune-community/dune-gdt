@@ -269,7 +269,7 @@ public:
   void visualize(const DiscreteSolutionType& solution, const std::string filename) const
   {
     for (size_t ii = 0; ii < solution.size(); ++ii)
-      solution[ii].second.visualize(filename, DSC::toString(ii));
+      solution[ii].second.visualize(filename, DSC::to_string(ii));
   }
 
   /// \}

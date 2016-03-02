@@ -220,7 +220,7 @@ public:
       if (!visualize_prefix_.empty()) {
         for (size_t ii = 0; ii < current_solution_->size(); ++ii) {
           current_solution_->operator[](ii).second.visualize(
-              visualize_prefix_ + "_solution_" + DSC::toString(current_refinement_), DSC::toString(ii));
+              visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_), DSC::to_string(ii));
         }
       }
     }
@@ -289,7 +289,7 @@ protected:
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         for (size_t ii = 0; ii < reference_solution_->size(); ++ii) {
-          reference_solution_->operator[](ii).second.visualize(visualize_prefix_ + "_reference", DSC::toString(ii));
+          reference_solution_->operator[](ii).second.visualize(visualize_prefix_ + "_reference", DSC::to_string(ii));
         }
       }
     }
@@ -307,13 +307,13 @@ protected:
         (*discrete_exact_solution_)
             .emplace_back(std::make_pair(time,
                                          DiscreteFunctionType(reference_discretization_->fv_space(),
-                                                              "exact solution at time " + DSC::toString(time))));
+                                                              "exact solution at time " + DSC::to_string(time))));
         project(*discrete_exact_solution_at_time, discrete_exact_solution_->operator[](ii).second);
       }
       if (!visualize_prefix_.empty()) {
         for (size_t ii = 0; ii < discrete_exact_solution_->size(); ++ii) {
           discrete_exact_solution_->operator[](ii)
-              .second.visualize(visualize_prefix_ + "_exact_solution", DSC::toString(ii));
+              .second.visualize(visualize_prefix_ + "_exact_solution", DSC::to_string(ii));
         }
       }
       discrete_exact_solution_computed_ = true;
