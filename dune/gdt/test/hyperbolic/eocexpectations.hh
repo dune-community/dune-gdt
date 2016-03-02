@@ -50,12 +50,12 @@ public:
                        << "  TestCaseType: " << Stuff::Common::Typename< TestCaseType >::value() << "\n"
                        << "  ChooseDiscretizer: ??\n"
                        << "  type: " << type << "\n"
-                       << "Please put an appropriate specialiaztion of LinearEllipticEocExpectations for these\n"
+                       << "Please put an appropriate specialization of HyperbolicEocExpectations for these\n"
                        << "combinations in a separate object file or add\n"
-                       << "  'template class LinearEllipticEocExpectations< ... >'\n"
-                       << "for this ChooseDiscretizer and polOrder in the appropriate object file!\n\n"
+                       << "  'template class HyperbolicEocExpectations< ... >'\n"
+                       << "for this ChooseDiscretizer in the appropriate object file!\n\n"
                        << "Oh: and do not forget to add\n"
-                       << "  'extern template class LinearEllipticEocExpectations< ... >'\n"
+                       << "  'extern template class HyperbolicEocExpectations< ... >'\n"
                        << "to each test source using these results!";
     return {};
   } // ... results(...)

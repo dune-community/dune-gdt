@@ -19,9 +19,9 @@ typedef testing::Types<   /* Dune::GDT::Hyperbolic::BurgersTestCase
 //                         , Dune::GDT::Hyperbolic::BurgersTestCase
 //                                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > > >
                            Dune::GDT::Hyperbolic::TransportTestCase
-                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
-//                          Dune::GDT::Hyperbolic::TransportTestCase
-//                                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > > >
+                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >, double, 1, 1 >
+                           , Dune::GDT::Hyperbolic::TransportTestCase
+                                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >, double, 1, 1 >
 //                         , Dune::GDT::Hyperbolic::ShallowWaterTestCase
 //                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
 //                         , Dune::GDT::Hyperbolic::ShockTubeTestCase
@@ -51,6 +51,7 @@ namespace Tests {
 extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
                                                  < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
                                                    double,
+                                                   1,
                                                    1 >,
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  1 >;
@@ -58,6 +59,7 @@ extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
 extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
                                                  < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >,
                                                    double,
+                                                   1,
                                                    1 >,
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  2 >;
