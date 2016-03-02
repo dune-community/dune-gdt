@@ -177,8 +177,8 @@ public:
         std::vector< EigenMatrixType > jacobian_u_i_eigen;
         std::vector< EigenMatrixType > jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_j[ii], 15)));
         }
       #if HAVE_EIGEN
           for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -326,8 +326,8 @@ public:
         *max_derivative_ = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_j, 15)));
       #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >
@@ -485,8 +485,8 @@ public:
         std::vector< EigenMatrixType > jacobian_u_i_eigen;
         std::vector< EigenMatrixType > jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_j[ii], 15)));
         }
       #if HAVE_EIGEN
           for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -635,8 +635,8 @@ public:
         *max_derivative_ = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian_u_j, 15)));
       #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver< typename Stuff::LA::EigenDenseMatrix< RangeFieldType >::BackendType >

@@ -52,7 +52,7 @@ struct visualize_helper
                                const DiscreteFunctionType& discrete_function)
   {
     static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
-    discrete_function.visualize(filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+    discrete_function.visualize(filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 
@@ -77,7 +77,7 @@ struct visualize_helper< ii, true >
         factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] = discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
     }
     ConstDiscreteFunction< typename DiscreteFunctionType::SpaceType::FactorSpaceType, typename DiscreteFunctionType::VectorType > factor_discrete_function(factor_space, factor_vector);
-    factor_discrete_function.visualize(filename_prefix + "_factor_" + DSC::toString(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+    factor_discrete_function.visualize(filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 

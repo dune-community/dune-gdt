@@ -619,7 +619,7 @@ public:
   }
 
   void visualize_reconstruction(const size_t save_counter) {
-    reconstruction_->template visualize_factor< 0 >("reconstruction_" + DSC::toString(save_counter), true);
+    reconstruction_->template visualize_factor< 0 >("reconstruction_" + DSC::to_string(save_counter), true);
   }
 
 private:
@@ -708,7 +708,7 @@ private:
       if (!eigenvectors_calculated_) {
 #if HAVE_EIGEN
         // create EigenSolver
-        ::Eigen::EigenSolver< typename EigenMatrixType::BackendType > eigen_solver(DSC::fromString< EigenMatrixType >(DSC::toString(analytical_flux_.jacobian(u_entity))).backend());
+        ::Eigen::EigenSolver< typename EigenMatrixType::BackendType > eigen_solver(DSC::from_string< EigenMatrixType >(DSC::to_string(analytical_flux_.jacobian(u_entity))).backend());
         assert(eigen_solver.info() == ::Eigen::Success);
         const auto eigen_eigenvectors = eigen_solver.eigenvectors();
 #  ifndef NDEBUG
@@ -718,8 +718,8 @@ private:
 #  endif
         const EigenMatrixType eigenvectors(eigen_eigenvectors.real());
         const EigenMatrixType eigenvectors_inverse(eigen_eigenvectors.inverse().real());
-        eigenvectors_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors));
-        eigenvectors_inverse_ = DSC::fromString< StuffFieldMatrixType >(DSC::toString(eigenvectors_inverse));
+        eigenvectors_ = DSC::from_string< StuffFieldMatrixType >(DSC::to_string(eigenvectors));
+        eigenvectors_inverse_ = DSC::from_string< StuffFieldMatrixType >(DSC::to_string(eigenvectors_inverse));
         if (is_linear_)
           eigenvectors_calculated_ = true;
 #else

@@ -111,12 +111,12 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) {                         // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::toString(-1.0 - cc*(cc+1), precision);
+                  A_str += DSC::to_string(-1.0 - cc*(cc+1), precision);
                 else
                   A_str += "0";
               } else {                                                  // 2 <= x <= 3
                 if (cc == rr)
-                  A_str += DSC::toString(-5.0*cc*(cc+1), precision);
+                  A_str += DSC::to_string(-5.0*cc*(cc+1), precision);
                 else
                   A_str += "0";
               }
@@ -124,10 +124,10 @@ protected:
           }
           A_str += "]";
           q_str += "]";
-          source_config["A." + DSC::toString(ii)] = A_str;
-          source_config["b." + DSC::toString(ii)] = q_str;
-//          std::cout << "A." << DSC::toString(ii) <<  ": " << A_str << std::endl;
-//          std::cout << "q." << DSC::toString(ii) <<  ": " << q_str << std::endl;
+          source_config["A." + DSC::to_string(ii)] = A_str;
+          source_config["b." + DSC::to_string(ii)] = q_str;
+//          std::cout << "A." << DSC::to_string(ii) <<  ": " << A_str << std::endl;
+//          std::cout << "q." << DSC::to_string(ii) <<  ": " << q_str << std::endl;
         }
       } else {
         MatrixType S_M_inverse(S());
@@ -136,7 +136,7 @@ protected:
           std::string A_str = "[";
           std::string q_str = "[";
           if (ii == 2)                                           // 1 <= x <= 1.5
-            q_str = DSC::toString(base_integrated(), precision);
+            q_str = DSC::to_string(base_integrated(), precision);
           for (size_t rr = 0; rr < dimRange; ++rr) {
             if (rr > 0) {
               A_str += "; ";
@@ -155,20 +155,20 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) {                         // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::toString(-1.0 - S_M_inverse[rr][cc], precision);
+                  A_str += DSC::to_string(-1.0 - S_M_inverse[rr][cc], precision);
                 else
-                  A_str += DSC::toString(-S_M_inverse[rr][cc], precision);
+                  A_str += DSC::to_string(-S_M_inverse[rr][cc], precision);
               } else {                                                  // 2 <= x <= 3
-                A_str += DSC::toString(-5.0*S_M_inverse[rr][cc], precision);
+                A_str += DSC::to_string(-5.0*S_M_inverse[rr][cc], precision);
               }
             }
           }
           A_str += "]";
           q_str += "]";
-          source_config["A." + DSC::toString(ii)] = A_str;
-          source_config["b." + DSC::toString(ii)] = q_str;
-//          std::cout << "A." << DSC::toString(ii) <<  ": " << A_str << std::endl;
-//          std::cout << "q." << DSC::toString(ii) <<  ": " << q_str << std::endl;
+          source_config["A." + DSC::to_string(ii)] = A_str;
+          source_config["b." + DSC::to_string(ii)] = q_str;
+//          std::cout << "A." << DSC::to_string(ii) <<  ": " << A_str << std::endl;
+//          std::cout << "q." << DSC::to_string(ii) <<  ": " << q_str << std::endl;
 
         }
       }
@@ -199,7 +199,7 @@ protected:
         for (size_t cc = 0; cc < dimRange; ++cc) {
           if (cc > 0)
             str += " ";
-          str += DSC::toString(0.5*basefunctions_right[cc], precision) + "+(" + DSC::toString(0.5*0.0001*(base_integrated()[cc]) - 0.5*basefunctions_right[cc], precision) + ")*x[0]/3.0";
+          str += DSC::to_string(0.5*basefunctions_right[cc], precision) + "+(" + DSC::to_string(0.5*0.0001*(base_integrated()[cc]) - 0.5*basefunctions_right[cc], precision) + ")*x[0]/3.0";
         }
         str += "]";
 //        std::cout << str << std::endl;

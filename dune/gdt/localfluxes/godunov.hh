@@ -182,7 +182,7 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
     std::vector< EigenMatrixType > jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15), dimRange, dimRange));
+      jacobian_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian[ii], 15), dimRange, dimRange));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -196,7 +196,7 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
     std::vector< EigenMatrixType > jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii], 15), dimRange, dimRange));
+      jacobian_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian[ii], 15), dimRange, dimRange));
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
   } // void reinitialize_jacobians(...)
@@ -227,8 +227,8 @@ private:
       const auto eigenvectors_inverse = eigenvectors.inverse();
       EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
       EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
-      jacobian_neg_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen, 15));
-      jacobian_pos_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen, 15));
+      jacobian_neg_[ii] = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_neg_eigen, 15));
+      jacobian_pos_[ii] = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_pos_eigen, 15));
     }
   } // void calculate_jacobians(...)
 
@@ -342,7 +342,7 @@ private:
   void initialize_jacobians() const
   {
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
-    EigenMatrixType jacobian_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15)));
+    EigenMatrixType jacobian_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian, 15)));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -354,7 +354,7 @@ private:
     RangeType u_mean = u_i + u_j;
     u_mean *= RangeFieldType(0.5);
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
-    EigenMatrixType jacobian_eigen = DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15));
+    EigenMatrixType jacobian_eigen = DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian, 15));
 
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
@@ -385,8 +385,8 @@ private:
       EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
       EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
       // set jacobian_neg_ and jacobian_pos_
-      jacobian_neg_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen, 15));
-      jacobian_pos_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen, 15));
+      jacobian_neg_ = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_neg_eigen, 15));
+      jacobian_pos_ = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_pos_eigen, 15));
       // jacobian_abs_ = jacobian_pos_ - jacobian_neg_;
       jacobian_abs_ = jacobian_neg_;
       jacobian_abs_ *= RangeFieldType(-1.0);
@@ -536,7 +536,7 @@ public:
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
       std::vector< EigenMatrixType > jacobian_eigen;
       for (size_t ii = 0; ii < dimDomain; ++ii)
-        jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+        jacobian_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian[ii])));
       calculate_jacobians(std::move(jacobian_eigen));
       jacobians_constructed_ = true;
     } // void initialize_jacobians()
@@ -550,7 +550,7 @@ public:
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
       std::vector< EigenMatrixType > jacobian_eigen;
       for (size_t ii = 0; ii < dimDomain; ++ii)
-        jacobian_eigen.emplace_back(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian[ii])));
+        jacobian_eigen.emplace_back(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian[ii])));
       // calculate jacobian_neg and jacobian_pos
       calculate_jacobians(std::move(jacobian_eigen));
     } // void reinitialize_jacobians(...)
@@ -581,8 +581,8 @@ public:
         const auto eigenvectors_inverse = eigenvectors.inverse();
         EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
         EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
-        jacobian_neg_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen));
-        jacobian_pos_[ii] = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen));
+        jacobian_neg_[ii] = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_neg_eigen));
+        jacobian_pos_[ii] = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_pos_eigen));
       }
     } // void calculate_jacobians(...)
 
@@ -698,7 +698,7 @@ public:
     void initialize_jacobians() const
     {
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
-      EigenMatrixType jacobian_eigen(DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15)));
+      EigenMatrixType jacobian_eigen(DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian, 15)));
       calculate_jacobians(std::move(jacobian_eigen));
       jacobians_constructed_ = true;
     } // void initialize_jacobians()
@@ -710,7 +710,7 @@ public:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
-      EigenMatrixType jacobian_eigen = DSC::fromString< EigenMatrixType >(DSC::toString(jacobian, 15));
+      EigenMatrixType jacobian_eigen = DSC::from_string< EigenMatrixType >(DSC::to_string(jacobian, 15));
 
       // calculate jacobian_neg and jacobian_pos
       calculate_jacobians(std::move(jacobian_eigen));
@@ -741,8 +741,8 @@ public:
         EigenMatrixType jacobian_neg_eigen(eigenvectors.real()*diag_jacobian_neg_tmp.backend()*eigenvectors_inverse.real());
         EigenMatrixType jacobian_pos_eigen(eigenvectors.real()*diag_jacobian_pos_tmp.backend()*eigenvectors_inverse.real());
         // set jacobian_neg_ and jacobian_pos_
-        jacobian_neg_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_neg_eigen, 15));
-        jacobian_pos_ = DSC::fromString< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::toString(jacobian_pos_eigen, 15));
+        jacobian_neg_ = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_neg_eigen, 15));
+        jacobian_pos_ = DSC::from_string< Dune::FieldMatrix< RangeFieldType, dimRange, dimRange > >(DSC::to_string(jacobian_pos_eigen, 15));
         // jacobian_abs_ = jacobian_pos_ - jacobian_neg_;
         jacobian_abs_ = jacobian_neg_;
         jacobian_abs_ *= RangeFieldType(-1.0);

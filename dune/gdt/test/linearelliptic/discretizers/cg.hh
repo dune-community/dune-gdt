@@ -68,7 +68,7 @@ public:
 
   static std::string static_id()                                                   // int() needed, otherwise we get a
   {                                                                                // linker error
-    return std::string("gdt.linearelliptic.discretization.cg.order_") + DSC::toString(int(polOrder));
+    return std::string("gdt.linearelliptic.discretization.cg.order_") + DSC::to_string(int(polOrder));
   }
 
   static DiscretizationType discretize(Stuff::Grid::ProviderInterface< GridType >& grid_provider,

@@ -133,7 +133,7 @@ protected:
     typedef typename DS::Functions::Checkerboard< typename VelocityGridType::template Codim< 0 >::Entity,
                                                   D, dimDomain,
                                                   R, 1, 1 >               CGJacobianType;
-    static const int precision = 15; // precision for toString
+    static const int precision = 15; // precision for to_string
 
     static void set_filename(const std::string filename)
     {
@@ -181,7 +181,7 @@ protected:
       }
       A_str += "]";
       source_config["A.0"] = A_str;
-      source_config["b.0"] = DSC::toString(RangeType(0));
+      source_config["b.0"] = DSC::to_string(RangeType(0));
       source_config["sparse.0"] = "true";
     } // ... create_source_values(...)
 
@@ -200,9 +200,9 @@ protected:
             if (cc > 0)
               str += " ";
             if (cc == rr - 1)
-              str += DSC::toString(double(rr)/(2.0*double(rr)+1.0), precision);
+              str += DSC::to_string(double(rr)/(2.0*double(rr)+1.0), precision);
             else if (cc == rr + 1)
-              str += DSC::toString((double(rr)+1.0)/(2.0*double(rr)+1.0), precision);
+              str += DSC::to_string((double(rr)+1.0)/(2.0*double(rr)+1.0), precision);
             else
               str += "0";
           }
@@ -211,7 +211,7 @@ protected:
         return str;
       } else {
         MatrixType D_M_inverse(M_inverse());
-        return DSC::toString(D_M_inverse.leftmultiply(D()), precision);
+        return DSC::to_string(D_M_inverse.leftmultiply(D()), precision);
       }
     } // ... create_flux_matrix()
 
@@ -237,7 +237,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::toString(0.0001*base_integrated()[rr], precision);
+          str += DSC::to_string(0.0001*base_integrated()[rr], precision);
         }
         str += "]";
         return str;
@@ -256,7 +256,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::toString(((1.0-2.0*(rr%2)) - 1.0), precision) + "*x[0]+1)";
+          str += "50*(" + DSC::to_string(((1.0-2.0*(rr%2)) - 1.0), precision) + "*x[0]+1)";
         }
         str += "]";
         return str;
@@ -265,9 +265,9 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::toString(50*(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]), precision)
+          str += DSC::to_string(50*(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]), precision)
                  + "*x[0]+"
-                 + DSC::toString(50*basefunctions_values_at_plusone()[rr], precision);
+                 + DSC::to_string(50*basefunctions_values_at_plusone()[rr], precision);
         }
         str += "]";
         return str;
@@ -347,7 +347,7 @@ protected:
         velocity_grid_config["type"] = "provider.cube";
         velocity_grid_config["lower_left"] = "[-1.0]";
         velocity_grid_config["upper_right"] = "[1.0]";
-        velocity_grid_config["num_elements"] = "[" + DSC::toString(basefunction_values[0].size() - 1) + "]";
+        velocity_grid_config["num_elements"] = "[" + DSC::to_string(basefunction_values[0].size() - 1) + "]";
         VelocityGridProviderType velocity_grid_provider = *(VelocityGridProviderType::create(velocity_grid_config));
         velocity_grid_ = velocity_grid_provider.grid_ptr();
 
@@ -360,13 +360,13 @@ protected:
         for (size_t ii = 0; ii < dimRange; ++ii) {
           VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
           for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
-            basefunction_ii_values[jj] = DSC::fromString< R >(basefunction_values[ii][jj]);
+            basefunction_ii_values[jj] = DSC::from_string< R >(basefunction_values[ii][jj]);
           }
           basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
           basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
           basefunctions_.emplace_back(CGFunctionType(cg_space,
                                                     basefunction_ii_values,
-                                                    "Basefunction " + DSC::toString(ii)));
+                                                    "Basefunction " + DSC::to_string(ii)));
         }
 
         // get jacobians of basefunctions. jacobians are piecewise constant, so use Checkerboard as CGJacobianType
@@ -497,7 +497,7 @@ public:
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"] = GetData::create_flux_matrix();
     //std::cout << flux_config["A"] << std::endl;
-    flux_config["b"] = DSC::toString(RangeType(0));
+    flux_config["b"] = DSC::to_string(RangeType(0));
     flux_config["sparse"] = "true";
     config.add(flux_config, "flux");
     ConfigType source_config = DefaultRHSType::default_config();

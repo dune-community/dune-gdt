@@ -37,7 +37,7 @@ struct WeightedL2ProductBase
 
   WeightedL2ProductBase(const double weight_value = 42)
     : weight_value_(weight_value)
-    , weight_("x", DSC::toString(double(weight_value_)), 0) // linker error if double(...) is missing
+    , weight_("x", DSC::to_string(double(weight_value_)), 0) // linker error if double(...) is missing
     , constant_("x", "1.0", 0)
     , linear_("x", "x[0] - 1.0", 1)
     , quadratic_("x", "x[0]*x[0]", 2)

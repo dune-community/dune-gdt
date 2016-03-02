@@ -69,8 +69,8 @@ protected:
     // Thus A(x) = 0 and q(x) = 0
     static void create_source_values(ConfigType& source_config)
     {
-      source_config["A.0"] = DSC::toString(MatrixType(0));
-      source_config["b.0"] = DSC::toString(RangeType(0));
+      source_config["A.0"] = DSC::to_string(MatrixType(0));
+      source_config["b.0"] = DSC::to_string(RangeType(0));
     } // ... create_source_values()
 
     // boundary value of kinetic equation is 100*delta(v-1)**exp(-(t-1)^2/2) at x = 0 and 100*delta(v+1)*exp(-(t-1)^2/2)
@@ -87,7 +87,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::toString(((1.0-2.0*(rr%2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
+          str += "50*(" + DSC::to_string(((1.0-2.0*(rr%2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
         }
         str += "]";
         return str;
@@ -97,9 +97,9 @@ protected:
           if (rr > 0)
             str += " ";
           str += "50*("
-                 + DSC::toString(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr])
+                 + DSC::to_string(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr])
                  + "*x[0]/7.0+"
-                 + DSC::toString(basefunctions_values_at_plusone()[rr])
+                 + DSC::to_string(basefunctions_values_at_plusone()[rr])
                  + ")*exp((-(t-1)^2)/2)";
         }
         str += "]";

@@ -83,7 +83,7 @@ protected:
   class GetData
   {
   public:
-    static const int precision = 15; // precision for toString
+    static const int precision = 15; // precision for to_string
 
     // (\Sigma_s \delta_{l0}\delta{m0} - \Sigma_t) * \psi_l^m
     static void create_source_values(ConfigType& source_config)
@@ -98,8 +98,8 @@ protected:
       for (size_t l = 1; l <= momentOrder; ++l)
         for (size_t m = 0; m <= l; ++m)
           S[pos(l, m)][pos(l, m)] = -1.0*Sigma_t;
-      source_config["A.0"] = DSC::toString(S, precision);
-      source_config["b.0"] = DSC::toString(RangeType(0));
+      source_config["A.0"] = DSC::to_string(S, precision);
+      source_config["b.0"] = DSC::to_string(RangeType(0));
       source_config["sparse.0"] = "true";
     } // ... create_source_values(...)
 
@@ -137,11 +137,11 @@ protected:
           }
         }
       }
-      flux_config["A.0"] = DSC::toString(X, precision);
+      flux_config["A.0"] = DSC::to_string(X, precision);
       flux_config["sparse.0"] = "true";
-      flux_config["A.1"] = DSC::toString(Z, precision);
+      flux_config["A.1"] = DSC::to_string(Z, precision);
       flux_config["sparse.1"] = "true";
-      flux_config["b"] = DSC::toString(typename DefaultFluxType::RangeType(0));
+      flux_config["b"] = DSC::to_string(typename DefaultFluxType::RangeType(0));
     } // ... create_flux_matrix()
 
     // initial value is max(exp(-10*((x-0.5)^2 + (y-0.5)^2)/sigma^2), 10^(-4)) with sigma = 0.02 for \psi_0^0 and 0 else
