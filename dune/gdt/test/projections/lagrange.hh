@@ -3,10 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_LAGRANGE_HH
-#define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_LAGRANGE_HH
+#ifndef DUNE_GDT_TEST_PROJECTIONS_LAGRANGE_HH
+#define DUNE_GDT_TEST_PROJECTIONS_LAGRANGE_HH
 
-#include <dune/gdt/operators/projections/lagrange.hh>
+#include <dune/gdt/projections/lagrange.hh>
 
 #include "base.hh"
 
@@ -62,4 +62,4 @@ struct LagrangeProjectionOperatorTest
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROJECTIONS_LAGRANGE_HH
+#endif // DUNE_GDT_TEST_PROJECTIONS_LAGRANGE_HH

@@ -12,7 +12,7 @@
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/products/l2.hh>
 
 namespace Dune {

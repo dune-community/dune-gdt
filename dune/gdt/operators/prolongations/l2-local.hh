@@ -11,7 +11,7 @@
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
 #include <dune/gdt/operators/default.hh>
-#include <dune/gdt/operators/projections/l2-local.hh>
+#include <dune/gdt/projections/l2-local.hh>
 
 namespace Dune {
 namespace GDT {

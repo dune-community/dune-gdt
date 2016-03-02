@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_LAGRANGE_HH
-#define DUNE_GDT_OPERATORS_PROJECTIONS_LAGRANGE_HH
+#ifndef DUNE_GDT_PROJECTIONS_LAGRANGE_HH
+#define DUNE_GDT_PROJECTIONS_LAGRANGE_HH
 
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/la/container/vector-interface.hh>
@@ -12,9 +12,8 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/lagrange-projection.hh>
 #include <dune/gdt/spaces/interface.hh>
-
-#include "../default.hh"
-#include "../interfaces.hh"
+#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -193,4 +192,4 @@ project_lagrange(const SourceType& source, DiscreteFunction< SpaceType, VectorTy
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_PROJECTIONS_LAGRANGE_HH
+#endif // DUNE_GDT_PROJECTIONS_LAGRANGE_HH

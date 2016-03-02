@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_DIRICHLET_HH
-#define DUNE_GDT_OPERATORS_PROJECTIONS_DIRICHLET_HH
+#ifndef DUNE_GDT_PROJECTIONS_DIRICHLET_HH
+#define DUNE_GDT_PROJECTIONS_DIRICHLET_HH
 
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/intersection.hh>
@@ -55,4 +55,4 @@ make_localizable_dirichlet_projection_operator(const GridViewType& grid_view,
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_PROJECTIONS_DIRICHLET_HH
+#endif // DUNE_GDT_PROJECTIONS_DIRICHLET_HH

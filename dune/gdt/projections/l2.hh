@@ -1,5 +1,5 @@
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
-#define DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
+#ifndef DUNE_GDT_PROJECTIONS_L2_HH
+#define DUNE_GDT_PROJECTIONS_L2_HH
 
 #include <dune/gdt/discretefunction/default.hh>
 
@@ -232,4 +232,4 @@ project_l2(const SourceType& source,
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_PROJECTIONS_L2_HH
+#endif // DUNE_GDT_PROJECTIONS_L2_HH

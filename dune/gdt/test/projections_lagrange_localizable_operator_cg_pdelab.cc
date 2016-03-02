@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx> // <- This one has to come first!
 
-#include "operators/projections/lagrange.hh"
+#include "projections/lagrange.hh"
 #include "spaces/cg/pdelab.hh"
 
 using namespace Dune::GDT::Test;

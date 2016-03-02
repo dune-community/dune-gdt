@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_HH
-#define DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_HH
+#ifndef DUNE_GDT_PROJECTIONS_L2_LOCAL_HH
+#define DUNE_GDT_PROJECTIONS_L2_LOCAL_HH
 
 #include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -15,8 +15,6 @@
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
-
-#include "../default.hh"
 
 namespace Dune {
 namespace GDT {
@@ -84,7 +82,7 @@ private:
           << "You are using this operator to project onto a continuous discrete function space (see below)!\n"
           << "Consider to use L2GlobalProjectionLocalizableOperator instead!\n"
           << "You can disable this warning by defining "
-          << "DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING\n"
+          << "DUNE_GDT_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING\n"
           << "at compile time or by disabling the Dune::Stuff::Common::TimedLogger() instance at runtime.\n"
           << "The type of the range space is: " << DSC::Typename< S >::value() << std::endl;
     } // ... issue_warning(...)
@@ -93,7 +91,7 @@ private:
   template< class S >
   static inline void issue_warning(const S&)
   {
-#ifndef DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING
+#ifndef DUNE_GDT_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING
     Warning< S, S::continuous >::issue();
 #endif
   }
@@ -225,4 +223,4 @@ make_local_l2_projection_operator(const GridViewType& grid_view, const size_t ov
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_PROJECTIONS_L2_LOCAL_HH
+#endif // DUNE_GDT_PROJECTIONS_L2_LOCAL_HH

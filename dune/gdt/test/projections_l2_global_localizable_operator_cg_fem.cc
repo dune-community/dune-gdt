@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "operators/projections/l2-global.hh"
+#include "projections/l2-global.hh"
 #include "spaces/cg/fem.hh"
 
 using namespace Dune::GDT::Test;

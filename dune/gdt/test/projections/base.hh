@@ -3,15 +3,15 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_PROJECTIONS_BASE_HH
-#define DUNE_GDT_TEST_OPERATORS_PROJECTIONS_BASE_HH
+#ifndef DUNE_GDT_TEST_PROJECTIONS_BASE_HH
+#define DUNE_GDT_TEST_PROJECTIONS_BASE_HH
 
 #include <dune/common/unused.hh>
 
 #include <dune/gdt/products/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
 
-#include "../base.hh"
+#include <dune/gdt/test/operators/base.hh>
 
 namespace Dune {
 namespace GDT {
@@ -94,4 +94,4 @@ struct ProjectionOperatorBase
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROJECTIONS_BASE_HH
+#endif // DUNE_GDT_TEST_PROJECTIONS_BASE_HH

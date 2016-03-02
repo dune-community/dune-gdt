@@ -8,7 +8,7 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/elliptic.hh>
 
 #include "base.hh"
