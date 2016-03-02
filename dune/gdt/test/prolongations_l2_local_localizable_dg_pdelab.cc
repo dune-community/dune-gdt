@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "operators/prolongations/l2.hh"
+#include "prolongations/l2.hh"
 #include "spaces/dg/pdelab.hh"
 
 using namespace Dune::GDT::Test;
