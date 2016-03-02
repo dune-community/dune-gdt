@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_PROLONGATIONS_HH
-#define DUNE_GDT_OPERATORS_PROLONGATIONS_HH
+#ifndef DUNE_GDT_PROLONGATIONS_HH
+#define DUNE_GDT_PROLONGATIONS_HH
 
 #include <vector>
 #include <limits>
@@ -557,4 +557,4 @@ void prolong(const SourceType& source, RangeType& range)
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_PROLONGATIONS_HH
+#endif // DUNE_GDT_PROLONGATIONS_HH

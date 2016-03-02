@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_BASE_HH
-#define DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_BASE_HH
+#ifndef DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
+#define DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/functions/expression.hh>
@@ -81,4 +81,4 @@ struct LocalizableProlongationOperatorBase
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_BASE_HH
+#endif // DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
