@@ -557,7 +557,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     auto op                      = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     // project the function
     DiscreteFunctionType discrete_function(space);
-    project(space.grid_view(), function, discrete_function);
+    project(space.grid_view(), function, discrete_function, 2);
     // compute product
     const auto result = op->apply2(discrete_function, discrete_function);
     auto op_tbb = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
@@ -573,7 +573,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   void correct_for_constant_arguments() const
   {
     const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
-    this->check(compute(constant_gradient), factor_value_ * 1.0, 5.76e-13);
+    this->check(compute(constant_gradient), factor_value_ * 1.0, 5.05e-13);
   }
 
   /**
@@ -583,7 +583,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const ExpressionFunctionType linear_gradient(
         "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}});
-    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, 1.92e-13);
+    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, 1.71e-13);
   }
 
   /**
@@ -593,7 +593,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const ExpressionFunctionType quadratic_gradient(
         "x", "(1.0/3.0) * x[0] * x[0] * x[0]", 3, ", quadratic gradient", {{"x[0]*x[0]", "0.0", "0.0"}});
-    this->check(compute(quadratic_gradient), factor_value_ * 1.0 / 5.0, 6.04e-14);
+    this->check(compute(quadratic_gradient), factor_value_ * 1.0 / 5.0, 5.33e-13);
   }
 
   void is_matrix_operator()
