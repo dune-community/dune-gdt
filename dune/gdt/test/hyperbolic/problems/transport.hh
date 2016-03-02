@@ -10,9 +10,12 @@
 #include <vector>
 #include <string>
 
-#include "default.hh"
 #include <dune/stuff/playground/functions/composition.hh>
+#include <dune/stuff/grid/provider/cube.hh>
+
 #include <dune/gdt/test/nonstationary-eocstudy.hh>
+
+#include "default.hh"
 
 namespace Dune {
 namespace GDT {
