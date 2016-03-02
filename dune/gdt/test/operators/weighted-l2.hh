@@ -62,7 +62,7 @@ struct WeightedL2ProductBase
     check(compute(quadratic_), weight_value_*(1.0/5.0));
   }
 
-  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 2.14e-14) const
+  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 2.5e-14) const
   {
     const auto error = std::abs(expected - result);
     EXPECT_LE(error, epsilon)
