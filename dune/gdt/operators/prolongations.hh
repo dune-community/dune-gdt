@@ -140,7 +140,7 @@ public:
                     < Spaces::FV::DefaultProduct
                       < GVR, RR, rR, rCR >, VR >& range) const
   {
-    prolong_onto_dg_fem_localfunctions_wrapper(source, range);
+    prolong_onto_fv(source, range);
   }
 
 private:
@@ -228,6 +228,40 @@ private:
         local_range_vector.set(ii, local_DoFs.get_entry(ii));
     } // walk the grid
   } // ... prolong_onto_dg_fem_localfunctions_wrapper(...)
+
+  template< class SourceFunctionType, class RangeFunctionType >
+  void prolong_onto_fv(const SourceFunctionType& source, RangeFunctionType& range) const
+  {
+    typedef typename RangeFunctionType::DomainType DomainType;
+    typedef typename RangeFunctionType::RangeType RangeType;
+    // create search in the source grid part
+    typedef typename SourceFunctionType::SpaceType::GridViewType SourceGridViewType;
+    typedef Stuff::Grid::EntityInlevelSearch< SourceGridViewType > EntitySearch;
+    EntitySearch entity_search(source.space().grid_view());
+    // walk the grid
+    RangeType source_value(0);
+    for (auto&& entity : elements(grid_view_))
+    {
+      auto local_range = range.local_discrete_function(entity);
+      // get global quadrature points
+      std::vector< DomainType > quadrature_points(1, entity.geometry().center());
+      // get source entities
+      const auto source_entity_ptr_unique_ptrs = entity_search(quadrature_points);
+      assert(source_entity_ptr_unique_ptrs.size() >= 1);
+      const auto& source_entity_unique_ptr = source_entity_ptr_unique_ptrs[0];
+      if (source_entity_unique_ptr) {
+          const auto source_entity = *source_entity_unique_ptr;
+          const auto local_source = source.local_function(source_entity);
+          local_source->evaluate(source_entity.geometry().local(entity.geometry().center()), source_value);
+        } else
+          source_value *= 0.0;
+      // set local DoFs
+      auto local_range_vector = local_range->vector();
+      assert(local_range_vector.size() == RangeFunctionType::dimRange);
+      for (size_t ii = 0; ii < RangeFunctionType::dimRange; ++ii)
+        local_range_vector.set(ii, source_value[ii]);
+    } // walk the grid
+  } // ... prolong_onto_fv(...)
 
   const GridViewType& grid_view_;
 }; // class L2Prolongation
