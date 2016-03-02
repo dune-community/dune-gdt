@@ -3,9 +3,14 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#ifndef DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH
+#define DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH
+
 #ifndef THIS_IS_A_BUILDBOT_BUILD
 # define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
+
+#include <dune/stuff/test/common.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/test/hyperbolic/eocstudy.hh>
@@ -25,7 +30,7 @@ struct hyperbolic_FV_discretization
 #if THIS_IS_A_BUILDBOT_BUILD
     TestCaseType test_case(/*num_refs = */ 1);
 #else
-    TestCaseType test_case(3);
+    TestCaseType test_case;
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
@@ -35,3 +40,5 @@ struct hyperbolic_FV_discretization
   } // ... eoc_study()
 
 }; // hyperbolic_FV_discretization
+
+#endif // DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH

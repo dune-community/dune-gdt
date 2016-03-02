@@ -17,9 +17,8 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/gdt/playground/functions/entropymomentfunction.hh>
 
-#include "default.hh"
+#include "2dboltzmann.hh"
 
 namespace Dune {
 namespace GDT {
