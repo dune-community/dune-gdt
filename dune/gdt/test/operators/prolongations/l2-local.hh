@@ -3,10 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_HH
-#define DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_HH
+#ifndef DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_LOCAL_HH
+#define DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_LOCAL_HH
 
-#include <dune/gdt/operators/prolongations/l2.hh>
+#include <dune/gdt/operators/prolongations/l2-local.hh>
 
 #include "base.hh"
 
@@ -26,4 +26,4 @@ class L2LocalProlongationLocalizableOperatorTest
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_HH
+#endif // DUNE_GDT_TEST_OPERATORS_PROLONGATIONS_L2_LOCAL_HH
