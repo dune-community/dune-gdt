@@ -3,9 +3,11 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#define DUNE_STUFF_TEST_MAIN_CATCH_EXCEPTIONS 1
+
 #include <dune/stuff/test/main.hxx>
 
-#include "prolongations/l2.hh"
+#include "prolongations/l2-local.hh"
 #include "spaces/rt/pdelab.hh"
 
 using namespace Dune::GDT::Test;
@@ -21,15 +23,29 @@ typedef testing::Types<SPACES_RT_PDELAB_LEVEL
                        > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProlongationLocalizableOperatorTest, SpaceTypes);
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
+{
+  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+}
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
+{
+  this->constructible_by_factory(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+}
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(0.204125);
+  this->produces_correct_results(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
 }
 
 
 #else // HAVE_DUNE_PDELAB
 
 
+TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
+{
+}
+TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
+{
+}
 TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
 }

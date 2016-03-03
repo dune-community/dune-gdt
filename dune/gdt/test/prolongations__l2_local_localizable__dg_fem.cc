@@ -5,7 +5,7 @@
 
 #include <dune/stuff/test/main.hxx>
 
-#include "prolongations/l2.hh"
+#include "prolongations/l2-local.hh"
 #include "spaces/dg/fem.hh"
 
 using namespace Dune::GDT::Test;
@@ -21,6 +21,14 @@ typedef testing::Types<SPACES_DG_FEM_LEVEL(1)
                        > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProlongationLocalizableOperatorTest, SpaceTypes);
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
+{
+  this->constructible_by_ctor();
+}
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
+{
+  this->constructible_by_factory();
+}
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
   this->produces_correct_results();
@@ -30,6 +38,12 @@ TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 #else // HAVE_DUNE_FEM
 
 
+TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
+{
+}
+TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
+{
+}
 TEST(DISABLED_L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
 }

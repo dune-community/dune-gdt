@@ -3,9 +3,11 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#define DUNE_STUFF_TEST_MAIN_CATCH_EXCEPTIONS 1
+
 #include <dune/stuff/test/main.hxx>
 
-#include "prolongations/l2.hh"
+#include "prolongations/l2-local.hh"
 #include "spaces/fv/default.hh"
 
 using namespace Dune::GDT::Test;
@@ -21,7 +23,15 @@ typedef testing::Types<SPACE_FV_SGRID_LEVEL(1, 1), SPACE_FV_SGRID_LEVEL(2, 1), S
                        > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProlongationLocalizableOperatorTest, SpaceTypes);
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
+{
+  this->constructible_by_ctor(1.45e-1);
+}
+TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
+{
+  this->constructible_by_factory(1.45e-1);
+}
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(0.144339);
+  this->produces_correct_results(1.45e-1);
 }
