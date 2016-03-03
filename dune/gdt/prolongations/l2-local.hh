@@ -65,6 +65,39 @@ public:
 }; // class L2LocalProlongationLocalizableOperator
 
 
+template <class GridViewType, class SourceType, class SpaceType, class VectorType>
+typename std::
+    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2LocalProlongationLocalizableOperator<GridViewType, SourceType,
+                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_local_l2_prolongation_localizable_operator(const GridViewType& grid_view, const SourceType& source,
+                                                    DiscreteFunction<SpaceType, VectorType>& range,
+                                                    const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2LocalProlongationLocalizableOperator<GridViewType,
+                                                                 SourceType,
+                                                                 DiscreteFunction<SpaceType, VectorType>>>(
+      over_integrate, grid_view, source, range);
+} // ... make_local_l2_prolongation_localizable_operator(...)
+
+template <class SourceType, class SpaceType, class VectorType>
+typename std::
+    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                  && Stuff::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2LocalProlongationLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
+    make_local_l2_prolongation_localizable_operator(const SourceType& source,
+                                                    DiscreteFunction<SpaceType, VectorType>& range,
+                                                    const size_t over_integrate = 0)
+{
+  return DSC::make_unique<L2LocalProlongationLocalizableOperator<typename SpaceType::GridViewType,
+                                                                 SourceType,
+                                                                 DiscreteFunction<SpaceType, VectorType>>>(
+      over_integrate, range.space().grid_view(), source, range);
+} // ... make_local_l2_prolongation_localizable_operator(...)
+
+
 } // namespace GDT
 } // namespace Dune
 
