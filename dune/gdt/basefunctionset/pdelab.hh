@@ -50,12 +50,13 @@ template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t do
 class PdelabWrapperTraits;
 
 
-//! Specialization for dimRange = 1, dimRangeRows = 1
-template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp>
-class PdelabWrapperTraits<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+//! Specialization for rangeDimCols = 1
+template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim>
+class PdelabWrapperTraits<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
 public:
-  typedef PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> derived_type;
+  typedef PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> derived_type;
 
 private:
   typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
@@ -66,7 +67,7 @@ public:
   typedef EntityImp EntityType;
 
 private:
-  friend class PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>;
+  friend class PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>;
 };
 
 
@@ -171,6 +172,111 @@ public:
       jacobian_inverse_transposed.mv(ret[ii][0], tmp_domain_);
       ret[ii][0] = tmp_domain_;
     }
+  } // ... jacobian(...)
+
+  using BaseType::jacobian;
+
+private:
+  mutable DomainType tmp_domain_;
+  std::unique_ptr<const PdelabLFSType> lfs_;
+  std::unique_ptr<const BackendType> backend_;
+}; // class PdelabWrapper
+
+
+template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim>
+class PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                    domainDim, RangeFieldImp, rangeDim, 1>,
+                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+{
+  typedef PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
+                                                                 RangeFieldImp, rangeDim, 1>,
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+
+public:
+  typedef internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                        1> Traits;
+  typedef typename Traits::BackendType BackendType;
+  typedef typename Traits::EntityType EntityType;
+
+private:
+  typedef typename Traits::PdelabLFSType PdelabLFSType;
+  typedef typename Traits::FESwitchType FESwitchType;
+
+public:
+  typedef typename BaseType::DomainType DomainType;
+  typedef typename BaseType::RangeType RangeType;
+  typedef typename BaseType::JacobianRangeType JacobianRangeType;
+  static const size_t dimDomain = domainDim;
+  static const size_t dimRange  = rangeDim;
+
+  PdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
+    : BaseType(ent)
+    , tmp_domain_(0)
+  {
+    PdelabLFSType* lfs_ptr = new PdelabLFSType(space);
+    lfs_ptr->bind(this->entity());
+    lfs_     = std::unique_ptr<PdelabLFSType>(lfs_ptr);
+    backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
+  } // PdelabWrapper(...)
+
+  PdelabWrapper(ThisType&& source) = default;
+  PdelabWrapper(const ThisType& /*other*/) = delete;
+
+  ThisType& operator=(const ThisType& /*other*/) = delete;
+
+  const BackendType& backend() const
+  {
+    return *backend_;
+  }
+
+  virtual size_t size() const override final
+  {
+    return backend_->size() * dimRange;
+  }
+
+  virtual size_t order() const override final
+  {
+    return backend_->order();
+  }
+
+  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const override final
+  {
+    assert(ret.size() >= size());
+    const size_t size_of_factor_basefunctionset = backend_->size();
+    std::vector<Dune::FieldVector<RangeFieldImp, 1>> factor_ret(size_of_factor_basefunctionset);
+    backend_->evaluateFunction(xx, factor_ret);
+    // if factor_ret is [1 2] and we have two factors, we want to return [[1 0] [2 0] [0 1] [0 2]]
+    for (size_t ii = 0; ii < size(); ++ii) {
+      size_t factor_index = 0;
+      size_t jj = ii;
+      while (jj >= size_of_factor_basefunctionset) {
+        jj -= size_of_factor_basefunctionset;
+        ++factor_index;
+      }
+      ret[ii] *= 0;
+      ret[ii][factor_index] = factor_ret[jj][0];
+    }
+  }
+
+  using BaseType::evaluate;
+
+  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const override final
+  {
+    assert(ret.size() >= backend_->size());
+    const size_t size_of_factor_basefunctionset = backend_->size();
+    std::vector<FieldMatrix<RangeFieldImp, 1, dimDomain>> factor_ret(size_of_factor_basefunctionset);
+    backend_->evaluateJacobian(xx, factor_ret);
+    const auto jacobian_inverse_transposed = this->entity().geometry().jacobianInverseTransposed(xx);
+    for (size_t ii = 0; ii < ret.size(); ++ii) {
+      jacobian_inverse_transposed.mv(factor_ret[ii][0], tmp_domain_);
+      factor_ret[ii][0] = tmp_domain_;
+    }
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      for (size_t jj = 0; jj < size_of_factor_basefunctionset; ++jj)
+        ret[jj][ii] = factor_ret[jj][0];
   } // ... jacobian(...)
 
   using BaseType::jacobian;
