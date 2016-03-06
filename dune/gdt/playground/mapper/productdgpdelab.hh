@@ -101,7 +101,29 @@ public:
     }
   } // ... globalIndices(...)
 
+  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
+  {
+    assert(localIndex < numDofs(entity));
+    size_t factor_index               = 0;
+    const auto factor_mapper_num_dofs = factor_mapper_.numDofs(entity);
+    while (localIndex >= factor_mapper_num_dofs) {
+      localIndex -= factor_mapper_num_dofs;
+      ++factor_index;
+    }
+    return factor_mapper_.mapToGlobal(entity, localIndex) + factor_index * factor_mapper_.size();
+  }
+
   using InterfaceType::globalIndices;
+
+  size_t numDofs(const size_t /*factor_index*/, const EntityType& entity) const
+  {
+    return factor_mapper_.numDofs(entity);
+  }
+
+  size_t maxNumDofs(const size_t /*factor_index*/) const
+  {
+    factor_mapper_.maxNumDofs();
+  }
 
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
@@ -115,36 +137,24 @@ public:
       ret[jj] = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
   } // ... globalIndices(...)
 
-  Dune::DynamicVector<size_t> globalIndices(const size_t factor_index, const EntityType& entity) const
+  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
   {
-    Dune::DynamicVector<size_t> ret(factor_mapper_.numDofs(entity), 0);
-    globalIndices(factor_index, entity, ret);
-    return ret;
-  }
-
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
-  {
-    assert(localIndex < numDofs(entity));
-    size_t factor_index               = 0;
-    const auto factor_mapper_num_dofs = factor_mapper_.numDofs(entity);
-    while (localIndex >= factor_mapper_num_dofs) {
-      localIndex -= factor_mapper_num_dofs;
-      ++factor_index;
-    }
-    return factor_mapper_.mapToGlobal(entity, localIndex) + factor_index * factor_mapper_.size();
-  }
-
-  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& localIndex) const
-  {
-    assert(localIndex < factor_mapper_.numDofs(entity));
+    assert(local_index_in_factor < factor_mapper_.numDofs(entity));
     assert(factor_index < dimRange);
-    return factor_mapper_.mapToGlobal(entity, localIndex) + factor_index * factor_mapper_.size();
+    return factor_mapper_.mapToGlobal(entity, local_index_in_factor) + factor_index * factor_mapper_.size();
+  }
+
+  size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
+  {
+    assert(local_index_in_factor < factor_mapper_.numDofs(entity));
+    assert(factor_index < dimRange);
+    return factor_mapper_.numDofs(entity) * factor_index + local_index_in_factor;
   }
 
 private:
   const BackendType& backend_;
   const FactorMapperType factor_mapper_;
-}; // class ProductFiniteVolume< ..., rangeDim, 1 >
+}; // class ProductDG< ..., rangeDim, 1 >
 
 
 } // namespace Mapper
