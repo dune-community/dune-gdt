@@ -114,14 +114,11 @@ public:
 
   virtual ~AnalyticalFluxInterface() = default;
 
-private:
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity DummyEntityType;
-
-public:
-  typedef typename Stuff::LocalfunctionSetInterface<DummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
+  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
-  typedef typename Stuff::LocalfunctionSetInterface<DummyEntityType, D, r, R, r, d>::JacobianRangeType
+  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
@@ -152,14 +149,12 @@ public:
   static const size_t dimRange     = r;
   static const size_t dimRangeCols = rC;
 
-private:
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity DummyEntityType;
+  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
 
-public:
-  typedef typename Stuff::LocalfunctionSetInterface<DummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
-  typedef typename Stuff::LocalfunctionSetInterface<DummyEntityType, D, r, R, r, d>::JacobianRangeType
+  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
