@@ -18,35 +18,33 @@ namespace GDT {
 namespace Tests {
 
 
-// template< bool anything >
-// class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 >, double, 1 >,
-//                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                 2,
-//                                 anything >
-//  : public internal::HyperbolicEocExpectationsBase< 2 >
-//{
-//  typedef Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 >, double, 1 > TestCaseType;
-// public:
-//  static std::vector< double > results(const TestCaseType& test_case, const std::string type)
-//  {
-//    if (type == "L1") {
-//      if (test_case.num_refinements() == 1)
-//        return {8.97e-02, 3.67e-02};
-//      else
-//        return {1.11e-01, 5.72e-02, 2.63e-02, 1.01e-02};
-//    } else
-//      EXPECT_TRUE(false) << "test results missing for type: " << type;
-//    return {};
-//  } // ... results(...)
-//}; // HyperbolicEocExpectations
+template <bool anything>
+class HyperbolicEocExpectations<Hyperbolic::
+                                    BurgersTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                    double, 1>,
+                                Hyperbolic::ChooseDiscretizer::fv, 2, anything>
+    : public internal::HyperbolicEocExpectationsBase<2>
+{
+  typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, double, 1>
+      TestCaseType;
 
-// template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase
-//                                                 < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 >
-//                                                 >,
-//                                                   double,
-//                                                   1 >,
-//                                          Hyperbolic::ChooseDiscretizer::fv,
-//                                          2 >;
+public:
+  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
+  {
+    if (type == "L1")
+      return {1.78e-03, 8.38e-04};
+    else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  } // ... results(...)
+}; // HyperbolicEocExpectations
+
+template class HyperbolicEocExpectations<Hyperbolic::
+                                             BurgersTestCase<Dune::YaspGrid<2,
+                                                                            Dune::EquidistantOffsetCoordinates<double,
+                                                                                                               2>>,
+                                                             double, 1>,
+                                         Hyperbolic::ChooseDiscretizer::fv, 2>;
 
 
 } // namespace Tests

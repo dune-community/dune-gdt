@@ -18,35 +18,39 @@ namespace GDT {
 namespace Tests {
 
 
-// template< bool anything >
-// class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase< Dune::YaspGrid< 1 >, double, 2 >,
-//                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                 1,
-//                                 anything >
-//  : public internal::HyperbolicEocExpectationsBase< 1 >
-//{
-//  typedef Hyperbolic::ShallowWaterTestCase< Dune::YaspGrid< 1 >, double, 2 > TestCaseType;
-// public:
-//  static std::vector< double > results(const TestCaseType& test_case, const std::string type)
-//  {
-//    if (type == "L1") {
-//      if (test_case.num_refinements() == 1)
-//        return {8.97e-02, 3.67e-02};
-//      else
-//        return {1.11e-01, 5.72e-02, 2.63e-02, 1.01e-02};
-//    } else
-//      EXPECT_TRUE(false) << "test results missing for type: " << type;
-//    return {};
-//  } // ... results(...)
-//}; // HyperbolicEocExpectations
+template <bool anything>
+class HyperbolicEocExpectations<Hyperbolic::
+                                    ShallowWaterTestCase<Dune::YaspGrid<1,
+                                                                        Dune::EquidistantOffsetCoordinates<double, 1>>,
+                                                         double>,
+                                Hyperbolic::ChooseDiscretizer::fv, 1, anything>
+    : public internal::HyperbolicEocExpectationsBase<1>
+{
+  typedef Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>, double>
+      TestCaseType;
 
-// template class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase
-//                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 >
-//                                                 >,
-//                                                   double,
-//                                                   2 >,
-//                                          Hyperbolic::ChooseDiscretizer::fv,
-//                                          1 >;
+public:
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
+  {
+    if (type == "L1") {
+      if (test_case.num_refinements() == 1)
+        return {3.35e+00, 1.59e+00};
+      else
+        return {4.14e+00, 2.50e+00, 1.11e+00};
+    } else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  } // ... results(...)
+}; // HyperbolicEocExpectations
+
+template class HyperbolicEocExpectations<Hyperbolic::
+                                             ShallowWaterTestCase<Dune::
+                                                                      YaspGrid<1,
+                                                                               Dune::
+                                                                                   EquidistantOffsetCoordinates<double,
+                                                                                                                1>>,
+                                                                  double>,
+                                         Hyperbolic::ChooseDiscretizer::fv, 1>;
 
 
 } // namespace Tests
