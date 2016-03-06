@@ -64,7 +64,7 @@ public:
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[10.0]";
-    grid_config["num_elements"] = "[100]";
+    grid_config["num_elements"] = "[10]";
     return grid_config;
   }
 
@@ -82,9 +82,9 @@ public:
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
     flux_config["variable"] = "u";
-    flux_config["expression"] = "[u[1] u[1]*u[1]/u[0]+9.81*0.5*u[0]*u[0]]";
+    flux_config["expression"] = "[u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]";
     flux_config["order"] = "2";
-    flux_config["gradient.0"] = "[0 1; -1.0*u[1]*u[1]/(u[0]*u[0])+9.81*u[0] 2*u[1]/u[0]]";
+    flux_config["gradient.0"] = "[0 1; -1.0*u[1]*u[1]/(u[0]*u[0])+u[0] 2*u[1]/u[0]]";
     config.add(flux_config, "flux");
     ConfigType source_config;
     source_config["lower_left"] = "[0.0]";
@@ -148,11 +148,27 @@ public:
                boundary_info_in,
                boundary_values_in)
   {}
+
+  virtual double CFL() const override
+  {
+    return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 3;
+  }
+
+  virtual bool is_linear() const override
+  {
+    return false;
+  }
 };
+
 
 } // namespace Problems
 
-
+// Test case for shallow water equations, see LeVeque, Finite Volume Methods for Hyperbolic Problems, 2002, Example 13.1
 template< class G, class R = double >
 class ShallowWaterTestCase
   : public Dune::GDT::Tests::NonStationaryTestCase< G, Problems::ShallowWater< typename G::template Codim< 0 >::Entity,
@@ -201,8 +217,8 @@ public:
         << "||  Testcase: Shallow Water                                           ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << "||  domain = [0, 10]                                                  ||\n"
-        << "||  flux = [u[1] u[1]*u[1]/u[0]+9.81*0.5*u[0]*u[0]]                   ||\n"
-        << "||  source = 0                                                        ||\n"
+        << "||  flux = [u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]                        ||\n"
+        << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: solution on finest grid                       ||\n"
         << "|+====================================================================+|\n"
         << "+======================================================================+" << std::endl;

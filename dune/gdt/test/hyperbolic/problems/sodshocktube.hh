@@ -269,14 +269,14 @@ public:
     flux_config["order"] = "4";
     flux_config["gradient.0"] = "[0 1 0; -0.8*u[1]*u[1]/(u[0]*u[0]) 1.6*u[1]/u[0] 0.4; -1.4*u[1]*u[2]/(u[0]*u[0])+0.4*u[1]*u[1]*u[1]/(u[0]*u[0]*u[0]) 1.4*u[2]/u[0]-0.6*u[1]*u[1]/(u[0]*u[0]) 1.4*u[1]/u[0]]";
     config.add(flux_config, "flux");
-    ConfigType source_config;
-    source_config["lower_left"] = "[0.0]";
-    source_config["upper_right"] = "[1.0]";
-    source_config["num_elements"] = "[1]";
-    source_config["variable"] = "u";
-    source_config["values.0"] = "[0 0 0]";
-    source_config["name"] = static_id();
-    config.add(source_config, "source");
+    ConfigType rhs_config;
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[1.0]";
+    rhs_config["num_elements"] = "[1]";
+    rhs_config["variable"] = "u";
+    rhs_config["values.0"] = "[0 0 0]";
+    rhs_config["name"] = static_id();
+    config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
     initial_value_config["lower_left"] = "[0.0]";
     initial_value_config["upper_right"] = "[1]";
@@ -306,23 +306,23 @@ public:
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
     const std::shared_ptr< const DefaultFluxType > flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr< const DefaultRHSType > source(DefaultRHSType::create(config.sub("source")));
+    const std::shared_ptr< const DefaultRHSType > rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr< const DefaultInitialValueType > initial_values(DefaultInitialValueType::create(config.sub("initial_values")));
     const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr< const DefaultBoundaryValueType > boundary_values(DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique< ThisType >(flux, source, initial_values,
+    return Stuff::Common::make_unique< ThisType >(flux, rhs, initial_values,
                                                   grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  ShockTube(const std::shared_ptr< const FluxType > flux = std::make_shared< DefaultFluxType >(*DefaultFluxType::create(default_config().sub("flux"))),
-            const std::shared_ptr< const RHSType > source = std::make_shared< DefaultRHSType >(*DefaultRHSType::create(default_config().sub("source"))),
-            const std::shared_ptr< const InitialValueType > initial_values = std::make_shared< DefaultInitialValueType >(*DefaultInitialValueType::create(default_config().sub("initial_values"))),
-            const ConfigType& grid_config = default_grid_config(),
-            const ConfigType& boundary_info = default_boundary_info_config(),
-            const std::shared_ptr< const BoundaryValueType > boundary_values = std::make_shared< DefaultBoundaryValueType >(*DefaultBoundaryValueType::create(default_config().sub("boundary_values"))))
+  ShockTube(const std::shared_ptr< const FluxType > flux,
+            const std::shared_ptr< const RHSType > rhs,
+            const std::shared_ptr< const InitialValueType > initial_values,
+            const ConfigType& grid_config,
+            const ConfigType& boundary_info,
+            const std::shared_ptr< const BoundaryValueType > boundary_values)
     : BaseType(flux,
-               source,
+               rhs,
                initial_values,
                grid_config,
                boundary_info,
@@ -366,8 +366,9 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  ShockTubeTestCase(const size_t num_refs = 4)
+  ShockTubeTestCase(const size_t num_refs = 3)
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+    , problem_(*(ProblemType::create(ProblemType::default_config())))
     , exact_solution_(std::make_shared< ShocktubeSolution< E, D, R > >(typename DSC::FieldVector< D, d >(0),
                                                                        typename DSC::FieldVector< D, d >(1)))
   {}

@@ -175,7 +175,7 @@ private:
 public:
   using typename BaseType::GridType;
 
-  BurgersTestCase(const size_t num_refs = (d == 1 ? 4 :2))
+  BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1))
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {}

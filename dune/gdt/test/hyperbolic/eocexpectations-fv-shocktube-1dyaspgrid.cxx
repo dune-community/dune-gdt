@@ -19,21 +19,21 @@ namespace Tests {
 
 
 template< bool anything >
-class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1 >, double, 3 >,
+class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >, double >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  1,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 1 >
 {
-  typedef Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1 >, double, 3 > TestCaseType;
+  typedef Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >, double > TestCaseType;
 public:
   static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1)
-        return {8.97e-02, 3.67e-02};
+        return {6.54e-02, 4.20e-02};
       else
-        return {1.11e-01, 5.72e-02, 2.63e-02, 1.01e-02};
+        return {6.74e-02, 4.39e-02, 2.83e-02, 1.80e-02};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -42,8 +42,7 @@ public:
 
 template class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase
                                                  < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
-                                                   double,
-                                                   3 >,
+                                                   double >,
                                           Hyperbolic::ChooseDiscretizer::fv,
                                           1 >;
 
