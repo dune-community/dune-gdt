@@ -91,7 +91,7 @@ public:
 
 template< class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain >
 class GodunovNumericalCouplingFlux
-  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp > >
+  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, domainDim > >
 {
 public:
   typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, domainDim >           Traits;
@@ -253,7 +253,7 @@ GodunovNumericalCouplingFlux< AnalyticalFluxImp, dimDomain >::jacobians_construc
 
 template< class AnalyticalFluxImp >
 class GodunovNumericalCouplingFlux< AnalyticalFluxImp, 1 >
-  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp > >
+  : public NumericalCouplingFluxInterface< internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, 1 > >
 {
 public:
   typedef internal::GodunovNumericalCouplingFluxTraits< AnalyticalFluxImp, 1 >        Traits;
@@ -268,7 +268,7 @@ public:
   typedef typename Traits::EigenMatrixType                          EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename DS::Functions::Affine< typename AnalyticalFluxType::EntityType,
+  typedef typename DS::Functions::Affine< typename AnalyticalFluxType::FluxDummyEntityType,
                                           RangeFieldType, dimRange,
                                           RangeFieldType, dimRange, 1 >         AffineFunctionType;
 
@@ -624,7 +624,7 @@ public:
   typedef typename Traits::EigenMatrixType                          EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename DS::Functions::Affine< typename AnalyticalFluxType::EntityType,
+  typedef typename DS::Functions::Affine< typename AnalyticalFluxType::FluxDummyEntityType,
                                           RangeFieldType, dimRange,
                                           RangeFieldType, dimRange, 1 >         AffineFunctionType;
   explicit GodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
