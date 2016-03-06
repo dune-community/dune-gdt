@@ -291,15 +291,6 @@ public:
     flux_config["b"] = "[0 0; 0 0]";
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config;
-    //    initial_value_config["variable"] = "x";
-    //    if (dimDomain == 1)
-    //      initial_value_config["expression"] = "[sin(pi*x[0]) sin(pi*x[0]) sin(pi*x[0])]";            // simple sine
-    //      wave
-    //    else
-    //      initial_value_config["expression"] =
-    //      "[1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))]"; //bump, only in 2D or
-    //      higher
-    //    initial_value_config["order"] = "10";
     initial_value_config["lower_left"]  = "[0.0 0.0 0.0]";
     initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
     if (dimDomain == 1)
@@ -404,6 +395,13 @@ public:
   virtual bool provides_exact_solution() const override final
   {
     return true;
+  }
+
+  virtual std::bitset<d> periodic_directions() const override final
+  {
+    std::bitset<d> periodic_dirs;
+    periodic_dirs.set();
+    return periodic_dirs;
   }
 
   virtual const std::shared_ptr<const SolutionType> exact_solution() const override final

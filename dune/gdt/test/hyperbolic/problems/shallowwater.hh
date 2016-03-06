@@ -11,6 +11,8 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 
+#include <dune/gdt/test/nonstationary-eocstudy.hh>
+
 #include "default.hh"
 
 namespace Dune {
@@ -24,9 +26,6 @@ class ShallowWater : public Default<EntityImp, DomainFieldImp, domainDim, RangeF
 {
   typedef Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> BaseType;
   typedef ShallowWater<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> ThisType;
-
-protected:
-  using typename BaseType::FluxSourceEntityType;
 
 public:
   using BaseType::dimDomain;
@@ -58,7 +57,6 @@ public:
     return "Shallowwater";
   }
 
-protected:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
@@ -76,14 +74,12 @@ protected:
     return boundary_config;
   }
 
-public:
   static ConfigType default_config(const std::string sub_name = "")
   {
     ConfigType config;
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
-    flux_config["type"]       = FluxType::static_id();
     flux_config["variable"]   = "u";
     flux_config["expression"] = "[u[1] u[1]*u[1]/u[0]+9.81*0.5*u[0]*u[0]]";
     flux_config["order"]      = "2";
@@ -150,6 +146,72 @@ public:
 };
 
 } // namespace Problems
+
+
+template <class G, class R = double>
+class ShallowWaterTestCase
+    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::ShallowWater<typename G::template Codim<0>::Entity,
+                                                                               typename G::ctype, G::dimension, R, 2>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+
+public:
+  static const size_t d            = G::dimension;
+  static const size_t dimRange     = 2;
+  static const size_t dimRangeCols = 1;
+  typedef typename Problems::ShallowWater<E, D, d, R, 2> ProblemType;
+
+private:
+  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+
+public:
+  using typename BaseType::GridType;
+  using typename BaseType::SolutionType;
+  using typename BaseType::LevelGridViewType;
+
+  ShallowWaterTestCase(const size_t num_refs = 2)
+    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+    , problem_(*(ProblemType::create(ProblemType::default_config())))
+  {
+  }
+
+  virtual const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
+
+  virtual bool provides_exact_solution() const override final
+  {
+    return false;
+  }
+
+  virtual std::bitset<d> periodic_directions() const override final
+  {
+    std::bitset<d> periodic_dirs;
+    periodic_dirs.set();
+    return periodic_dirs;
+  }
+
+  virtual void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+======================================================================+\n"
+        << "|+====================================================================+|\n"
+        << "||  Testcase: Shallow Water                                           ||\n"
+        << "|+--------------------------------------------------------------------+|\n"
+        << "||  domain = [0, 10]                                                  ||\n"
+        << "||  flux = [u[1] u[1]*u[1]/u[0]+9.81*0.5*u[0]*u[0]]                   ||\n"
+        << "||  source = 0                                                        ||\n"
+        << "||  reference solution: solution on finest grid                       ||\n"
+        << "|+====================================================================+|\n"
+        << "+======================================================================+" << std::endl;
+  }
+
+private:
+  const ProblemType problem_;
+}; // class ShallowWaterTestCase
+
+
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune

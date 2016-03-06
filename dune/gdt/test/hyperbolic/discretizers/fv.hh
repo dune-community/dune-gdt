@@ -30,27 +30,15 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
-template <class GridType, bool periodic = false>
-struct ChooseGridView
-{
-  typedef typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType type;
-};
-
-template <class GridType>
-struct ChooseGridView<GridType, true>
-{
-  typedef typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> type;
-};
-
-template <class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1,
-          bool use_periodic_grid_view                                                = true>
+template <class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class FVDiscretizer
 {
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
                            RangeFieldType, dimRange, dimRangeCols> ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
-  typedef typename ChooseGridView<GridType, use_periodic_grid_view>::type GridViewType;
+  typedef
+      typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
   typedef typename Spaces::FV::DefaultProduct<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef Discretizations::NonStationaryDefault<ProblemType, FVSpaceType> DiscretizationType;
 
@@ -59,12 +47,14 @@ public:
     return std::string("gdt.hyperbolic.discretization.fv.dim") + DSC::to_string(int(GridType::dimension));
   }
 
-  static DiscretizationType discretize(Stuff::Grid::ProviderInterface<GridType>& grid_provider,
-                                       const ProblemType& problem, const int level = 0)
+  static DiscretizationType
+  discretize(Stuff::Grid::ProviderInterface<GridType>& grid_provider, const ProblemType& problem, const int level = 0,
+             const std::bitset<GridType::dimension> periodic_directions = std::bitset<GridType::dimension>())
   {
     auto logger = Stuff::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
-    auto space = std::make_shared<const FVSpaceType>(GridViewType(grid_provider.level_view(level)));
+    auto space =
+        std::make_shared<const FVSpaceType>(GridViewType(grid_provider.level_view(level), periodic_directions));
     logger.debug() << "grid has " << space->grid_view().indexSet().size(0) << " elements" << std::endl;
     return std::move(DiscretizationType(problem, space));
   } // ... discretize(...)
