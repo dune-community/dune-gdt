@@ -61,18 +61,35 @@ public:
   {}
 
   // These methods are required by the ProductMapperInterface
-  Dune::DynamicVector< size_t > globalIndices(const size_t factor_index, const EntityType& entity) const
+  size_t numDofs(const size_t /*factor_index*/, const EntityType& /*entity*/) const
   {
-    Dune::DynamicVector< size_t > ret(numDofs(entity), 0);
-    globalIndices(factor_index, entity, ret);
-    return ret;
+    return 1;
   }
 
-  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
+  size_t maxNumDofs(const size_t /*factor_index*/) const
   {
-    assert(localIndex == 0);
+    return 1;
+  }
+
+  void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
+  {
+    if (ret.size() != 1)
+      ret.resize(1);
+    ret[0] = dimRange*(backend().index(entity)) + factor_index;
+  }
+
+  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(local_index_in_factor)) const
+  {
+    assert(local_index_in_factor == 0);
     assert(factor_index < numDofs(entity));
-    return (dimRange*(backend().index(entity))) + factor_index;
+    return dimRange*(backend().index(entity)) + factor_index;
+  }
+
+  size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(local_index_in_factor)) const
+  {
+    assert(local_index_in_factor == 0);
+    assert(factor_index < numDofs(entity));
+    return factor_index;
   }
 
   // The remaining methods are just redirected to the usual finite volume mapper

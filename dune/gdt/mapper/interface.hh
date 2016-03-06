@@ -86,6 +86,18 @@ public:
 
   using BaseType::globalIndices;
 
+  size_t numDofs(const size_t factor_index, const EntityType& entity) const
+  {
+    CHECK_CRTP(this->as_imp(*this).numDofs(factor_index, entity));
+    return this->as_imp(*this).numDofs(factor_index, entity);
+  }
+
+  size_t maxNumDofs(const size_t factor_index) const
+  {
+    CHECK_CRTP(this->as_imp(*this).maxNumDofs(factor_index));
+    return this->as_imp(*this).maxNumDofs(factor_index);
+  }
+
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(factor_index, entity, ret));
@@ -95,6 +107,19 @@ public:
   {
     CHECK_CRTP(this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor));
     return this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor);
+  }
+
+  size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
+  {
+    CHECK_CRTP(this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor));
+    return this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor);
+  }
+
+  Dune::DynamicVector< size_t > globalIndices(const size_t factor_index, const EntityType& entity) const
+  {
+    Dune::DynamicVector< size_t > ret(numDofs(factor_index, entity), 0);
+    globalIndices(factor_index, entity, ret);
+    return ret;
   }
 }; // class ProductMapperInterface
 
