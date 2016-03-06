@@ -102,6 +102,7 @@ public:
       local_range_vector.set(ii, local_solution[ii]);
   } // ... apply(...)
 
+  // TODO: do not use product evaluation to avoid a lot of multiplications with 0
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
                               && (is_fv_space<RangeSpaceType>::value || is_product_fv_space<RangeSpaceType>::value),
@@ -113,14 +114,9 @@ public:
     typedef Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalEvaluation::Product<SourceType>> local_l2_functional(over_integrate_,
                                                                                                   source);
-    assert(r * rC == local_range.basis().size());
-    // instead of using the basis [1 0 ... 0], ... , [0 ... 0 1], use [1 ... 1] to avoid multiplications and additions
-    // with 0.
-    typedef Stuff::Functions::Constant<E, D, d, R, r, rC> OneType;
-    const OneType one(1.);
-    Stuff::LA::CommonDenseVector<R> local_vector(r * rC);
+    Stuff::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
     const auto& entity = local_range.entity();
-    local_l2_functional.apply(*(one.local_function(entity)), local_vector.backend());
+    local_l2_functional.apply(local_range.basis(), local_vector.backend());
     local_vector /= entity.geometry().volume();
     auto& local_range_vector = local_range.vector();
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
