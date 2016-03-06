@@ -63,6 +63,11 @@ public:
     return false;
   }
 
+  virtual std::bitset< GridImp::dimension > periodic_directions() const
+  {
+    return std::bitset< GridImp::dimension >();
+  }
+
   virtual const std::shared_ptr< const SolutionType > exact_solution() const
   {
     if (provides_exact_solution())
@@ -181,7 +186,8 @@ public:
       current_discretization_
           = Stuff::Common::make_unique< DiscretizationType >(Discretizer::discretize(test_case_,
                                                                                      test_case_.problem(),
-                                                                                     test_case_.level_of(current_refinement_)));
+                                                                                     test_case_.level_of(current_refinement_),
+                                                                                     test_case_.periodic_directions()));
       current_solution_on_level_ = Stuff::Common::make_unique< DiscreteSolutionType >(current_discretization_->solve(test_case_.problem().is_linear()));
       time_to_solution_ = timer.elapsed();
       // prolong to reference grid part
@@ -272,7 +278,8 @@ protected:
       reference_discretization_
           = Stuff::Common::make_unique< DiscretizationType >(Discretizer::discretize(test_case_,
                                                                                      test_case_.problem(),
-                                                                                     test_case_.reference_level()));
+                                                                                     test_case_.reference_level(),
+                                                                                     test_case_.periodic_directions()));
       reference_solution_ = Stuff::Common::make_unique< DiscreteSolutionType >(reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {

@@ -241,7 +241,6 @@ public:
     return BaseType::type() + ".shocktube";
   }
 
-public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
@@ -265,7 +264,6 @@ public:
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
-    flux_config["type"] = FluxType::static_id();
     flux_config["variable"] = "u";
     flux_config["expression"] = "[u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]";
     flux_config["order"] = "4";
@@ -349,17 +347,18 @@ public:
 
 } // namespace Problems
 
-template< class G, class R = double, int r = 3 >
+template< class G, class R = double >
 class ShockTubeTestCase
   : public Dune::GDT::Tests::NonStationaryTestCase< G, Problems::ShockTube< typename G::template Codim< 0 >::Entity,
-                                                                     typename G::ctype, G::dimension, R, r > >
+                                                                     typename G::ctype, G::dimension, R, 3 > >
 {
   typedef typename G::template Codim< 0 >::Entity E;
   typedef typename G::ctype D;
 public:
   static const size_t d = G::dimension;
-  static const size_t dimRange = r;
-  typedef typename Problems::ShockTube< E, D, d, R, r > ProblemType;
+  static const size_t dimRange = 3;
+  static const size_t dimRangeCols = 1;
+  typedef typename Problems::ShockTube< E, D, d, R, dimRange > ProblemType;
 private:
   typedef typename Dune::GDT::Tests::NonStationaryTestCase< G, ProblemType > BaseType;
 public:
@@ -367,7 +366,7 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  ShockTubeTestCase(const size_t num_refs = 2)
+  ShockTubeTestCase(const size_t num_refs = 4)
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , exact_solution_(std::make_shared< ShocktubeSolution< E, D, R > >(typename DSC::FieldVector< D, d >(0),
                                                                        typename DSC::FieldVector< D, d >(1)))
@@ -396,7 +395,7 @@ public:
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 1]                                                                                   ||\n"
         << "||  flux = [u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]       ||\n"
-        << "||  source = 0                                                                                        ||\n"
+        << "||  rhs = 0                                                                                           ||\n"
         << "||  reference solution: semianalytic solution                                                         ||\n"
         << "|+====================================================================================================+|\n"
         << "+======================================================================================================+" << std::endl;

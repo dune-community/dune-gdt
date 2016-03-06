@@ -8,24 +8,24 @@
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/test/hyperbolic/eocexpectations.hh>
-//#include <dune/gdt/test/hyperbolic/problems/burgers.hh>
+#include <dune/gdt/test/hyperbolic/problems/burgers.hh>
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
-//#include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
-//#include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
+#include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
+#include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
 
 
-typedef testing::Types<   /* Dune::GDT::Hyperbolic::BurgersTestCase
-                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >*/
-//                         , Dune::GDT::Hyperbolic::BurgersTestCase
-//                                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > > >
-                           Dune::GDT::Hyperbolic::TransportTestCase
+typedef testing::Types<    Dune::GDT::Hyperbolic::BurgersTestCase
+                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
+                         , Dune::GDT::Hyperbolic::BurgersTestCase
+                                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > > >
+                         , Dune::GDT::Hyperbolic::TransportTestCase
                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >, double, 1, 1 >
-                           , Dune::GDT::Hyperbolic::TransportTestCase
+                         , Dune::GDT::Hyperbolic::TransportTestCase
                                                 < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >, double, 1, 1 >
-//                         , Dune::GDT::Hyperbolic::ShallowWaterTestCase
-//                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
-//                         , Dune::GDT::Hyperbolic::ShockTubeTestCase
-//                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
+                         , Dune::GDT::Hyperbolic::ShallowWaterTestCase
+                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
+                         , Dune::GDT::Hyperbolic::ShockTubeTestCase
+                                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > > >
                       > YaspGridTestCases;
 
 
@@ -34,19 +34,19 @@ namespace GDT {
 namespace Tests {
 
 
-//extern template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase
-//                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
-//                                                   double,
-//                                                   1 >,
-//                                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                                 1 >;
+extern template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase
+                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
+                                                   double,
+                                                   1 >,
+                                                 Hyperbolic::ChooseDiscretizer::fv,
+                                                 1 >;
 
-//extern template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase
-//                                                 < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >,
-//                                                   double,
-//                                                   1 >,
-//                                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                                 2 >;
+extern template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase
+                                                 < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >,
+                                                   double,
+                                                   1 >,
+                                                 Hyperbolic::ChooseDiscretizer::fv,
+                                                 2 >;
 
 extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
                                                  < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
@@ -64,19 +64,17 @@ extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  2 >;
 
-//extern template class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase
-//                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
-//                                                   double,
-//                                                   2 >,
-//                                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                                 1 >;
+extern template class HyperbolicEocExpectations< Hyperbolic::ShallowWaterTestCase
+                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
+                                                   double >,
+                                                 Hyperbolic::ChooseDiscretizer::fv,
+                                                 1 >;
 
-//extern template class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase
-//                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
-//                                                   double,
-//                                                   3 >,
-//                                                 Hyperbolic::ChooseDiscretizer::fv,
-//                                                 1 >;
+extern template class HyperbolicEocExpectations< Hyperbolic::ShockTubeTestCase
+                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
+                                                   double >,
+                                                 Hyperbolic::ChooseDiscretizer::fv,
+                                                 1 >;
 
 } // namespace Tests
 } // namespace GDT

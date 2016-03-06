@@ -243,7 +243,6 @@ public:
       DSC_CONFIG.set("threading.partition_factor", 1, true);
       // set dimensions
       static const size_t dimDomain = ProblemType::dimDomain;
-      static const size_t dimRange = ProblemType::dimRange;
 
       //get analytical flux, initial and boundary values
       typedef typename ProblemType::FluxType              AnalyticalFluxType;
@@ -277,9 +276,11 @@ public:
       // define operator types
       typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
                                                          DomainFieldType, dimDomain,
-                                                         RangeFieldType, dimRange, 1 >        ConstantFunctionType;
+                                                         RangeFieldType, 1, 1 >        ConstantFunctionType;
       typedef typename Dune::GDT::Operators::AdvectionGodunov
           < AnalyticalFluxType, BoundaryValueType > OperatorType;
+//      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
+//          < AnalyticalFluxType, BoundaryValueType, ConstantFunctionType > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionRHS< RHSType > RHSOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, RHSOperatorType, FVFunctionType, double > TimeStepperType;
 
@@ -288,7 +289,8 @@ public:
 
       //create advection operator
       const ConstantFunctionType dx_function(dx);
-      OperatorType advection_operator(*analytical_flux, *boundary_values, is_linear/*, true, true*/);
+      OperatorType advection_operator(*analytical_flux, *boundary_values, is_linear);
+//      OperatorType advection_operator(*analytical_flux, *boundary_values, dx_function, dt, is_linear, false);
 
       //create timestepper
       TimeStepperType timestepper(advection_operator, rhs_operator, u, dx);

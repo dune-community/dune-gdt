@@ -23,12 +23,12 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim >
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1 >
 class Burgers
-  : public Default< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >
+  : public Default< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols >
 {
-  typedef Burgers< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim > ThisType;
-  typedef Default< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim > BaseType;
+  typedef Burgers< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols > ThisType;
+  typedef Default< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols > BaseType;
 
 public:
   using typename BaseType::DefaultFluxType;
@@ -92,9 +92,8 @@ public:
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType flux_config;
-    flux_config["type"] = FluxType::static_id();
     flux_config["variable"] = "u";
-    flux_config["expression"] = "[1.0/2.0*u[0]*u[0] 1.0/2.0*u[0]*u[0] 1.0/2.0*u[0]*u[0]]";
+    flux_config["expression"] = "[0.5*u[0]*u[0] 0.5*u[0]*u[0] 0.5*u[0]*u[0]]";
     flux_config["order"] = "2";
     flux_config["gradient"] = "[u[0] 0 0]";
     flux_config["gradient.0"] = "[u[0] 0 0]";
@@ -122,12 +121,12 @@ public:
     }
   } // ... default_config(...)
 
-  Burgers(const std::shared_ptr< const FluxType > flux = std::make_shared< DefaultFluxType >(*DefaultFluxType::create(default_config().sub("flux"))),
-          const std::shared_ptr< const RHSType > rhs = std::make_shared< DefaultRHSType >(*DefaultRHSType::create(default_config().sub("rhs"))),
-          const std::shared_ptr< const InitialValueType > initial_values = std::make_shared< DefaultInitialValueType >(*DefaultInitialValueType::create(default_config().sub("initial_values"))),
-          const ConfigType& grid_config = default_grid_config(),
-          const ConfigType& boundary_info = default_boundary_info_config(),
-          const std::shared_ptr< const BoundaryValueType > boundary_values = std::make_shared< DefaultBoundaryValueType >(*DefaultBoundaryValueType::create(default_config().sub("boundary_values"))))
+  Burgers(const std::shared_ptr< const FluxType > flux,
+          const std::shared_ptr< const RHSType > rhs,
+          const std::shared_ptr< const InitialValueType > initial_values,
+          const ConfigType& grid_config,
+          const ConfigType& boundary_info,
+          const std::shared_ptr< const BoundaryValueType > boundary_values)
     : BaseType(flux,
                rhs,
                initial_values,
@@ -159,25 +158,26 @@ public:
 } // namespace Problems
 
 
-template< class G, class R = double, int r = 1 >
+template< class G, class R = double, size_t r = 1, size_t rC = 1 >
 class BurgersTestCase
   : public Dune::GDT::Tests::NonStationaryTestCase< G, Problems::Burgers< typename G::template Codim< 0 >::Entity,
-                                                                     typename G::ctype, G::dimension, R, r > >
+                                                                     typename G::ctype, G::dimension, R, r, rC > >
 {
   typedef typename G::template Codim< 0 >::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 public:
   static const size_t dimRange = r;
+  static const size_t dimRangeCols = rC;
   typedef Problems::Burgers< E, D, d, R, r > ProblemType;
 private:
   typedef Tests::NonStationaryTestCase< G, ProblemType > BaseType;
 public:
   using typename BaseType::GridType;
 
-  BurgersTestCase(const size_t num_refs = 3)
+  BurgersTestCase(const size_t num_refs = (d == 1 ? 4 :2))
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
-    , problem_()
+    , problem_(*(ProblemType::create(ProblemType::default_config())))
   {}
 
   virtual const ProblemType& problem() const override final
@@ -188,6 +188,13 @@ public:
   virtual bool provides_exact_solution() const override final
   {
     return false;
+  }
+
+  virtual std::bitset< d > periodic_directions() const override final
+  {
+    std::bitset< d > periodic_dirs;
+    periodic_dirs.set();
+    return periodic_dirs;
   }
 
   virtual void print_header(std::ostream& out = std::cout) const override final
@@ -201,7 +208,7 @@ public:
         << "|+--------------------------------------------------------------------+|\n"
         <<  domainstring
         << "||  flux = 0.5*u[0]^2                                                 ||\n"
-        << "||  rhs = 0                                                        ||\n"
+        << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: discrete solution on finest grid              ||\n"
         << "|+====================================================================+|\n"
         << "+======================================================================+" << std::endl;
