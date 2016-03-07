@@ -119,7 +119,7 @@ public:
 
   size_t maxNumDofs(const size_t /*factor_index*/) const
   {
-    factor_mapper_.maxNumDofs();
+    return factor_mapper_.maxNumDofs();
   }
 
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector< size_t >& ret) const
