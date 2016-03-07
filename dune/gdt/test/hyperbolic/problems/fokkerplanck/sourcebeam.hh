@@ -1,10 +1,10 @@
-// This file is part of the dune-hdd project:
-//   http://users.dune-project.org/projects/dune-hdd
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_HDD_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
-#define DUNE_HDD_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
 
 #include <memory>
 #include <vector>
@@ -30,7 +30,6 @@ class SourceBeam : public TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFi
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::FluxSourceEntityType;
   using typename BaseType::DefaultFluxType;
   using typename BaseType::DefaultInitialValueType;
   using typename BaseType::DefaultRHSType;
@@ -81,13 +80,13 @@ protected:
     //           = 5*S*M_inverse                             else (2 < x <= 3)
     // and  q(x) = base_integrated                           if 1 < x <= 1.5
     //           = 0                                         else
-    // For Legendre Polynomials, l-th component of Source is -(sigma_a + T/2*l(l+1))*u[l] + \int_{-1}^1 Q*P_l d\mu), so
+    // For Legendre Polynomials, l-th component of rhs is -(sigma_a + T/2*l(l+1))*u[l] + \int_{-1}^1 Q*P_l d\mu), so
     // here
-    // Source[l] = -u[l]                                     if x <= 1
-    //           = -(1 + l(l+1))u[l] + 2*delta(l)            if 1 < x <= 1.5
-    //           = -(1 + l(l+1))u[l]                         if 1.5 < x <= 2
-    //           = -5*l(l+1)*u[l]                            else (2 < x <= 3)
-    static void create_source_values(ConfigType& source_config)
+    // rhs[l] = -u[l]                                     if x <= 1
+    //        = -(1 + l(l+1))u[l] + 2*delta(l)            if 1 < x <= 1.5
+    //        = -(1 + l(l+1))u[l]                         if 1.5 < x <= 2
+    //        = -5*l(l+1)*u[l]                            else (2 < x <= 3)
+    static void create_rhs_values(ConfigType& rhs_config)
     {
       if (exact_legendre()) {
         for (size_t ii = 0; ii < 6; ++ii) {
@@ -125,10 +124,8 @@ protected:
           }
           A_str += "]";
           q_str += "]";
-          source_config["A." + DSC::to_string(ii)] = A_str;
-          source_config["b." + DSC::to_string(ii)] = q_str;
-          //          std::cout << "A." << DSC::to_string(ii) <<  ": " << A_str << std::endl;
-          //          std::cout << "q." << DSC::to_string(ii) <<  ": " << q_str << std::endl;
+          rhs_config["A." + DSC::to_string(ii)] = A_str;
+          rhs_config["b." + DSC::to_string(ii)] = q_str;
         }
       } else {
         MatrixType S_M_inverse(S());
@@ -166,13 +163,11 @@ protected:
           }
           A_str += "]";
           q_str += "]";
-          source_config["A." + DSC::to_string(ii)] = A_str;
-          source_config["b." + DSC::to_string(ii)] = q_str;
-          //          std::cout << "A." << DSC::to_string(ii) <<  ": " << A_str << std::endl;
-          //          std::cout << "q." << DSC::to_string(ii) <<  ": " << q_str << std::endl;
+          rhs_config["A." + DSC::to_string(ii)] = A_str;
+          rhs_config["b." + DSC::to_string(ii)] = q_str;
         }
       }
-    } // ... create_source_values()
+    } // ... create_rhs_values()
 
     // boundary value of kinetic equation is delta(v-1) at x = 0 and 10^(-4) at x = 3,
     // so k-th component of boundary value has to be 0.5*\phi_k(1) at x = 0 and 0.5*10^(-4)*base_integrated_k at x = 3
@@ -191,7 +186,6 @@ protected:
             str += "0.5-0.5*x[0]/3.0";
         }
         str += "]";
-        //        std::cout << str << std::endl;
         return str;
       } else {
         const auto& basefunctions_right = basefunctions_values_at_plusone();
@@ -204,7 +198,6 @@ protected:
                  + ")*x[0]/3.0";
         }
         str += "]";
-        //        std::cout << str << std::endl;
         return str;
       }
     } // ... create_boundary_values()
@@ -217,7 +210,7 @@ public:
     grid_config["type"]         = "provider.cube";
     grid_config["lower_left"]   = "[0.0]";
     grid_config["upper_right"]  = "[3.0]";
-    grid_config["num_elements"] = "[1000]";
+    grid_config["num_elements"] = "[100]";
     return grid_config;
   }
 
@@ -233,15 +226,14 @@ public:
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
     const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> source(DefaultRHSType::create(config.sub("source")));
+    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
     const ConfigType grid_config   = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(
-        flux, source, initial_values, grid_config, boundary_info, boundary_values);
+    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   static std::unique_ptr<ThisType> create(const std::string basefunctions_file)
@@ -254,14 +246,14 @@ public:
     ConfigType config = BaseType::default_config(basefunctions_file, sub_name);
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType source_config      = DefaultRHSType::default_config();
-    source_config["lower_left"]   = "[0.0]";
-    source_config["upper_right"]  = "[3.0]";
-    source_config["num_elements"] = "[6]";
-    GetData::create_source_values(source_config);
-    source_config["name"] = static_id();
-    config.add(source_config, "source", true);
-    ConfigType boundary_value_config    = DefaultBoundaryValueType::default_config();
+    ConfigType rhs_config;
+    rhs_config["lower_left"]   = "[0.0]";
+    rhs_config["upper_right"]  = "[3.0]";
+    rhs_config["num_elements"] = "[6]";
+    GetData::create_rhs_values(rhs_config);
+    rhs_config["name"] = static_id();
+    config.add(rhs_config, "rhs", true);
+    ConfigType boundary_value_config;
     boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
@@ -276,17 +268,94 @@ public:
     }
   } // ... default_config(...)
 
-  SourceBeam(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> source_in,
+  SourceBeam(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
              const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
              const ConfigType& boundary_info_in, const std::shared_ptr<const BoundaryValueType> boundary_values_in)
-    : BaseType(flux_in, source_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
+    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
+  }
+
+  virtual double CFL() const override
+  {
+    return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 4.0;
+  }
+
+  virtual bool is_linear() const override
+  {
+    return true;
   }
 };
 
 } // namespace Problems
+
+
+template <class G, class R = double, size_t momentOrder = 5>
+class SourceBeamTestCase
+    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
+                                                                             typename G::ctype, G::dimension, R,
+                                                                             momentOrder>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+
+public:
+  static const size_t d = G::dimension;
+  static_assert(d == 1, "Only implemented for dimension 1.");
+  typedef typename Problems::SourceBeam<E, D, d, R, momentOrder> ProblemType;
+  static const size_t dimRange     = ProblemType::dimRange;
+  static const size_t dimRangeCols = 1;
+
+private:
+  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+
+public:
+  using typename BaseType::GridType;
+  using typename BaseType::SolutionType;
+  using typename BaseType::LevelGridViewType;
+
+  SourceBeamTestCase(const size_t num_refs = 2)
+    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+    , problem_(*(ProblemType::create(ProblemType::default_config())))
+  {
+  }
+
+  virtual const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
+
+  virtual bool provides_exact_solution() const override final
+  {
+    return false;
+  }
+
+  virtual void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+======================================================================================================+\n"
+        << "|+====================================================================================================+|\n"
+        << "||  Testcase: Fokker-Planck SourceBeam                                                                ||\n"
+        << "|+----------------------------------------------------------------------------------------------------+|\n"
+        << "||  domain = [0, 3]                                                                                   ||\n"
+        << "||  flux =                                             ||\n"
+        << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011                                             ||\n"
+        << "||  reference solution: discrete solution on finest grid                                              ||\n"
+        << "|+====================================================================================================+|\n"
+        << "+======================================================================================================+"
+        << std::endl;
+  }
+
+private:
+  const ProblemType problem_;
+}; // class Boltzmann2DCheckerboardTestCase
+
+
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_HDD_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH

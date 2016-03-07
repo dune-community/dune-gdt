@@ -19,15 +19,11 @@ namespace Tests {
 
 
 template <bool anything>
-class HyperbolicEocExpectations<Hyperbolic::
-                                    ShallowWaterTestCase<Dune::YaspGrid<1,
-                                                                        Dune::EquidistantOffsetCoordinates<double, 1>>,
-                                                         double>,
+class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double>,
                                 Hyperbolic::ChooseDiscretizer::fv, 1, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
-  typedef Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>, double>
-      TestCaseType;
+  typedef Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -43,13 +39,7 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
-template class HyperbolicEocExpectations<Hyperbolic::
-                                             ShallowWaterTestCase<Dune::
-                                                                      YaspGrid<1,
-                                                                               Dune::
-                                                                                   EquidistantOffsetCoordinates<double,
-                                                                                                                1>>,
-                                                                  double>,
+template class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1>;
 
 
