@@ -257,6 +257,12 @@ private:
 // TODO: remove eigen dependency of GodunovNumericalCouplingFlux/GodunovNumericalBoundaryFlux
 #if HAVE_EIGEN
 
+namespace internal {
+  template< bool dimDomain_equals_1 >
+  struct InitializerChooser
+  {};
+}
+
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
 template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod >
 class AdvectionGodunov
@@ -290,22 +296,7 @@ public:
     , is_linear_(is_linear)
     , use_linear_reconstruction_(use_linear_reconstruction)
   {
-    if (use_linear_reconstruction_) {
-      assert(is_linear_ && "Linear reconstruction is only implemented for linear analytical fluxes!");
-      assert(dimDomain == 1 && "Linear reconstruction is only implemented in 1D!");
-    // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x = 0.
-    // As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
-      ::Eigen::EigenSolver< typename EigenMatrixType::BackendType > eigen_solver(DSC::from_string< EigenMatrixType >(DSC::to_string(analytical_flux_.jacobian(typename AnalyticalFluxType::RangeType(0)))).backend());
-      assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
-#ifndef NDEBUG
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        for (size_t jj = 0; jj < dimRange; ++jj)
-          assert(eigen_eigenvectors(ii,jj).imag() < 1e-15);
-#endif
-      eigenvectors_ = DSC::from_string< MatrixType >(DSC::to_string(EigenMatrixType(eigen_eigenvectors.real())));
-      eigenvectors_inverse_ = DSC::from_string< MatrixType >(DSC::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
-    }
+     initialize(internal::InitializerChooser< dimDomain == 1 >());
   }
 
   template< class SourceType, class RangeType >
@@ -351,6 +342,33 @@ public:
   }
 
 private:
+  void initialize(const internal::InitializerChooser< false >&)
+  {
+    if (use_linear_reconstruction_) {
+      assert(false && "Linear reconstruction is only implemented in 1D!");
+    }
+  }
+
+  void initialize(const internal::InitializerChooser< true >&)
+  {
+    if (use_linear_reconstruction_) {
+      assert(is_linear_ && "Linear reconstruction is only implemented for linear analytical fluxes!");
+      // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x = 0.
+      // As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
+      ::Eigen::EigenSolver< typename EigenMatrixType::BackendType > eigen_solver(DSC::from_string< EigenMatrixType >(DSC::to_string(analytical_flux_.jacobian(typename AnalyticalFluxType::RangeType(0)))).backend());
+      assert(eigen_solver.info() == ::Eigen::Success);
+      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
+#ifndef NDEBUG
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        for (size_t jj = 0; jj < dimRange; ++jj)
+          assert(eigen_eigenvectors(ii,jj).imag() < 1e-15);
+#endif
+      eigenvectors_ = DSC::from_string< MatrixType >(DSC::to_string(EigenMatrixType(eigen_eigenvectors.real())));
+      eigenvectors_inverse_ = DSC::from_string< MatrixType >(DSC::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
+    }
+  }
+
+
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType&  boundary_values_;
   const bool is_linear_;
