@@ -222,8 +222,7 @@ public:
     const auto local_source_entity = source.local_function(entity);
     const auto x_local = entity.geometry().local(entity.geometry().center());
     const auto u = local_source_entity->evaluate(x_local);
-    auto result = rhs_evaluation_.evaluate(u, entity, x_local);
-    result *= entity.geometry().volume();
+    const auto result = rhs_evaluation_.evaluate(u, entity, x_local);
     local_range.vector().add(result);
   }
 
