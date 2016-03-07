@@ -1,10 +1,10 @@
-// This file is part of the dune-hdd project:
-//   http://users.dune-project.org/projects/dune-hdd
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_HDD_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
-#define DUNE_HDD_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
 
 #include <memory>
 #include <vector>
@@ -19,14 +19,14 @@
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/la/container.hh>
 
-#include "default.hh"
+#include "../default.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-/** Testcase for the \f$P_n\f$ moment approximation of the Focker-Planck equation in one dimension
+/** Testcase for the \f$P_n\f$ moment approximation of the Fokker-Planck equation in one dimension
  * \f[
  * \partial_t \psi(t,x,v) + v * \partial_x \psi(t,x,v) + \sigma_a(x)*\psi(t,x,v) = 0.5*T(x)*\Delta_v \psi(t,x,v) + Q(x),
  * \f]
@@ -34,7 +34,7 @@ namespace Problems {
  * \f$Delta_v \psi = \partial_v( (1-v^2)\partial_v \psi)\f$ is the Laplace-Beltrami operator and
  * \f$\sigma_a, T, Q: [x_l, x_r] \to \mathbb{R}\f$ are the absorption coefficient, the transport coefficient and a
  * source, respectively.
- * The \f$P_n\f$ model approximates the solution of the Focker-Planck equation by an ansatz
+ * The \f$P_n\f$ model approximates the solution of the Fokker-Planck equation by an ansatz
  * \f[
  * \psi(t,x,v) = \sum \limits_{l=0}^n u_i(t,x)\phi_i(v)
  * \f]
@@ -56,7 +56,7 @@ namespace Problems {
  * \f[
  * \partial_t u + D M^{-1} \partial_x u = q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
  * \f]
- * This is a linear hyperbolic conservation law with source term q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
+ * This is a linear hyperbolic conservation law with rhs term q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
  * */
 template< class E, class D, size_t d, class R, size_t momentOrder >
 class TwoBeams
@@ -77,7 +77,8 @@ public:
                                                    dimDomain >                      FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux< FluxAffineFunctionType, E, D, d, R, dimRange, 1 > DefaultFluxType;
   typedef typename DefaultFluxType::RangeType                                       RangeType;
-  typedef typename DefaultFluxType::MatrixType                                      MatrixType;
+  typedef typename DefaultFluxType::FluxRangeType                                       FluxRangeType;
+  typedef typename FluxAffineFunctionType::MatrixType                                      MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename DS::Functions::Affine< DummyEntityType, R, dimRange, R, dimRange, 1 > RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard< RHSAffineFunctionType, E, D, d, R, dimRange, 1 > RHSCheckerboardFunctionType;
@@ -164,7 +165,7 @@ protected:
 
     // q - (sigma_a + T/2*S*M^(-1))*u = Q(x)*base_integrated() - (sigma_a(x)*I_{nxn} + T(x)/2*S*M_inverse)*u = q - A*u
     // here, T = 0, Q = 0, sigma_a = 4
-    static void create_source_values(ConfigType& source_config)
+    static void create_rhs_values(ConfigType& rhs_config)
     {
       std::string A_str = "[";
       for (size_t rr = 0; rr < dimRange; ++rr) {
@@ -180,10 +181,10 @@ protected:
         }
       }
       A_str += "]";
-      source_config["A.0"] = A_str;
-      source_config["b.0"] = DSC::to_string(RangeType(0));
-      source_config["sparse.0"] = "true";
-    } // ... create_source_values(...)
+      rhs_config["A.0"] = A_str;
+      rhs_config["b.0"] = DSC::to_string(FluxRangeType(0));
+      rhs_config["sparse.0"] = "true";
+    } // ... create_rhs_values(...)
 
     // flux matrix is D*M^(-1)
     // for legendre polynomials, using a recursion relation gives D*M^(-1)[cc][rr] = rr/(2*rr + 1)       if cc == rr - 1
@@ -211,7 +212,7 @@ protected:
         return str;
       } else {
         MatrixType D_M_inverse(M_inverse());
-        return DSC::to_string(D_M_inverse.leftmultiply(D()), precision);
+        return DSC::to_string(D_M_inverse.leftmultiply(DD()), precision);
       }
     } // ... create_flux_matrix()
 
@@ -332,7 +333,7 @@ protected:
         // get grid points from first line
         std::string grid_points;
         getline(basefunction_file, grid_points);
-        // get values of basefunctions at the DOFS, each line is for one base function
+        // get values of basefunctions at the DoFs, each line is for one base function
         std::vector< std::vector< std::string > > basefunction_values(dimRange);
         for (size_t ii = 0; ii < dimRange; ++ii) {
           std::string line;
@@ -439,7 +440,7 @@ public:
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[1.0]";
-    grid_config["num_elements"] = "[1000]";
+    grid_config["num_elements"] = "[100]";
     return grid_config;
   }
 
@@ -455,22 +456,12 @@ public:
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
     const std::shared_ptr< const DefaultFluxType > flux(DefaultFluxType::create(config.sub("flux")));
-    RangeType alpha;
-    alpha[0] = std::log(2);
-//    const std::shared_ptr< const DefaultFluxType > flux
-//        = std::make_shared< const DefaultFluxType >(GetData::velocity_grid_view(),
-//                                                    GetData::basefunctions(),
-//                                                    alpha,
-//                                                    0.5,
-//                                                    10e-8,
-//                                                    0.01,
-//                                                    0.001);
-    const std::shared_ptr< const DefaultRHSType > source(DefaultRHSType::create(config.sub("source")));
+    const std::shared_ptr< const DefaultRHSType > rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr< const DefaultInitialValueType > initial_values(DefaultInitialValueType::create(config.sub("initial_values")));
     const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr< const DefaultBoundaryValueType > boundary_values(DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique< ThisType >(flux, source, initial_values,
+    return Stuff::Common::make_unique< ThisType >(flux, rhs, initial_values,
                                                   grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
@@ -480,7 +471,8 @@ public:
    * corresponding values of a basefunction at the DoFs ( e.g. 1, 1, 1 in the second row for the zero order Legendre
    * polynomial and (-1, 0, 1) in the third row for the first order Legendre polynomial ...).
    * */
-  static std::unique_ptr< ThisType > create(const std::string basefunctions_file) {
+  static std::unique_ptr< ThisType > create(const std::string basefunctions_file)
+  {
     return create(default_config(basefunctions_file), static_id());
   }
 
@@ -493,21 +485,20 @@ public:
     ConfigType config;
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
-    ConfigType flux_config = DefaultFluxType::default_config();
+    ConfigType flux_config;
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"] = GetData::create_flux_matrix();
-    //std::cout << flux_config["A"] << std::endl;
     flux_config["b"] = DSC::to_string(RangeType(0));
     flux_config["sparse"] = "true";
     config.add(flux_config, "flux");
-    ConfigType source_config = DefaultRHSType::default_config();
-    source_config["lower_left"] = "[0.0]";
-    source_config["upper_right"] = "[1.0]";
-    source_config["num_elements"] = "[1]";
-    GetData::create_source_values(source_config);
-    source_config["name"] = static_id();
-    config.add(source_config, "source");
-    ConfigType initial_value_config = DefaultInitialValueType::default_config();
+    ConfigType rhs_config;
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[1.0]";
+    rhs_config["num_elements"] = "[1]";
+    GetData::create_rhs_values(rhs_config);
+    rhs_config["name"] = static_id();
+    config.add(rhs_config, "rhs");
+    ConfigType initial_value_config;
     initial_value_config["lower_left"] = "[0.0]";
     initial_value_config["upper_right"] = "[1.0]";
     initial_value_config["num_elements"] = "[1]";
@@ -515,7 +506,7 @@ public:
     initial_value_config["values.0"] = GetData::create_initial_values();
     initial_value_config["name"] = static_id();
     config.add(initial_value_config, "initial_values");
-    ConfigType boundary_value_config = BoundaryValueType::default_config();
+    ConfigType boundary_value_config;
     boundary_value_config["type"] = BoundaryValueType::static_id();
     boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
@@ -531,13 +522,13 @@ public:
   } // ... default_config(...)
 
   TwoBeams(const std::shared_ptr< const FluxType > flux_in,
-           const std::shared_ptr< const RHSType > source_in,
+           const std::shared_ptr< const RHSType > rhs_in,
            const std::shared_ptr< const InitialValueType > initial_values_in,
            const ConfigType& grid_config_in,
            const ConfigType& boundary_info_in,
            const std::shared_ptr< const BoundaryValueType > boundary_values_in)
     : BaseType(flux_in,
-               source_in,
+               rhs_in,
                initial_values_in,
                grid_config_in,
                boundary_info_in,
@@ -606,4 +597,4 @@ TwoBeams< E, D, d, R, rangeDim >::GetData::velocity_grid_;
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_HDD_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
