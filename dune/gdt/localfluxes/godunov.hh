@@ -673,11 +673,11 @@ public:
       if (n_ij > 0) {
         // flux = 0.5*(f_u_i + f_u_j + |A|*(u_i-u_j))*n_ij
         jacobian_abs_function_.evaluate(u_i - u_j, waves);
-        ret[0].axpy(RangeFieldType(0.5), f_u_i_plus_f_u_j + waves);
+        ret.axpy(RangeFieldType(0.5), f_u_i_plus_f_u_j + waves);
       } else {
         // flux = 0.5*(f_u_i + f_u_j - |A|*(u_i-u_j))*n_ij
         jacobian_abs_function_.evaluate(u_j - u_i, waves);
-        ret[0].axpy(RangeFieldType(-0.5), f_u_i_plus_f_u_j + waves);
+        ret.axpy(RangeFieldType(-0.5), f_u_i_plus_f_u_j + waves);
       }
 #else
       const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
