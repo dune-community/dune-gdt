@@ -59,5 +59,4 @@ target_link_libraries(test_linearelliptic__cg_discretization__alugrid_pdelab_eig
 target_link_libraries(test_linearelliptic__cg_discretization__sgrid_pdelab_eigen   lib_test_linearelliptic_cg_discretizations_sgrid)
 target_link_libraries(test_linearelliptic__cg_discretization__alugrid_pdelab_istl  lib_test_linearelliptic_cg_discretizations_alugrid)
 target_link_libraries(test_linearelliptic__cg_discretization__sgrid_pdelab_istl    lib_test_linearelliptic_cg_discretizations_sgrid)
-target_link_libraries(test_hyperbolic_fv_discretization_yaspgrid                   lib_test_hyperbolic_fv_discretizations_yaspgrid)
-
+target_link_libraries(test_hyperbolic__fv_discretization__yaspgrid                 lib_test_hyperbolic_fv_discretizations_yaspgrid)
