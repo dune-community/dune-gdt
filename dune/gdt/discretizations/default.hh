@@ -238,7 +238,6 @@ public:
   void solve(DiscreteSolutionType& solution, const bool is_linear) const
   {
     try {
-      DSC_CONFIG.set("threading.partition_factor", 1, true);
       // set dimensions
       static const size_t dimDomain = ProblemType::dimDomain;
 
@@ -272,31 +271,29 @@ public:
       double dt = CFL * dx;
 
       // define operator types
-      typedef typename Dune::Stuff::Functions::
-          Constant<typename FVSpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
-              ConstantFunctionType;
       typedef typename Dune::GDT::Operators::AdvectionGodunov<AnalyticalFluxType, BoundaryValueType> OperatorType;
+      //      typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
+      //                                                         DomainFieldType, dimDomain,
+      //                                                         RangeFieldType, 1, 1 >        ConstantFunctionType;
       //      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
       //          < AnalyticalFluxType, BoundaryValueType, ConstantFunctionType > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionRHS<RHSType> RHSOperatorType;
       typedef typename Dune::GDT::TimeStepper::RungeKutta<OperatorType, RHSOperatorType, FVFunctionType, double>
           TimeStepperType;
 
-      // create source operator, is independent of dt
+      // create right hand side operator
       RHSOperatorType rhs_operator(*rhs);
 
       // create advection operator
-      const ConstantFunctionType dx_function(dx);
       OperatorType advection_operator(*analytical_flux, *boundary_values, is_linear);
+      //      const ConstantFunctionType dx_function(dx);
       //      OperatorType advection_operator(*analytical_flux, *boundary_values, dx_function, dt, is_linear, false);
 
       // create timestepper
       TimeStepperType timestepper(advection_operator, rhs_operator, u, dx);
 
-      // now do the time steps
-
+      // do the time steps
       const double saveInterval = t_end / 1000 > dt ? t_end / 1000 : dt;
-
       solution.clear();
       timestepper.solve(t_end, dt, saveInterval, solution);
 

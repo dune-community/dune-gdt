@@ -10,8 +10,9 @@
 #include <vector>
 #include <string>
 
+#include <dune/gdt/test/nonstationary-eocstudy.hh>
+
 #include <dune/stuff/common/string.hh>
-#include <dune/stuff/functions/checkerboard.hh>
 
 #include "twobeams.hh"
 
@@ -20,12 +21,12 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-class SourceBeam : public TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+/** \see class TwoBeams in twobeams.hh */
+template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
+class SourceBeam : public TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder>
 {
-  typedef SourceBeam<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> ThisType;
-  typedef TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> BaseType;
+  typedef SourceBeam<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> ThisType;
+  typedef TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -318,7 +319,7 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  SourceBeamTestCase(const size_t num_refs = 2)
+  SourceBeamTestCase(const size_t num_refs = 1)
     : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
@@ -341,8 +342,8 @@ public:
         << "||  Testcase: Fokker-Planck SourceBeam                                                                ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 3]                                                                                   ||\n"
-        << "||  flux =                                             ||\n"
-        << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011                                             ||\n"
+        << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
+        << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"
         << "|+====================================================================================================+|\n"
         << "+======================================================================================================+"
@@ -351,7 +352,7 @@ public:
 
 private:
   const ProblemType problem_;
-}; // class Boltzmann2DCheckerboardTestCase
+}; // class SourceBeamTestCase
 
 
 } // namespace Hyperbolic
