@@ -10,9 +10,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/products/l2.hh>
-#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/test/nonstationary-eocstudy.hh>
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
@@ -527,7 +525,7 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  Boltzmann2DCheckerboardTestCase(const size_t num_refs = 2)
+  Boltzmann2DCheckerboardTestCase(const size_t num_refs = 1)
     : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {}
@@ -549,8 +547,8 @@ public:
         << "||  Testcase: Boltzmann 2D Checkerboard                                                               ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 7] x [0, 7]                                                                          ||\n"
-        << "||  flux = see http://dx.doi.org/10.1016/j.jcp.2005.04.011                                            ||\n"
-        << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011                                             ||\n"
+        << "||  flux = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                ||\n"
+        << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                 ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"
         << "|+====================================================================================================+|\n"
         << "+======================================================================================================+" << std::endl;

@@ -10,7 +10,6 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/common/fvector.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 
 #include <dune/gdt/test/nonstationary-eocstudy.hh>

@@ -19,13 +19,13 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-
-template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim >
+/** \see class TwoBeams in twobeams.hh */
+template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder >
 class TwoPulses
-  : public TwoBeams< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >
+  : public TwoBeams< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder >
 {
-  typedef TwoPulses< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim > ThisType;
-  typedef TwoBeams< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >  BaseType;
+  typedef TwoPulses< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder > ThisType;
+  typedef TwoBeams< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder >  BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -114,7 +114,7 @@ public:
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[7.0]";
-    grid_config["num_elements"] = "[1000]";
+    grid_config["num_elements"] = "[50]";
     return grid_config;
   }
 
@@ -143,7 +143,7 @@ public:
     return create(default_config(basefunctions_file), static_id());
   }
 
-  static ConfigType default_config(const std::string basefunctions_file, const std::string sub_name = "")
+  static ConfigType default_config(const std::string basefunctions_file = "", const std::string sub_name = "")
   {
     ConfigType config = BaseType::default_config(basefunctions_file, sub_name);
     config.add(default_grid_config(), "grid", true);
@@ -182,6 +182,21 @@ public:
                boundary_info_in,
                boundary_values_in)
   {}
+
+  virtual double CFL() const override
+  {
+      return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 7.0;
+  }
+
+  virtual bool is_linear() const override
+  {
+    return true;
+  }
 };
 
 } // namespace Problems

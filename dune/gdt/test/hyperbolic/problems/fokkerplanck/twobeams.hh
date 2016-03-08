@@ -38,9 +38,10 @@ namespace Problems {
  * \f[
  * \psi(t,x,v) = \sum \limits_{l=0}^n u_i(t,x)\phi_i(v)
  * \f]
- * where the \f$\phi_i, \, i=0,\ldots,n$ are suitable base functions of (a subset of) the function space on
- * \f$[-1, 1]\f$ that \f$\psi\f$ lives in. Typically, the Legendre polynomials are chosen as the \f$\phi_i\f$.
- * Once suitable base functions are found, a Galerkin semidiscretization in v is done, so the \f$\phi_i\f$ are also
+ * where the \f$\phi_i, \, i=0,\ldots,n$ are suitable basis functions of (a subset of) the function space on
+ * \f$[-1, 1]\f$ that \f$\psi\f$ lives in. n is called the moment order. Usually, the \f$\phi_i\f$ are chosen as the
+ * Legendre polynomials up to order n.
+ * Once suitable basis functions are found, a Galerkin semidiscretization in v is done, so the \f$\phi_i\f$ are also
  * taken as basis for the test space. This results in an equation of the form
  * \f[
  * M \partial_t u + D \partial_x u = q - (\sigma_a*M + 0.5*T*S) u,
@@ -56,8 +57,10 @@ namespace Problems {
  * \f[
  * \partial_t u + D M^{-1} \partial_x u = q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
  * \f]
- * This is a linear hyperbolic conservation law with rhs term q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
- * */
+ * For details on the parameters of the test cases implemented here (OneBeam, TwoBeams, TwoPulses, RectangularIC,
+ * SourceBeam) see Schneider, Alldredge, Frank, Klar, "Higher Order Mixed-Moment Approximations for the
+ * Fokker-Planck Equation in One Space Dimension", SIAM J. Appl. Math., 74(4), 1087–1114
+ */
 template< class E, class D, size_t d, class R, size_t momentOrder >
 class TwoBeams
   : public Default< E, D, d, R, momentOrder + 1 >
@@ -333,7 +336,7 @@ protected:
         // get grid points from first line
         std::string grid_points;
         getline(basefunction_file, grid_points);
-        // get values of basefunctions at the DoFs, each line is for one base function
+        // get values of basefunctions at the DoFs, each line is for one basis function
         std::vector< std::vector< std::string > > basefunction_values(dimRange);
         for (size_t ii = 0; ii < dimRange; ++ii) {
           std::string line;
@@ -352,7 +355,7 @@ protected:
         VelocityGridProviderType velocity_grid_provider = *(VelocityGridProviderType::create(velocity_grid_config));
         velocity_grid_ = velocity_grid_provider.grid_ptr();
 
-        // make CG Space with polOrder 1 and DiscreteFunctions for the base functions
+        // make CG Space with polOrder 1 and DiscreteFunctions for the basis functions
         velocity_grid_view_ = std::make_shared< VelocityGridViewType >(velocity_grid_->leafGridView());
 
         CGSpaceType cg_space = CGProviderType::create(velocity_grid_provider);
@@ -534,6 +537,21 @@ public:
                boundary_info_in,
                boundary_values_in)
   {}
+
+  virtual double CFL() const override
+  {
+    return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 4.0;
+  }
+
+  virtual bool is_linear() const override
+  {
+    return true;
+  }
 }; // ... TwoBeams ...
 
 template< class E, class D, size_t d, class R, size_t rangeDim >

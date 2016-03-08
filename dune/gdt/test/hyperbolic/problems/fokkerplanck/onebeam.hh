@@ -11,14 +11,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/common/exceptions.hh>
-#include <dune/geometry/quadraturerules.hh>
-
 #include <dune/stuff/common/string.hh>
-#include <dune/stuff/functions/checkerboard.hh>
-#include <dune/stuff/grid/provider.hh>
 
 #include "twobeams.hh"
 
@@ -27,7 +20,7 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-
+/** \see class TwoBeams in twobeams.hh */
 template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim >
 class OneBeam
   : public TwoBeams< EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim >
@@ -146,7 +139,7 @@ public:
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[1.0]";
-    grid_config["num_elements"] = "[1000]";
+    grid_config["num_elements"] = "[25]";
     return grid_config;
   }
 
@@ -180,7 +173,7 @@ public:
     ConfigType config = BaseType::default_config(basefunctions_file, sub_name);
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType rhs_config = DefaultRHSType::default_config();
+    ConfigType rhs_config;
     rhs_config["lower_left"] = "[0.0]";
     rhs_config["upper_right"] = "[1.0]";
     rhs_config["num_elements"] = "[10]";
@@ -188,7 +181,7 @@ public:
     GetData::create_rhs_values(rhs_config);
     rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs", true);
-    ConfigType boundary_value_config = DefaultBoundaryValueType::default_config();
+    ConfigType boundary_value_config;
     boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
@@ -216,6 +209,21 @@ public:
                boundary_info_in,
                boundary_values_in)
   {}
+
+  virtual double CFL() const override
+  {
+    return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 4.0;
+  }
+
+  virtual bool is_linear() const override
+  {
+    return true;
+  }
 }; // class OneBeam
 
 template< class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim >
