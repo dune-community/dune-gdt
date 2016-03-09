@@ -22,10 +22,8 @@ typedef testing::Types<    Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCas
                          , Dune::GDT::Hyperbolic::ShallowWaterTestCase< Dune::YaspGrid< 1 > >
                          , Dune::GDT::Hyperbolic::ShockTubeTestCase< Dune::YaspGrid< 1 > >
                          , Dune::GDT::Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double, 5 >
-                         , Dune::GDT::Hyperbolic::TransportTestCase
-                                < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >, double, 1, 1 >
-                         , Dune::GDT::Hyperbolic::TransportTestCase
-                                < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >, double, 1, 1 >
+                         , Dune::GDT::Hyperbolic::TransportTestCase< Dune::YaspGrid< 1 >, double, 1, 1 >,
+                           Dune::GDT::Hyperbolic::TransportTestCase< Dune::YaspGrid< 2 >, double, 1, 1 >
                       > YaspGridTestCases;
 
 
@@ -57,19 +55,11 @@ extern template class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase<
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  1 >;
 
-extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
-                                                 < Dune::YaspGrid< 1, Dune::EquidistantOffsetCoordinates< double, 1 > >,
-                                                   double,
-                                                   1,
-                                                   1 >,
+extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase< Dune::YaspGrid< 1 >, double, 1, 1 >,
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  1 >;
 
-extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase
-                                                 < Dune::YaspGrid< 2, Dune::EquidistantOffsetCoordinates< double, 2 > >,
-                                                   double,
-                                                   1,
-                                                   1 >,
+extern template class HyperbolicEocExpectations< Hyperbolic::TransportTestCase< Dune::YaspGrid< 2 >, double, 1, 1 >,
                                                  Hyperbolic::ChooseDiscretizer::fv,
                                                  2 >;
 
