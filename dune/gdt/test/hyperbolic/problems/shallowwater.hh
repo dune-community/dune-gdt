@@ -10,6 +10,7 @@
 
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
+#include <dune/stuff/grid/provider/cube.hh>
 
 #include <dune/gdt/test/nonstationary-eocstudy.hh>
 
