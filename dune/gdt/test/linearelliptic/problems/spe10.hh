@@ -9,6 +9,7 @@
 #include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/functions/constant.hh>
+#include <dune/stuff/functions/indicator.hh>
 #include <dune/stuff/functions/spe10.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/provider/cube.hh>
