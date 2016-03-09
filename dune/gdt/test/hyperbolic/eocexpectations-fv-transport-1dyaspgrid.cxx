@@ -19,14 +19,11 @@ namespace Tests {
 
 
 template <bool anything>
-class HyperbolicEocExpectations<Hyperbolic::
-                                    TransportTestCase<Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>,
-                                                      double, 1>,
+class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv, 1, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
-  typedef Hyperbolic::TransportTestCase<Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>, double, 1>
-      TestCaseType;
+  typedef Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -42,11 +39,7 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
-template class HyperbolicEocExpectations<Hyperbolic::
-                                             TransportTestCase<Dune::YaspGrid<1,
-                                                                              Dune::EquidistantOffsetCoordinates<double,
-                                                                                                                 1>>,
-                                                               double, 1>,
+template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1>;
 
 
