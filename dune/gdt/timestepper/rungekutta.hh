@@ -21,9 +21,8 @@ namespace Dune {
 namespace GDT {
 namespace TimeStepper {
 
-enum class RungeKuttaMethods { euler, second_order_ssp, third_order_ssp, classic_fourth_order, RK23, RK45 };
+enum class RungeKuttaMethods { euler, second_order_ssp, third_order_ssp, classic_fourth_order };
 
-// Euler
 template< class RangeFieldType, RungeKuttaMethods method = RungeKuttaMethods::euler >
 struct ButcherArrayProvider
 {
@@ -32,7 +31,7 @@ struct ButcherArrayProvider
     return DSC::from_string< Dune::DynamicMatrix< RangeFieldType > >("[0]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > b_1()
+  static Dune::DynamicVector< RangeFieldType > b()
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[1]");
   }
@@ -41,14 +40,8 @@ struct ButcherArrayProvider
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[0]");
   }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return Dune::DynamicVector< RangeFieldType >();
-  }
 };
 
-// Second order SSP
 template< class RangeFieldType >
 struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::second_order_ssp >
 {
@@ -57,7 +50,7 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::second_order_ssp
     return DSC::from_string< Dune::DynamicMatrix< RangeFieldType >  >("[0 0; 1 0]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > b_1()
+  static Dune::DynamicVector< RangeFieldType > b()
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]");
   }
@@ -66,14 +59,8 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::second_order_ssp
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 1]");
   }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return Dune::DynamicVector< RangeFieldType >();
-  }
 };
 
-// Third order SSP
 template< class RangeFieldType >
 struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::third_order_ssp >
 {
@@ -82,7 +69,7 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::third_order_ssp 
     return DSC::from_string< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0; 1 0 0; 0.25 0.25 0]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > b_1()
+  static Dune::DynamicVector< RangeFieldType > b()
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(2.0/3.0, 15) + "]");
   }
@@ -91,14 +78,8 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::third_order_ssp 
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 1 0.5]");
   }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return Dune::DynamicVector< RangeFieldType >();
-  }
 };
 
-// Classic fourth order RK
 template< class RangeFieldType >
 struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::classic_fourth_order >
 {
@@ -107,7 +88,7 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::classic_fourth_o
     return DSC::from_string< Dune::DynamicMatrix< RangeFieldType >  >("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > b_1()
+  static Dune::DynamicVector< RangeFieldType > b()
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(1.0/3.0, 15) + " " + DSC::to_string(1.0/3.0, 15) + " " + DSC::to_string(1.0/6.0, 15) + "]");
   }
@@ -116,119 +97,7 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::classic_fourth_o
   {
     return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 0.5 0.5 1]");
   }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return Dune::DynamicVector< RangeFieldType >();
-  }
 };
-
-// Bogacki-Shampine (adaptive RK23)
-template< class RangeFieldType >
-class ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::RK23 >
-{
-public:
-  static Dune::DynamicMatrix< RangeFieldType > A()
-  {
-    return DSC::from_string< Dune::DynamicMatrix< RangeFieldType > > ("[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; "
-                                                                    + DSC::to_string(2.0/9.0, 15)
-                                                                    + " " + DSC::to_string(1.0/3.0, 15)
-                                                                    + " " + DSC::to_string(4.0/9.0, 15)
-                                                                    + " 0]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > b_1()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > > ("[" + DSC::to_string(2.0/9.0, 15) + " "
-                                                                         + DSC::to_string(1.0/3.0, 15) + " "
-                                                                         + DSC::to_string(4.0/9.0, 15)
-                                                                         + " 0]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > > ("[" + DSC::to_string(7.0/24.0, 15) + " "
-                                                                         + DSC::to_string(1.0/4.0, 15) + " "
-                                                                         + DSC::to_string(1.0/3.0, 15) + " "
-                                                                         + DSC::to_string(1.0/8.0, 15)
-                                                                         + " 0]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > c()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0.5 0.75 1 0]");
-  }
-
-  static Dune::DynamicMatrix< RangeFieldType > Gamma()
-  {
-    DUNE_THROW(Dune::NotImplemented, "Only Rosenbrock-type methods provide Gamma");
-    return Dune::DynamicMatrix< RangeFieldType >();
-  }
-};
-
-// Dormand-Prince (adaptive RK45)
-template< class RangeFieldType >
-class ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::RK45 >
-{
-public:
-  static Dune::DynamicMatrix< RangeFieldType > A()
-  {
-    return DSC::from_string< Dune::DynamicMatrix< RangeFieldType > >
-        (std::string("[0 0 0 0 0 0 0;") +
-         " 0.2 0 0 0 0 0 0;" +
-         " 0.075 0.225 0 0 0 0 0;" +
-         " " + DSC::to_string(44.0/45.0, 15) + " " + DSC::to_string(-56.0/15.0, 15)
-         + " " + DSC::to_string(32.0/9.0, 15) + " 0 0 0 0;" + " "
-         + DSC::to_string(19372.0/6561.0, 15)
-         + " " + DSC::to_string(-25360.0/2187.0, 15)
-         + " " + DSC::to_string(64448.0/6561.0, 15)
-         + " " + DSC::to_string(-212.0/729.0, 15) + " 0 0 0;" + " "
-         + DSC::to_string(9017.0/3168.0, 15)
-         + " " + DSC::to_string(-355.0/33.0, 15)
-         + " " + DSC::to_string(46732.0/5247.0, 15)
-         + " " + DSC::to_string(49.0/176.0, 15)
-         + " " + DSC::to_string(-5103.0/18656.0, 15) + " 0 0;" + " "
-         + DSC::to_string(35.0/384.0, 15)
-         + " 0 " + DSC::to_string(500.0/1113.0, 15)
-         + " " + DSC::to_string(125.0/192.0, 15)
-         + " " + DSC::to_string(-2187.0/6784.0, 15)
-         + " " + DSC::to_string(11.0/84.0, 15) + " 0]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > b_1()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > > ("[" + DSC::to_string(35.0/384.0, 15)
-                                                                         + " 0 "
-                                                                         + DSC::to_string(500.0/1113.0, 15) + " "
-                                                                         + DSC::to_string(125.0/192.0, 15) + " "
-                                                                         + DSC::to_string(-2187.0/6784.0, 15) + " "
-                                                                         + DSC::to_string(11.0/84.0, 15)
-                                                                         + " 0]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > b_2()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > > ("[" + DSC::to_string(5179.0/57600.0, 15)
-                                                                         + " 0 "
-                                                                         + DSC::to_string(7571.0/16695.0, 15) + " "
-                                                                         + DSC::to_string(393.0/640.0, 15) + " "
-                                                                         + DSC::to_string(-92097.0/339200.0, 15) + " "
-                                                                         + DSC::to_string(187.0/2100.0, 15) + " "
-                                                                         + DSC::to_string(1.0/40.0, 15) + "]");
-  }
-
-  static Dune::DynamicVector< RangeFieldType > c()
-  {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > >
-                                                    ("[0 0.2 0.3 0.8 "+ DSC::to_string(8.0/9.0, 15) +" 1 1]");
-  }
-
-  static Dune::DynamicMatrix< RangeFieldType > Gamma()
-  {
-    DUNE_THROW(Dune::NotImplemented, "Only Rosenbrock-type methods provide Gamma");
-    return Dune::DynamicMatrix< RangeFieldType >();
-  }
-}; // Dormand-Prince (RK45)
 
 
 /** \brief Time stepper using Runge Kutta methods
@@ -287,22 +156,21 @@ public:
     , u_n_(initial_values_)
     , u_tmp_(u_n_)
     , t_(0.0)
+    , dx_(dx)
     , A_(A)
-    , b_1_(b_1)
+    , b_(b)
     , c_(c)
-    , b_2_(b_2)
     , num_stages_(A_.rows())
     , solution_(std::vector< std::pair< double, DiscreteFunctionType > >())
   {
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
-    assert(b_1_.size() == A_.rows());
-    assert(b_2_.size() == A_.rows() || b_2_.size() == 0);
+    assert(b_.size() == A_.rows());
     assert(c_.size() == A_.rows());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
         for (size_t jj = ii; jj < A_.cols(); ++jj) {
           assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0) &&
-                 "A has to be a lower triangular matrix with 0 on the main diagonal");
+                 "A has to be a lower triangular matrix with 0 on the diagonal (implicit methods are not implemented)");
         }
     }
 #endif //NDEBUG
@@ -332,7 +200,7 @@ public:
     }
 
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_n_.vector() += u_intermediate_stages_[ii].vector()*(factor*dt*b_1_[ii]);
+      u_n_.vector() += u_intermediate_stages_[ii].vector()*(factor*dt*b_[ii]);
     }
   } // void apply_RK_scheme(...)
 
@@ -496,10 +364,10 @@ private:
   DiscreteFunctionType u_n_;
   DiscreteFunctionType u_tmp_;
   double t_;
+  double dx_;
   const MatrixType A_;
-  const VectorType b_1_;
+  const VectorType b_;
   const VectorType c_;
-  const VectorType b_2_;
   std::vector< DiscreteFunctionType > u_intermediate_stages_;
   const size_t num_stages_;
   SolutionType solution_;
