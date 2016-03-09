@@ -212,7 +212,7 @@ public:
   }
 
   void visualize(const std::string filename_prefix,
-                 const std::string filename_suffix = "",
+                 const std::string filename_suffix,
                  const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
