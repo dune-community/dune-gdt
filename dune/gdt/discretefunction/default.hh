@@ -205,7 +205,7 @@ public:
     visualize(filename, "", subsampling, vtk_output_type);
   }
 
-  void visualize(const std::string filename_prefix, const std::string filename_suffix = "",
+  void visualize(const std::string filename_prefix, const std::string filename_suffix,
                  const bool subsampling                = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
