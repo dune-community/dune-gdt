@@ -18,6 +18,7 @@
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/localfunctional/integrals.hh>
 #include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/spaces/fv/interface.hh>
 
 #include "integrals.hh"
 #include "interfaces.hh"

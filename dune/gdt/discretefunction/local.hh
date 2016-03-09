@@ -16,6 +16,7 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/fv/interface.hh>
 #include <dune/gdt/mapper/interface.hh>
 
 namespace Dune {
