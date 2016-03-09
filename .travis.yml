@@ -55,15 +55,15 @@ install:
 
 before_script:
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}
+    - [ "x${TESTS}" != "xheadercheck" ] && ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}
+    - [ "x${TESTS}" != "xheadercheck" ] && ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}
 
 script:
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS}
+    - [ "x${TESTS}" != "xheadercheck" ] && ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS}
+    - [ "x${TESTS}" == "xheadercheck" ] && ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
     # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/
 
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
 
 # runs independent of 'script' failure/success
 after_script:
@@ -118,6 +118,10 @@ matrix:
       compiler: gcc
       addons:  *gcc49
       env: BLD=${DBG} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-4.9
+    - os: linux
+      compiler: gcc
+      addons:  *gcc49
+      env: BLD=${DBG} CC=gcc-4.9 TESTS=headercheck CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
 #      addons:  *gcc49
