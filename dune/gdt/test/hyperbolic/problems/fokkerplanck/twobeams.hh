@@ -115,28 +115,28 @@ protected:
   class GetData
   {
   public:
-    typedef D                                                            VelocityFieldImp;
-    typedef typename Dune::YaspGrid< dimDomain, Dune::EquidistantOffsetCoordinates< double, dimDomain > > VelocityGridType;
-    typedef Dune::Stuff::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
-    typedef typename VelocityGridType::LeafGridView                                   VelocityGridViewType;
-    typedef typename VelocityGridType::template Codim< 0 >::Entity                    VelocityEntityType;
-    typedef typename DS::LocalizableFunctionInterface< VelocityEntityType,
-                                                       VelocityFieldImp, dimDomain,
-                                                       R, 1, 1 >          VelocityFunctionType;
-    typedef typename DS::Functions::Expression< VelocityEntityType,
-                                                VelocityFieldImp, dimDomain,
-                                                R, 1, 1 >                 VelocityExpressionFunctionType;
+//    typedef D                                                            VelocityFieldImp;
+//    typedef typename Dune::YaspGrid< dimDomain, Dune::EquidistantOffsetCoordinates< double, dimDomain > > VelocityGridType;
+//    typedef Dune::Stuff::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
+//    typedef typename VelocityGridType::LeafGridView                                   VelocityGridViewType;
+//    typedef typename VelocityGridType::template Codim< 0 >::Entity                    VelocityEntityType;
+//    typedef typename DS::LocalizableFunctionInterface< VelocityEntityType,
+//                                                       VelocityFieldImp, dimDomain,
+//                                                       R, 1, 1 >          VelocityFunctionType;
+//    typedef typename DS::Functions::Expression< VelocityEntityType,
+//                                                VelocityFieldImp, dimDomain,
+//                                                R, 1, 1 >                 VelocityExpressionFunctionType;
 
     typedef typename Dune::Stuff::LA::CommonDenseVector< R >              VectorType;
-    typedef typename Dune::GDT::Spaces::CGProvider< VelocityGridType,
-                                                    DSG::ChooseLayer::leaf,
-                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
-                                                    1, R, 1, 1 >          CGProviderType;
-    typedef typename CGProviderType::Type                                             CGSpaceType;
-    typedef Dune::GDT::DiscreteFunction< CGSpaceType, VectorType >                    CGFunctionType;
-    typedef typename DS::Functions::Checkerboard< typename VelocityGridType::template Codim< 0 >::Entity,
-                                                  D, dimDomain,
-                                                  R, 1, 1 >               CGJacobianType;
+//    typedef typename Dune::GDT::Spaces::CGProvider< VelocityGridType,
+//                                                    DSG::ChooseLayer::leaf,
+//                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
+//                                                    1, R, 1, 1 >          CGProviderType;
+//    typedef typename CGProviderType::Type                                             CGSpaceType;
+//    typedef Dune::GDT::DiscreteFunction< CGSpaceType, VectorType >                    CGFunctionType;
+//    typedef typename DS::Functions::Checkerboard< typename VelocityGridType::template Codim< 0 >::Entity,
+//                                                  D, dimDomain,
+//                                                  R, 1, 1 >               CGJacobianType;
     static const int precision = 15; // precision for to_string
 
     static void set_filename(const std::string filename)
@@ -154,17 +154,17 @@ protected:
       return exact_legendre_;
     }
 
-    static const std::vector< CGFunctionType >& basefunctions()
-    {
-      calculate();
-      return basefunctions_;
-    }
+//    static const std::vector< CGFunctionType >& basefunctions()
+//    {
+//      calculate();
+//      return basefunctions_;
+//    }
 
-    static std::shared_ptr< const VelocityGridViewType > velocity_grid_view()
-    {
-      calculate();
-      return velocity_grid_view_;
-    }
+//    static std::shared_ptr< const VelocityGridViewType > velocity_grid_view()
+//    {
+//      calculate();
+//      return velocity_grid_view_;
+//    }
 
     // q - (sigma_a + T/2*S*M^(-1))*u = Q(x)*base_integrated() - (sigma_a(x)*I_{nxn} + T(x)/2*S*M_inverse)*u = q - A*u
     // here, T = 0, Q = 0, sigma_a = 4
@@ -330,97 +330,97 @@ protected:
   private:
     static void calculate()
     {
-      if (!is_calculated_) {
-        // get basis functions
-        std::ifstream basefunction_file(filename_);
-        // get grid points from first line
-        std::string grid_points;
-        getline(basefunction_file, grid_points);
-        // get values of basefunctions at the DoFs, each line is for one basis function
-        std::vector< std::vector< std::string > > basefunction_values(dimRange);
-        for (size_t ii = 0; ii < dimRange; ++ii) {
-          std::string line;
-          std::getline(basefunction_file, line);
-          basefunction_values[ii] = DSC::tokenize(line,
-                                                  ",",
-                                                  boost::algorithm::token_compress_mode_type::token_compress_on);
-        }
+//      if (!is_calculated_) {
+//        // get basis functions
+//        std::ifstream basefunction_file(filename_);
+//        // get grid points from first line
+//        std::string grid_points;
+//        getline(basefunction_file, grid_points);
+//        // get values of basefunctions at the DoFs, each line is for one basis function
+//        std::vector< std::vector< std::string > > basefunction_values(dimRange);
+//        for (size_t ii = 0; ii < dimRange; ++ii) {
+//          std::string line;
+//          std::getline(basefunction_file, line);
+//          basefunction_values[ii] = DSC::tokenize(line,
+//                                                  ",",
+//                                                  boost::algorithm::token_compress_mode_type::token_compress_on);
+//        }
 
-        //create grid for the velocity space, the size has to be the number of DOFs - 1
-        ConfigType velocity_grid_config;
-        velocity_grid_config["type"] = "provider.cube";
-        velocity_grid_config["lower_left"] = "[-1.0]";
-        velocity_grid_config["upper_right"] = "[1.0]";
-        velocity_grid_config["num_elements"] = "[" + DSC::to_string(basefunction_values[0].size() - 1) + "]";
-        VelocityGridProviderType velocity_grid_provider = *(VelocityGridProviderType::create(velocity_grid_config));
-        velocity_grid_ = velocity_grid_provider.grid_ptr();
+//        //create grid for the velocity space, the size has to be the number of DOFs - 1
+//        ConfigType velocity_grid_config;
+//        velocity_grid_config["type"] = "provider.cube";
+//        velocity_grid_config["lower_left"] = "[-1.0]";
+//        velocity_grid_config["upper_right"] = "[1.0]";
+//        velocity_grid_config["num_elements"] = "[" + DSC::to_string(basefunction_values[0].size() - 1) + "]";
+//        VelocityGridProviderType velocity_grid_provider = *(VelocityGridProviderType::create(velocity_grid_config));
+//        velocity_grid_ = velocity_grid_provider.grid_ptr();
 
-        // make CG Space with polOrder 1 and DiscreteFunctions for the basis functions
-        velocity_grid_view_ = std::make_shared< VelocityGridViewType >(velocity_grid_->leafGridView());
+//        // make CG Space with polOrder 1 and DiscreteFunctions for the basis functions
+//        velocity_grid_view_ = std::make_shared< VelocityGridViewType >(velocity_grid_->leafGridView());
 
-        CGSpaceType cg_space = CGProviderType::create(velocity_grid_provider);
+//        CGSpaceType cg_space = CGProviderType::create(velocity_grid_provider);
 
-        // create basefunctions from values at the DOFs
-        for (size_t ii = 0; ii < dimRange; ++ii) {
-          VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
-          for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
-            basefunction_ii_values[jj] = DSC::from_string< R >(basefunction_values[ii][jj]);
-          }
-          basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
-          basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
-          basefunctions_.emplace_back(CGFunctionType(cg_space,
-                                                    basefunction_ii_values,
-                                                    "Basefunction " + DSC::to_string(ii)));
-        }
+//        // create basefunctions from values at the DOFs
+//        for (size_t ii = 0; ii < dimRange; ++ii) {
+//          VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
+//          for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
+//            basefunction_ii_values[jj] = DSC::from_string< R >(basefunction_values[ii][jj]);
+//          }
+//          basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
+//          basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
+//          basefunctions_.emplace_back(CGFunctionType(cg_space,
+//                                                    basefunction_ii_values,
+//                                                    "Basefunction " + DSC::to_string(ii)));
+//        }
 
-        // get jacobians of basefunctions. jacobians are piecewise constant, so use Checkerboard as CGJacobianType
-        std::vector< CGJacobianType > basefunction_jacobians;
-        std::vector< std::vector< typename CGJacobianType::RangeType > > basefunction_jacobians_values(dimRange);
-        for (size_t ii = 0; ii < dimRange; ++ii) {
-          basefunction_jacobians_values[ii].resize(velocity_grid_view_->size(0));
-        }
-        const auto it_end = velocity_grid_view_->template end< 0 >();
-        for (auto it = velocity_grid_view_->template begin< 0 >(); it != it_end; ++it) {
-          const auto& entity = *it;
-          for (size_t ii = 0; ii < dimRange; ++ii) {
-            // basefunctions_[ii].jacobian(..) gives a 1x1 FieldMatrix
-            basefunction_jacobians_values[ii][velocity_grid_view_->indexSet().index(entity)]
-                = (basefunctions_[ii].local_function(entity)->jacobian(entity.geometry().local(entity.geometry().center())))[0][0];
-          }
-        }
+//        // get jacobians of basefunctions. jacobians are piecewise constant, so use Checkerboard as CGJacobianType
+//        std::vector< CGJacobianType > basefunction_jacobians;
+//        std::vector< std::vector< typename CGJacobianType::RangeType > > basefunction_jacobians_values(dimRange);
+//        for (size_t ii = 0; ii < dimRange; ++ii) {
+//          basefunction_jacobians_values[ii].resize(velocity_grid_view_->size(0));
+//        }
+//        const auto it_end = velocity_grid_view_->template end< 0 >();
+//        for (auto it = velocity_grid_view_->template begin< 0 >(); it != it_end; ++it) {
+//          const auto& entity = *it;
+//          for (size_t ii = 0; ii < dimRange; ++ii) {
+//            // basefunctions_[ii].jacobian(..) gives a 1x1 FieldMatrix
+//            basefunction_jacobians_values[ii][velocity_grid_view_->indexSet().index(entity)]
+//                = (basefunctions_[ii].local_function(entity)->jacobian(entity.geometry().local(entity.geometry().center())))[0][0];
+//          }
+//        }
 
-        for (size_t ii = 0; ii < dimRange; ++ii) {
-          const CGJacobianType jacobian_ii(DomainType(-1),
-                                           DomainType(1),
-                                           DSC::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
-                                           basefunction_jacobians_values[ii]);
-          basefunction_jacobians.emplace_back(jacobian_ii);
-        }
+//        for (size_t ii = 0; ii < dimRange; ++ii) {
+//          const CGJacobianType jacobian_ii(DomainType(-1),
+//                                           DomainType(1),
+//                                           DSC::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
+//                                           basefunction_jacobians_values[ii]);
+//          basefunction_jacobians.emplace_back(jacobian_ii);
+//        }
 
-        // calculate matrices
-        VelocityExpressionFunctionType v("v", "v[0]", 1);
-        VelocityExpressionFunctionType onebeam_left_boundary("v", "3*exp(3*v[0]+3)/(exp(6)-1)", 10);
-        VelocityExpressionFunctionType one_minus_v_squared("v", "1-(v[0]^2)", 2);
-        const typename Dune::GDT::Products::L2< VelocityGridViewType, R > l2_product(*velocity_grid_view_);
-        for (size_t ii = 0; ii < dimRange; ++ii) {
-          // Note: this assumes basefunctions_[0] is the constant function with value 1!!
-          base_integrated_[ii] = l2_product.apply2(basefunctions_[0], basefunctions_[ii]);
-          onebeam_left_boundary_values_[ii] = l2_product.apply2(onebeam_left_boundary, basefunctions_[ii]);
-          for (size_t jj = 0; jj < dimRange; ++jj) {
-            M_[ii][jj] = l2_product.apply2(basefunctions_[jj], basefunctions_[ii]);
-            const auto v_times_base = DS::Functions::Product< VelocityFunctionType,
-                                                              CGFunctionType >(v, basefunctions_[jj]);
-            const auto jacobian_times_one_minus_v_squared
-                = DS::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
-                                                                                 basefunction_jacobians[jj]);
-            D_[ii][jj] = l2_product.apply2(v_times_base, basefunctions_[ii]);
-            S_[ii][jj] = l2_product.apply2(jacobian_times_one_minus_v_squared, basefunction_jacobians[ii]);
-          }
-        }
-        M_inverse_ = M_;
-        M_inverse_.invert();
-        is_calculated_ = true;
-      }
+//        // calculate matrices
+//        VelocityExpressionFunctionType v("v", "v[0]", 1);
+//        VelocityExpressionFunctionType onebeam_left_boundary("v", "3*exp(3*v[0]+3)/(exp(6)-1)", 10);
+//        VelocityExpressionFunctionType one_minus_v_squared("v", "1-(v[0]^2)", 2);
+//        const typename Dune::GDT::Products::L2< VelocityGridViewType, R > l2_product(*velocity_grid_view_);
+//        for (size_t ii = 0; ii < dimRange; ++ii) {
+//          // Note: this assumes basefunctions_[0] is the constant function with value 1!!
+//          base_integrated_[ii] = l2_product.apply2(basefunctions_[0], basefunctions_[ii]);
+//          onebeam_left_boundary_values_[ii] = l2_product.apply2(onebeam_left_boundary, basefunctions_[ii]);
+//          for (size_t jj = 0; jj < dimRange; ++jj) {
+//            M_[ii][jj] = l2_product.apply2(basefunctions_[jj], basefunctions_[ii]);
+//            const auto v_times_base = DS::Functions::Product< VelocityFunctionType,
+//                                                              CGFunctionType >(v, basefunctions_[jj]);
+//            const auto jacobian_times_one_minus_v_squared
+//                = DS::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
+//                                                                                 basefunction_jacobians[jj]);
+//            D_[ii][jj] = l2_product.apply2(v_times_base, basefunctions_[ii]);
+//            S_[ii][jj] = l2_product.apply2(jacobian_times_one_minus_v_squared, basefunction_jacobians[ii]);
+//          }
+//        }
+//        M_inverse_ = M_;
+//        M_inverse_.invert();
+//        is_calculated_ = true;
+//      }
     } // ... calculate()
 
     static MatrixType M_, D_, S_, M_inverse_;
@@ -431,9 +431,9 @@ protected:
     static std::string filename_;
     static bool exact_legendre_;
     static RangeType onebeam_left_boundary_values_;
-    static std::vector< CGFunctionType > basefunctions_;
-    static std::shared_ptr< const VelocityGridType > velocity_grid_;
-    static std::shared_ptr< const VelocityGridViewType > velocity_grid_view_;
+//    static std::vector< CGFunctionType > basefunctions_;
+//    static std::shared_ptr< const VelocityGridType > velocity_grid_;
+//    static std::shared_ptr< const VelocityGridViewType > velocity_grid_view_;
   };
 
 public:
@@ -598,17 +598,17 @@ template< class E, class D, size_t d, class R, size_t rangeDim >
 typename TwoBeams< E, D, d, R, rangeDim >::RangeType
 TwoBeams< E, D, d, R, rangeDim >::GetData::onebeam_left_boundary_values_(rangeDim);
 
-template< class E, class D, size_t d, class R, size_t rangeDim >
-std::vector< typename TwoBeams< E, D, d, R, rangeDim >::GetData::CGFunctionType >
-TwoBeams< E, D, d, R, rangeDim >::GetData::basefunctions_;
+//template< class E, class D, size_t d, class R, size_t rangeDim >
+//std::vector< typename TwoBeams< E, D, d, R, rangeDim >::GetData::CGFunctionType >
+//TwoBeams< E, D, d, R, rangeDim >::GetData::basefunctions_;
 
-template< class E, class D, size_t d, class R, size_t rangeDim >
-std::shared_ptr< const typename TwoBeams< E, D, d, R, rangeDim >::GetData::VelocityGridViewType >
-TwoBeams< E, D, d, R, rangeDim >::GetData::velocity_grid_view_;
+//template< class E, class D, size_t d, class R, size_t rangeDim >
+//std::shared_ptr< const typename TwoBeams< E, D, d, R, rangeDim >::GetData::VelocityGridViewType >
+//TwoBeams< E, D, d, R, rangeDim >::GetData::velocity_grid_view_;
 
-template< class E, class D, size_t d, class R, size_t rangeDim >
-std::shared_ptr< const typename TwoBeams< E, D, d, R, rangeDim >::GetData::VelocityGridType >
-TwoBeams< E, D, d, R, rangeDim >::GetData::velocity_grid_;
+//template< class E, class D, size_t d, class R, size_t rangeDim >
+//std::shared_ptr< const typename TwoBeams< E, D, d, R, rangeDim >::GetData::VelocityGridType >
+//TwoBeams< E, D, d, R, rangeDim >::GetData::velocity_grid_;
 
 } // namespace Problems
 } // namespace Hyperbolic
