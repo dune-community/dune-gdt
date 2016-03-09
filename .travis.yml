@@ -61,7 +61,7 @@ before_script:
 script:
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS}
     # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
-    - travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/*/test/
+    - travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/
 
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck
 
