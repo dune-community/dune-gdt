@@ -271,7 +271,7 @@ public:
 
   virtual std::string identifier() const override
   {
-    return "SWIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::toString(polOrder);
+    return "SWIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::to_string(polOrder);
   }
 
   virtual size_t num_refinements() const override
