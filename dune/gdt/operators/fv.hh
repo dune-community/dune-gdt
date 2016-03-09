@@ -358,7 +358,7 @@ private:
   void initialize(const internal::InitializerChooser<false>&)
   {
     if (use_linear_reconstruction_) {
-      assert(false && "Linear reconstruction is only implemented in 1D!");
+      DUNE_THROW(Dune::NotImplemented, "Linear reconstruction is only implemented in 1D!");
     }
   }
 
