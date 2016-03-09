@@ -244,7 +244,7 @@ public:
 
   virtual std::string identifier() const override final
   {
-    return "SIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::toString(polOrder);
+    return "SIP discontinuous galerkin discretization, polOrder " + Dune::Stuff::Common::to_string(polOrder);
   }
 
   virtual size_t num_refinements() const override final
