@@ -228,8 +228,10 @@ private:
     EntitySearch entity_search(source.space().grid_view());
     // walk the grid
     RangeType source_value(0);
-    for (auto&& entity : elements(grid_view_)) {
-      auto local_range = range.local_discrete_function(entity);
+    const auto entity_it_end = grid_view_.template end<0>();
+    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+      const auto& entity = *entity_it;
+      auto local_range   = range.local_discrete_function(entity);
       // get global quadrature points
       std::vector<DomainType> quadrature_points(1, entity.geometry().center());
       // get source entities
@@ -237,9 +239,9 @@ private:
       assert(source_entity_ptr_unique_ptrs.size() >= 1);
       const auto& source_entity_unique_ptr = source_entity_ptr_unique_ptrs[0];
       if (source_entity_unique_ptr) {
-        const auto source_entity = *source_entity_unique_ptr;
-        const auto local_source = source.local_function(source_entity);
-        local_source->evaluate(source_entity.geometry().local(entity.geometry().center()), source_value);
+        const auto source_entity_ptr = *source_entity_unique_ptr;
+        const auto local_source = source.local_function(*source_entity_ptr);
+        local_source->evaluate(source_entity_ptr->geometry().local(entity.geometry().center()), source_value);
       } else
         source_value *= 0.0;
       // set local DoFs
