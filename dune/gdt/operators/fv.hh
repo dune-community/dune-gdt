@@ -379,7 +379,7 @@ private:
 
 #else // HAVE_EIGEN
 
-template< class AnalyticalFluxImp, class BoundaryValueFunctionImp >
+template< class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter >
 class AdvectionGodunov
 {
   static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");

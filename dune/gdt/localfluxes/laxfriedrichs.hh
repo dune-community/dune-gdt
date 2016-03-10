@@ -44,6 +44,7 @@ class LaxFriedrichsNumericalDirichletBoundaryFlux;
 template< class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim >
 class LaxFriedrichsNumericalAbsorbingBoundaryFlux;
 
+#if HAVE_EIGEN
 
 namespace internal {
 
@@ -765,6 +766,29 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
 }; // class LaxFriedrichsNumericalAbsorbingBoundaryFlux
+
+
+#else // HAVE_EIGEN
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim >
+class LaxFriedrichsNumericalCouplingFlux
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+template< class AnalyticalFluxImp, class BoundaryValueFunctionType, class LocalizableFunctionImp, size_t domainDim >
+class LaxFriedrichsNumericalDirichletBoundaryFlux
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+template< class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim >
+class LaxFriedrichsNumericalAbsorbingBoundaryFlux
+{
+  static_assert(AlwaysFalse< AnalyticalFluxImp >::value, "You are missing eigen!");
+};
+
+#endif // HAVE_EIGEN
 
 
 } // namespace GDT
