@@ -227,7 +227,7 @@ public:
   template <class SourceType, class RangeSpaceType, class VectorType>
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
-    const auto entity              = local_range.entity();
+    const auto& entity             = local_range.entity();
     const auto local_source_entity = source.local_function(entity);
     const auto x_local             = entity.geometry().local(entity.geometry().center());
     const auto u                   = local_source_entity->evaluate(x_local);
@@ -265,7 +265,7 @@ public:
   template <class SourceType, class RangeSpaceType, class VectorType>
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
-    const auto entity     = local_range.entity();
+    const auto& entity    = local_range.entity();
     const auto& grid_view = local_range.space().grid_view();
     // get reconstruction vector and mapper
     auto& reconstruction_vector       = local_range.vector();
