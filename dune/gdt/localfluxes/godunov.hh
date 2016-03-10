@@ -328,11 +328,11 @@ public:
     if (n_ij > 0) {
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_function_.evaluate(u_j - u_i, negative_waves);
-      ret = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
+      ret = f_u_i + negative_waves;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_function_.evaluate(u_i - u_j, positive_waves);
-      ret = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
+      ret = positive_waves - f_u_i;
     }
 #endif
     return ret;
@@ -684,11 +684,11 @@ public:
       if (n_ij > 0) {
         RangeType negative_waves(RangeFieldType(0));
         jacobian_neg_function_.evaluate(u_j - u_i, negative_waves);
-        ret = Dune::DynamicVector< RangeFieldType >(f_u_i + negative_waves);
+        ret = f_u_i + negative_waves;
       } else {
         RangeType positive_waves(RangeFieldType(0));
         jacobian_pos_function_.evaluate(u_i - u_j, positive_waves);
-        ret = Dune::DynamicVector< RangeFieldType >(positive_waves - f_u_i);
+        ret = positive_waves - f_u_i;
       }
 #endif
       return ret;
