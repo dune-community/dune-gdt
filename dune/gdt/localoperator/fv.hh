@@ -157,13 +157,13 @@ public:
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
   {
-    const auto entity                         = intersection.inside();
-    const auto neighbor                       = intersection.outside();
-    const auto local_source_entity            = source.local_function(entity);
-    const auto local_source_neighbor          = source.local_function(neighbor);
+    const auto entity_ptr                     = intersection.inside();
+    const auto neighbor_ptr                   = intersection.outside();
+    const auto local_source_entity            = source.local_function(*entity_ptr);
+    const auto local_source_neighbor          = source.local_function(*neighbor_ptr);
     const auto geometry_intersection          = intersection.geometry();
-    const auto local_functions_tuple_entity   = numerical_flux_.local_functions(entity);
-    const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(neighbor);
+    const auto local_functions_tuple_entity   = numerical_flux_.local_functions(*entity_ptr);
+    const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(*neighbor_ptr);
     const DSC::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
                            LocalDiscreteFunction<SpaceType, VectorType>::dimRange> result =
         numerical_flux_.evaluate(local_functions_tuple_entity,
@@ -172,8 +172,8 @@ public:
                                  *local_source_neighbor,
                                  intersection,
                                  geometry_intersection.local(geometry_intersection.center()));
-    local_range_entity.vector().add(result * (1.0 / entity.geometry().volume()));
-    local_range_neighbor.vector().add(result * (-1.0 / neighbor.geometry().volume()));
+    local_range_entity.vector().add(result * (1.0 / entity_ptr->geometry().volume()));
+    local_range_neighbor.vector().add(result * (-1.0 / neighbor_ptr->geometry().volume()));
   }
 
 private:
@@ -196,15 +196,15 @@ public:
   void apply(const SourceType& source, const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
   {
-    const auto entity                = intersection.inside();
-    const auto local_source_entity   = source.local_function(entity);
+    const auto entity_ptr            = intersection.inside();
+    const auto local_source_entity   = source.local_function(*entity_ptr);
     const auto geometry_intersection = intersection.geometry();
-    const auto local_functions_tuple = numerical_flux_.local_functions(entity);
+    const auto local_functions_tuple = numerical_flux_.local_functions(*entity_ptr);
     auto result                      = numerical_flux_.evaluate(local_functions_tuple,
                                            *local_source_entity,
                                            intersection,
                                            geometry_intersection.local(geometry_intersection.center()));
-    result /= entity.geometry().volume();
+    result /= entity_ptr->geometry().volume();
     local_range_entity.vector().add(result);
   }
 
@@ -279,13 +279,15 @@ public:
     for (auto i_it = grid_view.ibegin(entity); i_it != i_it_end; ++i_it) {
       const auto& intersection = *i_it;
       if (intersection.neighbor()) {
-        const auto neighbor        = intersection.outside();
-        const auto neighbor_center = neighbor.geometry().center();
+        const auto neighbor_ptr    = intersection.outside();
+        const auto neighbor_center = neighbor_ptr->geometry().center();
         const bool boundary = intersection.boundary();
         if ((neighbor_center[0] < entity_center[0] && !boundary) || (neighbor_center[0] > entity_center[0] && boundary))
-          u_left = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
+          u_left =
+              source.local_discrete_function(*neighbor_ptr)->evaluate(neighbor_ptr->geometry().local(neighbor_center));
         else
-          u_right = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
+          u_right =
+              source.local_discrete_function(*neighbor_ptr)->evaluate(neighbor_ptr->geometry().local(neighbor_center));
       } else {
         if (intersection.geometry().center()[0] < entity_center[0])
           u_left = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
