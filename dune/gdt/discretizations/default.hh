@@ -237,6 +237,7 @@ public:
 
   void solve(DiscreteSolutionType& solution, const bool is_linear) const
   {
+#if HAVE_EIGEN
     try {
       // set dimensions
       static const size_t dimDomain = ProblemType::dimDomain;
@@ -301,6 +302,9 @@ public:
       std::cerr << "Dune reported: " << e.what() << std::endl;
       std::abort();
     }
+#else // HAVE_EIGEN
+    static_assert(AlwaysFalse<DiscreteSolutionType>::value, "You are missing eigen!");
+#endif // HAVE_EIGEN
   }
 
   /// \}
