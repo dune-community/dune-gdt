@@ -51,8 +51,8 @@ namespace internal {
 template< class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain >
 class GodunovNumericalCouplingFluxTraits
 {
-//  static_assert(std::is_base_of< Dune::GDT::IsAnalyticalFlux, AnalyticalFluxImp >::value, // <- should be implemented as is_analytical_flux< AnalyticalFluxImp >::value
-//                "AnalyticalFluxImp has to be derived from GDT::IsAnalyticalFlux.");
+  static_assert(is_analytical_flux< AnalyticalFluxImp >::value,
+                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface");
 public:
   typedef AnalyticalFluxImp                            AnalyticalFluxType;
   typedef GodunovNumericalCouplingFlux< AnalyticalFluxType, domainDim >               derived_type;
