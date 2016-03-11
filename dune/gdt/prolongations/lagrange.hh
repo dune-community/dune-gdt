@@ -18,6 +18,26 @@ namespace Dune {
 namespace GDT {
 
 
+// forward
+template< class GridViewImp, class FieldImp = double >
+class LagrangeProlongationOperator;
+
+
+namespace internal {
+
+
+template< class GridViewImp, class FieldImp >
+class LagrangeProlongationOperatorTraits
+{
+public:
+  typedef LagrangeProlongationOperator< GridViewImp, FieldImp > derived_type;
+  typedef FieldImp                                             FieldType;
+};
+
+
+} // namespace internal
+
+
 /**
  * \brief Carries out a prolongation (in a localized manner) using a lagrange projection.
  *
@@ -92,6 +112,89 @@ make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction< Sou
                                                                                                        source,
                                                                                                        range);
 } // ... make_lagrange_prolongation_localizable_operator(...)
+
+
+template< class GridViewImp, class FieldImp >
+class LagrangeProlongationOperator
+  : public OperatorInterface< internal::LagrangeProlongationOperatorTraits< GridViewImp, FieldImp > >
+{
+  typedef OperatorInterface< internal::LagrangeProlongationOperatorTraits< GridViewImp, FieldImp > > BaseType;
+public:
+  typedef internal::LagrangeProlongationOperatorTraits< GridViewImp, FieldImp > Traits;
+  typedef GridViewImp GridViewType;
+  using typename BaseType::FieldType;
+private:
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type E;
+  typedef typename GridViewType::ctype D;
+  static const size_t d = GridViewType::dimension;
+
+public:
+  LagrangeProlongationOperator(GridViewType grid_view)
+    : grid_view_(grid_view)
+  {}
+
+  template< class SS, class SV, class RS, class RV >
+  void apply(const ConstDiscreteFunction< SS, SV >& source, DiscreteFunction< RS, RV >& range) const
+  {
+    LagrangeProlongationLocalizableOperator< GridViewType, ConstDiscreteFunction< SS, SV >, DiscreteFunction< RS, RV > >
+        op(grid_view_, source, range);
+    op.apply();
+  }
+
+  template< class RangeType, class SourceType >
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  template< class RangeType, class SourceType >
+  void apply_inverse(const RangeType& /*range*/,
+                     SourceType& /*source*/,
+                     const Stuff::Common::Configuration& /*opts*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  std::vector< std::string > invert_options() const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+private:
+  GridViewType grid_view_;
+}; // class LagrangeProlongationOperator
+
+
+template< class GridViewType >
+    typename std::enable_if< Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< LagrangeProlongationOperator< GridViewType > >
+                           >::type
+make_lagrange_prolongation_operator(const GridViewType& grid_view)
+{
+  return DSC::make_unique< LagrangeProlongationOperator< GridViewType > >(grid_view);
+}
+
+
+template< class GridViewType, class SS, class SV, class RS, class RV >
+    typename std::enable_if< Stuff::Grid::is_grid_layer< GridViewType >::value, void >::type
+prolong_lagrange(const GridViewType& grid_view,
+                 const ConstDiscreteFunction< SS, SV >& source,
+                 DiscreteFunction< RS, RV >& range)
+{
+  make_lagrange_prolongation_operator(grid_view)->apply(source, range);
+}
+
+template< class SS, class SV, class RS, class RV >
+void prolong_lagrange(const ConstDiscreteFunction< SS, SV >& source,
+                      DiscreteFunction< RS, RV >& range)
+{
+  make_lagrange_prolongation_operator(range.space().grid_view())->apply(source, range);
+}
 
 
 } // namespace GDT
