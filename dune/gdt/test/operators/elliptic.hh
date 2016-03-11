@@ -46,22 +46,22 @@ struct EllipticProductBase
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const = 0;
 
-  void correct_for_constant_arguments() const
+  void correct_for_constant_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(constant_gradient_), factor_value_*dimDomain*1.0, 4.27e-14);
+    check(compute(constant_gradient_), factor_value_*dimDomain*1.0, epsilon);
   }
 
-  void correct_for_linear_arguments() const
+  void correct_for_linear_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(linear_gradient_), factor_value_*dimDomain*(1.0/3.0), 1.43e-14);
+    check(compute(linear_gradient_), factor_value_*dimDomain*(1.0/3.0), epsilon);
   }
 
-  void correct_for_quadratic_arguments() const
+  void correct_for_quadratic_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(quadratic_gradient_), factor_value_*dimDomain*(1.0/5.0));
+    check(compute(quadratic_gradient_), factor_value_*dimDomain*(1.0/5.0), epsilon);
   }
 
-  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 1e-14) const
+  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon) const
   {
     const auto error = std::abs(expected - result);
     EXPECT_LE(error, epsilon)

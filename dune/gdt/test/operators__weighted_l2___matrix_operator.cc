@@ -50,12 +50,13 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, is_matrix_operator) {
   this->is_matrix_operator();
 }
 TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_constant_arguments) {
-  this->correct_for_constant_arguments();
+  this->correct_for_constant_arguments(this->dimDomain == 1 ? 1.43e-14
+                                                            : (this->dimDomain == 2 ? 7.11e-15 : 2.85e-14));
 }
 
 #if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
 TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_linear_arguments) {
-  this->correct_for_linear_arguments();
+  this->correct_for_linear_arguments(this->dimDomain == 3 ? 2.49e-14 : 1e-15);
 }
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_linear_arguments) {
@@ -65,7 +66,7 @@ TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_linear_arguments) {
 
 #if HAVE_DUNE_FEM
 TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments) {
-  this->correct_for_quadratic_arguments();
+  this->correct_for_quadratic_arguments(this->dimDomain == 3 ? 5.33e-15 : 1e-15);
 }
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments) {
