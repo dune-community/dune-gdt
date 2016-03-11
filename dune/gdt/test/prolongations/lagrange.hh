@@ -49,6 +49,45 @@ struct LagrangeProlongationLocalizableOperatorTest
 };
 
 
+template <class SpaceType>
+struct LagrangeProlongationOperatorTest
+    : public ProlongationOperatorBase<SpaceType, SpaceType, LagrangeProlongationOperator>
+{
+  typedef ProlongationOperatorBase<SpaceType, SpaceType, LagrangeProlongationOperator> BaseType;
+  using typename BaseType::ProlongationOperatorType;
+
+  void constructible_by_ctor(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view = this->fine_space_.grid_view();
+
+    ProlongationOperatorType DUNE_UNUSED(op)(grid_view);
+  } // ... constructible_by_ctor(...)
+
+  void constructible_by_factory(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view = this->fine_space_.grid_view();
+
+    auto DUNE_UNUSED(op) = make_lagrange_prolongation_operator(grid_view);
+  } // ... constructible_by_factory(...)
+
+  void free_function_callable(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view     = this->fine_space_.grid_view();
+    const auto& source = this->coarse_discrete_function_;
+    auto& range        = this->fine_discrete_function_;
+
+    prolong_lagrange(grid_view, source, range);
+    prolong_lagrange(source, range);
+  } // ... free_function_callable(...)
+};
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
