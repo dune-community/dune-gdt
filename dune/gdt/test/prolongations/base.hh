@@ -21,32 +21,26 @@ namespace Test {
 namespace internal {
 
 template <class GridType>
-struct LocalizableProlongationOperatorBase
+struct ProlongationOperatorsBaseGridHolder
 {
   typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
 
-  LocalizableProlongationOperatorBase()
+  ProlongationOperatorsBaseGridHolder()
     : grid_provider_(0.0, 1.0, 2u)
   {
     grid_provider_.grid().globalRefine(1);
   }
 
   GridProviderType grid_provider_;
-}; // struct LocalizableProlongationOperatorBase
+}; // struct ProlongationOperatorsBaseGridHolder
 
 
-} // namespace internal
-
-
-/**
- * \note Assumes that project and Products::L2 does the right thing.
- */
-template <class CoarseSpaceType, class FineSpaceType, template <class, class, class> class ProlongationOperatorImp>
-struct LocalizableProlongationOperatorBase
+template <class CoarseSpaceType, class FineSpaceType>
+struct ProlongationOperatorsBase
     : public ::testing::Test,
-      public internal::LocalizableProlongationOperatorBase<typename FineSpaceType::GridViewType::Grid>
+      public ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridViewType::Grid>
 {
-  typedef internal::LocalizableProlongationOperatorBase<typename FineSpaceType::GridViewType::Grid> BaseType;
+  typedef ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridViewType::Grid> BaseType;
   typedef typename FineSpaceType::GridViewType GridViewType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename FineSpaceType::DomainFieldType DomainFieldType;
@@ -59,10 +53,8 @@ struct LocalizableProlongationOperatorBase
   typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;
   typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;
   typedef Dune::GDT::DiscreteFunction<FineSpaceType, VectorType> FineDiscreteFunctionType;
-  typedef ProlongationOperatorImp<GridViewType, CoarseDiscreteFunctionType, FineDiscreteFunctionType>
-      ProlongationOperatorType;
 
-  LocalizableProlongationOperatorBase()
+  ProlongationOperatorsBase()
     : function_("x", "x[0]", 1, "function")
     , coarse_space_(grid_provider_.template level<CoarseSpaceType::part_view_type>(0))
     , fine_space_(grid_provider_.template level<FineSpaceType::part_view_type>(grid_provider_.grid().maxLevel()))
@@ -93,11 +85,11 @@ struct LocalizableProlongationOperatorBase
   void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
   {
     prepare(tolerance);
-    ProlongationOperatorType(fine_space_.grid_view(), coarse_discrete_function_, fine_discrete_function_).apply();
+    ProlongationOperatorType(fine_space_.grid_view()).apply(coarse_discrete_function_, fine_discrete_function_);
     const auto fine_l2_error =
         make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
-  } // ... (produces_correct_results(...)
+  } // ... produces_correct_results(...)
 
   using BaseType::grid_provider_;
 
@@ -107,7 +99,74 @@ struct LocalizableProlongationOperatorBase
   CoarseDiscreteFunctionType coarse_discrete_function_;
   FineDiscreteFunctionType fine_discrete_function_;
   bool prepared_;
+}; // ProlongationOperatorsBase
+
+
+} // namespace internal
+
+
+/**
+ * \note Assumes that project and Products::L2 does the right thing.
+ */
+template <class CoarseSpaceType, class FineSpaceType, template <class, class, class> class ProlongationOperatorImp>
+struct LocalizableProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
+{
+  typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::CoarseDiscreteFunctionType;
+  using typename BaseType::FineDiscreteFunctionType;
+  using typename BaseType::RangeFieldType;
+  typedef ProlongationOperatorImp<GridViewType, CoarseDiscreteFunctionType, FineDiscreteFunctionType>
+      ProlongationOperatorType;
+
+  using BaseType::prepare;
+
+  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  {
+    prepare(tolerance);
+    ProlongationOperatorType(fine_space_.grid_view(), coarse_discrete_function_, fine_discrete_function_).apply();
+    const auto fine_l2_error =
+        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+    EXPECT_LE(fine_l2_error, tolerance);
+  } // ... produces_correct_results(...)
+
+  using BaseType::function_;
+  using BaseType::fine_space_;
+  using BaseType::coarse_discrete_function_;
+  using BaseType::fine_discrete_function_;
 }; // LocalizableProlongationOperatorBase
+
+
+/**
+ * \note Assumes that project and Products::L2 does the right thing.
+ */
+template <class CoarseSpaceType, class FineSpaceType, template <class, class> class ProlongationOperatorImp>
+struct ProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
+{
+  typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::CoarseDiscreteFunctionType;
+  using typename BaseType::FineDiscreteFunctionType;
+  using typename BaseType::RangeFieldType;
+  typedef ProlongationOperatorImp<GridViewType, RangeFieldType> ProlongationOperatorType;
+
+  using BaseType::prepare;
+
+  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  {
+    prepare(tolerance);
+    ProlongationOperatorType op(fine_space_.grid_view());
+    op.apply(coarse_discrete_function_, fine_discrete_function_);
+    const auto fine_l2_error =
+        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+    EXPECT_LE(fine_l2_error, tolerance);
+  } // ... produces_correct_results(...)
+
+  using BaseType::function_;
+  using BaseType::fine_space_;
+  using BaseType::coarse_discrete_function_;
+  using BaseType::fine_discrete_function_;
+}; // ProlongationOperatorBase
 
 
 } // namespace Test
