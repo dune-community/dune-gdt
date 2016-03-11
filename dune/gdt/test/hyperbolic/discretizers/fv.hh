@@ -18,7 +18,7 @@
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/l2.hh>
-#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/playground/operators/elliptic-cg.hh>
 #include <dune/gdt/spaces/fv/defaultproduct.hh>
 #include <dune/gdt/spaces/constraints.hh>
