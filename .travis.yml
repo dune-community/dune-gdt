@@ -110,6 +110,14 @@ matrix:
 #    - os: linux
 #      compiler: gcc
 #      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=prolongation BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=projection BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
 #      env: CC=gcc-4.9 TESTS=space BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
@@ -143,6 +151,14 @@ matrix:
     - os: linux
       compiler: gcc
       addons:  *gcc5
+      env: CC=gcc-5 TESTS=prolongation BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=projection BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
       env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
     - os: linux
       compiler: gcc
@@ -173,6 +189,14 @@ matrix:
           - *commonpackages
           - ['clang-3.7']
       env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=prolongation BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=projection BLD=${DBG} CXX=clang++-3.7
     - os: linux
       compiler: clang
       addons:  *clang37
