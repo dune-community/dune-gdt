@@ -48,22 +48,22 @@ struct WeightedL2ProductBase
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const = 0;
 
-  void correct_for_constant_arguments() const
+  void correct_for_constant_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(constant_), weight_value_ * 1.0);
+    check(compute(constant_), weight_value_ * 1.0, epsilon);
   }
 
-  void correct_for_linear_arguments() const
+  void correct_for_linear_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(linear_), weight_value_ * (1.0 / 3.0));
+    check(compute(linear_), weight_value_ * (1.0 / 3.0), epsilon);
   }
 
-  void correct_for_quadratic_arguments() const
+  void correct_for_quadratic_arguments(const RangeFieldType epsilon = 1e-15) const
   {
-    check(compute(quadratic_), weight_value_ * (1.0 / 5.0));
+    check(compute(quadratic_), weight_value_ * (1.0 / 5.0), epsilon);
   }
 
-  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon = 2.5e-14) const
+  void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon) const
   {
     const auto error = std::abs(expected - result);
     EXPECT_LE(error, epsilon) << "result:     " << result << "\n"
@@ -89,6 +89,7 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
   using typename WeightedL2BaseType::ExpressionFunctionType;
   using typename LocalizableBaseType::ScalarFunctionType;
   using typename LocalizableBaseType::RangeFieldType;
+  using WeightedL2BaseType::dimDomain;
 
   void constructible_by_ctor()
   {
@@ -160,6 +161,7 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
   using typename MatrixBaseType::ScalarFunctionType;
   using typename MatrixBaseType::RangeFieldType;
   using typename MatrixBaseType::MatrixType;
+  using WeightedL2BaseType::dimDomain;
 
   void constructible_by_ctor()
   {
@@ -289,6 +291,7 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
   using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::MatrixType;
   using typename OperatorBaseType::VectorType;
+  using WeightedL2BaseType::dimDomain;
 
   void constructible_by_ctor()
   {
