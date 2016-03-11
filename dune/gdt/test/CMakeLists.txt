@@ -31,6 +31,9 @@ foreach (test ${testnames})
   if (${test} MATCHES linearelliptic AND ${test} MATCHES sgrid)
     list(APPEND linearelliptic_sgrid_test_binaries ${test})
   endif (${test})
+  if (${test} MATCHES hyperbolic AND ${test} MATCHES yaspgrid)
+    list(APPEND hyperbolic_yaspgrid_test_binaries ${test})
+  endif (${test})
 endforeach (test ${testnames})
 
 add_custom_target(test_binaries_space DEPENDS ${spaces_test_binaries})
@@ -39,6 +42,7 @@ add_custom_target(test_binaries_projection DEPENDS ${projections_test_binaries})
 add_custom_target(test_binaries_prolongation DEPENDS ${prolongations_test_binaries})
 add_custom_target(test_binaries_linearelliptic_cg_discretization_alugrid DEPENDS ${linearelliptic_alugrid_test_binaries})
 add_custom_target(test_binaries_linearelliptic_cg_discretization_sgrid DEPENDS ${linearelliptic_sgrid_test_binaries})
+add_custom_target(test_binaries_hyperbolic_fv_discretization_yaspgrid DEPENDS ${hyperbolic_yaspgrid_test_binaries})
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
