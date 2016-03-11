@@ -8,8 +8,8 @@
 
 #include <dune/stuff/common/memory.hh>
 
-#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/projections/l2-local.hh>
 
@@ -28,6 +28,8 @@ class L2LocalProlongationLocalizableOperator
     : Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
       public L2LocalProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
 {
+  static_assert(is_const_discrete_function<SourceImp>::value, "");
+  static_assert(is_discrete_function<RangeImp>::value, "");
   typedef Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>> SourceStorage;
   typedef L2LocalProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
       BaseOperatorType;
@@ -39,7 +41,7 @@ public:
 
   L2LocalProlongationLocalizableOperator(const size_t over_integrate, GridViewType grd_vw, const SourceType& src,
                                          RangeType& rng)
-    : SourceStorage(new ReinterpretDiscreteFunction<SourceType>(src))
+    : SourceStorage(new ReinterpretDiscreteFunction<SourceImp>(src))
     , BaseOperatorType(over_integrate, grd_vw, SourceStorage::access(), rng)
   {
   }
@@ -65,36 +67,43 @@ public:
 }; // class L2LocalProlongationLocalizableOperator
 
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProlongationLocalizableOperator<GridViewType, SourceType,
-                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_local_l2_prolongation_localizable_operator(const GridViewType& grid_view, const SourceType& source,
-                                                    DiscreteFunction<SpaceType, VectorType>& range,
-                                                    const size_t over_integrate = 0)
+template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
+          class RangeVectorType>
+typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_space<SourceSpaceType>::value
+                            && Stuff::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
+                            && Stuff::LA::is_vector<RangeVectorType>::value,
+                        std::unique_ptr<L2LocalProlongationLocalizableOperator<GridViewType,
+                                                                               ConstDiscreteFunction<SourceSpaceType,
+                                                                                                     SourceVectorType>,
+                                                                               DiscreteFunction<RangeSpaceType,
+                                                                                                RangeVectorType>>>>::
+    type
+    make_local_l2_prolongation_localizable_operator(
+        const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+        DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProlongationLocalizableOperator<GridViewType,
-                                                                 SourceType,
-                                                                 DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, grid_view, source, range);
+  return DSC::
+      make_unique<L2LocalProlongationLocalizableOperator<GridViewType,
+                                                         ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                         DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+          over_integrate, grid_view, source, range);
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
-template <class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                  && Stuff::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProlongationLocalizableOperator<typename SpaceType::GridViewType, SourceType,
-                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_local_l2_prolongation_localizable_operator(const SourceType& source,
-                                                    DiscreteFunction<SpaceType, VectorType>& range,
-                                                    const size_t over_integrate = 0)
+template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
+typename std::enable_if<is_space<SourceSpaceType>::value && Stuff::LA::is_vector<SourceVectorType>::value
+                            && is_space<RangeSpaceType>::value && Stuff::LA::is_vector<RangeVectorType>::value,
+                        std::unique_ptr<L2LocalProlongationLocalizableOperator<
+                            typename RangeSpaceType::GridViewType,
+                            ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                            DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
+make_local_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+                                                DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+                                                const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProlongationLocalizableOperator<typename SpaceType::GridViewType,
-                                                                 SourceType,
-                                                                 DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, range.space().grid_view(), source, range);
+  return DSC::make_unique<L2LocalProlongationLocalizableOperator<
+      typename RangeSpaceType::GridViewType,
+      ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_view(), source, range);
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
 
