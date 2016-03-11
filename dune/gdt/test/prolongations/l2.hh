@@ -52,6 +52,49 @@ struct L2ProlongationLocalizableOperatorTest
 };
 
 
+template< class SpaceType >
+struct L2ProlongationOperatorTest
+  : public ProlongationOperatorBase< SpaceType, SpaceType, L2ProlongationOperator >
+{
+  typedef ProlongationOperatorBase< SpaceType, SpaceType, L2ProlongationOperator > BaseType;
+  using typename BaseType::ProlongationOperatorType;
+
+  void constructible_by_ctor(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view = this->fine_space_.grid_view();
+    const auto& source = this->coarse_discrete_function_;
+    auto& range = this->fine_discrete_function_;
+
+    ProlongationOperatorType DUNE_UNUSED(w_over_integrate)(0, grid_view);
+    ProlongationOperatorType DUNE_UNUSED(wo_over_integrate)(  grid_view);
+  } // ... constructible_by_ctor(...)
+
+  void constructible_by_factory(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view = this->fine_space_.grid_view();
+
+    auto DUNE_UNUSED(w_over_integrate)  = make_l2_prolongation_operator(grid_view, 1);
+    auto DUNE_UNUSED(wo_over_integrate) = make_l2_prolongation_operator(grid_view);
+  } // ... constructible_by_factory(...)
+
+  void free_function_callable(const double tolerance = 1e-15)
+  {
+    this->prepare(tolerance);
+
+    auto grid_view = this->fine_space_.grid_view();
+    const auto& source = this->coarse_discrete_function_;
+    auto& range = this->fine_discrete_function_;
+
+    prolong_l2(grid_view, source, range);
+    prolong_l2(source, range);
+  } // ... free_function_callable(...)
+};
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
