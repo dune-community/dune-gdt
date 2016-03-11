@@ -17,6 +17,26 @@ namespace Dune {
 namespace GDT {
 
 
+// forward
+template< class GridViewImp, class FieldImp = double >
+class L2LocalProlongationOperator;
+
+
+namespace internal {
+
+
+template< class GridViewImp, class FieldImp >
+class L2LocalProlongationOperatorTraits
+{
+public:
+  typedef L2LocalProlongationOperator< GridViewImp, FieldImp > derived_type;
+  typedef FieldImp                                             FieldType;
+};
+
+
+} // namespace internal
+
+
 /**
  * \brief Carries out a prolongation (in a localized manner) using a local L2 projection.
  *
@@ -114,6 +134,80 @@ make_local_l2_prolongation_localizable_operator(const ConstDiscreteFunction< Sou
                                                                                                       source,
                                                                                                       range);
 } // ... make_local_l2_prolongation_localizable_operator(...)
+
+
+template< class GridViewImp, class FieldImp >
+class L2LocalProlongationOperator
+  : public OperatorInterface< internal::L2LocalProlongationOperatorTraits< GridViewImp, FieldImp > >
+{
+  typedef OperatorInterface< internal::L2LocalProlongationOperatorTraits< GridViewImp, FieldImp > > BaseType;
+public:
+  typedef internal::L2LocalProlongationOperatorTraits< GridViewImp, FieldImp > Traits;
+  typedef GridViewImp GridViewType;
+  using typename BaseType::FieldType;
+private:
+  typedef typename Stuff::Grid::Entity< GridViewType >::Type E;
+  typedef typename GridViewType::ctype D;
+  static const size_t d = GridViewType::dimension;
+
+public:
+  L2LocalProlongationOperator(const size_t over_integrate, GridViewType grid_view)
+    : grid_view_(grid_view)
+    , over_integrate_(over_integrate)
+  {}
+
+  L2LocalProlongationOperator(GridViewType grid_view)
+    : grid_view_(grid_view)
+    , over_integrate_(0)
+  {}
+
+  template< class SS, class SV, class RS, class RV >
+  void apply(const ConstDiscreteFunction< SS, SV >& source,
+             DiscreteFunction< RS, RV >& range) const
+  {
+    L2LocalProlongationLocalizableOperator< GridViewType, ConstDiscreteFunction< SS, SV >, DiscreteFunction< RS, RV > >
+        op(over_integrate_, grid_view_, source, range);
+    op.apply();
+  }
+
+  template< class RangeType, class SourceType >
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  template< class RangeType, class SourceType >
+  void apply_inverse(const RangeType& /*range*/,
+                     SourceType& /*source*/,
+                     const Stuff::Common::Configuration& /*opts*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  std::vector< std::string > invert_options() const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  {
+    DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
+  }
+
+private:
+  GridViewType grid_view_;
+  const size_t over_integrate_;
+}; // class L2LocalProlongationOperator
+
+
+template< class GridViewType >
+    typename std::enable_if< Stuff::Grid::is_grid_layer< GridViewType >::value
+                           , std::unique_ptr< L2LocalProlongationOperator< GridViewType > >
+                           >::type
+make_local_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
+{
+  return DSC::make_unique< L2LocalProlongationOperator< GridViewType > >(over_integrate, grid_view);
+}
 
 
 } // namespace GDT
