@@ -88,7 +88,9 @@ struct L2ProlongationOperatorTest : public ProlongationOperatorBase<SpaceType, S
     const auto& source = this->coarse_discrete_function_;
     auto& range        = this->fine_discrete_function_;
 
+    prolong_l2(grid_view, source, range, 1);
     prolong_l2(grid_view, source, range);
+    prolong_l2(source, range, 1);
     prolong_l2(source, range);
   } // ... free_function_callable(...)
 };
