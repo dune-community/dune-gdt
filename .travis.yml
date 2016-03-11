@@ -95,127 +95,101 @@ env:
 
 matrix:
   include:
-    - os: linux
-      compiler: gcc
-      addons: &gcc49
-        apt:
-          sources:
-          - *commonsources
-          - 'ubuntu-toolchain-r-test'
-          packages:
-          - *commonpackages
-          - ['g++-4.9', 'gcc-4.9']
-      env: BLD=${DBG} CC=gcc-4.9 TESTS=operator CXX=g++-4.9
-    - os: linux
-      compiler: gcc
-      addons:  *gcc49
-      env: BLD=${DBG} CC=gcc-4.9 TESTS=space CXX=g++-4.9
-    - os: linux
-      compiler: gcc
-      addons:  *gcc49
-      env: BLD=${DBG} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-4.9
-    - os: linux
-      compiler: gcc
-      addons:  *gcc49
-      env: BLD=${DBG} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-4.9
-    - os: linux
-      compiler: gcc
-      addons:  *gcc49
-      env: BLD=${DBG} CC=gcc-4.9 TESTS=headercheck CXX=g++-4.9
+#    gcc 4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc49
-#      env: BLD=${REL} CC=gcc-4.9 TESTS=operator CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: BLD=${REL} CC=gcc-4.9 TESTS=space CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: BLD=${REL} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: BLD=${REL} CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-4.9
-#
-#    - os: linux
-#      compiler: gcc
-#      addons: &gcc5
+#      addons: &gcc49
 #        apt:
 #          sources:
 #          - *commonsources
 #          - 'ubuntu-toolchain-r-test'
 #          packages:
 #          - *commonpackages
-#          - ['g++-5', 'gcc-5']
-#      env: BLD=${DBG} CC=gcc-5 TESTS=operator CXX=g++-5
+#          - ['g++-4.9', 'gcc-4.9']
+#      env: CC=gcc-4.9 TESTS=operator BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${DBG} CC=gcc-5 TESTS=space CXX=g++-5
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=space BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${DBG} CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-5
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${DBG} CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-5
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${REL} CC=gcc-5 TESTS=operator CXX=g++-5
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-4.9
 #    - os: linux
 #      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${REL} CC=gcc-5 TESTS=space CXX=g++-5
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${REL} CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid CXX=g++-5
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc5
-#      env: BLD=${REL} CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid CXX=g++-5
-#
-#    - os: linux
-#      compiler: clang
-#      addons: &clang37
-#        apt:
-#          sources:
-#          - *commonsources
-#          - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
-#          packages:
-#          - *commonpackages
-#          - ['clang-3.7']
-#      env: BLD=${DBG} CC=clang-3.7 TESTS=operator CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${DBG} CC=clang-3.7 TESTS=space CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${DBG} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${DBG} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${REL} CC=clang-3.7 TESTS=operator CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${REL} CC=clang-3.7 TESTS=space CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${REL} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid CXX=clang++-3.7
-#    - os: linux
-#      compiler: clang
-#      addons:  *clang37
-#      env: BLD=${REL} CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid CXX=clang++-3.7
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=headercheck BLD=${DBG} CXX=g++-4.9
 
+#   gcc 5
+    - os: linux
+      compiler: gcc
+      addons: &gcc5
+        apt:
+          sources:
+          - *commonsources
+          - 'ubuntu-toolchain-r-test'
+          packages:
+          - *commonpackages
+          - ['g++-5', 'gcc-5']
+      env: CC=gcc-5 TESTS=operator BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
+
+#   clang 3.7
+    - os: linux
+      compiler: clang
+      addons: &clang37
+        apt:
+          sources:
+          - *commonsources
+          - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          packages:
+          - *commonpackages
+          - ['clang-3.7']
+      env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=space BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
