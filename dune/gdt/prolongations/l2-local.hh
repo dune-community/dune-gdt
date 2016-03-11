@@ -162,8 +162,7 @@ public:
   {}
 
   template< class SS, class SV, class RS, class RV >
-  void apply(const ConstDiscreteFunction< SS, SV >& source,
-             DiscreteFunction< RS, RV >& range) const
+  void apply(const ConstDiscreteFunction< SS, SV >& source, DiscreteFunction< RS, RV >& range) const
   {
     L2LocalProlongationLocalizableOperator< GridViewType, ConstDiscreteFunction< SS, SV >, DiscreteFunction< RS, RV > >
         op(over_integrate_, grid_view_, source, range);
