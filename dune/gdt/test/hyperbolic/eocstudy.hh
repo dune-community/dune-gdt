@@ -84,20 +84,22 @@ public:
     if (type == "L1") {
       double norm = 0;
       // walk over time steps
-      for (size_t ii = 0; ii < solution.size(); ++ii) {
+      const auto solution_it_end = solution.end();
+      for (auto solution_it = solution.begin(); solution_it != solution_it_end; ++solution_it) {
         double spatial_integral = 0;
         // walk over all entities, solution is constant on each entity
-        const auto& grid_view = solution[ii].second.space().grid_view();
+        const auto& grid_view = solution_it->second.space().grid_view();
         const auto it_end = grid_view.template end<0>();
         for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
           const auto& entity = *it;
           double value = 0;
-          for (const auto& index : solution[ii].second.space().mapper().globalIndices(entity))
-            value += std::abs(solution[ii].second.vector()[index]);
+          for (const auto& index : solution_it->second.space().mapper().globalIndices(entity))
+            value += std::abs(solution_it->second.vector()[index]);
           spatial_integral += value * entity.geometry().volume();
         }
-        const double dt = (ii == solution.size() - 1) ? solution[ii].first - solution[ii - 1].first
-                                                      : solution[ii + 1].first - solution[ii].first;
+        auto solution_it_copy = solution_it;
+        const double dt = (solution_it == --solution.end()) ? ((*solution_it).first - (*(--solution_it_copy)).first)
+                                                            : ((*(++solution_it_copy)).first - (*solution_it).first);
         norm += dt * spatial_integral;
       }
       return norm;

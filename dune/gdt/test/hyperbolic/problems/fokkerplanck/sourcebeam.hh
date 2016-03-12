@@ -48,7 +48,7 @@ public:
     return BaseType::static_id() + ".sourcebeam";
   }
 
-  std::string type() const
+  std::string type() const override
   {
     return BaseType::type() + ".sourcebeam";
   }

@@ -203,33 +203,36 @@ public:
         current_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       // time prolongation
       DiscreteSolutionType time_prolongated_current_solution_on_level;
-      size_t jj = 0;
-      for (size_t ii = 0; ii < current_solution_->size(); ++ii) {
-        const auto time_ii = current_solution_->operator[](ii).first;
-        const auto time_jj = current_solution_on_level_->operator[](jj).first;
-        time_prolongated_current_solution_on_level.emplace_back(
-            std::make_pair(time_ii, current_solution_on_level_->operator[](jj).second));
-        if (time_jj < time_ii && jj != current_solution_on_level_->size() - 1) {
-          // compute weighted average of the two values (at time jj and jj+1) of current_solution_on_level_
-          const auto time_ii_minus_1 = current_solution_->operator[](ii - 1).first;
-          time_prolongated_current_solution_on_level[ii].second.vector() =
-              (current_solution_on_level_->operator[](jj).second.vector() * (time_jj - time_ii_minus_1)
-               + current_solution_on_level_->operator[](jj + 1).second.vector() * (time_ii - time_jj))
-              * (1.0 / (time_ii - time_ii_minus_1));
-          ++jj;
+      auto current_solution_on_level_it = current_solution_on_level_->begin();
+      typename DiscreteSolutionType::key_type last_time;
+      const auto current_solution_it_end = current_solution_->end();
+      for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
+           ++current_solution_it) {
+        const auto time          = current_solution_it->first;
+        const auto time_on_level = current_solution_on_level_it->first;
+        time_prolongated_current_solution_on_level.insert(std::make_pair(time, current_solution_on_level_it->second));
+        if (time_on_level < time && current_solution_on_level_it != --current_solution_on_level_->end()) {
+          // compute weighted average of the two values of current_solution_on_level_
+          time_prolongated_current_solution_on_level.at(time).vector() =
+              (current_solution_on_level_it->second.vector() * (time_on_level - last_time)
+               + (++current_solution_on_level_it)->second.vector() * (time - time_on_level))
+              * (1.0 / (time - last_time));
         }
+        last_time = time;
       }
       // spatial prolongation
-      for (size_t ii = 0; ii < current_solution_->size(); ++ii)
-        Operators::prolong(time_prolongated_current_solution_on_level[ii].second,
-                           current_solution_->operator[](ii).second);
+      for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
+           ++current_solution_it)
+        Operators::prolong(time_prolongated_current_solution_on_level.at(current_solution_it->first),
+                           (*current_solution_it).second);
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {
-        for (size_t ii = 0; ii < current_solution_->size(); ++ii) {
-          current_solution_->operator[](ii).second.visualize(
-              visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_), DSC::to_string(ii));
-        }
+        size_t counter = 0;
+        for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
+             ++current_solution_it, ++counter)
+          current_solution_it->second.visualize(visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_),
+                                                DSC::to_string(counter));
       }
     }
     return time_to_solution_;
@@ -246,29 +249,21 @@ public:
       compute_reference_solution();
       assert(reference_discretization_);
       // compute error
+      std::unique_ptr<DiscreteSolutionType> difference;
       if (test_case_.provides_exact_solution()) {
         compute_discrete_exact_solution_vector();
         assert(discrete_exact_solution_);
-        std::unique_ptr<DiscreteSolutionType> difference =
-            DSC::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
-        for (size_t ii = 0; ii < difference->size(); ++ii) {
-          assert(DSC::FloatCmp::eq(difference->operator[](ii).first, current_solution_->operator[](ii).first)
-                 && "Time steps must be the same");
-          difference->operator[](ii).second.vector() =
-              difference->operator[](ii).second.vector() - current_solution_->operator[](ii).second.vector();
-        }
-        return compute_norm(*difference, type);
+        difference = DSC::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
       } else {
         assert(reference_solution_);
-        std::unique_ptr<DiscreteSolutionType> difference = DSC::make_unique<DiscreteSolutionType>(*reference_solution_);
-        for (size_t ii = 0; ii < difference->size(); ++ii) {
-          assert(DSC::FloatCmp::eq(difference->operator[](ii).first, current_solution_->operator[](ii).first)
-                 && "Time steps must be the same");
-          difference->operator[](ii).second.vector() =
-              difference->operator[](ii).second.vector() - current_solution_->operator[](ii).second.vector();
-        }
-        return compute_norm(*difference, type);
+        difference = DSC::make_unique<DiscreteSolutionType>(*reference_solution_);
       }
+      for (auto& difference_at_time : *difference) {
+        auto time = difference_at_time.first;
+        assert(current_solution_->count(time) && "Time steps must be the same");
+        difference_at_time.second.vector() = difference_at_time.second.vector() - current_solution_->at(time).vector();
+      }
+      return compute_norm(*difference, type);
     } else {
       assert(current_solution_on_level_);
       return estimate(*current_solution_on_level_, type);
@@ -296,9 +291,13 @@ protected:
           reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
-        for (size_t ii = 0; ii < reference_solution_->size(); ++ii) {
-          reference_solution_->operator[](ii).second.visualize(visualize_prefix_ + "_reference", DSC::to_string(ii));
-        }
+        size_t counter                       = 0;
+        const auto reference_solution_it_end = reference_solution_->end();
+        for (auto reference_solution_it = reference_solution_->begin();
+             reference_solution_it != reference_solution_it_end;
+             ++reference_solution_it, ++counter)
+          reference_solution_it->second.visualize(
+              visualize_prefix_ + "_reference" + DSC::to_string(current_refinement_), DSC::to_string(counter));
       }
     }
   } // ... compute_reference_solution()
@@ -308,21 +307,26 @@ protected:
     if (!discrete_exact_solution_computed_) {
       discrete_exact_solution_ = DSC::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
-      const auto exact_solution = test_case_.exact_solution();
-      for (size_t ii = 0; ii < reference_solution_->size(); ++ii) {
-        const double time                          = reference_solution_->operator[](ii).first;
+      const auto exact_solution                 = test_case_.exact_solution();
+      const auto discrete_exact_solution_it_end = discrete_exact_solution_->end();
+      for (auto discrete_exact_solution_it = discrete_exact_solution_->begin();
+           discrete_exact_solution_it != discrete_exact_solution_it_end;
+           ++discrete_exact_solution_it) {
+        const double time                          = discrete_exact_solution_it->first;
         const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        (*discrete_exact_solution_)
-            .emplace_back(std::make_pair(time,
-                                         DiscreteFunctionType(reference_discretization_->fv_space(),
-                                                              "exact solution at time " + DSC::to_string(time))));
-        project(*discrete_exact_solution_at_time, discrete_exact_solution_->operator[](ii).second);
+        discrete_exact_solution_->insert(
+            std::make_pair(time,
+                           DiscreteFunctionType(reference_discretization_->fv_space(),
+                                                "exact solution at time " + DSC::to_string(time))));
+        project(*discrete_exact_solution_at_time, discrete_exact_solution_->at(time));
       }
       if (!visualize_prefix_.empty()) {
-        for (size_t ii = 0; ii < discrete_exact_solution_->size(); ++ii) {
-          discrete_exact_solution_->operator[](ii)
-              .second.visualize(visualize_prefix_ + "_exact_solution", DSC::to_string(ii));
-        }
+        size_t counter = 0;
+        for (auto discrete_exact_solution_it = discrete_exact_solution_->begin();
+             discrete_exact_solution_it != discrete_exact_solution_it_end;
+             ++discrete_exact_solution_it, ++counter)
+          discrete_exact_solution_it->second.visualize(
+              visualize_prefix_ + "_exact_solution" + DSC::to_string(current_refinement_), DSC::to_string(counter));
       }
       discrete_exact_solution_computed_ = true;
     }
