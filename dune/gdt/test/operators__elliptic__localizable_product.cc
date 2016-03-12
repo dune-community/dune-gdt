@@ -27,11 +27,13 @@ TYPED_TEST(EllipticLocalizableProductTest, is_localizable_product) {
   this->is_localizable_product();
 }
 TYPED_TEST(EllipticLocalizableProductTest, correct_for_constant_arguments) {
-  this->correct_for_constant_arguments();
+  this->correct_for_constant_arguments(this->dimDomain == 3 ? 4.27e-14 : 1e-15);
 }
 TYPED_TEST(EllipticLocalizableProductTest, correct_for_linear_arguments) {
-  this->correct_for_linear_arguments();
+  this->correct_for_linear_arguments(this->dimDomain == 1 ? 3.56e-15
+                                                          : (this->dimDomain == 2 ? 7.11e-15
+                                                                                  : 1.43e-14));
 }
 TYPED_TEST(EllipticLocalizableProductTest, correct_for_quadratic_arguments) {
-  this->correct_for_quadratic_arguments();
+  this->correct_for_quadratic_arguments(this->dimDomain == 1 ? 1e-15 : 3.56e-15);
 }

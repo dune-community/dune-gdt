@@ -90,6 +90,7 @@ struct EllipticLocalizableProductTest
   typedef typename LocalizableBaseType::ScalarFunctionType     ScalarFunctionType;
   typedef typename LocalizableBaseType::TensorFunctionType     TensorFunctionType;
   typedef typename LocalizableBaseType::RangeFieldType RangeFieldType;
+  using EllipticBaseType::dimDomain;
 
   void constructible_by_ctor()
   {
@@ -523,6 +524,7 @@ struct EllipticOperatorTest
   using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::MatrixType;
   using typename OperatorBaseType::VectorType;
+  using EllipticBaseType::dimDomain;
 
   void constructible_by_ctor()
   {
