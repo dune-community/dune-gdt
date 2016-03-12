@@ -61,7 +61,7 @@ public:
   typedef typename FVSpaceType::RangeFieldType                            RangeFieldType;
   typedef typename Dune::Stuff::LA::CommonDenseVector< RangeFieldType >   VectorType;
   typedef DiscreteFunction< FVSpaceType, VectorType >                     DiscreteFunctionType;
-  typedef std::vector< std::pair< double, DiscreteFunctionType > >        DiscreteSolutionType;
+  typedef std::map< double, DiscreteFunctionType, Dune::GDT::TimeStepper::internal::FloatCmpLt > DiscreteSolutionType;
 }; // class NonStationaryDefaultTraits
 
 
@@ -249,7 +249,6 @@ public:
       typedef typename ProblemType::RHSType               RHSType;
       typedef typename ProblemType::InitialValueType      InitialValueType;
       typedef typename ProblemType::BoundaryValueType     BoundaryValueType;
-      typedef typename ProblemType::DomainFieldType       DomainFieldType;
       typedef typename ProblemType::RangeFieldType        RangeFieldType;
       const std::shared_ptr< const AnalyticalFluxType > analytical_flux = problem_.flux();
       const std::shared_ptr< const InitialValueType > initial_values = problem_.initial_values();
@@ -282,7 +281,6 @@ public:
 //      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
 //          < AnalyticalFluxType, BoundaryValueType, ConstantFunctionType > OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionRHS< RHSType > RHSOperatorType;
-      typedef typename Dune::GDT::TimeStepper::RungeKutta< OperatorType, RHSOperatorType, FVFunctionType, double > TimeStepperType;
 
       // create right hand side operator
       RHSOperatorType rhs_operator(*rhs);
@@ -292,13 +290,18 @@ public:
 //      const ConstantFunctionType dx_function(dx);
 //      OperatorType advection_operator(*analytical_flux, *boundary_values, dx_function, dt, is_linear, false);
 
-      //create timestepper
-      TimeStepperType timestepper(advection_operator, rhs_operator, u, dx);
+      // use fractional step method
+      typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< OperatorType, FVFunctionType, double > OperatorTimeStepperType;
+      OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
+      typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< RHSOperatorType, FVFunctionType, double > RHSOperatorTimeStepperType;
+      RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+      typedef typename Dune::GDT::TimeStepper::FractionalStepStepper< OperatorTimeStepperType, RHSOperatorTimeStepperType > TimeStepperType;
+      TimeStepperType timestepper(timestepper_op, timestepper_rhs);
 
       // do the time steps
-      const double saveInterval = t_end/1000 > dt ? t_end/1000 : dt;
+      const size_t num_save_steps = 1000;
       solution.clear();
-      timestepper.solve(t_end, dt, saveInterval, solution);
+      timestepper.solve(t_end, dt, num_save_steps, solution);
 
     } catch (Dune::Exception& e) {
       std::cerr << "Dune reported: " << e.what() << std::endl;

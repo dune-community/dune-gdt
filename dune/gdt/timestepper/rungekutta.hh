@@ -16,15 +16,47 @@
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/la/container.hh>
 
+#include "interface.hh"
+
 
 namespace Dune {
 namespace GDT {
 namespace TimeStepper {
 
-enum class RungeKuttaMethods { euler, second_order_ssp, third_order_ssp, classic_fourth_order };
 
-template< class RangeFieldType, RungeKuttaMethods method = RungeKuttaMethods::euler >
+enum class RungeKuttaMethods { euler, second_order_ssp, third_order_ssp, classic_fourth_order, other };
+
+
+namespace internal {
+
+
+// unspecialized
+template< class RangeFieldType, class TimeFieldType, RungeKuttaMethods method = RungeKuttaMethods::other >
 struct ButcherArrayProvider
+{
+  static Dune::DynamicMatrix< RangeFieldType > A()
+  {
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    return Dune::DynamicMatrix< RangeFieldType >();
+  }
+
+  static Dune::DynamicVector< RangeFieldType > b()
+  {
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    return Dune::DynamicVector< RangeFieldType >();
+  }
+
+  static Dune::DynamicVector< TimeFieldType > c()
+  {
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    return Dune::DynamicVector< TimeFieldType >();
+  }
+};
+
+
+// Euler
+template< class RangeFieldType, class TimeFieldType >
+struct ButcherArrayProvider< RangeFieldType, TimeFieldType, RungeKuttaMethods::euler >
 {
   static Dune::DynamicMatrix< RangeFieldType > A()
   {
@@ -36,14 +68,15 @@ struct ButcherArrayProvider
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[1]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > c()
+  static Dune::DynamicVector< TimeFieldType > c()
   {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[0]");
+    return DSC::from_string< Dune::DynamicVector< TimeFieldType >  >("[0]");
   }
 };
 
-template< class RangeFieldType >
-struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::second_order_ssp >
+// Second order SSP
+template< class RangeFieldType, class TimeFieldType >
+struct ButcherArrayProvider< RangeFieldType, TimeFieldType, RungeKuttaMethods::second_order_ssp >
 {
   static Dune::DynamicMatrix< RangeFieldType > A()
   {
@@ -55,14 +88,15 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::second_order_ssp
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[0.5 0.5]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > c()
+  static Dune::DynamicVector< TimeFieldType > c()
   {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 1]");
+    return DSC::from_string< Dune::DynamicVector< TimeFieldType > >("[0 1]");
   }
 };
 
-template< class RangeFieldType >
-struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::third_order_ssp >
+// Third order SSP
+template< class RangeFieldType, class TimeFieldType >
+struct ButcherArrayProvider< RangeFieldType, TimeFieldType, RungeKuttaMethods::third_order_ssp >
 {
   static Dune::DynamicMatrix< RangeFieldType > A()
   {
@@ -74,14 +108,15 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::third_order_ssp 
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(2.0/3.0, 15) + "]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > c()
+  static Dune::DynamicVector< TimeFieldType > c()
   {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 1 0.5]");
+    return DSC::from_string< Dune::DynamicVector< TimeFieldType > >("[0 1 0.5]");
   }
 };
 
-template< class RangeFieldType >
-struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::classic_fourth_order >
+// Classic fourth order RK
+template< class RangeFieldType, class TimeFieldType >
+struct ButcherArrayProvider< RangeFieldType, TimeFieldType, RungeKuttaMethods::classic_fourth_order >
 {
   static Dune::DynamicMatrix< RangeFieldType > A()
   {
@@ -93,75 +128,73 @@ struct ButcherArrayProvider< RangeFieldType, RungeKuttaMethods::classic_fourth_o
     return DSC::from_string< Dune::DynamicVector< RangeFieldType >  >("[" + DSC::to_string(1.0/6.0, 15) + " " + DSC::to_string(1.0/3.0, 15) + " " + DSC::to_string(1.0/3.0, 15) + " " + DSC::to_string(1.0/6.0, 15) + "]");
   }
 
-  static Dune::DynamicVector< RangeFieldType > c()
+  static Dune::DynamicVector< TimeFieldType > c()
   {
-    return DSC::from_string< Dune::DynamicVector< RangeFieldType > >("[0 0.5 0.5 1]");
+    return DSC::from_string< Dune::DynamicVector< TimeFieldType > >("[0 0.5 0.5 1]");
   }
 };
 
 
+} // namespace internal
+
+
 /** \brief Time stepper using Runge Kutta methods
  *
- * Timestepper for equations of the form u_t + L(u) = q(u) where u is a discrete function, L a space operator
- * and q an operator representing a source or sink.
- * A fractional step approach is used to evolve the equation, where the same Runge Kutta method is used in both steps.
- * The specific Runge Kutta method can be chosen in the constructor by supplying a DynamicMatrix< RangeFieldType >
- * A and vectors (DynamicVector< RangeFieldType >) b and c. Here, A, b and c form the butcher tableau (see
- * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is composed of the coefficients a_{ij}, b of b_j
- * and c of c_j). The default is a forward euler method. By now, c will be ignored as operators that are explicitly
- * time-dependent are not supported yet.
+ * Timestepper using explicit Runge Kutta methods to solve equations of the form u_t = \alpha L(u) where u is a
+ * discrete function, L an operator acting on u and \alpha a scalar factor (e.g. -1).
+ * The specific Runge Kutta method can be chosen as the third template argument. If your desired Runge Kutta method is
+ * not contained in Dune::GDT::TimeStepper::RungeKuttaMethods, choose RungeKuttaMethods::other and supply a
+ * DynamicMatrix< RangeFieldType > A and vectors (DynamicVector< RangeFieldType >) b and c in the constructor. Here, A,
+ * b and c form the butcher tableau (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is
+ * composed of the coefficients a_{ij}, b of b_j and c of c_j). The default is a forward euler method.
  *
- * \tparam FluxOperatorImp Type of flux operator L
+ * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values
- * \tparam SourceFunctionImp Type of source operator q
  */
-
-template< class FluxOperatorImp, class SourceOperatorImp, class DiscreteFunctionImp, class TimeFieldImp, RungeKuttaMethods method = RungeKuttaMethods::euler, bool unsplit = false >
-class RungeKutta
+template< class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp, RungeKuttaMethods method = RungeKuttaMethods::euler >
+class ExplicitRungeKutta
+    : public TimeStepperInterface< DiscreteFunctionImp, TimeFieldImp >
 {
+  typedef TimeStepperInterface< DiscreteFunctionImp, TimeFieldImp > BaseType;
+  typedef typename internal::ButcherArrayProvider< typename BaseType::RangeFieldType, TimeFieldImp, method > ButcherArrayProviderType;
 public:
-  typedef FluxOperatorImp     FluxOperatorType;
-  typedef SourceOperatorImp   SourceOperatorType;
-  typedef DiscreteFunctionImp DiscreteFunctionType;
-  typedef TimeFieldImp        TimeFieldType;
+  using typename BaseType::DiscreteFunctionType;
+  using typename BaseType::TimeFieldType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::SolutionType;
 
-  typedef typename DiscreteFunctionType::DomainFieldType  DomainFieldType;
-  typedef typename DiscreteFunctionType::RangeFieldType   RangeFieldType;
+  typedef OperatorImp OperatorType;
   typedef typename Dune::DynamicMatrix< RangeFieldType >  MatrixType;
   typedef typename Dune::DynamicVector< RangeFieldType >  VectorType;
   typedef typename Dune::DynamicVector< TimeFieldType >   TimeVectorType;
-  typedef typename std::vector< std::pair< TimeFieldType, DiscreteFunctionType > > SolutionType;
 
   /**
    * \brief Constructor for RungeKutta time stepper
    *
    * \param flux operator L
-   * \param source operator q
    * \param initial_values Discrete function containing initial values for u
-   * \param start_time Starting time (s.t. u(start_time) = initial_values)
    * \param A A (see above)
    * \param b b (see above)
    * \param c c (completely ignored, see above)
    */
-  RungeKutta(const FluxOperatorType& flux_operator,
-             const SourceOperatorType& source_operator,
-             const DiscreteFunctionType& initial_values,
-             const DomainFieldType dx,
-             const MatrixType A = ButcherArrayProvider< RangeFieldType, method>::A(),
-             const VectorType b = ButcherArrayProvider< RangeFieldType, method>::b(),
-             const TimeVectorType c = ButcherArrayProvider< RangeFieldType, method>::c())
-    : flux_operator_(flux_operator)
-    , source_operator_(source_operator)
+  ExplicitRungeKutta(const OperatorType& op,
+                     const DiscreteFunctionType& initial_values,
+                     const RangeFieldType alpha = 1.0,
+                     const double t_0 = 0.0,
+                     const MatrixType A = ButcherArrayProviderType::A(),
+                     const VectorType b = ButcherArrayProviderType::b(),
+                     const TimeVectorType c = ButcherArrayProviderType::c())
+    : op_(op)
     , initial_values_(initial_values)
+    , alpha_(alpha)
     , u_n_(initial_values_)
     , u_tmp_(u_n_)
-    , t_(0.0)
-    , dx_(dx)
+    , t_(t_0)
     , A_(A)
     , b_(b)
     , c_(c)
     , num_stages_(A_.rows())
-    , solution_(std::vector< std::pair< double, DiscreteFunctionType > >())
   {
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(b_.size() == A_.rows());
@@ -170,7 +203,7 @@ public:
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
         for (size_t jj = ii; jj < A_.cols(); ++jj) {
           assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0) &&
-                 "A has to be a lower triangular matrix with 0 on the diagonal (implicit methods are not implemented)");
+                 "A has to be a lower triangular matrix with 0 on the main diagonal");
         }
     }
 #endif //NDEBUG
@@ -180,132 +213,41 @@ public:
     }
   } // constructor
 
-  TimeFieldType step(const TimeFieldType dt)
-  {
-    apply_RK_scheme(flux_operator_, dt, -1.0);       // evaluate conservation law d_t u + L(u) = 0
-    apply_RK_scheme(source_operator_,dt, 1.0);       // evaluate source terms d_t u = q(u)
-    t_ += dt;                                        // augment time
-    return dt;
-  } // ... step(...)
-
-  template< class OperatorImp >
-  void apply_RK_scheme(const OperatorImp& op, const TimeFieldType dt, const RangeFieldType factor)
-  {
-    for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
-      u_tmp_.vector() = u_n_.vector();
-      for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*factor*(A_[ii][jj]));
-      op.apply(u_tmp_, u_intermediate_stages_[ii], t_ + dt*c_[ii]);
-    }
-
-    for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_n_.vector() += u_intermediate_stages_[ii].vector()*(factor*dt*b_[ii]);
-    }
-  } // void apply_RK_scheme(...)
-
-  void reset()
-  {
-    t_ = 0.0;
-    u_n_.vector() = initial_values_.vector();
-  }
-
-  void solve(const TimeFieldType t_end,
-             const TimeFieldType first_dt,
-             const TimeFieldType save_step_length,
-             const bool save_solution,
-             const bool write_solution,
-             const std::string filename_prefix,
-             std::vector< std::pair< double, DiscreteFunctionType > >& solution)
-  {
-    TimeFieldType dt = first_dt;
-    assert(t_end - t_ >= dt);
-    size_t time_step_counter = 0;
-
-    const TimeFieldType save_interval = DSC::FloatCmp::eq(save_step_length, 0.0) ? dt : save_step_length;
-    const TimeFieldType output_interval = 0.001;
-    TimeFieldType next_save_time = t_ + save_interval > t_end ? t_end : t_ + save_interval;
-    TimeFieldType next_output_time = t_ + output_interval;
-    size_t save_step_counter = 1;
-
-    // clear solution
-    if (save_solution) {
-      solution.clear();
-      solution.emplace_back(std::make_pair(t_, u_n_));
-    }
-    if (write_solution)
-      u_n_.template visualize_factor< 0 >(filename_prefix + "factor_0_0");
-
-    while (t_ + dt < t_end)
-    {
-      // do a timestep
-      dt = step(dt);
-
-      // check if data should be written in this timestep (and write)
-      if (DSC::FloatCmp::ge(t_, next_save_time - 1e-10)) {
-        if (save_solution)
-          solution.emplace_back(std::make_pair(t_, u_n_));
-        if (write_solution)
-          u_n_.visualize(filename_prefix, DSC::to_string(save_step_counter));
-        next_save_time += save_interval;
-        ++save_step_counter;
-      }
-
-      // augment time step counter
-      ++time_step_counter;
-
-      // print info about time, timestep size and counter
-//      if (DSC::FloatCmp::ge(t_, next_output_time)) {
-//        std::cout << " k=" << time_step_counter << " t=" << t_ << " dt=" << dt << std::endl;
-//        next_output_time += output_interval;
-//      }
-    } // while (t_ < t_end)
-
-    // do last step s.t. it matches t_end exactly
-    if (!DSC::FloatCmp::ge(t_, t_end - 1e-10)) {
-      step(t_end - t_);
-      solution.emplace_back(std::make_pair(t_, u_n_));
-    }
-  } // ... solve(...)
-
-  void solve(const TimeFieldType t_end,
-             const TimeFieldType first_dt,
-             const TimeFieldType save_step_length = 0.0,
-             const bool save_solution = false,
-             const bool write_solution = true,
-             const std::string filename_prefix = "")
-  {
-    solve(t_end, first_dt, save_step_length, save_solution, write_solution, filename_prefix, solution_);
-  }
-
-  void solve(const TimeFieldType t_end,
-             const TimeFieldType first_dt,
-             const TimeFieldType save_step_length,
-             std::vector< std::pair< double, DiscreteFunctionType > >& solution)
-  {
-    solve(t_end, first_dt, save_step_length, true, false, "", solution);
-  }
-
-  TimeFieldType current_time() const
+  virtual TimeFieldType current_time() const override
   {
     return t_;
   }
 
-  const DiscreteFunctionType& current_solution() const
+  virtual const DiscreteFunctionType& solution_at_current_time() const override
   {
     return u_n_;
   }
 
-  template< size_t factor_to_be_visualized = 0 >
-  void visualize_solution(const std::string prefix = "") const
+  virtual void set_solution_at_current_time(const DiscreteFunctionType& discrete_func) override final
   {
-    for (size_t ii = 0; ii < solution_.size(); ++ii) {
-      auto& pair = solution_[ii];
-      pair.second.template visualize_factor< factor_to_be_visualized >(prefix + "factor_"
-                                                                       + DSC::to_string(factor_to_be_visualized)
-                                                                       + "_" + DSC::to_string(ii), true);
-    }
+    u_n_.vector() = discrete_func.vector();
   }
+
+  TimeFieldType step(const TimeFieldType dt) override final
+  {
+    // calculate stages
+    for (size_t ii = 0; ii < num_stages_; ++ii) {
+      u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
+      u_tmp_.vector() = u_n_.vector();
+      for (size_t jj = 0; jj < ii; ++jj)
+        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*alpha_*(A_[ii][jj]));
+      op_.apply(u_tmp_, u_intermediate_stages_[ii], t_ + dt*c_[ii]);
+    }
+
+    // calculate value of u at next time step
+    for (size_t ii = 0; ii < num_stages_; ++ii)
+      u_n_.vector() += u_intermediate_stages_[ii].vector()*(alpha_*dt*b_[ii]);
+
+    //augment time
+    t_ += dt;
+
+    return dt;
+  } // ... step(...)
 
   const std::pair< bool, TimeFieldType > find_suitable_dt(const TimeFieldType initial_dt,
                                                           const TimeFieldType dt_refinement_factor = 2,
@@ -353,25 +295,72 @@ public:
     return std::make_pair(bool(false), current_dt);
   }
 
-  const SolutionType solution() const {
-    return solution_;
-  }
-
 private:
-  const FluxOperatorType& flux_operator_;
-  const SourceOperatorType& source_operator_;
+  const OperatorType& op_;
   const DiscreteFunctionType& initial_values_;
+  const RangeFieldType alpha_;
   DiscreteFunctionType u_n_;
   DiscreteFunctionType u_tmp_;
   double t_;
-  double dx_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
   std::vector< DiscreteFunctionType > u_intermediate_stages_;
   const size_t num_stages_;
-  SolutionType solution_;
 };
+
+
+template< class FirstStepperImp, class SecondStepperImp >
+class FractionalStepStepper
+    : public TimeStepperInterface< typename FirstStepperImp::DiscreteFunctionType, typename FirstStepperImp::TimeFieldType >
+{
+  typedef TimeStepperInterface< typename FirstStepperImp::DiscreteFunctionType, typename FirstStepperImp::TimeFieldType > BaseType;
+public:
+  using typename BaseType::DiscreteFunctionType;
+  using typename BaseType::TimeFieldType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::SolutionType;
+
+  typedef FirstStepperImp FirstStepperType;
+  typedef SecondStepperImp SecondStepperType;
+
+  FractionalStepStepper(FirstStepperType& first_stepper,
+                        SecondStepperType& second_stepper)
+    : first_stepper_(first_stepper)
+    , second_stepper_(second_stepper)
+  {} // constructor
+
+  virtual TimeFieldType current_time() const override
+  {
+    return first_stepper_.current_time();
+  }
+
+  virtual const DiscreteFunctionType& solution_at_current_time() const override
+  {
+    return first_stepper_.solution_at_current_time();
+  }
+
+  virtual void set_solution_at_current_time(const DiscreteFunctionType& discrete_func) override final
+  {
+    first_stepper_.set_solution_at_current_time(discrete_func);
+  }
+
+  TimeFieldType step(const TimeFieldType dt) override final
+  {
+    const auto t = current_time();
+    first_stepper_.solve(t+dt, dt, -1, false);
+    second_stepper_.set_solution_at_current_time(first_stepper_.solution_at_current_time());
+    second_stepper_.solve(t+dt, dt, -1, false);
+    first_stepper_.set_solution_at_current_time(second_stepper_.solution_at_current_time());
+    return dt;
+  } // ... step(...)
+
+private:
+  FirstStepperType& first_stepper_;
+  SecondStepperType& second_stepper_;
+};
+
 
 } // namespace TimeStepper
 } // namespace Stuff
