@@ -10,10 +10,6 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include <dune/gdt/products/elliptic.hh>
-#include <dune/gdt/products/h1.hh>
-#include <dune/gdt/products/l2.hh>
-
 #include "../nonstationary-eocstudy.hh"
 #include "eocexpectations.hh"
 
