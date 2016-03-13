@@ -14,14 +14,14 @@ using namespace Dune::GDT::Test;
 
 
 typedef testing::Types< SPACES_RT_PDELAB_LEVEL
-#if HAVE_ALUGRID
+#if HAVE_ALUGRID && !defined(__GNUC__)
                       , SPACES_RT_PDELAB_ALUGRID_LEVEL
 #endif
                       > SpaceTypes;
 
 TYPED_TEST_CASE(ProlongationTest, SpaceTypes);
 TYPED_TEST(ProlongationTest, produces_correct_results) {
-  this->produces_correct_results();
+  this->produces_correct_results(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
 }
 
 
