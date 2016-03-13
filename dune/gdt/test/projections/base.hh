@@ -8,7 +8,7 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
 
 #include <dune/gdt/test/operators/base.hh>
@@ -32,8 +32,8 @@ struct ProjectionOperatorBase
 
   void measure_error(const RangeFieldType& tolerance) const
   {
-    const Dune::GDT::Products::L2< GridViewType > l2_product_operator(this->space_.grid_view());
-    const auto l2_error = l2_product_operator.induced_norm(this->function_ - this->discrete_function_);
+    const auto l2_error
+        = make_l2_operator(this->space_.grid_view(), 2)->induced_norm(this->function_ - this->discrete_function_);
     EXPECT_LE(l2_error, tolerance)
         << "l2_error:  " << std::scientific << l2_error << "\n"
         << "tolerance: " << std::scientific << tolerance;
