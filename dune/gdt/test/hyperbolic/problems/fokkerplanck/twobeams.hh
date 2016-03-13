@@ -11,7 +11,7 @@
 #include <string>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 
 #include <dune/stuff/common/string.hh>
