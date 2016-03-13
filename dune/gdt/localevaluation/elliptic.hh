@@ -224,11 +224,11 @@ public:
   /// \name Actual implementations of evaluate
   /// \{
 
-  template< class R >
+  template< class R, size_t r >
   void evaluate(const Stuff::LocalfunctionInterface   < E, D, d, R, 1, 1 >& local_diffusion_factor,
                 const Stuff::LocalfunctionInterface   < E, D, d, R, d, d >& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& test_base,
-                const Stuff::LocalfunctionSetInterface< E, D, d, R, 1, 1 >& ansatz_base,
+                const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& test_base,
+                const Stuff::LocalfunctionSetInterface< E, D, d, R, r, 1 >& ansatz_base,
                 const Dune::FieldVector< D, d >& localPoint,
                 Dune::DynamicMatrix< R >& ret) const
   {
@@ -247,8 +247,11 @@ public:
     assert(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
-      for (size_t jj = 0; jj < cols; ++jj)
-        retRow[jj] = (diffusion_value * ansatzGradients[jj][0]) * testGradients[ii][0];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        for (size_t rr = 0; rr < r; ++rr) {
+          retRow[jj] = (diffusion_value * ansatzGradients[jj][rr]) * testGradients[ii][rr];
+        }
+      }
     }
   } // ... evaluate(...)
 
