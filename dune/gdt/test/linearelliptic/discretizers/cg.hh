@@ -34,13 +34,6 @@ namespace LinearElliptic {
 
 /**
  * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
- * \tparam GG GridType
- * \tparam ll layer
- * \tparam ss space_backend
- * \tparam la la_backend
- * \tparam pp polOrder
- * \tparam RR RangeFieldType
- * \tparam rr dimRange
  */
 template< class GridType,
           Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
