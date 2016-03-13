@@ -3,31 +3,32 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-// This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include "spaces_cg_fem.hh"
-#include "spaces_rt_pdelab.hh"
+#include "spaces/cg/fem.hh"
+#include "spaces/rt/pdelab.hh"
 
-#include "operators_darcy.hh"
+#include "operators/darcy.hh"
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
+using namespace Dune::GDT::Test;
+
+#if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)
 
 typedef testing::Types<
-//                        std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
-                      /*,*/ std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2) >
+                        /*std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
+                      ,*/ std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2) >
                       > SpaceTypes;
 
-TYPED_TEST_CASE(DarcyOperator, SpaceTypes);
-TYPED_TEST(DarcyOperator, produces_correct_results) {
+TYPED_TEST_CASE(DarcyOperatorTest, SpaceTypes);
+TYPED_TEST(DarcyOperatorTest, produces_correct_results) {
   this->produces_correct_results();
 }
 
 
-#else // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
+#else // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)
 
 
-TEST(DISABLED_DarcyOperator, produces_correct_results) {}
+TEST(DISABLED_DarcyOperatorTest, produces_correct_results) {}
 
 
-#endif // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
+#endif // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)

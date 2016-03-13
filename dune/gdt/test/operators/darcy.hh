@@ -12,22 +12,27 @@
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/darcy.hh>
-#include <dune/gdt/operators/projections.hh>
-#include <dune/gdt/products/h1.hh>
-#include <dune/gdt/products/l2.hh>
+#include <dune/gdt/projections.hh>
+#include <dune/gdt/operators/laplace.hh>
+#include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
+#include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/rt/pdelab.hh>
 
-using namespace Dune;
-using namespace GDT;
+namespace Dune {
+namespace GDT {
+namespace Test {
 
 
 /**
  * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
  *       Spaces::CG::FemBased, Spaces::RT::PdelabBased and Spaces::FV::Default work correctly.
+ * \todo This test is rather old and could be refactored in terms of the other operator tests.
+ * \todo Missing ctor and make_darcy_operator tests.
  */
 template< class SpaceTypes >
-struct DarcyOperator
+struct DarcyOperatorTest
   : public ::testing::Test
 {
   typedef typename SpaceTypes::first_type SourceSpaceType;
@@ -50,14 +55,14 @@ struct DarcyOperator
     grid.globalRefine(1);
 
     typedef Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, 1 > FunctionType;
-    const FunctionType source("x", "x[0] * x[1]", 2, "source", {{"x[1]", "x[0]"}});
+    const FunctionType source("x", "x[0] * x[1]", 2, "source", {"x[1]", "x[0]"});
 
     const RangeSpaceType range_space(SpaceTools::GridPartView< RangeSpaceType >::create_leaf(grid));
     VectorType range_vector(range_space.mapper().size());
     DiscreteFunction< RangeSpaceType, VectorType > range(range_space, range_vector);
 
     const FunctionType function("x", "-1.0", 0);
-    const Operators::Darcy< GridViewType, FunctionType > darcy_operator(range_space.grid_view(), function);
+    const DarcyOperator< GridViewType, FunctionType > darcy_operator(range_space.grid_view(), function);
     darcy_operator.apply(source, range);
 
     const Stuff::Functions::Expression< EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain >
@@ -65,13 +70,11 @@ struct DarcyOperator
                      "desired output",
                      {{"0.0", "1.0"}, {"1.0", "0.0"}});
 
-    const Products::L2< GridViewType > l2_product(range_space.grid_view());
-    const RangeFieldType l2_error = l2_product.induced_norm(desired_output - range);
+    const RangeFieldType l2_error = make_l2_operator(range_space.grid_view(), 2)->induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     EXPECT_LE(l2_error, l2_error_expected);
 
-    const Products::H1Semi< GridViewType > h1_semi_product(range_space.grid_view());
-    const RangeFieldType h1_error = h1_semi_product.induced_norm(desired_output - range);
+    const RangeFieldType h1_error = make_laplace_operator(range_space.grid_view(), 2)->induced_norm(desired_output - range);
     const RangeFieldType h1_error_expected = expected_result_("h1", desired_output, range_space.grid_view());
     EXPECT_LE(h1_error, h1_error_expected);
   } // ... produces_correct_results()
@@ -96,21 +99,22 @@ struct DarcyOperator
       const FvSpaceType fv_space(grid_view);
       VectorType fv_desired_output_vector(fv_space.mapper().size());
       DiscreteFunction< FvSpaceType, VectorType > fv_desired_output(fv_space, fv_desired_output_vector);
-      const Operators::L2Projection< GV > l2_projection(grid_view);
-      l2_projection.apply(desired_output, fv_desired_output);
-      const Products::L2< GV > l2_product(grid_view);
-      const Products::H1Semi< GV > h1_semi_product(grid_view);
-      if (type == "l2")
-        return 2.0 * l2_product.induced_norm(desired_output - fv_desired_output);
-      else if (type == "h1")
-        return h1_semi_product.induced_norm(desired_output - fv_desired_output);
-      else
+      project(desired_output, fv_desired_output);
+      if (type == "l2") {
+        return 2.0 * make_l2_operator(grid_view, 2)->induced_norm(desired_output - fv_desired_output);
+      } else if (type == "h1") {
+        return make_laplace_operator(grid_view, 2)->induced_norm(desired_output - fv_desired_output);
+      } else
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
     } else
       DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
   } // ... expected_result_(...)
-}; // struct DarcyOperator
+}; // struct DarcyOperatorTest
 
+
+} // namespace Test
+} // namespace GDT
+} // namespace Dune
 
 
 #endif // DUNE_GDT_TEST_OPERATORS_DARCY_HH
