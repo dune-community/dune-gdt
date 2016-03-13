@@ -209,7 +209,7 @@ public:
         current_solution_vector_ = Stuff::Common::make_unique<VectorType>(reference_discretization_->create_vector());
       DiscreteFunctionType reference_refinement_solution(
           reference_discretization_->ansatz_space(), *current_solution_vector_, "solution on reference grid part");
-      Operators::prolong(current_refinement_solution, reference_refinement_solution);
+      prolong(current_refinement_solution, reference_refinement_solution);
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {

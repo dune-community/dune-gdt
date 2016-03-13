@@ -223,8 +223,8 @@ public:
       // spatial prolongation
       for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
            ++current_solution_it)
-        Operators::prolong(time_prolongated_current_solution_on_level.at(current_solution_it->first),
-                           (*current_solution_it).second);
+        prolong(time_prolongated_current_solution_on_level.at(current_solution_it->first),
+                (*current_solution_it).second);
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {
