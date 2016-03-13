@@ -1,0 +1,219 @@
+sudo: required
+dist: trusty
+language: generic
+
+addons:
+  apt:
+    sources: &commonsources
+    packages: &commonpackages
+    - gfortran
+    - cmake
+    - cmake-data
+    - doxygen
+    - texlive-base
+    - python-virtualenv
+    - libboost1.55-all-dev
+    - python-pip
+    - libtbb-dev
+    - ccache
+    - libsuitesparse-dev
+    - lcov
+    - curl
+    - python3-requests
+
+before_install:
+  - |-
+    : ${OPTS:="config.opts/travis.make.release"} && export OPTS
+  - |-
+    : ${BUILD_CMD:="make -k -j 2"} && export BUILD_CMD
+  # workaround for https://github.com/travis-ci/travis-ci/issues/5285
+  - sudo -E apt-get install -y -q python-pip python3-pip
+  - sudo -E pip3 install virtualenv cpp-coveralls
+  - sudo -E pip install virtualenv cpp-coveralls
+  - export PATH=/usr/lib/ccache:$PATH
+  - cd $HOME
+  - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
+  - cd $HOME/src
+  - git checkout refactor_operators_functionals
+  - git submodule update --init --recursive
+  - git submodule status
+  # our local scripts look for an OPTS env entry
+  - ./local/bin/download_external_libraries.py
+  - ./local/bin/build_external_libraries.py
+  # ensures ${MY_MODULE} from travis own checkout is used
+  - echo removing modules ${MODULES_TO_DELETE}
+  - rm -rf ${MODULES_TO_DELETE} ${MY_MODULE}
+
+# command to install dependencies
+install:
+  - cd $HOME/src
+  #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
+  - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
+  - ${SRC_DCTRL} ${BLD} all
+  # move my travis checkout into this source tree
+  - cp -ra ${TRAVIS_BUILD_DIR} .
+
+before_script:
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}; fi
+
+script:
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS}; fi
+    - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck; fi
+    # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
+
+
+# runs independent of 'script' failure/success
+after_script:
+    # reset for ctest
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec make clean
+    - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+  webhooks:
+    - https://buildtimetrend.herokuapp.com/travis
+
+branches:
+  except:
+    - gh-pages
+
+cache:
+  directories:
+    - $HOME/.ccache
+
+env:
+  global:
+    - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
+    - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
+    - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
+    - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
+
+matrix:
+  include:
+#    gcc 4.9
+#    - os: linux
+#      compiler: gcc
+#      addons: &gcc49
+#        apt:
+#          sources:
+#          - *commonsources
+#          - 'ubuntu-toolchain-r-test'
+#          packages:
+#          - *commonpackages
+#          - ['g++-4.9', 'gcc-4.9']
+#      env: CC=gcc-4.9 TESTS=operator BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=prolongation BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=projection BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=space BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-4.9
+#    - os: linux
+#      compiler: gcc
+#      addons:  *gcc49
+#      env: CC=gcc-4.9 TESTS=headercheck BLD=${DBG} CXX=g++-4.9
+
+#   gcc 5
+    - os: linux
+      compiler: gcc
+      addons: &gcc5
+        apt:
+          sources:
+          - *commonsources
+          - 'ubuntu-toolchain-r-test'
+          packages:
+          - *commonpackages
+          - ['g++-5', 'gcc-5']
+      env: CC=gcc-5 TESTS=operator BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=prolongation BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=projection BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
+
+#   clang 3.7
+    - os: linux
+      compiler: clang
+      addons: &clang37
+        apt:
+          sources:
+          - *commonsources
+          - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          packages:
+          - *commonpackages
+          - ['clang-3.7']
+      env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=prolongation BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=projection BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=space BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
