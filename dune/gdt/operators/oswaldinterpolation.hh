@@ -190,8 +190,7 @@ private:
         } // if (boundary_vertices.find(global_vertex_id))
       } // loop over all local DoFs
     } // walk the grid for the second time
-  } // ... apply(...)
-
+  } // ... apply_dg_fem(...)
 
   const GridViewType& grid_view_;
   const bool zero_boundary_;
