@@ -67,19 +67,15 @@ public:
   {}
 
   template< class SGP, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 >, SV >&
-                source,
-             DiscreteFunction< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 >, RV >&
-                range) const
+  void apply(const ConstDiscreteFunction< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 >, SV >& source,
+             DiscreteFunction< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 >, RV >& range) const
   {
     apply_dg_fem(source, range);
   }
 
   template< class SGP, class SV, class RGP, class RV >
-  void apply(const ConstDiscreteFunction< Spaces::Block< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 > >, SV >&
-                source,
-             DiscreteFunction< Spaces::Block< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 > >, RV >&
-                range) const
+  void apply(const ConstDiscreteFunction< Spaces::Block< Spaces::DG::FemBased< SGP, 1, FieldType, 1, 1 > >, SV >& source,
+             DiscreteFunction< Spaces::Block< Spaces::DG::FemBased< RGP, 1, FieldType, 1, 1 > >, RV >& range) const
   {
     apply_dg_fem(source, range);
   }
@@ -106,7 +102,7 @@ private:
       if (basis.size() != num_vertices)
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
 
-      //loop over all vertices of the entitity, to find their associated global DoF indices
+      // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
         const auto vertex_ptr = entity.template subEntity< dimDomain >(boost::numeric_cast< int >(local_vertex_id));
         const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
@@ -165,7 +161,7 @@ private:
           } // if (intersection.boundary() && !intersection.neighbor())
         } // loop over all intersections
       } // if(zero_boundary)
-    } //walk the grid for the first time
+    } // walk the grid for the first time
 
     // walk the grid for the second time
     for (auto entity_it = grid_view_.template begin< 0 >(); entity_it != entity_it_end; ++entity_it) {
@@ -194,8 +190,7 @@ private:
         } // if (boundary_vertices.find(global_vertex_id))
       } // loop over all local DoFs
     } // walk the grid for the second time
-  } // ... apply(...)
-
+  } // ... apply_dg_fem(...)
 
   const GridViewType& grid_view_;
   const bool zero_boundary_;
