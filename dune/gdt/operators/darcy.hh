@@ -27,28 +27,18 @@
 
 namespace Dune {
 namespace GDT {
-namespace Exceptions {
-
-
-class darcy_operator_error : public operator_error
-{
-};
-
-
-} // namespace Exceptions
-namespace Operators {
 
 
 // forward, to be used in the traits
 template <class GridViewImp, class FunctionImp>
-class Darcy;
+class DarcyOperator;
 
 
 namespace internal {
 
 
 template <class GridViewImp, class FunctionImp>
-class DarcyTraits
+class DarcyOperatorTraits
 {
   static_assert(Stuff::is_localizable_function<FunctionImp>::value,
                 "FunctionImp has to be derived from Stuff::IsLocalizableFunction!");
@@ -57,10 +47,10 @@ class DarcyTraits
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
 
 public:
-  typedef Darcy<GridViewImp, FunctionImp> derived_type;
+  typedef DarcyOperator<GridViewImp, FunctionImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef typename FunctionImp::RangeFieldType FieldType;
-}; // class DarcyTraits
+}; // class DarcyOperatorTraits
 
 
 } // namespace internal
@@ -68,19 +58,20 @@ public:
 
 /**
   * \note Only works for scalar valued function atm.
+  * \todo add make_darcy_operator
   **/
 template <class GridViewImp, class FunctionImp>
-class Darcy : public OperatorInterface<internal::DarcyTraits<GridViewImp, FunctionImp>>
+class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>>
 {
 public:
-  typedef internal::DarcyTraits<GridViewImp, FunctionImp> Traits;
+  typedef internal::DarcyOperatorTraits<GridViewImp, FunctionImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const size_t dimDomain = GridViewType::dimension;
 
-  Darcy(const GridViewType& grd_vw, const FunctionImp& function)
+  DarcyOperator(const GridViewType& grd_vw, const FunctionImp& function)
     : grid_view_(grd_vw)
     , function_(function)
   {
@@ -153,7 +144,7 @@ private:
     try {
       Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(Exceptions::darcy_operator_error,
+      DUNE_THROW(Exceptions::operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());
@@ -268,10 +259,9 @@ private:
 
   const GridViewType& grid_view_;
   const FunctionImp& function_;
-}; // class Darcy
+}; // class DarcyOperator
 
 
-} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 
