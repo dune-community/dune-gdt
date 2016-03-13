@@ -22,7 +22,7 @@ namespace internal {
 /**
  * \note This test assumes that Products::L2 does the right thing!
  */
-template< class SpaceType, class ProjectionOperatorType >
+template< class SpaceType >
 struct ProjectionOperatorBase
   : public OperatorBase< SpaceType >
 {
@@ -34,7 +34,9 @@ struct ProjectionOperatorBase
   {
     const Dune::GDT::Products::L2< GridViewType > l2_product_operator(this->space_.grid_view());
     const auto l2_error = l2_product_operator.induced_norm(this->function_ - this->discrete_function_);
-    EXPECT_LE(l2_error, tolerance);
+    EXPECT_LE(l2_error, tolerance)
+        << "l2_error:  " << std::scientific << l2_error << "\n"
+        << "tolerance: " << std::scientific << tolerance;
   }
 }; // struct ProjectionOperatorBase
 
@@ -44,9 +46,9 @@ struct ProjectionOperatorBase
 
 template< class SpaceType, class LocalizableProjectionOperatorType >
 struct LocalizableProjectionOperatorBase
-  : public internal::ProjectionOperatorBase< SpaceType, LocalizableProjectionOperatorType >
+  : public internal::ProjectionOperatorBase< SpaceType >
 {
-  typedef internal::ProjectionOperatorBase< SpaceType, LocalizableProjectionOperatorType > BaseType;
+  typedef internal::ProjectionOperatorBase< SpaceType > BaseType;
   using typename BaseType::RangeFieldType;
 
   void constructible_by_ctor()
@@ -70,9 +72,9 @@ struct LocalizableProjectionOperatorBase
 
 template< class SpaceType, class ProjectionOperatorType >
 struct ProjectionOperatorBase
-  : public internal::ProjectionOperatorBase< SpaceType, ProjectionOperatorType >
+  : public internal::ProjectionOperatorBase< SpaceType >
 {
-  typedef internal::ProjectionOperatorBase< SpaceType, ProjectionOperatorType > BaseType;
+  typedef internal::ProjectionOperatorBase< SpaceType > BaseType;
   using typename BaseType::RangeFieldType;
 
   void constructible_by_ctor()

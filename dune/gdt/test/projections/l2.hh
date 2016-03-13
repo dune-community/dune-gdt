@@ -53,8 +53,8 @@ struct L2ProjectionOperatorTest
     const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
-    Dune::GDT::project_l2(grid_view, source, range);
-    Dune::GDT::project_l2(source, range);
+    project_l2(grid_view, source, range);
+    project_l2(source, range);
   } // ... free_function_callable(...)
 };
 
