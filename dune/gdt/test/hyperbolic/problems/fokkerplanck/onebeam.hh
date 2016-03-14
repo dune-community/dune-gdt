@@ -223,6 +223,11 @@ public:
   {
     return true;
   }
+
+  virtual bool has_non_zero_rhs() const override
+  {
+    return true;
+  }
 }; // class OneBeam
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>

@@ -96,6 +96,11 @@ public:
   {
     return false;
   }
+
+  virtual bool has_non_zero_rhs() const
+  {
+    return false;
+  }
 }; // ProblemInterface
 
 
