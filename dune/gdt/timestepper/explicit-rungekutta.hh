@@ -5,8 +5,8 @@
 //
 // Contributors: Tobias Leibner
 
-#ifndef DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
-#define DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
+#ifndef DUNE_GDT_TIMESTEPPER_EXPLICIT_RUNGEKUTTA_HH
+#define DUNE_GDT_TIMESTEPPER_EXPLICIT_RUNGEKUTTA_HH
 
 #include <utility>
 
@@ -36,19 +36,19 @@ struct ButcherArrayProvider
 {
   static Dune::DynamicMatrix< RangeFieldType > A()
   {
-    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
     return Dune::DynamicMatrix< RangeFieldType >();
   }
 
   static Dune::DynamicVector< RangeFieldType > b()
   {
-    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
     return Dune::DynamicVector< RangeFieldType >();
   }
 
   static Dune::DynamicVector< TimeFieldType > c()
   {
-    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKuttas constructor for this method!");
+    DUNE_THROW(Dune::NotImplemented, "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
     return Dune::DynamicVector< TimeFieldType >();
   }
 };
@@ -140,8 +140,8 @@ struct ButcherArrayProvider< RangeFieldType, TimeFieldType, RungeKuttaMethods::c
 
 /** \brief Time stepper using Runge Kutta methods
  *
- * Timestepper using explicit Runge Kutta methods to solve equations of the form u_t = \alpha L(u) where u is a
- * discrete function, L an operator acting on u and \alpha a scalar factor (e.g. -1).
+ * Timestepper using explicit Runge Kutta methods to solve equations of the form u_t = r * L(u, t) where u is a
+ * discrete function, L an operator acting on u and r a scalar factor (e.g. -1).
  * The specific Runge Kutta method can be chosen as the third template argument. If your desired Runge Kutta method is
  * not contained in Dune::GDT::TimeStepper::RungeKuttaMethods, choose RungeKuttaMethods::other and supply a
  * DynamicMatrix< RangeFieldType > A and vectors (DynamicVector< RangeFieldType >) b and c in the constructor. Here, A,
@@ -169,28 +169,30 @@ public:
   typedef typename Dune::DynamicVector< RangeFieldType >  VectorType;
   typedef typename Dune::DynamicVector< TimeFieldType >   TimeVectorType;
 
+  using BaseType::current_solution;
+  using BaseType::current_time;
+
   /**
    * \brief Constructor for RungeKutta time stepper
-   *
-   * \param flux operator L
-   * \param initial_values Discrete function containing initial values for u
-   * \param A A (see above)
-   * \param b b (see above)
-   * \param c c (completely ignored, see above)
+   * \param op Operator L
+   * \param initial_values Discrete function containing initial values for u at time t_0.
+   * \param r Scalar factor (see above, default is 1)
+   * \param t_0 Initial time (default is 0)
+   * \param A Coefficient matrix (only provide if you use RungeKuttaMethods::other)
+   * \param b Coefficient vector (only provide if you use RungeKuttaMethods::other)
+   * \param c Coefficients for time steps (only provide if you use RungeKuttaMethods::other)
    */
   ExplicitRungeKutta(const OperatorType& op,
                      const DiscreteFunctionType& initial_values,
-                     const RangeFieldType alpha = 1.0,
+                     const RangeFieldType r = 1.0,
                      const double t_0 = 0.0,
-                     const MatrixType A = ButcherArrayProviderType::A(),
-                     const VectorType b = ButcherArrayProviderType::b(),
-                     const TimeVectorType c = ButcherArrayProviderType::c())
-    : op_(op)
-    , initial_values_(initial_values)
-    , alpha_(alpha)
-    , u_n_(initial_values_)
-    , u_tmp_(u_n_)
-    , t_(t_0)
+                     const MatrixType& A = ButcherArrayProviderType::A(),
+                     const VectorType& b = ButcherArrayProviderType::b(),
+                     const TimeVectorType& c = ButcherArrayProviderType::c())
+    : BaseType(t_0, initial_values)
+    , op_(op)
+    , r_(r)
+    , u_tmp_(BaseType::current_solution())
     , A_(A)
     , b_(b)
     , c_(c)
@@ -209,42 +211,30 @@ public:
 #endif //NDEBUG
     // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_ ; ++ii) {
-      u_intermediate_stages_.emplace_back(u_n_);
+      u_intermediate_stages_.emplace_back(current_solution());
     }
   } // constructor
 
-  virtual TimeFieldType current_time() const override
+  virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
   {
-    return t_;
-  }
-
-  virtual const DiscreteFunctionType& solution_at_current_time() const override
-  {
-    return u_n_;
-  }
-
-  virtual void set_solution_at_current_time(const DiscreteFunctionType& discrete_func) override final
-  {
-    u_n_.vector() = discrete_func.vector();
-  }
-
-  TimeFieldType step(const TimeFieldType dt) override final
-  {
+    const TimeFieldType actual_dt = std::min(dt, max_dt);
+    auto& t = current_time();
+    auto& u_n = current_solution();
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
-      u_tmp_.vector() = u_n_.vector();
+      u_tmp_.vector() = u_n.vector();
       for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(dt*alpha_*(A_[ii][jj]));
-      op_.apply(u_tmp_, u_intermediate_stages_[ii], t_ + dt*c_[ii]);
+        u_tmp_.vector() += u_intermediate_stages_[jj].vector()*(actual_dt*r_*(A_[ii][jj]));
+      op_.apply(u_tmp_, u_intermediate_stages_[ii], t + actual_dt*c_[ii]);
     }
 
     // calculate value of u at next time step
     for (size_t ii = 0; ii < num_stages_; ++ii)
-      u_n_.vector() += u_intermediate_stages_[ii].vector()*(alpha_*dt*b_[ii]);
+      u_n.vector() += u_intermediate_stages_[ii].vector()*(r_*actual_dt*b_[ii]);
 
     //augment time
-    t_ += dt;
+    t += actual_dt;
 
     return dt;
   } // ... step(...)
@@ -255,10 +245,12 @@ public:
                                                           const size_t max_steps_per_dt = 20,
                                                           const size_t max_refinements = 20)
   {
+    auto& t = current_time();
+    auto& u_n = current_solution();
     assert(treshold > 0);
     // save current state
-    DiscreteFunctionType initial_u_n = u_n_;
-    TimeFieldType initial_t = t_;
+    DiscreteFunctionType initial_u_n = u_n;
+    TimeFieldType initial_t = t;
     // start with initial dt
     TimeFieldType current_dt = initial_dt;
     size_t num_refinements = 0;
@@ -271,8 +263,8 @@ public:
         step(current_dt);
         ++num_steps;
         // ... unless there is a value above threshold
-        for (size_t kk = 0; kk < u_n_.vector().size(); ++kk) {
-          if (std::abs(u_n_.vector()[kk]) > treshold) {
+        for (size_t kk = 0; kk < u_n.vector().size(); ++kk) {
+          if (std::abs(u_n.vector()[kk]) > treshold) {
             unlikely_value_occured = true;
             std::cout << "failed" << std::endl;
             break;
@@ -281,14 +273,14 @@ public:
         // if we are able to do max_steps_per_dt time steps with this dt, we accept this dt
         if (num_steps == max_steps_per_dt) {
           std::cout << "looks fine" << std::endl;
-          u_n_.vector() = initial_u_n.vector();
-          t_ = initial_t;
+          u_n.vector() = initial_u_n.vector();
+          t = initial_t;
           return std::make_pair(bool(true), current_dt);
         }
       }
       // if there was a value above threshold start over with smaller dt
-      u_n_.vector() = initial_u_n.vector();
-      t_ = initial_t;
+      u_n.vector() = initial_u_n.vector();
+      t = initial_t;
       current_dt /= dt_refinement_factor;
       ++num_refinements;
     }
@@ -297,11 +289,8 @@ public:
 
 private:
   const OperatorType& op_;
-  const DiscreteFunctionType& initial_values_;
-  const RangeFieldType alpha_;
-  DiscreteFunctionType u_n_;
+  const RangeFieldType r_;
   DiscreteFunctionType u_tmp_;
-  double t_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
@@ -310,60 +299,8 @@ private:
 };
 
 
-template< class FirstStepperImp, class SecondStepperImp >
-class FractionalStepStepper
-    : public TimeStepperInterface< typename FirstStepperImp::DiscreteFunctionType, typename FirstStepperImp::TimeFieldType >
-{
-  typedef TimeStepperInterface< typename FirstStepperImp::DiscreteFunctionType, typename FirstStepperImp::TimeFieldType > BaseType;
-public:
-  using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::TimeFieldType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
-
-  typedef FirstStepperImp FirstStepperType;
-  typedef SecondStepperImp SecondStepperType;
-
-  FractionalStepStepper(FirstStepperType& first_stepper,
-                        SecondStepperType& second_stepper)
-    : first_stepper_(first_stepper)
-    , second_stepper_(second_stepper)
-  {} // constructor
-
-  virtual TimeFieldType current_time() const override
-  {
-    return first_stepper_.current_time();
-  }
-
-  virtual const DiscreteFunctionType& solution_at_current_time() const override
-  {
-    return first_stepper_.solution_at_current_time();
-  }
-
-  virtual void set_solution_at_current_time(const DiscreteFunctionType& discrete_func) override final
-  {
-    first_stepper_.set_solution_at_current_time(discrete_func);
-  }
-
-  TimeFieldType step(const TimeFieldType dt) override final
-  {
-    const auto t = current_time();
-    first_stepper_.solve(t+dt, dt, -1, false);
-    second_stepper_.set_solution_at_current_time(first_stepper_.solution_at_current_time());
-    second_stepper_.solve(t+dt, dt, -1, false);
-    first_stepper_.set_solution_at_current_time(second_stepper_.solution_at_current_time());
-    return dt;
-  } // ... step(...)
-
-private:
-  FirstStepperType& first_stepper_;
-  SecondStepperType& second_stepper_;
-};
-
-
 } // namespace TimeStepper
 } // namespace Stuff
 } // namespace Dune
 
-#endif // DUNE_GDT_TIMESTEPPER_RUNGEKUTTA_HH
+#endif // DUNE_GDT_TIMESTEPPER_EXPLICIT_RUNGEKUTTA_HH
