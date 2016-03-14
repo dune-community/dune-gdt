@@ -20,7 +20,6 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/projections/dirichlet.hh>
 #include <dune/gdt/operators/elliptic.hh>
-#include <dune/gdt/playground/operators/elliptic-cg.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
