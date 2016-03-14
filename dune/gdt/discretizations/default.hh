@@ -14,7 +14,8 @@
 #include <dune/stuff/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
-#include <dune/gdt/timestepper/rungekutta.hh>
+#include <dune/gdt/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/timestepper/fractional-step.hh>
 
 #include "interfaces.hh"
 
@@ -290,18 +291,22 @@ public:
 //      const ConstantFunctionType dx_function(dx);
 //      OperatorType advection_operator(*analytical_flux, *boundary_values, dx_function, dt, is_linear, false);
 
-      // use fractional step method
       typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< OperatorType, FVFunctionType, double > OperatorTimeStepperType;
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
-      typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< RHSOperatorType, FVFunctionType, double > RHSOperatorTimeStepperType;
-      RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-      typedef typename Dune::GDT::TimeStepper::FractionalStepStepper< OperatorTimeStepperType, RHSOperatorTimeStepperType > TimeStepperType;
-      TimeStepperType timestepper(timestepper_op, timestepper_rhs);
 
       // do the time steps
-      const size_t num_save_steps = 1000;
+      const size_t num_save_steps = 100;
       solution.clear();
-      timestepper.solve(t_end, dt, num_save_steps, solution);
+      if (problem_.has_non_zero_rhs()) {
+        // use fractional step method
+        typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< RHSOperatorType, FVFunctionType, double > RHSOperatorTimeStepperType;
+        RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+        typedef typename Dune::GDT::TimeStepper::FractionalStep< OperatorTimeStepperType, RHSOperatorTimeStepperType > TimeStepperType;
+        TimeStepperType timestepper(timestepper_op, timestepper_rhs);
+        timestepper.solve(t_end, dt, num_save_steps, solution);
+      } else {
+        timestepper_op.solve(t_end, dt, num_save_steps, solution);
+      }
 
     } catch (Dune::Exception& e) {
       std::cerr << "Dune reported: " << e.what() << std::endl;

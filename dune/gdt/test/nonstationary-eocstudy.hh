@@ -97,6 +97,7 @@ protected:
   typedef typename Discretizer::ProblemType        ProblemType;
   typedef typename DiscretizationType::DiscreteSolutionType  DiscreteSolutionType;
   typedef typename DiscretizationType::DiscreteFunctionType DiscreteFunctionType;
+  typedef typename DiscreteSolutionType::key_type TimeFieldType;
 
   typedef typename TestCaseType::InitialValueType InitialValueType;
   typedef typename TestCaseType::template Level< Stuff::Grid::ChoosePartView::view >::Type GridViewType;
@@ -197,16 +198,17 @@ public:
         current_solution_ = Stuff::Common::make_unique< DiscreteSolutionType >(*reference_solution_);
       // time prolongation
       DiscreteSolutionType time_prolongated_current_solution_on_level;
+      const auto time_prolongated_current_solution_on_level_it_end = time_prolongated_current_solution_on_level.end();
       auto current_solution_on_level_it = current_solution_on_level_->begin();
-      typename DiscreteSolutionType::key_type last_time;
+      const auto current_solution_on_level_it_last = --current_solution_on_level_->end();
       const auto current_solution_it_end = current_solution_->end();
-      for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end; ++current_solution_it) {
+      for (auto current_solution_it = current_solution_->begin(), last_time = current_solution_it->first; current_solution_it != current_solution_it_end; ++current_solution_it) {
         const auto time = current_solution_it->first;
         const auto time_on_level = current_solution_on_level_it->first;
-        time_prolongated_current_solution_on_level.insert(std::make_pair(time, current_solution_on_level_it->second));
-        if (time_on_level < time && current_solution_on_level_it != --current_solution_on_level_->end()) {
+        const auto inserted_it = time_prolongated_current_solution_on_level.insert(time_prolongated_current_solution_on_level_it_end, std::make_pair(time, current_solution_on_level_it->second));
+        if (time_on_level < time && current_solution_on_level_it != current_solution_on_level_it_last) {
           // compute weighted average of the two values of current_solution_on_level_
-          time_prolongated_current_solution_on_level.at(time).vector() = (current_solution_on_level_it->second.vector()*(time_on_level - last_time)
+          inserted_it->second.vector() = (current_solution_on_level_it->second.vector()*(time_on_level - last_time)
                                           + (++current_solution_on_level_it)->second.vector()*(time - time_on_level))*(1.0/(time - last_time));
         }
         last_time = time;
@@ -294,15 +296,16 @@ protected:
       discrete_exact_solution_ = DSC::make_unique< DiscreteSolutionType >();
       compute_reference_solution();
       const auto exact_solution = test_case_.exact_solution();
-      const auto discrete_exact_solution_it_end = discrete_exact_solution_->end();
-      for (auto discrete_exact_solution_it = discrete_exact_solution_->begin(); discrete_exact_solution_it != discrete_exact_solution_it_end; ++discrete_exact_solution_it) {
-        const double time = discrete_exact_solution_it->first;
+      const auto reference_solution_it_end = reference_solution_->end();
+      for (auto reference_solution_it = reference_solution_->begin(); reference_solution_it != reference_solution_it_end; ++reference_solution_it) {
+        const double time = reference_solution_it->first;
         const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        discrete_exact_solution_->insert(std::make_pair(time, DiscreteFunctionType(reference_discretization_->fv_space(), "exact solution at time " + DSC::to_string(time))));
-        project(*discrete_exact_solution_at_time, discrete_exact_solution_->at(time));
+        const auto inserted_it = discrete_exact_solution_->insert(discrete_exact_solution_->end(), std::make_pair(time, DiscreteFunctionType(reference_discretization_->fv_space(), "exact solution at time " + DSC::to_string(time))));
+        project(*discrete_exact_solution_at_time, inserted_it->second);
       }
       if (!visualize_prefix_.empty()) {
         size_t counter = 0;
+        const auto discrete_exact_solution_it_end = discrete_exact_solution_->end();
         for (auto discrete_exact_solution_it = discrete_exact_solution_->begin(); discrete_exact_solution_it != discrete_exact_solution_it_end; ++discrete_exact_solution_it, ++counter)
           discrete_exact_solution_it->second.visualize(visualize_prefix_ + "_exact_solution" + DSC::to_string(current_refinement_), DSC::to_string(counter));
       }

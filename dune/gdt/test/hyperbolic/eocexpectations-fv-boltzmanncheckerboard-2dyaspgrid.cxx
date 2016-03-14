@@ -30,7 +30,7 @@ public:
   static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "L1") {
-      return {2.83e+00, 1.31e+00};
+      return {2.58e+00, 1.31e+00};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};

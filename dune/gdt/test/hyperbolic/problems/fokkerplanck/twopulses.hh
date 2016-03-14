@@ -197,6 +197,11 @@ public:
   {
     return true;
   }
+
+  virtual bool has_non_zero_rhs() const override
+  {
+    return false;
+  }
 };
 
 } // namespace Problems

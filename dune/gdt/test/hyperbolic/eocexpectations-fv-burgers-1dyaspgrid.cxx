@@ -31,9 +31,9 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1)
-        return {8.13e-02, 3.44e-02};
+        return {8.96e-02, 3.87e-02};
       else
-        return {1.01e-01, 5.43e-02, 2.69e-02, 1.22e-02, 4.75e-03};
+        return {1.13e-01, 6.17e-02, 2.88e-02, 1.24e-02, 4.82e-03};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
