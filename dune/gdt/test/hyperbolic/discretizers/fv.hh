@@ -7,21 +7,11 @@
 #define DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_FV_HH
 
 #include <dune/stuff/common/timedlogging.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/grid/periodicview.hh>
-#include <dune/stuff/la/container.hh>
 
-#include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/functionals/l2.hh>
-#include <dune/gdt/projections.hh>
-#include <dune/gdt/playground/operators/elliptic-cg.hh>
 #include <dune/gdt/spaces/fv/defaultproduct.hh>
-#include <dune/gdt/spaces/constraints.hh>
 
 #include <dune/gdt/test/hyperbolic/problems/interface.hh>
 #include "base.hh"
@@ -68,7 +58,7 @@ public:
 }; // class FVDiscretizer
 
 
-} // namespace LinearElliptic
+} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 
