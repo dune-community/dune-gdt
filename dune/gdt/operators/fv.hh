@@ -11,12 +11,8 @@
 
 #include <dune/stuff/aliases.hh>
 #include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/common/string.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/grid/information.hh>
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
@@ -27,9 +23,6 @@
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/localoperator/fv.hh>
-#include <dune/gdt/assembler/local/codim0.hh>
-#include <dune/gdt/assembler/local/codim1.hh>
-#include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/default.hh>
 
