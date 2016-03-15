@@ -15,6 +15,7 @@
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretizations/interfaces.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/prolongations.hh>
 
 namespace Dune {
