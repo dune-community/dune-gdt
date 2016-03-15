@@ -181,7 +181,7 @@ public:
       // check if data should be written in this timestep (and write)
       if (DSC::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
         if (save_solution)
-          sol.insert(solution.end(), std::make_pair(t, current_solution()));
+          sol.insert(sol.end(), std::make_pair(t, current_solution()));
         if (visualize)
           current_solution().visualize(filename_prefix, DSC::to_string(save_step_counter));
         if (output_progress)
