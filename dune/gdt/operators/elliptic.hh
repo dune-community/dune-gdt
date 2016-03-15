@@ -20,9 +20,10 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localoperator/integrals.hh>
-#include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/operators/default.hh>
 #include <dune/gdt/spaces/interface.hh>
+
+#include "interfaces.hh"
+#include "default.hh"
 
 namespace Dune {
 namespace GDT {
