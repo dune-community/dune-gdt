@@ -203,7 +203,8 @@ public:
       auto current_solution_on_level_it = current_solution_on_level_->begin();
       const auto current_solution_on_level_it_last = --current_solution_on_level_->end();
       const auto current_solution_it_end = current_solution_->end();
-      for (auto current_solution_it = current_solution_->begin(), last_time = current_solution_it->first; current_solution_it != current_solution_it_end; ++current_solution_it) {
+      auto last_time = current_solution_->begin()->first;
+      for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end; ++current_solution_it) {
         const auto time = current_solution_it->first;
         const auto time_on_level = current_solution_on_level_it->first;
         const auto inserted_it = time_prolongated_current_solution_on_level.insert(time_prolongated_current_solution_on_level_it_end, std::make_pair(time, current_solution_on_level_it->second));
