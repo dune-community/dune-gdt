@@ -20,17 +20,26 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
-template <class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
+template <class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1,
+          bool use_lax_friedrichs_flux = false, bool use_adaptive_timestepper = false,
+          bool use_linear_reconstruction = false>
 class FVDiscretizer
 {
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
                            RangeFieldType, dimRange, dimRangeCols> ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
+  static const constexpr FluxTimeStepperKombinations flux_and_timestepper_type =
+      use_lax_friedrichs_flux
+          ? FluxTimeStepperKombinations::laxfriedrichs_euler
+          : (use_linear_reconstruction ? FluxTimeStepperKombinations::godunovwithreconstruction_euler
+                                       : (use_adaptive_timestepper ? FluxTimeStepperKombinations::godunov_adaptiveRK
+                                                                   : FluxTimeStepperKombinations::godunov_euler));
   typedef
       typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
   typedef typename Spaces::FV::DefaultProduct<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
-  typedef Discretizations::NonStationaryDefault<ProblemType, FVSpaceType> DiscretizationType;
+  typedef Discretizations::NonStationaryDefault<ProblemType, FVSpaceType, use_lax_friedrichs_flux,
+                                                use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error

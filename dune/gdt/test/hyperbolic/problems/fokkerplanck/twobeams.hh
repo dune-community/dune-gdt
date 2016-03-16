@@ -97,7 +97,7 @@ public:
     return BaseType::static_id() + ".twobeams";
   }
 
-  std::string type() const
+  std::string type() const override
   {
     return BaseType::type() + ".twobeams";
   }
