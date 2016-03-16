@@ -198,9 +198,9 @@ public:
   }
 
   virtual TimeFieldType solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps,
-                              SolutionType& solution)
+                              SolutionType& sol)
   {
-    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", solution);
+    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol);
   }
 
   /**

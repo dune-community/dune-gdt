@@ -167,8 +167,8 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::cl
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values
  */
-template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp,
-          RungeKuttaMethods method = RungeKuttaMethods::euler>
+template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
+          RungeKuttaMethods method                                         = RungeKuttaMethods::euler>
 class ExplicitRungeKutta : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
