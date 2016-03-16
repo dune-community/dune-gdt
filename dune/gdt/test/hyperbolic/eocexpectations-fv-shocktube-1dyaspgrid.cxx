@@ -20,7 +20,8 @@ namespace Tests {
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
-                                Hyperbolic::ChooseDiscretizer::fv, 1, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 1,
+                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double> TestCaseType;
@@ -39,8 +40,61 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
+template <bool anything>
+class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
+                                Hyperbolic::ChooseDiscretizer::fv, 1,
+                                Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK, anything>
+    : public internal::HyperbolicEocExpectationsBase<1>
+{
+  typedef Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double> TestCaseType;
+
+public:
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
+  {
+    if (type == "L1") {
+      if (test_case.num_refinements() == 1)
+        return {7.01e-02, 4.98e-02};
+      else
+        return {7.05e-02, 5.04e-02, 3.47e-02, 2.32e-02};
+    } else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  } // ... results(...)
+}; // HyperbolicEocExpectations
+
+template <bool anything>
+class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
+                                Hyperbolic::ChooseDiscretizer::fv, 1,
+                                Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler, anything>
+    : public internal::HyperbolicEocExpectationsBase<1>
+{
+  typedef Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double> TestCaseType;
+
+public:
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
+  {
+    if (type == "L1") {
+      if (test_case.num_refinements() == 1)
+        return {8.82e-02, 6.65e-02};
+      else
+        return {8.86e-02, 6.70e-02, 4.91e-02, 3.42e-02};
+    } else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  } // ... results(...)
+}; // HyperbolicEocExpectations
+
 template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 1>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 1,
+                                         Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+
+template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
+                                         Hyperbolic::ChooseDiscretizer::fv, 1,
+                                         Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK>;
+
+template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
+                                         Hyperbolic::ChooseDiscretizer::fv, 1,
+                                         Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler>;
 
 
 } // namespace Tests

@@ -20,7 +20,8 @@ namespace Tests {
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double>,
-                                Hyperbolic::ChooseDiscretizer::fv, 1, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 1,
+                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double> TestCaseType;
@@ -40,7 +41,8 @@ public:
 }; // HyperbolicEocExpectations
 
 template class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 1>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 1,
+                                         Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
 
 
 } // namespace Tests

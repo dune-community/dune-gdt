@@ -38,8 +38,8 @@ public:
 
 } // namespace internal
 
-
-template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, bool anything = true>
+template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain,
+          Hyperbolic::FluxTimeStepperKombinations flux_timestepper, bool anything = true>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

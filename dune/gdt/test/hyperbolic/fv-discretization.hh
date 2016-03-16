@@ -40,8 +40,7 @@ struct hyperbolic_FV_discretization_godunov_euler : public ::testing::Test
                                                false,
                                                false,
                                                false> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(
-        test_case, {}, TestCaseType::ProblemType::static_id());
+    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_euler
@@ -67,8 +66,7 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK : public ::testing::Test
                                                false,
                                                true,
                                                false> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(
-        test_case, {}, TestCaseType::ProblemType::static_id() + "godunov_adaptiveRK");
+    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK
@@ -94,8 +92,7 @@ struct hyperbolic_FV_discretization_laxfriedrichs_euler : public ::testing::Test
                                                true,
                                                false,
                                                false> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(
-        test_case, {}, TestCaseType::ProblemType::static_id() + "_LF");
+    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_laxfriedrichs_euler
@@ -121,8 +118,7 @@ struct hyperbolic_FV_discretization_godunovwithreconstruction_euler : public ::t
                                                false,
                                                false,
                                                true> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(
-        test_case, {}, TestCaseType::ProblemType::static_id() + "_Reconstruction");
+    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_euler
