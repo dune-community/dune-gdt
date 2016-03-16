@@ -37,7 +37,7 @@ struct hyperbolic_FV_discretization_godunov_euler
     typedef typename Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double,
                                                 TestCaseType::dimRange, TestCaseType::dimRangeCols,
                                                 false, false, false > Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, TestCaseType::ProblemType::static_id());
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_euler
@@ -60,7 +60,7 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK
     typedef typename Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double,
                                                 TestCaseType::dimRange, TestCaseType::dimRangeCols,
                                                 false, true, false > Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, TestCaseType::ProblemType::static_id() + "godunov_adaptiveRK");
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK
@@ -83,7 +83,7 @@ struct hyperbolic_FV_discretization_laxfriedrichs_euler
     typedef typename Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double,
                                                 TestCaseType::dimRange, TestCaseType::dimRangeCols,
                                                 true, false, false > Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, TestCaseType::ProblemType::static_id() + "_LF");
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_laxfriedrichs_euler
@@ -106,7 +106,7 @@ struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
     typedef typename Hyperbolic::FVDiscretizer< typename TestCaseType::GridType, double,
                                                 TestCaseType::dimRange, TestCaseType::dimRangeCols,
                                                 false, false, true > Discretizer;
-    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {}, TestCaseType::ProblemType::static_id() + "_Reconstruction");
+    Tests::HyperbolicEocStudy< TestCaseType, Discretizer > eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_godunov_euler

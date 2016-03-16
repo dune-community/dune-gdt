@@ -22,6 +22,7 @@ template< bool anything >
 class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  1,
+                                 Hyperbolic::FluxTimeStepperKombinations::godunov_euler,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 1 >
 {
@@ -37,9 +38,35 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
+template< bool anything >
+class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
+                                 Hyperbolic::ChooseDiscretizer::fv,
+                                 1,
+                                 Hyperbolic::FluxTimeStepperKombinations::godunovwithreconstruction_euler,
+                                 anything >
+  : public internal::HyperbolicEocExpectationsBase< 1 >
+{
+  typedef Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double > TestCaseType;
+public:
+  static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
+  {
+    if (type == "L1") {
+      return {2.63e-01, 1.39e-01};
+    } else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  } // ... results(...)
+}; // HyperbolicEocExpectations
+
 template class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                           Hyperbolic::ChooseDiscretizer::fv,
-                                          1 >;
+                                          1,
+                                          Hyperbolic::FluxTimeStepperKombinations::godunov_euler >;
+
+template class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
+                                          Hyperbolic::ChooseDiscretizer::fv,
+                                          1,
+                                          Hyperbolic::FluxTimeStepperKombinations::godunovwithreconstruction_euler >;
 
 
 } // namespace Tests

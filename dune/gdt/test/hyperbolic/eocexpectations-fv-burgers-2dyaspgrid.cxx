@@ -22,6 +22,7 @@ template< bool anything >
 class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 >, double, 1 >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  2,
+                                 Hyperbolic::FluxTimeStepperKombinations::godunov_euler,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 2 >
 {
@@ -39,7 +40,8 @@ public:
 
 template class HyperbolicEocExpectations< Hyperbolic::BurgersTestCase< Dune::YaspGrid< 2 >,double, 1 >,
                                           Hyperbolic::ChooseDiscretizer::fv,
-                                          2 >;
+                                          2,
+                                          Hyperbolic::FluxTimeStepperKombinations::godunov_euler >;
 
 
 } // namespace Tests
