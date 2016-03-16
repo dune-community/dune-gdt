@@ -260,7 +260,6 @@ private:
   mutable typename DS::PerThreadValue<int> num_neighbors_;
 }; // class LaxFriedrichsNumericalCouplingFlux
 
-
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
 typename DS::PerThreadValue<
     typename LaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, domainDim>::DomainType>
@@ -382,7 +381,7 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = Dune::DynamicVector<RangeFieldType>(analytical_flux_.evaluate(u_i));
+    ret = analytical_flux_.evaluate(u_i);
     ret += analytical_flux_.evaluate(u_j);
     if (n_ij < 0)
       ret *= n_ij;
@@ -713,7 +712,7 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = Dune::DynamicVector<RangeFieldType>(analytical_flux_.evaluate(u_i));
+    ret = analytical_flux_.evaluate(u_i);
     ret += analytical_flux_.evaluate(u_j);
     if (n_ij < 0)
       ret *= n_ij;
