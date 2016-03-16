@@ -48,7 +48,7 @@ public:
     return BaseType::static_id() + ".onebeam";
   }
 
-  std::string type() const
+  std::string type() const override
   {
     return BaseType::type() + ".onebeam";
   }

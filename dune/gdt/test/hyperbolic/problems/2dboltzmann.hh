@@ -331,7 +331,7 @@ public:
     return BaseType::static_id() + ".boltzmann2dcheckerboard";
   }
 
-  std::string type() const
+  std::string type() const override
   {
     return BaseType::type() + ".boltzmann2dcheckerboard";
   }

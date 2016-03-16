@@ -58,13 +58,13 @@ public:
     // Oh: and do not forget to add
     //   'extern template class HyperbolicEocExpectations< ... >'
     // to each test source using these results!
-    return HyperbolicEocExpectations< TestCaseType, Discretizer::type, GridViewType::dimension >::rate(type);
+    return HyperbolicEocExpectations< TestCaseType, Discretizer::type, GridViewType::dimension, Discretizer::flux_and_timestepper_type >::rate(type);
   } // ... expected_rate(...)
 
   virtual std::vector< double > expected_results(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker, see the explanation above in expected_rate()!
-    return HyperbolicEocExpectations< TestCaseType, Discretizer::type, GridViewType::dimension >::results(this->test_case_, type);
+    return HyperbolicEocExpectations< TestCaseType, Discretizer::type, GridViewType::dimension, Discretizer::flux_and_timestepper_type >::results(this->test_case_, type);
   }
 
   virtual std::vector< std::string > available_norms() const override final
