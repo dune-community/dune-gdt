@@ -110,11 +110,12 @@ public:
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange      = Traits::dimRange;
 
-  explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear = false)
+  explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear = false,
+                                        const bool reinitialize_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_ && is_linear_)
+    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
       initialize_jacobians();
   }
 
@@ -278,11 +279,12 @@ public:
   typedef typename DS::Functions::Affine<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
                                          RangeFieldType, dimRange, 1> AffineFunctionType;
 
-  explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear = false)
+  explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear,
+                                        const bool reinitialize_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_ && is_linear_)
+    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
       initialize_jacobians();
   }
 
@@ -479,12 +481,13 @@ public:
   static const size_t dimRange  = Traits::dimRange;
 
   explicit GodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                        const BoundaryValueFunctionType& boundary_values, const bool is_linear = false)
+                                        const BoundaryValueFunctionType& boundary_values, const bool is_linear = false,
+                                        const bool reinitialize_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_ && is_linear_)
+    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
       initialize_jacobians();
   }
 
@@ -650,12 +653,13 @@ public:
   typedef typename DS::Functions::Affine<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
                                          RangeFieldType, dimRange, 1> AffineFunctionType;
   explicit GodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                        const BoundaryValueFunctionType& boundary_values, const bool is_linear = false)
+                                        const BoundaryValueFunctionType& boundary_values, const bool is_linear = false,
+                                        const bool reinitialize_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (!jacobians_constructed_ && is_linear_)
+    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
       initialize_jacobians();
   }
 
