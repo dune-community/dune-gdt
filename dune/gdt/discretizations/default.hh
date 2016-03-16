@@ -14,6 +14,7 @@
 #include <dune/stuff/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
+#include <dune/gdt/timestepper/adaptive-rungekutta.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/timestepper/fractional-step.hh>
 
@@ -28,7 +29,7 @@ namespace Discretizations {
 template< class ProblemType, class AnsatzSpaceType, class MatrixType, class VectorType, class TestSpaceType = AnsatzSpaceType >
 class StationaryContainerBasedDefault;
 
-template< class ProblemImp, class FVSpaceImp >
+template< class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper, bool use_linear_reconstruction >
 class NonStationaryDefault;
 
 
@@ -50,13 +51,12 @@ public:
 }; // class StationaryContainerBasedDefaultTraits
 
 
-template< class ProblemImp, class FVSpaceImp >
+template< class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper, bool use_linear_reconstruction >
 class NonStationaryDefaultTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
 public:
-  typedef NonStationaryDefault
-      < ProblemImp, FVSpaceImp >                                          derived_type;
+  typedef NonStationaryDefault< ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > derived_type;
   typedef ProblemImp                                                      ProblemType;
   typedef FVSpaceImp                                                      FVSpaceType;
   typedef typename FVSpaceType::RangeFieldType                            RangeFieldType;
@@ -201,15 +201,52 @@ private:
 }; // class StationaryContainerBasedDefault
 
 
-template< class ProblemImp, class FVSpaceImp >
+namespace internal {
+
+
+template< class OperatorType, bool use_lax_friedrichs_flux = false >
+struct AdvectionOperatorCreator
+{
+  template< class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType >
+  static OperatorType create(const AnalyticalFluxType& analytical_flux,
+                             const BoundaryValueType& boundary_values,
+                             const ConstantFunctionType& /*dx_function*/,
+                             const RangeFieldType /*dt*/,
+                             const bool is_linear,
+                             const bool use_linear_reconstruction)
+  {
+    return OperatorType(analytical_flux, boundary_values, is_linear, use_linear_reconstruction);
+  }
+};
+
+template< class OperatorType >
+struct AdvectionOperatorCreator< OperatorType, true >
+{
+  template< class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType >
+  static OperatorType create(const AnalyticalFluxType& analytical_flux,
+                             const BoundaryValueType& boundary_values,
+                             const ConstantFunctionType& dx_function,
+                             const RangeFieldType dt,
+                             const bool is_linear,
+                             const bool /*use_linear_reconstruction*/)
+  {
+    return OperatorType(analytical_flux, boundary_values, dx_function, dt, is_linear);
+  }
+};
+
+
+} // namespace internal
+
+
+template< class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper, bool use_linear_reconstruction >
 class NonStationaryDefault
   : public NonStationaryDiscretizationInterface<
-             internal::NonStationaryDefaultTraits< ProblemImp, FVSpaceImp > >
+             internal::NonStationaryDefaultTraits< ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > >
 {
   typedef NonStationaryDiscretizationInterface
-          < internal::NonStationaryDefaultTraits< ProblemImp, FVSpaceImp > >
+          < internal::NonStationaryDefaultTraits< ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > >
       BaseType;
-  typedef NonStationaryDefault< ProblemImp, FVSpaceImp > ThisType;
+  typedef NonStationaryDefault< ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > ThisType;
 public:
   using typename BaseType::ProblemType;
   using typename BaseType::FVSpaceType;
@@ -250,6 +287,7 @@ public:
       typedef typename ProblemType::RHSType               RHSType;
       typedef typename ProblemType::InitialValueType      InitialValueType;
       typedef typename ProblemType::BoundaryValueType     BoundaryValueType;
+      typedef typename ProblemType::DomainFieldType       DomainFieldType;
       typedef typename ProblemType::RangeFieldType        RangeFieldType;
       const std::shared_ptr< const AnalyticalFluxType > analytical_flux = problem_.flux();
       const std::shared_ptr< const InitialValueType > initial_values = problem_.initial_values();
@@ -263,35 +301,40 @@ public:
       //project initial values
       project(*initial_values, u);
 
-      const double t_end = problem_.t_end();
-      const double CFL = problem_.CFL();
+      const RangeFieldType t_end = problem_.t_end();
+      const RangeFieldType CFL = problem_.CFL();
 
       //calculate dx and choose t_end and initial dt
       Dune::Stuff::Grid::Dimensions< typename FVSpaceType::GridViewType > dimensions(fv_space_->grid_view());
-      double dx = dimensions.entity_width.max();
+      RangeFieldType dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);
-      double dt = CFL*dx;
+      RangeFieldType dt = CFL*dx;
 
       // define operator types
-      typedef typename Dune::GDT::Operators::AdvectionGodunov
-          < AnalyticalFluxType, BoundaryValueType > OperatorType;
-//      typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
-//                                                         DomainFieldType, dimDomain,
-//                                                         RangeFieldType, 1, 1 >        ConstantFunctionType;
-//      typedef typename Dune::GDT::Operators::AdvectionLaxFriedrichs
-//          < AnalyticalFluxType, BoundaryValueType, ConstantFunctionType > OperatorType;
+      typedef typename Dune::Stuff::Functions::Constant< typename FVSpaceType::EntityType,
+                                                         DomainFieldType, dimDomain,
+                                                         RangeFieldType, 1, 1 >        ConstantFunctionType;
+      typedef typename std::conditional< use_lax_friedrichs_flux,
+          typename Dune::GDT::Operators::AdvectionLaxFriedrichs< AnalyticalFluxType, BoundaryValueType, ConstantFunctionType >,
+          typename Dune::GDT::Operators::AdvectionGodunov< AnalyticalFluxType, BoundaryValueType >
+          >::type OperatorType;
       typedef typename Dune::GDT::Operators::AdvectionRHS< RHSType > RHSOperatorType;
 
       // create right hand side operator
       RHSOperatorType rhs_operator(*rhs);
 
-      //create advection operator
-      OperatorType advection_operator(*analytical_flux, *boundary_values, is_linear);
-//      const ConstantFunctionType dx_function(dx);
-//      OperatorType advection_operator(*analytical_flux, *boundary_values, dx_function, dt, is_linear, false);
+      const ConstantFunctionType dx_function(dx);
 
-      typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< OperatorType, FVFunctionType, double > OperatorTimeStepperType;
+      //create advection operator
+      OperatorType advection_operator = internal::AdvectionOperatorCreator< OperatorType, use_lax_friedrichs_flux >::create(*analytical_flux,
+                                                                                                                            *boundary_values,
+                                                                                                                            dx_function, dt, is_linear,
+                                                                                                                            use_linear_reconstruction);
+
+      typedef typename std::conditional< use_adaptive_timestepper,
+          typename Dune::GDT::TimeStepper::AdaptiveRungeKutta< OperatorType, FVFunctionType >,
+          typename Dune::GDT::TimeStepper::ExplicitRungeKutta< OperatorType, FVFunctionType > >::type OperatorTimeStepperType;
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
 
       // do the time steps
@@ -299,7 +342,9 @@ public:
       solution.clear();
       if (problem_.has_non_zero_rhs()) {
         // use fractional step method
-        typedef typename Dune::GDT::TimeStepper::ExplicitRungeKutta< RHSOperatorType, FVFunctionType, double > RHSOperatorTimeStepperType;
+        typedef typename std::conditional< use_adaptive_timestepper,
+            typename Dune::GDT::TimeStepper::AdaptiveRungeKutta< RHSOperatorType, FVFunctionType >,
+            typename Dune::GDT::TimeStepper::ExplicitRungeKutta< RHSOperatorType, FVFunctionType > >::type RHSOperatorTimeStepperType;
         RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
         typedef typename Dune::GDT::TimeStepper::FractionalStep< OperatorTimeStepperType, RHSOperatorTimeStepperType > TimeStepperType;
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
