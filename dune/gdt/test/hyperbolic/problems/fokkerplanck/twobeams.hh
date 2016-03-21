@@ -81,7 +81,7 @@ public:
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux< FluxAffineFunctionType, E, D, d, R, dimRange, 1 > DefaultFluxType;
   typedef typename DefaultFluxType::RangeType                                       RangeType;
   typedef typename DefaultFluxType::FluxRangeType                                       FluxRangeType;
-  typedef typename FluxAffineFunctionType::MatrixType                                      MatrixType;
+  typedef typename FluxAffineFunctionType::FieldMatrixType                            MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename DS::Functions::Affine< DummyEntityType, R, dimRange, R, dimRange, 1 > RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard< RHSAffineFunctionType, E, D, d, R, dimRange, 1 > RHSCheckerboardFunctionType;
@@ -186,7 +186,6 @@ protected:
       A_str += "]";
       rhs_config["A.0"] = A_str;
       rhs_config["b.0"] = DSC::to_string(FluxRangeType(0));
-      rhs_config["sparse.0"] = "true";
     } // ... create_rhs_values(...)
 
     // flux matrix is D*M^(-1)
@@ -492,7 +491,6 @@ public:
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"] = GetData::create_flux_matrix();
     flux_config["b"] = DSC::to_string(RangeType(0));
-    flux_config["sparse"] = "true";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"] = "[0.0]";

@@ -47,7 +47,7 @@ public:
                                                    dimDomain >                      FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux< FluxAffineFunctionType, EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1 > DefaultFluxType;
   typedef typename DefaultFluxType::FluxRangeType                                       FluxRangeType;
-  typedef typename FluxAffineFunctionType::MatrixType                               MatrixType;
+  typedef typename FluxAffineFunctionType::FieldMatrixType                               MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename DS::Functions::Affine< DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1 > RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard< RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1 > RHSCheckerboardFunctionType;
@@ -98,7 +98,6 @@ protected:
           S[pos(l, m)][pos(l, m)] = -1.0*Sigma_t;
       rhs_config["A.0"] = DSC::to_string(S, precision);
       rhs_config["b"] = DSC::to_string(RangeType(0));
-      rhs_config["sparse.0"] = "true";
     } // ... create_rhs_values(...)
 
     static void create_flux_matrices(ConfigType& flux_config)
@@ -136,9 +135,7 @@ protected:
         }
       }
       flux_config["A.0"] = DSC::to_string(X, precision);
-      flux_config["sparse.0"] = "true";
       flux_config["A.1"] = DSC::to_string(Z, precision);
-      flux_config["sparse.1"] = "true";
       flux_config["b"] = DSC::to_string(FluxRangeType(0));
     } // ... create_flux_matrix()
 
@@ -390,7 +387,6 @@ protected:
           size_t number = 7*row + col;
           rhs_config["A." + DSC::to_string(number)] = DSC::to_string(S, precision);
           rhs_config["b." + DSC::to_string(number)] = DSC::to_string(q);
-          rhs_config["sparse." + DSC::to_string(number)] = "true";
         }
       }
     } // ... create_rhs_values(...)
