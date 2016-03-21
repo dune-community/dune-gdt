@@ -65,12 +65,25 @@ public:
   typedef typename InterfaceType::BackendType BackendType;
 private:
   typedef PDELab::LocalFunctionSpace< BackendType, PDELab::TrialSpaceTag > PdeLabLFSType;
+public:
+  typedef typename PdeLabLFSType::Traits::DOFIndex MultiIndexType;
 
 public:
   explicit PdelabWrapperBase(const BackendType& pdelab_space)
     : backend_(pdelab_space)
     , lfs_(backend_)
-  {}
+  {
+    const auto& grid_view = backend_.gridView();
+    const auto it_end = grid_view.template end<0>();
+    std::size_t count = 0;
+    for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
+      const auto& entity = *it;
+      lfs_.bind(entity);
+      for (size_t ii = 0; ii < lfs_.size(); ++ii)
+        if (index_map_.find(lfs_.dofIndex(ii)) == index_map_.end())
+          index_map_.insert(std::make_pair(lfs_.dofIndex(ii), count++));
+    }
+  }
 
   virtual ~PdelabWrapperBase(){}
 
@@ -113,7 +126,7 @@ public:
   {
     lfs_.bind(entity);
     assert(localIndex < lfs_.size());
-    return mapAfterBound(entity, localIndex);
+    return index_map_[lfs_.dofIndex(localIndex)];
   } // ... mapToGlobal(...)
 
 protected:
@@ -121,6 +134,7 @@ protected:
 
   const BackendType& backend_;
   mutable PdeLabLFSType lfs_;
+  mutable std::unordered_map< MultiIndexType, std::size_t > index_map_;
 }; // class PdelabWrapperBase
 
 
