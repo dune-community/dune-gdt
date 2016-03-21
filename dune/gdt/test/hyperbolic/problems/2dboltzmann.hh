@@ -46,7 +46,7 @@ public:
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
                                                                 dimDomain, RangeFieldImp, dimRange, 1> DefaultFluxType;
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
-  typedef typename FluxAffineFunctionType::MatrixType MatrixType;
+  typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename DS::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
       RHSAffineFunctionType;
@@ -98,9 +98,8 @@ protected:
       for (size_t l = 1; l <= momentOrder; ++l)
         for (size_t m = 0; m <= l; ++m)
           S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
-      rhs_config["A.0"]      = DSC::to_string(S, precision);
-      rhs_config["b"]        = DSC::to_string(RangeType(0));
-      rhs_config["sparse.0"] = "true";
+      rhs_config["A.0"] = DSC::to_string(S, precision);
+      rhs_config["b"]   = DSC::to_string(RangeType(0));
     } // ... create_rhs_values(...)
 
     static void create_flux_matrices(ConfigType& flux_config)
@@ -136,11 +135,9 @@ protected:
           }
         }
       }
-      flux_config["A.0"]      = DSC::to_string(X, precision);
-      flux_config["sparse.0"] = "true";
-      flux_config["A.1"]      = DSC::to_string(Z, precision);
-      flux_config["sparse.1"] = "true";
-      flux_config["b"]        = DSC::to_string(FluxRangeType(0));
+      flux_config["A.0"] = DSC::to_string(X, precision);
+      flux_config["A.1"] = DSC::to_string(Z, precision);
+      flux_config["b"]   = DSC::to_string(FluxRangeType(0));
     } // ... create_flux_matrix()
 
     // initial value is max(exp(-10*((x-0.5)^2 + (y-0.5)^2)/sigma^2), 10^(-4)) with sigma = 0.02 for \psi_0^0 and 0 else
@@ -389,7 +386,6 @@ protected:
           size_t number = 7 * row + col;
           rhs_config["A." + DSC::to_string(number)] = DSC::to_string(S, precision);
           rhs_config["b." + DSC::to_string(number)] = DSC::to_string(q);
-          rhs_config["sparse." + DSC::to_string(number)] = "true";
         }
       }
     } // ... create_rhs_values(...)
