@@ -22,6 +22,8 @@
 # include <dune/grid/alugrid.hh>
 #endif
 
+#include <dune/stuff/test/gtest/gtest.h>
+
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>
@@ -167,8 +169,8 @@ public:
                       "cos(8.0 * pi * x[0]) + cos(8.0 * pi * x[1])",
                       3,
                       "exact solution",
-                      {{"-8.0 * pi * sin(8.0 * pi * x[0])",
-                        "-8.0 * pi * sin(8.0 * pi * x[1])"}})
+                      {"-8.0 * pi * sin(8.0 * pi * x[0])",
+                       "-8.0 * pi * sin(8.0 * pi * x[1])"})
   {}
 
   void print_header(std::ostream& out = std::cout) const
@@ -278,8 +280,8 @@ public:
                       "cos(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
                       2,
                       "exact solution",
-                      {{"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
-                        "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"}})
+                      {"-0.5 * pi * sin(0.5 * pi * x[0]) * cos(0.5 * pi * x[1])",
+                       "-0.5 * pi * cos(0.5 * pi * x[0]) * sin(0.5 * pi * x[1])"})
   {}
 
   void print_header(std::ostream& out = std::cout) const
@@ -705,7 +707,8 @@ private:
 typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridType;
 
 #define ALU_CONFORM_2D_ESTIMATOR_TESTCASES \
-    EllipticTestCase::LocalThermalBlock< AluConform2dGridType > \
+    EllipticTestCase::ESV07< AluConform2dGridType > \
+  , EllipticTestCase::LocalThermalBlock< AluConform2dGridType > \
   , EllipticTestCase::Spe10Model1< AluConform2dGridType >
 
 #define ALU_CONFORM_2D_TESTCASES \
@@ -718,8 +721,7 @@ typedef Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > AluConform2dGridT
 
 typedef testing::Types<
 #if HAVE_ALUGRID
-                        EllipticTestCase::ESV07< AluConform2dGridType >
-                      , ALU_CONFORM_2D_ESTIMATOR_TESTCASES
+                      ALU_CONFORM_2D_ESTIMATOR_TESTCASES
 #endif
                       > EllipticEstimatorTestCases;
 
