@@ -6,6 +6,8 @@
 #ifndef DUNE_GDT_MAPPER_PDELAB_HH
 #define DUNE_GDT_MAPPER_PDELAB_HH
 
+#include <unordered_map>
+
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
 
