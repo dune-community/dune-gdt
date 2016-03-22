@@ -423,16 +423,16 @@ public:
                || std::is_same< TestCase, EllipticTestCase::ESV07< ALUGrid< 2, 2, simplex, conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
+          return {1.82e-02, 4.53e-03, 1.12e-03, 2.78e-04};
         else if (type.compare("H1_semi") == 0)
-          return {3.79e-01, 1.90e-01, 9.38e-02, 4.67e-02};
+          return {1.48e-01, 7.28e-02, 3.62e-02, 1.80e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {1.25e-02, 1.42e-03, 1.69e-04, 2.08e-05};
+          return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
         else if (type.compare("H1_semi") == 0)
-          return {7.84e-02, 2.01e-02, 5.02e-03, 1.26e-03};
+          return {1.41e-02, 3.56e-03, 8.91e-04, 2.20e-04};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
