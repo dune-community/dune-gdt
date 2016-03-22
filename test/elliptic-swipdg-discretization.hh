@@ -41,14 +41,14 @@
 #include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
-#include <dune/gdt/operators/prolongations.hh>
-#include <dune/gdt/operators/projections.hh>
+#include <dune/gdt/prolongations.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/playground/products/ESV2007.hh>
 #include <dune/gdt/playground/spaces/dg/fem.hh>
-#include <dune/gdt/products/elliptic.hh>
-#include <dune/gdt/products/h1.hh>
-#include <dune/gdt/products/l2.hh>
-#include <dune/gdt/products/weightedl2.hh>
+#include <dune/gdt/operators/elliptic.hh>
+#include <dune/gdt/operators/laplace.hh>
+#include <dune/gdt/operators/l2.hh>
+#include <dune/gdt/operators/weighted-l2.hh>
 #include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/fv/default.hh>
@@ -351,7 +351,6 @@ public:
         compute_reference_solution();
       timer.reset();
       const auto reference_grid_view = test_.reference_grid_view();
-      const Operators::Prolongation< GridViewType > prolongation_operator(reference_grid_view);
       assert(reference_discretization_);
       if (!current_solution_vector_)
         current_solution_vector_
@@ -359,7 +358,7 @@ public:
       DiscreteFunctionType reference_level_solution(reference_discretization_->space(),
                                                     *current_solution_vector_,
                                                     "solution on reference grid part");
-      prolongation_operator.apply(current_level_solution, reference_level_solution);
+      prolong(reference_grid_view, current_level_solution, reference_level_solution);
       last_computed_level_ = current_level_;
     }
     return timer.elapsed() + elapsed;
@@ -557,11 +556,9 @@ protected:
     using namespace Dune;
     using namespace Dune::GDT;
     if (type.compare("L2") == 0) {
-      Products::L2< GridViewType > l2_product_operator(grid_view);
-      return std::sqrt(l2_product_operator.apply2(function, function));
+      return make_l2_operator(grid_view)->induced_norm(function);
     } else if (type.compare("H1_semi") == 0) {
-      Products::H1Semi< GridViewType > h1_product_operator(grid_view);
-      return std::sqrt(h1_product_operator.apply2(function, function));
+      return make_laplace_operator(grid_view)->induced_norm(function);
     } else
       DUNE_THROW(Dune::RangeError, "Wrong type '" << type << "' requested!");
   } // ... compute_norm(...)
@@ -755,9 +752,7 @@ private:
       typedef Dune::Stuff::Functions::Difference< ExactSolutionType, ConstDiscreteFunctionType > DifferenceType;
       const DifferenceType difference(test_.exact_solution(), current_solution);
       auto grid_view = test_.level_grid_view(current_level_);
-      const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
-          elliptic_product(grid_view, test_.diffusion(), over_integrate);
-      return std::sqrt(elliptic_product.apply2(difference, difference));
+      return make_elliptic_operator(grid_view, test_.diffusion(), over_integrate)->induced_norm(difference);
     } else {
       if (!reference_solution_computed_)
         this->compute_reference_solution();
@@ -767,9 +762,7 @@ private:
       const VectorType difference_vector = (*reference_solution_vector_) - (*current_solution_vector_);
       const ConstDiscreteFunctionType difference(reference_discretization_->space(), difference_vector);
       auto grid_view = test_.reference_grid_view();
-      const GDT::Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
-          elliptic_product(grid_view, test_.diffusion(), over_integrate);
-      return std::sqrt(elliptic_product.apply2(difference, difference));
+      return make_elliptic_operator(grid_view, test_.diffusion(), over_integrate)->induced_norm(difference);
     }
   } // ... compute_energy_norm(...)
 
@@ -791,9 +784,7 @@ private:
     const Operators::OswaldInterpolation< GridViewType > oswald_interpolation_operator(grid_view);
     oswald_interpolation_operator.apply(discrete_solution, oswald_interpolation);
 
-    const Products::Elliptic< GridViewType, typename TestCase::DiffusionType >
-        elliptic_product(grid_view, test_.diffusion(), over_integrate);
-    return elliptic_product.induced_norm(discrete_solution - oswald_interpolation);
+    return make_elliptic_operator(grid_view, test_.diffusion(), over_integrate)->induced_norm(discrete_solution - oswald_interpolation);
   } // ... compute_nonconformity_estimator(...)
 
   double compute_residual_estimator_ESV07()
@@ -807,15 +798,12 @@ private:
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space);
 
-    Operators::Projection< GridViewType > projection_operator(grid_view, over_integrate);
-    projection_operator.apply(test_.force(), p0_force);
+    project(grid_view, test_.force(), p0_force, over_integrate);
 
     typedef typename Stuff::Functions::ESV2007::Cutoff< typename TestCase::DiffusionType > CutoffFunctionType;
     const CutoffFunctionType cutoff_function(test_.diffusion());
 
-    const Products::WeightedL2< GridViewType, CutoffFunctionType >
-        weighted_l2_product(grid_view, cutoff_function, over_integrate);
-    return weighted_l2_product.induced_norm(test_.force() - p0_force);
+    return make_weighted_l2_operator(grid_view, cutoff_function, over_integrate)->induced_norm(test_.force() - p0_force);
   } // ... compute_residual_estimator_ESV07(...)
 
   double compute_diffusive_flux_estimator()
@@ -873,8 +861,7 @@ private:
     VectorType p0_force_vector(p0_space.mapper().size());
     typedef DiscreteFunction< P0SpaceType, VectorType > P0DiscreteFunctionType;
     P0DiscreteFunctionType p0_force(p0_space, p0_force_vector);
-    Operators::Projection< GridViewType > projection_operator(grid_view);
-    projection_operator.apply(test_.force(), p0_force);
+    project(grid_view, test_.force(), p0_force);
 
     typedef Spaces::RT::PdelabBased< GridViewType, 0, RangeFieldType, dimDomain > RTN0SpaceType;
     const RTN0SpaceType rtn0_space(grid_view);
