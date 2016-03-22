@@ -15,6 +15,9 @@ namespace GDT {
 namespace Spaces {
 
 
+static constexpr ChooseSpaceBackend default_dg_backend = default_space_backend;
+
+
 template< class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
 class DGInterface
   : public SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >
