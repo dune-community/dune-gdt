@@ -861,6 +861,8 @@ public:
                 Dune::DynamicVector< R >& ret) const
   {
     typedef Stuff::Common::FieldMatrix< R, dimDomain, dimDomain > TensorType;
+    // clear ret
+    ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
@@ -868,13 +870,14 @@ public:
     const auto       diffusionFactorValue = localDiffusionFactor.evaluate(localPointEntity);
     const TensorType diffusionTensorValue = localDiffusionTensor.evaluate(localPointEntity);
     const auto       dirichletValue       = localDirichlet.evaluate(localPointEntity);
-    const auto       diffusionValue = diffusionTensorValue * diffusionFactorValue;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = testBase.order();
     const R sigma = SIPDG::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = unitOuterNormal * (diffusionTensorValue * unitOuterNormal);
     const R penalty = (diffusionFactorValue * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    // compute diffusion value (should be factor * tensor, but this is the same)
+    const auto diffusionValue = diffusionTensorValue * diffusionFactorValue;
     // evaluate basis
     const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPointEntity);
@@ -884,9 +887,9 @@ public:
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term
-      ret[ii] = -1.0 * dirichletValue * ((diffusionValue * testGradients[ii][0]) * unitOuterNormal);
+      ret[ii] += -1.0 * dirichletValue * ((diffusionValue * testGradients[ii][0]) * unitOuterNormal);
       // penalty term
-      ret[ii] = penalty * dirichletValue * testValues[ii];
+      ret[ii] += penalty * dirichletValue * testValues[ii];
     } // loop over all test basis functions
   } // ... evaluate(...)
 
