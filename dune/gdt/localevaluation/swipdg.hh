@@ -394,6 +394,11 @@ public:
                 Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
                 Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
+    // clear ret
+    entityEntityRet *= 0.0;
+    neighborNeighborRet *= 0.0;
+    entityNeighborRet *= 0.0;
+    neighborEntityRet *= 0.0;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
     const auto localPointEn    = intersection.geometryInInside().global(localPoint);
     const auto localPointNe    = intersection.geometryInOutside().global(localPoint);
@@ -448,10 +453,10 @@ public:
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
         // consistency term
-        entityEntityRetRow[jj] =
+        entityEntityRetRow[jj] +=
             -weight_minus * functionValueEn * (ansatzGradientsEn[jj][0] * unitOuterNormal) * testValuesEn[ii];
         // symmetry term
-        entityEntityRetRow[jj] =
+        entityEntityRetRow[jj] +=
             -weight_minus * ansatzValuesEn[jj] * functionValueEn * (testGradientsEn[ii][0] * unitOuterNormal);
         // penalty term
         entityEntityRetRow[jj] += penalty * ansatzValuesEn[jj] * testValuesEn[ii];
@@ -459,10 +464,10 @@ public:
       // loop over all neighbor ansatz basis functions
       for (size_t jj = 0; jj < colsNe; ++jj) {
         // consistency term
-        entityNeighborRetRow[jj] =
+        entityNeighborRetRow[jj] +=
             -weight_plus * functionValueNe * (ansatzGradientsNe[jj][0] * unitOuterNormal) * testValuesEn[ii];
         // symmetry term
-        entityNeighborRetRow[jj] =
+        entityNeighborRetRow[jj] +=
             weight_minus * ansatzValuesNe[jj] * functionValueEn * (testGradientsEn[ii][0] * unitOuterNormal);
         // penalty term
         entityNeighborRetRow[jj] += -1.0 * penalty * ansatzValuesNe[jj] * testValuesEn[ii];
@@ -475,10 +480,10 @@ public:
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
         // consistency term
-        neighborEntityRetRow[jj] =
+        neighborEntityRetRow[jj] +=
             weight_minus * functionValueEn * (ansatzGradientsEn[jj][0] * unitOuterNormal) * testValuesNe[ii];
         // symmetry term
-        neighborEntityRetRow[jj] =
+        neighborEntityRetRow[jj] +=
             -weight_plus * ansatzValuesEn[jj] * functionValueNe * (testGradientsNe[ii][0] * unitOuterNormal);
         // penalty term
         neighborEntityRetRow[jj] += -1.0 * penalty * ansatzValuesEn[jj] * testValuesNe[ii];
@@ -486,10 +491,10 @@ public:
       // loop over all neighbor ansatz basis functions
       for (size_t jj = 0; jj < colsNe; ++jj) {
         // consistency term
-        neighborNeighborRetRow[jj] =
+        neighborNeighborRetRow[jj] +=
             weight_plus * functionValueNe * (ansatzGradientsNe[jj][0] * unitOuterNormal) * testValuesNe[ii];
         // symmetry term
-        neighborNeighborRetRow[jj] =
+        neighborNeighborRetRow[jj] +=
             weight_plus * ansatzValuesNe[jj] * functionValueNe * (testGradientsNe[ii][0] * unitOuterNormal);
         // penalty term
         neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
