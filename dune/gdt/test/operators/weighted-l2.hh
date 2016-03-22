@@ -307,8 +307,8 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight    = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_weighted_l2_operator(weight, grid_view);
-    auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_operator(weight, grid_view, 1);
+    auto DUNE_UNUSED(wo_over_integrate) = make_weighted_l2_operator(grid_view, weight);
+    auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_operator(grid_view, weight, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
@@ -316,7 +316,7 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight    = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    return make_weighted_l2_operator(weight, grid_view)->apply2(function, function);
+    return make_weighted_l2_operator(grid_view, weight)->apply2(function, function);
   }
 
   void apply_is_callable()
@@ -326,7 +326,7 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     auto& source          = this->discrete_function_;
     auto range            = make_discrete_function<VectorType>(this->space_);
 
-    auto op = make_weighted_l2_operator(weight, grid_view);
+    auto op = make_weighted_l2_operator(grid_view, weight);
     op->apply(source, range);
   } // ... apply_is_callable(...)
 }; // struct WeightedL2OperatorTest

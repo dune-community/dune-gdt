@@ -328,11 +328,11 @@ private:
 // ///////////////////////// //
 
 template <class GridViewType, class WeightFunctionType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<WeightFunctionType>::value,
+typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
+                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<WeightedL2Operator<WeightFunctionType, GridViewType,
                                                            typename WeightFunctionType::RangeFieldType>>>::type
-make_weighted_l2_operator(const WeightFunctionType& weight, const GridViewType& grid_view,
+make_weighted_l2_operator(const GridViewType& grid_view, const WeightFunctionType& weight,
                           const size_t over_integrate = 0)
 {
   return DSC::
