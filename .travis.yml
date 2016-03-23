@@ -88,6 +88,10 @@ cache:
 
 env:
   global:
+    - BASEDIR=$HOME/src
+    - PATH=${BASEDIR}/local/bin:$PATH
+    - LD_LIBRARY_PATH=${BASEDIR}/local/lib64:${BASEDIR}/local/lib:$LD_LIBRARY_PATH
+    - PKG_CONFIG_PATH=${BASEDIR}/local/lib64/pkgconfig:${BASEDIR}/local/lib/pkgconfig:${BASEDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
     - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
     - CONFIGURE_FLAGS="--disable-parallel"
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
