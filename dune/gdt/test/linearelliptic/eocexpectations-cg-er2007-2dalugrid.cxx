@@ -3,11 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifdef ENABLE_MPI
-# undef ENABLE_MPI
-#endif
-#define ENABLE_MPI 0
-
 #include "config.h"
 
 #if HAVE_ALUGRID
