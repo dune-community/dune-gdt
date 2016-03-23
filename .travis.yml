@@ -48,7 +48,7 @@ before_install:
 install:
   - cd $HOME/src
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
-  - export SRC_DCTRL="$PWD/dune-common/bin/dunecontrol --disable-parallel"
+  - export SRC_DCTRL="$PWD/dune-common/bin/dunecontrol"
   - ${SRC_DCTRL} ${BLD} all
   # move my travis checkout into this source tree
   - cp -ra ${TRAVIS_BUILD_DIR} .
@@ -89,6 +89,7 @@ cache:
 env:
   global:
     - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
+    - CONFIGURE_FLAGS="--disable-parallel"
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
     - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
     - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
