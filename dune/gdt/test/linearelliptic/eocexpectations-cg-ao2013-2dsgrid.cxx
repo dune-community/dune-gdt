@@ -33,14 +33,14 @@ public:
         return {4.52e-02, 1.27e-02, 3.28e-03, 8.50e-04};
     } else if (type == "H1_semi") {
       if (test_case.num_refinements() == 1)
-        return {4.07e-01, 1.81e-01};
+        return {4.12e-01, 1.88e-01};
       else
-        return {4.19e-01, 2.07e-01, 1.05e-01, 5.21e-02};
+        return {4.20e-01, 2.08e-01, 1.09e-01, 6.01e-02};
     } else if (type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {2.43e-01, 1.43e-01};
+        return {2.68e-01, 1.90e-01};
       else
-        return {2.50e-01, 1.64e-01, 1.15e-01, 7.81e-02};
+        return {2.59e-01, 1.78e-01, 1.37e-01, 1.12e-01};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
