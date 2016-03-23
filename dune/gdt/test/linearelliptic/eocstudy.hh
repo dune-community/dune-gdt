@@ -39,7 +39,7 @@ private:
 public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
   LinearEllipticEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
-                         const std::string visualize_prefix = "", const size_t over_integrate = 0)
+                         const std::string visualize_prefix = "", const size_t over_integrate = 2)
     : BaseType(test_case, only_these_norms, visualize_prefix)
     , over_integrate_(over_integrate)
   {
