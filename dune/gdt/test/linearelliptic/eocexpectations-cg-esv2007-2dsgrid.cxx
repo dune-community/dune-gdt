@@ -29,7 +29,7 @@ public:
     if (type == "L2")
       return {8.28e-03, 2.04e-03, 5.09e-04, 1.27e-04};
     else if (type == "H1_semi" || type == "energy")
-      return {2.53e-01, 1.26e-01, 6.30e-02, 3.15e-02};
+      return {1.14e-01, 5.68e-02, 2.83e-02, 1.42e-02};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};

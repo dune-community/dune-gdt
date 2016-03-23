@@ -31,7 +31,7 @@ public:
     if (type == "L2")
       return {4.23e-02, 9.65e-03, 2.42e-03, 6.05e-04};
     else if (type == "H1_semi" || type == "energy")
-      return {4.32e-01, 2.05e-01, 1.03e-01, 5.14e-02};
+      return {1.94e-01, 9.24e-02, 4.63e-02, 2.31e-02};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -51,7 +51,7 @@ public:
     if (type == "L2")
       return {4.23e-02, 1.08e-02, 2.70e-03, 6.76e-04};
     else if (type == "H1_semi" || type == "energy")
-      return {4.32e-01, 2.18e-01, 1.09e-01, 5.45e-02};
+      return {1.94e-01, 9.79e-02, 4.91e-02, 2.45e-02};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
