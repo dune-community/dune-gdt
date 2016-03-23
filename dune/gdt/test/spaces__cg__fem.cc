@@ -11,7 +11,7 @@
 #if HAVE_DUNE_FEM
 
 typedef testing::Types<SPACES_CG_FEM(1)
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                            ,
                        SPACES_CG_FEM_ALUGRID(1)
 #endif
@@ -36,7 +36,7 @@ TYPED_TEST(CG_Space, check_for_correct_copy)
 }
 
 typedef testing::Types<SPACES_CG_FEM(1)
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                            ,
                        SPACES_CG_FEM_ALUGRID(1)
 #endif

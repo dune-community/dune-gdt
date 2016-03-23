@@ -14,7 +14,7 @@ using namespace Dune::GDT::Test;
 
 
 typedef testing::Types<SPACES_RT_PDELAB
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                        ,
                        SPACES_RT_PDELAB_ALUGRID
 #endif
