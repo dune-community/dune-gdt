@@ -16,7 +16,7 @@ typedef testing::Types<
 # ifdef NDEBUG
                       , SPACES_DG_FEM(2)
 # endif
-# if HAVE_ALUGRID && !defined(__GNUC__)
+# if HAVE_ALUGRID
                       , SPACES_DG_FEM_ALUGRID(1)
 #   ifdef NDEBUG
                       , SPACES_DG_FEM_ALUGRID(2)
@@ -48,7 +48,7 @@ TEST(DISABLED_DG_Space, check_for_correct_copy_polorder_2) {}
 
 typedef testing::Types<
                         SPACES_DG_FEM(1)
-# if HAVE_ALUGRID && !defined(__GNUC__)
+# if HAVE_ALUGRID
                       , SPACES_DG_FEM_ALUGRID(1)
 # endif
                       > P1Q1_DG_Spaces_Fem;

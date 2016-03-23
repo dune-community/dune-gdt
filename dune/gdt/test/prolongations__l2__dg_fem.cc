@@ -14,7 +14,7 @@ using namespace Dune::GDT::Test;
 
 
 typedef testing::Types< SPACES_DG_FEM_LEVEL(1)
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                       , SPACES_DG_FEM_ALUGRID_LEVEL(1)
 #endif
                       > SpaceTypes;

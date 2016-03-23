@@ -12,7 +12,7 @@
 
 using namespace Dune::GDT::Test;
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
 
 typedef testing::Types<
                         /*std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
@@ -25,10 +25,10 @@ TYPED_TEST(DarcyOperatorTest, produces_correct_results) {
 }
 
 
-#else // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)
+#else // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID
 
 
 TEST(DISABLED_DarcyOperatorTest, produces_correct_results) {}
 
 
-#endif // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID && !defined(__GNUC__)
+#endif // HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_ALUGRID

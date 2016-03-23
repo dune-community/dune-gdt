@@ -17,12 +17,12 @@ typedef testing::Types< SPACE_FV_SGRID(1, 1)
                       , SPACE_FV_YASPGRID(1, 1)
                       , SPACE_FV_YASPGRID(2, 1)
                       , SPACE_FV_YASPGRID(3, 1)
-#if HAVE_ALUGRID && !defined(__GNUC__)
+#if HAVE_ALUGRID
                       , SPACE_FV_ALUCONFORMGRID(2, 1)
                       , SPACE_FV_ALUCONFORMGRID(3, 1)
                       , SPACE_FV_ALUCUBEGRID(2, 1)
                       , SPACE_FV_ALUCUBEGRID(3, 1)
-#endif // HAVE_ALUGRID && !defined(__GNUC__)
+#endif // HAVE_ALUGRID
                       > SpaceTypes;
 
 TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);

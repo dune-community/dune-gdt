@@ -15,7 +15,7 @@
 
 typedef testing::Types<
                         SPACES_DG_PDELAB(1)
-# if HAVE_ALUGRID && !defined(__GNUC__)
+# if HAVE_ALUGRID
                       , SPACES_DG_PDELAB_ALUGRID(1)
 # endif
                       > DG_Spaces_Pdelab;
@@ -37,7 +37,7 @@ TYPED_TEST(DG_Space, check_for_correct_copy) {
 
 typedef testing::Types<
                         SPACES_DG_PDELAB(1)
-# if HAVE_ALUGRID && !defined(__GNUC__)
+# if HAVE_ALUGRID
                       , SPACES_DG_PDELAB_ALUGRID(1)
 # endif
                       > P1Q1_DG_Spaces_Pdelab;
