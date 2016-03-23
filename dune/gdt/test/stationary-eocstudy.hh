@@ -259,7 +259,7 @@ public:
 
   std::map<std::string, std::vector<double>> run(std::ostream& out, const bool print_timings = false)
   {
-    return BaseType::run(false, out, print_timings);
+    return BaseType::run(true, out, print_timings);
   }
 
 protected:
