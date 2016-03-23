@@ -48,7 +48,7 @@ before_install:
 install:
   - cd $HOME/src
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
-  - export SRC_DCTRL="$PWD/dune-common/bin/dunecontrol --disable-parallel"
+  - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
   - ${SRC_DCTRL} ${BLD} all
   # move my travis checkout into this source tree
   - cp -ra ${TRAVIS_BUILD_DIR} .
