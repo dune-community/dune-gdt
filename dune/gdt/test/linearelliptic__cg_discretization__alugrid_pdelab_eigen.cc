@@ -3,11 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifdef ENABLE_MPI
-#undef ENABLE_MPI
-#endif
-#define ENABLE_MPI 0
-
 #ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
 #define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
