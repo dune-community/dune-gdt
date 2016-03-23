@@ -25,7 +25,7 @@ before_install:
   - |-
     : ${OPTS:="config.opts/travis.make.release"} && export OPTS
   - |-
-    : ${BUILD_CMD:="make -k -j 2"} && export BUILD_CMD
+    : ${BUILD_CMD:="make -k -j 1"} && export BUILD_CMD
   # workaround for https://github.com/travis-ci/travis-ci/issues/5285
   - sudo -E apt-get install -y -q python-pip python3-pip
   - sudo -E pip3 install virtualenv cpp-coveralls
