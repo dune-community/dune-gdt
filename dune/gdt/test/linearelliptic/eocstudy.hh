@@ -40,7 +40,7 @@ public:
   LinearEllipticEocStudy(TestCaseType& test_case,
                          const std::vector< std::string > only_these_norms = {},
                          const std::string visualize_prefix = "",
-                         const size_t over_integrate = 0)
+                         const size_t over_integrate = 2)
     : BaseType(test_case, only_these_norms, visualize_prefix)
     , over_integrate_(over_integrate)
   {}
