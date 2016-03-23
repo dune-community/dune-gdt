@@ -30,11 +30,11 @@ public:
   static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "L2")
-      return {1.37e-02, 4.02e-03};
+      return {3.44e-02, 1.01e-02};
     else if (type == "H1_semi")
-      return {4.56e-01, 2.41e-01};
+      return {1.47e-01, 7.78e-02};
     else if (type == "energy")
-      return {1.15e+00, 6.11e-01};
+      return {1.88e-01, 1.00e-01};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -53,11 +53,11 @@ public:
   static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "L2")
-      return {2.02e-02, 6.13e-03};
+      return {5.08e-02, 1.54e-02};
     else if (type == "H1_semi")
-      return {6.22e-01, 3.21e-01};
+      return {2.01e-01, 1.04e-01};
     else if (type == "energy")
-      return {1.40e+00, 7.63e-01};
+      return {2.30e-01, 1.25e-01};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
