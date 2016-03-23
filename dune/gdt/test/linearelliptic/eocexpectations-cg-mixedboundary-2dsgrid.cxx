@@ -34,7 +34,7 @@ public:
         return {2.59e-02, 6.51e-03, 1.58e-03, 3.46e-04};
     } else if (type == "H1_semi" || type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {2.01e-01, 8.95e-02};
+        return {2.02e-01, 8.99e-02};
       else
         return {2.07e-01, 1.03e-01, 5.00e-02, 2.24e-02};
     } else
