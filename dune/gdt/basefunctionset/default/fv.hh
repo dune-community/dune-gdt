@@ -6,11 +6,6 @@
 #ifndef DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
 #define DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
 
-#include <dune/common/fmatrix.hh>
-#include <dune/common/fvector.hh>
-
-#include <dune/stuff/common/type_utils.hh>
-
 #include "../interface.hh"
 
 namespace Dune {
