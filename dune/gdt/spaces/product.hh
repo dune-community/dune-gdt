@@ -14,6 +14,8 @@
 
 #include <dune/gdt/basefunctionset/default/product.hh>
 #include <dune/gdt/mapper/default/product.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/parallel.hh>
 
 #include "interface.hh"
 
@@ -180,8 +182,6 @@ private:
   const std::unique_ptr<CommunicatorType> communicator_;
 }; // class DefaultProductSpace
 
-
-#include <dune/gdt/spaces/cg.hh>
 
 template <class GridViewImp, int polynomialOrder, size_t domainDim, class RangeFieldImp>
 class TaylorHoodSpace : public ProductSpace<CG::PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1>,

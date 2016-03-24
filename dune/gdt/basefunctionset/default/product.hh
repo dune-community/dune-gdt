@@ -154,7 +154,8 @@ class ProductBaseFunctionSet
                                       typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
                                           DomainFieldType,
                                       std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
-                                      std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::RangeFieldType,
+                                      typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
+                                          RangeFieldType,
                                       internal::SumDimRange<BaseFunctionSetImps...>::dimRange, 1>
 {
   typedef ProductBaseFunctionSet<BaseFunctionSetImps...> ThisType;

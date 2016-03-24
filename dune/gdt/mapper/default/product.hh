@@ -144,12 +144,12 @@ public:
   // These methods are required by the ProductMapperInterface
   size_t numDofs(const size_t factor_index, const EntityType& entity) const
   {
-    return DSC::DynamicTupleGetter<0>::numDofs(mappers_, factor_index, entity);
+    return internal::DynamicTupleGetter<0>::numDofs(mappers_, factor_index, entity);
   }
 
   size_t maxNumDofs(const size_t factor_index) const
   {
-    return DSC::DynamicTupleGetter<0>::maxNumDofs(mappers_, factor_index);
+    return internal::DynamicTupleGetter<0>::maxNumDofs(mappers_, factor_index);
   }
 
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
@@ -167,7 +167,7 @@ public:
     for (size_t ii = 0; ii < factor_index; ++ii)
       first_global_index_of_factor += size(ii);
     return first_global_index_of_factor
-           + DSC::DynamicTupleGetter<0>::mapToGlobal(mappers_, factor_index, entity, local_index_in_factor);
+           + internal::DynamicTupleGetter<0>::mapToGlobal(mappers_, factor_index, entity, local_index_in_factor);
   }
 
   size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
@@ -185,7 +185,7 @@ public:
 
   size_t size(const size_t factor_index) const
   {
-    return DSC::DynamicTupleGetter<0>::size(mappers_, factor_index);
+    return internal::DynamicTupleGetter<0>::size(mappers_, factor_index);
   }
 
   size_t size() const
