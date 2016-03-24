@@ -41,9 +41,9 @@ public:
         return {4.32e-01, 2.93e-01, 1.50e-01, 6.54e-02};
     } else if (type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {};
+        return {2.32e-01, 1.15e-01};
       else
-        return {};
+        return {2.53e-01, 1.46e-01, 7.45e-02, 3.35e-02};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
