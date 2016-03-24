@@ -34,7 +34,7 @@ public:
     else if (type == "H1_semi")
       return {1.09e-01, 5.36e-02};
     else if (type == "energy")
-      return {};
+      return {1.37e-01, 6.60e-02};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
