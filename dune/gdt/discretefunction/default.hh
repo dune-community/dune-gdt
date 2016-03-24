@@ -76,7 +76,7 @@ struct visualize_helper< ii, true >
       for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
         factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] = discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
     }
-    ConstDiscreteFunction< typename DiscreteFunctionType::SpaceType::FactorSpaceType, typename DiscreteFunctionType::VectorType > factor_discrete_function(factor_space, factor_vector);
+    ConstDiscreteFunction< typename std::tuple_element< ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type, typename DiscreteFunctionType::VectorType > factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
