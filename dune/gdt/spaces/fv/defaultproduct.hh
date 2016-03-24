@@ -77,6 +77,7 @@ public:
     , factor_space_(gv)
   {}
 
+  DefaultProduct(const ThisType& other) = default;
   DefaultProduct(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;

@@ -231,7 +231,7 @@ public:
     assert(DSC::FloatCmp::ge(scale_factor_max_, 1.0));
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(Gamma_.rows() == Gamma_.cols() && "Gamma has to be a square matrix");
-    assert(Gamma_.rows() == A_.rows() && "Sizes of A and Gamma have to match!")
+    assert(Gamma_.rows() == A_.rows() && "Sizes of A and Gamma have to match!");
     assert(b_1.size() == A_.rows());
     assert(b_2.size() == A_.rows());
     assert(c_.size() == A_.rows());
