@@ -84,6 +84,12 @@ public:
 
   using BaseType::globalIndices;
 
+  size_t size(const size_t factor_index) const
+  {
+    CHECK_CRTP(this->as_imp(*this).size(factor_index));
+    return this->as_imp(*this).size(factor_index);
+  }
+
   size_t numDofs(const size_t factor_index, const EntityType& entity) const
   {
     CHECK_CRTP(this->as_imp(*this).numDofs(factor_index, entity));
