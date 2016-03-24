@@ -38,8 +38,6 @@ public:
 private:
   static_assert(Stuff::is_localizable_function<FunctionType>::value,
                 "ProblemImp::FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-
-private:
   typedef Stuff::Functions::Constant<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
                                      FunctionType::dimDomain, typename FunctionType::RangeFieldType,
                                      FunctionType::dimRange> ConstantFunctionType;
@@ -80,7 +78,7 @@ public:
                  "If provides_exact_solution() is true, exact_solution() has to be implemented!");
     else
       DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
-                 "Do not call exact_solution() f provides_exact_solution() is false!");
+                 "Do not call exact_solution() if provides_exact_solution() is false!");
     return zero_;
   }
 
