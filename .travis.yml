@@ -191,6 +191,14 @@ matrix:
     - os: linux
       compiler: gcc
       addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=g++-5
+    - os: linux
+      compiler: gcc
+      addons:  *gcc5
       env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
       compiler: gcc
@@ -249,6 +257,14 @@ matrix:
       compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
+    - os: linux
+      compiler: clang
+      addons:  *clang37
+      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
       compiler: clang
       addons:  *clang37
