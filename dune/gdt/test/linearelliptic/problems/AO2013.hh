@@ -65,7 +65,7 @@ public:
                                              1.0,  1.0, 1.0, 0.1, 0.1, 0.1},
                                             "diffusion_factor"),
                new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix< RangeFieldImp, 2 >(), "diffusion_tensor"),
-               new ScalarConstantFunctionType(1,  "force"),
+               new ScalarConstantFunctionType(1, "force"),
                new ScalarConstantFunctionType(0, "dirichlet"),
                new ScalarConstantFunctionType(0, "neumann"),
                grd_cfg,

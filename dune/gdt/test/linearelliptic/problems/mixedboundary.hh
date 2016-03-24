@@ -50,12 +50,16 @@ public:
 
   static Stuff::Common::Configuration default_boundary_info_cfg()
   {
-    return Stuff::Grid::BoundaryInfoConfigs::AllDirichlet::default_config();
+    Stuff::Common::Configuration cfg;
+    cfg["type"] = Stuff::Grid::BoundaryInfoConfigs::NormalBased::static_id();
+    cfg["default"] = "dirichlet";
+    cfg["neumann.0"] = "[1 0]";
+    return cfg;
   }
 
   MixedBoundaryProblem(const size_t integration_order = default_integration_order,
-                 const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
-                 const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
+                       const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
+                       const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
                new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix< RangeFieldImp, 2 >(), "diffusion_tensor"),
                new ScalarConstantFunctionType(1,  "force"),

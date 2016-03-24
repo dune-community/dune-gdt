@@ -37,16 +37,54 @@ class ESV2007Problem< EntityImp, DomainFieldImp, 2, RangeFieldImp, 1 >
   typedef Stuff::Functions::Constant< EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2 > MatrixConstantFunctionType;
   typedef Stuff::Functions::ESV2007::Testcase1Force< EntityImp, DomainFieldImp, 2, RangeFieldImp, 1 > ForceType;
 
+  template< class G, bool anything = true >
+  struct GridHelper
+  {
+    static Stuff::Common::Configuration default_grid_cfg()
+    {
+      // currently: SGrid, add specialization for other grids, if needed
+      auto cfg = Stuff::Grid::Providers::Configs::Cube_default();
+      cfg["lower_left"]      = "[-1 -1]";
+      cfg["num_elements"]    = "[8 8]";
+      cfg["num_refinements"] = "0";
+      return cfg;
+    }
+  };
+
+  template< bool anything >
+  struct GridHelper< ALU2dGrid< 2, 2, (ALU2DGrid::ElementType)0u >, anything >
+  {
+    static Stuff::Common::Configuration default_grid_cfg()
+    {
+      auto cfg = Stuff::Grid::Providers::Configs::Cube_default();
+      cfg["lower_left"]      = "[-1 -1]";
+      cfg["num_elements"]    = "[4 4]";
+      cfg["num_refinements"] = "2";
+      return cfg;
+    }
+  };
+
+  template< class E, bool anything = true >
+  struct Helper
+  {
+    static_assert(AlwaysFalse< E >::value, "");
+  };
+
+  template< int cd, int dim, class G, template< int, int, class > class E, bool anything >
+  struct Helper< Entity< cd, dim, G, E >, anything >
+  {
+    static Stuff::Common::Configuration default_grid_cfg()
+    {
+      return GridHelper< typename std::remove_const< G >::type >::default_grid_cfg();
+    }
+  };
+
 public:
-  static const size_t default_integration_order = 3;
+  static const size_t default_integration_order = 2;
 
   static Stuff::Common::Configuration default_grid_cfg()
   {
-    auto cfg = Stuff::Grid::Providers::Configs::Cube_default();
-    cfg["lower_left"]      = "[-1 -1]";
-    cfg["num_elements"]    = "[8 8]";
-    cfg["num_refinements"] = "0";
-    return cfg;
+    return Helper< EntityImp >::default_grid_cfg();
   }
 
   static Stuff::Common::Configuration default_boundary_info_cfg()
