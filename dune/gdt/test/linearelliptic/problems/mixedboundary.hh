@@ -49,7 +49,11 @@ public:
 
   static Stuff::Common::Configuration default_boundary_info_cfg()
   {
-    return Stuff::Grid::BoundaryInfoConfigs::AllDirichlet::default_config();
+    Stuff::Common::Configuration cfg;
+    cfg["type"]      = Stuff::Grid::BoundaryInfoConfigs::NormalBased::static_id();
+    cfg["default"]   = "dirichlet";
+    cfg["neumann.0"] = "[1 0]";
+    return cfg;
   }
 
   MixedBoundaryProblem(const size_t integration_order = default_integration_order,

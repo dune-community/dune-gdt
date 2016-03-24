@@ -47,7 +47,7 @@ public:
     cfg["lower_left"]      = "[0 0]";
     cfg["upper_right"]     = "[5 1]";
     cfg["num_elements"]    = "[100 20]";
-    cfg["num_refinements"] = "0";
+    cfg["num_refinements"] = "1";
     return cfg;
   }
 

@@ -86,7 +86,7 @@ private:
 public:
   using typename BaseType::GridType;
 
-  ER2007TestCase(const size_t num_refs = 1)
+  ER2007TestCase(const size_t num_refs = 2)
     : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_cfg())->grid_ptr(), num_refs)
     , problem_()
     , exact_solution_("x", "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])", ProblemType::default_integration_order,
