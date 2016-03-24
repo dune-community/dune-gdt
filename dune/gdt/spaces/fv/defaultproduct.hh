@@ -8,9 +8,7 @@
 #ifndef DUNE_GDT_SPACES_FV_DEFAULTPRODUCT_HH
 #define DUNE_GDT_SPACES_FV_DEFAULTPRODUCT_HH
 
-#include <tuple>
-
-#include <dune/gdt/mapper/default/productfv.hh>
+#include <dune/stuff/common/tuple.hh>
 
 #include "default.hh"
 #include "interface.hh"
@@ -31,42 +29,6 @@ class DefaultProduct
 
 namespace internal {
 
-// from
-// https://stackoverflow.com/questions/16853552/how-to-create-a-type-list-for-variadic-templates-that-contains-n-times-the-sam
-
-// in the end, we would like to have something like indices< 0, 1, 2 > for N = 3
-template <std::size_t...>
-struct indices
-{
-};
-
-// we want to call this with empty Indices, i.e. create_indices< N >::type == indices< 0, 1, 2 > for N = 3
-template <std::size_t N, std::size_t... Indices>
-struct create_indices : create_indices<N - 1, N - 1, Indices...>
-{
-};
-
-// terminating template
-template <std::size_t... Indices>
-struct create_indices<0, Indices...>
-{
-  typedef indices<Indices...> type;
-};
-
-// T_aliased< T, Index > is always the type T, no matter what Index is
-template <typename T, std::size_t index>
-using T_aliased = T;
-
-// make_identical_tuple< T, N >::type is a std::tuple< T, ... , T > with a length of N
-template <typename T, std::size_t N, typename I = typename create_indices<N>::type>
-struct make_identical_tuple;
-
-template <typename T, std::size_t N, std::size_t... Indices>
-struct make_identical_tuple<T, N, indices<Indices...>>
-{
-  using type = std::tuple<T_aliased<T, Indices>...>;
-};
-
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DefaultProductTraits : public DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
@@ -81,14 +43,14 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::RangeFieldType;
   typedef typename Dune::GDT::Spaces::FV::Default<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
-  typedef typename make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
+  typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
   typedef typename Dune::GDT::Mapper::ProductFiniteVolume<GridViewType, dimRange, 1> MapperType;
 }; // class DefaultProductTraits
 
 
 } // namespace internal
 
-/** TODO: delete copy constructor again and uncomment move constructor? */
+
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1>
     : public Dune::GDT::Spaces::ProductFVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim,
@@ -117,11 +79,11 @@ public:
   {
   }
 
-  //  DefaultProduct(ThisType&& source) = default;
+  DefaultProduct(ThisType&& source) = default;
 
-  //  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
 
-  //  ThisType& operator=(ThisType&& source) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   // These methods are required by ProductSpaceInterface
   template <size_t ii>
