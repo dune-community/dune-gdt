@@ -10,6 +10,8 @@
 
 #include <tuple>
 
+#include <dune/stuff/common/tuple.hh>
+
 #include <dune/gdt/playground/mapper/productdgpdelab.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -32,37 +34,6 @@ class PdelabBasedProduct
 
 namespace internal {
 
-// from https://stackoverflow.com/questions/16853552/how-to-create-a-type-list-for-variadic-templates-that-contains-n-times-the-sam
-
-// in the end, we would like to have something like indices< 1, 2, 3 > for N = 3
-template< std::size_t... >
-struct indices {};
-
-// we want to call this with empty Indices, i.e. create_indices< N >::type == indices< 1, 2, 3 > for N = 3
-template< std::size_t N, std::size_t... Indices>
-struct create_indices : create_indices< N-1, N-1, Indices...> {};
-
-// terminating template
-template< std::size_t... Indices >
-struct create_indices< 0, Indices...> {
-  typedef indices<Indices...> type;
-};
-
-// T_aliased< T, Index > is always the type T, no matter what Index is
-template<typename T, std::size_t index>
-using T_aliased = T;
-
-// make_identical_tuple< T, N >::type is a std::tuple< T, ... , T > with a length of N
-template< typename T, std::size_t N, typename I = typename create_indices< N >::type >
-struct make_identical_tuple;
-
-template< typename T, std::size_t N, std::size_t ...Indices >
-struct make_identical_tuple< T, N, indices< Indices... > >
-{
-    using type = std::tuple<T_aliased<T, Indices>...>;
-};
-
-
 
 template< class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols >
 class PdelabBasedProductTraits
@@ -84,7 +55,7 @@ public:
   using BaseType::needs_grid_view;
 
   typedef typename Dune::GDT::Spaces::DG::PdelabBased< GridViewType, polOrder, RangeFieldType, 1, dimRangeCols >  FactorSpaceType;
-  typedef typename make_identical_tuple< FactorSpaceType, dimRange >::type                                        SpaceTupleType;
+  typedef typename DSC::make_identical_tuple< FactorSpaceType, dimRange >::type SpaceTupleType;
 };
 
 

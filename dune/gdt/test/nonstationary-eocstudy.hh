@@ -207,7 +207,7 @@ public:
       for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end; ++current_solution_it) {
         const auto time = current_solution_it->first;
         const auto time_on_level = current_solution_on_level_it->first;
-        const auto inserted_it = time_prolongated_current_solution_on_level.insert(time_prolongated_current_solution_on_level_it_end, std::make_pair(time, current_solution_on_level_it->second));
+        const auto inserted_it = time_prolongated_current_solution_on_level.emplace_hint(time_prolongated_current_solution_on_level_it_end, time, current_solution_on_level_it->second);
         if (time_on_level < time && current_solution_on_level_it != current_solution_on_level_it_last) {
           // compute weighted average of the two values of current_solution_on_level_
           inserted_it->second.vector() = (current_solution_on_level_it->second.vector()*(time_on_level - last_time)
@@ -302,7 +302,7 @@ protected:
       for (auto reference_solution_it = reference_solution_->begin(); reference_solution_it != reference_solution_it_end; ++reference_solution_it) {
         const double time = reference_solution_it->first;
         const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        const auto inserted_it = discrete_exact_solution_->insert(discrete_exact_solution_->end(), std::make_pair(time, DiscreteFunctionType(reference_discretization_->fv_space(), "exact solution at time " + DSC::to_string(time))));
+        const auto inserted_it = discrete_exact_solution_->emplace_hint(discrete_exact_solution_->end(), time, reference_solution_it->second);
         project(*discrete_exact_solution_at_time, inserted_it->second);
       }
       if (!visualize_prefix_.empty()) {
