@@ -169,23 +169,22 @@ public:
     const TensorType local_diffusion_tensor_en = localDiffusionTensorEntity.evaluate(localPointEn);
     const auto local_diffusion_factor_ne       = localDiffusionFactorNeighbor.evaluate(localPointNe);
     const TensorType local_diffusion_tensor_ne = localDiffusionTensorNeighbor.evaluate(localPointNe);
+    const auto diffusion_value_en              = local_diffusion_tensor_en * local_diffusion_factor_en;
+    const auto diffusion_value_ne              = local_diffusion_tensor_ne * local_diffusion_factor_ne;
+    //    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    //    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
     const R sigma = SIPDG::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
-    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
-    const R delta_plus                = unitOuterNormal * (local_diffusion_tensor_ne * unitOuterNormal);
-    const R delta_minus               = unitOuterNormal * (local_diffusion_tensor_en * unitOuterNormal);
-    const R gamma                     = (delta_plus * delta_minus) / (delta_plus + delta_minus);
-    const R penalty                   = (local_diffusion_factor * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    const R weight_plus               = delta_minus / (delta_plus + delta_minus);
-    const R weight_minus              = delta_plus / (delta_plus + delta_minus);
-    // compute diffusion value (should be factor * tensor, but this is the same)
-    const auto diffusion_value_en = local_diffusion_tensor_en * local_diffusion_factor_en;
-    const auto diffusion_value_ne = local_diffusion_tensor_ne * local_diffusion_factor_ne;
+    const R delta_plus   = unitOuterNormal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * unitOuterNormal);
+    const R delta_minus  = unitOuterNormal * (/*local_diffusion_tensor_en*/ diffusion_value_en * unitOuterNormal);
+    const R gamma        = (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    const R penalty      = (/*local_diffusion_factor **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R weight_plus  = delta_minus / (delta_plus + delta_minus);
+    const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // evaluate bases
     // * entity
     //   * test
@@ -589,14 +588,13 @@ public:
     // evaluate local function
     const auto diffusion_factor_value       = localDiffusionFactor.evaluate(localPointEntity);
     const TensorType diffusion_tensor_value = localDiffusionTensor.evaluate(localPointEntity);
+    const auto diffusion_value              = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
     const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma   = unitOuterNormal * (diffusion_tensor_value * unitOuterNormal);
-    const R penalty = (diffusion_factor_value * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    // compute diffusion value (should be factor * tensor, but this is the same)
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    const R gamma   = unitOuterNormal * (/*diffusion_tensor_value*/ diffusion_value * unitOuterNormal);
+    const R penalty = (/*diffusion_factor_value **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
     const size_t rows        = testBase.size();
