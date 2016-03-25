@@ -48,6 +48,8 @@ foreach (test ${testnames})
   endif (${test})
 endforeach (test ${testnames})
 
+set_tests_properties(test_hyperbolic__fv_discretization__yaspgrid PROPERTIES TIMEOUT 1800)
+
 add_custom_target(test_binaries_space DEPENDS ${spaces_test_binaries})
 add_custom_target(test_binaries_operator DEPENDS ${operators_test_binaries})
 add_custom_target(test_binaries_projection_default DEPENDS ${projections_default_test_binaries})
