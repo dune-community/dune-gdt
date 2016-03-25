@@ -19,8 +19,12 @@
 typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 2>>,
                        Dune::GDT::LinearElliptic::ER2007TestCase<Dune::SGrid<2, 2>>,
                        Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::SGrid<2, 2>>> SGridTestCases;
+                       Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::SGrid<2, 2>>
+#if !THIS_IS_A_BUILDBOT_BUILD
+                       ,
+                       Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::SGrid<2, 2>>
+#endif
+                       > SGridTestCases;
 
 
 #if HAVE_ALUGRID
