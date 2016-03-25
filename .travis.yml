@@ -96,6 +96,7 @@ env:
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
     - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
     - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
+    - CONFIGURE_FLAGS="--with-metis=$BASEDIR/local --with-parmetis=$BASEDIR/local"
 
 matrix:
   include:
