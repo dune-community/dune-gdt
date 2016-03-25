@@ -3,6 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
+#define THIS_IS_A_BUILDBOT_BUILD 1
+
 #ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
 # define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
