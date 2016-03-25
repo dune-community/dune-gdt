@@ -6,6 +6,10 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_ESV2007_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_ESV2007_HH
 
+#if HAVE_ALUGRID
+#include <dune/grid/alugrid.hh>
+#endif
+
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/ESV2007.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -36,45 +40,28 @@ class ESV2007Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
   typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
   typedef Stuff::Functions::ESV2007::Testcase1Force<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ForceType;
 
-  template <class G, bool anything = true>
-  struct GridHelper
+  template <class E>
+  struct Helper
+  {
+    static_assert(AlwaysFalse<E>::value, "This should not happen!");
+  };
+
+  template <int cd, int dim, class G, template <int, int, class> class E>
+  struct Helper<Entity<cd, dim, G, E>>
   {
     static Stuff::Common::Configuration default_grid_cfg()
     {
-      // currently: SGrid, add specialization for other grids, if needed
       auto cfg               = Stuff::Grid::Providers::Configs::Cube_default();
       cfg["lower_left"]      = "[-1 -1]";
       cfg["num_elements"]    = "[8 8]";
       cfg["num_refinements"] = "0";
+#if HAVE_ALUGRID
+      if (std::is_same<typename std::decay<G>::type, ALU2dGrid<2, 2, (ALU2DGrid::ElementType)0u>>::value) {
+        cfg["num_elements"]    = "[4 4]";
+        cfg["num_refinements"] = "2";
+      }
+#endif // HAVE_ALUGRID
       return cfg;
-    }
-  };
-
-  template <bool anything>
-  struct GridHelper<ALU2dGrid<2, 2, (ALU2DGrid::ElementType)0u>, anything>
-  {
-    static Stuff::Common::Configuration default_grid_cfg()
-    {
-      auto cfg               = Stuff::Grid::Providers::Configs::Cube_default();
-      cfg["lower_left"]      = "[-1 -1]";
-      cfg["num_elements"]    = "[4 4]";
-      cfg["num_refinements"] = "2";
-      return cfg;
-    }
-  };
-
-  template <class E, bool anything = true>
-  struct Helper
-  {
-    static_assert(AlwaysFalse<E>::value, "");
-  };
-
-  template <int cd, int dim, class G, template <int, int, class> class E, bool anything>
-  struct Helper<Entity<cd, dim, G, E>, anything>
-  {
-    static Stuff::Common::Configuration default_grid_cfg()
-    {
-      return GridHelper<typename std::remove_const<G>::type>::default_grid_cfg();
     }
   };
 
