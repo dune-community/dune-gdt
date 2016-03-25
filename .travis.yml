@@ -20,9 +20,6 @@ addons:
     - lcov
     - curl
     - python3-requests
-    - libmetis-dev
-    - metis
-    - libparmetis-dev
 
 before_install:
   - |-
