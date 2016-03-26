@@ -122,6 +122,7 @@ public:
     , reference_solution_vector_(nullptr)
     , current_solution_vector_(nullptr)
     , visualize_prefix_(visualize_prefix)
+    , current_num_DoFs_(0)
   {
   }
 
@@ -168,12 +169,18 @@ public:
       return 1.0;
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_grid_size() const override final
+  virtual size_t current_num_DoFs() const override final
   {
-    assert(current_refinement_ <= num_refinements());
-    const int level = test_case_.level_of(current_refinement_);
-    return test_case_.grid().size(level, 0);
-  } // ... current_grid_size(...)
+    if (current_refinement_ != last_computed_refinement_) {
+      assert(current_refinement_ <= num_refinements());
+      current_num_DoFs_ =
+          Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_))
+              .ansatz_space()
+              .mapper()
+              .size();
+    }
+    return current_num_DoFs_;
+  } // ... current_num_DoFs(...)
 
   virtual double current_grid_width() const override final
   {
@@ -306,6 +313,7 @@ protected:
   std::unique_ptr<VectorType> reference_solution_vector_;
   std::unique_ptr<VectorType> current_solution_vector_;
   const std::string visualize_prefix_;
+  mutable size_t current_num_DoFs_;
 }; // class StationaryEocStudy
 
 
