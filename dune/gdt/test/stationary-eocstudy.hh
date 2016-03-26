@@ -262,7 +262,7 @@ public:
       ++current_refinement_;
   }
 
-  std::map<std::string, std::vector<double>> run(std::ostream& out, const bool print_timings = false)
+  std::map<std::string, std::vector<double>> run(std::ostream& out, const bool print_timings = true)
   {
     return BaseType::run(true, out, print_timings);
   }
