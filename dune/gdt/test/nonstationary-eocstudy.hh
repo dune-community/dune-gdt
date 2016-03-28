@@ -164,12 +164,12 @@ public:
       return 1.0;
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_grid_size() const override final
+  virtual size_t current_num_DoFs() const override final
   {
     assert(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
     return test_case_.grid().size(level, 0);
-  } // ... current_grid_size(...)
+  } // ... current_num_DoFs(...)
 
   virtual double current_grid_width() const override final
   {
