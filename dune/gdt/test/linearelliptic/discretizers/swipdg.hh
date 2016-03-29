@@ -68,7 +68,6 @@ public:
                                        const ProblemType& problem,
                                        const int level = 0)
   {
-    const double beta = 1.0;
     auto logger = Stuff::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
     auto space = SpaceProvider::create(grid_provider, level);
@@ -99,16 +98,14 @@ public:
     typedef LocalOperator::Codim1CouplingIntegral<
         LocalEvaluation::SWIPDG::Inner< DiffusionFactorType, DiffusionTensorType > > CouplingOperatorType;
     const CouplingOperatorType                                          couplingOperator(problem.diffusion_factor(),
-                                                                                         problem.diffusion_tensor(),
-                                                                                         beta);
+                                                                                         problem.diffusion_tensor());
     const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
     // dirichlet boundary face terms
     // * lhs
     typedef LocalOperator::Codim1BoundaryIntegral<
         LocalEvaluation::SWIPDG::BoundaryLHS< DiffusionFactorType, DiffusionTensorType > > DirichletOperatorType;
     const DirichletOperatorType                                         dirichletOperator(problem.diffusion_factor(),
-                                                                                          problem.diffusion_tensor(),
-                                                                                          beta);
+                                                                                          problem.diffusion_tensor());
     const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
     // * rhs
     typedef LocalFunctional::Codim1Integral<
@@ -116,8 +113,7 @@ public:
             DirichletFunctionalType;
     const DirichletFunctionalType                                 dirichletFunctional(problem.diffusion_factor(),
                                                                                       problem.diffusion_tensor(),
-                                                                                      problem.dirichlet(),
-                                                                                      beta);
+                                                                                      problem.dirichlet());
     const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
     // neumann boundary face terms
     // * rhs
