@@ -18,14 +18,21 @@ using namespace Dune::GDT;
 #if HAVE_DUNE_PDELAB && HAVE_DUNE_ISTL && HAVE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, AluGridTestCases);
-TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid)
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid_order_1)
 {
-  this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::istl_sparse>();
+  this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::istl_sparse, 1>();
+}
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid_order_2)
+{
+  this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::istl_sparse, 2>();
 }
 
 #else
 
-TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid)
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid_order_1)
+{
+}
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid_order_2)
 {
 }
 

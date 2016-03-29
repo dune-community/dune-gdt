@@ -22,7 +22,7 @@
 template <class TestCaseType>
 struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::Stuff::LA::ChooseBackend la_backend>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::Stuff::LA::ChooseBackend la_backend, int polOrder>
   static void eoc_study()
   {
     using namespace Dune;
@@ -38,7 +38,7 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
                                               Stuff::Grid::ChooseLayer::level,
                                               space_backend,
                                               la_backend,
-                                              1,
+                                              polOrder,
                                               typename TestCaseType::ProblemType::RangeFieldType,
                                               1> Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
