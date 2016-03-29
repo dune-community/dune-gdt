@@ -6,6 +6,11 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 
+#if HAVE_ALUGRID
+#include <dune/grid/alugrid.hh>
+#endif
+#include <dune/grid/sgrid.hh>
+
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
@@ -39,9 +44,10 @@ class AO2013Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 public:
   static Stuff::Common::Configuration default_grid_cfg()
   {
-    auto cfg               = Stuff::Grid::Providers::Configs::Cube_default();
-    cfg["num_elements"]    = "[6 6]";
-    cfg["num_refinements"] = "1";
+    Stuff::Common::Configuration cfg;
+    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
+    cfg["lower_left"]  = "[0 0]";
+    cfg["upper_right"] = "[1 1]";
     return cfg;
   }
 
@@ -113,11 +119,61 @@ public:
 private:
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
 
+  template <class T, bool anything = true>
+  struct Helper
+  {
+    static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      return cfg;
+    }
+  };
+
+  template <bool anything>
+  struct Helper<SGrid<2, 2>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[6 6]";
+      return cfg;
+    }
+  };
+
+#if HAVE_ALUGRID
+  template <bool anything>
+  struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"]    = "[6 6]";
+      cfg["num_refinements"] = "1";
+      return cfg;
+    }
+  };
+
+  template <bool anything>
+  struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[6 6]";
+      return cfg;
+    }
+  };
+#endif // HAVE_ALUGRID
+
+  static Stuff::Common::Configuration grid_cfg()
+  {
+    auto cfg = ProblemType::default_grid_cfg();
+    cfg      = Helper<typename std::decay<G>::type>::value(cfg);
+    return cfg;
+  }
+
 public:
   using typename BaseType::GridType;
 
   AO2013TestCase(const size_t num_refs = 3)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
     , problem_()
   {
   }

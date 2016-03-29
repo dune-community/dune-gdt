@@ -6,7 +6,10 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_SPE10_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_SPE10_HH
 
+#if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
+#endif
+#include <dune/grid/sgrid.hh>
 
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/indicator.hh>
@@ -43,11 +46,10 @@ class Spe10Model1Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 public:
   static Stuff::Common::Configuration default_grid_cfg()
   {
-    auto cfg               = Stuff::Grid::Providers::Configs::Cube_default();
-    cfg["lower_left"]      = "[0 0]";
-    cfg["upper_right"]     = "[5 1]";
-    cfg["num_elements"]    = "[100 20]";
-    cfg["num_refinements"] = "1";
+    Stuff::Common::Configuration cfg;
+    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
+    cfg["lower_left"]  = "[0 0]";
+    cfg["upper_right"] = "[5 1]";
     return cfg;
   }
 
@@ -90,12 +92,61 @@ public:
 
 private:
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
+  template <class T, bool anything = true>
+  struct Helper
+  {
+    static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      return cfg;
+    }
+  };
+
+  template <bool anything>
+  struct Helper<SGrid<2, 2>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[100 20]";
+      return cfg;
+    }
+  };
+
+#if HAVE_ALUGRID
+  template <bool anything>
+  struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"]    = "[100 20]";
+      cfg["num_refinements"] = "1";
+      return cfg;
+    }
+  };
+
+  template <bool anything>
+  struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[100 20]";
+      return cfg;
+    }
+  };
+#endif // HAVE_ALUGRID
+
+  static Stuff::Common::Configuration grid_cfg()
+  {
+    auto cfg = ProblemType::default_grid_cfg();
+    cfg      = Helper<typename std::decay<G>::type>::value(cfg);
+    return cfg;
+  }
 
 public:
   using typename BaseType::GridType;
 
   Spe10Model1TestCase(const size_t num_refs = 1)
-    : BaseType(create_initial_grid(), num_refs)
+    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
     , problem_()
   {
   }
@@ -114,9 +165,9 @@ public:
         << "|+--------------------------------------------------------+|\n"
         << "||  domain = [0, 5] x [0, 1]                              ||\n"
         << "||  diffusion: spe10 model 1 scalar data                  ||\n"
-        << "||         |  2000 in [0.55, 0.70] x [0.70, 0.85]         ||\n"
-        << "||  force: | -1000 in [3.00, 3.15] x [0.77, 0.90]         ||\n"
-        << "||         | -1000 in [4.30, 4.45] x [0.50, 0.65]         ||\n"
+        << "||         |  2000 in [0.95, 1.10] x [0.30, 0.45]         ||\n"
+        << "||  force: | -1000 in [3.00, 3.15] x [0.75, 0.90]         ||\n"
+        << "||         | -1000 in [4.25, 4.40] x [0.25, 0.40]         ||\n"
         << "||  dirichlet = 0                                         ||\n"
         << "||  reference solution: discrete solution on finest grid  ||\n"
         << "|+========================================================+|\n"
@@ -124,16 +175,6 @@ public:
   }
 
 private:
-  static std::shared_ptr<GridType> create_initial_grid()
-  {
-    auto grid_cfg = ProblemType::default_grid_cfg();
-#if HAVE_ALUGRID
-    if (std::is_same<GridType, ALUGrid<2, 2, simplex, conforming>>::value)
-      grid_cfg["num_refinements"] = "1";
-#endif // HAVE_ALUGRID
-    return Stuff::Grid::Providers::Cube<G>::create(grid_cfg)->grid_ptr();
-  } // ... create_initial_grid(...)
-
   const ProblemType problem_;
 }; // class Spe10Model1TestCase
 
