@@ -5,7 +5,7 @@
 
 # expectation targets
 # CG
-add_library(lib_test_linearelliptic_cg_discretizations_sgrid
+add_library(expectations_linearelliptic_cg_discretizations_sgrid
             STATIC
             EXCLUDE_FROM_ALL
             eocexpectations-cg-ao2013-2dsgrid.cxx
@@ -13,7 +13,7 @@ add_library(lib_test_linearelliptic_cg_discretizations_sgrid
             eocexpectations-cg-esv2007-2dsgrid.cxx
             eocexpectations-cg-mixedboundary-2dsgrid.cxx
             eocexpectations-cg-spe10-2dsgrid.cxx)
-add_library(lib_test_linearelliptic_cg_discretizations_alugrid
+add_library(expectations_linearelliptic_cg_discretizations_alugrid
             STATIC
             EXCLUDE_FROM_ALL
             eocexpectations-cg-ao2013-2dalugrid.cxx
@@ -23,7 +23,7 @@ add_library(lib_test_linearelliptic_cg_discretizations_alugrid
             eocexpectations-cg-spe10-2dalugrid.cxx)
 
 # SWIPDG
-add_library(lib_test_linearelliptic_swipdg_discretizations_sgrid
+add_library(expectations_linearelliptic_swipdg_discretizations_sgrid
             STATIC
             EXCLUDE_FROM_ALL
             eocexpectations-swipdg-ao2013-2dsgrid.cxx
@@ -31,7 +31,7 @@ add_library(lib_test_linearelliptic_swipdg_discretizations_sgrid
             eocexpectations-swipdg-esv2007-2dsgrid.cxx
             eocexpectations-swipdg-mixedboundary-2dsgrid.cxx
             eocexpectations-swipdg-spe10-2dsgrid.cxx)
-add_library(lib_test_linearelliptic_swipdg_discretizations_alugrid
+add_library(expectations_linearelliptic_swipdg_discretizations_alugrid
             STATIC
             EXCLUDE_FROM_ALL
             eocexpectations-swipdg-ao2013-2dalugrid.cxx
@@ -41,13 +41,13 @@ add_library(lib_test_linearelliptic_swipdg_discretizations_alugrid
             eocexpectations-swipdg-spe10-2dalugrid.cxx)
 
 # add some compile flags
-foreach (_target lib_test_linearelliptic_cg_discretizations_alugrid
-                 lib_test_linearelliptic_swipdg_discretizations_alugrid)
+foreach (_target expectations_linearelliptic_cg_discretizations_alugrid
+                 expectations_linearelliptic_swipdg_discretizations_alugrid)
   add_dune_alugrid_flags(${_target})
 endforeach (_target)
-foreach (_target lib_test_linearelliptic_cg_discretizations_alugrid
-                 lib_test_linearelliptic_cg_discretizations_sgrid
-                 lib_test_linearelliptic_swipdg_discretizations_alugrid
-                 lib_test_linearelliptic_swipdg_discretizations_sgrid)
+foreach (_target expectations_linearelliptic_cg_discretizations_alugrid
+                 expectations_linearelliptic_cg_discretizations_sgrid
+                 expectations_linearelliptic_swipdg_discretizations_alugrid
+                 expectations_linearelliptic_swipdg_discretizations_sgrid)
   add_dune_mpi_flags(${_target})
 endforeach (_target)
