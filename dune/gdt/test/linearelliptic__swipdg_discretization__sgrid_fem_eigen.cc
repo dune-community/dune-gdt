@@ -19,7 +19,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_FEM && HAVE_EIGEN
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridTestCases);
+TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridDgTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse>();
