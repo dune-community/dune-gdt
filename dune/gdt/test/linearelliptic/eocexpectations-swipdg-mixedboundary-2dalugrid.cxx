@@ -90,14 +90,14 @@ public:
   {
     if (type == "L2") {
       if (test_case.num_refinements() == 1)
-        return {2.09e-02, 4.85e-03};
+        return {6.46e-02, 1.75e-02};
       else
-        return {2.20e-02, 6.01e-03, 1.51e-03, 3.25e-04};
+        return {6.84e-02, 2.17e-02, 5.78e-03, 1.27e-03};
     } else if (type == "H1_semi" || type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {1.70e-01, 7.64e-02};
+        return {3.12e-01, 1.47e-01};
       else
-        return {1.77e-01, 9.00e-02, 4.42e-02, 1.97e-02};
+        return {3.28e-01, 1.76e-01, 8.72e-02, 3.89e-02};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
