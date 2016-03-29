@@ -18,12 +18,16 @@ using namespace Dune::GDT;
 #if HAVE_DUNE_FEM && HAVE_EIGEN
 
 TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridDgTestCases);
-TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid) {
-  this->template eoc_study< ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse >();
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid_order_1) {
+  this->template eoc_study< ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse, 1 >();
+}
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid_order_2) {
+  this->template eoc_study< ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse, 2 >();
 }
 
 #else
 
-TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid) {}
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid_order_1) {}
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_sgrid_order_2) {}
 
 #endif
