@@ -182,6 +182,12 @@ public:
     return current_num_DoFs_;
   } // ... current_num_DoFs(...)
 
+  virtual size_t current_grid_size() const override final
+  {
+    assert(current_refinement_ <= num_refinements());
+    return test_case_.level_view(test_case_.level_of(current_refinement_)).indexSet().size(0);
+  } // ... current_grid_size(...)
+
   virtual double current_grid_width() const override final
   {
     assert(current_refinement_ <= num_refinements());
