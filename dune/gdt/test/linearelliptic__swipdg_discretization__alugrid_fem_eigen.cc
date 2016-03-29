@@ -15,7 +15,7 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-//#if HAVE_DUNE_FEM && HAVE_EIGEN && HAVE_ALUGRID
+#if HAVE_DUNE_FEM && HAVE_EIGEN && HAVE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, AluGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_alugrid)
@@ -23,8 +23,10 @@ TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_a
   this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse>();
 }
 
-//#else
+#else
 
-// TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_alugrid) {}
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_alugrid)
+{
+}
 
-//#endif
+#endif
