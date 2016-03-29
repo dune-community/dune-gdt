@@ -9,6 +9,7 @@
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
 #endif
+#include <dune/grid/sgrid.hh>
 
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/ESV2007.hh>
@@ -41,34 +42,16 @@ class ESV2007Problem< EntityImp, DomainFieldImp, 2, RangeFieldImp, 1 >
   typedef Stuff::Functions::Constant< EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2 > MatrixConstantFunctionType;
   typedef Stuff::Functions::ESV2007::Testcase1Force< EntityImp, DomainFieldImp, 2, RangeFieldImp, 1 > ForceType;
 
-  template< class E >
-  struct Helper { static_assert(AlwaysFalse< E >::value, "This should not happen!"); };
-
-  template< int cd, int dim, class G, template< int, int, class > class E >
-  struct Helper< Entity< cd, dim, G, E > >
-  {
-    static Stuff::Common::Configuration default_grid_cfg()
-    {
-      auto cfg = Stuff::Grid::Providers::Configs::Cube_default();
-      cfg["lower_left"]      = "[-1 -1]";
-      cfg["num_elements"]    = "[8 8]";
-      cfg["num_refinements"] = "0";
-#if HAVE_ALUGRID
-      if (std::is_same< typename std::decay< G >::type, ALU2dGrid< 2, 2, (ALU2DGrid::ElementType)0u > >::value) {
-        cfg["num_elements"]    = "[4 4]";
-        cfg["num_refinements"] = "2";
-      }
-#endif // HAVE_ALUGRID
-      return cfg;
-    }
-  };
-
 public:
   static const size_t default_integration_order = 2;
 
   static Stuff::Common::Configuration default_grid_cfg()
   {
-    return Helper< EntityImp >::default_grid_cfg();
+    Stuff::Common::Configuration cfg;
+    cfg["type"] = Stuff::Grid::Providers::Configs::Cube_default()["type"];
+    cfg["lower_left"]  = "[-1 -1]";
+    cfg["upper_right"] = "[1 1]";
+    return cfg;
   }
 
   static Stuff::Common::Configuration default_boundary_info_cfg()
@@ -104,11 +87,58 @@ public:
   typedef LinearElliptic::ESV2007Problem< E, D, d, R, r > ProblemType;
 private:
   typedef Test::StationaryTestCase< G, ProblemType > BaseType;
+
+  template< class T, bool anything = true >
+  struct Helper
+  {
+    static_assert(AlwaysFalse< T >::value, "Please add a configuration for this grid type!");
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg) { return cfg; }
+  };
+
+  template< bool anything >
+  struct Helper< SGrid< 2, 2 >, anything >
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[8 8]";
+      return cfg;
+    }
+  };
+
+#if HAVE_ALUGRID
+  template< bool anything >
+  struct Helper< ALUGrid< 2, 2, simplex, conforming >, anything >
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"]    = "[4 4]";
+      cfg["num_refinements"] = "2";
+      return cfg;
+    }
+  };
+
+  template< bool anything >
+  struct Helper< ALUGrid< 2, 2, simplex, nonconforming >, anything >
+  {
+    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[8 8]";
+      return cfg;
+    }
+  };
+#endif // HAVE_ALUGRID
+
+  static Stuff::Common::Configuration grid_cfg()
+  {
+    auto cfg = ProblemType::default_grid_cfg();
+    cfg = Helper< typename std::decay< G >::type >::value(cfg);
+    return cfg;
+  }
 public:
   using typename BaseType::GridType;
 
   ESV2007TestCase(const size_t num_refs = 3)
-    : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(Stuff::Grid::Providers::Cube< G >::create(grid_cfg())->grid_ptr(), num_refs)
     , problem_()
     , exact_solution_()
   {}
