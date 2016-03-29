@@ -19,7 +19,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_PDELAB && HAVE_DUNE_ISTL
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridTestCases);
+TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridDgTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_sgrid) {
   this->template eoc_study< ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::istl_sparse >();
 }
