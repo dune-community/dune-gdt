@@ -49,9 +49,9 @@ public:
   static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "L2")
-      return {};
+      return {2.05e-01, 1.66e-02, 1.91e-03};
     else if (type == "H1_semi" || type == "energy")
-      return {};
+      return {4.39e-01, 9.32e-02, 2.37e-02};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};

@@ -61,19 +61,19 @@ public:
   {
     if (type == "L2") {
       if (test_case.num_refinements() == 1)
-        return {};
+        return {8.95e-02, 8.74e-03};
       else
-        return {};
+        return {8.97e-02, 8.75e-03, 1.89e-03, 6.60e-04};
     } else if (type == "H1_semi") {
       if (test_case.num_refinements() == 1)
-        return {};
+        return {5.28e-01, 1.51e-01};
       else
-        return {};
+        return {5.24e-01, 1.47e-01, 7.39e-02, 5.43e-02};
     } else if (type == "energy") {
       if (test_case.num_refinements() == 1)
-        return {};
+        return {2.91e-01, 2.20e-01};
       else
-        return {};
+        return {2.70e-01, 2.05e-01, 1.77e-01, 1.46e-01};
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
