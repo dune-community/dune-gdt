@@ -15,6 +15,7 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
+#include "elliptic.hh"
 #include "interface.hh"
 #include "sipdg.hh"
 
@@ -43,15 +44,15 @@ template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class BoundaryLHS;
 
 
-template <class DiffusionFactorImp, class DiffusionTensorImp>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class InnerPenalty;
 
 
-template <class DiffusionFactorImp, class DiffusionTensorImp>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void>
 class BoundaryLHSPenalty;
 
 
-template <class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp = void>
+template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp = void>
 class BoundaryRHS;
 
 
@@ -59,215 +60,39 @@ namespace internal {
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
-class InnerTraits
+class InnerTraits : public LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>
 {
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions have to agree!");
-
 public:
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-}; // class InnerTraits
-
-
-template <class LocalizableFunctionImp>
-class InnerTraits<LocalizableFunctionImp, void>
-{
-  static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be a localizable function!");
-
-public:
-  typedef Inner<LocalizableFunctionImp, void> derived_type;
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef typename LocalizableFunctionType::EntityType EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
-  typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
-  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
-}; // class InnerTraits< ..., void >
+};
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp>
-class InnerPenaltyTraits
+class BoundaryLHSTraits : public LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>
 {
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions have to agree!");
-
-public:
-  typedef InnerPenalty<DiffusionFactorImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-}; // class InnerPenaltyTraits
-
-
-template <class DiffusionFactorImp, class DiffusionTensorImp>
-class BoundaryLHSTraits
-{
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions have to agree!");
-
 public:
   typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-}; // class BoundaryLHSTraits
+};
 
 
-template <class DiffusionFactorImp, class DiffusionTensorImp>
-class BoundaryLHSPenaltyTraits
-{
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain, "Dimensions have to agree!");
-
-public:
-  typedef BoundaryLHSPenalty<DiffusionFactorImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
-}; // class BoundaryLHSPenaltyTraits
-
-
-template <class LocalizableFunctionImp>
-class BoundaryLHSTraits<LocalizableFunctionImp, void>
-{
-  static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be a localizable function!");
-
-public:
-  typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef BoundaryLHS<LocalizableFunctionType> derived_type;
-  typedef typename LocalizableFunctionType::EntityType EntityType;
-  typedef typename LocalizableFunctionType::DomainFieldType DomainFieldType;
-  typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
-  typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
-  static const size_t dimDomain = LocalizableFunctionType::dimDomain;
-}; // class BoundaryLHSTraits< ..., void >
-
-
-template <class DiffusionFactorImp, class DirichletImp, class DiffusionTensorImp>
+template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp>
 class BoundaryRHSTraits
 {
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
-                "DiffusionFactorImp has to be a localizable function!");
   static_assert(Stuff::is_localizable_function<DirichletImp>::value, "DirichletImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
-                "DiffusionTensorImp has to be a localizable function!");
-  static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value
-                    && std::is_same<typename DiffusionFactorImp::EntityType, typename DirichletImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(
-      std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DiffusionTensorImp::DomainFieldType>::value
-          && std::is_same<typename DiffusionFactorImp::DomainFieldType, typename DirichletImp::DomainFieldType>::value,
-      "DomainFieldTypes have to agree!");
-  static_assert(DiffusionFactorImp::dimDomain == DiffusionTensorImp::dimDomain
-                    && DiffusionFactorImp::dimDomain == DirichletImp::dimDomain,
-                "Dimensions have to agree!");
+  typedef LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
 
 public:
-  typedef BoundaryRHS<DiffusionFactorImp, DirichletImp, DiffusionTensorImp> derived_type;
-  typedef DiffusionFactorImp LocalizableDiffusionFactorFunctionType;
-  typedef DirichletImp LocalizableDirichletFunctionType;
-  typedef DiffusionTensorImp LocalizableDiffusionTensorFunctionType;
-  typedef typename LocalizableDiffusionFactorFunctionType::LocalfunctionType LocalDiffusionFactorFunctionType;
-  typedef typename LocalizableDirichletFunctionType::LocalfunctionType LocalDirichletFunctionType;
-  typedef typename LocalizableDiffusionTensorFunctionType::LocalfunctionType LocalDiffusionTensorFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFactorFunctionType>,
-                     std::shared_ptr<LocalDiffusionTensorFunctionType>,
-                     std::shared_ptr<LocalDirichletFunctionType>> LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFactorFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFactorFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFactorFunctionType::dimDomain;
+  typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp> derived_type;
+  typedef DirichletImp DirichletType;
+  typedef typename EllipticType::DiffusionFactorType DiffusionFactorType;
+  typedef typename EllipticType::DiffusionTensorType DiffusionTensorType;
+  typedef std::tuple<std::shared_ptr<typename DirichletType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
+                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
+  typedef typename EllipticType::EntityType EntityType;
+  typedef typename EllipticType::DomainFieldType DomainFieldType;
+  static const size_t dimDomain = EllipticType::dimDomain;
 }; // class BoundaryRHSTraits
-
-
-template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
-class BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void>
-{
-  static_assert(Stuff::is_localizable_function<LocalizableDiffusionFunctionImp>::value,
-                "LocalizableDiffusionFunctionImp has to be a localizable function!");
-  static_assert(Stuff::is_localizable_function<LocalizableDirichletFunctionImp>::value,
-                "LocalizableDirichletFunctionImp has to be a localizable function!");
-  static_assert(std::is_same<typename LocalizableDiffusionFunctionImp::EntityType,
-                             typename LocalizableDirichletFunctionImp::EntityType>::value,
-                "EntityTypes have to agree!");
-  static_assert(std::is_same<typename LocalizableDiffusionFunctionImp::DomainFieldType,
-                             typename LocalizableDirichletFunctionImp::DomainFieldType>::value,
-                "DomainFieldTypes have to agree!");
-  static_assert(LocalizableDiffusionFunctionImp::dimDomain == LocalizableDirichletFunctionImp::dimDomain,
-                "Dimensions have to agree!");
-
-public:
-  typedef BoundaryRHS<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp> derived_type;
-  typedef LocalizableDiffusionFunctionImp LocalizableDiffusionFunctionType;
-  typedef LocalizableDirichletFunctionImp LocalizableDirichletFunctionType;
-  typedef typename LocalizableDiffusionFunctionType::LocalfunctionType LocalDiffusionFunctionType;
-  typedef typename LocalizableDirichletFunctionType::LocalfunctionType LocalDirichletFunctionType;
-  typedef std::tuple<std::shared_ptr<LocalDiffusionFunctionType>, std::shared_ptr<LocalDirichletFunctionType>>
-      LocalfunctionTupleType;
-  typedef typename LocalizableDiffusionFunctionType::EntityType EntityType;
-  typedef typename LocalizableDiffusionFunctionType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = LocalizableDiffusionFunctionType::dimDomain;
-}; // class BoundaryRHSTraits< ..., void >
 
 
 } // namespace internal
@@ -276,228 +101,386 @@ public:
 /**
  *  see Epshteyn, Riviere, 2007 for the meaning of beta
  */
-template <class LocalizableFunctionImp>
-class Inner<LocalizableFunctionImp, void>
-    : public LocalEvaluation::Codim1Interface<internal::InnerTraits<LocalizableFunctionImp, void>, 4>
+//! \todo Make use of InnerPenalty
+template <class DiffusionFactorImp, class DiffusionTensorImp>
+class Inner : public LocalEvaluation::Codim1Interface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp>, 4>
 {
+  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef Inner<DiffusionFactorImp, DiffusionTensorImp> ThisType;
+
 public:
-  typedef internal::InnerTraits<LocalizableFunctionImp, void> Traits;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
+  typedef typename Traits::DiffusionFactorType DiffusionFactorType;
+  typedef typename Traits::DiffusionTensorType DiffusionTensorType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  Inner(const LocalizableFunctionType& inducingFunction,
-        const double beta = SIPDG::internal::default_beta(LocalizableFunctionType::dimDomain))
-    : inducingFunction_(inducingFunction)
+  Inner(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
+        const double beta = SIPDG::internal::default_beta(dimDomain))
+    : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 4 >
+  Inner(const DiffusionFactorType& diffusion_factor, const double beta = SIPDG::internal::default_beta(dimDomain))
+    : elliptic_(diffusion_factor)
+    , beta_(beta)
+  {
+  }
+
+  template <
+      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
+      ,
+      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
+                                         && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
+  Inner(const DiffusionType& diffusion, const double beta = SIPDG::internal::default_beta(dimDomain))
+    : elliptic_(diffusion)
+    , beta_(beta)
+  {
+  }
+
+  Inner(const ThisType& other) = default;
+  Inner(ThisType&& source) = default;
+
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 4 >.
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(inducingFunction_.local_function(entity));
+    return std::make_tuple(elliptic_.diffusion_factor().local_function(entity),
+                           elliptic_.diffusion_tensor().local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t
-  order(const LocalfunctionTupleType& localFunctionsEntity, const LocalfunctionTupleType& localFunctionsNeighbor,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseEntity,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseEntity,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseNeighbor,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseNeighbor)
-      const
+  size_t order(
+      const LocalfunctionTupleType& local_functions_en, const LocalfunctionTupleType& local_functions_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_ne) const
   {
-    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
-    const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
-    return order(*localFunctionEntity,
-                 *localFunctionNeighbor,
-                 testBaseEntity,
-                 ansatzBaseEntity,
-                 testBaseNeighbor,
-                 ansatzBaseNeighbor);
+    const auto local_diffusion_factor_en = std::get<0>(local_functions_en);
+    const auto local_diffusion_tensor_en = std::get<1>(local_functions_en);
+    const auto local_diffusion_factor_ne = std::get<0>(local_functions_ne);
+    const auto local_diffusion_tensor_ne = std::get<1>(local_functions_ne);
+    return order(*local_diffusion_factor_en,
+                 *local_diffusion_tensor_en,
+                 *local_diffusion_factor_ne,
+                 *local_diffusion_tensor_ne,
+                 test_base_en,
+                 ansatz_base_en,
+                 test_base_ne,
+                 ansatz_base_ne);
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(
-      const LocalfunctionTupleType& localFunctionsEntity, const LocalfunctionTupleType& localFunctionsNeighbor,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseEntity,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseEntity,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseNeighbor,
-      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseNeighbor,
-      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-      Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
-      Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
+  void
+  evaluate(const LocalfunctionTupleType& local_functions_en, const LocalfunctionTupleType& local_functions_ne,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_en,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_en,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_ne,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_ne,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicMatrix<R>& ret_en_en, Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+           Dune::DynamicMatrix<R>& ret_ne_en) const
   {
-    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
-    const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
-    evaluate(*localFunctionEntity,
-             *localFunctionNeighbor,
-             testBaseEntity,
-             ansatzBaseEntity,
-             testBaseNeighbor,
-             ansatzBaseNeighbor,
+    const auto local_diffusion_factor_en = std::get<0>(local_functions_en);
+    const auto local_diffusion_tensor_en = std::get<1>(local_functions_en);
+    const auto local_diffusion_factor_ne = std::get<0>(local_functions_ne);
+    const auto local_diffusion_tensor_ne = std::get<1>(local_functions_ne);
+    evaluate(*local_diffusion_factor_en,
+             *local_diffusion_tensor_en,
+             *local_diffusion_factor_ne,
+             *local_diffusion_tensor_ne,
+             test_base_en,
+             ansatz_base_en,
+             test_base_ne,
+             ansatz_base_ne,
              intersection,
-             localPoint,
-             entityEntityRet,
-             neighborNeighborRet,
-             entityNeighborRet,
-             neighborEntityRet);
+             local_point,
+             ret_en_en,
+             ret_ne_ne,
+             ret_en_ne,
+             ret_ne_en);
   }
 
   /// \}
-  /// \name Actual implementation of order
+  /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
 
-  template <class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t
-  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunctionEntity,
-        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunctionNeighbor,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseEntity,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseEntity,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBaseNeighbor,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBaseNeighbor)
-      const
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value, size_t>::type order(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_ne) const
   {
-    return std::max(localFunctionEntity.order(), localFunctionNeighbor.order())
-           + std::max(testBaseEntity.order(), testBaseNeighbor.order())
-           + std::max(ansatzBaseEntity.order(), ansatzBaseNeighbor.order());
+    const auto local_functions_en        = localFunctions(local_diffusion_factor_en.entity());
+    const auto local_diffusion_tensor_en = std::get<1>(local_functions_en);
+    const auto local_functions_ne        = localFunctions(local_diffusion_factor_ne.entity());
+    const auto local_diffusion_tensor_ne = std::get<1>(local_functions_ne);
+    return order(local_diffusion_factor_en,
+                 *local_diffusion_tensor_en,
+                 local_diffusion_factor_ne,
+                 *local_diffusion_tensor_ne,
+                 test_base_en,
+                 ansatz_base_en,
+                 test_base_ne,
+                 ansatz_base_ne);
+  } // size_t order(...)
+
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value && dimDomain != 1, size_t>::type order(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+          local_diffusion_tensor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+          local_diffusion_tensor_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_ne) const
+  {
+    const auto local_functions_en        = localFunctions(local_diffusion_tensor_en.entity());
+    const auto local_diffusion_factor_en = std::get<0>(local_functions_en);
+    const auto local_functions_ne        = localFunctions(local_diffusion_tensor_ne.entity());
+    const auto local_diffusion_factor_ne = std::get<0>(local_functions_ne);
+    return order(*local_diffusion_factor_en,
+                 local_diffusion_tensor_en,
+                 *local_diffusion_factor_ne,
+                 local_diffusion_tensor_ne,
+                 test_base_en,
+                 ansatz_base_en,
+                 test_base_ne,
+                 ansatz_base_ne);
+  } // size_t order(...)
+
+  template <class R, class IntersectionType>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value, void>::type evaluate(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_ne,
+      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+      Dune::DynamicMatrix<R>& ret_en_en, Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+      Dune::DynamicMatrix<R>& ret_ne_en) const
+  {
+    const auto local_functions_en        = localFunctions(local_diffusion_factor_en.entity());
+    const auto local_diffusion_tensor_en = std::get<1>(local_functions_en);
+    const auto local_functions_ne        = localFunctions(local_diffusion_factor_ne.entity());
+    const auto local_diffusion_tensor_ne = std::get<1>(local_functions_ne);
+    evaluate(local_diffusion_factor_en,
+             *local_diffusion_tensor_en,
+             local_diffusion_factor_ne,
+             *local_diffusion_tensor_ne,
+             test_base_en,
+             ansatz_base_en,
+             test_base_ne,
+             ansatz_base_ne,
+             intersection,
+             local_point,
+             ret_en_en,
+             ret_ne_ne,
+             ret_en_ne,
+             ret_ne_en);
+  }
+
+  template <class R, class IntersectionType>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value && dimDomain != 1, void>::type
+  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+               local_diffusion_tensor_en,
+           const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+               local_diffusion_tensor_ne,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_en,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_en,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_ne,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_ne,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicMatrix<R>& ret_en_en, Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+           Dune::DynamicMatrix<R>& ret_ne_en) const
+  {
+    const auto local_functions_en        = localFunctions(local_diffusion_tensor_en.entity());
+    const auto local_diffusion_factor_en = std::get<0>(local_functions_en);
+    const auto local_functions_ne        = localFunctions(local_diffusion_tensor_ne.entity());
+    const auto local_diffusion_factor_ne = std::get<0>(local_functions_ne);
+    evaluate(*local_diffusion_factor_en,
+             local_diffusion_tensor_en,
+             *local_diffusion_factor_ne,
+             local_diffusion_tensor_ne,
+             test_base_en,
+             ansatz_base_en,
+             test_base_ne,
+             ansatz_base_ne,
+             intersection,
+             local_point,
+             ret_en_en,
+             ret_ne_ne,
+             ret_en_ne,
+             ret_ne_en);
   }
 
   /// \}
-  /// \name Actual implementation of evaluate
+  /// \name Actual Typelementation of order.
   /// \{
 
-  /**
-   *  \brief  Computes the swipdg fluxes in a primal setting.
-   *  \tparam IntersectionType Type of the codim 1 Intersection
-   *  \tparam R         RangeFieldType
-   */
-  template <class IntersectionType, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunctionEntity,
-                const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunctionNeighbor,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBaseEntity,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBaseEntity,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBaseNeighbor,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBaseNeighbor,
-                const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, 1>& localPoint,
-                Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
-                Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
+  template <class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  size_t order(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>&
+          local_diffusion_factor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT, rCDT>&
+          local_diffusion_tensor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>&
+          local_diffusion_factor_ne,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT, rCDT>&
+          local_diffusion_tensor_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base_ne) const
   {
+    return std::max(local_diffusion_factor_en.order(), local_diffusion_factor_ne.order())
+           + std::max(local_diffusion_tensor_en.order(), local_diffusion_tensor_ne.order())
+           + std::max(test_base_en.order(), test_base_ne.order())
+           + std::max(ansatz_base_en.order(), ansatz_base_ne.order());
+  } // size_t order(...)
+
+  /// \}
+  /// \name Actual Typelementation of evaluate.
+  /// \{
+
+  template <class R, class IntersectionType>
+  void evaluate(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+          local_diffusion_tensor_en,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor_ne,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+          local_diffusion_tensor_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_en,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base_ne,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base_ne,
+      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+      Dune::DynamicMatrix<R>& ret_en_en, Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+      Dune::DynamicMatrix<R>& ret_ne_en) const
+  {
+    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
-    entityEntityRet *= 0.0;
-    neighborNeighborRet *= 0.0;
-    entityNeighborRet *= 0.0;
-    neighborEntityRet *= 0.0;
+    ret_en_en *= 0.0;
+    ret_ne_ne *= 0.0;
+    ret_en_ne *= 0.0;
+    ret_ne_en *= 0.0;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
-    const auto localPointEn    = intersection.geometryInInside().global(localPoint);
-    const auto localPointNe    = intersection.geometryInOutside().global(localPoint);
-    const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
+    const auto local_point_en = intersection.geometryInInside().global(local_point);
+    const auto local_point_ne = intersection.geometryInOutside().global(local_point);
+    const auto normal         = intersection.unitOuterNormal(local_point);
     // evaluate local function
-    const auto functionValueEn = localFunctionEntity.evaluate(localPointEn);
-    const auto functionValueNe = localFunctionNeighbor.evaluate(localPointNe);
+    const auto local_diffusion_factor_value_en       = local_diffusion_factor_en.evaluate(local_point_en);
+    const TensorType local_diffusion_tensor_value_en = local_diffusion_tensor_en.evaluate(local_point_en);
+    const auto local_diffusion_factor_value_ne       = local_diffusion_factor_ne.evaluate(local_point_ne);
+    const TensorType local_diffusion_tensor_value_ne = local_diffusion_tensor_ne.evaluate(local_point_ne);
+    const auto diffusion_value_en                    = local_diffusion_tensor_value_en * local_diffusion_factor_value_en;
+    const auto diffusion_value_ne                    = local_diffusion_tensor_value_ne * local_diffusion_factor_value_ne;
+    //    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    //    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     // compute penalty factor (see Epshteyn, Riviere, 2007)
-    const size_t max_polorder =
-        std::max(testBaseEntity.order(),
-                 std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
+    const size_t max_polorder = std::max(
+        test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
     const R sigma = SIPDG::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R delta_plus   = /*unitOuterNormal * (*/ functionValueNe /** unitOuterNormal)*/;
-    const R delta_minus  = /*unitOuterNormal * (*/ functionValueEn /** unitOuterNormal)*/;
+    const R delta_plus   = normal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * normal);
+    const R delta_minus  = normal * (/*local_diffusion_tensor_en*/ diffusion_value_en * normal);
     const R gamma        = (delta_plus * delta_minus) / (delta_plus + delta_minus);
-    const R penalty      = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R penalty      = (/*local_diffusion_factor **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     const R weight_plus  = delta_minus / (delta_plus + delta_minus);
     const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // evaluate bases
     // * entity
     //   * test
-    const size_t rowsEn        = testBaseEntity.size();
-    const auto testValuesEn    = testBaseEntity.evaluate(localPointEn);
-    const auto testGradientsEn = testBaseEntity.jacobian(localPointEn);
+    const size_t rows_en         = test_base_en.size();
+    const auto test_values_en    = test_base_en.evaluate(local_point_en);
+    const auto test_gradients_en = test_base_en.jacobian(local_point_en);
     //   * ansatz
-    const size_t colsEn          = ansatzBaseEntity.size();
-    const auto ansatzValuesEn    = ansatzBaseEntity.evaluate(localPointEn);
-    const auto ansatzGradientsEn = ansatzBaseEntity.jacobian(localPointEn);
+    const size_t cols_en           = ansatz_base_en.size();
+    const auto ansatz_values_en    = ansatz_base_en.evaluate(local_point_en);
+    const auto ansatz_gradients_en = ansatz_base_en.jacobian(local_point_en);
     // * neighbor
     //   * test
-    const size_t rowsNe        = testBaseNeighbor.size();
-    const auto testValuesNe    = testBaseNeighbor.evaluate(localPointNe);
-    const auto testGradientsNe = testBaseNeighbor.jacobian(localPointNe);
+    const size_t rows_ne         = test_base_ne.size();
+    const auto test_values_ne    = test_base_ne.evaluate(local_point_ne);
+    const auto test_gradients_ne = test_base_ne.jacobian(local_point_ne);
     //   * ansatz
-    const size_t colsNe          = ansatzBaseNeighbor.size();
-    const auto ansatzValuesNe    = ansatzBaseNeighbor.evaluate(localPointNe);
-    const auto ansatzGradientsNe = ansatzBaseNeighbor.jacobian(localPointNe);
+    const size_t cols_ne           = ansatz_base_ne.size();
+    const auto ansatz_values_ne    = ansatz_base_ne.evaluate(local_point_ne);
+    const auto ansatz_gradients_ne = ansatz_base_ne.jacobian(local_point_ne);
     // compute the evaluations
-    assert(entityEntityRet.rows() >= rowsEn);
-    assert(entityEntityRet.cols() >= colsEn);
-    assert(entityNeighborRet.rows() >= rowsEn);
-    assert(entityNeighborRet.cols() >= colsNe);
-    assert(neighborEntityRet.rows() >= rowsNe);
-    assert(neighborEntityRet.cols() >= colsEn);
-    assert(neighborNeighborRet.rows() >= rowsNe);
-    assert(neighborNeighborRet.cols() >= colsNe);
+    assert(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
+    assert(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
+    assert(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
+    assert(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
     // loop over all entity test basis functions
-    for (size_t ii = 0; ii < rowsEn; ++ii) {
-      auto& entityEntityRetRow   = entityEntityRet[ii];
-      auto& entityNeighborRetRow = entityNeighborRet[ii];
+    for (size_t ii = 0; ii < rows_en; ++ii) {
+      auto& ret_en_en_row = ret_en_en[ii];
+      auto& ret_en_ne_row = ret_en_ne[ii];
       // loop over all entity ansatz basis functions
-      for (size_t jj = 0; jj < colsEn; ++jj) {
+      for (size_t jj = 0; jj < cols_en; ++jj) {
         // consistency term
-        entityEntityRetRow[jj] +=
-            -weight_minus * functionValueEn * (ansatzGradientsEn[jj][0] * unitOuterNormal) * testValuesEn[ii];
+        ret_en_en_row[jj] +=
+            -weight_minus * ((diffusion_value_en * ansatz_gradients_en[jj][0]) * normal) * test_values_en[ii];
         // symmetry term
-        entityEntityRetRow[jj] +=
-            -weight_minus * ansatzValuesEn[jj] * functionValueEn * (testGradientsEn[ii][0] * unitOuterNormal);
+        ret_en_en_row[jj] +=
+            -weight_minus * ansatz_values_en[jj] * ((diffusion_value_en * test_gradients_en[ii][0]) * normal);
         // penalty term
-        entityEntityRetRow[jj] += penalty * ansatzValuesEn[jj] * testValuesEn[ii];
+        ret_en_en_row[jj] += penalty * ansatz_values_en[jj] * test_values_en[ii];
       } // loop over all entity ansatz basis functions
       // loop over all neighbor ansatz basis functions
-      for (size_t jj = 0; jj < colsNe; ++jj) {
+      for (size_t jj = 0; jj < cols_ne; ++jj) {
         // consistency term
-        entityNeighborRetRow[jj] +=
-            -weight_plus * functionValueNe * (ansatzGradientsNe[jj][0] * unitOuterNormal) * testValuesEn[ii];
+        ret_en_ne_row[jj] +=
+            -weight_plus * ((diffusion_value_ne * ansatz_gradients_ne[jj][0]) * normal) * test_values_en[ii];
         // symmetry term
-        entityNeighborRetRow[jj] +=
-            weight_minus * ansatzValuesNe[jj] * functionValueEn * (testGradientsEn[ii][0] * unitOuterNormal);
+        ret_en_ne_row[jj] +=
+            weight_minus * ansatz_values_ne[jj] * ((diffusion_value_en * test_gradients_en[ii][0]) * normal);
         // penalty term
-        entityNeighborRetRow[jj] += -1.0 * penalty * ansatzValuesNe[jj] * testValuesEn[ii];
+        ret_en_ne_row[jj] += -1.0 * penalty * ansatz_values_ne[jj] * test_values_en[ii];
       } // loop over all neighbor ansatz basis functions
     } // loop over all entity test basis functions
     // loop over all neighbor test basis functions
-    for (size_t ii = 0; ii < rowsNe; ++ii) {
-      auto& neighborEntityRetRow   = neighborEntityRet[ii];
-      auto& neighborNeighborRetRow = neighborNeighborRet[ii];
+    for (size_t ii = 0; ii < rows_ne; ++ii) {
+      auto& ret_ne_en_row = ret_ne_en[ii];
+      auto& ret_ne_ne_row = ret_ne_ne[ii];
       // loop over all entity ansatz basis functions
-      for (size_t jj = 0; jj < colsEn; ++jj) {
+      for (size_t jj = 0; jj < cols_en; ++jj) {
         // consistency term
-        neighborEntityRetRow[jj] +=
-            weight_minus * functionValueEn * (ansatzGradientsEn[jj][0] * unitOuterNormal) * testValuesNe[ii];
+        ret_ne_en_row[jj] +=
+            weight_minus * ((diffusion_value_en * ansatz_gradients_en[jj][0]) * normal) * test_values_ne[ii];
         // symmetry term
-        neighborEntityRetRow[jj] +=
-            -weight_plus * ansatzValuesEn[jj] * functionValueNe * (testGradientsNe[ii][0] * unitOuterNormal);
+        ret_ne_en_row[jj] +=
+            -weight_plus * ansatz_values_en[jj] * ((diffusion_value_ne * test_gradients_ne[ii][0]) * normal);
         // penalty term
-        neighborEntityRetRow[jj] += -1.0 * penalty * ansatzValuesEn[jj] * testValuesNe[ii];
+        ret_ne_en_row[jj] += -1.0 * penalty * ansatz_values_en[jj] * test_values_ne[ii];
       } // loop over all entity ansatz basis functions
       // loop over all neighbor ansatz basis functions
-      for (size_t jj = 0; jj < colsNe; ++jj) {
+      for (size_t jj = 0; jj < cols_ne; ++jj) {
         // consistency term
-        neighborNeighborRetRow[jj] +=
-            weight_plus * functionValueNe * (ansatzGradientsNe[jj][0] * unitOuterNormal) * testValuesNe[ii];
+        ret_ne_ne_row[jj] +=
+            weight_plus * ((diffusion_value_ne * ansatz_gradients_ne[jj][0]) * normal) * test_values_ne[ii];
         // symmetry term
-        neighborNeighborRetRow[jj] +=
-            weight_plus * ansatzValuesNe[jj] * functionValueNe * (testGradientsNe[ii][0] * unitOuterNormal);
+        ret_ne_ne_row[jj] +=
+            weight_plus * ansatz_values_ne[jj] * ((diffusion_value_ne * test_gradients_ne[ii][0]) * normal);
         // penalty term
-        neighborNeighborRetRow[jj] += penalty * ansatzValuesNe[jj] * testValuesNe[ii];
+        ret_ne_ne_row[jj] += penalty * ansatz_values_ne[jj] * test_values_ne[ii];
       } // loop over all neighbor ansatz basis functions
     } // loop over all neighbor test basis functions
   } // ... evaluate(...)
@@ -505,36 +488,61 @@ public:
   /// \}
 
 private:
-  const LocalizableFunctionType& inducingFunction_;
+  const EllipticType elliptic_;
   const double beta_;
-}; // class Inner< ..., void >
+}; // Inner
 
 
-template <class LocalizableFunctionImp>
-class BoundaryLHS<LocalizableFunctionImp, void>
-    : public LocalEvaluation::Codim1Interface<internal::BoundaryLHSTraits<LocalizableFunctionImp, void>, 2>
+template <class DiffusionFactorImp, class DiffusionTensorImp>
+class BoundaryLHS
+    : public LocalEvaluation::Codim1Interface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp>, 2>
 {
 public:
-  typedef internal::BoundaryLHSTraits<LocalizableFunctionImp, void> Traits;
-  typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp> ThisType;
+
+public:
+  typedef internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
+  typedef typename Traits::DiffusionFactorType DiffusionFactorType;
+  typedef typename Traits::DiffusionTensorType DiffusionTensorType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  BoundaryLHS(const LocalizableFunctionType& inducingFunction,
+  BoundaryLHS(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
               const double beta = SIPDG::internal::default_beta(dimDomain))
-    : inducingFunction_(inducingFunction)
+    : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
+  BoundaryLHS(const DiffusionFactorType& diffusion_factor, const double beta = SIPDG::internal::default_beta(dimDomain))
+    : elliptic_(diffusion_factor)
+    , beta_(beta)
+  {
+  }
+
+  template <
+      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
+      ,
+      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
+                                         && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
+  BoundaryLHS(const DiffusionType& diffusion, const double beta = SIPDG::internal::default_beta(dimDomain))
+    : elliptic_(diffusion)
+    , beta_(beta)
+  {
+  }
+
+  BoundaryLHS(const ThisType& other) = default;
+  BoundaryLHS(ThisType&& source) = default;
+
   /// \name Required by LocalEvaluation::Codim1Interface< ..., 2 >
-  /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(inducingFunction_.local_function(entity));
+    return std::make_tuple(elliptic_.diffusion_factor().local_function(entity),
+                           elliptic_.diffusion_tensor().local_function(entity));
   }
 
   /**
@@ -542,223 +550,323 @@ public:
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t
-  order(const LocalfunctionTupleType localFuncs,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
+  order(const LocalfunctionTupleType& local_functions,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
   {
-    return order(*std::get<0>(localFuncs), testBase, ansatzBase);
+    const auto local_diffusion_factor = std::get<0>(local_functions);
+    const auto local_diffusion_tensor = std::get<1>(local_functions);
+    return order(*local_diffusion_factor, *local_diffusion_tensor, test_base, ansatz_base);
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(const LocalfunctionTupleType localFuncs,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
+  void evaluate(const LocalfunctionTupleType& local_functions,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
                 const IntersectionType& intersection,
-                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicMatrix<R>& ret) const
+                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
-    evaluate(*std::get<0>(localFuncs), testBase, ansatzBase, intersection, localPoint, ret);
+    const auto local_diffusion_factor = std::get<0>(local_functions);
+    const auto local_diffusion_tensor = std::get<1>(local_functions);
+    evaluate(*local_diffusion_factor, *local_diffusion_tensor, test_base, ansatz_base, intersection, local_point, ret);
   }
 
   /// \}
-  /// \name Actual implementation of order
+  /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
 
-  /**
-   *  \return localFunction.order() + testBase.order() + ansatzBase.order()
-   */
-  template <class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t
-  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rL, rCL>& localFunction,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value, size_t>::type
+  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
   {
-    return localFunction.order() + testBase.order() + ansatzBase.order();
+    const auto local_functions        = localFunctions(local_diffusion_factor.entity());
+    const auto local_diffusion_tensor = std::get<1>(local_functions);
+    return order(local_diffusion_factor, *local_diffusion_tensor, test_base, ansatz_base);
+  }
+
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value && dimDomain != 1, size_t>::type
+  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+            local_diffusion_tensor,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
+  {
+    const auto local_functions        = localFunctions(local_diffusion_tensor.entity());
+    const auto local_diffusion_factor = std::get<0>(local_functions);
+    return order(*local_diffusion_factor, local_diffusion_tensor, test_base, ansatz_base);
+  }
+
+  template <class R, class IntersectionType>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value, void>::type
+  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicMatrix<R>& ret) const
+  {
+    const auto local_functions        = localFunctions(local_diffusion_factor.entity());
+    const auto local_diffusion_tensor = std::get<1>(local_functions);
+    evaluate(local_diffusion_factor, *local_diffusion_tensor, test_base, ansatz_base, intersection, local_point, ret);
+  }
+
+  template <class R, class IntersectionType>
+  typename std::enable_if<std::is_same<DiffusionTensorImp, void>::value && dimDomain != 1, void>::type
+  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+               local_diffusion_tensor,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicMatrix<R>& ret) const
+  {
+    const auto local_functions        = localFunctions(local_diffusion_tensor.entity());
+    const auto local_diffusion_factor = std::get<0>(local_functions);
+    evaluate(*local_diffusion_factor, local_diffusion_tensor, test_base, ansatz_base, intersection, local_point, ret);
   }
 
   /// \}
-  /// \name Actual implementation of evaluate
+  /// \name Actual implementation of order.
   /// \{
 
-  template <class IntersectionType, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunction,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBase,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBase,
-                const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, 1>& localPoint,
-                Dune::DynamicMatrix<R>& ret) const
+  template <class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  size_t order(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>& local_diffusion_factor,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT, rCDT>& local_diffusion_tensor,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
   {
+    return local_diffusion_factor.order() + local_diffusion_tensor.order() + test_base.order() + ansatz_base.order();
+  }
+
+  /// \}
+  /// \name Actual implementation of evaluate.
+  /// \{
+
+  template <class R, class IntersectionType>
+  void
+  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor,
+           const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+               local_diffusion_tensor,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& ansatz_base,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicMatrix<R>& ret) const
+  {
+    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
-    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto local_point_entity = intersection.geometryInInside().global(local_point);
+    const auto normal             = intersection.unitOuterNormal(local_point);
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPointEntity);
+    const auto diffusion_factor_value       = local_diffusion_factor.evaluate(local_point_entity);
+    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
+    const auto diffusion_value              = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
-    const size_t max_polorder = std::max(testBase.order(), ansatzBase.order());
+    const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
     const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma   = /*unitOuterNormal * (*/ functionValue /** unitOuterNormal)*/;
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R gamma   = normal * (/*diffusion_tensor_value*/ diffusion_value * normal);
+    const R penalty = (/*diffusion_factor_value **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
-    const size_t rows        = testBase.size();
-    const auto testValues    = testBase.evaluate(localPointEntity);
-    const auto testGradients = testBase.jacobian(localPointEntity);
+    const size_t rows         = test_base.size();
+    const auto test_values    = test_base.evaluate(local_point_entity);
+    const auto test_gradients = test_base.jacobian(local_point_entity);
     // * ansatz
-    const size_t cols          = ansatzBase.size();
-    const auto ansatzValues    = ansatzBase.evaluate(localPointEntity);
-    const auto ansatzGradients = ansatzBase.jacobian(localPointEntity);
+    const size_t cols           = ansatz_base.size();
+    const auto ansatz_values    = ansatz_base.evaluate(local_point_entity);
+    const auto ansatz_gradients = ansatz_base.jacobian(local_point_entity);
     // compute products
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    assert(ret.rows() >= rows && ret.cols() >= cols);
     // loop over all test basis functions
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       // loop over all ansatz basis functions
       for (size_t jj = 0; jj < cols; ++jj) {
         // consistency term
-        retRow[jj] += -1.0 * functionValue * (ansatzGradients[jj][0] * unitOuterNormal) * testValues[ii];
+        retRow[jj] += -1.0 * ((diffusion_value * ansatz_gradients[jj][0]) * normal) * test_values[ii];
         // symmetry term
-        retRow[jj] += -1.0 * ansatzValues[jj] * functionValue * (testGradients[ii][0] * unitOuterNormal);
+        retRow[jj] += -1.0 * ansatz_values[jj] * ((diffusion_value * test_gradients[ii][0]) * normal);
         // penalty term
-        retRow[jj] += penalty * ansatzValues[jj] * testValues[ii];
+        retRow[jj] += penalty * ansatz_values[jj] * test_values[ii];
       } // loop over all ansatz basis functions
     } // loop over all test basis functions
-  } // ... evaluate(...)
+  } // void evaluate(...)
 
   /// \}
 
 private:
-  const LocalizableFunctionType& inducingFunction_;
+  const EllipticType elliptic_;
   const double beta_;
-}; // class BoundaryLHS< ..., void >
+}; // class BoundaryLHS
 
 
-template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
-class BoundaryRHS<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void>
-    : public LocalEvaluation::Codim1Interface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
-                                                                          LocalizableDirichletFunctionImp, void>,
-                                              1>
+template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp>
+class BoundaryRHS
+    : public LocalEvaluation::
+          Codim1Interface<internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp>, 1>
 {
+  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp> ThisType;
+
 public:
-  typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp, void> Traits;
-  typedef typename Traits::LocalizableDiffusionFunctionType LocalizableDiffusionFunctionType;
-  typedef typename Traits::LocalizableDirichletFunctionType LocalizableDirichletFunctionType;
+  typedef internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp> Traits;
+  typedef typename Traits::DirichletType DirichletType;
+  typedef typename Traits::DiffusionFactorType DiffusionFactorType;
+  typedef typename Traits::DiffusionTensorType DiffusionTensorType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
-              const double beta = SIPDG::internal::default_beta(dimDomain))
-    : diffusion_(diffusion)
-    , dirichlet_(dirichlet)
+  BoundaryRHS(const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
+              const DiffusionTensorType& diffusion_tensor, const double beta = SIPDG::internal::default_beta(dimDomain))
+    : dirichlet_(dirichlet)
+    , elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >
+  BoundaryRHS(const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
+              const double beta = SIPDG::internal::default_beta(dimDomain))
+    : dirichlet_(dirichlet)
+    , elliptic_(diffusion_factor)
+    , beta_(beta)
+  {
+  }
+
+  template <
+      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
+      ,
+      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
+                                         && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
+  BoundaryRHS(const DirichletType& dirichlet, const DiffusionType& diffusion,
+              const double beta = SIPDG::internal::default_beta(dimDomain))
+    : dirichlet_(dirichlet)
+    , elliptic_(diffusion)
+    , beta_(beta)
+  {
+  }
+
+  BoundaryRHS(const ThisType& other) = default;
+  BoundaryRHS(ThisType&& source) = default;
+
+  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >.
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(diffusion_.local_function(entity), dirichlet_.local_function(entity));
+    return std::make_tuple(dirichlet_.local_function(entity),
+                           elliptic_.diffusion_factor().local_function(entity),
+                           elliptic_.diffusion_tensor().local_function(entity));
   }
 
   /**
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class R, size_t r, size_t rC>
-  size_t order(const LocalfunctionTupleType localFuncs,
-               const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase) const
+  size_t
+  order(const LocalfunctionTupleType& local_functions,
+        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& test_base) const
   {
-    const auto localDiffusion = std::get<0>(localFuncs);
-    const auto localDirichlet = std::get<1>(localFuncs);
-    return order(*localDiffusion, *localDirichlet, testBase);
+    const auto local_dirichlet        = std::get<0>(local_functions);
+    const auto local_diffusion_factor = std::get<1>(local_functions);
+    const auto local_diffusion_tensor = std::get<2>(local_functions);
+    return order(*local_dirichlet, *local_diffusion_factor, *local_diffusion_tensor, test_base);
   }
 
   /**
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class IntersectionType, class R, size_t r, size_t rC>
-  void evaluate(const LocalfunctionTupleType localFuncs,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
+  void evaluate(const LocalfunctionTupleType& local_functions,
+                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& test_base,
                 const IntersectionType& intersection,
-                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
+                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point, Dune::DynamicVector<R>& ret) const
   {
-    const auto localDiffusion = std::get<0>(localFuncs);
-    const auto localDirichlet = std::get<1>(localFuncs);
-    evaluate(*localDiffusion, *localDirichlet, testBase, intersection, localPoint, ret);
+    const auto local_dirichlet        = std::get<0>(local_functions);
+    const auto local_diffusion_factor = std::get<1>(local_functions);
+    const auto local_diffusion_tensor = std::get<2>(local_functions);
+    evaluate(
+        *local_dirichlet, *local_diffusion_factor, *local_diffusion_tensor, test_base, intersection, local_point, ret);
   }
 
   /// \}
-  /// \name Actual implementation of order
+  /// \name Actual implementation of order.
   /// \{
 
-  /**
-   *  \return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
-   */
-  template <class R, size_t rLF, size_t rCLF, size_t rLR, size_t rCLR, size_t rT, size_t rCT>
-  size_t
-  order(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLF, rCLF>& localDiffusion,
-        const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLR, rCLR>& localDirichlet,
-        const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase) const
+  template <class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rLR, size_t rCLR, size_t rT, size_t rCT>
+  size_t order(
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLR, rCLR>& local_dirichlet,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDF, rCDF>& local_diffusion_factor,
+      const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rDT, rCDT>& local_diffusion_tensor,
+      const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base) const
   {
-    const size_t testOrder         = testBase.order();
-    const size_t testGradientOrder = boost::numeric_cast<size_t>(std::max(ssize_t(testOrder) - 1, ssize_t(0)));
-    const size_t diffusionOrder    = localDiffusion.order();
-    const size_t dirichletOrder = localDirichlet.order();
-    return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
+    const size_t test_order          = test_base.order();
+    const size_t test_gradient_order = std::max(ssize_t(test_order) - 1, ssize_t(0));
+    const size_t diffusionOrder      = local_diffusion_factor.order() + local_diffusion_tensor.order();
+    const size_t dirichletOrder = local_dirichlet.order();
+    return std::max(test_order + dirichletOrder, diffusionOrder + test_gradient_order + dirichletOrder);
   } // ... order(...)
 
   /// \}
-  /// \name Actual implementation of evaluate
+  /// \name Actual implementation of evaluate.
   /// \{
 
-  template <class IntersectionType, class R>
-  void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDiffusion,
-                const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDirichlet,
-                const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
+  template <class R, class IntersectionType>
+  void
+  evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_dirichlet,
+           const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& local_diffusion_factor,
+           const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
+               local_diffusion_tensor,
+           const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& test_base,
+           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
+           Dune::DynamicVector<R>& ret) const
   {
+    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
-    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto local_point_entity = intersection.geometryInInside().global(local_point);
+    const auto normal             = intersection.unitOuterNormal(local_point);
     // evaluate local functions
-    const auto diffusionValue = localDiffusion.evaluate(localPointEntity);
-    const auto dirichletValue = localDirichlet.evaluate(localPointEntity);
+    const auto dirichlet_value              = local_dirichlet.evaluate(local_point_entity);
+    const auto diffusion_factor_value       = local_diffusion_factor.evaluate(local_point_entity);
+    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
     // compute penalty (see Epshteyn, Riviere, 2007)
-    const auto polorder = testBase.order();
-    const R sigma       = SIPDG::internal::boundary_sigma(polorder);
+    const size_t polorder = test_base.order();
+    const R sigma         = SIPDG::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma   = /*unitOuterNormal * (*/ diffusionValue /** unitOuterNormal)*/;
-    const R penalty = (sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R gamma   = normal * (diffusion_tensor_value * normal);
+    const R penalty = (diffusion_factor_value * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    // compute diffusion value
+    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // evaluate basis
-    const auto size          = testBase.size();
-    const auto testValues    = testBase.evaluate(localPointEntity);
-    const auto testGradients = testBase.jacobian(localPointEntity);
+    const size_t size         = test_base.size();
+    const auto test_values    = test_base.evaluate(local_point_entity);
+    const auto test_gradients = test_base.jacobian(local_point_entity);
     // compute
     assert(ret.size() >= size);
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term
-      ret[ii] += -1.0 * dirichletValue * diffusionValue * (testGradients[ii][0] * unitOuterNormal);
+      ret[ii] += -1.0 * dirichlet_value * ((diffusion_value * test_gradients[ii][0]) * normal);
       // penalty term
-      ret[ii] += penalty * dirichletValue * testValues[ii];
+      ret[ii] += penalty * dirichlet_value * test_values[ii];
     } // loop over all test basis functions
   } // ... evaluate(...)
 
-private:
-  const LocalizableDiffusionFunctionType& diffusion_;
-  const LocalizableDirichletFunctionType& dirichlet_;
+  /// \}
+
+  const DirichletType& dirichlet_;
+  const EllipticType elliptic_;
   const double beta_;
-}; // class BoundaryRHS< ..., void >
+}; // class BoundaryRHS
 
 
 } // namespace SWIPDG
