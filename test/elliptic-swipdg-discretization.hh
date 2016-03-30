@@ -305,6 +305,11 @@ public:
     }
   } // ... norm_reference_solution(...)
 
+  virtual size_t current_num_DoFs() const override
+  {
+    return current_grid_size();
+  }
+
   virtual size_t current_grid_size() const override
   {
     assert(current_level_ < test_.num_levels());
