@@ -4,7 +4,7 @@
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
 # expectation targets
-add_library(lib_test_hyperbolic_fv_discretizations_yaspgrid
+add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
 	    STATIC
             EXCLUDE_FROM_ALL
             eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
@@ -17,7 +17,7 @@ add_library(lib_test_hyperbolic_fv_discretizations_yaspgrid
             eocexpectations-fv-shocktube-1dyaspgrid.cxx)
 
 # add some compile flags
-foreach (_target lib_test_hyperbolic_fv_discretizations_yaspgrid)
+foreach (_target expectations_hyperbolic_fv_discretizations_yaspgrid)
   add_dune_mpi_flags(${_target})
 endforeach (_target)
 
