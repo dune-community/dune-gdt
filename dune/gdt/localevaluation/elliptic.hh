@@ -256,7 +256,7 @@ public:
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         for (size_t rr = 0; rr < r; ++rr) {
-          retRow[jj] = (diffusion_value * ansatzGradients[jj][rr]) * testGradients[ii][rr];
+          retRow[jj] += (diffusion_value * ansatzGradients[jj][rr]) * testGradients[ii][rr];
         }
       }
     }
