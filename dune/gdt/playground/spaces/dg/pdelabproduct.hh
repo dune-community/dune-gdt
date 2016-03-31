@@ -66,17 +66,20 @@ public:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
 class PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
+    : public Dune::GDT::SpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder, RangeFieldImp,
+                                                                          rangeDim, 1>,
+                                       GridViewImp::dimension, rangeDim, 1>,
+      public Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
                                                                                  RangeFieldImp, rangeDim, 1>,
                                               GridViewImp::dimension, rangeDim, 1>
 {
   typedef PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef typename Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
-                                                                                       RangeFieldImp, rangeDim, 1>,
-                                                    GridViewImp::dimension, rangeDim, 1> BaseType;
+  typedef typename Dune::GDT::SpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
+                                                                                RangeFieldImp, rangeDim, 1>,
+                                             GridViewImp::dimension, rangeDim, 1> BaseType;
 
 public:
-  using typename BaseType::Traits;
+  typedef typename internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;

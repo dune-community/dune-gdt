@@ -47,12 +47,6 @@ public:
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
 class ProductFVInterface : public ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
-  typedef ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
-
-public:
-  using typename BaseType::RangeFieldType;
-  using BaseType::compute_pattern;
-  using BaseType::local_constraints;
 }; // class ProductFVInterface
 
 
