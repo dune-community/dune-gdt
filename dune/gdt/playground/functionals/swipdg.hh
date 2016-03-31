@@ -29,7 +29,7 @@ class DirichletBoundarySWIPDG
                                                                            DiffusionTensorType>> FunctionalBaseType;
   typedef SystemAssembler<SpaceImp, GridViewImp, SpaceImp> AssemblerBaseType;
 
-  typedef LocalFunctional::Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<DiffusionFactorType, DirichletType,
+  typedef LocalFunctional::Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<DirichletType, DiffusionFactorType,
                                                                                DiffusionTensorType>>
       LocalFunctionalType;
   typedef LocalAssembler::Codim1Vector<LocalFunctionalType> LocalAssemblerType;
@@ -57,7 +57,7 @@ public:
     , diffusion_tensor_(diffusion_tensor)
     , dirichlet_(dirichlet)
     , boundary_info_(boundary_info)
-    , local_functional_(diffusion_factor_, diffusion_tensor_, dirichlet_, beta)
+    , local_functional_(dirichlet_, diffusion_factor_, diffusion_tensor_, beta)
     , local_assembler_(local_functional_)
   {
     setup();
@@ -73,7 +73,7 @@ public:
     , diffusion_tensor_(diffusion_tensor)
     , dirichlet_(dirichlet)
     , boundary_info_(boundary_info)
-    , local_functional_(diffusion_factor_, diffusion_tensor_, dirichlet_, beta)
+    , local_functional_(dirichlet_, diffusion_factor_, diffusion_tensor_, beta)
     , local_assembler_(local_functional_)
   {
     setup();
