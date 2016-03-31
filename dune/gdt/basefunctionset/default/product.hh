@@ -66,7 +66,7 @@ struct DynamicTupleGetter
 
   template< typename... TupleArgs >
   static typename std::enable_if<I == sizeof...(TupleArgs), void>::type
-  order(const std::tuple< TupleArgs... >& /*tuple*/, size_t& current_order)
+  order(const std::tuple< TupleArgs... >& /*tuple*/, size_t& /*current_order*/)
   {}
 
   template< typename... TupleArgs >
