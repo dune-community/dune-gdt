@@ -26,7 +26,8 @@ namespace internal {
 
 struct FloatCmpLt
 {
-  bool operator()(const double& a, const double& b) const
+  template <class A, class B>
+  bool operator()(const A& a, const B& b) const
   {
     return DSC::FloatCmp::lt(a, b);
   }
