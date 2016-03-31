@@ -477,16 +477,10 @@ public:
  * */
 template< class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1 >
 class ProductSpaceInterface
-    : public SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols >
 {
-  typedef SpaceInterface< ImpTraits, domainDim, rangeDim, rangeDimCols > BaseType;
 public:
   typedef ImpTraits Traits;
-  using typename BaseType::EntityType;
-  using typename BaseType::PatternType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::MapperType;
-  static_assert(std::is_base_of< IsProductMapper, MapperType>::value, "MapperType has to be derived from ProductMapperInterface");
+  static_assert(std::is_base_of< IsProductMapper, typename Traits::MapperType>::value, "MapperType has to be derived from ProductMapperInterface");
   typedef typename Traits::SpaceTupleType SpaceTupleType;
   static const size_t num_factors = std::tuple_size< SpaceTupleType >::value;
 
