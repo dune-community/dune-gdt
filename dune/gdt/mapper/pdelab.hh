@@ -17,8 +17,10 @@
 
 #include <dune/stuff/common/parallel/threadstorage.hh>
 #include <dune/stuff/common/type_utils.hh>
+#include <dune/stuff/common/tuple.hh>
 
 #include "interface.hh"
+#include <dune/gdt/mapper/default/product.hh>
 
 namespace Dune {
 namespace GDT {
@@ -28,7 +30,7 @@ namespace Mapper {
 
 
 // forwards
-template <class PdelabSpaceImp>
+template <class PdelabSpaceImp, size_t rangeDim>
 class ContinuousPdelabWrapper;
 
 template <class PdelabSpaceImp>
@@ -38,11 +40,11 @@ class DiscontinuousPdelabWrapper;
 namespace internal {
 
 
-template <class PdelabSpaceImp>
+template <class PdelabSpaceImp, size_t rangeDim>
 class ContinuousPdelabWrapperTraits
 {
 public:
-  typedef ContinuousPdelabWrapper<PdelabSpaceImp> derived_type;
+  typedef ContinuousPdelabWrapper<PdelabSpaceImp, rangeDim> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
 };
@@ -147,12 +149,33 @@ protected:
 } // namespace internal
 
 
-template <class PdelabSpaceImp>
+template <class PdelabSpaceImp, size_t rangeDim = 1>
 class ContinuousPdelabWrapper
-    : public internal::PdelabWrapperBase<internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp>>
+    : public DefaultProductMapperFromTuple<
+          typename PdelabSpaceImp::Traits::GridViewType,
+          typename DSC::make_identical_tuple<ContinuousPdelabWrapper<PdelabSpaceImp, 1>, rangeDim>::type>::type
+{
+  typedef ContinuousPdelabWrapper<PdelabSpaceImp, 1> ScalarValuedMapperType;
+  typedef typename DefaultProductMapperFromTuple<
+      typename PdelabSpaceImp::Traits::GridViewType,
+      typename Dune::Stuff::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::type>::type BaseType;
+
+public:
+  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, rangeDim>::BackendType BackendType;
+  ContinuousPdelabWrapper(const BackendType& pdelab_space)
+    : BaseType(pdelab_space.gridView(),
+               DSC::make_identical_tuple<ScalarValuedMapperType, rangeDim>::create(pdelab_space))
+  {
+  }
+}; // class ContinuousPdelabWrapper
+
+
+template <class PdelabSpaceImp>
+class ContinuousPdelabWrapper<PdelabSpaceImp, 1>
+    : public internal::PdelabWrapperBase<internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, 1>>
 {
 public:
-  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp> Traits;
+  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, 1> Traits;
   typedef typename Traits::EntityType EntityType;
 
   template <class... Args>
