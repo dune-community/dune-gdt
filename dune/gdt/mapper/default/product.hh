@@ -116,6 +116,16 @@ public:
 } // namespace internal
 
 
+template <class GridViewImp, class TupleType>
+struct DefaultProductMapperFromTuple;
+
+template <class GridViewImp, class... MapperTypes>
+struct DefaultProductMapperFromTuple<GridViewImp, std::tuple<MapperTypes...>>
+{
+  typedef DefaultProductMapper<GridViewImp, MapperTypes...> type;
+};
+
+
 template <class GridViewImp, class... MapperTypes>
 class DefaultProductMapper
     : public ProductMapperInterface<internal::DefaultProductMapperTraits<GridViewImp, MapperTypes...>>
@@ -131,6 +141,12 @@ public:
 
   DefaultProductMapper(const GridViewType& grid_view, const MapperTypes&... mappers)
     : mappers_(mappers...)
+    , grid_view_(grid_view)
+  {
+  }
+
+  DefaultProductMapper(const GridViewType& grid_view, const std::tuple<MapperTypes...>& mappers)
+    : mappers_(mappers)
     , grid_view_(grid_view)
   {
   }
