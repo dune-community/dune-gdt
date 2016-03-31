@@ -109,11 +109,11 @@ public:
     const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
     // * rhs
     typedef LocalFunctional::Codim1Integral<
-        LocalEvaluation::SWIPDG::BoundaryRHS< DiffusionFactorType, FunctionType, DiffusionTensorType > >
+        LocalEvaluation::SWIPDG::BoundaryRHS< FunctionType, DiffusionFactorType, DiffusionTensorType > >
             DirichletFunctionalType;
-    const DirichletFunctionalType                                 dirichletFunctional(problem.diffusion_factor(),
-                                                                                      problem.diffusion_tensor(),
-                                                                                      problem.dirichlet());
+    const DirichletFunctionalType                                 dirichletFunctional(problem.dirichlet(),
+                                                                                      problem.diffusion_factor(),
+                                                                                      problem.diffusion_tensor());
     const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
     // neumann boundary face terms
     // * rhs

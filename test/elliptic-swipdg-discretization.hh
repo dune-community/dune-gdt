@@ -169,8 +169,8 @@ public:
       // * rhs
       typedef LocalFunctional::Codim1Integral< LocalEvaluation::SWIPDG::BoundaryRHS< FunctionType, FunctionType > >
           DirichletFunctionalType;
-      const DirichletFunctionalType                                 dirichletFunctional(diffusion_,
-                                                                                        dirichlet_,
+      const DirichletFunctionalType                                 dirichletFunctional(dirichlet_,
+                                                                                        diffusion_,
                                                                                         beta_);
       const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
       systemAssembler.add(dirichletVectorAssembler,
