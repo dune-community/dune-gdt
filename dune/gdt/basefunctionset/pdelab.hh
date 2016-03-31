@@ -249,15 +249,11 @@ public:
     std::vector<Dune::FieldVector<RangeFieldImp, 1>> factor_ret(size_of_factor_basefunctionset);
     backend_->evaluateFunction(xx, factor_ret);
     // if factor_ret is [1 2] and we have two factors, we want to return [[1 0] [2 0] [0 1] [0 2]]
-    for (size_t ii = 0; ii < size(); ++ii) {
-      size_t factor_index = 0;
-      size_t jj = ii;
-      while (jj >= size_of_factor_basefunctionset) {
-        jj -= size_of_factor_basefunctionset;
-        ++factor_index;
+    for (size_t jj = 0; jj < size_of_factor_basefunctionset; ++jj) {
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        ret[ii * size_of_factor_basefunctionset + jj] *= 0;
+        ret[ii * size_of_factor_basefunctionset + jj][ii] = factor_ret[jj][0];
       }
-      ret[ii] *= 0;
-      ret[ii][factor_index] = factor_ret[jj][0];
     }
   }
 
@@ -270,13 +266,16 @@ public:
     std::vector<FieldMatrix<RangeFieldImp, 1, dimDomain>> factor_ret(size_of_factor_basefunctionset);
     backend_->evaluateJacobian(xx, factor_ret);
     const auto jacobian_inverse_transposed = this->entity().geometry().jacobianInverseTransposed(xx);
-    for (size_t ii = 0; ii < ret.size(); ++ii) {
-      jacobian_inverse_transposed.mv(factor_ret[ii][0], tmp_domain_);
-      factor_ret[ii][0] = tmp_domain_;
+    for (size_t jj = 0; jj < factor_ret.size(); ++jj) {
+      jacobian_inverse_transposed.mv(factor_ret[jj][0], tmp_domain_);
+      factor_ret[jj][0] = tmp_domain_;
     }
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      for (size_t jj = 0; jj < size_of_factor_basefunctionset; ++jj)
-        ret[jj][ii] = factor_ret[jj][0];
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      for (size_t jj = 0; jj < size_of_factor_basefunctionset; ++jj) {
+        ret[ii * size_of_factor_basefunctionset + jj] *= 0;
+        ret[ii * size_of_factor_basefunctionset + jj][ii] = factor_ret[jj][0];
+      }
+    }
   } // ... jacobian(...)
 
   using BaseType::jacobian;
