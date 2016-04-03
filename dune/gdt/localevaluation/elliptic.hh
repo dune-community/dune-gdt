@@ -233,6 +233,7 @@ public:
                 Dune::DynamicMatrix< R >& ret) const
   {
     typedef Stuff::Common::FieldMatrix< R, d, d > TensorType;
+    ret *= 0.0;
     // evaluate local functions
     const auto       diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
