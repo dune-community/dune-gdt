@@ -215,6 +215,7 @@ public:
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
                 const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
   {
+    ret *= 0.0;
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test base
@@ -237,6 +238,7 @@ public:
                 const Stuff::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
                 const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
+    ret *= 0.0;
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate bases
@@ -264,6 +266,7 @@ public:
                 const IntersectionType& intersection,
                 const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicVector<R>& ret) const
   {
+    ret *= 0.0;
     // evaluate local function
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     const auto functionValue    = localFunction.evaluate(localPointEntity);
@@ -288,6 +291,7 @@ public:
                 const IntersectionType& intersection,
                 const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
+    ret *= 0.0;
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPointEntity);
