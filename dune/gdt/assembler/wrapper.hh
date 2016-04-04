@@ -24,6 +24,9 @@ namespace Dune {
 namespace GDT {
 namespace internal {
 
+// //////////////////////
+// // wrap constraints //
+// //////////////////////
 
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
 class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
@@ -31,6 +34,8 @@ class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewTy
   static_assert(AlwaysFalse<ConstraintsType>::value, "Please add a specialization for these Constraints!");
 };
 
+
+// given DirichletConstraints
 
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType>
 class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
@@ -84,51 +89,11 @@ private:
 }; // class ConstraintsWrapper
 
 
-template <class AssemblerType, class LocalTwoFormType, class MatrixType>
-class LocalVolumeTwoFormWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
-{
-  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+// //////////////////////////////////
+// // wrap a local volume two-form //
+// //////////////////////////////////
 
-public:
-  typedef typename AssemblerType::TestSpaceType TestSpaceType;
-  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
-  typedef typename AssemblerType::GridViewType GridViewType;
-  using typename BaseType::EntityType;
-
-  LocalVolumeTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                            const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                            const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
-                            const LocalTwoFormType& local_twoform, MatrixType& matrix)
-    : test_space_(test_space)
-    , ansatz_space_(ansatz_space)
-    , where_(where)
-    , local_twoform_(local_twoform)
-    , matrix_(matrix)
-    , local_assembler_(local_twoform_)
-  {
-  }
-
-  virtual ~LocalVolumeTwoFormWrapper() = default;
-
-  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
-  {
-    return where_->apply_on(gv, entity);
-  }
-
-  virtual void apply_local(const EntityType& entity) override final
-  {
-    local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
-  }
-
-private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
-  const LocalTwoFormType& local_twoform_;
-  MatrixType& matrix_;
-  const LocalVolumeTwoFormAssembler<LocalTwoFormType> local_assembler_;
-}; // class LocalVolumeTwoFormWrapper
-
+// given a local assembler
 
 template <class AssemblerType, class LocalVolumeTwoFormAssemblerType, class MatrixType>
 class LocalVolumeTwoFormMatrixAssemblerWrapper
@@ -175,12 +140,211 @@ private:
 }; // class LocalVolumeTwoFormMatrixAssemblerWrapper
 
 
+// without a given local assembler
+
+template <class AssemblerType, class LocalVolumeTwoFormType, class MatrixType>
+class LocalVolumeTwoFormWrapper
+    : private DSC::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>,
+      public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType,
+                                                      LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>, MatrixType>
+{
+  typedef DSC::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>> LocalAssemblerProvider;
+  typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
+                                                   MatrixType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+
+  LocalVolumeTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                            const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                            const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                            const LocalVolumeTwoFormType& local_twoform, MatrixType& matrix)
+    : LocalAssemblerProvider(local_twoform)
+    , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
+  {
+  }
+}; // class LocalVolumeTwoFormWrapper
+
+
+// ///////////////////////////////// //
+// // wrap a local coupling two-form //
+// ///////////////////////////////// //
+
+// given a local assembler
+
+template <class AssemblerType, class LocalCouplingTwoFormAssemblerType, class MatrixType>
+class LocalCouplingTwoFormMatrixAssemblerWrapper
+    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+{
+  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+
+  LocalCouplingTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                             const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                                             const LocalCouplingTwoFormAssemblerType& local_assembler,
+                                             MatrixType& matrix)
+    : test_space_(test_space)
+    , ansatz_space_(ansatz_space)
+    , where_(where)
+    , local_assembler_(local_assembler)
+    , matrix_(matrix)
+  {
+  }
+
+  virtual ~LocalCouplingTwoFormMatrixAssemblerWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
+  {
+    return where_->apply_on(gv, intersection);
+  }
+
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
+                           const EntityType& /*outside_entity*/) override final
+  {
+    local_assembler_.assemble(*test_space_, *ansatz_space_, *test_space_, *ansatz_space_, intersection, matrix_);
+  } // ... apply_local(...)
+
+private:
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
+  const LocalCouplingTwoFormAssemblerType& local_assembler_;
+  MatrixType& matrix_;
+}; // class LocalCouplingTwoFormMatrixAssemblerWrapper
+
+// without a given local assembler
+
+template <class AssemblerType, class LocalCouplingTwoFormType, class MatrixType>
+class LocalCouplingTwoFormWrapper
+    : private DSC::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>,
+      public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
+                                                        LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
+                                                        MatrixType>
+{
+  typedef DSC::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>> LocalAssemblerProvider;
+  typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
+                                                     LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
+                                                     MatrixType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+
+  LocalCouplingTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                              const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                              const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                              const LocalCouplingTwoFormType& local_twoform, MatrixType& matrix)
+    : LocalAssemblerProvider(local_twoform)
+    , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
+  {
+  }
+}; // class LocalCouplingTwoFormWrapper
+
+
+// ///////////////////////////////// //
+// // wrap a local boundary two-form //
+// ///////////////////////////////// //
+
+// given a local assembler
+
+template <class AssemblerType, class LocalBoundaryTwoFormAssemblerType, class MatrixType>
+class LocalBoundaryTwoFormMatrixAssemblerWrapper
+    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+{
+  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+
+  LocalBoundaryTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                             const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                                             const LocalBoundaryTwoFormAssemblerType& local_assembler,
+                                             MatrixType& matrix)
+    : test_space_(test_space)
+    , ansatz_space_(ansatz_space)
+    , where_(where)
+    , local_assembler_(local_assembler)
+    , matrix_(matrix)
+  {
+  }
+
+  virtual ~LocalBoundaryTwoFormMatrixAssemblerWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
+  {
+    return where_->apply_on(gv, intersection);
+  }
+
+  virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
+                           const EntityType& /*outside_entity*/) override final
+  {
+    local_assembler_.assemble(*test_space_, *ansatz_space_, intersection, matrix_);
+  } // ... apply_local(...)
+
+private:
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
+  const LocalBoundaryTwoFormAssemblerType& local_assembler_;
+  MatrixType& matrix_;
+}; // class LocalBoundaryTwoFormMatrixAssemblerWrapper
+
+// without a given local assembler
+
+template <class AssemblerType, class LocalBoundaryTwoFormType, class MatrixType>
+class LocalBoundaryTwoFormWrapper
+    : private DSC::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>,
+      public LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
+                                                        LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
+                                                        MatrixType>
+{
+  typedef DSC::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>> LocalAssemblerProvider;
+  typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
+                                                     LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
+                                                     MatrixType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+
+  LocalBoundaryTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                              const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                              const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                              const LocalBoundaryTwoFormType& local_twoform, MatrixType& matrix)
+    : LocalAssemblerProvider(local_twoform)
+    , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
+  {
+  }
+}; // class LocalBoundaryTwoFormWrapper
+
+
+// ////////////////////////////////////
+// // wrap a local volume functional //
+// ////////////////////////////////////
+
+// given a local assembler
+
 template <class AssemblerType, class LocalVolumeFunctionalAssemblerType, class VectorType>
 class LocalVolumeFunctionalVectorAssemblerWrapper
     : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
   typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
-  typedef DSC::TmpVectorsStorage<typename AssemblerType::TestSpaceType::RangeFieldType> TmpVectorsProvider;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -218,50 +382,43 @@ private:
 }; // class LocalVolumeVectorAssemblerWrapper
 
 
+// without a given local assembler
+
 template <class AssemblerType, class LocalFunctionalType, class VectorType>
-class LocalVolumeFunctionalWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+class LocalVolumeFunctionalWrapper
+    : private DSC::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>,
+      public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
+                                                         LocalVolumeFunctionalAssembler<LocalFunctionalType>,
+                                                         VectorType>
 {
-  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+  typedef DSC::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>> LocalAssemblerProvider;
+  typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
+                                                      LocalVolumeFunctionalAssembler<LocalFunctionalType>,
+                                                      VectorType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
-  using typename BaseType::EntityType;
 
   LocalVolumeFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                                const LocalFunctionalType& local_functional, VectorType& vector)
-    : test_space_(test_space)
-    , where_(where)
-    , local_functional_(local_functional)
-    , vector_(vector)
-    , local_assembler_(local_functional_)
+    : LocalAssemblerProvider(local_functional)
+    , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
   {
   }
-
-  virtual ~LocalVolumeFunctionalWrapper() = default;
-
-  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
-  {
-    return where_->apply_on(gv, entity);
-  }
-
-  virtual void apply_local(const EntityType& entity) override final
-  {
-    local_assembler_.assemble(*test_space_, entity, vector_);
-  }
-
-private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
-  const LocalFunctionalType& local_functional_;
-  VectorType& vector_;
-  const LocalVolumeFunctionalAssembler<LocalFunctionalType> local_assembler_;
 }; // class LocalVolumeFunctionalWrapper
 
 
-template <class AssemblerType, class LocalFunctionalType, class VectorType>
-class LocalFaceFunctionalWrapper : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+// /////////////////////////////// //
+// // wrap a local face functional //
+// /////////////////////////////// //
+
+// given a local assembler
+
+template <class AssemblerType, class LocalFaceFunctionalAssemblerType, class VectorType>
+class LocalFaceFunctionalVectorAssemblerWrapper
+    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
 {
   typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
 
@@ -271,18 +428,17 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalFaceFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
-                             const LocalFunctionalType& local_functional, VectorType& vector)
-    : test_space_(test_space)
+  LocalFaceFunctionalVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
+                                            const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                                            const LocalFaceFunctionalAssemblerType& local_assembler, VectorType& vector)
+    : space_(space)
     , where_(where)
-    , local_functional_(local_functional)
+    , local_assembler_(local_assembler)
     , vector_(vector)
-    , local_assembler_(local_functional_)
   {
   }
 
-  virtual ~LocalFaceFunctionalWrapper() = default;
+  virtual ~LocalFaceFunctionalVectorAssemblerWrapper() = default;
 
   virtual bool apply_on(const GridViewType& gv, const IntersectionType& intersection) const override final
   {
@@ -292,16 +448,48 @@ public:
   virtual void apply_local(const IntersectionType& intersection, const EntityType& /*inside_entity*/,
                            const EntityType& /*outside_entity*/) override final
   {
-    local_assembler_.assemble(*test_space_, intersection, vector_);
+    local_assembler_.assemble(*space_, intersection, vector_);
   }
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const TestSpaceType>& space_;
   const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
-  const LocalFunctionalType& local_functional_;
+  const LocalFaceFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
-  const LocalFaceFunctionalAssembler<LocalFunctionalType> local_assembler_;
+}; // class LocalFaceFunctionalVectorAssemblerWrapper
+
+
+// wihtout a given local assembler
+
+template <class AssemblerType, class LocalFaceFunctionalType, class VectorType>
+class LocalFaceFunctionalWrapper
+    : private DSC::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>,
+      public LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
+                                                       LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
+                                                       VectorType>
+{
+  typedef DSC::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>> LocalAssemblerProvider;
+  typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
+                                                    LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
+                                                    VectorType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+
+  LocalFaceFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+                             const LocalFaceFunctionalType& local_functional, VectorType& vector)
+    : LocalAssemblerProvider(local_functional)
+    , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
+  {
+  }
 }; // class LocalFaceFunctionalWrapper
+
+
+// ///////// //
+// old stuff //
+// ///////// //
 
 
 template <class AssemblerType, class LocalVolumeMatrixAssembler, class MatrixType>
