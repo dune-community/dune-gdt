@@ -127,6 +127,57 @@ public:
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
 
+  template <class V, class M>
+  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+           Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  {
+    assert(matrix.rows() == test_space_->mapper().size());
+    assert(matrix.cols() == ansatz_space_->mapper().size());
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
+                                                                 LocalCouplingTwoFormAssembler<V>,
+                                                                 typename M::derived_type> WrapperType;
+    this->codim1_functors_.emplace_back(
+        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
+  } // ... add(...)
+
+  template <class V, class M>
+  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
+           Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  {
+    assert(matrix.rows() == test_space_->mapper().size());
+    assert(matrix.cols() == ansatz_space_->mapper().size());
+    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType,
+                                                                 LocalBoundaryTwoFormAssembler<V>,
+                                                                 typename M::derived_type> WrapperType;
+    this->codim1_functors_.emplace_back(
+        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
+  } // ... add(...)
+
+  template <class L, class V>
+  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
+           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  {
+    assert(vector.size() == test_space_->mapper().size());
+    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
+                                                                  LocalVolumeFunctionalAssembler<L>,
+                                                                  typename V::derived_type> WrapperType;
+    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
+  } // ... add(...)
+
+  template <class L, class V>
+  void add(const LocalFaceFunctionalAssembler<L>& local_assembler,
+           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
+           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  {
+    assert(vector.size() == test_space_->mapper().size());
+    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,
+                                                                LocalFaceFunctionalAssembler<L>,
+                                                                typename V::derived_type> WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
+  } // ... add(...)
 
   template <class Codim0Assembler, class M>
   void DUNE_DEPRECATED_MSG("Will be removed or first argument has to be replaced by an interface (04.02.2015)!")
@@ -191,18 +242,6 @@ public:
     typedef internal::LocalVolumeVectorAssemblerWrapper<ThisType,
                                                         LocalAssembler::Codim0Vector<L>,
                                                         typename V::derived_type> WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
-  } // ... add(...)
-
-  template <class L, class V>
-  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
-           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
-  {
-    assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
-                                                                  LocalVolumeFunctionalAssembler<L>,
-                                                                  typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
