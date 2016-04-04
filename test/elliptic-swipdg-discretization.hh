@@ -34,7 +34,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localevaluation/product.hh>
-#include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
 #include <dune/gdt/localoperator/codim0.hh>
@@ -151,7 +151,7 @@ public:
       const LocalAssembler::Codim0Vector< ForceFunctionalType > forceVectorAssembler(forceFunctional);
       systemAssembler.add(forceVectorAssembler, rhs_vector_);
       // inner face terms
-      typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::SWIPDG::Inner< FunctionType > > CouplingOperatorType;
+      typedef LocalOperator::Codim1CouplingIntegral< LocalEvaluation::EllipticIpdg::Inner< FunctionType > > CouplingOperatorType;
       const CouplingOperatorType                                          couplingOperator(diffusion_, beta_);
       const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
       systemAssembler.add(couplingMatrixAssembler,
@@ -159,7 +159,7 @@ public:
                           new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
       // dirichlet boundary face terms
       // * lhs
-      typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::SWIPDG::BoundaryLHS< FunctionType > >
+      typedef LocalOperator::Codim1BoundaryIntegral< LocalEvaluation::EllipticIpdg::BoundaryLHS< FunctionType > >
           DirichletOperatorType;
       const DirichletOperatorType                                         dirichletOperator(diffusion_, beta_);
       const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
@@ -167,7 +167,7 @@ public:
                           system_matrix_,
                           new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(boundary_info_));
       // * rhs
-      typedef LocalFunctional::Codim1Integral< LocalEvaluation::SWIPDG::BoundaryRHS< FunctionType, FunctionType > >
+      typedef LocalFunctional::Codim1Integral< LocalEvaluation::EllipticIpdg::BoundaryRHS< FunctionType, FunctionType > >
           DirichletFunctionalType;
       const DirichletFunctionalType                                 dirichletFunctional(dirichlet_,
                                                                                         diffusion_,

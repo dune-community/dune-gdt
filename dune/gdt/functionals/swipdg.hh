@@ -10,7 +10,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 
 #include <dune/gdt/localfunctional/codim1.hh>
-#include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/assembler/system.hh>
 
 #include "base.hh"

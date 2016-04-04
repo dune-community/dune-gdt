@@ -19,7 +19,7 @@
 #include <dune/stuff/functions/constant.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/spaces/rt/pdelab.hh>
 
 namespace Dune {
@@ -69,8 +69,8 @@ public:
     const FieldType infinity = std::numeric_limits< FieldType >::infinity();
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
-    const LocalEvaluation::SWIPDG::Inner< LocalizableFunctionType > inner_evaluation(diffusion_);
-    const LocalEvaluation::SWIPDG::BoundaryLHS< LocalizableFunctionType > boundary_evaluation(diffusion_);
+    const LocalEvaluation::EllipticIpdg::Inner< LocalizableFunctionType > inner_evaluation(diffusion_);
+    const LocalEvaluation::EllipticIpdg::BoundaryLHS< LocalizableFunctionType > boundary_evaluation(diffusion_);
     const Stuff::Functions::Constant< EntityType, DomainFieldType, dimDomain, FieldType, 1 > constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);

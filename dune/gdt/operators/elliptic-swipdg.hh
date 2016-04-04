@@ -15,7 +15,7 @@
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/assembler/local/codim0.hh>

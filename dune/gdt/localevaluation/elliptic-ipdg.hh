@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALEVALUATION_SWIPDG_HH
-#define DUNE_GDT_LOCALEVALUATION_SWIPDG_HH
+#ifndef DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH
+#define DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH
 
 #include <tuple>
 
@@ -32,7 +32,7 @@ namespace LocalEvaluation {
  *              For the coice of the weighting see Ern, Stephansen, Zunino (2007): "A discontinuous Galerkin method with
  *              weighted averages for advection-diffusion equations with locally small and anisotropic diffusivity"
  */
-namespace SWIPDG {
+namespace EllipticIpdg {
 
 
 enum class Method
@@ -942,9 +942,9 @@ public:
 }; // class BoundaryRHS
 
 
-} // namespace SWIPDG
+} // namespace EllipticIpdg
 } // namespace LocalEvaluation
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALEVALUATION_SWIPDG_HH
+#endif // DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH

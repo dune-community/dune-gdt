@@ -7,7 +7,7 @@
 #define DUNE_GDT_PLAYGROUND_FUNCTIONALS_SWIPDG_HH
 
 
-//#include <dune/gdt/playground/localevaluation/swipdg.hh>
+//#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/functionals/swipdg.hh>
 
 
