@@ -69,7 +69,7 @@ class Default<GridViewImp, RangeFieldImp, rangeDim, 1>
                       rangeDim, 1> BaseType;
 
 public:
-  using typename BaseType::Traits;
+  typedef typename internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;

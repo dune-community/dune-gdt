@@ -15,13 +15,12 @@ namespace GDT {
 namespace Spaces {
 
 
-template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class FVInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
+template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
+class FVInterface : public SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>
 {
-  typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
+  typedef SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols> BaseType;
 
 public:
-  typedef ImpTraits Traits;
   using typename BaseType::EntityType;
   using typename BaseType::PatternType;
 
@@ -42,12 +41,6 @@ public:
     static_assert(AlwaysFalse<S>::value, "FV spaces do not implement constraints!");
   }
 }; // class FVInterface
-
-
-template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class ProductFVInterface : public ProductSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
-{
-}; // class ProductFVInterface
 
 
 } // namespace Spaces
@@ -77,18 +70,6 @@ struct is_fv_space
 
 template <class S>
 struct is_fv_space<S, false> : public std::false_type
-{
-};
-
-template <class S, bool candidate = internal::is_fv_space_helper<S>::is_candidate>
-struct is_product_fv_space
-    : public std::is_base_of<Spaces::ProductFVInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>,
-                             S>
-{
-};
-
-template <class S>
-struct is_product_fv_space<S, false> : public std::false_type
 {
 };
 
