@@ -17,7 +17,9 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/matrix.hh>
 
-#include "../localevaluation/interface.hh"
+#include <dune/gdt/localevaluation/interface.hh>
+#include <dune/gdt/type_traits.hh>
+
 #include "interfaces.hh"
 
 namespace Dune {
@@ -28,7 +30,7 @@ namespace GDT {
 template< class BinaryEvaluationType >
 class LocalVolumeIntegralOperator;
 
-template< class QuaternaryEvaluationType >
+template< class QuaternaryFaceIntegrandTypeType >
 class LocalCouplingIntegralOperator;
 
 template< class BinaryEvaluationType >
@@ -41,30 +43,27 @@ namespace internal {
 template< class BinaryEvaluationType >
 class LocalVolumeIntegralOperatorTraits
 {
-  static_assert(std::is_base_of< LocalEvaluation::Codim0Interface< typename BinaryEvaluationType::Traits, 2 >,
-                                 BinaryEvaluationType >::value,
+  static_assert(is_binary_volume_integrand< BinaryEvaluationType >::value,
                 "BinaryEvaluationType has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
 public:
   typedef LocalVolumeIntegralOperator< BinaryEvaluationType > derived_type;
 };
 
 
-template< class QuaternaryEvaluationType >
+template< class QuaternaryFaceIntegrandTypeType >
 class LocalCouplingIntegralOperatorTraits
 {
-  static_assert(std::is_base_of< LocalEvaluation::Codim1Interface< typename QuaternaryEvaluationType::Traits, 4 >,
-                                 QuaternaryEvaluationType >::value,
-                "QuaternaryEvaluationType has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
+  static_assert(is_quaternary_face_integrand< QuaternaryFaceIntegrandTypeType >::value,
+                "QuaternaryFaceIntegrandTypeType has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
 public:
-  typedef LocalCouplingIntegralOperator< QuaternaryEvaluationType > derived_type;
+  typedef LocalCouplingIntegralOperator< QuaternaryFaceIntegrandTypeType > derived_type;
 };
 
 
 template< class BinaryEvaluationType >
 class LocalBoundaryIntegralOperatorTraits
 {
-  static_assert(std::is_base_of< LocalEvaluation::Codim1Interface< typename BinaryEvaluationType::Traits, 2 >,
-                                 BinaryEvaluationType >::value,
+  static_assert(is_binary_face_integrand< BinaryEvaluationType >::value,
                 "BinaryEvaluationType has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
 public:
   typedef LocalBoundaryIntegralOperator< BinaryEvaluationType > derived_type;
