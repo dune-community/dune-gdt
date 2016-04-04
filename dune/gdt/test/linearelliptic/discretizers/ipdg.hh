@@ -14,14 +14,13 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/product.hh>
-#include <dune/gdt/localfunctional/codim0.hh>
-#include <dune/gdt/localfunctional/codim1.hh>
-#include <dune/gdt/localoperator/codim0.hh>
 #include <dune/gdt/localevaluation/elliptic-ipdg.hh>
+#include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/localfunctional/integrals.hh>
+#include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/spaces/dg.hh>
 
 #include "../problems/interface.hh"
@@ -86,41 +85,40 @@ public:
     typedef typename ProblemType::FunctionType FunctionType;
     // volume terms
     // * lhs
-    typedef LocalOperator::Codim0Integral< LocalEvaluation::Elliptic< DiffusionFactorType, DiffusionTensorType > >
+    typedef LocalVolumeIntegralOperator< LocalEvaluation::Elliptic< DiffusionFactorType, DiffusionTensorType > >
         EllipticOperatorType;
-    const EllipticOperatorType                                  ellipticOperator(problem.diffusion_factor(),
-                                                                                 problem.diffusion_tensor());
-    const LocalAssembler::Codim0Matrix< EllipticOperatorType >  diffusionMatrixAssembler(ellipticOperator);
+    const EllipticOperatorType                                ellipticOperator(problem.diffusion_factor(),
+                                                                               problem.diffusion_tensor());
+    const LocalVolumeTwoFormAssembler< EllipticOperatorType > diffusionMatrixAssembler(ellipticOperator);
     // * rhs
-    typedef LocalFunctional::Codim0Integral< LocalEvaluation::Product< FunctionType > > ForceFunctionalType;
-    const ForceFunctionalType                                 forceFunctional(problem.force());
-    const LocalAssembler::Codim0Vector< ForceFunctionalType > forceVectorAssembler(forceFunctional);
+    typedef LocalVolumeIntegralFunctional< LocalEvaluation::Product< FunctionType > > ForceFunctionalType;
+    const ForceFunctionalType                                   forceFunctional(problem.force());
+    const LocalVolumeFunctionalAssembler< ForceFunctionalType > forceVectorAssembler(forceFunctional);
     // inner face terms
-    typedef LocalOperator::Codim1CouplingIntegral<
+    typedef LocalCouplingIntegralOperator<
         LocalEvaluation::EllipticIpdg::Inner< DiffusionFactorType, DiffusionTensorType, method > > CouplingOperatorType;
-    const CouplingOperatorType                                          couplingOperator(problem.diffusion_factor(),
-                                                                                         problem.diffusion_tensor());
-    const LocalAssembler::Codim1CouplingMatrix< CouplingOperatorType >  couplingMatrixAssembler(couplingOperator);
+    const CouplingOperatorType                                  couplingOperator(problem.diffusion_factor(),
+                                                                                 problem.diffusion_tensor());
+    const LocalCouplingTwoFormAssembler< CouplingOperatorType > couplingMatrixAssembler(couplingOperator);
     // dirichlet boundary face terms
     // * lhs
-    typedef LocalOperator::Codim1BoundaryIntegral<
-        LocalEvaluation::EllipticIpdg::BoundaryLHS< DiffusionFactorType, DiffusionTensorType, method > > DirichletOperatorType;
-    const DirichletOperatorType                                         dirichletOperator(problem.diffusion_factor(),
-                                                                                          problem.diffusion_tensor());
-    const LocalAssembler::Codim1BoundaryMatrix< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
+    typedef LocalBoundaryIntegralOperator< LocalEvaluation::EllipticIpdg::BoundaryLHS
+        < DiffusionFactorType, DiffusionTensorType, method > > DirichletOperatorType;
+    const DirichletOperatorType                                  dirichletOperator(problem.diffusion_factor(),
+                                                                                   problem.diffusion_tensor());
+    const LocalBoundaryTwoFormAssembler< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
     // * rhs
-    typedef LocalFunctional::Codim1Integral<
-        LocalEvaluation::EllipticIpdg::BoundaryRHS< FunctionType, DiffusionFactorType, DiffusionTensorType, method > >
-            DirichletFunctionalType;
+    typedef LocalFaceIntegralFunctional< LocalEvaluation::EllipticIpdg::BoundaryRHS
+        < FunctionType, DiffusionFactorType, DiffusionTensorType, method > > DirichletFunctionalType;
     const DirichletFunctionalType                                 dirichletFunctional(problem.dirichlet(),
                                                                                       problem.diffusion_factor(),
                                                                                       problem.diffusion_tensor());
-    const LocalAssembler::Codim1Vector< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
+    const LocalFaceFunctionalAssembler< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
     // neumann boundary face terms
     // * rhs
-    typedef LocalFunctional::Codim1Integral< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
+    typedef LocalFaceIntegralFunctional< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
     const NeumannFunctionalType                                 neumannFunctional(problem.neumann());
-    const LocalAssembler::Codim1Vector< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
+    const LocalFaceFunctionalAssembler< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
     // do all the work
     typedef SystemAssembler< SpaceType > SystemAssemblerType;
     SystemAssemblerType systemAssembler(space);
