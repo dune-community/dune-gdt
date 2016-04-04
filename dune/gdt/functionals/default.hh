@@ -76,7 +76,7 @@ public:
     : BaseAssemblerType(std::forward<Args>(args)...)
     , vector_(vec)
   {
-    if (vector_.access().size() != this->space().mapper().size())
+    if (vector_.access().size() != this->test_space().mapper().size())
       DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
                  "vector.size(): " << vector_.access().size() << "\n"
                                    << "space().mapper().size(): "
@@ -86,7 +86,7 @@ public:
   template <class... Args>
   explicit VectorFunctionalDefault(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
-    , vector_(new VectorType(this->space().mapper().size(), 0.0))
+    , vector_(new VectorType(this->test_space().mapper().size(), 0.0))
   {
   }
 
@@ -140,7 +140,7 @@ public:
   }
 
   template <class S>
-  void apply(const ConstDiscreteFunction<SpaceType, S>& source) const
+  FieldType apply(const ConstDiscreteFunction<SpaceType, S>& source) const
   {
     return apply(source.vector());
   }
