@@ -130,6 +130,51 @@ private:
 }; // class LocalVolumeTwoFormWrapper
 
 
+template <class AssemblerType, class LocalVolumeTwoFormAssemblerType, class MatrixType>
+class LocalVolumeTwoFormMatrixAssemblerWrapper
+    : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+{
+  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::GridViewType GridViewType;
+  using typename BaseType::EntityType;
+
+  LocalVolumeTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
+                                           const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                           const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+                                           const LocalVolumeTwoFormAssemblerType& local_assembler, MatrixType& matrix)
+    : test_space_(test_space)
+    , ansatz_space_(ansatz_space)
+    , where_(where)
+    , local_assembler_(local_assembler)
+    , matrix_(matrix)
+  {
+  }
+
+  virtual ~LocalVolumeTwoFormMatrixAssemblerWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity) override final
+  {
+    local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
+  }
+
+private:
+  const DS::PerThreadValue<const TestSpaceType>& test_space_;
+  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const LocalVolumeTwoFormAssemblerType& local_assembler_;
+  MatrixType& matrix_;
+}; // class LocalVolumeTwoFormMatrixAssemblerWrapper
+
+
 template <class AssemblerType, class LocalFunctionalType, class VectorType>
 class LocalVolumeFunctionalWrapper : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {

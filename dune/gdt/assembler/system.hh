@@ -114,6 +114,19 @@ public:
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
 
+  template <class V, class M>
+  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  {
+    assert(matrix.rows() == test_space_->mapper().size());
+    assert(matrix.cols() == ansatz_space_->mapper().size());
+    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
+                                                               LocalVolumeTwoFormAssembler<V>,
+                                                               typename M::derived_type> WrapperType;
+    this->codim0_functors_.emplace_back(
+        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
+  } // ... add(...)
+
   template <class Codim0Assembler, class M>
   void DUNE_DEPRECATED_MSG("Will be removed or first argument has to be replaced by an interface (04.02.2015)!")
       add_codim0_assembler(const Codim0Assembler& local_assembler,
