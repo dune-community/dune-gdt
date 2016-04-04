@@ -372,6 +372,53 @@ private:
 }; // class LocalCouplingOperatorApplicator
 
 
+template< class LocalBoundaryTwoFormType >
+class LocalBoundaryTwoFormAssembler
+{
+  static_assert(is_local_boundary_twoform< LocalBoundaryTwoFormType >::value, "");
+public:
+  explicit LocalBoundaryTwoFormAssembler(const LocalBoundaryTwoFormType& local_twoform)
+    : local_twoform_(local_twoform)
+  {}
+
+  template< class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class IntersectionType, class M, class R >
+  void assemble(const SpaceInterface< T, Td, Tr, TrC >& test_space,
+                const SpaceInterface< A, Ad, Ar, ArC >& ansatz_space,
+                const IntersectionType& intersection,
+                Stuff::LA::MatrixInterface< M, R >& global_matrix) const
+  {
+    const auto entityPtr = intersection.inside();
+    const auto& entity = *entityPtr;
+    // prepare
+    const size_t rows = test_space.mapper().numDofs(entity);
+    const size_t cols = ansatz_space.mapper().numDofs(entity);
+    Dune::DynamicMatrix< R > local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    // apply local two-form
+    const auto test_base   = test_space.base_function_set(entity);
+    const auto ansatz_base = ansatz_space.base_function_set(entity);
+    assert(test_base.size()   == rows);
+    assert(ansatz_base.size() == cols);
+    local_twoform_.apply2(test_base, ansatz_base, intersection, local_matrix);
+    // write local matrix to global
+    const auto global_row_indices = test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    const auto global_col_indices = ansatz_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    assert(global_row_indices.size() == rows);
+    assert(global_col_indices.size() == cols);
+    for (size_t ii = 0; ii < rows; ++ii) {
+      const auto& local_matrix_row = local_matrix[ii];
+      const size_t global_ii = global_row_indices[ii];
+      for (size_t jj = 0; jj < cols; ++jj) {
+        const size_t global_jj = global_col_indices[jj];
+        global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
+      }
+    } // write local matrix to global
+  } // ... assemble(...)
+
+private:
+  const LocalBoundaryTwoFormType& local_twoform_;
+}; // class LocalBoundaryTwoFormAssembler
+
+
 template< class GridViewType, class LocalOperatorType, class SourceType, class RangeType >
 class LocalBoundaryOperatorApplicator
   : public Stuff::Grid::internal::Codim1Object< GridViewType >
