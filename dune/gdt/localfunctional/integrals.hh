@@ -7,6 +7,7 @@
 #define DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
 
 #include <dune/gdt/localevaluation/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -28,8 +29,7 @@ namespace internal {
 template <class UnaryEvaluationImp>
 class LocalVolumeIntegralFunctionalTraits
 {
-  static_assert(std::is_base_of<LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1>,
-                                UnaryEvaluationImp>::value,
+  static_assert(is_unary_volume_integrand<UnaryEvaluationImp>::value,
                 "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
 
 public:
@@ -40,9 +40,8 @@ public:
 template <class UnaryEvaluationImp>
 class LocalFaceIntegralFunctionalTraits
 {
-  static_assert(std::is_base_of<LocalEvaluation::Codim0Interface<typename UnaryEvaluationImp::Traits, 1>,
-                                UnaryEvaluationImp>::value,
-                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
+  static_assert(is_unary_face_integrand<UnaryEvaluationImp>::value,
+                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 1 >!");
 
 public:
   typedef LocalFaceIntegralFunctional<UnaryEvaluationImp> derived_type;
