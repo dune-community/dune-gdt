@@ -65,7 +65,7 @@ public:
   {}
 
   template< class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType >
-      typename std::enable_if< StaticCheck< E, D, d, R, r, rC, RangeSpaceType, VectorType >::value && !(is_fv_space< RangeSpaceType >::value || is_product_fv_space< RangeSpaceType >::value), void >::type
+      typename std::enable_if< StaticCheck< E, D, d, R, r, rC, RangeSpaceType, VectorType >::value && !is_fv_space< RangeSpaceType >::value, void >::type
   apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source,
         LocalDiscreteFunction< RangeSpaceType, VectorType >& local_range) const
   {
@@ -104,7 +104,7 @@ public:
 
   // TODO: do not use product evaluation to avoid a lot of multiplications with 0
   template< class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType >
-  typename std::enable_if< StaticCheck< E, D, d, R, r, rC, RangeSpaceType, VectorType >::value && (is_fv_space< RangeSpaceType >::value || is_product_fv_space< RangeSpaceType >::value), void >::type
+  typename std::enable_if< StaticCheck< E, D, d, R, r, rC, RangeSpaceType, VectorType >::value && is_fv_space< RangeSpaceType >::value, void >::type
   apply(const Stuff::LocalizableFunctionInterface< E, D, d, R, r, rC >& source,
         LocalDiscreteFunction< RangeSpaceType, VectorType >& local_range) const
   {

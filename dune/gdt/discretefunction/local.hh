@@ -220,7 +220,7 @@ public:
   void evaluate(const DomainType& xx, RangeType& ret) const override final
   {
     assert(this->is_a_valid_point(xx));
-    if (!(GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value)) {
+    if (!GDT::is_fv_space< SpaceType >::value) {
       std::fill(ret.begin(), ret.end(), RangeFieldType(0));
       std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
       assert(localVector_->size() == tmpBaseValues.size());
@@ -237,7 +237,7 @@ public:
   virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override final
   {
     assert(this->is_a_valid_point(xx));
-    if (!(GDT::is_fv_space< SpaceType >::value || GDT::is_product_fv_space< SpaceType >::value)) {
+    if (!GDT::is_fv_space< SpaceType >::value) {
       std::fill(ret.begin(), ret.end(), RangeFieldType(0));
       std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
       assert(localVector_->size() == tmpBaseJacobianValues.size());
