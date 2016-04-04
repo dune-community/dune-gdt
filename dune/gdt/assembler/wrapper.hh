@@ -174,6 +174,47 @@ private:
 }; // class LocalVolumeTwoFormMatrixAssemblerWrapper
 
 
+template< class AssemblerType, class LocalVolumeFunctionalAssemblerType, class VectorType >
+class LocalVolumeFunctionalVectorAssemblerWrapper
+  : public Stuff::Grid::internal::Codim0Object< typename AssemblerType::GridViewType >
+{
+  typedef Stuff::Grid::internal::Codim0Object< typename AssemblerType::GridViewType >     BaseType;
+  typedef DSC::TmpVectorsStorage< typename AssemblerType::TestSpaceType::RangeFieldType > TmpVectorsProvider;
+public:
+  typedef typename AssemblerType::TestSpaceType TestSpaceType;
+  typedef typename AssemblerType::GridViewType  GridViewType;
+  using typename BaseType::EntityType;
+
+  LocalVolumeFunctionalVectorAssemblerWrapper(const DS::PerThreadValue< const TestSpaceType >& space,
+                                              const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >* where,
+                                              const LocalVolumeFunctionalAssemblerType& local_assembler,
+                                              VectorType& vector)
+    : space_(space)
+    , where_(where)
+    , local_assembler_(local_assembler)
+    , vector_(vector)
+  {}
+
+  virtual ~LocalVolumeFunctionalVectorAssemblerWrapper() = default;
+
+  virtual bool apply_on(const GridViewType& gv, const EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity) override final
+  {
+    local_assembler_.assemble(*space_, entity, vector_);
+  }
+
+private:
+  const DS::PerThreadValue< const TestSpaceType >& space_;
+  const std::unique_ptr< const Stuff::Grid::ApplyOn::WhichEntity< GridViewType > > where_;
+  const LocalVolumeFunctionalAssemblerType& local_assembler_;
+  VectorType& vector_;
+}; // class LocalVolumeVectorAssemblerWrapper
+
+
 template< class AssemblerType, class LocalFunctionalType, class VectorType >
 class LocalVolumeFunctionalWrapper
   : public Stuff::Grid::internal::Codim0Object< typename AssemblerType::GridViewType >
