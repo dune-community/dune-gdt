@@ -3,6 +3,6 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#warning "This header is deprecated, include <dune/gdt/localevaluation/swipdg.hh> instead (30.03.2016)!"
+#warning "This header is deprecated, include <dune/gdt/localevaluation/elliptic-ipdg.hh> instead (30.03.2016)!"
 
-#include <dune/gdt/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>

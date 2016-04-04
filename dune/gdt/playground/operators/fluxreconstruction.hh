@@ -8,7 +8,7 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/gdt/playground/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 
 namespace Dune {

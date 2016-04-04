@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_SWIPDG_HH
-#define DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_SWIPDG_HH
+#ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_IPDG_HH
+#define DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_IPDG_HH
 
 #include <dune/stuff/common/timedlogging.hh>
 #include <dune/stuff/common/memory.hh>
@@ -21,7 +21,7 @@
 #include <dune/gdt/localfunctional/codim0.hh>
 #include <dune/gdt/localfunctional/codim1.hh>
 #include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/playground/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/spaces/dg.hh>
 
 #include "../problems/interface.hh"
@@ -33,12 +33,13 @@ namespace LinearElliptic {
 
 
 /**
- * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
+ * \brief Discretizes a linear elliptic PDE using an interior penalty discontinuous Galerkin Finite Element method.
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
           ChooseSpaceBackend spacebackend                = Spaces::default_dg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
-          class RangeFieldType = double, size_t dimRange = 1>
+          class RangeFieldType = double, size_t dimRange = 1,
+          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::Method::swipdg>
 class SwipdgDiscretizer
 {
 public:
@@ -85,22 +86,23 @@ public:
     const ForceFunctionalType forceFunctional(problem.force());
     const LocalAssembler::Codim0Vector<ForceFunctionalType> forceVectorAssembler(forceFunctional);
     // inner face terms
-    typedef LocalOperator::Codim1CouplingIntegral<LocalEvaluation::SWIPDG::Inner<DiffusionFactorType,
-                                                                                 DiffusionTensorType>>
-        CouplingOperatorType;
+    typedef LocalOperator::
+        Codim1CouplingIntegral<LocalEvaluation::EllipticIpdg::Inner<DiffusionFactorType, DiffusionTensorType, method>>
+            CouplingOperatorType;
     const CouplingOperatorType couplingOperator(problem.diffusion_factor(), problem.diffusion_tensor());
     const LocalAssembler::Codim1CouplingMatrix<CouplingOperatorType> couplingMatrixAssembler(couplingOperator);
     // dirichlet boundary face terms
     // * lhs
-    typedef LocalOperator::Codim1BoundaryIntegral<LocalEvaluation::SWIPDG::BoundaryLHS<DiffusionFactorType,
-                                                                                       DiffusionTensorType>>
+    typedef LocalOperator::Codim1BoundaryIntegral<LocalEvaluation::EllipticIpdg::
+                                                      BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>>
         DirichletOperatorType;
     const DirichletOperatorType dirichletOperator(problem.diffusion_factor(), problem.diffusion_tensor());
     const LocalAssembler::Codim1BoundaryMatrix<DirichletOperatorType> dirichletMatrixAssembler(dirichletOperator);
     // * rhs
-    typedef LocalFunctional::
-        Codim1Integral<LocalEvaluation::SWIPDG::BoundaryRHS<FunctionType, DiffusionFactorType, DiffusionTensorType>>
-            DirichletFunctionalType;
+    typedef LocalFunctional::Codim1Integral<LocalEvaluation::EllipticIpdg::BoundaryRHS<FunctionType,
+                                                                                       DiffusionFactorType,
+                                                                                       DiffusionTensorType,
+                                                                                       method>> DirichletFunctionalType;
     const DirichletFunctionalType dirichletFunctional(
         problem.dirichlet(), problem.diffusion_factor(), problem.diffusion_tensor());
     const LocalAssembler::Codim1Vector<DirichletFunctionalType> dirichletVectorAssembler(dirichletFunctional);
@@ -136,4 +138,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_SWIPDG_HH
+#endif // DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_IPDG_HH

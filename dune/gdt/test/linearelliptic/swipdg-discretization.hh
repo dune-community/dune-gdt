@@ -15,7 +15,7 @@
 #include <dune/gdt/spaces/interface.hh>
 
 #include "eocstudy.hh"
-#include "discretizers/swipdg.hh"
+#include "discretizers/ipdg.hh"
 #include "problems.hh"
 
 

@@ -19,7 +19,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/assembler/local/codim1.hh>
 #include <dune/gdt/localoperator/codim1.hh>
-#include <dune/gdt/playground/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/products/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 

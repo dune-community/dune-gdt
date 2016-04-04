@@ -9,7 +9,7 @@
 #include <dune/stuff/common/memory.hh>
 
 #include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/playground/localevaluation/swipdg.hh>
+#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/operators/elliptic-swipdg.hh>
 
 namespace Dune {
