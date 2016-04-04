@@ -207,6 +207,124 @@ private:
   const Stuff::Grid::ApplyOn::WhichEntity< GridViewType >& where_;
 }; // class LocalOperatorApplicator
 
+
+template< class LocalCouplingTwoFormType >
+class LocalCouplingTwoFormAssembler
+{
+  static_assert(is_local_coupling_twoform< LocalCouplingTwoFormType >::value,
+                "LocalCouplingTwoFormType has to be derived from LocalCouplingTwoFormInterface!");
+public:
+  explicit LocalCouplingTwoFormAssembler(const LocalCouplingTwoFormType& local_twoform)
+    : local_coupling_twoform_(local_twoform)
+  {}
+
+  template< class TE, size_t TEd, size_t TEr, size_t TErC,
+            class AE, size_t AEd, size_t AEr, size_t AErC,
+            class TN, size_t TNd, size_t TNr, size_t TNrC,
+            class AN, size_t ANd, size_t ANr, size_t ANrC,
+            class IntersectionType,
+            class MEE, class MNN, class MEN, class MNE, class R >
+  void assemble(const SpaceInterface< TE, TEd, TEr, TErC >& test_space_en,
+                const SpaceInterface< AE, AEd, AEr, AErC >& ansatz_space_en,
+                const SpaceInterface< TN, TNd, TNr, TNrC >& test_space_ne,
+                const SpaceInterface< AN, ANd, ANr, ANrC >& ansatz_space_ne,
+                const IntersectionType& intersection,
+                Stuff::LA::MatrixInterface< MEE, R >& global_matrix_en_en,
+                Stuff::LA::MatrixInterface< MNN, R >& global_matrix_ne_ne,
+                Stuff::LA::MatrixInterface< MEN, R >& global_matrix_en_ne,
+                Stuff::LA::MatrixInterface< MNE, R >& global_matrix_ne_en) const
+  {
+    assert(global_matrix_en_en.rows() >= test_space_en.mapper().size());
+    assert(global_matrix_en_en.cols() >= ansatz_space_en.mapper().size());
+    assert(global_matrix_ne_ne.rows() >= test_space_ne.mapper().size());
+    assert(global_matrix_en_en.cols() >= ansatz_space_ne.mapper().size());
+    assert(global_matrix_en_ne.rows() >= test_space_en.mapper().size());
+    assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
+    assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());
+    assert(global_matrix_ne_en.cols() >= ansatz_space_en.mapper().size());
+    const auto entityPtr = intersection.inside();
+    const auto& entity = *entityPtr;
+    const auto neighborPtr = intersection.outside();
+    const auto& neighbor = *neighborPtr;
+    // prepare
+    const size_t rows_en = test_space_en.mapper().numDofs(entity);
+    const size_t cols_en = ansatz_space_en.mapper().numDofs(entity);
+    const size_t rows_ne = test_space_ne.mapper().numDofs(neighbor);
+    const size_t cols_ne = ansatz_space_ne.mapper().numDofs(neighbor);
+    Dune::DynamicMatrix< R > local_matrix_en_en(rows_en, cols_en, 0.); // \todo: make mutable member, after SMP refactor
+    Dune::DynamicMatrix< R > local_matrix_ne_ne(rows_ne, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
+    Dune::DynamicMatrix< R > local_matrix_en_ne(rows_en, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
+    Dune::DynamicMatrix< R > local_matrix_ne_en(rows_ne, cols_en, 0.); // \todo: make mutable member, after SMP refactor
+    // apply local two-form
+    const auto test_base_en   = test_space_en.base_function_set(entity);
+    const auto ansatz_base_en = ansatz_space_en.base_function_set(entity);
+    const auto test_base_ne   = test_space_ne.base_function_set(neighbor);
+    const auto ansatz_base_ne = ansatz_space_ne.base_function_set(neighbor);
+    local_coupling_twoform_.apply2(test_base_en, ansatz_base_en,
+                                   test_base_ne, ansatz_base_ne,
+                                   intersection,
+                                   local_matrix_en_en, local_matrix_ne_ne, local_matrix_en_ne, local_matrix_ne_en);
+    // write local matrix to global
+    const auto global_row_indices_en = test_space_en.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    const auto global_col_indices_en = ansatz_space_en.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    const auto global_row_indices_ne = test_space_ne.mapper().globalIndices(neighbor); // \todo: make mutable member, after SMP refactor
+    const auto global_col_indices_ne = ansatz_space_ne.mapper().globalIndices(neighbor); // \todo: make mutable member, after SMP refactor
+    assert(global_row_indices_en.size() == rows_en);
+    assert(global_col_indices_en.size() == cols_en);
+    assert(global_row_indices_ne.size() == rows_ne);
+    assert(global_col_indices_ne.size() == cols_ne);
+    for (size_t ii = 0; ii < rows_en; ++ii) {
+      const auto& local_matrix_en_en_row = local_matrix_en_en[ii];
+      const auto& local_matrix_en_ne_row = local_matrix_en_ne[ii];
+      const size_t global_ii = global_row_indices_en[ii];
+      for (size_t jj = 0; jj < cols_en; ++jj) {
+        const size_t global_jj = global_col_indices_en[jj];
+        global_matrix_en_en.add_to_entry(global_ii, global_jj, local_matrix_en_en_row[jj]);
+      }
+      for (size_t jj = 0; jj < cols_ne; ++jj) {
+        const size_t global_jj = global_col_indices_ne[jj];
+        global_matrix_en_ne.add_to_entry(global_ii, global_jj, local_matrix_en_ne_row[jj]);
+      }
+    }
+    for (size_t ii = 0; ii < rows_ne; ++ii) {
+      const auto& local_matrix_ne_en_row = local_matrix_ne_en[ii];
+      const auto& local_matrix_ne_ne_row = local_matrix_ne_ne[ii];
+      const size_t global_ii = global_row_indices_ne[ii];
+      for (size_t jj = 0; jj < cols_en; ++jj) {
+        const size_t global_jj = global_col_indices_en[jj];
+        global_matrix_ne_en.add_to_entry(global_ii, global_jj, local_matrix_ne_en_row[jj]);
+      }
+      for (size_t jj = 0; jj < cols_ne; ++jj) {
+        const size_t global_jj = global_col_indices_ne[jj];
+        global_matrix_ne_ne.add_to_entry(global_ii, global_jj, local_matrix_ne_ne_row[jj]);
+      }
+    }
+  } // ... assemble(...)
+
+  template< class TE, size_t TEd, size_t TEr, size_t TErC,
+            class AE, size_t AEd, size_t AEr, size_t AErC,
+            class TN, size_t TNd, size_t TNr, size_t TNrC,
+            class AN, size_t ANd, size_t ANr, size_t ANrC,
+            class IntersectionType,
+            class M, class R >
+  void assemble(const SpaceInterface< TE, TEd, TEr, TErC >& test_space_en,
+                const SpaceInterface< AE, AEd, AEr, AErC >& ansatz_space_en,
+                const SpaceInterface< TN, TNd, TNr, TNrC >& test_space_ne,
+                const SpaceInterface< AN, ANd, ANr, ANrC >& ansatz_space_ne,
+                const IntersectionType& intersection,
+                Stuff::LA::MatrixInterface< M, R >& global_matrix) const
+  {
+    assemble(test_space_en, ansatz_space_en,
+             test_space_ne, ansatz_space_ne,
+             intersection,
+             global_matrix, global_matrix, global_matrix, global_matrix);
+  }
+
+private:
+  const LocalCouplingTwoFormType& local_coupling_twoform_;
+}; // class LocalCouplingTwoFormAssembler
+
+
 template< class GridViewType, class LocalOperatorType, class SourceType, class RangeType >
 class LocalCouplingOperatorApplicator
   : public Stuff::Grid::internal::Codim1Object< GridViewType >
@@ -252,6 +370,7 @@ private:
   RangeType& range_;
   const Stuff::Grid::ApplyOn::WhichIntersection< GridViewType >& where_;
 }; // class LocalCouplingOperatorApplicator
+
 
 template< class GridViewType, class LocalOperatorType, class SourceType, class RangeType >
 class LocalBoundaryOperatorApplicator
