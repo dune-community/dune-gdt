@@ -168,14 +168,14 @@ public:
   template <class... Args>
   explicit LocalCouplingIntegralOperator(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(over_integrate)
+    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
   {
   }
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
+    , over_integrate_(over_integrate)
   {
   }
 
