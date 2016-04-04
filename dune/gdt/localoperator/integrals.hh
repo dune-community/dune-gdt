@@ -111,8 +111,7 @@ public:
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, ansatz_base, test_base) + over_integrate_;
-    const auto& quadrature = QuadratureRules< D, d >::rule(entity.type(),
-                                                           boost::numeric_cast< int >(integrand_order));
+    const auto& quadrature = QuadratureRules< D, d >::rule(entity.type(), boost::numeric_cast< int >(integrand_order));
     // prepare storage
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
@@ -160,13 +159,13 @@ public:
   template< class... Args >
   explicit LocalCouplingIntegralOperator(const int over_integrate, Args&& ...args)
     : integrand_(std::forward< Args >(args)...)
-    , over_integrate_(over_integrate)
+    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
   {}
 
   template< class... Args >
   explicit LocalCouplingIntegralOperator(const size_t over_integrate, Args&& ...args)
     : integrand_(std::forward< Args >(args)...)
-    , over_integrate_(boost::numeric_cast< size_t >(over_integrate))
+    , over_integrate_(over_integrate)
   {}
 
   template< class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
