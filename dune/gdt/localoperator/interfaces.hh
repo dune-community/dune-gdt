@@ -159,23 +159,23 @@ public:
    */
   template <class TE, class AE, class TN, class AN, class IntersectionType, class D, size_t d, class R, size_t rT,
             size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<TE, D, d, R, rT, rCT>& test_base_entity,
-              const Stuff::LocalfunctionSetInterface<AE, D, d, R, rA, rCA>& ansatz_base_entity,
-              const Stuff::LocalfunctionSetInterface<TN, D, d, R, rT, rCT>& test_base_neighbor,
-              const Stuff::LocalfunctionSetInterface<AN, D, d, R, rA, rCA>& ansatz_base_neighbor,
-              const IntersectionType& intersection, Dune::DynamicMatrix<R>& entityEntityRet,
-              Dune::DynamicMatrix<R>& neighborNeighborRet, Dune::DynamicMatrix<R>& entityNeighborRet,
-              Dune::DynamicMatrix<R>& neighborEntityRet) const
+  void apply2(const Stuff::LocalfunctionSetInterface<TE, D, d, R, rT, rCT>& test_base_en,
+              const Stuff::LocalfunctionSetInterface<AE, D, d, R, rA, rCA>& ansatz_base_en,
+              const Stuff::LocalfunctionSetInterface<TN, D, d, R, rT, rCT>& test_base_ne,
+              const Stuff::LocalfunctionSetInterface<AN, D, d, R, rA, rCA>& ansatz_base_ne,
+              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret_en_en,
+              Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+              Dune::DynamicMatrix<R>& ret_ne_en) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base_entity,
-                                              ansatz_base_entity,
-                                              test_base_neighbor,
-                                              ansatz_base_neighbor,
+    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base_en,
+                                              ansatz_base_en,
+                                              test_base_ne,
+                                              ansatz_base_ne,
                                               intersection,
-                                              entityEntityRet,
-                                              neighborNeighborRet,
-                                              entityNeighborRet,
-                                              neighborEntityRet));
+                                              ret_en_en,
+                                              ret_ne_ne,
+                                              ret_en_ne,
+                                              ret_ne_en));
   }
 }; // class LocalCouplingTwoFormInterface
 
