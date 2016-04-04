@@ -127,6 +127,7 @@ public:
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
 
+
   template <class Codim0Assembler, class M>
   void DUNE_DEPRECATED_MSG("Will be removed or first argument has to be replaced by an interface (04.02.2015)!")
       add_codim0_assembler(const Codim0Assembler& local_assembler,
@@ -190,6 +191,18 @@ public:
     typedef internal::LocalVolumeVectorAssemblerWrapper<ThisType,
                                                         LocalAssembler::Codim0Vector<L>,
                                                         typename V::derived_type> WrapperType;
+    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
+  } // ... add(...)
+
+  template <class L, class V>
+  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
+           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  {
+    assert(vector.size() == test_space_->mapper().size());
+    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
+                                                                  LocalVolumeFunctionalAssembler<L>,
+                                                                  typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
