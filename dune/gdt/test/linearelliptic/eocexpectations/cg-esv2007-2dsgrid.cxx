@@ -7,8 +7,8 @@
 
 #include <dune/grid/sgrid.hh>
 
-#include "problems/ESV2007.hh"
-#include "eocexpectations.hh"
+#include "../problems/ESV2007.hh"
+#include "../eocexpectations.hh"
 
 
 namespace Dune {

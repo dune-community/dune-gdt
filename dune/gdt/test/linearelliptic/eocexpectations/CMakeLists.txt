@@ -8,37 +8,37 @@
 add_library(expectations_linearelliptic_cg_discretizations_sgrid
             STATIC
             EXCLUDE_FROM_ALL
-            eocexpectations-cg-ao2013-2dsgrid.cxx
-            eocexpectations-cg-er2007-2dsgrid.cxx
-            eocexpectations-cg-esv2007-2dsgrid.cxx
-            eocexpectations-cg-mixedboundary-2dsgrid.cxx
-            eocexpectations-cg-spe10-2dsgrid.cxx)
+            cg-ao2013-2dsgrid.cxx
+            cg-er2007-2dsgrid.cxx
+            cg-esv2007-2dsgrid.cxx
+            cg-mixedboundary-2dsgrid.cxx
+            cg-spe10-2dsgrid.cxx)
 add_library(expectations_linearelliptic_cg_discretizations_alugrid
             STATIC
             EXCLUDE_FROM_ALL
-            eocexpectations-cg-ao2013-2dalugrid.cxx
-            eocexpectations-cg-er2007-2dalugrid.cxx
-            eocexpectations-cg-esv2007-2dalugrid.cxx
-            eocexpectations-cg-mixedboundary-2dalugrid.cxx
-            eocexpectations-cg-spe10-2dalugrid.cxx)
+            cg-ao2013-2dalugrid.cxx
+            cg-er2007-2dalugrid.cxx
+            cg-esv2007-2dalugrid.cxx
+            cg-mixedboundary-2dalugrid.cxx
+            cg-spe10-2dalugrid.cxx)
 
 # SWIPDG
 add_library(expectations_linearelliptic_swipdg_discretizations_sgrid
             STATIC
             EXCLUDE_FROM_ALL
-            eocexpectations-swipdg-ao2013-2dsgrid.cxx
-            eocexpectations-swipdg-er2007-2dsgrid.cxx
-            eocexpectations-swipdg-esv2007-2dsgrid.cxx
-            eocexpectations-swipdg-mixedboundary-2dsgrid.cxx
-            eocexpectations-swipdg-spe10-2dsgrid.cxx)
+            swipdg-ao2013-2dsgrid.cxx
+            swipdg-er2007-2dsgrid.cxx
+            swipdg-esv2007-2dsgrid.cxx
+            swipdg-mixedboundary-2dsgrid.cxx
+            swipdg-spe10-2dsgrid.cxx)
 add_library(expectations_linearelliptic_swipdg_discretizations_alugrid
             STATIC
             EXCLUDE_FROM_ALL
-            eocexpectations-swipdg-ao2013-2dalugrid.cxx
-            eocexpectations-swipdg-er2007-2dalugrid.cxx
-            eocexpectations-swipdg-esv2007-2dalugrid.cxx
-            eocexpectations-swipdg-mixedboundary-2dalugrid.cxx
-            eocexpectations-swipdg-spe10-2dalugrid.cxx)
+            swipdg-ao2013-2dalugrid.cxx
+            swipdg-er2007-2dalugrid.cxx
+            swipdg-esv2007-2dalugrid.cxx
+            swipdg-mixedboundary-2dalugrid.cxx
+            swipdg-spe10-2dalugrid.cxx)
 
 # add some compile flags
 foreach (_target expectations_linearelliptic_cg_discretizations_alugrid

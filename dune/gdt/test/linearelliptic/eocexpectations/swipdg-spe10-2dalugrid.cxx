@@ -9,8 +9,8 @@
 
 # include <dune/grid/alugrid.hh>
 
-# include "problems/spe10.hh"
-# include "eocexpectations.hh"
+# include "../problems/spe10.hh"
+# include "../eocexpectations.hh"
 
 
 namespace Dune {

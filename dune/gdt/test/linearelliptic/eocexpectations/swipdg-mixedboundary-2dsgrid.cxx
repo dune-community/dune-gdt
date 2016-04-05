@@ -7,8 +7,8 @@
 
 #include <dune/grid/sgrid.hh>
 
-#include "problems/mixedboundary.hh"
-#include "eocexpectations.hh"
+#include "../problems/mixedboundary.hh"
+#include "../eocexpectations.hh"
 
 
 namespace Dune {
