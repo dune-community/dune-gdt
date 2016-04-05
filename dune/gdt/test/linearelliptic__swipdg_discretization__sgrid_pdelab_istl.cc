@@ -10,6 +10,7 @@
 #include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "linearelliptic/swipdg-discretization.hh"
+#include "linearelliptic/swipdg-testcases.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -17,7 +18,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_PDELAB && HAVE_DUNE_ISTL
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridDgTestCases);
+TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_istl_and_sgrid_order_1) {
   this->template eoc_study< ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::istl_sparse, 1 >();
 }
