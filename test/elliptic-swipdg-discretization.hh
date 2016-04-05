@@ -400,19 +400,8 @@ public:
   std::vector<double> expected_results(const std::string type) const override
   {
     using namespace Dune;
-    if (std::is_same<TestCase, EllipticTestCase::ESV07<SGrid<2, 2>>>::value) {
-      if (polOrder == 1) {
-        if (type.compare("L2") == 0)
-          return {1.15e-01, 3.04e-02, 7.51e-03, 1.86e-03};
-        else if (type.compare("H1_semi") == 0)
-          return {3.79e-01, 1.90e-01, 9.38e-02, 4.67e-02};
-        else
-          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
-      } else
-        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
-#if HAVE_ALUGRID
-    } else if (std::is_same<TestCase, EllipticTestCase::ESV07<ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value
-               || std::is_same<TestCase, EllipticTestCase::ESV07<ALUGrid<2, 2, simplex, conforming>>>::value) {
+    if (std::is_same<TestCase, EllipticTestCase::ESV07<ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value
+        || std::is_same<TestCase, EllipticTestCase::ESV07<ALUGrid<2, 2, simplex, conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
           return {1.82e-02, 4.53e-03, 1.12e-03, 2.78e-04};
@@ -433,67 +422,17 @@ public:
                             EllipticTestCase::LocalThermalBlock<ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::
                    value) {
       if (polOrder == 1) {
-#if THIS_IS_A_BUILDBOT_BUILD
-        if (type.compare("L2") == 0)
-          return {5.33e-02, 1.69e-02};
-        else if (type.compare("H1_semi") == 0)
-          return {3.82e-01, 2.29e-01};
-#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {5.57e-02, 1.99e-02, 5.54e-03, 1.29e-03};
         else if (type.compare("H1_semi") == 0)
           return {4.32e-01, 2.93e-01, 1.50e-01, 6.54e-02};
-#endif // THIS_IS_A_BUILDBOT_BUILD
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
-#if THIS_IS_A_BUILDBOT_BUILD
-        if (type.compare("L2") == 0)
-          return {1.18e-02, 2.12e-03};
-        else if (type.compare("H1_semi") == 0)
-          return {1.67e-01, 5.58e-02};
-#else // THIS_IS_A_BUILDBOT_BUILD
         if (type.compare("L2") == 0)
           return {1.18e-02, 2.11e-03, 3.89e-04, 7.76e-05};
         else if (type.compare("H1_semi") == 0)
           return {1.69e-01, 5.96e-02, 1.94e-02, 6.04e-03};
-#endif // THIS_IS_A_BUILDBOT_BUILD
-        else
-          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
-      } else
-        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same<TestCase, EllipticTestCase::ER07<ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
-      if (polOrder == 1) {
-        if (type.compare("L2") == 0)
-          return {6.09e-02, 1.65e-02, 4.22e-03};
-        else if (type.compare("H1_semi") == 0)
-          return {2.98e-01, 1.46e-01, 7.25e-02};
-        else
-          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
-      } else if (polOrder == 2) {
-        if (type.compare("L2") == 0)
-          return {6.42e-03, 8.23e-04, 1.04e-04};
-        else if (type.compare("H1_semi") == 0)
-          return {5.40e-02, 1.41e-02, 3.55e-03};
-        else
-          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
-      } else
-        DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
-    } else if (std::is_same<TestCase,
-                            EllipticTestCase::MixedBoundaryTypes<ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::
-                   value) {
-      if (polOrder == 1) {
-        if (type.compare("L2") == 0)
-          return {4.02e-02, 1.12e-02, 2.83e-03, 6.33e-04};
-        else if (type.compare("H1_semi") == 0)
-          return {2.69e-01, 1.39e-01, 6.87e-02, 3.08e-02};
-        else
-          DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
-      } else if (polOrder == 2) {
-        if (type.compare("L2") == 0)
-          return {3.58e-03, 6.25e-04, 1.21e-04, 2.68e-05};
-        else if (type.compare("H1_semi") == 0)
-          return {4.81e-02, 1.79e-02, 7.19e-03, 2.85e-03};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -516,7 +455,6 @@ public:
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
         DUNE_THROW(NotImplemented, "Please record the expected results for this polOrder!");
-#endif // HAVE_ALUGRID
     } else
       DUNE_THROW(NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   }
@@ -672,7 +610,6 @@ public:
 
   std::vector<double> expected_results(const std::string type) const override
   {
-#if HAVE_ALUGRID
     if (std::is_same<TestCase, EllipticTestCase::ESV07<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>>::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
@@ -696,11 +633,7 @@ public:
                    value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-#if THIS_IS_A_BUILDBOT_BUILD
-          return {8.27e-02, 4.09e-02};
-#else
           return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
-#endif
         else if (type == nonconformity_estimator_id())
           return {9.57e-02, 1.10e-01, 5.12e-02, 2.17e-02};
         else if (type == residual_estimator_ESV07_id())
@@ -708,11 +641,7 @@ public:
         else if (type == diffusive_flux_estimator_id())
           return {1.12e-01, 6.54e-02, 3.54e-02, 1.90e-02};
         else if (type == efficiency_ESV07_id())
-#if THIS_IS_A_BUILDBOT_BUILD
-          return {1.78e+00, 3.13e+00};
-#else
           return {1.62e+00, 2.45e+00, 2.32e+00, 2.40e+00};
-#endif
         else
           return BaseType::expected_results(type);
       } else
@@ -736,7 +665,6 @@ public:
       } else
         DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this polOrder!");
     } else
-#endif
       DUNE_THROW(Dune::NotImplemented, "Please record the expected results for this TestCase/GridType combination!");
   } // ... expected_results(...)
 
