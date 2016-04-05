@@ -178,7 +178,7 @@ public:
   // see the ctors of EllipticLocalizableProduct
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
             ,
-            typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value) //
+            typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value)
                                                && (std::is_same<DiffusionImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionImp)>::type,
             class... Args>
