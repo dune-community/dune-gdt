@@ -28,6 +28,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
+#include <dune/stuff/functions/indicator.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/spe10.hh>
 #include <dune/stuff/common/color.hh>
@@ -413,8 +414,10 @@ public:
       ExpressionFunctionType;
   typedef Dune::Stuff::Functions::Spe10::Model1<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       Spe10Model1FunctionType;
+  typedef Dune::Stuff::Functions::Indicator<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+      IndicatorFunctionType;
   typedef Spe10Model1FunctionType DiffusionType;
-  typedef ConstantFunctionType ForceType;
+  typedef IndicatorFunctionType ForceType;
   typedef ConstantFunctionType DirichletType;
   typedef ConstantFunctionType NeumannType;
   typedef ConstantFunctionType ExactSolutionType;
@@ -423,7 +426,9 @@ public:
     : BaseType(create_initial_grid(), num_refinements)
     , boundary_info_()
     , diffusion_("perm_case1.dat", {0.0, 0.0}, {5.0, 1.0})
-    , force_(1)
+    , force_({{{{0.95, 0.30}, {1.10, 0.45}}, 2000},
+              {{{3.00, 0.75}, {3.15, 0.90}}, -1000},
+              {{{4.25, 0.25}, {4.40, 0.40}}, -1000}})
     , dirichlet_(0)
     , neumann_(0)
   {
