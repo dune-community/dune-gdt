@@ -14,13 +14,9 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
-#include <dune/gdt/localevaluation/product.hh>
-#include <dune/gdt/localfunctional/integrals.hh>
-#include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/functionals/elliptic-ipdg.hh>
+#include <dune/gdt/operators/elliptic-ipdg.hh>
 #include <dune/gdt/spaces/dg.hh>
 
 #include "../problems/interface.hh"
@@ -77,68 +73,31 @@ public:
     auto boundary_info = Stuff::Grid::BoundaryInfoProvider< IntersectionType >::create(problem.boundary_info_cfg());
     logger.info() << "Assembling... " << std::endl;
     VectorType rhs_vector(space.mapper().size(), 0.0);
-    MatrixType system_matrix(space.mapper().size(),
-                             space.mapper().size(),
-                             space.compute_face_and_volume_pattern());
-    typedef typename ProblemType::DiffusionFactorType DiffusionFactorType;
-    typedef typename ProblemType::DiffusionTensorType DiffusionTensorType;
-    typedef typename ProblemType::FunctionType FunctionType;
-    // volume terms
-    // * lhs
-    typedef LocalVolumeIntegralOperator< LocalEvaluation::Elliptic< DiffusionFactorType, DiffusionTensorType > >
-        EllipticOperatorType;
-    const EllipticOperatorType                                ellipticOperator(problem.diffusion_factor(),
-                                                                               problem.diffusion_tensor());
-    const LocalVolumeTwoFormAssembler< EllipticOperatorType > diffusionMatrixAssembler(ellipticOperator);
-    // * rhs
-    typedef LocalVolumeIntegralFunctional< LocalEvaluation::Product< FunctionType > > ForceFunctionalType;
-    const ForceFunctionalType                                   forceFunctional(problem.force());
-    const LocalVolumeFunctionalAssembler< ForceFunctionalType > forceVectorAssembler(forceFunctional);
-    // inner face terms
-    typedef LocalCouplingIntegralOperator<
-        LocalEvaluation::EllipticIpdg::Inner< DiffusionFactorType, DiffusionTensorType, method > > CouplingOperatorType;
-    const CouplingOperatorType                                  couplingOperator(problem.diffusion_factor(),
-                                                                                 problem.diffusion_tensor());
-    const LocalCouplingTwoFormAssembler< CouplingOperatorType > couplingMatrixAssembler(couplingOperator);
-    // dirichlet boundary face terms
-    // * lhs
-    typedef LocalBoundaryIntegralOperator< LocalEvaluation::EllipticIpdg::BoundaryLHS
-        < DiffusionFactorType, DiffusionTensorType, method > > DirichletOperatorType;
-    const DirichletOperatorType                                  dirichletOperator(problem.diffusion_factor(),
-                                                                                   problem.diffusion_tensor());
-    const LocalBoundaryTwoFormAssembler< DirichletOperatorType > dirichletMatrixAssembler(dirichletOperator);
-    // * rhs
-    typedef LocalFaceIntegralFunctional< LocalEvaluation::EllipticIpdg::BoundaryRHS
-        < FunctionType, DiffusionFactorType, DiffusionTensorType, method > > DirichletFunctionalType;
-    const DirichletFunctionalType                                 dirichletFunctional(problem.dirichlet(),
-                                                                                      problem.diffusion_factor(),
-                                                                                      problem.diffusion_tensor());
-    const LocalFaceFunctionalAssembler< DirichletFunctionalType > dirichletVectorAssembler(dirichletFunctional);
-    // neumann boundary face terms
-    // * rhs
-    typedef LocalFaceIntegralFunctional< LocalEvaluation::Product< FunctionType > > NeumannFunctionalType;
-    const NeumannFunctionalType                                 neumannFunctional(problem.neumann());
-    const LocalFaceFunctionalAssembler< NeumannFunctionalType > neumannVectorAssembler(neumannFunctional);
-    // do all the work
-    typedef SystemAssembler< SpaceType > SystemAssemblerType;
-    SystemAssemblerType systemAssembler(space);
-    systemAssembler.add(diffusionMatrixAssembler, system_matrix);
-    systemAssembler.add(forceVectorAssembler, rhs_vector);
-    systemAssembler.add(couplingMatrixAssembler,
-                        system_matrix,
-                        new Stuff::Grid::ApplyOn::InnerIntersectionsPrimally< GridViewType >());
-    systemAssembler.add(dirichletMatrixAssembler,
-                        system_matrix,
-                        new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(*boundary_info));
-    systemAssembler.add(dirichletVectorAssembler,
-                        rhs_vector,
-                        new Stuff::Grid::ApplyOn::DirichletIntersections< GridViewType >(*boundary_info));
-    systemAssembler.add(neumannVectorAssembler,
-                        rhs_vector,
-                        new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(*boundary_info));
-    systemAssembler.assemble();
+    auto ipdg_operator = make_elliptic_ipdg_matrix_operator< MatrixType, method >(problem.diffusion_factor(),
+                                                                                  problem.diffusion_tensor(),
+                                                                                  *boundary_info,
+                                                                                  space);
+    auto ipdg_boundary_functional = make_elliptic_ipdg_dirichlet_vector_functional< method >(problem.dirichlet(),
+                                                                                             problem.diffusion_factor(),
+                                                                                             problem.diffusion_tensor(),
+                                                                                             *boundary_info,
+                                                                                             rhs_vector,
+                                                                                             space);
+    auto l2_force_functional = make_l2_volume_vector_functional(problem.force(), rhs_vector, space);
+    auto l2_neumann_functional
+        = make_l2_face_vector_functional(problem.neumann(),
+                                         rhs_vector,
+                                         space,
+                                         new Stuff::Grid::ApplyOn::NeumannIntersections< GridViewType >(*boundary_info));
+    // register everything for assembly in one grid walk
+    SystemAssembler< SpaceType > assembler(space);
+    assembler.add(*ipdg_operator);
+    assembler.add(*ipdg_boundary_functional);
+    assembler.add(*l2_force_functional);
+    assembler.add(*l2_neumann_functional);
+    assembler.assemble();
     // create the discretization (no copy of the containers done here, bc. of cow)
-    return DiscretizationType(problem, space, system_matrix, rhs_vector);
+    return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);
   } // ... discretize(...)
 }; // class SwipdgDiscretizer
 
