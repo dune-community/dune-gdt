@@ -425,7 +425,7 @@ public:
         if (type.compare("L2") == 0)
           return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
         else if (type.compare("H1_semi") == 0)
-          return {1.41e-02, 3.56e-03, 8.91e-04, 2.20e-04};
+          return {1.41e-02, 3.56e-03, 8.91e-04, 2.23e-04};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -452,16 +452,16 @@ public:
                EllipticTestCase::Spe10Model1< ALUGrid<2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("L2") == 0)
-          return {7.22e-02, 2.59e-02};
+          return {9.48e-03, 2.64e-03};
         else if (type.compare("H1_semi") == 0)
-          return {5.28e-01, 3.48e-01};
+          return {1.09e-01, 5.36e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else if (polOrder == 2) {
         if (type.compare("L2") == 0)
-          return {2.08e-02, 3.74e-03};
+          return {2.74e-03, 8.75e-04};
         else if (type.compare("H1_semi") == 0)
-          return {2.56e-01, 8.47e-02};
+          return {4.91e-02, 2.26e-02};
         else
           DUNE_THROW(RangeError, "Wrong type '" << type << "' requested!");
       } else
@@ -641,15 +641,15 @@ public:
     } else if (std::is_same< TestCase, EllipticTestCase::Spe10Model1< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > >::value) {
       if (polOrder == 1) {
         if (type.compare("energy") == 0)
-          return {3.30e-02, 1.65e-02};
+          return {8.38e-01, 4.02e-01};
         else if (type == nonconformity_estimator_id())
-          return {8.49e-01, 1.15e+00};
+          return {2.74e+00, 1.84e+00};
         else if (type == residual_estimator_ESV07_id())
-          return {0.0, 0.0};
+          return {3.43e-17, 1.64e-17};
         else if (type == diffusive_flux_estimator_id())
-          return {4.76e-02, 3.06e-02};
+          return {1.22e+00, 7.62e-01};
         else if (type == efficiency_ESV07_id())
-          return {2.57e+01, 6.99e+01};
+          return {3.59e+00, 4.95e+00};
         else
           return BaseType::expected_results(type);
       } else
