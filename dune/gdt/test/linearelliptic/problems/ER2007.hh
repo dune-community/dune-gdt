@@ -16,7 +16,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 
-#include <dune/gdt/test/stationary-eocstudy.hh>
+#include <dune/gdt/test/stationary-testcase.hh>
 
 #include "base.hh"
 
