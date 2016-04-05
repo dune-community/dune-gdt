@@ -45,16 +45,19 @@ enum class Method
 };
 
 
+static constexpr Method default_method = Method::swipdg;
+
+
 // forwards
-template <class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = Method::swipdg>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = default_method>
 class Inner;
 
 
-template <class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = Method::swipdg>
+template <class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = default_method>
 class BoundaryLHS;
 
 
-template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = Method::swipdg>
+template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp = void, Method method = default_method>
 class BoundaryRHS;
 
 
