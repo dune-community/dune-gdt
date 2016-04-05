@@ -11,12 +11,13 @@
 #endif
 
 #include <dune/stuff/test/common.hh>
+#include <dune/stuff/functions/spe10.hh>
+#include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
 #include "eocstudy.hh"
 #include "discretizers/cg.hh"
-#include "problems.hh"
 
 
 template <class TestCaseType>

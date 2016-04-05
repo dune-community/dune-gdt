@@ -10,6 +10,7 @@
 #include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "linearelliptic/cg-discretization.hh"
+#include "linearelliptic/cg-testcases.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -17,7 +18,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_PDELAB && HAVE_EIGEN
 
-TYPED_TEST_CASE(linearelliptic_CG_discretization, SGridCgTestCases);
+TYPED_TEST_CASE(linearelliptic_CG_discretization, SGridTestCases);
 TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_pdelab_and_eigen_and_sgrid)
 {
   this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::eigen_sparse>();

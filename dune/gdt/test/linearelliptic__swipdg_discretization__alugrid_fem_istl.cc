@@ -10,6 +10,7 @@
 #include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "linearelliptic/swipdg-discretization.hh"
+#include "linearelliptic/swipdg-testcases.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
