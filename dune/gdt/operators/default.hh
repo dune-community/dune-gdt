@@ -285,6 +285,28 @@ public:
           new WrapperType(this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_.access()));
   }
 
+  template< class C >
+  void add(const LocalCouplingTwoFormInterface< C >& local_coupling_twoform,
+           const DSG::ApplyOn::WhichIntersection< GridViewType >* where
+              = new DSG::ApplyOn::InnerIntersectionsPrimally< GridViewType >())
+  {
+    typedef internal::LocalCouplingTwoFormWrapper
+        < ThisType, typename LocalCouplingTwoFormInterface< C >::derived_type, MatrixType > WrapperType;
+    this->codim1_functors_.emplace_back(
+          new WrapperType(this->test_space_, this->ansatz_space_, where, local_coupling_twoform.as_imp(), matrix_.access()));
+  }
+
+  template< class B >
+  void add(const LocalBoundaryTwoFormInterface< B >& local_boundary_twoform,
+           const DSG::ApplyOn::WhichIntersection< GridViewType >* where
+              = new DSG::ApplyOn::InnerIntersectionsPrimally< GridViewType >())
+  {
+    typedef internal::LocalBoundaryTwoFormWrapper
+        < ThisType, typename LocalBoundaryTwoFormInterface< B >::derived_type, MatrixType > WrapperType;
+    this->codim1_functors_.emplace_back(
+          new WrapperType(this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_.access()));
+  }
+
   template< class S, class R >
   void apply(const Stuff::LA::VectorInterface< S >& source, Stuff::LA::VectorInterface< R >& range) const
   {
