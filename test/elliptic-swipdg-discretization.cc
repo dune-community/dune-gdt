@@ -36,7 +36,7 @@ struct EllipticSWIPDGDiscretization
 }; // EllipticSWIPDGDiscretization
 
 #if HAVE_DUNE_FEM
-TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticTestCases);
+TYPED_TEST_CASE(EllipticSWIPDGDiscretization, EllipticEstimatorTestCases);
 TYPED_TEST(EllipticSWIPDGDiscretization, eoc_study_polorder_1) {
   this->template eoc_study< 1 >();
 }
