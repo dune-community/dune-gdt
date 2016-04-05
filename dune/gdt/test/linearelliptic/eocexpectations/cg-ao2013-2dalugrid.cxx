@@ -9,8 +9,8 @@
 
 #include <dune/grid/alugrid.hh>
 
-#include "problems/AO2013.hh"
-#include "eocexpectations.hh"
+#include "../problems/AO2013.hh"
+#include "../eocexpectations.hh"
 
 namespace Dune {
 namespace GDT {

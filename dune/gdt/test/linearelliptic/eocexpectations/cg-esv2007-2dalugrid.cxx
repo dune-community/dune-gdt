@@ -9,8 +9,8 @@
 
 #include <dune/grid/alugrid.hh>
 
-#include "problems/ESV2007.hh"
-#include "eocexpectations.hh"
+#include "../problems/ESV2007.hh"
+#include "../eocexpectations.hh"
 
 
 namespace Dune {
