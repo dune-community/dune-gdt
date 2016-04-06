@@ -322,8 +322,8 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  SourceBeamTestCase(const size_t num_refs = 1)
-    : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {}
 
@@ -344,6 +344,8 @@ public:
         << "||  Testcase: Fokker-Planck SourceBeam                                                                ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 3]                                                                                   ||\n"
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+                           + "]                                                                                   ||\n"
         << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
         << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"

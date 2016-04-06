@@ -20,7 +20,8 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
-template< class GridType,
+template< class TestCaseType,
+          class GridType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
@@ -37,15 +38,15 @@ public:
                             dimRange,
                             dimRangeCols> ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
-  static const constexpr FluxTimeStepperKombinations flux_and_timestepper_type
-                  = use_lax_friedrichs_flux ? FluxTimeStepperKombinations::laxfriedrichs_euler
-                  : (use_linear_reconstruction ? FluxTimeStepperKombinations::godunovwithreconstruction_euler
-                  : (use_adaptive_timestepper ? FluxTimeStepperKombinations::godunov_adaptiveRK
-                                              : FluxTimeStepperKombinations::godunov_euler));
+  static const constexpr FluxTimeStepperCombinations flux_and_timestepper_type
+                  = use_lax_friedrichs_flux ? FluxTimeStepperCombinations::laxfriedrichs_euler
+                  : (use_linear_reconstruction ? FluxTimeStepperCombinations::godunovwithreconstruction_euler
+                  : (use_adaptive_timestepper ? FluxTimeStepperCombinations::godunov_adaptiveRK
+                                              : FluxTimeStepperCombinations::godunov_euler));
   typedef typename DSG::PeriodicGridView
       < typename Stuff::Grid::ProviderInterface< GridType >::LevelGridViewType >             GridViewType;
   typedef typename Spaces::FV::DefaultProduct< GridViewType, RangeFieldType, dimRange, dimRangeCols > FVSpaceType;
-  typedef Discretizations::NonStationaryDefault< ProblemType, FVSpaceType, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > DiscretizationType;
+  typedef Discretizations::NonStationaryDefault< TestCaseType, FVSpaceType, use_lax_friedrichs_flux, use_adaptive_timestepper, use_linear_reconstruction > DiscretizationType;
 
   static std::string static_id()
   {                                                                                // int() needed, otherwise we get a linker error
@@ -53,7 +54,7 @@ public:
   }
 
   static DiscretizationType discretize(Stuff::Grid::ProviderInterface< GridType >& grid_provider,
-                                       const ProblemType& problem,
+                                       const TestCaseType& test_case,
                                        const int level = 0,
                                        const std::bitset< GridType::dimension > periodic_directions = std::bitset< GridType::dimension >())
   {
@@ -61,7 +62,7 @@ public:
     logger.info() << "Creating space... " << std::endl;
     auto space = std::make_shared< const FVSpaceType >(GridViewType(grid_provider.level_view(level), periodic_directions));
     logger.debug() << "grid has " << space->grid_view().indexSet().size(0) << " elements" << std::endl;
-    return std::move(DiscretizationType(problem, space));
+    return DiscretizationType(test_case, space);
   } // ... discretize(...)
 }; // class FVDiscretizer
 

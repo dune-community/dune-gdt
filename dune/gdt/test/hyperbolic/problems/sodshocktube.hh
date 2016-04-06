@@ -366,8 +366,8 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  ShockTubeTestCase(const size_t num_refs = 3)
-    : BaseType(Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  ShockTubeTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube< G >::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
     , exact_solution_(std::make_shared< ShocktubeSolution< E, D, R > >(typename DSC::FieldVector< D, d >(0),
                                                                        typename DSC::FieldVector< D, d >(1)))
@@ -395,6 +395,8 @@ public:
         << "||  Testcase: Shock Tube                                                                              ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 1]                                                                                   ||\n"
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+                            + "]                                                                                  ||\n"
         << "||  flux = [u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]       ||\n"
         << "||  rhs = 0                                                                                           ||\n"
         << "||  reference solution: semianalytic solution                                                         ||\n"

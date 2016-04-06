@@ -22,16 +22,21 @@ template< bool anything >
 class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  1,
-                                 Hyperbolic::FluxTimeStepperKombinations::godunov_euler,
+                                 Hyperbolic::FluxTimeStepperCombinations::godunov_euler,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 1 >
 {
   typedef Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double > TestCaseType;
 public:
-  static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
+  static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      return {3.25e-01, 1.63e-01};
+      if (DSC::FloatCmp::eq(test_case.t_end(), 4.0))
+        return {3.25e-01, 1.63e-01};
+      else if (DSC::FloatCmp::eq(test_case.t_end(), 4.0/5.0))
+        return {9.16e-02, 4.08e-02};
+      else
+        EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -42,16 +47,22 @@ template< bool anything >
 class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                  Hyperbolic::ChooseDiscretizer::fv,
                                  1,
-                                 Hyperbolic::FluxTimeStepperKombinations::godunovwithreconstruction_euler,
+                                 Hyperbolic::FluxTimeStepperCombinations::godunovwithreconstruction_euler,
                                  anything >
   : public internal::HyperbolicEocExpectationsBase< 1 >
 {
   typedef Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double > TestCaseType;
 public:
-  static std::vector< double > results(const TestCaseType& /*test_case*/, const std::string type)
+  static std::vector< double > results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      return {2.63e-01, 1.39e-01};
+      if (test_case.num_refinements() == 1)
+        if (DSC::FloatCmp::eq(test_case.t_end(), 4.0))
+          return {2.63e-01, 1.39e-01};
+        else if (DSC::FloatCmp::eq(test_case.t_end(), 4.0/5.0))
+          return {7.07e-02, 3.13e-02};
+        else
+          EXPECT_TRUE(false) << "test results missing for type: " << type;
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -61,12 +72,12 @@ public:
 template class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                           Hyperbolic::ChooseDiscretizer::fv,
                                           1,
-                                          Hyperbolic::FluxTimeStepperKombinations::godunov_euler >;
+                                          Hyperbolic::FluxTimeStepperCombinations::godunov_euler >;
 
 template class HyperbolicEocExpectations< Hyperbolic::SourceBeamTestCase< Dune::YaspGrid< 1 >, double >,
                                           Hyperbolic::ChooseDiscretizer::fv,
                                           1,
-                                          Hyperbolic::FluxTimeStepperKombinations::godunovwithreconstruction_euler >;
+                                          Hyperbolic::FluxTimeStepperCombinations::godunovwithreconstruction_euler >;
 
 
 } // namespace Tests
