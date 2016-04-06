@@ -92,18 +92,18 @@ private:
                 "The dimDomain of RangeType and GridViewType have to match!");
 
 public:
-  LocalizableProductDefault(GridViewType grid_view, const RangeType& range, const SourceType& source)
-    : BaseType(grid_view)
-    , range_(range)
-    , source_(source)
+  LocalizableProductDefault(GridViewType grd_vw, const RangeType& rng, const SourceType& src)
+    : BaseType(grd_vw)
+    , range_(rng)
+    , source_(src)
     , walked_(false)
   {
   }
 
-  LocalizableProductDefault(GridViewType grid_view, const RangeType& range)
-    : BaseType(grid_view)
-    , range_(range)
-    , source_(range)
+  LocalizableProductDefault(GridViewType grd_vw, const RangeType& rng)
+    : BaseType(grd_vw)
+    , range_(rng)
+    , source_(rng)
     , walked_(false)
   {
   }
