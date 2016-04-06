@@ -524,8 +524,9 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  Boltzmann2DCheckerboardTestCase(const size_t num_refs = 1)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  Boltzmann2DCheckerboardTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+               num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }
@@ -547,6 +548,8 @@ public:
         << "||  Testcase: Boltzmann 2D Checkerboard                                                               ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 7] x [0, 7]                                                                          ||\n"
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+               + "]                                                                                  ||\n"
         << "||  flux = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                ||\n"
         << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                 ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"

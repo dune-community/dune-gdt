@@ -6,6 +6,7 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 
+#include <dune/stuff/common/float_cmp.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/test/gtest/gtest.h>
 
@@ -39,7 +40,7 @@ public:
 } // namespace internal
 
 template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain,
-          Hyperbolic::FluxTimeStepperKombinations flux_timestepper, bool anything = true>
+          Hyperbolic::FluxTimeStepperCombinations flux_timestepper, bool anything = true>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

@@ -372,8 +372,9 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2))
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+               num_refs)
     , reference_grid_view_(BaseType::reference_grid_view())
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
@@ -420,6 +421,8 @@ public:
         << "|+====================================================================+|\n"
         << "||  Testcase: Transport                                               ||\n"
         << "|+--------------------------------------------------------------------+|\n" << domainstring
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+               + "]                                                   ||\n"
         << "||  flux = u[0]                                                       ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: exact solution                                ||\n"

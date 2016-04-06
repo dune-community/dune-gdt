@@ -52,15 +52,15 @@ public:
 }; // class StationaryContainerBasedDefaultTraits
 
 
-template <class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
+template <class TestCaseImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
           bool use_linear_reconstruction>
 class NonStationaryDefaultTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
 public:
-  typedef NonStationaryDefault<ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
+  typedef NonStationaryDefault<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
                                use_linear_reconstruction> derived_type;
-  typedef ProblemImp ProblemType;
+  typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp FVSpaceType;
   typedef typename FVSpaceType::RangeFieldType RangeFieldType;
   typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
@@ -236,31 +236,32 @@ struct AdvectionOperatorCreator<OperatorType, true>
 } // namespace internal
 
 
-template <class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
+template <class TestCaseImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
           bool use_linear_reconstruction>
 class NonStationaryDefault
-    : public NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<ProblemImp, FVSpaceImp,
+    : public NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<TestCaseImp, FVSpaceImp,
                                                                                        use_lax_friedrichs_flux,
                                                                                        use_adaptive_timestepper,
                                                                                        use_linear_reconstruction>>
 {
-  typedef NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<ProblemImp, FVSpaceImp,
+  typedef NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<TestCaseImp, FVSpaceImp,
                                                                                     use_lax_friedrichs_flux,
                                                                                     use_adaptive_timestepper,
                                                                                     use_linear_reconstruction>>
       BaseType;
-  typedef NonStationaryDefault<ProblemImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
+  typedef NonStationaryDefault<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
                                use_linear_reconstruction> ThisType;
 
 public:
+  typedef TestCaseImp TestCaseType;
   using typename BaseType::ProblemType;
   using typename BaseType::FVSpaceType;
   using typename BaseType::DiscreteSolutionType;
   using typename BaseType::VectorType;
   using typename BaseType::DiscreteFunctionType;
 
-  NonStationaryDefault(const ProblemType& prblm, const std::shared_ptr<const FVSpaceType> fv_space_ptr)
-    : problem_(prblm)
+  NonStationaryDefault(const TestCaseImp& tst_cs, const std::shared_ptr<const FVSpaceType> fv_space_ptr)
+    : test_case_(tst_cs)
     , fv_space_(fv_space_ptr)
   {
   }
@@ -270,7 +271,7 @@ public:
 
   const ProblemType& problem() const
   {
-    return problem_;
+    return test_case_.problem();
   }
 
   const FVSpaceType& fv_space() const
@@ -294,10 +295,10 @@ public:
       typedef typename ProblemType::BoundaryValueType BoundaryValueType;
       typedef typename ProblemType::DomainFieldType DomainFieldType;
       typedef typename ProblemType::RangeFieldType RangeFieldType;
-      const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem_.flux();
-      const std::shared_ptr<const InitialValueType> initial_values    = problem_.initial_values();
-      const std::shared_ptr<const BoundaryValueType> boundary_values  = problem_.boundary_values();
-      const std::shared_ptr<const RHSType> rhs                        = problem_.rhs();
+      const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem().flux();
+      const std::shared_ptr<const InitialValueType> initial_values    = problem().initial_values();
+      const std::shared_ptr<const BoundaryValueType> boundary_values  = problem().boundary_values();
+      const std::shared_ptr<const RHSType> rhs                        = problem().rhs();
 
       // allocate a discrete function for the concentration and another one to temporary store the update in each step
       typedef DiscreteFunction<FVSpaceType, Dune::Stuff::LA::CommonDenseVector<RangeFieldType>> FVFunctionType;
@@ -306,8 +307,9 @@ public:
       // project initial values
       project(*initial_values, u);
 
-      const RangeFieldType t_end = problem_.t_end();
-      const RangeFieldType CFL   = problem_.CFL();
+      RangeFieldType t_end = test_case_.t_end();
+
+      const RangeFieldType CFL = problem().CFL();
 
       // calculate dx and choose t_end and initial dt
       Dune::Stuff::Grid::Dimensions<typename FVSpaceType::GridViewType> dimensions(fv_space_->grid_view());
@@ -348,7 +350,7 @@ public:
       // do the time steps
       const size_t num_save_steps = 100;
       solution.clear();
-      if (problem_.has_non_zero_rhs()) {
+      if (problem().has_non_zero_rhs()) {
         // use fractional step method
         typedef typename std::
             conditional<use_adaptive_timestepper,
@@ -376,7 +378,7 @@ public:
   /// \}
 
 private:
-  const ProblemType& problem_;
+  const TestCaseType& test_case_;
   const std::shared_ptr<const FVSpaceType> fv_space_;
 }; // class NonStationaryDefault
 

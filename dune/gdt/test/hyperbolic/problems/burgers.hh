@@ -172,8 +172,9 @@ private:
 public:
   using typename BaseType::GridType;
 
-  BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1))
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+               num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }
@@ -204,6 +205,8 @@ public:
         << "|+====================================================================+|\n"
         << "||  Testcase: Burgers                                                 ||\n"
         << "|+--------------------------------------------------------------------+|\n" << domainstring
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+               + "]                                                   ||\n"
         << "||  flux = 0.5*u[0]^2                                                 ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: discrete solution on finest grid              ||\n"

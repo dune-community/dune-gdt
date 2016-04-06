@@ -27,13 +27,14 @@ struct hyperbolic_FV_discretization_godunov_euler : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
 #if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1);
+    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
 #else
     TestCaseType test_case;
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<typename TestCaseType::GridType,
+    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
+                                               typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
@@ -53,13 +54,14 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
 #if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1);
+    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
 #else
     TestCaseType test_case;
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<typename TestCaseType::GridType,
+    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
+                                               typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
@@ -79,13 +81,14 @@ struct hyperbolic_FV_discretization_laxfriedrichs_euler : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
 #if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1);
+    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
 #else
     TestCaseType test_case;
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<typename TestCaseType::GridType,
+    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
+                                               typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
@@ -105,13 +108,14 @@ struct hyperbolic_FV_discretization_godunovwithreconstruction_euler : public ::t
     using namespace Dune;
     using namespace Dune::GDT;
 #if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1);
+    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
 #else
     TestCaseType test_case;
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<typename TestCaseType::GridType,
+    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
+                                               typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,

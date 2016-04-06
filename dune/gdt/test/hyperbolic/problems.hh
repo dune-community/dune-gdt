@@ -43,77 +43,77 @@ namespace Tests {
 extern template class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Dune::YaspGrid<2>, double,
                                                                                             1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::
+                                                Hyperbolic::FluxTimeStepperCombinations::
                                                     godunovwithreconstruction_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                                Hyperbolic::FluxTimeStepperKombinations::
+                                                Hyperbolic::FluxTimeStepperCombinations::
                                                     godunovwithreconstruction_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                                Hyperbolic::FluxTimeStepperKombinations::godunov_adaptiveRK>;
+                                                Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                                Hyperbolic::FluxTimeStepperKombinations::laxfriedrichs_euler>;
+                                                Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler>;
 
 
 } // namespace Tests

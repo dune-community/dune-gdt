@@ -186,8 +186,9 @@ public:
   using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
 
-  ShallowWaterTestCase(const size_t num_refs = 2)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(), num_refs)
+  ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+               num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }
@@ -216,6 +217,8 @@ public:
         << "||  Testcase: Shallow Water                                           ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << "||  domain = [0, 10]                                                  ||\n"
+        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+               + "]                                                   ||\n"
         << "||  flux = [u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]                        ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: solution on finest grid                       ||\n"

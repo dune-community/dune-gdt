@@ -17,7 +17,7 @@ enum class ChooseDiscretizer
   fv
 }; // enum class ChooseDiscretizer
 
-enum class FluxTimeStepperKombinations
+enum class FluxTimeStepperCombinations
 {
   godunov_euler,
   godunov_adaptiveRK,

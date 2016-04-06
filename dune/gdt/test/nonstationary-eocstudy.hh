@@ -40,8 +40,9 @@ public:
 
 public:
   template <class... Args>
-  NonStationaryTestCase(Args&&... args)
+  NonStationaryTestCase(const double divide_t_end_by_this, Args&&... args)
     : EocBaseType(std::forward<Args>(args)...)
+    , divide_t_end_by_this_(divide_t_end_by_this)
     , zero_()
   {
   }
@@ -72,6 +73,11 @@ public:
     return std::bitset<GridImp::dimension>();
   }
 
+  virtual double t_end() const
+  {
+    return problem().t_end() / divide_t_end_by_this_;
+  }
+
   virtual const std::shared_ptr<const SolutionType> exact_solution() const
   {
     if (provides_exact_solution())
@@ -84,6 +90,7 @@ public:
   }
 
 private:
+  const double divide_t_end_by_this_;
   const std::shared_ptr<const SolutionType> zero_;
 }; // class NonStationaryTestCase
 
@@ -197,11 +204,8 @@ public:
       assert(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
-      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
-          Discretizer::discretize(test_case_,
-                                  test_case_.problem(),
-                                  test_case_.level_of(current_refinement_),
-                                  test_case_.periodic_directions()));
+      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
+          test_case_, test_case_, test_case_.level_of(current_refinement_), test_case_.periodic_directions()));
       current_solution_on_level_ = Stuff::Common::make_unique<DiscreteSolutionType>(
           current_discretization_->solve(test_case_.problem().is_linear()));
       time_to_solution_ = timer.elapsed();
@@ -297,7 +301,7 @@ protected:
   {
     if (!reference_solution_computed_) {
       reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
-          test_case_, test_case_.problem(), test_case_.reference_level(), test_case_.periodic_directions()));
+          test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
       reference_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(
           reference_discretization_->solve(test_case_.problem().is_linear()));
       reference_solution_computed_ = true;
