@@ -109,11 +109,11 @@ public:
 
   explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                         const bool is_linear = false,
-                                        const bool reinitialize_jacobians = true)
+                                        const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
+    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
       initialize_jacobians();
   }
 
@@ -275,11 +275,11 @@ public:
 
   explicit GodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                         const bool is_linear,
-                                        const bool reinitialize_jacobians = true)
+                                        const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
+    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
       initialize_jacobians();
   }
 
@@ -464,12 +464,12 @@ public:
   explicit GodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                         const BoundaryValueFunctionType& boundary_values,
                                         const bool is_linear = false,
-                                        const bool reinitialize_jacobians = true)
+                                        const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
+    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
       initialize_jacobians();
   }
 
@@ -633,12 +633,12 @@ public:
   explicit GodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                         const BoundaryValueFunctionType& boundary_values,
                                         const bool is_linear = false,
-                                        const bool reinitialize_jacobians = true)
+                                        const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinitialize_jacobians))
+    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
       initialize_jacobians();
   }
 
