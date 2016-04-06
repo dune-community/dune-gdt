@@ -12,6 +12,7 @@
 
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localevaluation/elliptic-ipdg.hh>
+#include <dune/gdt/localfunctional/integrals.hh>
 
 #include "default.hh"
 
