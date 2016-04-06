@@ -36,13 +36,14 @@ struct linearelliptic_SWIPDG_discretization
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef LinearElliptic::SwipdgDiscretizer< typename TestCaseType::GridType,
-                                               Stuff::Grid::ChooseLayer::level,
-                                               space_backend,
-                                               la_backend,
-                                               polOrder,
-                                               typename TestCaseType::ProblemType::RangeFieldType,
-                                               1 > Discretizer;
+    typedef LinearElliptic::IpdgDiscretizer< typename TestCaseType::GridType,
+                                             Stuff::Grid::ChooseLayer::level,
+                                             space_backend,
+                                             la_backend,
+                                             polOrder,
+                                             typename TestCaseType::ProblemType::RangeFieldType,
+                                             1,
+                                             LocalEvaluation::EllipticIpdg::Method::swipdg > Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy< TestCaseType, Discretizer > eoc_study(test_case);
     try {
       Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));

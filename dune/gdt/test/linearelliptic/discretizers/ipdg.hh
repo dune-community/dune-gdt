@@ -37,8 +37,8 @@ template< class GridType,
           int pol = 1,
           class RangeFieldType = double,
           size_t dimRange = 1,
-          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::Method::swipdg >
-class SwipdgDiscretizer
+          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method >
+class IpdgDiscretizer
 {
 public:
   typedef ProblemInterface< typename GridType::template Codim< 0 >::Entity,
@@ -99,7 +99,7 @@ public:
     // create the discretization (no copy of the containers done here, bc. of cow)
     return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);
   } // ... discretize(...)
-}; // class SwipdgDiscretizer
+}; // class IpdgDiscretizer
 
 
 } // namespace LinearElliptic
