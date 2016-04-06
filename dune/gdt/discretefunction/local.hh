@@ -175,9 +175,9 @@ private:
 public:
   typedef ConstLocalDoFVector<VectorType> ConstLocalDoFVectorType;
 
-  ConstLocalDiscreteFunction(const SpaceType& space, const VectorType& globalVector, const EntityType& ent)
+  ConstLocalDiscreteFunction(const SpaceType& sp, const VectorType& globalVector, const EntityType& ent)
     : BaseType(ent)
-    , space_(space)
+    , space_(sp)
     , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
     , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
   {
