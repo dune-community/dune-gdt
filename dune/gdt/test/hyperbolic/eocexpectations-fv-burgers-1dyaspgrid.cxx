@@ -61,7 +61,7 @@ public:
         if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
           return {8.64e-02, 3.72e-02};
         else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-          return {1.33e-02, 6.34e-03};
+          return {1.33e-02, 6.33e-03};
         else
           EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
       else
