@@ -34,8 +34,8 @@ template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLa
           ChooseSpaceBackend spacebackend                = Spaces::default_dg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
           class RangeFieldType = double, size_t dimRange = 1,
-          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::Method::swipdg>
-class SwipdgDiscretizer
+          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method>
+class IpdgDiscretizer
 {
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
@@ -86,7 +86,7 @@ public:
     // create the discretization (no copy of the containers done here, bc. of cow)
     return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);
   } // ... discretize(...)
-}; // class SwipdgDiscretizer
+}; // class IpdgDiscretizer
 
 
 } // namespace LinearElliptic
