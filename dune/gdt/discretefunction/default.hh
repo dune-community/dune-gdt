@@ -219,7 +219,7 @@ public:
                  const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    redirect_visualize(space(), filename_prefix, filename_suffix, subsampling, vtk_output_type, internal::ChooseVisualize< is_product_space< SpaceType >::value >());
+    redirect_visualize(filename_prefix, filename_suffix, subsampling, vtk_output_type, internal::ChooseVisualize< is_product_space< SpaceType >::value >());
   }
 
   template< size_t ii >
@@ -242,22 +242,20 @@ public:
 
 protected:
   template< class S, size_t d, size_t r, size_t rC >
-  void redirect_visualize(const SpaceInterface< S, d, r, rC >& space,
-                          const std::string filename_prefix,
+  void redirect_visualize(const std::string filename_prefix,
                           const std::string filename_suffix,
                           const bool subsampling,
                           const VTK::OutputType vtk_output_type,
                           const internal::ChooseVisualize< false >&) const
   {
-    BaseType::template visualize< typename SpaceType::GridViewType >(space.grid_view(),
+    BaseType::template visualize< typename SpaceType::GridViewType >(space().grid_view(),
                                                                      filename_prefix + filename_suffix,
                                                                      subsampling,
                                                                      vtk_output_type);
   } // ... redirect_visualize(...)
 
   template< class S, size_t d, size_t r, size_t rC >
-  void redirect_visualize(const SpaceInterface< S, d, r, rC >& /*space*/,
-                          const std::string filename_prefix,
+  void redirect_visualize(const std::string filename_prefix,
                           const std::string filename_suffix,
                           const bool subsampling,
                           const VTK::OutputType vtk_output_type,
