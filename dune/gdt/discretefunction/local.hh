@@ -286,8 +286,8 @@ private:
 public:
   typedef LocalDoFVector< VectorType > LocalDoFVectorType;
 
-  LocalDiscreteFunction(const SpaceType& space, VectorType& globalVector, const EntityType& ent)
-    : BaseType(space, globalVector, ent)
+  LocalDiscreteFunction(const SpaceType& sp, VectorType& globalVector, const EntityType& ent)
+    : BaseType(sp, globalVector, ent)
     , localVector_(new LocalDoFVectorType(space_.mapper(), entity_, globalVector))
   {
     assert(localVector_->size() == base_->size());
