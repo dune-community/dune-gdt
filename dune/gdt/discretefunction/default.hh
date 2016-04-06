@@ -144,7 +144,7 @@ class ConstDiscreteFunction
   typedef ConstDiscreteFunction< SpaceImp, VectorImp > ThisType;
 public:
   typedef SpaceImp                             SpaceType;
-  typedef typename SpaceImp::Traits            SpaceTraits;
+  typedef typename SpaceType::Traits           SpaceTraits;
   typedef VectorImp                            VectorType;
   using typename BaseType::EntityType;
   using typename BaseType::LocalfunctionType;
@@ -241,7 +241,6 @@ public:
   }
 
 protected:
-  template< class S, size_t d, size_t r, size_t rC >
   void redirect_visualize(const std::string filename_prefix,
                           const std::string filename_suffix,
                           const bool subsampling,
@@ -254,14 +253,13 @@ protected:
                                                                      vtk_output_type);
   } // ... redirect_visualize(...)
 
-  template< class S, size_t d, size_t r, size_t rC >
   void redirect_visualize(const std::string filename_prefix,
                           const std::string filename_suffix,
                           const bool subsampling,
                           const VTK::OutputType vtk_output_type,
                           const internal::ChooseVisualize< true >&) const
   {
-    internal::static_for_loop< 0, ProductSpaceInterface< S, d, r, rC >::num_factors >::visualize(filename_prefix, filename_suffix, subsampling, vtk_output_type, *this);
+    internal::static_for_loop< 0, ProductSpaceInterface< SpaceTraits, SpaceType::dimDomain, SpaceType::dimRange, SpaceType::dimRangeCols >::num_factors >::visualize(filename_prefix, filename_suffix, subsampling, vtk_output_type, *this);
   } // ... redirect_visualize(...)
 
   const DS::PerThreadValue< SpaceType > space_;
