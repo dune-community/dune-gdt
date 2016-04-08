@@ -45,14 +45,14 @@ public:
     , over_integrate_(over_integrate)
   {}
 
-  virtual ~LinearEllipticEocStudy() {}
+  virtual ~LinearEllipticEocStudy() = default;
 
-  virtual std::string identifier() const override final
+  virtual std::string identifier() override
   {
     return Discretizer::static_id();
   }
 
-  virtual size_t expected_rate(const std::string type) const override final
+  virtual size_t expected_rate(const std::string type) override
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
     // specialization of LinearEllipticEocExpectations!
@@ -69,20 +69,20 @@ public:
     return LinearEllipticEocExpectations< TestCaseType, Discretizer::type, polOrder >::rate(type);
   } // ... expected_rate(...)
 
-  virtual std::vector< double > expected_results(const std::string type) const override final
+  virtual std::vector< double > expected_results(const std::string type) const override
   {
     // If you get an undefined reference here from the linker, see the explanation above in expected_rate()!
     return LinearEllipticEocExpectations< TestCaseType, Discretizer::type, polOrder >::results(this->test_case_, type);
   }
 
-  virtual std::vector< std::string > available_norms() const override final
+  virtual std::vector< std::string > available_norms() const override
   {
     return {"L2", "H1_semi", "energy"};
   }
 
   virtual double compute_norm(const GridViewType& grid_view,
                               const FunctionType& function,
-                              const std::string type) const override final
+                              const std::string type) override final
   {
     if (type == "L2")
       return make_l2_operator(grid_view, over_integrate_)->induced_norm(function);
@@ -98,12 +98,12 @@ public:
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
   } // ... compute_norm(...)
 
-  virtual std::vector< std::string > available_estimators() const override final
+  virtual std::vector< std::string > available_estimators() const override
   {
     return {};
   }
 
-  virtual double estimate(const VectorType& /*vector*/, const std::string /*type*/) const override final
+  virtual double estimate(const VectorType& /*vector*/, const std::string /*type*/) override
   {
     DUNE_THROW(NotImplemented, "Do not call me if available_estimators().size() == 0!");
   }
