@@ -77,7 +77,8 @@ template< class BinaryEvaluationType >
 class LocalVolumeIntegralOperator
   : public LocalVolumeTwoFormInterface< internal::LocalVolumeIntegralOperatorTraits< BinaryEvaluationType > >
 {
-  typedef LocalVolumeIntegralOperator< BinaryEvaluationType >                 ThisType;
+  typedef LocalVolumeIntegralOperator< BinaryEvaluationType >                                                ThisType;
+  typedef LocalVolumeTwoFormInterface< internal::LocalVolumeIntegralOperatorTraits< BinaryEvaluationType > > BaseType;
 public:
   typedef internal::LocalVolumeIntegralOperatorTraits< BinaryEvaluationType > Traits;
 
@@ -101,6 +102,8 @@ public:
 
   LocalVolumeIntegralOperator(const ThisType& other) = default;
   LocalVolumeIntegralOperator(ThisType&& source) = default;
+
+  using BaseType::apply2;
 
   template< class E, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA >
   void apply2(const Stuff::LocalfunctionSetInterface< E, D, d, R, rT, rCT >& test_base,
