@@ -47,9 +47,7 @@ public:
   {
   }
 
-  virtual ~NonStationaryTestCase()
-  {
-  }
+  virtual ~NonStationaryTestCase() = default;
 
   virtual const ProblemType& problem() const = 0;
 
@@ -134,11 +132,9 @@ public:
   {
   }
 
-  virtual ~NonStationaryEocStudy()
-  {
-  }
+  virtual ~NonStationaryEocStudy() = default;
 
-  virtual size_t num_refinements() const override final
+  virtual size_t num_refinements() override final
   {
     return test_case_.num_refinements();
   }
@@ -171,21 +167,21 @@ public:
       return 1.0;
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_num_DoFs() const override final
+  virtual size_t current_num_DoFs() override final
   {
     assert(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
     return test_case_.grid().size(level, 0);
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() const override final
+  virtual size_t current_grid_size() override final
   {
     assert(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
     return test_case_.grid().size(level, 0);
   } // ... current_grid_size(...)
 
-  virtual double current_grid_width() const override final
+  virtual double current_grid_width() override final
   {
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
@@ -356,9 +352,9 @@ protected:
 
   virtual std::vector<std::string> available_estimators() const = 0;
 
-  virtual double estimate(const DiscreteSolutionType& solution, const std::string type) const = 0;
+  virtual double estimate(const DiscreteSolutionType& solution, const std::string type) = 0;
 
-  virtual double compute_norm(const DiscreteSolutionType& solution, const std::string type) const = 0;
+  virtual double compute_norm(const DiscreteSolutionType& solution, const std::string type) = 0;
 
   TestCaseType& test_case_;
   size_t current_refinement_;

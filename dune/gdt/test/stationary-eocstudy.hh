@@ -60,11 +60,9 @@ public:
   {
   }
 
-  virtual ~StationaryEocStudy()
-  {
-  }
+  virtual ~StationaryEocStudy() = default;
 
-  virtual size_t num_refinements() const override final
+  virtual size_t num_refinements() override final
   {
     return test_case_.num_refinements();
   }
@@ -103,7 +101,7 @@ public:
       return 1.0;
   } // ... norm_reference_solution(...)
 
-  virtual size_t current_num_DoFs() const override final
+  virtual size_t current_num_DoFs() override final
   {
     if (current_refinement_ != last_computed_refinement_) {
       assert(current_refinement_ <= num_refinements());
@@ -116,13 +114,13 @@ public:
     return current_num_DoFs_;
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() const override final
+  virtual size_t current_grid_size() override final
   {
     assert(current_refinement_ <= num_refinements());
     return test_case_.level_view(test_case_.level_of(current_refinement_)).indexSet().size(0);
   } // ... current_grid_size(...)
 
-  virtual double current_grid_width() const override final
+  virtual double current_grid_width() override final
   {
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
@@ -236,15 +234,14 @@ protected:
 
   virtual std::vector<std::string> available_estimators() const = 0;
 
-  virtual double estimate(const VectorType& vector, const std::string type) const = 0;
+  virtual double estimate(const VectorType& vector, const std::string type) = 0;
 
-  virtual double compute_norm(const GridViewType& grid_view, const FunctionType& function,
-                              const std::string type) const = 0;
+  virtual double compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type) = 0;
 
   TestCaseType& test_case_;
   size_t current_refinement_;
   size_t last_computed_refinement_;
-  mutable std::vector<double> grid_widths_;
+  std::vector<double> grid_widths_;
   double time_to_solution_;
   bool reference_solution_computed_;
   std::unique_ptr<DiscretizationType> current_discretization_;
@@ -253,7 +250,7 @@ protected:
   std::unique_ptr<VectorType> reference_solution_vector_;
   std::unique_ptr<VectorType> current_solution_vector_;
   const std::string visualize_prefix_;
-  mutable size_t current_num_DoFs_;
+  size_t current_num_DoFs_;
 }; // class StationaryEocStudy
 
 

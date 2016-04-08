@@ -41,12 +41,12 @@ public:
   {
   }
 
-  virtual std::string identifier() const override final
+  virtual std::string identifier() override final
   {
     return Discretizer::static_id();
   }
 
-  virtual size_t expected_rate(const std::string type) const override final
+  virtual size_t expected_rate(const std::string type) override final
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
     // specialization of HyperbolicEocExpectations!
@@ -80,7 +80,7 @@ public:
     return {"L1"};
   }
 
-  virtual double compute_norm(const DiscreteSolutionType& solution, const std::string type) const override final
+  virtual double compute_norm(const DiscreteSolutionType& solution, const std::string type) override final
   {
     if (type == "L1") {
       double norm = 0;
@@ -116,7 +116,7 @@ public:
     return {};
   }
 
-  virtual double estimate(const DiscreteSolutionType& /*solution*/, const std::string /*type*/) const override final
+  virtual double estimate(const DiscreteSolutionType& /*solution*/, const std::string /*type*/) override final
   {
     std::abort();
   }
