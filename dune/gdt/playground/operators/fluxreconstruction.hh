@@ -54,9 +54,9 @@ public:
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
-    const LocalEvaluation::SWIPDG::Inner<DiffusionFactorType, DiffusionTensorType> inner_evaluation(diffusion_factor_,
-                                                                                                    diffusion_tensor_);
-    const LocalEvaluation::SWIPDG::BoundaryLHS<DiffusionFactorType, DiffusionTensorType> boundary_evaluation(
+    const LocalEvaluation::EllipticIpdg::Inner<DiffusionFactorType, DiffusionTensorType> inner_evaluation(
+        diffusion_factor_, diffusion_tensor_);
+    const LocalEvaluation::EllipticIpdg::BoundaryLHS<DiffusionFactorType, DiffusionTensorType> boundary_evaluation(
         diffusion_factor_, diffusion_tensor_);
     const Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
