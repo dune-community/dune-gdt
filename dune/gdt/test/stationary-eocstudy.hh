@@ -81,24 +81,26 @@ public:
 
   virtual double norm_reference_solution(const std::string type) override final
   {
-    if (is_norm(type)) {
-      if (test_case_.provides_exact_solution()) {
-        // visualize
-        if (!visualize_prefix_.empty()) {
-          test_case_.exact_solution().visualize(test_case_.reference_grid_view(),
-                                                visualize_prefix_ + "_exact_solution");
-        }
-        return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution(), type);
-      } else {
-        compute_reference_solution();
-        assert(reference_discretization_);
-        assert(reference_solution_vector_);
-        const ConstDiscreteFunctionType reference_solution(
-            reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
-        return compute_norm(test_case_.reference_grid_view(), reference_solution, type);
+    if (!is_norm(type))
+      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+                 "Do not call norm_reference_solution() for an estimator!\n"
+                     << "type: "
+                     << type
+                     << "\n");
+    if (test_case_.provides_exact_solution()) {
+      // visualize
+      if (!visualize_prefix_.empty()) {
+        test_case_.exact_solution().visualize(test_case_.reference_grid_view(), visualize_prefix_ + "_exact_solution");
       }
-    } else
-      return 1.0;
+      return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution(), type);
+    } else {
+      compute_reference_solution();
+      assert(reference_discretization_);
+      assert(reference_solution_vector_);
+      const ConstDiscreteFunctionType reference_solution(
+          reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
+      return compute_norm(test_case_.reference_grid_view(), reference_solution, type);
+    }
   } // ... norm_reference_solution(...)
 
   virtual size_t current_num_DoFs() override final
