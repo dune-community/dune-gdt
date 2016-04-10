@@ -95,6 +95,11 @@ target_link_libraries(test_linearelliptic__swipdg_discretization__sgrid_fem_istl
 target_link_libraries(test_linearelliptic__swipdg_discretization__sgrid_pdelab_eigen   expectations_linearelliptic_swipdg_discretizations_sgrid)
 target_link_libraries(test_linearelliptic__swipdg_discretization__sgrid_pdelab_istl    expectations_linearelliptic_swipdg_discretizations_sgrid)
 
+target_link_libraries(test_linearelliptic__swipdg_estimators__alugrid_fem_eigen expectations_linearelliptic_swipdg_discretizations_alugrid
+                                                                                expectations_linearelliptic_swipdg_estimators_alugrid)
+target_link_libraries(test_linearelliptic__swipdg_estimators__alugrid_fem_istl  expectations_linearelliptic_swipdg_discretizations_alugrid
+                                                                                expectations_linearelliptic_swipdg_estimators_alugrid)
+
 target_link_libraries(test_hyperbolic__fv_discretization__yaspgrid_godunov_euler expectations_hyperbolic_fv_discretizations_yaspgrid)
 target_link_libraries(test_hyperbolic__fv_discretization__yaspgrid_godunov_reconstruction_euler expectations_hyperbolic_fv_discretizations_yaspgrid)
 target_link_libraries(test_hyperbolic__fv_discretization__yaspgrid_laxfriedrichs_euler expectations_hyperbolic_fv_discretizations_yaspgrid)
