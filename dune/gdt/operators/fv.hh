@@ -31,18 +31,17 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operators {
 
 
 // forwards
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
-class AdvectionLaxFriedrichs;
+class AdvectionLaxFriedrichsOperator;
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-class AdvectionGodunov;
+class AdvectionGodunovOperator;
 
 template <class RHSEvaluationImp>
-class AdvectionRHS;
+class AdvectionRHSOperator;
 
 
 namespace internal {
@@ -64,33 +63,34 @@ public:
 
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
-class AdvectionLaxFriedrichsTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
+class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
 {
   static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef AdvectionLaxFriedrichs<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp> derived_type;
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp>
+      derived_type;
 
-}; // class AdvectionLaxFriedrichsTraits
+}; // class AdvectionLaxFriedrichsOperatorTraits
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-class AdvectionGodunovTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
+class AdvectionGodunovOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
 {
 public:
-  typedef AdvectionGodunov<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
-}; // class AdvectionGodunovTraits
+  typedef AdvectionGodunovOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
+}; // class AdvectionGodunovOperatorTraits
 
 
 template <class RHSEvaluationImp>
-class AdvectionRHSTraits
+class AdvectionRHSOperatorTraits
 {
 public:
-  typedef AdvectionRHS<RHSEvaluationImp> derived_type;
+  typedef AdvectionRHSOperator<RHSEvaluationImp> derived_type;
   typedef RHSEvaluationImp RHSEvaluationType;
   typedef typename RHSEvaluationImp::DomainFieldType FieldType;
-}; // class AdvectionRHSTraits
+}; // class AdvectionRHSOperatorTraits
 
 
 } // namespace internal
@@ -187,14 +187,14 @@ private:
 
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
-class AdvectionLaxFriedrichs
-    : public Dune::GDT::OperatorInterface<internal::AdvectionLaxFriedrichsTraits<AnalyticalFluxImp,
-                                                                                 BoundaryValueFunctionImp,
-                                                                                 LocalizableFunctionImp>>
+class AdvectionLaxFriedrichsOperator
+    : public Dune::GDT::OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
+                                                                                         BoundaryValueFunctionImp,
+                                                                                         LocalizableFunctionImp>>
 {
 public:
-  typedef internal::AdvectionLaxFriedrichsTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp>
-      Traits;
+  typedef internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
+                                                         LocalizableFunctionImp> Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
@@ -206,9 +206,10 @@ public:
                                                   typename BoundaryValueFunctionType::TimeIndependentFunctionType,
                                                   LocalizableFunctionType, dimDomain> NumericalBoundaryFluxType;
 
-  AdvectionLaxFriedrichs(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
-                         const LocalizableFunctionType& dx, const double dt, const bool is_linear = false,
-                         const bool use_local = false, const bool entity_geometries_equal = false)
+  AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
+                                 const BoundaryValueFunctionType& boundary_values, const LocalizableFunctionType& dx,
+                                 const double dt, const bool is_linear = false, const bool use_local = false,
+                                 const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
@@ -248,7 +249,7 @@ private:
   const bool is_linear_;
   const bool use_local_;
   const bool entity_geometries_equal_;
-}; // class AdvectionLaxFriedrichs
+}; // class AdvectionLaxFriedrichsOperator
 
 // TODO: remove eigen dependency of GodunovNumericalCouplingFlux/GodunovNumericalBoundaryFlux
 #if HAVE_EIGEN
@@ -262,12 +263,13 @@ struct InitializerChooser
 
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
-class AdvectionGodunov
-    : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
-                                                                           slope_limiter>>
+class AdvectionGodunovOperator
+    : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
+                                                                                   BoundaryValueFunctionImp,
+                                                                                   slope_limiter>>
 {
 public:
-  typedef internal::AdvectionGodunovTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> Traits;
+  typedef internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   static const size_t dimDomain    = AnalyticalFluxType::dimDomain;
@@ -286,8 +288,8 @@ public:
                                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType,
                                                        dimDomain> NumericalBoundaryFluxType;
 
-  AdvectionGodunov(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
-                   const bool is_linear = false, const bool use_linear_reconstruction = false)
+  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
+                           const bool is_linear = false, const bool use_linear_reconstruction = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
@@ -384,12 +386,12 @@ private:
   const bool use_linear_reconstruction_;
   MatrixType eigenvectors_;
   MatrixType eigenvectors_inverse_;
-}; // class AdvectionGodunov
+}; // class AdvectionGodunovOperator
 
 #else // HAVE_EIGEN
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-class AdvectionGodunov
+class AdvectionGodunovOperator
 {
   static_assert(AlwaysFalse<AnalyticalFluxImp>::value, "You are missing eigen!");
 };
@@ -398,16 +400,16 @@ class AdvectionGodunov
 
 
 template <class RHSEvaluationImp>
-class AdvectionRHS : public Dune::GDT::OperatorInterface<internal::AdvectionRHSTraits<RHSEvaluationImp>>
+class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>
 {
   static_assert(is_rhs_evaluation<RHSEvaluationImp>::value, "RHSEvaluationImp has to be derived from RHSInterface!");
 
 public:
-  typedef internal::AdvectionRHSTraits<RHSEvaluationImp> Traits;
+  typedef internal::AdvectionRHSOperatorTraits<RHSEvaluationImp> Traits;
   typedef typename Traits::RHSEvaluationType RHSEvaluationType;
   typedef LocalRHSFVOperator<RHSEvaluationType> LocalOperatorType;
 
-  AdvectionRHS(const RHSEvaluationType& rhs_evaluation)
+  AdvectionRHSOperator(const RHSEvaluationType& rhs_evaluation)
     : local_operator_(rhs_evaluation)
   {
   }
@@ -423,10 +425,9 @@ public:
 
 private:
   const LocalOperatorType local_operator_;
-}; // class AdvectionRHS
+}; // class AdvectionRHSOperator
 
 
-} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 
