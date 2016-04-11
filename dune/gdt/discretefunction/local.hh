@@ -195,13 +195,6 @@ public:
     return space_;
   }
 
-  const
-    DUNE_DEPRECATED_MSG("Use basis() instead (05.07.2015)!")
-        BaseFunctionSetType& base() const
-  {
-    return basis();
-  }
-
   const BaseFunctionSetType& basis() const
   {
     return *base_;

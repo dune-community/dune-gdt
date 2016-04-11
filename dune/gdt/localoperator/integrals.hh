@@ -268,7 +268,6 @@ private:
 }; // class LocalCouplingIntegralOperator
 
 
-
 template< class BinaryFaceIntegrandType >
 class LocalBoundaryIntegralOperator
   : public LocalBoundaryTwoFormInterface< internal::LocalBoundaryIntegralOperatorTraits< BinaryFaceIntegrandType > >

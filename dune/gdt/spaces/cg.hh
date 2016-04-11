@@ -83,15 +83,6 @@ public:
 
 
 
-template< class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type,
-          int polOrder, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1 >
-class
-    DUNE_DEPRECATED_MSG("Use CGProvider instead (02.02.2015)!")
-      ContinuousLagrangeProvider
-  : public CGProvider< GridType, layer_type, backend_type, polOrder, RangeFieldType, dimRange, dimRangeCols >
-{};
-
-
 } // namespace Spaces
 } // namespace GDT
 } // namespace Dune
