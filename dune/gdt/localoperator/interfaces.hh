@@ -21,22 +21,27 @@ namespace GDT {
 
 namespace internal {
 
-
+/// \todo drop and implement the is_... properly
 class IsLocalOperator
 {};
 
+/// \todo drop and implement the is_... properly
 class IsLocalCouplingOperator
 {};
 
+/// \todo drop and implement the is_... properly
 class IsLocalBoundaryOperator
 {};
 
+/// \todo drop and implement the is_... properly
 class IsLocalVolumeTwoForm
 {};
 
+/// \todo drop and implement the is_... properly
 class IsLocalCouplingTwoForm
 {};
 
+/// \todo drop and implement the is_... properly
 class IsLocalBoundaryTwoForm
 {};
 
@@ -211,31 +216,37 @@ public:
 }; // class LocalBoundaryTwoFormInterface
 
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_operator
     : public std::is_base_of< internal::IsLocalOperator, T>
 {};
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_coupling_operator
     : public std::is_base_of< internal::IsLocalCouplingOperator, T>
 {};
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_boundary_operator
     : public std::is_base_of< internal::IsLocalBoundaryOperator, T>
 {};
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_volume_twoform
   : public std::is_base_of< internal::IsLocalVolumeTwoForm, T >
 {};
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_coupling_twoform
   : public std::is_base_of< internal::IsLocalCouplingTwoForm, T >
 {};
 
+/// \todo move to type_traits.hh
 template< class T >
 struct is_local_boundary_twoform
   : public std::is_base_of< internal::IsLocalBoundaryTwoForm, T >
