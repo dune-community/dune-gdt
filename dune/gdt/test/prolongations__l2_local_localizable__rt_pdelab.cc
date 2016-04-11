@@ -23,15 +23,15 @@ typedef testing::Types<SPACES_RT_PDELAB_LEVEL
 TYPED_TEST_CASE(L2LocalProlongationLocalizableOperatorTest, SpaceTypes);
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_ctor)
 {
-  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : (this->dimDomain == 2 ? 1.58e-1 : 1.45e-1));
 }
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, constructible_by_factory)
 {
-  this->constructible_by_factory(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : (this->dimDomain == 2 ? 1.58e-1 : 1.45e-1));
 }
 TYPED_TEST(L2LocalProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : (this->dimDomain == 2 ? 1.58e-1 : 1.45e-1));
 }
 
 
