@@ -35,7 +35,7 @@ public:
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
       return {2.74e+00, 1.84e+00};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
-      return {8.24e-12, 1.47e-11};
+      return {2.26e-11, 4.40e-12};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id())
       return {1.22e+00, 7.62e-01};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
