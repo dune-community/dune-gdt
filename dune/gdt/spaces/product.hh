@@ -25,7 +25,7 @@ namespace Spaces {
 
 
 template <class... SpaceImps>
-class ProductSpace;
+class DefaultProductSpace;
 
 
 namespace internal {
@@ -63,10 +63,10 @@ struct allContinuous<LastSpaceType>
 
 
 template <class... SpaceImps>
-class ProductSpaceTraits
+class DefaultProductSpaceTraits
 {
 public:
-  typedef ProductSpace<SpaceImps...> derived_type;
+  typedef DefaultProductSpace<SpaceImps...> derived_type;
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::GridViewType GridViewType;
   static const size_t dimDomain    = GridViewType::dimension;
   static const size_t dimRange     = GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange;
@@ -91,19 +91,21 @@ public:
 
 
 template <class... SpaceImps>
-class ProductSpace
-    : public Dune::GDT::ProductSpaceInterface<internal::ProductSpaceTraits<SpaceImps...>,
+class DefaultProductSpace
+    : public Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
+                                       std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                       GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>,
+      public Dune::GDT::ProductSpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
                                               std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
                                               GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>
 {
-  typedef ProductSpace<SpaceImps...> ThisType;
-  typedef Dune::GDT::ProductSpaceInterface<internal::ProductSpaceTraits<SpaceImps...>,
-                                           std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                           GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
-                                           1> BaseType;
+  typedef DefaultProductSpace<SpaceImps...> ThisType;
+  typedef Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
+                                    std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                    GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1> BaseType;
 
 public:
-  using typename BaseType::Traits;
+  typedef typename internal::DefaultProductSpaceTraits<SpaceImps...> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
@@ -115,23 +117,23 @@ private:
 
 public:
   using typename BaseType::CommunicatorType;
-  using typename BaseType::SpaceTupleType;
+  typedef typename Traits::SpaceTupleType SpaceTupleType;
 
-  ProductSpace(SpaceImps&&... spaces)
+  DefaultProductSpace(const SpaceImps&... spaces)
     : spaces_(std::make_tuple(spaces...))
-    , product_mapper_(spaces...)
+    , product_mapper_(spaces_)
     , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_view()))
   {
   }
 
-  ProductSpace(const ThisType& other)
+  DefaultProductSpace(const ThisType& other)
     : spaces_(other.spaces_)
     , product_mapper_(other.product_mapper_)
     , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_view()))
   {
   }
 
-  ProductSpace(ThisType&& source) = default;
+  DefaultProductSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -184,14 +186,14 @@ private:
 
 
 template <class GridViewImp, int polynomialOrder, size_t domainDim, class RangeFieldImp>
-class TaylorHoodSpace : public ProductSpace<CG::PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1>,
-                                            CG::PdelabBased<GridViewImp, polynomialOrder - 1, RangeFieldImp, 1, 1>>
+class TaylorHoodSpace
+    : public DefaultProductSpace<CG::PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1>,
+                                 CG::PdelabBased<GridViewImp, polynomialOrder - 1, RangeFieldImp, 1, 1>>
 {
+public:
   typedef CG::PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1> VelocitySpaceType;
   typedef CG::PdelabBased<GridViewImp, polynomialOrder - 1, RangeFieldImp, 1, 1> PressureSpaceType;
-  typedef ProductSpace<VelocitySpaceType, PressureSpaceType> BaseType;
-
-public:
+  typedef DefaultProductSpace<VelocitySpaceType, PressureSpaceType> BaseType;
   TaylorHoodSpace(const GridViewImp& grid_view)
     : BaseType(VelocitySpaceType(grid_view), PressureSpaceType(grid_view))
   {
