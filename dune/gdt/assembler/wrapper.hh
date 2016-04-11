@@ -12,10 +12,9 @@
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/grid/walker/wrapper.hh>
 
+#include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
-
-#include "local.hh"
 
 namespace Dune {
 namespace GDT {

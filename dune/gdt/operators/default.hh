@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
-#include <dune/gdt/assembler/local.hh>
+#include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/assembler/wrapper.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
