@@ -9,6 +9,7 @@
 #include <dune/stuff/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
+#include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/localevaluation/elliptic.hh>
 #include <dune/gdt/localevaluation/elliptic-ipdg.hh>
