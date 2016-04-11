@@ -11,8 +11,8 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/localoperator/integrals.hh>
-#include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 
 #include "default.hh"
 
@@ -26,9 +26,8 @@ namespace GDT {
 
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
-          class RangeSpace,
-          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method,
-          class Matrix                                 = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class RangeSpace, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
+          class Matrix                                                 = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticIpdgMatrixOperator
@@ -36,12 +35,12 @@ class EllipticIpdgMatrixOperator
 {
   typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
       BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType>>
+  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalVolumeOperatorType;
-  typedef LocalCouplingIntegralOperator<LocalEvaluation::EllipticIpdg::Inner<DiffusionFactorType, DiffusionTensorType,
-                                                                             method>> LocalCouplingOperatorType;
-  typedef LocalBoundaryIntegralOperator<LocalEvaluation::EllipticIpdg::BoundaryLHS<DiffusionFactorType,
-                                                                                   DiffusionTensorType, method>>
+  typedef LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType,
+                                                                           method>> LocalCouplingOperatorType;
+  typedef LocalBoundaryIntegralOperator<LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType,
+                                                                                 DiffusionTensorType, method>>
       LocalBoundaryOperatorType;
 
 public:
@@ -156,7 +155,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                                   LocalEvaluation::EllipticIpdg::default_method,
+                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -166,7 +165,7 @@ make_elliptic_ipdg_matrix_operator(
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      SpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
 }
@@ -176,11 +175,11 @@ make_elliptic_ipdg_matrix_operator(
  *        IPDG method has to be supplied, source and range space are given by space, grid_view of the space is used).
  * \note  MatrixType and IPDG method have to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor,
+auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEllipticIpdgIntegrands::swipdg >(factor, tensor,
 boundary_info, space);
 \endcode
  */
-template <class MatrixType, LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType,
+template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType>
 typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
@@ -211,7 +210,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                                   LocalEvaluation::EllipticIpdg::default_method,
+                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType, GridViewType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -221,7 +220,7 @@ make_elliptic_ipdg_matrix_operator(
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      SpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType,
                                                      GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_view);
@@ -232,11 +231,11 @@ make_elliptic_ipdg_matrix_operator(
  *        IPDG method has to be supplied, source and range space are given by space).
  * \note  MatrixType and IPDG method have to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor,
+auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEllipticIpdgIntegrands::swipdg >(factor, tensor,
 boundary_info, space, grid_view);
 \endcode
  */
-template <class MatrixType, LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType,
+template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType, class GridViewType>
 typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
@@ -274,7 +273,7 @@ typename std::
                   && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
-                                                         LocalEvaluation::EllipticIpdg::default_method, MatrixType,
+                                                         LocalEllipticIpdgIntegrands::default_method, MatrixType,
                                                          GridViewType, SourceSpaceType>>>::type
     make_elliptic_ipdg_matrix_operator(
         const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -285,7 +284,7 @@ typename std::
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      RangeSpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType,
                                                      GridViewType,
                                                      SourceSpaceType>>(
@@ -297,11 +296,11 @@ typename std::
  *        IPDG method has to be supplied).
  * \note  MatrixType and IPDG method have to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor,
+auto op = make_elliptic_ipdg_matrix_operator< MatrixType, LocalEllipticIpdgIntegrands::swipdg >(factor, tensor,
 boundary_info, range_space, source_space, grid_view);
 \endcode
  */
-template <class MatrixType, LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType,
+template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
     enable_if<Stuff::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionFactorType>::value
@@ -336,7 +335,7 @@ typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::val
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
                             && Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                                   LocalEvaluation::EllipticIpdg::default_method,
+                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -346,7 +345,7 @@ make_elliptic_ipdg_matrix_operator(
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      SpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space);
 }
@@ -356,11 +355,11 @@ make_elliptic_ipdg_matrix_operator(
  *        space, grid_view of the space is used).
  * \note  IPDG method has to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor, boundary_info,
+auto op = make_elliptic_ipdg_matrix_operator< LocalEllipticIpdgIntegrands::swipdg >(factor, tensor, boundary_info,
 matrix, space);
 \endcode
  */
-template <LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType, class DiffusionTensorType,
+template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class SpaceType>
 typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
@@ -387,7 +386,7 @@ typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::val
                             && Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                                   LocalEvaluation::EllipticIpdg::default_method,
+                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType, GridViewType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -397,7 +396,7 @@ make_elliptic_ipdg_matrix_operator(
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      SpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType,
                                                      GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
@@ -408,11 +407,11 @@ make_elliptic_ipdg_matrix_operator(
  *        space).
  * \note  IPDG method has to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor, boundary_info,
+auto op = make_elliptic_ipdg_matrix_operator< LocalEllipticIpdgIntegrands::swipdg >(factor, tensor, boundary_info,
 matrix, space, grid_view);
 \endcode
  */
-template <LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType, class DiffusionTensorType,
+template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
@@ -445,7 +444,7 @@ typename std::
                   && Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
-                                                         LocalEvaluation::EllipticIpdg::default_method, MatrixType,
+                                                         LocalEllipticIpdgIntegrands::default_method, MatrixType,
                                                          GridViewType, SourceSpaceType>>>::type
     make_elliptic_ipdg_matrix_operator(
         const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -456,7 +455,7 @@ typename std::
   return DSC::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                      DiffusionTensorType,
                                                      RangeSpaceType,
-                                                     LocalEvaluation::EllipticIpdg::default_method,
+                                                     LocalEllipticIpdgIntegrands::default_method,
                                                      MatrixType,
                                                      GridViewType,
                                                      SourceSpaceType>>(
@@ -467,11 +466,11 @@ typename std::
  * \brief Creates an elliptic matrix IPDG operator (IPDG method has to be supplied).
  * \note  IPDG method has to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator< LocalEvaluation::EllipticIpdg::swipdg >(factor, tensor, boundary_info,
+auto op = make_elliptic_ipdg_matrix_operator< LocalEllipticIpdgIntegrands::swipdg >(factor, tensor, boundary_info,
 matrix, range_space, source_space, grid_view);
 \endcode
  */
-template <LocalEvaluation::EllipticIpdg::Method method, class DiffusionFactorType, class DiffusionTensorType,
+template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
     enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value

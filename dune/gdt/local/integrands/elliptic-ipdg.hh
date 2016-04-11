@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH
-#define DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
 
 #include <tuple>
 
@@ -16,15 +16,14 @@
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "elliptic.hh"
-#include "interface.hh"
+#include "interfaces.hh"
 #include "sipdg.hh"
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
 
 /**
- *  \brief      Contains local evaluations for the symmetric weighted interior penalty discontinuous Galerkin (SWIPDG)
+ *  \brief      Contains local integrands for the symmetric weighted interior penalty discontinuous Galerkin (SWIPDG)
  *              discretization.
  *
  *              For the choice of penalization and the role of the user input see Epshteyn, Riviere (2007):
@@ -32,7 +31,7 @@ namespace LocalEvaluation {
  *              For the coice of the weighting see Ern, Stephansen, Zunino (2007): "A discontinuous Galerkin method with
  *              weighted averages for advection-diffusion equations with locally small and anisotropic diffusivity"
  */
-namespace EllipticIpdg {
+namespace LocalEllipticIpdgIntegrands {
 
 
 enum class Method
@@ -65,7 +64,7 @@ namespace internal {
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
-class InnerTraits : public LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>
+class InnerTraits : public GDT::internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>
 {
 public:
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp, method> derived_type;
@@ -73,7 +72,7 @@ public:
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
-class BoundaryLHSTraits : public LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>
+class BoundaryLHSTraits : public GDT::internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>
 {
 public:
   typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp, method> derived_type;
@@ -84,7 +83,7 @@ template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp
 class BoundaryRHSTraits
 {
   static_assert(Stuff::is_localizable_function<DirichletImp>::value, "DirichletImp has to be a localizable function!");
-  typedef LocalEvaluation::internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef GDT::internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
 
 public:
   typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> derived_type;
@@ -109,9 +108,9 @@ public:
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class Inner
-    : public LocalEvaluation::Codim1Interface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
+    : public LocalFaceIntegrandInterface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
 {
-  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
 public:
@@ -124,13 +123,14 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
   Inner(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-        const double beta = SIPDG::internal::default_beta(dimDomain))
+        const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  Inner(const DiffusionFactorType& diffusion_factor, const double beta = SIPDG::internal::default_beta(dimDomain))
+  Inner(const DiffusionFactorType& diffusion_factor,
+        const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
   {
@@ -141,7 +141,7 @@ public:
       ,
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
-  Inner(const DiffusionType& diffusion, const double beta = SIPDG::internal::default_beta(dimDomain))
+  Inner(const DiffusionType& diffusion, const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
   {
@@ -150,7 +150,7 @@ public:
   Inner(const ThisType& other) = default;
   Inner(ThisType&& source) = default;
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 4 >.
+  /// \name Required by LocalFaceIntegrandInterface< ..., 4 >.
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -472,7 +472,7 @@ public:
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
-    const R sigma = SIPDG::internal::inner_sigma(max_polorder);
+    const R sigma = LocalSipdgIntegrands::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R delta_plus   = normal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * normal);
     const R delta_minus  = normal * (/*local_diffusion_tensor_en*/ diffusion_value_en * normal);
@@ -569,11 +569,11 @@ private:
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
-class BoundaryLHS : public LocalEvaluation::
-                        Codim1Interface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
+class BoundaryLHS
+    : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
 {
 public:
-  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
 public:
@@ -586,13 +586,14 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
   BoundaryLHS(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-              const double beta = SIPDG::internal::default_beta(dimDomain))
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  BoundaryLHS(const DiffusionFactorType& diffusion_factor, const double beta = SIPDG::internal::default_beta(dimDomain))
+  BoundaryLHS(const DiffusionFactorType& diffusion_factor,
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
   {
@@ -603,7 +604,8 @@ public:
       ,
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
-  BoundaryLHS(const DiffusionType& diffusion, const double beta = SIPDG::internal::default_beta(dimDomain))
+  BoundaryLHS(const DiffusionType& diffusion,
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
   {
@@ -612,7 +614,7 @@ public:
   BoundaryLHS(const ThisType& other) = default;
   BoundaryLHS(ThisType&& source) = default;
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \name Required by LocalFaceIntegrandInterface< ..., 2 >
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -789,7 +791,7 @@ public:
     const auto diffusion_value              = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
-    const R sigma             = SIPDG::internal::boundary_sigma(max_polorder);
+    const R sigma             = LocalSipdgIntegrands::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma   = normal * (/*diffusion_tensor_value*/ diffusion_value * normal);
     const R penalty = (/*diffusion_factor_value **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
@@ -828,11 +830,11 @@ private:
 
 
 template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp, Method method>
-class BoundaryRHS
-    : public LocalEvaluation::
-          Codim1Interface<internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method>, 1>
+class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp,
+                                                                                   DiffusionTensorImp, method>,
+                                                       1>
 {
-  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
+  typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
 public:
@@ -846,7 +848,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
   BoundaryRHS(const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
-              const DiffusionTensorType& diffusion_tensor, const double beta = SIPDG::internal::default_beta(dimDomain))
+              const DiffusionTensorType& diffusion_tensor,
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
@@ -854,7 +857,7 @@ public:
   }
 
   BoundaryRHS(const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
-              const double beta = SIPDG::internal::default_beta(dimDomain))
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor)
     , beta_(beta)
@@ -867,7 +870,7 @@ public:
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
   BoundaryRHS(const DirichletType& dirichlet, const DiffusionType& diffusion,
-              const double beta = SIPDG::internal::default_beta(dimDomain))
+              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion)
     , beta_(beta)
@@ -877,7 +880,7 @@ public:
   BoundaryRHS(const ThisType& other) = default;
   BoundaryRHS(ThisType&& source) = default;
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >.
+  /// \name Required by LocalFaceIntegrandInterface< ..., 1 >.
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -961,7 +964,7 @@ public:
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
-    const R sigma         = SIPDG::internal::boundary_sigma(polorder);
+    const R sigma         = LocalSipdgIntegrands::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma   = normal * (diffusion_tensor_value * normal);
     const R penalty = (diffusion_factor_value * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
@@ -990,9 +993,8 @@ public:
 }; // class BoundaryRHS
 
 
-} // namespace EllipticIpdg
-} // namespace LocalEvaluation
+} // namespace LocalEllipticIpdgIntegrands
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH

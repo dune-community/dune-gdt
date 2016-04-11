@@ -19,7 +19,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
+namespace LocalIntegrands {
 namespace ESV2007 {
 
 
@@ -93,10 +93,9 @@ public:
 
 template <class DiffusionType, class DiffusiveFluxType>
 class DiffusiveFluxEstimate<DiffusionType, DiffusiveFluxType, void>
-    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>,
-                                              2>
+    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
 {
-  typedef LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
+  typedef LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
       BaseType;
 
 public:
@@ -112,7 +111,7 @@ public:
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -216,14 +215,13 @@ private:
 
 template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType>
 class DiffusiveFluxEstimate
-    : public LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType,
-                                                                                    DiffusiveFluxType,
-                                                                                    DiffusionTensorType>,
-                                              2>
-{
-  typedef LocalEvaluation::Codim0Interface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
+    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
                                                                                  DiffusionTensorType>,
-                                           2> BaseType;
+                                           2>
+{
+  typedef LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
+                                                                              DiffusionTensorType>,
+                                        2> BaseType;
 
 public:
   typedef internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType> Traits;
@@ -240,7 +238,7 @@ public:
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -367,7 +365,7 @@ private:
 
 
 } // namespace ESV2007
-} // namespace LocalEvaluation
+} // namespace LocalIntegrands
 } // namespace GDT
 } // namespace Dune
 

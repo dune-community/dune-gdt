@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_EVALUATION_PRODUCT_HH
-#define DUNE_GDT_EVALUATION_PRODUCT_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_PRODUCTS_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_PRODUCTS_HH
 
 #include <type_traits>
 
@@ -13,16 +13,15 @@
 
 #include <dune/stuff/functions/interfaces.hh>
 
-#include "interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
 
 
 // forward
 template <class LocalizableFunctionImp>
-class Product;
+class LocalProductIntegrand;
 
 
 namespace internal {
@@ -32,20 +31,20 @@ namespace internal {
  *  \brief Traits for the Product evaluation.
  */
 template <class LocalizableFunctionImp>
-class ProductTraits
+class LocalProductIntegrandTraits
 {
   static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be a localizable function.");
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef Product<LocalizableFunctionType> derived_type;
+  typedef LocalProductIntegrand<LocalizableFunctionType> derived_type;
   typedef typename LocalizableFunctionType::EntityType EntityType;
   typedef typename LocalizableFunctionType::DomainFieldType DomainFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const size_t dimDomain = LocalizableFunctionType::dimDomain;
-}; // class ProductTraits
+}; // class LocalProductIntegrandTraits
 
 
 } // namespace internal
@@ -55,25 +54,26 @@ public:
  *  \brief  Computes a product evaluation.
  */
 template <class LocalizableFunctionImp>
-class Product : public LocalEvaluation::Codim0Interface<internal::ProductTraits<LocalizableFunctionImp>, 1>,
-                public LocalEvaluation::Codim0Interface<internal::ProductTraits<LocalizableFunctionImp>, 2>,
-                public LocalEvaluation::Codim1Interface<internal::ProductTraits<LocalizableFunctionImp>, 1>,
-                public LocalEvaluation::Codim1Interface<internal::ProductTraits<LocalizableFunctionImp>, 2>
+class LocalProductIntegrand
+    : public LocalVolumeIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 1>,
+      public LocalVolumeIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 2>,
+      public LocalFaceIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 1>,
+      public LocalFaceIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 2>
 {
 public:
-  typedef internal::ProductTraits<LocalizableFunctionImp> Traits;
+  typedef internal::LocalProductIntegrandTraits<LocalizableFunctionImp> Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  Product(const LocalizableFunctionType& inducingFunction)
+  LocalProductIntegrand(const LocalizableFunctionType& inducingFunction)
     : inducingFunction_(inducingFunction)
   {
   }
 
-  /// \name Required by all variants of LocalEvaluation::Codim0Interface
+  /// \name Required by all variants of LocalVolumeIntegrandInterface
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -82,7 +82,7 @@ public:
   }
 
   /// \}
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 1 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 1 >
   /// \{
 
   /**
@@ -108,7 +108,7 @@ public:
   }
 
   /// \}
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 1 >
+  /// \name Required by LocalFaceIntegrandInterface< ..., 1 >
   /// \{
 
   /**
@@ -124,7 +124,7 @@ public:
   }
 
   /// \}
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
 
   /**
@@ -140,7 +140,7 @@ public:
   }
 
   /// \}
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \name Required by LocalFaceIntegrandInterface< ..., 2 >
   /// \{
 
   /**
@@ -157,7 +157,7 @@ public:
   }
 
   /// \}
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 > and LocalEvaluation::Codim1Interface< ..., 2 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 2 > and LocalFaceIntegrandInterface< ..., 2 >
   /// \{
 
   /**
@@ -177,7 +177,7 @@ public:
   /// \{
 
   /**
-   * \note   for `LocalEvaluation::Codim0Interface< ..., 1 >`
+   * \note   for `LocalVolumeIntegrandInterface< ..., 1 >`
    * \return localFunction.order() + testBase.order()
    */
   template <class R, size_t rL, size_t rCL, size_t rT, size_t rCT>
@@ -190,8 +190,8 @@ public:
 
   /**
    * \note   for
-   *         - `LocalEvaluation::Codim0Interface< ..., 2 >`
-   *         - `LocalEvaluation::Codim1Interface< ..., 2 >`
+   *         - `LocalVolumeIntegrandInterface< ..., 2 >`
+   *         - `LocalFaceIntegrandInterface< ..., 2 >`
    * \return localFunction.order() + testBase.order() + ansatzBase.order()
    */
   template <class R, size_t rL, size_t rCL, size_t rT, size_t rCT, size_t rA, size_t rCA>
@@ -208,7 +208,7 @@ public:
   /// \{
 
   /**
-   * \note for `LocalEvaluation::Codim0Interface< ..., 1 >`
+   * \note for `LocalVolumeIntegrandInterface< ..., 1 >`
    */
   template <class R, size_t r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
@@ -230,7 +230,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  for `LocalEvaluation::Codim0Interface< ..., 2 >`
+   * \note  for `LocalVolumeIntegrandInterface< ..., 2 >`
    */
   template <class R, size_t r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
@@ -258,7 +258,7 @@ public:
   } // ... evaluate(...)
 
   /**
-   * \note for `LocalEvaluation::Codim1Interface< ..., 1 >`
+   * \note for `LocalFaceIntegrandInterface< ..., 1 >`
    */
   template <class IntersectionType, class R, size_t r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
@@ -282,7 +282,7 @@ public:
 
   /**
    * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
-   * \note  for `LocalEvaluation::Codim1Interface< ..., 2 >`
+   * \note  for `LocalFaceIntegrandInterface< ..., 2 >`
    */
   template <class IntersectionType, class R, size_t r>
   void evaluate(const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
@@ -315,10 +315,9 @@ public:
 
 private:
   const LocalizableFunctionType& inducingFunction_;
-}; // class Product
+}; // class LocalProductIntegrand
 
-} // namespace LocalEvaluation
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_EVALUATION_PRODUCT_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_PRODUCTS_HH

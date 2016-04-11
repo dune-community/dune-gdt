@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_EVALUATION_INTERFACE_HH
-#define DUNE_GDT_EVALUATION_INTERFACE_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH
 
 #include <memory>
 
@@ -17,7 +17,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
 
 
 /**
@@ -26,7 +25,7 @@ namespace LocalEvaluation {
  *  \note   All evaluations have to be copyable!
  */
 template <class Traits, size_t numArguments>
-class Codim0Interface
+class LocalVolumeIntegrandInterface
 {
   static_assert(AlwaysFalse<Traits>::value, "There is no interface for this numArguments!");
 };
@@ -36,7 +35,8 @@ class Codim0Interface
  *  \brief  Interface for unary codim 0 evaluations.
  */
 template <class Traits>
-class Codim0Interface<Traits, 1> : public Stuff::CRTPInterface<Codim0Interface<Traits, 1>, Traits>
+class LocalVolumeIntegrandInterface<Traits, 1>
+    : public Stuff::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 1>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -85,14 +85,15 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, localPoint, ret));
   }
-}; // class Codim0Interface< Traits, 1 >
+}; // class LocalVolumeIntegrandInterface< Traits, 1 >
 
 
 /**
  *  \brief  Interface for binary codim 0 evaluations.
  **/
 template <class Traits>
-class Codim0Interface<Traits, 2> : public Stuff::CRTPInterface<Codim0Interface<Traits, 2>, Traits>
+class LocalVolumeIntegrandInterface<Traits, 2>
+    : public Stuff::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 2>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -143,7 +144,7 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, ansatzBase, localPoint, ret));
   }
-}; // class Codim0Interface< Traits, 2 >
+}; // class LocalVolumeIntegrandInterface< Traits, 2 >
 
 
 /**
@@ -152,7 +153,7 @@ public:
  *  \note   All evaluations have to be copyable!
  */
 template <class Traits, size_t numArguments>
-class Codim1Interface
+class LocalFaceIntegrandInterface
 {
   static_assert(AlwaysFalse<Traits>::value, "There is no interface for this numArguments!");
 };
@@ -162,7 +163,8 @@ class Codim1Interface
  *  \brief  Interface for unary codim 1 evaluations.
  */
 template <class Traits>
-class Codim1Interface<Traits, 1> : public Stuff::CRTPInterface<Codim1Interface<Traits, 1>, Traits>
+class LocalFaceIntegrandInterface<Traits, 1>
+    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -213,14 +215,15 @@ public:
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, intersection, localPoint, ret));
   }
-}; // class Codim1Interface< Traits, 1 >
+}; // class LocalFaceIntegrandInterface< Traits, 1 >
 
 
 /**
  *  \brief  Interface for binary codim 1 evaluations.
  */
 template <class Traits>
-class Codim1Interface<Traits, 2> : public Stuff::CRTPInterface<Codim1Interface<Traits, 2>, Traits>
+class LocalFaceIntegrandInterface<Traits, 2>
+    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -274,14 +277,15 @@ public:
     CHECK_AND_CALL_CRTP(
         this->as_imp().evaluate(localFunctionsTuple, testBase, ansatzBase, intersection, localPoint, ret));
   }
-}; // class Codim1Interface< Traits, 2 >
+}; // class LocalFaceIntegrandInterface< Traits, 2 >
 
 
 /**
  *  \brief  Interface for quaternary codim 1 evaluations.
  */
 template <class Traits>
-class Codim1Interface<Traits, 4> : public Stuff::CRTPInterface<Codim1Interface<Traits, 4>, Traits>
+class LocalFaceIntegrandInterface<Traits, 4>
+    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -361,11 +365,10 @@ public:
                                                 entityNeighborRet,
                                                 neighborEntityRet));
   }
-}; // class Codim1Interface< Traits, 4 >
+}; // class LocalFaceIntegrandInterface< Traits, 4 >
 
 
-} // namespace LocalEvaluation
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_EVALUATION_INTERFACE_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH

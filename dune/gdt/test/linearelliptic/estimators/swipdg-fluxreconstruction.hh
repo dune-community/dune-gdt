@@ -12,8 +12,8 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/projections.hh>
@@ -75,7 +75,7 @@ class LocalNonconformityESV2007
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef typename ConstDiscreteFunctionType::DifferenceType DifferenceType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType>>
+  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalOperatorType;
 
 public:
@@ -175,7 +175,7 @@ class LocalResidualESV2007 : public Stuff::Grid::Codim0ReturnFunctor<GridViewTyp
   typedef typename DiffusiveFluxType::DivergenceType DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
   typedef typename Stuff::Functions::ESV2007::Cutoff<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Product<CutoffFunctionType>> LocalOperatorType;
+  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>> LocalOperatorType;
 
 public:
   using typename BaseType::EntityType;
@@ -286,7 +286,7 @@ class LocalDiffusiveFluxESV2007
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef Spaces::RT::PdelabBased<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::ESV2007::DiffusiveFluxEstimate<DiffusionFactorType,
+  typedef LocalVolumeIntegralOperator<LocalIntegrands::ESV2007::DiffusiveFluxEstimate<DiffusionFactorType,
                                                                                       RTN0DiscreteFunctionType,
                                                                                       DiffusionTensorType>>
       LocalOperatorType;

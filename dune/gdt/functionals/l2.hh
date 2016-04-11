@@ -17,7 +17,7 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/localfunctional/integrals.hh>
-#include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/assembler/system.hh>
 
 #include "base.hh"
@@ -59,7 +59,7 @@ public:
   }
 
 private:
-  const LocalVolumeIntegralFunctional<LocalEvaluation::Product<FunctionType>> local_l2_functional_;
+  const LocalVolumeIntegralFunctional<LocalProductIntegrand<FunctionType>> local_l2_functional_;
 }; // class L2VolumeVectorFunctional
 
 
@@ -166,7 +166,7 @@ public:
   }
 
 private:
-  const LocalFaceIntegralFunctional<LocalEvaluation::Product<FunctionType>> local_l2_functional_;
+  const LocalFaceIntegralFunctional<LocalProductIntegrand<FunctionType>> local_l2_functional_;
 }; // class L2FaceVectorFunctional
 
 

@@ -19,7 +19,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
+namespace LocalIntegrands {
 namespace OS2014 {
 
 
@@ -77,15 +77,16 @@ public:
 
 template <class DiffusionFactorType, class DiffusionFactorHatType, class DiffusionTensorType, class DiffusiveFluxType>
 class DiffusiveFluxEstimateStar
-    : public LocalEvaluation::
-          Codim0Interface<internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType,
-                                                                    DiffusionTensorType, DiffusiveFluxType>,
-                          2>
+    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType,
+                                                                                     DiffusionFactorHatType,
+                                                                                     DiffusionTensorType,
+                                                                                     DiffusiveFluxType>,
+                                           2>
 {
-  typedef LocalEvaluation::
-      Codim0Interface<internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType,
-                                                                DiffusionTensorType, DiffusiveFluxType>,
-                      2> BaseType;
+  typedef LocalVolumeIntegrandInterface<internal::
+                                            DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType,
+                                                                            DiffusionTensorType, DiffusiveFluxType>,
+                                        2> BaseType;
 
 public:
   typedef internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType, DiffusionTensorType,
@@ -232,7 +233,7 @@ private:
 
 
 } // namespace OS2014
-} // namespace LocalEvaluation
+} // namespace LocalIntegrands
 } // namespace GDT
 } // namespace Dune
 

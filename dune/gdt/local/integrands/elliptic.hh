@@ -5,8 +5,8 @@
 //
 // Contributors: Kirsten Weber
 
-#ifndef DUNE_GDT_EVALUATION_ELLIPTIC_HH
-#define DUNE_GDT_EVALUATION_ELLIPTIC_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
 
 #include <tuple>
 
@@ -20,16 +20,15 @@
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include "interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
 
 
 // forward
 template <class DiffusionFactorImp, class DiffusionTensorImp = void>
-class Elliptic;
+class LocalEllipticIntegrand;
 
 
 namespace internal {
@@ -37,10 +36,9 @@ namespace internal {
 
 /**
  * \brief Traits for the Elliptic evaluation (variant for given diffusion factor and tensor).
- * \sa    EllipticTraits (below) for a variant if only a diffusion is given.
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp>
-class EllipticTraits
+class LocalEllipticIntegrandTraits
 {
   static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
                 "DiffusionFactorType has to be a localizable function!");
@@ -113,10 +111,10 @@ private:
 public:
   typedef typename Helper<single_factor_given, single_tensor_given>::FactorType DiffusionFactorType;
   typedef typename Helper<single_factor_given, single_tensor_given>::TensorType DiffusionTensorType;
-  typedef Elliptic<DiffusionFactorType, DiffusionTensorType> derived_type;
+  typedef LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType> derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
-}; // class EllipticTraits
+}; // class LocalEllipticIntegrandTraits
 
 
 } // namespace internal
@@ -126,15 +124,17 @@ public:
  * \brief Computes an elliptic evaluation.
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp>
-class Elliptic
-    : public LocalEvaluation::Codim0Interface<internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>, 2>
+class LocalEllipticIntegrand
+    : public LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp,
+                                                                                  DiffusionTensorImp>,
+                                           2>
 {
-  typedef LocalEvaluation::Codim0Interface<internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp>, 2>
-      BaseType;
-  typedef Elliptic<DiffusionFactorImp, DiffusionTensorImp> ThisType;
+  typedef LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>,
+                                        2> BaseType;
+  typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> ThisType;
 
 public:
-  typedef internal::EllipticTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
+  typedef internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp> Traits;
   typedef typename Traits::DiffusionFactorType DiffusionFactorType;
   typedef typename Traits::DiffusionTensorType DiffusionTensorType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -150,13 +150,13 @@ private:
   using BaseType::d;
 
 public:
-  Elliptic(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
   {
   }
 
-  Elliptic(const DiffusionFactorType& diffusion_factor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(new DiffusionTensorType(
           Stuff::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
@@ -168,16 +168,16 @@ public:
       ,
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
-  Elliptic(const DiffusionType& diffusion)
+  LocalEllipticIntegrand(const DiffusionType& diffusion)
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
   {
   }
 
-  Elliptic(const ThisType& other) = default;
-  Elliptic(ThisType&& source) = default;
+  LocalEllipticIntegrand(const ThisType& other) = default;
+  LocalEllipticIntegrand(ThisType&& source) = default;
 
-  /// \name Required by LocalEvaluation::Codim0Interface< ..., 2 >
+  /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -282,11 +282,10 @@ public:
 private:
   const DiffusionFactorProvider diffusion_factor_;
   const DiffusionTensorProvider diffusion_tensor_;
-}; // class Elliptic
+}; // class LocalEllipticIntegrand
 
 
-} // namespace LocalEvaluation
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_EVALUATION_ELLIPTIC_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH

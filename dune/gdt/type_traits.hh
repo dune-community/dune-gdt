@@ -10,15 +10,15 @@
 
 #include <dune/stuff/common/type_utils.hh>
 
-#include <dune/gdt/localevaluation/interface.hh>
+#include <dune/gdt/local/integrands/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-// /////////////////////////////////////////
-// // all of localevaluation/interface.hh //
-// /////////////////////////////////////////
+// ///////////////////////////////////////////
+// // all of local/integrands/interfaces.hh //
+// ///////////////////////////////////////////
 
 namespace internal {
 
@@ -62,7 +62,7 @@ struct is_quaternary_face_integrand_helper
 
 
 template <class T, bool candidate = internal::is_unary_volume_integrand_helper<T>::is_candidate>
-struct is_unary_volume_integrand : public std::is_base_of<LocalEvaluation::Codim0Interface<typename T::Traits, 1>, T>
+struct is_unary_volume_integrand : public std::is_base_of<LocalVolumeIntegrandInterface<typename T::Traits, 1>, T>
 {
 };
 
@@ -73,7 +73,7 @@ struct is_unary_volume_integrand<T, false> : public std::false_type
 
 
 template <class T, bool candidate = internal::is_binary_volume_integrand_helper<T>::is_candidate>
-struct is_binary_volume_integrand : public std::is_base_of<LocalEvaluation::Codim0Interface<typename T::Traits, 2>, T>
+struct is_binary_volume_integrand : public std::is_base_of<LocalVolumeIntegrandInterface<typename T::Traits, 2>, T>
 {
 };
 
@@ -84,7 +84,7 @@ struct is_binary_volume_integrand<T, false> : public std::false_type
 
 
 template <class T, bool candidate = internal::is_unary_face_integrand_helper<T>::is_candidate>
-struct is_unary_face_integrand : public std::is_base_of<LocalEvaluation::Codim1Interface<typename T::Traits, 1>, T>
+struct is_unary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 1>, T>
 {
 };
 
@@ -95,7 +95,7 @@ struct is_unary_face_integrand<T, false> : public std::false_type
 
 
 template <class T, bool candidate = internal::is_binary_face_integrand_helper<T>::is_candidate>
-struct is_binary_face_integrand : public std::is_base_of<LocalEvaluation::Codim1Interface<typename T::Traits, 2>, T>
+struct is_binary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 2>, T>
 {
 };
 
@@ -106,7 +106,7 @@ struct is_binary_face_integrand<T, false> : public std::false_type
 
 
 template <class T, bool candidate = internal::is_quaternary_face_integrand_helper<T>::is_candidate>
-struct is_quaternary_face_integrand : public std::is_base_of<LocalEvaluation::Codim1Interface<typename T::Traits, 4>, T>
+struct is_quaternary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 4>, T>
 {
 };
 

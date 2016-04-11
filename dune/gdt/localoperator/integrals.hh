@@ -17,7 +17,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/matrix.hh>
 
-#include <dune/gdt/localevaluation/interface.hh>
+#include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
@@ -44,7 +44,7 @@ template <class BinaryEvaluationType>
 class LocalVolumeIntegralOperatorTraits
 {
   static_assert(is_binary_volume_integrand<BinaryEvaluationType>::value,
-                "BinaryEvaluationType has to be derived from LocalEvaluation::Codim0Interface< ..., 2 >!");
+                "BinaryEvaluationType has to be derived from LocalVolumeIntegrandInterface< ..., 2 >!");
 
 public:
   typedef LocalVolumeIntegralOperator<BinaryEvaluationType> derived_type;
@@ -55,7 +55,7 @@ template <class QuaternaryFaceIntegrandTypeType>
 class LocalCouplingIntegralOperatorTraits
 {
   static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandTypeType>::value,
-                "QuaternaryFaceIntegrandTypeType has to be derived from LocalEvaluation::Codim1Interface< ..., 4 >!");
+                "QuaternaryFaceIntegrandTypeType has to be derived from LocalFaceIntegrandInterface< ..., 4 >!");
 
 public:
   typedef LocalCouplingIntegralOperator<QuaternaryFaceIntegrandTypeType> derived_type;
@@ -66,7 +66,7 @@ template <class BinaryEvaluationType>
 class LocalBoundaryIntegralOperatorTraits
 {
   static_assert(is_binary_face_integrand<BinaryEvaluationType>::value,
-                "BinaryEvaluationType has to be derived from LocalEvaluation::Codim1Interface< ..., 2 >!");
+                "BinaryEvaluationType has to be derived from LocalFaceIntegrandInterface< ..., 2 >!");
 
 public:
   typedef LocalBoundaryIntegralOperator<BinaryEvaluationType> derived_type;

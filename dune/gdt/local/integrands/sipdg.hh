@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_HH
-#define DUNE_GDT_LOCALEVALUATION_SIPDG_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_SIPDG_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_SIPDG_HH
 
 #include <tuple>
 
@@ -21,11 +21,10 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include "interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
-namespace LocalEvaluation {
 
 /**
  *  \brief      Contains local evaluations for the symmetric interior penalty discontinuous Galerkin (SIPDG)
@@ -34,7 +33,7 @@ namespace LocalEvaluation {
  *              For the choice of penalization and the role of the user input see Epshteyn, Riviere (2007):
  *              "Estimation of penalty parameters for symmetric interior penalty Galerkin methods"
  */
-namespace SIPDG {
+namespace LocalSipdgIntegrands {
 
 
 // forwards
@@ -139,7 +138,7 @@ static inline double inner_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+    DSC::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
@@ -166,7 +165,7 @@ static inline double boundary_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localevaluation.sipdg.inner").warn()
+    DSC::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
@@ -184,7 +183,7 @@ static inline double boundary_sigma(const size_t pol_order)
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableFunctionImp>
-class Inner : public LocalEvaluation::Codim1Interface<internal::InnerTraits<LocalizableFunctionImp>, 4>
+class Inner : public LocalFaceIntegrandInterface<internal::InnerTraits<LocalizableFunctionImp>, 4>
 {
 public:
   typedef internal::InnerTraits<LocalizableFunctionImp> Traits;
@@ -200,7 +199,7 @@ public:
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 4 >
+  /// \name Required by LocalFaceIntegrandInterface< ..., 4 >
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -413,7 +412,7 @@ private:
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableFunctionImp>
-class BoundaryLHS : public LocalEvaluation::Codim1Interface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
+class BoundaryLHS : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
 {
 public:
   typedef internal::BoundaryLHSTraits<LocalizableFunctionImp> Traits;
@@ -429,7 +428,7 @@ public:
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ..., 2>
+  /// \name Required by LocalFaceIntegrandInterface< ..., 2>
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -538,10 +537,9 @@ private:
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
-class BoundaryRHS
-    : public LocalEvaluation::Codim1Interface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
-                                                                          LocalizableDirichletFunctionImp>,
-                                              1>
+class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
+                                                                                   LocalizableDirichletFunctionImp>,
+                                                       1>
 {
 public:
   typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp> Traits;
@@ -560,7 +558,7 @@ public:
   {
   }
 
-  /// \name Required by LocalEvaluation::Codim1Interface< ...., 1 >
+  /// \name Required by LocalFaceIntegrandInterface< ...., 1 >
   /// \{
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
@@ -661,9 +659,8 @@ private:
 }; // class BoundaryRHS
 
 
-} // namespace SIPDG
-} // namespace LocalEvaluation
+} // namespace LocalSipdgIntegrands
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALEVALUATION_SIPDG_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_SIPDG_HH

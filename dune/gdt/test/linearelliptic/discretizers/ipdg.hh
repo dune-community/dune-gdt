@@ -34,7 +34,7 @@ template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLa
           ChooseSpaceBackend spacebackend                = Spaces::default_dg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
           class RangeFieldType = double, size_t dimRange = 1,
-          LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method>
+          LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class IpdgDiscretizer
 {
 public:

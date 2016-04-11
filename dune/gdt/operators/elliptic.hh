@@ -18,7 +18,7 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localevaluation/elliptic.hh>
+#include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -39,7 +39,7 @@ template <class DiffusionFactorType,
 class EllipticLocalizableProduct : public LocalizableProductDefault<GridView, Range, Source, Field>
 {
   typedef LocalizableProductDefault<GridView, Range, Source, Field> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType>>
+  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 
 public:
@@ -171,7 +171,7 @@ class EllipticMatrixOperator
     : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
   typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType>>
+  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 
 public:
@@ -543,7 +543,7 @@ class EllipticOperator
 {
   typedef OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
                                                              Field>> BaseType;
-  typedef LocalEvaluation::Elliptic<DiffusionFactorType, DiffusionTensorType> LocalEvaluationType;
+  typedef LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType> LocalIntegrandType;
 
 public:
   using typename BaseType::FieldType;
@@ -613,7 +613,7 @@ public:
   }
 
 private:
-  const LocalEvaluationType data_functions_; // We use the local evaluation to store the data functions since it can
+  const LocalIntegrandType data_functions_; // We use the local evaluation to store the data functions since it can
   GridViewType grid_view_; // handle the case of single diffusion factor, single diffusion tensor and
   const size_t over_integrate_; // both factor and tensor and creates the required missing data function.
 }; // class EllipticOperator

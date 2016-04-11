@@ -11,8 +11,8 @@
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/la/container.hh>
 
-#include <dune/gdt/localevaluation/elliptic.hh>
-#include <dune/gdt/localevaluation/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/localfunctional/integrals.hh>
 
 #include "base.hh"
@@ -30,8 +30,8 @@ namespace GDT {
  */
 template <class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, // <- may be void
-          class Space, LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method,
-          class Vector                                              = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
+          class Space, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
+          class Vector                                            = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
 class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
@@ -108,8 +108,8 @@ public:
   /// \}
 
 private:
-  const LocalFaceIntegralFunctional<LocalEvaluation::EllipticIpdg::BoundaryRHS<DirichletType, DiffusionFactorType,
-                                                                               DiffusionTensorType>> local_functional_;
+  const LocalFaceIntegralFunctional<LocalEllipticIpdgIntegrands::BoundaryRHS<DirichletType, DiffusionFactorType,
+                                                                             DiffusionTensorType>> local_functional_;
 }; // class EllipticIpdgDirichletVectorFunctional
 
 
@@ -125,8 +125,8 @@ private:
 
 // no vector given, both diffusion factor and tensor, no grid view given, method specified
 
-template <class VectorType, LocalEvaluation::EllipticIpdg::Method method, class DirichletType,
-          class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
+template <class VectorType, LocalEllipticIpdgIntegrands::Method method, class DirichletType, class DiffusionFactorType,
+          class DiffusionTensorType, class SpaceType>
 typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<DirichletType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
@@ -157,7 +157,7 @@ typename std::
                   && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
               std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionFactorType,
                                                                     DiffusionTensorType, SpaceType,
-                                                                    LocalEvaluation::EllipticIpdg::default_method,
+                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                     VectorType>>>::type
     make_elliptic_ipdg_dirichlet_vector_functional(
         const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
@@ -165,7 +165,7 @@ typename std::
         const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
         const SpaceType& space, const size_t over_integrate = 0)
 {
-  return make_elliptic_ipdg_dirichlet_vector_functional<VectorType, LocalEvaluation::EllipticIpdg::default_method>(
+  return make_elliptic_ipdg_dirichlet_vector_functional<VectorType, LocalEllipticIpdgIntegrands::default_method>(
       dirichlet, diffusion_factor, diffusion_tensor, space, over_integrate, boundary_info);
 }
 
@@ -187,7 +187,7 @@ typename std::
 
 // vector given, both diffusion factor and tensor, no grid view given, method specified
 
-template <LocalEvaluation::EllipticIpdg::Method method, class DirichletType, class DiffusionFactorType,
+template <LocalEllipticIpdgIntegrands::Method method, class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, class VectorType, class SpaceType>
 typename std::enable_if<Stuff::is_localizable_function<DirichletType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value

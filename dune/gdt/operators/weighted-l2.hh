@@ -12,7 +12,7 @@
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container.hh>
 
-#include <dune/gdt/localevaluation/product.hh>
+#include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -30,7 +30,7 @@ template <class WeightFunctionType, class GridView, class Range, class Source = 
 class WeightedL2LocalizableProduct : public LocalizableProductDefault<GridView, Range, Source, Field>
 {
   typedef LocalizableProductDefault<GridView, Range, Source, Field> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Product<WeightFunctionType>> LocalWeightedL2OperatorType;
+  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:
   template <class... Args>
@@ -88,7 +88,7 @@ class WeightedL2MatrixOperator
     : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
   typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEvaluation::Product<WeightFunctionType>> LocalWeightedL2OperatorType;
+  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:
   template <class... Args>

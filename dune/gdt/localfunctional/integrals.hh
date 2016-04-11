@@ -6,7 +6,7 @@
 #ifndef DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
 #define DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
 
-#include <dune/gdt/localevaluation/interface.hh>
+#include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
@@ -30,7 +30,7 @@ template <class UnaryEvaluationImp>
 class LocalVolumeIntegralFunctionalTraits
 {
   static_assert(is_unary_volume_integrand<UnaryEvaluationImp>::value,
-                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim0Interface< ..., 1 >!");
+                "UnaryEvaluationImp has to be derived from LocalVolumeIntegrandInterface< ..., 1 >!");
 
 public:
   typedef LocalVolumeIntegralFunctional<UnaryEvaluationImp> derived_type;
@@ -41,7 +41,7 @@ template <class UnaryEvaluationImp>
 class LocalFaceIntegralFunctionalTraits
 {
   static_assert(is_unary_face_integrand<UnaryEvaluationImp>::value,
-                "UnaryEvaluationImp has to be derived from LocalEvaluation::Codim1Interface< ..., 1 >!");
+                "UnaryEvaluationImp has to be derived from LocalFaceIntegrandInterface< ..., 1 >!");
 
 public:
   typedef LocalFaceIntegralFunctional<UnaryEvaluationImp> derived_type;
