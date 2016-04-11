@@ -1,3 +1,21 @@
+// This file is part of the dune-gdt project:
+//   http://users.dune-project.org/projects/dune-gdt
+// Copyright holders: Felix Schindler
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+
+#ifndef DUNE_GDT_LOCAL_DOF_VECTOR_HH
+#define DUNE_GDT_LOCAL_DOF_VECTOR_HH
+
+#include <ostream>
+
+#include <dune/stuff/la/container/vector-interface.hh>
+
+#include <dune/gdt/mapper/interface.hh>
+
+namespace Dune {
+namespace GDT {
+
+
 template <class VectorImp>
 class ConstLocalDoFVector
 {
@@ -105,3 +123,9 @@ private:
   using BaseType::indices_;
   VectorType& vector_;
 }; // class LocalDoFVector
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_LOCAL_DOF_VECTOR_HH
