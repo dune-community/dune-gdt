@@ -20,7 +20,7 @@
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/assembler/system.hh>
 
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -37,9 +37,9 @@ namespace GDT {
 template <class FunctionType, class Space,
           class Vector   = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
-class L2VolumeVectorFunctional : public VectorFunctionalDefault<Vector, Space, GridView, Field>
+class L2VolumeVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
-  typedef VectorFunctionalDefault<Vector, Space, GridView, Field> BaseType;
+  typedef VectorFunctionalBase<Vector, Space, GridView, Field> BaseType;
 
 public:
   template <class... Args>
@@ -123,9 +123,9 @@ typename std::enable_if<Stuff::is_localizable_function<FunctionType>::value && S
 template <class FunctionType, class Space,
           class Vector   = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
-class L2FaceVectorFunctional : public VectorFunctionalDefault<Vector, Space, GridView, Field>
+class L2FaceVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
-  typedef VectorFunctionalDefault<Vector, Space, GridView, Field> BaseType;
+  typedef VectorFunctionalBase<Vector, Space, GridView, Field> BaseType;
 
 public:
   using typename BaseType::GridViewType;

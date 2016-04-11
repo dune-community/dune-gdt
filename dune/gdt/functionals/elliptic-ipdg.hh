@@ -15,7 +15,7 @@
 #include <dune/gdt/localevaluation/elliptic-ipdg.hh>
 #include <dune/gdt/localfunctional/integrals.hh>
 
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -33,9 +33,9 @@ template <class DirichletType, class DiffusionFactorType,
           class Space, LocalEvaluation::EllipticIpdg::Method method = LocalEvaluation::EllipticIpdg::default_method,
           class Vector                                              = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
-class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalDefault<Vector, Space, GridView, Field>
+class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
-  typedef VectorFunctionalDefault<Vector, Space, GridView, Field> BaseType;
+  typedef VectorFunctionalBase<Vector, Space, GridView, Field> BaseType;
 
 public:
   using typename BaseType::GridViewType;

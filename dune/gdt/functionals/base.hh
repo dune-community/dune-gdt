@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_FUNCTIONALS_DEFAULT_HH
-#define DUNE_GDT_FUNCTIONALS_DEFAULT_HH
+#ifndef DUNE_GDT_FUNCTIONALS_BASE_HH
+#define DUNE_GDT_FUNCTIONALS_BASE_HH
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
@@ -24,14 +24,14 @@ namespace GDT {
 
 // forward, required for the traits
 template <class V, class S, class GV = typename S::GridViewType, class F = typename V::RealType>
-class VectorFunctionalDefault;
+class VectorFunctionalBase;
 
 
 namespace internal {
 
 
 template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
-class VectorFunctionalDefaultTraits
+class VectorFunctionalBaseTraits
 {
   static_assert(Stuff::LA::is_vector<VectorImp>::value,
                 "VectorType has to be derived from Stuff::LA::vectorInterface!");
@@ -41,7 +41,7 @@ class VectorFunctionalDefaultTraits
                 "SpaceType and GridViewType have to match!");
 
 public:
-  typedef VectorFunctionalDefault<VectorImp, SpaceImp, GridViewImp, FieldImp> derived_type;
+  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridViewImp, FieldImp> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -53,17 +53,17 @@ public:
  * \note Does a const_cast in apply(), not sure yet if this is fine.
  */
 template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
-class VectorFunctionalDefault
-    : public FunctionalInterface<internal::VectorFunctionalDefaultTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>,
+class VectorFunctionalBase
+    : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>,
       public SystemAssembler<SpaceImp, GridViewImp>
 {
-  typedef FunctionalInterface<internal::VectorFunctionalDefaultTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>
+  typedef FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>
       BaseFunctionalType;
   typedef SystemAssembler<SpaceImp, GridViewImp> BaseAssemblerType;
-  typedef VectorFunctionalDefault<VectorImp, SpaceImp, GridViewImp, FieldImp> ThisType;
+  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridViewImp, FieldImp> ThisType;
 
 public:
-  typedef internal::VectorFunctionalDefaultTraits<VectorImp, SpaceImp, GridViewImp, FieldImp> Traits;
+  typedef internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp> Traits;
   typedef typename BaseAssemblerType::AnsatzSpaceType SpaceType;
   using typename BaseAssemblerType::GridViewType;
   typedef VectorImp VectorType;
@@ -72,7 +72,7 @@ public:
 
 public:
   template <class... Args>
-  explicit VectorFunctionalDefault(VectorType& vec, Args&&... args)
+  explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
     , vector_(vec)
   {
@@ -81,16 +81,16 @@ public:
                  "vector.size(): " << vector_.access().size() << "\n"
                                    << "space().mapper().size(): "
                                    << this->space().mapper().size());
-  } // VectorFunctionalDefault(...)
+  } // VectorFunctionalBase(...)
 
   template <class... Args>
-  explicit VectorFunctionalDefault(Args&&... args)
+  explicit VectorFunctionalBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
     , vector_(new VectorType(this->test_space().mapper().size(), 0.0))
   {
   }
 
-  VectorFunctionalDefault(ThisType&& source) = default;
+  VectorFunctionalBase(ThisType&& source) = default;
 
   const VectorType& vector() const
   {
@@ -147,10 +147,10 @@ public:
 
 private:
   DSC::StorageProvider<VectorType> vector_;
-}; // class VectorFunctionalDefault
+}; // class VectorFunctionalBase
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_FUNCTIONALS_DEFAULT_HH
+#endif // DUNE_GDT_FUNCTIONALS_BASE_HH
