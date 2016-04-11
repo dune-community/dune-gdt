@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_HH
-#define DUNE_GDT_BASEFUNCTIONSET_FEM_HH
+#ifndef DUNE_GDT_SAPCES_BASEFUNCTIONSET_DUNE_FEM_WRAPPER_HH
+#define DUNE_GDT_SAPCES_BASEFUNCTIONSET_DUNE_FEM_WRAPPER_HH
 
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
@@ -29,7 +29,7 @@ namespace BaseFunctionSet {
 // forward, to be used in the traits and to allow for specialization
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class FemWrapper
+class DuneFemWrapper
 {
   static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "Untested for these dimensions!");
 };
@@ -40,11 +40,11 @@ namespace internal {
 
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols>
-class FemWrapperTraits
+class DuneFemWrapperTraits
 {
 public:
-  typedef FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
-      derived_type;
+  typedef DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                         rangeDimCols> derived_type;
   typedef typename Dune::Fem::DefaultBasisFunctionSet<EntityImp, ShapeFunctionSetImp> BackendType;
   typedef EntityImp EntityType;
 };
@@ -55,19 +55,20 @@ public:
 
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim>
-class FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
-                                                                 domainDim, RangeFieldImp, rangeDim, 1>,
+class DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
+                                                                     domainDim, RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef FemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim,
-                                                              RangeFieldImp, rangeDim, 1>,
+  typedef DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      ThisType;
+  typedef BaseFunctionSetInterface<internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
+                                                                  domainDim, RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef internal::FemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                     1> Traits;
+  typedef internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                         rangeDim, 1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainType DomainType;
@@ -75,15 +76,15 @@ public:
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
   template <class S>
-  FemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface<S>& femSpace, const EntityType& ent)
+  DuneFemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface<S>& femSpace, const EntityType& ent)
     : BaseType(ent)
     , backend_(new BackendType(femSpace.basisFunctionSet(this->entity())))
   {
   }
 
-  FemWrapper(ThisType&& source) = default;
+  DuneFemWrapper(ThisType&& source) = default;
 
-  FemWrapper(const ThisType& /*other*/) = delete;
+  DuneFemWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -121,7 +122,7 @@ public:
 
 private:
   std::unique_ptr<const BackendType> backend_;
-}; // class FemWrapper
+}; // class DuneFemWrapper
 
 
 #else // HAVE_DUNE_FEM
@@ -129,7 +130,7 @@ private:
 
 template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class FemWrapper
+class DuneFemWrapper
 {
   static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "You are missing dune-fem!");
 };
@@ -141,4 +142,4 @@ class FemWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_BASEFUNCTIONSET_FEM_HH
+#endif // DUNE_GDT_SAPCES_BASEFUNCTIONSET_DUNE_FEM_WRAPPER_HH

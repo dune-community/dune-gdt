@@ -20,7 +20,7 @@
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "../../../mapper/fem.hh"
-#include "../../../basefunctionset/fem.hh"
+#include <dune/gdt/spaces/basefunctionset/dune-fem-wrapper.hh>
 
 #include "../../../spaces/dg/interface.hh"
 
@@ -68,8 +68,8 @@ public:
   typedef Dune::Fem::LagrangeDiscontinuousGalerkinSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::FemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
-                                      dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
+                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;

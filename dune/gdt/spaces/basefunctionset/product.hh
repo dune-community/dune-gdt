@@ -3,12 +3,12 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_BASEFUNCTIONSET_DEFAULT_PRODUCT_HH
-#define DUNE_GDT_BASEFUNCTIONSET_DEFAULT_PRODUCT_HH
+#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_PRODUCT_HH
+#define DUNE_GDT_SPACES_BASEFUNCTIONSET_PRODUCT_HH
 
 #include <tuple>
 
-#include "../interface.hh"
+#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -17,7 +17,7 @@ namespace BaseFunctionSet {
 
 // forward
 template <class... BaseFunctionSetImps>
-class ProductBaseFunctionSet;
+class ProductDefault;
 
 
 namespace internal {
@@ -136,10 +136,10 @@ struct DynamicTupleGetter
 
 
 template <class... BaseFunctionSetImps>
-class ProductBaseFunctionSetTraits
+class ProductDefaultTraits
 {
 public:
-  typedef ProductBaseFunctionSet<BaseFunctionSetImps...> derived_type;
+  typedef ProductDefault<BaseFunctionSetImps...> derived_type;
   typedef double BackendType;
   typedef typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::EntityType EntityType;
 };
@@ -149,8 +149,8 @@ public:
 
 
 template <class... BaseFunctionSetImps>
-class ProductBaseFunctionSet
-    : public BaseFunctionSetInterface<internal::ProductBaseFunctionSetTraits<BaseFunctionSetImps...>,
+class ProductDefault
+    : public BaseFunctionSetInterface<internal::ProductDefaultTraits<BaseFunctionSetImps...>,
                                       typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
                                           DomainFieldType,
                                       std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
@@ -158,8 +158,8 @@ class ProductBaseFunctionSet
                                           RangeFieldType,
                                       internal::SumDimRange<BaseFunctionSetImps...>::dimRange, 1>
 {
-  typedef ProductBaseFunctionSet<BaseFunctionSetImps...> ThisType;
-  typedef BaseFunctionSetInterface<internal::ProductBaseFunctionSetTraits<BaseFunctionSetImps...>,
+  typedef ProductDefault<BaseFunctionSetImps...> ThisType;
+  typedef BaseFunctionSetInterface<internal::ProductDefaultTraits<BaseFunctionSetImps...>,
                                    typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
                                        DomainFieldType,
                                    std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
@@ -168,7 +168,7 @@ class ProductBaseFunctionSet
                                    internal::SumDimRange<BaseFunctionSetImps...>::dimRange, 1> BaseType;
 
 public:
-  typedef internal::ProductBaseFunctionSetTraits<BaseFunctionSetImps...> Traits;
+  typedef internal::ProductDefaultTraits<BaseFunctionSetImps...> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -177,19 +177,19 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  ProductBaseFunctionSet(const EntityType& en, BaseFunctionSetImps... basefunctionsets)
+  ProductDefault(const EntityType& en, BaseFunctionSetImps... basefunctionsets)
     : BaseType(en)
     , basefunctionsets_(std::move(basefunctionsets)...)
   {
   }
 
-  ProductBaseFunctionSet(ThisType&& source)
+  ProductDefault(ThisType&& source)
     : BaseType(source)
     , basefunctionsets_(std::move(source.basefunctionsets_))
   {
   }
 
-  ProductBaseFunctionSet(const ThisType& /*other*/) = delete;
+  ProductDefault(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -226,11 +226,11 @@ public:
 
 private:
   std::tuple<BaseFunctionSetImps...> basefunctionsets_;
-}; // class ProductBaseFunctionSet
+}; // class ProductDefault
 
 
 } // namespace BaseFunctionSet
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_BASEFUNCTIONSET_DEFAULT_PRODUCT_HH
+#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_PRODUCT_HH

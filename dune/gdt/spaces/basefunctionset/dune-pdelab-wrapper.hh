@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_BASEFUNCTIONSET_PDELAB_HH
-#define DUNE_GDT_BASEFUNCTIONSET_PDELAB_HH
+#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_PDELAB_WRAPPER_HH
+#define DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_PDELAB_WRAPPER_HH
 
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
@@ -27,7 +27,7 @@ namespace BaseFunctionSet {
 // forwards, to be used in the traits and to allow for specialization
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabWrapper
+class DunePdelabWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for arbitrary dimension!");
 };
@@ -35,7 +35,7 @@ class PdelabWrapper
 
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class PiolaTransformedPdelabWrapper
+class PiolaTransformedDunePdelabWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "Untested for these dimensions!");
 };
@@ -47,38 +47,16 @@ namespace internal {
 // forward, to allow for specialization
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols>
-class PdelabWrapperTraits;
+class DunePdelabWrapperTraits;
 
 
 //! Specialization for rangeDimCols = 1
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim>
-class PdelabWrapperTraits<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+class DunePdelabWrapperTraits<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
 public:
-  typedef PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> derived_type;
-
-private:
-  typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
-  typedef FiniteElementInterfaceSwitch<typename PdelabSpaceImp::Traits::FiniteElementType> FESwitchType;
-
-public:
-  typedef typename FESwitchType::Basis BackendType;
-  typedef EntityImp EntityType;
-
-private:
-  friend class PdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>;
-};
-
-
-template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
-          size_t rangeDim>
-class PiolaTransformedPdelabWrapperTraits
-{
-  static_assert(domainDim == rangeDim, "Untested!");
-
-public:
-  typedef PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+  typedef DunePdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       derived_type;
 
 private:
@@ -90,8 +68,31 @@ public:
   typedef EntityImp EntityType;
 
 private:
-  friend class PiolaTransformedPdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                             rangeDim, 1>;
+  friend class DunePdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>;
+};
+
+
+template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+          size_t rangeDim>
+class PiolaTransformedDunePdelabWrapperTraits
+{
+  static_assert(domainDim == rangeDim, "Untested!");
+
+public:
+  typedef PiolaTransformedDunePdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                            rangeDim> derived_type;
+
+private:
+  typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
+  typedef FiniteElementInterfaceSwitch<typename PdelabSpaceImp::Traits::FiniteElementType> FESwitchType;
+
+public:
+  typedef typename FESwitchType::Basis BackendType;
+  typedef EntityImp EntityType;
+
+private:
+  friend class PiolaTransformedDunePdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                                 rangeDim, 1>;
 };
 
 
@@ -100,18 +101,18 @@ private:
 
 //! Specialization for dimRange = 1, dimRangeRows = 1
 template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp>
-class PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
-    : public BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
-                                                                    domainDim, RangeFieldImp, 1, 1>,
+class DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+    : public BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                        domainDim, RangeFieldImp, 1, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
 {
-  typedef PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                                 RangeFieldImp, 1, 1>,
+  typedef DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
+  typedef BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                     domainDim, RangeFieldImp, 1, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, 1, 1> BaseType;
 
 public:
-  typedef internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+  typedef internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
       Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
@@ -125,7 +126,7 @@ public:
   typedef typename BaseType::RangeType RangeType;
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
 
-  PdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
+  DunePdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
     : BaseType(ent)
     , tmp_domain_(0)
   {
@@ -133,10 +134,10 @@ public:
     lfs_ptr->bind(this->entity());
     lfs_     = std::unique_ptr<PdelabLFSType>(lfs_ptr);
     backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
-  } // PdelabWrapper(...)
+  } // DunePdelabWrapper(...)
 
-  PdelabWrapper(ThisType&& source) = default;
-  PdelabWrapper(const ThisType& /*other*/) = delete;
+  DunePdelabWrapper(ThisType&& source) = default;
+  DunePdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -180,24 +181,24 @@ private:
   mutable DomainType tmp_domain_;
   std::unique_ptr<const PdelabLFSType> lfs_;
   std::unique_ptr<const BackendType> backend_;
-}; // class PdelabWrapper
+}; // class DunePdelabWrapper
 
 
 template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim>
-class PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
-                                                                    domainDim, RangeFieldImp, rangeDim, 1>,
+class DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                        domainDim, RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef PdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                                 RangeFieldImp, rangeDim, 1>,
+  typedef DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
+                                                                     domainDim, RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef internal::PdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                        1> Traits;
+  typedef internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                            rangeDim, 1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -212,7 +213,7 @@ public:
   static const size_t dimDomain = domainDim;
   static const size_t dimRange  = rangeDim;
 
-  PdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
+  DunePdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
     : BaseType(ent)
     , tmp_domain_(0)
   {
@@ -220,10 +221,10 @@ public:
     lfs_ptr->bind(this->entity());
     lfs_     = std::unique_ptr<PdelabLFSType>(lfs_ptr);
     backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
-  } // PdelabWrapper(...)
+  } // DunePdelabWrapper(...)
 
-  PdelabWrapper(ThisType&& source) = default;
-  PdelabWrapper(const ThisType& /*other*/) = delete;
+  DunePdelabWrapper(ThisType&& source) = default;
+  DunePdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -284,27 +285,28 @@ private:
   mutable DomainType tmp_domain_;
   std::unique_ptr<const PdelabLFSType> lfs_;
   std::unique_ptr<const BackendType> backend_;
-}; // class PdelabWrapper
+}; // class DunePdelabWrapper
 
 
 template <class PdelabSpaceType, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim>
-class PiolaTransformedPdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp,
-                                                                                    DomainFieldImp, domainDim,
-                                                                                    RangeFieldImp, rangeDim>,
+class PiolaTransformedDunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                        1>
+    : public BaseFunctionSetInterface<internal::PiolaTransformedDunePdelabWrapperTraits<PdelabSpaceType, EntityImp,
+                                                                                        DomainFieldImp, domainDim,
+                                                                                        RangeFieldImp, rangeDim>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef PiolaTransformedPdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                        1> ThisType;
-  typedef BaseFunctionSetInterface<internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp,
-                                                                                 DomainFieldImp, domainDim,
-                                                                                 RangeFieldImp, rangeDim>,
+  typedef PiolaTransformedDunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                            rangeDim, 1> ThisType;
+  typedef BaseFunctionSetInterface<internal::PiolaTransformedDunePdelabWrapperTraits<PdelabSpaceType, EntityImp,
+                                                                                     DomainFieldImp, domainDim,
+                                                                                     RangeFieldImp, rangeDim>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
 
 public:
-  typedef internal::PiolaTransformedPdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                        RangeFieldImp, rangeDim> Traits;
+  typedef internal::PiolaTransformedDunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
+                                                            RangeFieldImp, rangeDim> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -319,7 +321,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  PiolaTransformedPdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
+  PiolaTransformedDunePdelabWrapper(const PdelabSpaceType& space, const EntityType& ent)
     : BaseType(ent)
     , tmp_domain_(DomainFieldType(0))
     , tmp_jacobian_transposed_(DomainFieldType(0))
@@ -331,11 +333,11 @@ public:
     backend_             = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
     tmp_ranges_          = std::vector<RangeType>(backend_->size(), RangeType(0));
     tmp_jacobian_ranges_ = std::vector<JacobianRangeType>(backend_->size(), JacobianRangeType(0));
-  } // PdelabWrapper(...)
+  } // DunePdelabWrapper(...)
 
-  PiolaTransformedPdelabWrapper(ThisType&& source) = default;
+  PiolaTransformedDunePdelabWrapper(ThisType&& source) = default;
 
-  PiolaTransformedPdelabWrapper(const ThisType& /*other*/) = delete;
+  PiolaTransformedDunePdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -402,7 +404,7 @@ private:
   std::unique_ptr<const BackendType> backend_;
   mutable std::vector<RangeType> tmp_ranges_;
   mutable std::vector<JacobianRangeType> tmp_jacobian_ranges_;
-}; // class PiolaTransformedPdelabWrapper
+}; // class PiolaTransformedDunePdelabWrapper
 
 
 #else // HAVE_DUNE_PDELAB
@@ -410,7 +412,7 @@ private:
 
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabWrapper
+class DunePdelabWrapper
 {
   static_assert(AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
 };
@@ -418,7 +420,7 @@ class PdelabWrapper
 
 template <class PdelabSpaceImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
-class PiolaTransformedPdelabWrapper
+class PiolaTransformedDunePdelabWrapper
 {
   static_assert(AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
 };
@@ -430,4 +432,4 @@ class PiolaTransformedPdelabWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_BASEFUNCTIONSET_PDELAB_HH
+#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_PDELAB_WRAPPER_HH

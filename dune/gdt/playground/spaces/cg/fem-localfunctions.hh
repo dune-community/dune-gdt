@@ -29,7 +29,7 @@
 #include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/mapper/fem.hh>
-#include <dune/gdt/basefunctionset/fem-localfunctions.hh>
+#include <dune/gdt/spaces/basefunctionset/dune-fem-localfunctions-wrapper.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 
 namespace Dune {
@@ -88,8 +88,8 @@ private:
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
-  typedef BaseFunctionSet::FemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain, RangeFieldType,
-                                                    rangeDim, rangeDimCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::DuneFemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain,
+                                                        RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
-#define DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH
+#define DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH
 
 #include <vector>
 
@@ -20,7 +20,7 @@ namespace BaseFunctionSet {
 // forward, to be used in the traits and to allow for specialization
 template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
           size_t rangeDimCols = 1>
-class FemLocalfunctionsWrapper
+class DuneFemLocalfunctionsWrapper
 {
   static_assert(AlwaysFalse<BaseFunctionSetMapImp>::value, "Untested for these dimensions!");
 };
@@ -31,11 +31,11 @@ namespace internal {
 
 template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
           size_t rangeDimCols>
-class FemLocalfunctionsWrapperTraits
+class DuneFemLocalfunctionsWrapperTraits
 {
 public:
-  typedef FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                   rangeDimCols> derived_type;
+  typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                       rangeDimCols> derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType BackendType;
   typedef typename BackendType::EntityType EntityType;
 };
@@ -45,20 +45,21 @@ public:
 
 
 template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-class FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
-                                                                               domainDim, RangeFieldImp, rangeDim, 1>,
+class DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp,
+                                                                                   DomainFieldImp, domainDim,
+                                                                                   RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef BaseFunctionSetInterface<internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
-                                                                            domainDim, RangeFieldImp, rangeDim, 1>,
+  typedef BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
+                                                                                domainDim, RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
-  typedef FemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+  typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
 
 public:
-  typedef internal::FemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                   rangeDim, 1> Traits;
+  typedef internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                                       rangeDim, 1> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -66,16 +67,16 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  FemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& ent)
+  DuneFemLocalfunctionsWrapper(const BaseFunctionSetMapImp& baseFunctionSetMap, const EntityType& ent)
     : BaseType(ent)
     , baseFunctionSetMap_(baseFunctionSetMap)
     , backend_(new BackendType(baseFunctionSetMap_.find(this->entity())))
   {
   }
 
-  FemLocalfunctionsWrapper(ThisType&& source) = default;
+  DuneFemLocalfunctionsWrapper(ThisType&& source) = default;
 
-  FemLocalfunctionsWrapper(const ThisType& /*other*/) = delete;
+  DuneFemLocalfunctionsWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
 
@@ -113,11 +114,11 @@ public:
 private:
   const BaseFunctionSetMapImp& baseFunctionSetMap_;
   std::unique_ptr<const BackendType> backend_;
-}; // class FemLocalfunctionsWrapper
+}; // class DuneFemLocalfunctionsWrapper
 
 
 } // namespace BaseFunctionSet
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_BASEFUNCTIONSET_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH

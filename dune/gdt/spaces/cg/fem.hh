@@ -66,8 +66,8 @@ public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::FemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
-                                      dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
+                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;

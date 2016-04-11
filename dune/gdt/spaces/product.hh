@@ -12,7 +12,7 @@
 
 #include <dune/stuff/common/tuple.hh>
 
-#include <dune/gdt/basefunctionset/default/product.hh>
+#include <dune/gdt/spaces/basefunctionset/product.hh>
 #include <dune/gdt/mapper/default/product.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/parallel.hh>
@@ -75,7 +75,7 @@ public:
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
   typedef typename std::tuple<SpaceImps...> SpaceTupleType;
   typedef typename Dune::GDT::Mapper::DefaultProductMapper<GridViewType, typename SpaceImps::MapperType...> MapperType;
-  typedef typename Dune::GDT::BaseFunctionSet::ProductBaseFunctionSet<typename SpaceImps::BaseFunctionSetType...>
+  typedef typename Dune::GDT::BaseFunctionSet::ProductDefault<typename SpaceImps::BaseFunctionSetType...>
       BaseFunctionSetType;
   static const int polOrder    = internal::maxPolOrder<SpaceImps...>::polOrder;
   static const bool continuous = internal::allContinuous<SpaceImps...>::value;

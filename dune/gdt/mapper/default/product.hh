@@ -11,7 +11,7 @@
 #include <dune/stuff/common/debug.hh>
 #include <dune/stuff/common/type_utils.hh>
 
-#include <dune/gdt/basefunctionset/default/product.hh>
+#include <dune/gdt/spaces/basefunctionset/product.hh>
 
 #include "../../mapper/interface.hh"
 

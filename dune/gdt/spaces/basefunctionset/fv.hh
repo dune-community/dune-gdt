@@ -3,10 +3,10 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
-#define DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
+#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH
+#define DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH
 
-#include "../interface.hh"
+#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -184,4 +184,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_BASEFUNCTIONSET_DEFAULT_FV_HH
+#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH

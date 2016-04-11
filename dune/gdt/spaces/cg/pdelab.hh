@@ -30,7 +30,7 @@
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "../../mapper/pdelab.hh"
-#include "../../basefunctionset/pdelab.hh"
+#include "../basefunctionset/dune-pdelab-wrapper.hh"
 
 #include "interface.hh"
 
@@ -98,8 +98,8 @@ public:
       BackendType;
   typedef Mapper::ContinuousPdelabWrapper<BackendType, rangeDim> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef BaseFunctionSet::PdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim,
-                                         rangeDimCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                                             rangeDim, rangeDimCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
 

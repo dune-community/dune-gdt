@@ -24,7 +24,7 @@
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
 
-#include <dune/gdt/basefunctionset/pdelab.hh>
+#include <dune/gdt/spaces/basefunctionset/dune-pdelab-wrapper.hh>
 #include <dune/gdt/mapper/pdelab.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
