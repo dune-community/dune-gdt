@@ -100,6 +100,27 @@ struct DynamicTupleGetter
   }
 };
 
+template <size_t I, class... SpaceTypes>
+struct MapperTuplefromSpaceTupleCreator
+{
+  template <class... MapperTypes>
+  static typename std::enable_if<sizeof...(MapperTypes) == sizeof...(SpaceTypes),
+                                 typename std::tuple<MapperTypes...>>::type
+  create(const std::tuple<SpaceTypes...>& /*spaces*/, const std::tuple<MapperTypes...>& mappers)
+  {
+    return mappers;
+  }
+
+  template <class... MapperTypes>
+  static typename std::enable_if<sizeof...(MapperTypes) < sizeof...(SpaceTypes),
+                                 typename std::tuple<typename SpaceTypes::MapperType...>>::type
+  create(const std::tuple<SpaceTypes...>& spaces, const std::tuple<MapperTypes...>& mappers)
+  {
+    const auto new_mappers = std::tuple_cat(mappers, std::make_tuple(std::get<I>(spaces).mapper()));
+    return MapperTuplefromSpaceTupleCreator<I + 1, SpaceTypes...>::create(spaces, new_mappers);
+  }
+};
+
 
 template <class GridViewImp, class... MapperTypes>
 class DefaultProductMapperTraits
@@ -140,7 +161,7 @@ public:
   using typename BaseType::BackendType;
 
   DefaultProductMapper(const GridViewType& grid_view, const MapperTypes&... mappers)
-    : mappers_(mappers...)
+    : mappers_(std::make_tuple(mappers...))
     , grid_view_(grid_view)
   {
   }
@@ -151,9 +172,10 @@ public:
   {
   }
 
-  template <class FirstSpaceType, class... SpaceTypes>
-  DefaultProductMapper(const FirstSpaceType& first_space, const SpaceTypes&... spaces)
-    : DefaultProductMapper(first_space.grid_view(), first_space.mapper(), spaces.mapper()...)
+  template <class... SpaceTypes>
+  DefaultProductMapper(const std::tuple<SpaceTypes...>& spaces)
+    : DefaultProductMapper(std::get<0>(spaces).grid_view(),
+                           internal::MapperTuplefromSpaceTupleCreator<0, SpaceTypes...>::create(spaces, std::tuple<>()))
   {
   }
 
