@@ -318,10 +318,10 @@ public:
                                                          DomainFieldType, dimDomain,
                                                          RangeFieldType, 1, 1 >        ConstantFunctionType;
       typedef typename std::conditional< use_lax_friedrichs_flux,
-          typename Dune::GDT::Operators::AdvectionLaxFriedrichs< AnalyticalFluxType, BoundaryValueType, ConstantFunctionType >,
-          typename Dune::GDT::Operators::AdvectionGodunov< AnalyticalFluxType, BoundaryValueType >
+          typename Dune::GDT::AdvectionLaxFriedrichsOperator< AnalyticalFluxType, BoundaryValueType, ConstantFunctionType >,
+          typename Dune::GDT::AdvectionGodunovOperator< AnalyticalFluxType, BoundaryValueType >
           >::type OperatorType;
-      typedef typename Dune::GDT::Operators::AdvectionRHS< RHSType > RHSOperatorType;
+      typedef typename Dune::GDT::AdvectionRHSOperator< RHSType > RHSOperatorType;
 
       // create right hand side operator
       RHSOperatorType rhs_operator(*rhs);
