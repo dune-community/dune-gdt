@@ -280,6 +280,13 @@ private:
 }; // class DarcyOperator
 
 
+template <class G, class F>
+std::unique_ptr<DarcyOperator<G, F>> make_darcy(const G& grid_view, const F& function)
+{
+  return std::unique_ptr<DarcyOperator<G, F>>(new Darcy< G, F >(grid_view, function));
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
