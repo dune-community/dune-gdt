@@ -14,7 +14,7 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include <dune/gdt/discretefunction/local.hh>
+#include <dune/gdt/local/discretefunction.hh>
 
 namespace Dune {
 namespace GDT {

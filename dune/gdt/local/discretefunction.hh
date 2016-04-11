@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
-#define DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
+#ifndef DUNE_GDT_LOCAL_DISCRETEFUNCTION_HH
+#define DUNE_GDT_LOCAL_DISCRETEFUNCTION_HH
 
 #include <vector>
 #include <type_traits>
@@ -208,4 +208,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_DISCRETEFUNCTION_LOCAL_HH
+#endif // DUNE_GDT_LOCAL_DISCRETEFUNCTION_HH

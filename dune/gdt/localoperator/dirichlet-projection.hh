@@ -8,7 +8,7 @@
 
 #include <dune/stuff/functions/interfaces.hh>
 
-#include <dune/gdt/discretefunction/local.hh>
+#include <dune/gdt/local/discretefunction.hh>
 
 #include "interfaces.hh"
 

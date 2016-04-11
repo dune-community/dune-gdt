@@ -25,10 +25,9 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/common/memory.hh>
 
+#include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-
-#include "local.hh"
 
 namespace Dune {
 namespace GDT {

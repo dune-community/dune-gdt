@@ -13,7 +13,7 @@
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/la/solver.hh>
 
-#include <dune/gdt/discretefunction/local.hh>
+#include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/localevaluation/product.hh>
 #include <dune/gdt/localfunctional/integrals.hh>
