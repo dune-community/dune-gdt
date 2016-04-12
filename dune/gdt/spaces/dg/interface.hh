@@ -12,14 +12,13 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 static constexpr ChooseSpaceBackend default_dg_backend = default_space_backend;
 
 
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class DGInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
+class DgSpaceInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
 
@@ -44,10 +43,9 @@ public:
   {
     static_assert(AlwaysFalse<S>::value, "DG spaces do not implement constraints!");
   }
-}; // class DGInterface
+}; // class DgSpaceInterface
 
 
-} // namespace Spaces
 namespace internal {
 
 
@@ -68,7 +66,7 @@ struct is_dg_space_helper
 
 template <class S, bool candidate = internal::is_dg_space_helper<S>::is_candidate>
 struct is_dg_space
-    : public std::is_base_of<Spaces::DGInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+    : public std::is_base_of<DgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 

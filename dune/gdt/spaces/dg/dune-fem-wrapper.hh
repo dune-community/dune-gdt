@@ -80,12 +80,12 @@ public:
 // untested for the vector-valued case
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public DGInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                         GridPartImp::dimension, 1, 1>
+    : public DgSpaceInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                              GridPartImp::dimension, 1, 1>
 {
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
-  typedef DGInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                      GridPartImp::dimension, 1, 1> BaseType;
+  typedef DgSpaceInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                           GridPartImp::dimension, 1, 1> BaseType;
 
 public:
   using typename BaseType::Traits;

@@ -145,12 +145,13 @@ public:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public DGInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                         GridViewImp::dimension, 1, 1>
+    : public DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1,
+                                                                       1>,
+                              GridViewImp::dimension, 1, 1>
 {
   typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
-  typedef DGInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                      GridViewImp::dimension, 1, 1> BaseType;
+  typedef DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                           GridViewImp::dimension, 1, 1> BaseType;
 
 public:
   using typename BaseType::Traits;
