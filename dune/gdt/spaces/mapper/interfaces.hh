@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_INTERFACE_HH
-#define DUNE_GDT_MAPPER_INTERFACE_HH
+#ifndef DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
+#define DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
 
 #include <dune/common/dynvector.hh>
 
@@ -132,4 +132,4 @@ public:
 } // namespace Dune
 
 
-#endif // DUNE_GDT_MAPPER_INTERFACE_HH
+#endif // DUNE_GDT_SPACES_MAPPER_INTERFACES_HH

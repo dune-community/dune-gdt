@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_PDELAB_HH
-#define DUNE_GDT_MAPPER_PDELAB_HH
+#ifndef DUNE_GDT_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH
+#define DUNE_GDT_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH
 
 #include <unordered_map>
 
@@ -19,8 +19,8 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/common/tuple.hh>
 
-#include "interface.hh"
-#include <dune/gdt/mapper/default/product.hh>
+#include "interfaces.hh"
+#include "product.hh"
 
 namespace Dune {
 namespace GDT {
@@ -236,4 +236,4 @@ class DiscontinuousPdelabWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_MAPPER_PDELAB_HH
+#endif // DUNE_GDT_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH

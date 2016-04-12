@@ -25,7 +25,7 @@
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container/pattern.hh>
 
-#include <dune/gdt/mapper/interface.hh>
+#include <dune/gdt/spaces/mapper/interfaces.hh>
 
 #include "constraints.hh"
 

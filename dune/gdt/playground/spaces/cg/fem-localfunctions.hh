@@ -28,7 +28,7 @@
 
 #include <dune/stuff/common/type_utils.hh>
 
-#include <dune/gdt/mapper/fem.hh>
+#include <dune/gdt/spaces/mapper/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/basefunctionset/dune-fem-localfunctions-wrapper.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 

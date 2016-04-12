@@ -9,7 +9,7 @@
 #include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/spaces/basefunctionset/fv.hh>
-#include <dune/gdt/mapper/default/fv.hh>
+#include <dune/gdt/spaces/mapper/fv.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "interface.hh"

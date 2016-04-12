@@ -18,7 +18,7 @@
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/mapper/interface.hh>
+#include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
 #include <dune/gdt/test/grids.hh>

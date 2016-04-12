@@ -25,7 +25,7 @@
 #include <dune/stuff/common/type_utils.hh>
 
 #include <dune/gdt/spaces/basefunctionset/dune-pdelab-wrapper.hh>
-#include <dune/gdt/mapper/pdelab.hh>
+#include <dune/gdt/spaces/mapper/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "interface.hh"

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_FEM_HH
-#define DUNE_GDT_MAPPER_FEM_HH
+#ifndef DUNE_GDT_SPACES_MAPPER_DUNE_FEM_WRAPPER_HH
+#define DUNE_GDT_SPACES_MAPPER_DUNE_FEM_WRAPPER_HH
 
 #include <dune/common/dynvector.hh>
 #include <dune/common/typetraits.hh>
@@ -15,7 +15,7 @@
 
 #include <dune/stuff/common/type_utils.hh>
 
-#include "interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
@@ -241,4 +241,4 @@ class FemDofWrapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_MAPPER_FEM_HH
+#endif // DUNE_GDT_SPACES_MAPPER_DUNE_FEM_WRAPPER_HH

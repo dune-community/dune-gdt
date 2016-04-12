@@ -11,8 +11,8 @@
 #include <dune/stuff/common/debug.hh>
 #include <dune/stuff/common/type_utils.hh>
 
-#include <dune/gdt/mapper/interface.hh>
-#include <dune/gdt/mapper/pdelab.hh>
+#include <dune/gdt/spaces/mapper/interfaces.hh>
+#include <dune/gdt/spaces/mapper/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {

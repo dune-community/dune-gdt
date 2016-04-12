@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_DEFAULT_FV_HH
-#define DUNE_GDT_MAPPER_DEFAULT_FV_HH
+#ifndef DUNE_GDT_SPACES_MAPPER_FV_HH
+#define DUNE_GDT_SPACES_MAPPER_FV_HH
 
 #include <type_traits>
 
@@ -13,7 +13,7 @@
 #include <dune/stuff/common/debug.hh>
 #include <dune/stuff/common/type_utils.hh>
 
-#include "../../mapper/interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
@@ -273,4 +273,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_MAPPER_DEFAULT_FV_HH
+#endif // DUNE_GDT_SPACES_MAPPER_FV_HH

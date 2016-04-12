@@ -10,7 +10,7 @@
 
 #include <dune/stuff/la/container/vector-interface.hh>
 
-#include <dune/gdt/mapper/interface.hh>
+#include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {

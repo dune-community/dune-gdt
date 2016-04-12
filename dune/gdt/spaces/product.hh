@@ -13,7 +13,7 @@
 #include <dune/stuff/common/tuple.hh>
 
 #include <dune/gdt/spaces/basefunctionset/product.hh>
-#include <dune/gdt/mapper/default/product.hh>
+#include <dune/gdt/spaces/mapper/product.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
