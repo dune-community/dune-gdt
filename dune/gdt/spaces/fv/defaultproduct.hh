@@ -53,14 +53,14 @@ public:
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::Spaces::FVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                            GridViewImp::dimension, rangeDim, 1>,
+    : public Dune::GDT::FvSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+                                         GridViewImp::dimension, rangeDim, 1>,
       public Dune::GDT::ProductSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
                                               GridViewImp::dimension, rangeDim, 1>
 {
   typedef DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Dune::GDT::Spaces::FVInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                         GridViewImp::dimension, rangeDim, 1> BaseType;
+  typedef Dune::GDT::FvSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+                                      GridViewImp::dimension, rangeDim, 1> BaseType;
   typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> DefaultFVSpaceType;
 
 public:

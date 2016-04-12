@@ -61,12 +61,12 @@ public:
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class Default<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public FVInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                         rangeDim, 1>
+    : public FvSpaceInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+                              rangeDim, 1>
 {
   typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef FVInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                      rangeDim, 1> BaseType;
+  typedef FvSpaceInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+                           rangeDim, 1> BaseType;
 
 public:
   typedef typename internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;

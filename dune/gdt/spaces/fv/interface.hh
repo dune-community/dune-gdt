@@ -12,11 +12,10 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class FVInterface : public SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>
+class FvSpaceInterface : public SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols> BaseType;
 
@@ -40,10 +39,9 @@ public:
   {
     static_assert(AlwaysFalse<S>::value, "FV spaces do not implement constraints!");
   }
-}; // class FVInterface
+}; // class FvSpaceInterface
 
 
-} // namespace Spaces
 namespace internal {
 
 
@@ -64,7 +62,7 @@ struct is_fv_space_helper
 
 template <class S, bool candidate = internal::is_fv_space_helper<S>::is_candidate>
 struct is_fv_space
-    : public std::is_base_of<Spaces::FVInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+    : public std::is_base_of<FvSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 
