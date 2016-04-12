@@ -21,7 +21,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 template <class... SpaceImps>
@@ -185,7 +184,6 @@ private:
 }; // class DefaultProductSpace
 
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
