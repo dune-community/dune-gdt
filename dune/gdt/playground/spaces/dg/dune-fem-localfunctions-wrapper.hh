@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_FEM_LOCALFUNCTIONS_HH
-#define DUNE_GDT_PLAYGROUND_SPACES_DG_FEM_LOCALFUNCTIONS_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH
 
 #include <dune/common/deprecated.hh>
 
@@ -32,15 +32,13 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace DG {
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class FemLocalfunctionsBased
+class DuneFemLocalfunctionsDgSpaceWrapper
 {
   static_assert(rangeDim == 1 && rangeDimCols == 1, "Not yet implemented (find suitable vector valued basis)!");
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
@@ -48,7 +46,7 @@ class FemLocalfunctionsBased
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class FemLocalfunctionsBasedTraits
+class DuneFemLocalfunctionsDgSpaceWrapperTraits
 {
   static_assert(polynomialOrder >= 1, "Wrong polOrder given!");
   static_assert(rangeDim == 1, "Not yet implemented (find suitable vector valued basis)!");
@@ -72,7 +70,8 @@ private:
 
 public:
   typedef RangeFieldImp RangeFieldType;
-  typedef FemLocalfunctionsBased<GridPartType, polOrder, RangeFieldType, rangeDim, rangeDimCols> derived_type;
+  typedef DuneFemLocalfunctionsDgSpaceWrapper<GridPartType, polOrder, RangeFieldType, rangeDim, rangeDimCols>
+      derived_type;
   typedef Dune::LagrangeLocalFiniteElement<Dune::EquidistantPointSet, dimDomain, DomainFieldType, RangeFieldType>
       ContinuousFiniteElementType;
   typedef Dune::DGLocalFiniteElement<ContinuousFiniteElementType> FiniteElementType;
@@ -95,21 +94,22 @@ public:
 
 private:
   template <class G, int p, class R, size_t r, size_t rC>
-  friend class FemLocalfunctionsBased;
-}; // class FemLocalfunctionsBasedTraits
+  friend class DuneFemLocalfunctionsDgSpaceWrapper;
+}; // class DuneFemLocalfunctionsDgSpaceWrapperTraits
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+class DuneFemLocalfunctionsDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public SpaceInterface<DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1,
+                                                                      1>,
                             typename GridPartImp::dimension, 1, 1>
 {
-  typedef SpaceInterface<FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+  typedef SpaceInterface<DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
                          typename GridPartImp::dimension, 1, 1> BaseType;
-  typedef FemLocalfunctionsBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
+  typedef DuneFemLocalfunctionsDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
-  typedef FemLocalfunctionsBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
+  typedef DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
@@ -136,7 +136,7 @@ private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;
 
 public:
-  FemLocalfunctionsBased(GridPartType gridP)
+  DuneFemLocalfunctionsDgSpaceWrapper(GridPartType gridP)
     : gridPart_(gridP)
     , gridView_(gridPart_->gridView())
     , baseFunctionSetMap_(gridPart_)
@@ -146,7 +146,7 @@ public:
   {
   }
 
-  FemLocalfunctionsBased(const ThisType& other) = default;
+  DuneFemLocalfunctionsDgSpaceWrapper(const ThisType& other) = default;
 
   ThisType& operator=(const ThisType& other)
   {
@@ -211,14 +211,14 @@ private:
   const BackendType backend_;
   const MapperType mapper_;
   mutable double communicator_;
-}; // class FemLocalfunctionsBased< ..., 1, 1 >
+}; // class DuneFemLocalfunctionsDgSpaceWrapper< ..., 1, 1 >
 
 
 #else // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class FemLocalfunctionsBased
+class DuneFemLocalfunctionsDgSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "You are missing dune-fem-localfunctions!");
 };
@@ -227,9 +227,7 @@ class FemLocalfunctionsBased
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
 
-} // namespace DG
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PLAYGROUND_SPACES_DG_FEM_LOCALFUNCTIONS_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_FEM_LOCALFUNCTIONS_WRAPPER_HH
