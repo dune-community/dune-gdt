@@ -21,7 +21,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
+
 
 template <class ViewImp,
           bool is_parallel =
@@ -78,7 +78,6 @@ struct CommunicationChooser<ViewImp, true>
 
 #endif // HAVE_MPI
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
