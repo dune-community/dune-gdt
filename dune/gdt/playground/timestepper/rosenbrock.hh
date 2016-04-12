@@ -5,8 +5,8 @@
 //
 // Contributors: Tobias Leibner
 
-#ifndef DUNE_GDT_TIMESTEPPER_ROSENBROCK_TYPE_HH
-#define DUNE_GDT_TIMESTEPPER_ROSENBROCK_TYPE_HH
+#ifndef DUNE_GDT_PLAYGROUND_TIMESTEPPER_ROSENBROCK_HH
+#define DUNE_GDT_PLAYGROUND_TIMESTEPPER_ROSENBROCK_HH
 
 #include <utility>
 
@@ -20,10 +20,9 @@
 
 namespace Dune {
 namespace GDT {
-namespace TimeStepper {
 
 
-enum class RosenbrocktypeMethods
+enum class RosenbrockTimeStepperMethods
 {
   GRK4A,
   GRK4T,
@@ -35,41 +34,42 @@ namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType, RosenbrocktypeMethods method = RosenbrocktypeMethods::other>
+template <class RangeFieldType, class TimeFieldType,
+          RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::other>
 struct RosenbrockButcherArrayProvider
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in Rosenbrocktype's constructor for this method!");
+               "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
     return Dune::DynamicMatrix<RangeFieldType>();
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in Rosenbrocktype's constructor for this method!");
+               "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
     return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in Rosenbrocktype's constructor for this method!");
+               "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
     return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in Rosenbrocktype's constructor for this method!");
+               "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
     return Dune::DynamicVector<TimeFieldType>();
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in Rosenbrocktype's constructor for this method!");
+               "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
     return Dune::DynamicVector<TimeFieldType>();
   }
 };
@@ -77,7 +77,7 @@ struct RosenbrockButcherArrayProvider
 // GRK4A, see Kaps, Rentrop (1979), "Generalized Runge-Kutta methods of order four with stepsize control for stiff
 // ordinary differential equations"
 template <class RangeFieldType, class TimeFieldType>
-struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrocktypeMethods::GRK4A>
+struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockTimeStepperMethods::GRK4A>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -111,7 +111,7 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, Rosenbrockt
 
 // GRK4T
 template <class RangeFieldType, class TimeFieldType>
-struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrocktypeMethods::GRK4T>
+struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockTimeStepperMethods::GRK4T>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -152,7 +152,8 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, Rosenbrockt
  * Timestepper using Rosenbrock-type methods methods to solve equations of the form u_t = r * L(u) where u is a
  * discrete function, L an operator acting on u and r a scalar factor (e.g. -1).
  * The specific Rosenbrock-type method can be chosen as the third template argument. If your desired Rosenbrock-type
- * method is not contained in Dune::GDT::TimeStepper::RosenbrocktypeMethods, choose RosenbrocktypeMethods::other and
+ * method is not contained in Dune::GDT::TimeStepper::RosenbrockTimeStepperMethods, choose
+ * RosenbrockTimeStepperMethods::other and
  * supply matrices A, Gamma (DynamicMatrix< RangeFieldType >) and vectors b_1, b_2 (DynamicVector< RangeFieldType >) and
  * c (DynamicVector< TimeFieldType >) in the constructor. Here, A, Gamma, b_1, b_2 and c form the extended butcher
  * tableau (see https://de.wikipedia.org/wiki/Rosenbrock-Wanner-Verfahren, b_1 and b_2 are the same as for adaptive
@@ -162,13 +163,13 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, Rosenbrockt
  * \tparam DiscreteFunctionImp Type of initial values and solution at a fixed time
  * \tparam SolverImp Type of solver used for inversion of matrix in each time step.
  * \tparam TimeFieldImp Type used for representation of time (default is double)
- * \tparam method Rosenbrock-type method that is used (default is RosenbrocktypeMethods::GRK4T)
+ * \tparam method Rosenbrock-type method that is used (default is RosenbrockTimeStepperMethods::GRK4T)
  *
  * \todo Implement concept of jacobian/time derivative of operator and finish implementation of this method.
  */
 template <class OperatorImp, class DiscreteFunctionImp, class SolverImp, class TimeFieldImp = double,
-          RosenbrocktypeMethods method                                                      = RosenbrocktypeMethods::GRK4T>
-class Rosenbrocktype : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+          RosenbrockTimeStepperMethods method                                               = RosenbrockTimeStepperMethods::GRK4T>
+class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
   typedef typename internal::RosenbrockButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
@@ -191,7 +192,7 @@ public:
   using BaseType::current_time;
 
   /**
-   * \brief Constructor for Rosenbrocktype time stepper
+   * \brief Constructor for RosenbrockTimeStepper time stepper
    * \param op Operator L
    * \param initial_values Discrete function containing initial values for u at time t_0.
    * \param r Scalar factor (see above, default is 1)
@@ -199,19 +200,20 @@ public:
    * \param tol Error tolerance for the adaptive scheme (default is 1e-4)
    * \param scale_factor_min Minimum allowed factor for time step scaling (default is 0.2).
    * \param scale_factor_max Maximum allowed factor for time step scaling (default is 5).
-   * \param A Coefficient matrix (only provide if you use RosenbrocktypeMethods::other)
-   * \param b_1 First set of coefficients (only provide if you use RosenbrocktypeMethods::other)
-   * \param b_2 Second set of coefficients (only provide if you use RosenbrocktypeMethods::other)
-   * \param c Coefficients for time steps (only provide if you use RosenbrocktypeMethods::other)
-   * \param Gamma Coefficient matrix (only provide if you use RosenbrocktypeMethods::other)
+   * \param A Coefficient matrix (only provide if you use RosenbrockTimeStepperMethods::other)
+   * \param b_1 First set of coefficients (only provide if you use RosenbrockTimeStepperMethods::other)
+   * \param b_2 Second set of coefficients (only provide if you use RosenbrockTimeStepperMethods::other)
+   * \param c Coefficients for time steps (only provide if you use RosenbrockTimeStepperMethods::other)
+   * \param Gamma Coefficient matrix (only provide if you use RosenbrockTimeStepperMethods::other)
    */
-  Rosenbrocktype(const OperatorType& op, const DiscreteFunctionType& initial_values, const RangeFieldType r = 1.0,
-                 const double t_0 = 0.0, const RangeFieldType tol = 1e-4, const TimeFieldType scale_factor_min = 0.2,
-                 const TimeFieldType scale_factor_max = 5, const MatrixType& A = ButcherArrayProviderType::A(),
-                 const VectorType& b_1   = ButcherArrayProviderType::b_1(),
-                 const VectorType& b_2   = ButcherArrayProviderType::b_2(),
-                 const TimeVectorType& c = ButcherArrayProviderType::c(),
-                 const MatrixType& Gamma = ButcherArrayProviderType::Gamma())
+  RosenbrockTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
+                        const RangeFieldType r = 1.0, const double t_0 = 0.0, const RangeFieldType tol = 1e-4,
+                        const TimeFieldType scale_factor_min = 0.2, const TimeFieldType scale_factor_max = 5,
+                        const MatrixType& A     = ButcherArrayProviderType::A(),
+                        const VectorType& b_1   = ButcherArrayProviderType::b_1(),
+                        const VectorType& b_2   = ButcherArrayProviderType::b_2(),
+                        const TimeVectorType& c = ButcherArrayProviderType::c(),
+                        const MatrixType& Gamma = ButcherArrayProviderType::Gamma())
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
@@ -280,7 +282,7 @@ public:
       for (size_t jj = 0; jj <= ii; ++jj)
         d_[ii] += Gamma[ii][jj];
     }
-  } // constructor Rosenbrocktype
+  } // constructor RosenbrockTimeStepper
 
   TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt)
   {
@@ -296,7 +298,7 @@ public:
 
       for (size_t ii = 0; ii < num_stages_; ++ii) {
         // GRK4A and GRK4T use the same coefficients for the third and fourth stage
-        if ((method == RosenbrocktypeMethods::GRK4A || method == RosenbrocktypeMethods::GRK4T) && ii == 3)
+        if ((method == RosenbrockTimeStepperMethods::GRK4A || method == RosenbrockTimeStepperMethods::GRK4T) && ii == 3)
           u_intermediate_stages_[ii].vector() = u_intermediate_stages_[ii - 1].vector();
         else {
           u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
@@ -382,8 +384,7 @@ private:
 };
 
 
-} // namespace TimeStepper
-} // namespace Stuff
+} // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TIMESTEPPER_ROSENBROCK_TYPE_HH
+#endif // DUNE_GDT_PLAYGROUND_TIMESTEPPER_ROSENBROCK_HH
