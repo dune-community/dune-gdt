@@ -74,7 +74,7 @@ public:
   typedef typename GridViewType::IndexSet BackendType;
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
   typedef typename std::tuple<SpaceImps...> SpaceTupleType;
-  typedef typename Dune::GDT::Mapper::DefaultProductMapper<GridViewType, typename SpaceImps::MapperType...> MapperType;
+  typedef typename Dune::GDT::DefaultProductMapper<GridViewType, typename SpaceImps::MapperType...> MapperType;
   typedef typename Dune::GDT::BaseFunctionSet::ProductDefault<typename SpaceImps::BaseFunctionSetType...>
       BaseFunctionSetType;
   static const int polOrder    = internal::maxPolOrder<SpaceImps...>::polOrder;

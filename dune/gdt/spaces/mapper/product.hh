@@ -17,7 +17,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Mapper {
 
 
 // forward
@@ -282,7 +281,6 @@ private:
 }; // class DefaultProductMapper
 
 
-} // namespace Mapper
 } // namespace GDT
 } // namespace Dune
 
