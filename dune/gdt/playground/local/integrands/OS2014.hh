@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALEVALUATION_OS2014_HH
-#define DUNE_GDT_LOCALEVALUATION_OS2014_HH
+#ifndef DUNE_GDT_PLAYGROUND_LOCAL_INTEGRANDS_OS2014_HH
+#define DUNE_GDT_PLAYGROUND_LOCAL_INTEGRANDS_OS2014_HH
 
 #include <tuple>
 #include <memory>
@@ -15,24 +15,22 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include "../../localevaluation/interface.hh"
+#include <dune/gdt/local/integrands/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
-namespace LocalIntegrands {
-namespace OS2014 {
 
 
 // forward, to be used in the traits
 template <class DiffusionFactorImp, class DiffusionFactorHatImp, class DiffusionTensorImp, class DiffusiveFluxImp>
-class DiffusiveFluxEstimateStar;
+class LocalDiffusiveFluxEstimateStarOS2014Integrand;
 
 
 namespace internal {
 
 
 template <class DiffusionFactorType, class DiffusionFactorHatType, class DiffusionTensorType, class DiffusiveFluxType>
-class DiffusiveFluxEstimateStarTraits
+class LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits
 {
   static_assert(Stuff::is_localizable_function<DiffusionFactorType>::value,
                 "DiffusionFactorType has to be a localizable function.");
@@ -60,8 +58,8 @@ class DiffusiveFluxEstimateStarTraits
                 "Dimensions have to agree");
 
 public:
-  typedef DiffusiveFluxEstimateStar<DiffusionFactorType, DiffusionFactorHatType, DiffusionTensorType, DiffusiveFluxType>
-      derived_type;
+  typedef LocalDiffusiveFluxEstimateStarOS2014Integrand<DiffusionFactorType, DiffusionFactorHatType,
+                                                        DiffusionTensorType, DiffusiveFluxType> derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionFactorHatType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>,
@@ -76,29 +74,33 @@ public:
 
 
 template <class DiffusionFactorType, class DiffusionFactorHatType, class DiffusionTensorType, class DiffusiveFluxType>
-class DiffusiveFluxEstimateStar
-    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType,
-                                                                                     DiffusionFactorHatType,
-                                                                                     DiffusionTensorType,
-                                                                                     DiffusiveFluxType>,
+class LocalDiffusiveFluxEstimateStarOS2014Integrand
+    : public LocalVolumeIntegrandInterface<internal::
+                                               LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
+                                                                                                   DiffusionFactorHatType,
+                                                                                                   DiffusionTensorType,
+                                                                                                   DiffusiveFluxType>,
                                            2>
 {
   typedef LocalVolumeIntegrandInterface<internal::
-                                            DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType,
-                                                                            DiffusionTensorType, DiffusiveFluxType>,
+                                            LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
+                                                                                                DiffusionFactorHatType,
+                                                                                                DiffusionTensorType,
+                                                                                                DiffusiveFluxType>,
                                         2> BaseType;
 
 public:
-  typedef internal::DiffusiveFluxEstimateStarTraits<DiffusionFactorType, DiffusionFactorHatType, DiffusionTensorType,
-                                                    DiffusiveFluxType> Traits;
+  typedef internal::LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType, DiffusionFactorHatType,
+                                                                        DiffusionTensorType, DiffusiveFluxType> Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
 
-  DiffusiveFluxEstimateStar(const DiffusionFactorType& diffusion_factor,
-                            const DiffusionFactorHatType& diffusion_factor_hat,
-                            const DiffusionTensorType& diffusion_tensor, const DiffusiveFluxType& diffusive_flux)
+  LocalDiffusiveFluxEstimateStarOS2014Integrand(const DiffusionFactorType& diffusion_factor,
+                                                const DiffusionFactorHatType& diffusion_factor_hat,
+                                                const DiffusionTensorType& diffusion_tensor,
+                                                const DiffusiveFluxType& diffusive_flux)
     : diffusion_factor_(diffusion_factor)
     , diffusion_factor_hat_(diffusion_factor_hat)
     , diffusion_tensor_(diffusion_tensor)
@@ -229,12 +231,10 @@ private:
   const DiffusionFactorHatType& diffusion_factor_hat_;
   const DiffusionTensorType& diffusion_tensor_;
   const DiffusiveFluxType& diffusive_flux_;
-}; // class DiffusiveFluxEstimateStar
+}; // class LocalDiffusiveFluxEstimateStarOS2014Integrand
 
 
-} // namespace OS2014
-} // namespace LocalIntegrands
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALEVALUATION_OS2014_HH
+#endif // DUNE_GDT_PLAYGROUND_LOCAL_INTEGRANDS_OS2014_HH
