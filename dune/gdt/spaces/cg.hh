@@ -19,7 +19,7 @@
 #endif
 
 #include "interface.hh"
-#include "cg/fem.hh"
+#include "cg/dune-fem-wrapper.hh"
 #include "cg/pdelab.hh"
 
 
@@ -47,7 +47,7 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
-    typedef GDT::Spaces::CG::FemBased<GridLayerType, p, R, r> Type;
+    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>

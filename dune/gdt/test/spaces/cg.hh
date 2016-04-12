@@ -15,7 +15,7 @@
 #include <dune/stuff/common/ranges.hh>
 #include <dune/stuff/grid/walker.hh>
 
-#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/pdelab.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/basefunctionset/interface.hh>

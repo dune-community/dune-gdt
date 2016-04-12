@@ -16,7 +16,7 @@
 #include <dune/gdt/operators/laplace.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/spaces/cg/fem.hh>
+#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
@@ -27,7 +27,7 @@ namespace Test {
 
 /**
  * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
- *       Spaces::CG::FemBased, Spaces::RT::PdelabBased and Spaces::FV::Default work correctly.
+ *       DuneFemCgSpaceWrapper, Spaces::RT::PdelabBased and Spaces::FV::Default work correctly.
  * \todo This test is rather old and could be refactored in terms of the other operator tests.
  * \todo Missing ctor and make_darcy_operator tests.
  */
@@ -82,7 +82,7 @@ struct DarcyOperatorTest : public ::testing::Test
   RangeFieldType expected_result_(const std::string type, const FunctionType& desired_output, const GV& grid_view) const
   {
     typedef typename SpaceTools::LeafGridPartView<GridType, RangeSpaceType::needs_grid_view>::Type GPV;
-    if (std::is_base_of<Spaces::CG::FemBased<GPV, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+    if (std::is_base_of<DuneFemCgSpaceWrapper<GPV, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;
       else if (type == "h1")
