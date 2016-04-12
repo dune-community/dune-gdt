@@ -14,7 +14,7 @@
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
-#include <dune/gdt/playground/spaces/dg/pdelab.hh>
+#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/playground/spaces/mapper/dune-pdelab-wrapper.hh>
 
 namespace Dune {
@@ -36,9 +36,9 @@ namespace internal {
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class PdelabBasedProductTraits
-    : public PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+    : public DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
   typedef PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
@@ -54,7 +54,7 @@ public:
   using BaseType::part_view_type;
   using BaseType::needs_grid_view;
 
-  typedef typename Dune::GDT::Spaces::DG::PdelabBased<GridViewType, polOrder, RangeFieldType, 1, dimRangeCols>
+  typedef typename Dune::GDT::DunePdelabDgSpaceWrapper<GridViewType, polOrder, RangeFieldType, 1, dimRangeCols>
       FactorSpaceType;
   typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
 };

@@ -51,7 +51,7 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab>
   {
-    typedef GDT::Spaces::DG::PdelabBased<GridLayerType, p, R, r> Type;
+    typedef GDT::DunePdelabDgSpaceWrapper<GridLayerType, p, R, r> Type;
   };
 
   typedef Stuff::Grid::ProviderInterface<GridType> GridProviderType;

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_PDELAB_HH
-#define DUNE_GDT_PLAYGROUND_SPACES_DG_PDELAB_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_PDELAB_WRAPPER_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_PDELAB_WRAPPER_HH
 
 #include <memory>
 
@@ -24,22 +24,19 @@
 
 #include <dune/gdt/spaces/parallel.hh>
 
-#include "../../../mapper/pdelab.hh"
 #include <dune/gdt/spaces/basefunctionset/dune-pdelab-wrapper.hh>
-
-#include "../../../spaces/dg/interface.hh"
+#include <dune/gdt/spaces/dg/interface.hh>
+#include "../mapper/dune-pdelab-wrapper.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace DG {
 
 #if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBased
+class DunePdelabDgSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for this combination of dimensions!");
 };
@@ -49,10 +46,10 @@ namespace internal {
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBasedTraits
+class DunePdelabDgSpaceWrapperTraits
 {
 public:
-  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
   static const int polOrder    = polynomialOrder;
   static const bool continuous = false;
@@ -102,20 +99,20 @@ public:
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
-  friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
-}; // class PdelabBasedTraits
+  friend class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
+}; // class DunePdelabDgSpaceWrapperTraits
 
 
 } // namespace internal
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
-class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public DGInterface<internal::PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public DGInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
                          GridViewImp::dimension, 1, 1>
 {
-  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
-  typedef DGInterface<internal::PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+  typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
+  typedef DGInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
                       GridViewImp::dimension, 1, 1> BaseType;
 
 public:
@@ -134,7 +131,7 @@ private:
 public:
   using typename BaseType::CommunicatorType;
 
-  PdelabBased(GridViewType gV)
+  DunePdelabDgSpaceWrapper(GridViewType gV)
     : grid_view_(gV)
     , fe_map_()
     , backend_(grid_view_, fe_map_)
@@ -148,7 +145,7 @@ public:
    * \brief Copy ctor.
    * \note  Manually implemented bc of the std::mutex + communicator_  unique_ptr
    */
-  PdelabBased(const ThisType& other)
+  DunePdelabDgSpaceWrapper(const ThisType& other)
     : grid_view_(other.grid_view_)
     , fe_map_()
     , backend_(grid_view_, fe_map_)
@@ -165,7 +162,7 @@ public:
    * \brief Move ctor.
    * \note  Manually implemented bc of the std::mutex.
    */
-  PdelabBased(ThisType&& source)
+  DunePdelabDgSpaceWrapper(ThisType&& source)
     : grid_view_(source.grid_view_)
     , fe_map_(source.fe_map_)
     , backend_(source.backend_)
@@ -215,14 +212,14 @@ private:
   mutable std::unique_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
-}; // class PdelabBased< ..., 1 >
+}; // class DunePdelabDgSpaceWrapper< ..., 1 >
 
 
 #else // HAVE_DUNE_PDELAB
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBased
+class DunePdelabDgSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridViewImp>::value, "You are missing dune-pdelab!");
 };
@@ -231,9 +228,7 @@ class PdelabBased
 #endif // HAVE_DUNE_PDELAB
 
 
-} // namespace DG
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PLAYGROUND_SPACES_DG_PDELAB_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_PDELAB_WRAPPER_HH
