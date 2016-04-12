@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
-#define DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
+#ifndef DUNE_GDT_SPACES_DG_DUNE_FEM_WRAPPER_HH
+#define DUNE_GDT_SPACES_DG_DUNE_FEM_WRAPPER_HH
 
 #include <memory>
 
@@ -19,22 +19,19 @@
 
 #include <dune/gdt/spaces/parallel.hh>
 
-#include "../../../mapper/fem.hh"
-#include <dune/gdt/spaces/basefunctionset/dune-fem-wrapper.hh>
-
-#include "../../../spaces/dg/interface.hh"
+#include "../mapper/dune-fem-wrapper.hh"
+#include "../basefunctionset/dune-fem-wrapper.hh"
+#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace DG {
 
 #if HAVE_DUNE_FEM
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class FemBased
+class DuneFemDgSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "Untested for these dimensions!");
 };
@@ -44,10 +41,10 @@ namespace internal {
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class FemBasedTraits
+class DuneFemDgSpaceWrapperTraits
 {
 public:
-  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
   static const int polOrder    = polynomialOrder;
@@ -74,7 +71,7 @@ public:
   static const bool needs_grid_view                       = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
-}; // class FemBasedTraits
+}; // class DuneFemDgSpaceWrapperTraits
 
 
 } // namespace internal
@@ -82,12 +79,12 @@ public:
 
 // untested for the vector-valued case
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
-class FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public DGInterface<internal::FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+class DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
+    : public DGInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
                          GridPartImp::dimension, 1, 1>
 {
-  typedef FemBased<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
-  typedef DGInterface<internal::FemBasedTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+  typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
+  typedef DGInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
                       GridPartImp::dimension, 1, 1> BaseType;
 
 public:
@@ -105,7 +102,7 @@ private:
 public:
   using typename BaseType::CommunicatorType;
 
-  FemBased(GridPartType gridP)
+  DuneFemDgSpaceWrapper(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
     , gridView_(new GridViewType(gridPart_->gridView()))
     , backend_(new BackendType(*gridPart_))
@@ -114,9 +111,9 @@ public:
   {
   }
 
-  FemBased(const ThisType& other) = default;
+  DuneFemDgSpaceWrapper(const ThisType& other) = default;
 
-  FemBased(ThisType&& source) = default;
+  DuneFemDgSpaceWrapper(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -159,14 +156,14 @@ private:
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
-}; // class FemBased< ..., 1 >
+}; // class DuneFemDgSpaceWrapper< ..., 1 >
 
 
 #else // HAVE_DUNE_FEM
 
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class FemBased
+class DuneFemDgSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridPartImp>::value, "You are missing dune-fem!");
 };
@@ -175,9 +172,7 @@ class FemBased
 #endif // HAVE_DUNE_FEM
 
 
-} // namespace DG
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_DISCONTINUOUSLAGRANGE_FEM_HH
+#endif // DUNE_GDT_SPACES_DG_DUNE_FEM_WRAPPER_HH

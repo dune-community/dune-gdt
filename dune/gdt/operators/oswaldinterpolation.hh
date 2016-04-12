@@ -20,7 +20,7 @@
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/playground/spaces/dg/fem.hh>
+#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 
 #include "interfaces.hh"
@@ -67,15 +67,15 @@ public:
   }
 
   template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<Spaces::DG::FemBased<SGP, 1, FieldType, 1, 1>, SV>& source,
-             DiscreteFunction<Spaces::DG::FemBased<RGP, 1, FieldType, 1, 1>, RV>& range) const
+  void apply(const ConstDiscreteFunction<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>, SV>& source,
+             DiscreteFunction<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range) const
   {
     apply_dg_fem(source, range);
   }
 
   template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<Spaces::Block<Spaces::DG::FemBased<SGP, 1, FieldType, 1, 1>>, SV>& source,
-             DiscreteFunction<Spaces::Block<Spaces::DG::FemBased<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+  void apply(const ConstDiscreteFunction<Spaces::Block<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
+             DiscreteFunction<Spaces::Block<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
   {
     apply_dg_fem(source, range);
   }

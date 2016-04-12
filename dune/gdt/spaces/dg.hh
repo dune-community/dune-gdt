@@ -17,7 +17,7 @@
 #include <dune/stuff/grid/provider/interface.hh>
 
 #include "interface.hh"
-#include "../playground/spaces/dg/fem.hh"
+#include "dg/dune-fem-wrapper.hh"
 #include "../playground/spaces/dg/pdelab.hh"
 
 
@@ -45,7 +45,7 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
-    typedef GDT::Spaces::DG::FemBased<GridLayerType, p, R, r> Type;
+    typedef GDT::DuneFemDgSpaceWrapper<GridLayerType, p, R, r> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
