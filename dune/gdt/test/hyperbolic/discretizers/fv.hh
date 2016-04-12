@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/periodicview.hh>
 
 #include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/spaces/fv/defaultproduct.hh>
+#include <dune/gdt/spaces/fv/product.hh>
 
 #include <dune/gdt/test/hyperbolic/problems/interface.hh>
 #include "base.hh"
@@ -37,7 +37,7 @@ public:
                                                                    : FluxTimeStepperCombinations::godunov_euler));
   typedef
       typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
-  typedef typename Spaces::FV::DefaultProduct<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
+  typedef typename FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef Discretizations::NonStationaryDefault<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
                                                 use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
 

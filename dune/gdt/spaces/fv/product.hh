@@ -5,8 +5,8 @@
 //
 // Contributors: Tobias Leibner
 
-#ifndef DUNE_GDT_SPACES_FV_DEFAULTPRODUCT_HH
-#define DUNE_GDT_SPACES_FV_DEFAULTPRODUCT_HH
+#ifndef DUNE_GDT_SPACES_FV_FvProductSpace_HH
+#define DUNE_GDT_SPACES_FV_FvProductSpace_HH
 
 #include <dune/stuff/common/tuple.hh>
 
@@ -15,13 +15,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace FV {
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class DefaultProduct
+class FvProductSpace
 {
   static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
 };
@@ -31,12 +29,12 @@ namespace internal {
 
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class DefaultProductTraits : public DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
+class FvProductSpaceTraits : public DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
 {
   typedef DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
-  typedef DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   using typename BaseType::GridViewType;
   static const size_t dimDomain    = GridViewType::dimension;
   static const size_t dimRange     = rangeDim;
@@ -45,26 +43,26 @@ public:
   typedef typename Dune::GDT::Spaces::FV::Default<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
   typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
   typedef typename Dune::GDT::Mapper::ProductFiniteVolume<GridViewType, dimRange, 1> MapperType;
-}; // class DefaultProductTraits
+}; // class FvProductSpaceTraits
 
 
 } // namespace internal
 
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
-class DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::FvSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+class FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
+    : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
                                          GridViewImp::dimension, rangeDim, 1>,
-      public Dune::GDT::ProductSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+      public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
                                               GridViewImp::dimension, rangeDim, 1>
 {
-  typedef DefaultProduct<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Dune::GDT::FvSpaceInterface<internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+  typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
                                       GridViewImp::dimension, rangeDim, 1> BaseType;
   typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> DefaultFVSpaceType;
 
 public:
-  typedef typename internal::DefaultProductTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
+  typedef typename internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
@@ -73,15 +71,15 @@ public:
   using typename BaseType::CommunicatorType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
-  DefaultProduct(GridViewType gv)
+  FvProductSpace(GridViewType gv)
     : default_fv_space_(gv)
     , product_fv_mapper_(gv)
     , factor_space_(gv)
   {
   }
 
-  DefaultProduct(const ThisType& other) = default;
-  DefaultProduct(ThisType&& source) = default;
+  FvProductSpace(const ThisType& other) = default;
+  FvProductSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -124,12 +122,10 @@ private:
   const DefaultFVSpaceType default_fv_space_;
   const MapperType product_fv_mapper_;
   const FactorSpaceType factor_space_;
-}; // class DefaultProduct< ..., 1 >
+}; // class FvProductSpace< ..., 1 >
 
 
-} // namespace FV
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_FV_DEFAULTPRODUCT_HH
+#endif // DUNE_GDT_SPACES_FV_FvProductSpace_HH
