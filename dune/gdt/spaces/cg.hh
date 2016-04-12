@@ -25,12 +25,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
           class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
-class CGProvider
+class CgSpaceProvider
 {
   static const Stuff::Grid::ChoosePartView part_view_type = ChooseGridPartView<backend_type>::type;
 
@@ -80,10 +79,9 @@ public:
     return Type(grid_provider.template layer<layer_type, part_view_type>(level_or_subdomain));
   }
 #endif // HAVE_DUNE_GRID_MULTISCALE
-}; // class CGProvider
+}; // class CgSpaceProvider
 
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

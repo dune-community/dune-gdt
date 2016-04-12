@@ -127,7 +127,7 @@ protected:
     //                                                R, 1, 1 >                 VelocityExpressionFunctionType;
 
     typedef typename Dune::Stuff::LA::CommonDenseVector<R> VectorType;
-    //    typedef typename Dune::GDT::Spaces::CGProvider< VelocityGridType,
+    //    typedef typename Dune::GDT::CgSpaceProvider< VelocityGridType,
     //                                                    DSG::ChooseLayer::leaf,
     //                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
     //                                                    1, R, 1, 1 >          CGProviderType;

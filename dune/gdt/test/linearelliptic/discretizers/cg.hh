@@ -43,7 +43,7 @@ class CGDiscretizer
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
                            RangeFieldType, dimRange> ProblemType;
-  typedef Spaces::CGProvider<GridType, layer, space_backend, pol, RangeFieldType, dimRange> SpaceProvider;
+  typedef CgSpaceProvider<GridType, layer, space_backend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
   typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::MatrixType MatrixType;
   typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::VectorType VectorType;
