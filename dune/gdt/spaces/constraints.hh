@@ -25,7 +25,6 @@ class ConstraintsWrapper;
 
 
 } // namespace internal
-namespace Spaces {
 
 
 /**
@@ -158,7 +157,6 @@ private:
 }; // class DirichletConstraints
 
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 

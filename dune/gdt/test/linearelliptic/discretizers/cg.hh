@@ -81,7 +81,7 @@ public:
     auto dirichlet_projection          = make_discrete_function<VectorType>(space, "dirichlet values");
     auto dirichlet_projection_operator = make_localizable_dirichlet_projection_operator(
         space.grid_view(), *boundary_info, problem.dirichlet(), dirichlet_projection);
-    Spaces::DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());
+    DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());
     // register everything for assembly in one grid walk
     SystemAssembler<SpaceType> assembler(space);
     assembler.add(*elliptic_operator);

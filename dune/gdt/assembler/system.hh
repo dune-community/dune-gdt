@@ -90,7 +90,7 @@ public:
   using BaseType::add;
 
   template <class C>
-  void add(Spaces::ConstraintsInterface<C>& constraints,
+  void add(ConstraintsInterface<C>& constraints,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType, typename C::derived_type>

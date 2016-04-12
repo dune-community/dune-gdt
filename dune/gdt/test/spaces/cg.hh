@@ -69,9 +69,9 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     typedef typename SpaceType::RangeFieldType RangeFieldType;
     Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
     std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
-    Dune::GDT::Spaces::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
+    Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
         boundary_info, this->space_.mapper().size(), true);
-    Dune::GDT::Spaces::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(
+    Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(
         boundary_info, this->space_.mapper().size(), false);
     this->space_.local_constraints(entity, dirichlet_constraints_set);
     this->space_.local_constraints(entity, dirichlet_constraints_clear);

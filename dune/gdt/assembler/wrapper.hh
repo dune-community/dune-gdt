@@ -35,13 +35,13 @@ class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewTy
 
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType>
 class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
-                         Spaces::DirichletConstraints<typename GridViewType::Intersection>>
+                         DirichletConstraints<typename GridViewType::Intersection>>
     : public Stuff::Grid::internal::Codim0Object<GridViewType>
 {
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
   typedef Stuff::Grid::internal::Codim0Object<GridViewType> BaseType;
-  typedef Spaces::DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
+  typedef DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
 
 public:
   using typename BaseType::EntityType;

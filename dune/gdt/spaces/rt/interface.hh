@@ -168,7 +168,7 @@ public:
 
   template <class S, size_t d, size_t r, size_t rC, class C, class R>
   void local_constraints(const SpaceInterface<S, d, r, rC>& /*ansatz_space*/, const EntityType& /*entity*/,
-                         Spaces::ConstraintsInterface<C>& /*ret*/) const
+                         ConstraintsInterface<C>& /*ret*/) const
   {
     DUNE_THROW(NotImplemented, "RT spaces do not implement constraints!");
   }
