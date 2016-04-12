@@ -214,6 +214,7 @@ public:
  * Interface for right-hand side q of the PDE delta_t u + div f(u,x,t) = q(u,x,t) where u: R^d \to
  * R^{r \times rC}.
  * TODO: implement for rC > 1.
+ * \todo Drop in favor of AnalyticalFluxInterface
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
 class RhsEvaluationFluxInterface : internal::IsRHSEvaluation
