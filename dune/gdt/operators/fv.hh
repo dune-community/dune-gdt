@@ -24,7 +24,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/default.hh>
 
-#include <dune/gdt/playground/spaces/dg/pdelabproduct.hh>
+#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 
 #include "interfaces.hh"
 #include "default.hh"
@@ -303,11 +303,11 @@ public:
   {
     const auto current_boundary_values = boundary_values_.evaluate_at_time(time);
     if (use_linear_reconstruction_) {
-      typedef Spaces::DG::PdelabBasedProduct<typename SourceType::SpaceType::GridViewType,
-                                             1, // polOrder
-                                             RangeFieldType,
-                                             dimRange,
-                                             dimRangeCols> DGSpaceType;
+      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridViewType,
+                                              1, // polOrder
+                                              RangeFieldType,
+                                              dimRange,
+                                              dimRangeCols> DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
       const auto dg_space_      = DSC::make_unique<DGSpaceType>(range.space().grid_view());
       const auto reconstruction = DSC::make_unique<ReconstructedDiscreteFunctionType>(*dg_space_, "reconstructed");

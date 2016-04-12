@@ -46,7 +46,7 @@ class DunePdelabDgSpaceWrapper
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBasedProduct
+class DunePdelabDgProductSpaceWrapper
 {
   static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
 };
@@ -114,13 +114,14 @@ private:
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class PdelabBasedProductTraits
+class DunePdelabDgProductSpaceWrapperTraits
     : public DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
 {
   typedef DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
-  typedef PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+      derived_type;
   using typename BaseType::GridViewType;
   static const int polOrder        = BaseType::polOrder;
   static const size_t dimDomain    = GridViewType::dimension;
@@ -252,21 +253,24 @@ private:
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
-class PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::SpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder, RangeFieldImp,
-                                                                          rangeDim, 1>,
+class DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
+    : public Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
+                                                                                       RangeFieldImp, rangeDim, 1>,
                                        GridViewImp::dimension, rangeDim, 1>,
-      public Dune::GDT::ProductSpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
-                                                                                 RangeFieldImp, rangeDim, 1>,
-                                              GridViewImp::dimension, rangeDim, 1>
-{
-  typedef PdelabBasedProduct<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef typename Dune::GDT::SpaceInterface<internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder,
+      public Dune::GDT::
+          ProductSpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
                                                                                 RangeFieldImp, rangeDim, 1>,
-                                             GridViewImp::dimension, rangeDim, 1> BaseType;
+                                GridViewImp::dimension, rangeDim, 1>
+{
+  typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef
+      typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
+                                                                                         RangeFieldImp, rangeDim, 1>,
+                                         GridViewImp::dimension, rangeDim, 1> BaseType;
 
 public:
-  typedef typename internal::PdelabBasedProductTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
+  typedef typename internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp,
+                                                                   rangeDim, 1> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
@@ -279,7 +283,7 @@ public:
   typedef typename Traits::SpaceTupleType SpaceTupleType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
-  PdelabBasedProduct(GridViewType gv)
+  DunePdelabDgProductSpaceWrapper(GridViewType gv)
     : grid_view_(gv)
     , factor_space_(grid_view_)
     , factor_mapper_(factor_space_.backend())
@@ -288,7 +292,7 @@ public:
   {
   }
 
-  PdelabBasedProduct(const ThisType& other)
+  DunePdelabDgProductSpaceWrapper(const ThisType& other)
     : grid_view_(other.grid_view_)
     , factor_space_(other.factor_space_)
     , factor_mapper_(other.factor_mapper_)
@@ -300,7 +304,7 @@ public:
       const auto& DUNE_UNUSED(comm) = this->communicator();
   }
 
-  PdelabBasedProduct(ThisType&& source) = default;
+  DunePdelabDgProductSpaceWrapper(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
