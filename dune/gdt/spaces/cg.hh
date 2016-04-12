@@ -20,7 +20,7 @@
 
 #include "interface.hh"
 #include "cg/dune-fem-wrapper.hh"
-#include "cg/pdelab.hh"
+#include "cg/dune-pdelab-wrapper.hh"
 
 
 namespace Dune {
@@ -53,7 +53,7 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab>
   {
-    typedef GDT::Spaces::CG::PdelabBased<GridLayerType, p, R, r> Type;
+    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r> Type;
   };
 
   typedef Stuff::Grid::ProviderInterface<GridType> GridProviderType;
