@@ -21,17 +21,16 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 static constexpr ChooseSpaceBackend default_cg_backend = default_space_backend;
 
 
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class CGInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
+class CgSpaceInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
-  typedef CGInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
+  typedef CgSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -294,10 +293,9 @@ private:
       possible_convex_combination_coefficients(vectors_in, possible_coefficients, final_size);
     } // if (...)
   } // ... possible_convex_combination_coefficients(...)
-}; // class CGInterface
+}; // class CgSpaceInterface
 
 
-} // namespace Spaces
 namespace internal {
 
 
@@ -318,7 +316,7 @@ struct is_cg_space_helper
 
 template <class S, bool candidate = internal::is_cg_space_helper<S>::is_candidate>
 struct is_cg_space
-    : public std::is_base_of<Spaces::CGInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+    : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 

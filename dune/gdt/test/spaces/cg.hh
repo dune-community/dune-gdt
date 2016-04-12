@@ -48,7 +48,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   }
 
   template <class T, size_t d, size_t r, size_t rC>
-  void matches_signature(const Dune::GDT::Spaces::CGInterface<T, d, r, rC>& /*space*/)
+  void matches_signature(const Dune::GDT::CgSpaceInterface<T, d, r, rC>& /*space*/)
   {
     static_assert(std::is_same<typename SpaceType::Traits, T>::value, "");
     static_assert(d == SpaceType::dimDomain, "");

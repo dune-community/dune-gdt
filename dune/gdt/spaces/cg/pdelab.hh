@@ -141,11 +141,11 @@ struct LocalDirichletDoFs<1, SpaceType>
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                 GridViewImp::dimension, 1, 1>
+    : public CgSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                              GridViewImp::dimension, 1, 1>
 {
-  typedef Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                              GridViewImp::dimension, 1, 1> BaseType;
+  typedef CgSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>, GridViewImp::dimension,
+                           1, 1> BaseType;
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -272,13 +272,13 @@ private:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
 class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                                 GridViewImp::dimension, rangeDim, 1>,
+    : public CgSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
+                              GridViewImp::dimension, rangeDim, 1>,
       public ProductSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
                                    GridViewImp::dimension, rangeDim, 1>
 {
-  typedef Spaces::CGInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                              GridViewImp::dimension, rangeDim, 1> BaseType;
+  typedef CgSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
+                           GridViewImp::dimension, rangeDim, 1> BaseType;
   typedef ProductSpaceInterface<PdelabBasedTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
                                 GridViewImp::dimension, rangeDim, 1> ProductInterfaceType;
   typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;

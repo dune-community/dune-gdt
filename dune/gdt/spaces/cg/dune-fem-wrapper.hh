@@ -73,14 +73,14 @@ public:
 }; // class DuneFemCgSpaceWrapperTraits
 
 
-// untested for the vector-valued case, especially Spaces::CGInterface
+// untested for the vector-valued case, especially CgSpaceInterface
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t r>
 class DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>
-    : public Spaces::CGInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
-                                 GridPartImp::dimension, r, 1>
+    : public CgSpaceInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
+                              GridPartImp::dimension, r, 1>
 {
-  typedef Spaces::CGInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
-                              GridPartImp::dimension, r, 1> BaseType;
+  typedef CgSpaceInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
+                           GridPartImp::dimension, r, 1> BaseType;
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> ThisType;
 
 public:

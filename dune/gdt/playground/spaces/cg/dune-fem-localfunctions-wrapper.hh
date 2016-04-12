@@ -103,13 +103,12 @@ private:
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class DuneFemLocalfunctionsCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public Spaces::CGInterface<DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp,
-                                                                           1, 1>,
-                                 GridPartImp::dimension, RangeFieldImp, 1, 1>
-{
-  typedef Spaces::CGInterface<DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1,
+    : public CgSpaceInterface<DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1,
                                                                         1>,
-                              GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
+                              GridPartImp::dimension, RangeFieldImp, 1, 1>
+{
+  typedef CgSpaceInterface<DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                           GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
   typedef DuneFemLocalfunctionsCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:

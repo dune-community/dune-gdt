@@ -119,7 +119,7 @@ private:
    */
   template <class T, class S, class V>
   void redirect_apply(
-      const Spaces::CGInterface<T, dimDomain, dimDomain, 1>& /*space*/,
+      const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
       const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
