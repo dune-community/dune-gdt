@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALEVALUATION_ESV2007_HH
-#define DUNE_GDT_LOCALEVALUATION_ESV2007_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_ESV2007_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_ESV2007_HH
 
 #include <tuple>
 #include <memory>
@@ -15,24 +15,22 @@
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
-#include "../../localevaluation/interface.hh"
+#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
-namespace LocalIntegrands {
-namespace ESV2007 {
 
 
 // forward, to be used in the traits
 template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType = void>
-class DiffusiveFluxEstimate;
+class LocalDiffusiveFluxEstimateESV2007Integrand;
 
 
 namespace internal {
 
 
 template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType = void>
-class DiffusiveFluxEstimateTraits
+class LocalDiffusiveFluxEstimateESV2007IntegrandTraits
 {
   static_assert(Stuff::is_localizable_function<DiffusionFactorType>::value,
                 "DiffusionFactorType has to be a localizable function.");
@@ -54,18 +52,19 @@ class DiffusiveFluxEstimateTraits
                 "Dimensions have to agree");
 
 public:
-  typedef DiffusiveFluxEstimate<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType> derived_type;
+  typedef LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType>
+      derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
   typedef typename DiffusionFactorType::EntityType EntityType;
   typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = DiffusionFactorType::dimDomain;
-}; // class DiffusiveFluxEstimateTraits
+}; // class LocalDiffusiveFluxEstimateESV2007IntegrandTraits
 
 
 template <class DiffusionType, class DiffusiveFluxType>
-class DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType, void>
+class LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType, void>
 {
   static_assert(Stuff::is_localizable_function<DiffusionType>::value,
                 "DiffusionType has to be a localizable function.");
@@ -79,33 +78,37 @@ class DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType, void>
   static_assert(DiffusionType::dimDomain == DiffusiveFluxType::dimDomain, "Dimensions of domains have to agree");
 
 public:
-  typedef DiffusiveFluxEstimate<DiffusionType, DiffusiveFluxType> derived_type;
+  typedef LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionType, DiffusiveFluxType> derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
   typedef typename DiffusionType::EntityType EntityType;
   typedef typename DiffusionType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = DiffusionType::dimDomain;
-}; // class DiffusiveFluxEstimateTraits
+}; // class LocalDiffusiveFluxEstimateESV2007IntegrandTraits
 
 
 } // namespace internal
 
 
 template <class DiffusionType, class DiffusiveFluxType>
-class DiffusiveFluxEstimate<DiffusionType, DiffusiveFluxType, void>
-    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
+class LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionType, DiffusiveFluxType, void>
+    : public LocalVolumeIntegrandInterface<internal::
+                                               LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType,
+                                                                                                DiffusiveFluxType>,
+                                           2>
 {
-  typedef LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType>, 2>
-      BaseType;
+  typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType,
+                                                                                                   DiffusiveFluxType>,
+                                        2> BaseType;
 
 public:
-  typedef internal::DiffusiveFluxEstimateTraits<DiffusionType, DiffusiveFluxType> Traits;
+  typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType> Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
 
-  DiffusiveFluxEstimate(const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux)
+  LocalDiffusiveFluxEstimateESV2007Integrand(const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux)
     : diffusion_(diffusion)
     , diffusive_flux_(diffusive_flux)
   {
@@ -210,28 +213,33 @@ public:
 private:
   const DiffusionType& diffusion_;
   const DiffusiveFluxType& diffusive_flux_;
-}; // class DiffusiveFluxEstimate< ..., void >
+}; // class LocalDiffusiveFluxEstimateESV2007Integrand< ..., void >
 
 
 template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType>
-class DiffusiveFluxEstimate
-    : public LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
-                                                                                 DiffusionTensorType>,
+class LocalDiffusiveFluxEstimateESV2007Integrand
+    : public LocalVolumeIntegrandInterface<internal::
+                                               LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
+                                                                                                DiffusiveFluxType,
+                                                                                                DiffusionTensorType>,
                                            2>
 {
-  typedef LocalVolumeIntegrandInterface<internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType,
-                                                                              DiffusionTensorType>,
+  typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
+                                                                                                   DiffusiveFluxType,
+                                                                                                   DiffusionTensorType>,
                                         2> BaseType;
 
 public:
-  typedef internal::DiffusiveFluxEstimateTraits<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType> Traits;
+  typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType, DiffusiveFluxType,
+                                                                     DiffusionTensorType> Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
 
-  DiffusiveFluxEstimate(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                        const DiffusiveFluxType& diffusive_flux)
+  LocalDiffusiveFluxEstimateESV2007Integrand(const DiffusionFactorType& diffusion_factor,
+                                             const DiffusionTensorType& diffusion_tensor,
+                                             const DiffusiveFluxType& diffusive_flux)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , diffusive_flux_(diffusive_flux)
@@ -361,12 +369,10 @@ private:
   const DiffusionFactorType& diffusion_factor_;
   const DiffusionTensorType& diffusion_tensor_;
   const DiffusiveFluxType& diffusive_flux_;
-}; // class DiffusiveFluxEstimate
+}; // class LocalDiffusiveFluxEstimateESV2007Integrand
 
 
-} // namespace ESV2007
-} // namespace LocalIntegrands
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALEVALUATION_ESV2007_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_ESV2007_HH

@@ -17,7 +17,7 @@
 #include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/projections.hh>
-#include <dune/gdt/playground/localevaluation/ESV2007.hh>
+#include <dune/gdt/local/integrands/ESV2007.hh>
 #include <dune/gdt/playground/operators/fluxreconstruction.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/pdelab.hh>
@@ -286,9 +286,9 @@ class LocalDiffusiveFluxESV2007
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef Spaces::RT::PdelabBased<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
-  typedef LocalVolumeIntegralOperator<LocalIntegrands::ESV2007::DiffusiveFluxEstimate<DiffusionFactorType,
-                                                                                      RTN0DiscreteFunctionType,
-                                                                                      DiffusionTensorType>>
+  typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType,
+                                                                                 RTN0DiscreteFunctionType,
+                                                                                 DiffusionTensorType>>
       LocalOperatorType;
 
 public:
