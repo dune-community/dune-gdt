@@ -115,12 +115,12 @@ private:
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
-    : public Spaces::RTInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
-                                 GridViewImp::dimension, rangeDim, 1>
+    : public RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+                              GridViewImp::dimension, rangeDim, 1>
 {
   typedef DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Spaces::RTInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
-                              GridViewImp::dimension, rangeDim, 1> BaseType;
+  typedef RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+                           GridViewImp::dimension, rangeDim, 1> BaseType;
 
 public:
   typedef internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;

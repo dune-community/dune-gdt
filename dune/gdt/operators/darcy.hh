@@ -175,11 +175,11 @@ private:
 
   template <class T, class S, class V>
   void redirect_apply(
-      const Spaces::RTInterface<T, dimDomain, dimDomain, 1>& /*space*/,
+      const RtSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
       const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
-    static_assert(Spaces::RTInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
+    static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
     const auto& rtn0_space = range.space();
     auto& range_vector     = range.vector();
     const auto infinity = std::numeric_limits<FieldType>::infinity();

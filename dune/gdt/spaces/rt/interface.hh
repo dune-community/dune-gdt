@@ -14,14 +14,13 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class RTInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
+class RtSpaceInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols>
 {
   typedef SpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> BaseType;
-  typedef RTInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
+  typedef RtSpaceInterface<ImpTraits, domainDim, rangeDim, rangeDimCols> ThisType;
 
 public:
   typedef ImpTraits Traits;
@@ -174,10 +173,9 @@ public:
     DUNE_THROW(NotImplemented, "RT spaces do not implement constraints!");
   }
   /** @} */
-}; // class RTInterface
+}; // class RtSpaceInterface
 
 
-} // namespace Spaces
 namespace internal {
 
 
@@ -198,7 +196,7 @@ struct is_rt_space_helper
 
 template <class S, bool candidate = internal::is_rt_space_helper<S>::is_candidate>
 struct is_rt_space
-    : public std::is_base_of<Spaces::RTInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+    : public std::is_base_of<RtSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 
