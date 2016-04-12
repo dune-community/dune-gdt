@@ -10,7 +10,7 @@
 
 #include <dune/stuff/test/gtest/gtest.h>
 
-#include "../nonstationary-eocstudy.hh"
+#include "../instationary-eocstudy.hh"
 #include "eocexpectations.hh"
 
 namespace Dune {

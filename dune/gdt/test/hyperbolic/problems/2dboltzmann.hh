@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/gdt/test/nonstationary-eocstudy.hh>
+#include <dune/gdt/test/instationary-eocstudy.hh>
 
 #include <dune/stuff/common/string.hh>
 #include <dune/stuff/functions/affine.hh>

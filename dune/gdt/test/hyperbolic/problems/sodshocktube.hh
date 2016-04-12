@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include <dune/gdt/test/nonstationary-eocstudy.hh>
+#include <dune/gdt/test/instationary-eocstudy.hh>
 
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
