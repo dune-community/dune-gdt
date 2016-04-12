@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
-#define DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
+#ifndef DUNE_GDT_LOCAL_FUNCTIONALS_INTEGRALS_HH
+#define DUNE_GDT_LOCAL_FUNCTIONALS_INTEGRALS_HH
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
@@ -183,4 +183,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALFUNCTIONAL_INTEGRALS_HH
+#endif // DUNE_GDT_LOCAL_FUNCTIONALS_INTEGRALS_HH

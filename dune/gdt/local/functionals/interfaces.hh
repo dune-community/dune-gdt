@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALFUNCTIONAL_INTERFACES_HH
-#define DUNE_GDT_LOCALFUNCTIONAL_INTERFACES_HH
+#ifndef DUNE_GDT_LOCAL_FUNCTIONALS_INTERFACES_HH
+#define DUNE_GDT_LOCAL_FUNCTIONALS_INTERFACES_HH
 
 #include <vector>
 
@@ -77,4 +77,4 @@ struct is_local_volume_functional<T, false> : public std::false_type
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALFUNCTIONAL_INTERFACES_HH
+#endif // DUNE_GDT_LOCAL_FUNCTIONALS_INTERFACES_HH

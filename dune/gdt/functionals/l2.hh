@@ -16,7 +16,7 @@
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 
-#include <dune/gdt/localfunctional/integrals.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/assembler/system.hh>
 

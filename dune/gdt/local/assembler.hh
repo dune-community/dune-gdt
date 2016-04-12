@@ -16,7 +16,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/localoperator/interfaces.hh>
-#include <dune/gdt/localfunctional/interfaces.hh>
+#include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {

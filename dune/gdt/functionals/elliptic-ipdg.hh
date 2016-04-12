@@ -13,7 +13,7 @@
 
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
-#include <dune/gdt/localfunctional/integrals.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
 
 #include "base.hh"
 
