@@ -14,7 +14,7 @@
 
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/operators/integrals.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -27,9 +27,9 @@ namespace GDT {
 
 template <class WeightFunctionType, class GridView, class Range, class Source = Range,
           class Field                                                         = typename Range::RangeFieldType>
-class WeightedL2LocalizableProduct : public LocalizableProductDefault<GridView, Range, Source, Field>
+class WeightedL2LocalizableProduct : public LocalizableProductBase<GridView, Range, Source, Field>
 {
-  typedef LocalizableProductDefault<GridView, Range, Source, Field> BaseType;
+  typedef LocalizableProductBase<GridView, Range, Source, Field> BaseType;
   typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:
@@ -85,9 +85,9 @@ template <class WeightFunctionType, class RangeSpace,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class WeightedL2MatrixOperator
-    : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
+    : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
-  typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
+  typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
   typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:

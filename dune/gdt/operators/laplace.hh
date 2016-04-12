@@ -69,7 +69,7 @@ public:
    *
    *        We suffer from the same problems as L2LocalizableProduct, see also the documentation of
    *        \sa L2LocalizableProduct::L2LocalizableProduct(). This ctor can be used as follows, where over_integrate is
-   *        a non-negative integer and ...args are the arguments for LocalizableProductDefault (i.e., a grid_view, a
+   *        a non-negative integer and ...args are the arguments for LocalizableProductBase (i.e., a grid_view, a
    *        range and possibly a source):
 \code
 LaplaceLocalizableProduct(over_integrate, ...args);
@@ -159,7 +159,7 @@ public:
    *
    *        We suffer from the same problems as L2LocalizableProduct, see also the documentation of
    *        \sa L2LocalizableProduct::L2LocalizableProduct(). This ctor can be used as follows, where over_integrate is
-   *        a non-negative integer and ...args are the arguments for MatrixOperatorDefault (i.e., possibly a matrix,
+   *        a non-negative integer and ...args are the arguments for MatrixOperatorBase (i.e., possibly a matrix,
    *        a range space, possibly a grid_view and possibly a source space):
 \code
 LaplaceLocalizableProduct(over_integrate, ...args);

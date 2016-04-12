@@ -15,7 +15,7 @@
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/l2.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/operators/l2.hh>
 
@@ -44,11 +44,11 @@ public:
 
 
 template <class GridViewImp, class SourceImp, class RangeImp>
-class L2GlobalProjectionLocalizableOperator : public LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp>
+class L2GlobalProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
 {
   static_assert(Stuff::is_localizable_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
-  typedef LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
 
 public:
   using typename BaseType::GridViewType;

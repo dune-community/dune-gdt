@@ -23,7 +23,7 @@
 #include <dune/gdt/spaces/interface.hh>
 
 #include "interfaces.hh"
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -36,9 +36,9 @@ namespace GDT {
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
           class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
-class EllipticLocalizableProduct : public LocalizableProductDefault<GridView, Range, Source, Field>
+class EllipticLocalizableProduct : public LocalizableProductBase<GridView, Range, Source, Field>
 {
-  typedef LocalizableProductDefault<GridView, Range, Source, Field> BaseType;
+  typedef LocalizableProductBase<GridView, Range, Source, Field> BaseType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 
@@ -168,9 +168,9 @@ template <class DiffusionFactorType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticMatrixOperator
-    : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
+    : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
-  typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
+  typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 

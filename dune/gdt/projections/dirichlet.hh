@@ -11,16 +11,16 @@
 #include <dune/stuff/grid/layers.hh>
 
 #include <dune/gdt/local/operators/dirichlet-projection.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 
 namespace Dune {
 namespace GDT {
 
 
 template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double>
-class DirichletProjectionLocalizableOperator : public LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp>
+class DirichletProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
 
 public:
   using typename BaseType::IntersectionType;

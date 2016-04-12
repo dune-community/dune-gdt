@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_OPERATORS_DEFAULT_HH
-#define DUNE_GDT_OPERATORS_DEFAULT_HH
+#ifndef DUNE_GDT_OPERATORS_BASE_HH
+#define DUNE_GDT_OPERATORS_BASE_HH
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
@@ -27,7 +27,7 @@ namespace GDT {
 // forward, required for the traits
 template <class M, class RS, class GV = typename RS::GridViewType, class SS = RS, class F = typename M::RealType,
           ChoosePattern pt = ChoosePattern::face_and_volume>
-class MatrixOperatorDefault;
+class MatrixOperatorBase;
 
 
 namespace internal {
@@ -35,7 +35,7 @@ namespace internal {
 
 template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class FieldImp,
           ChoosePattern pt>
-class MatrixOperatorDefaultTraits
+class MatrixOperatorBaseTraits
 {
   static_assert(Stuff::LA::is_matrix<MatrixImp>::value,
                 "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
@@ -49,7 +49,7 @@ class MatrixOperatorDefaultTraits
                 "SourceSpaceType and GridViewType have to match!");
 
 public:
-  typedef MatrixOperatorDefault<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> derived_type;
+  typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -62,7 +62,7 @@ public:
  */
 template <class GridViewImp, class RangeImp, class SourceImp = RangeImp,
           class FieldImp                                     = typename RangeImp::RangeFieldType>
-class LocalizableProductDefault : public Stuff::Grid::Walker<GridViewImp>
+class LocalizableProductBase : public Stuff::Grid::Walker<GridViewImp>
 {
   typedef Stuff::Grid::Walker<GridViewImp> BaseType;
 
@@ -92,7 +92,7 @@ private:
                 "The dimDomain of RangeType and GridViewType have to match!");
 
 public:
-  LocalizableProductDefault(GridViewType grd_vw, const RangeType& rng, const SourceType& src)
+  LocalizableProductBase(GridViewType grd_vw, const RangeType& rng, const SourceType& src)
     : BaseType(grd_vw)
     , range_(rng)
     , source_(src)
@@ -100,7 +100,7 @@ public:
   {
   }
 
-  LocalizableProductDefault(GridViewType grd_vw, const RangeType& rng)
+  LocalizableProductBase(GridViewType grd_vw, const RangeType& rng)
     : BaseType(grd_vw)
     , range_(rng)
     , source_(rng)
@@ -159,7 +159,7 @@ protected:
   const SourceType& source_;
   std::vector<std::unique_ptr<DSG::internal::Codim0ReturnObject<GridViewType, FieldType>>> local_volume_twoforms_;
   bool walked_;
-}; // class LocalizableProductDefault
+}; // class LocalizableProductBase
 
 
 /**
@@ -168,18 +168,18 @@ protected:
  */
 template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class FieldImp,
           ChoosePattern pt>
-class MatrixOperatorDefault
-    : public OperatorInterface<internal::MatrixOperatorDefaultTraits<MatrixImp, RangeSpaceImp, GridViewImp,
-                                                                     SourceSpaceImp, FieldImp, pt>>,
+class MatrixOperatorBase
+    : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                                                                  FieldImp, pt>>,
       public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
 {
-  typedef OperatorInterface<internal::MatrixOperatorDefaultTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                                                  FieldImp, pt>> BaseOperatorType;
+  typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
+                                                               FieldImp, pt>> BaseOperatorType;
   typedef SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp> BaseAssemblerType;
-  typedef MatrixOperatorDefault<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> ThisType;
+  typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> ThisType;
 
 public:
-  typedef internal::MatrixOperatorDefaultTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt>
+  typedef internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt>
       Traits;
   typedef typename BaseAssemblerType::TestSpaceType RangeSpaceType;
   typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
@@ -244,7 +244,7 @@ public:
   }
 
   template <class... Args>
-  explicit MatrixOperatorDefault(MatrixType& mtrx, Args&&... args)
+  explicit MatrixOperatorBase(MatrixType& mtrx, Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
     , matrix_(mtrx)
   {
@@ -258,17 +258,17 @@ public:
                  "matrix.cols(): " << matrix_.access().cols() << "\n"
                                    << "source_space().mapper().size(): "
                                    << this->source_space().mapper().size());
-  } // MatrixOperatorDefault(...)
+  } // MatrixOperatorBase(...)
 
   template <class... Args>
-  explicit MatrixOperatorDefault(Args&&... args)
+  explicit MatrixOperatorBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
     , matrix_(new MatrixType(this->range_space().mapper().size(), this->source_space().mapper().size(),
                              pattern(this->range_space(), this->source_space(), this->grid_view())))
   {
   }
 
-  MatrixOperatorDefault(ThisType&& source) = default;
+  MatrixOperatorBase(ThisType&& source) = default;
 
   const MatrixType& matrix() const
   {
@@ -397,11 +397,11 @@ protected:
 
 private:
   DSC::StorageProvider<MatrixType> matrix_;
-}; // class MatrixOperatorDefault
+}; // class MatrixOperatorBase
 
 
 template <class GridViewImp, class SourceImp, class RangeImp>
-class LocalizableOperatorDefault : public Stuff::Grid::Walker<GridViewImp>
+class LocalizableOperatorBase : public Stuff::Grid::Walker<GridViewImp>
 {
   typedef Stuff::Grid::Walker<GridViewImp> BaseType;
 
@@ -425,7 +425,7 @@ private:
   static_assert(RangeType::dimDomain == GridViewType::dimension, "Have to match!");
 
 public:
-  LocalizableOperatorDefault(GridViewType grd_vw, const SourceType& src, RangeType& rng)
+  LocalizableOperatorBase(GridViewType grd_vw, const SourceType& src, RangeType& rng)
     : BaseType(grd_vw)
     , source_(src)
     , range_(rng)
@@ -504,10 +504,10 @@ protected:
   std::vector<std::unique_ptr<DSG::internal::Codim0Object<GridViewType>>> local_operators_codim_0;
   std::vector<std::unique_ptr<DSG::internal::Codim1Object<GridViewType>>> local_operators_codim_1;
   bool walked_;
-}; // class LocalizableOperatorDefault
+}; // class LocalizableOperatorBase
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_DEFAULT_HH
+#endif // DUNE_GDT_OPERATORS_BASE_HH

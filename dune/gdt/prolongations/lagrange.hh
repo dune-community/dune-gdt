@@ -10,7 +10,7 @@
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/projections/lagrange.hh>
 
 

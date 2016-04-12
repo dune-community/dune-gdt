@@ -22,12 +22,12 @@
 #include <dune/gdt/local/fluxes/laxfriedrichs.hh>
 #include <dune/gdt/local/operators/fv.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 
 #include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 
 #include "interfaces.hh"
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -99,10 +99,9 @@ public:
 template <class AnalyticalFluxImp, class NumericalCouplingFluxImp, class NumericalBoundaryFluxImp,
           class BoundaryValueFunctionImp, class SourceImp, class RangeImp>
 class AdvectionLocalizableDefault
-    : public Dune::GDT::LocalizableOperatorDefault<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorDefault<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
-      BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
 
   static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
@@ -150,10 +149,9 @@ private:
 
 template <class SourceImp, class RangeImp, class BoundaryValueFunctionImp, class MatrixImp, SlopeLimiters slope_limiter>
 class LinearReconstructionLocalizable
-    : public Dune::GDT::LocalizableOperatorDefault<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorDefault<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
-      BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
   typedef LinearReconstructionLocalizable<SourceImp, RangeImp, BoundaryValueFunctionImp, MatrixImp, slope_limiter>
       ThisType;
 
@@ -417,7 +415,7 @@ public:
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
   {
-    LocalizableOperatorDefault<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
+    LocalizableOperatorBase<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
         range.space().grid_view(), source, range);
     localizable_operator.add(local_operator_);
     localizable_operator.apply();

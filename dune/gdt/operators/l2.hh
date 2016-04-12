@@ -73,11 +73,11 @@ public:
   /**
    * \brief Creates a localizable L2 product.
    *
-   *        Since the L2LocalizableProduct does not require anything beyond what LocalizableProductDefault does,
+   *        Since the L2LocalizableProduct does not require anything beyond what LocalizableProductBase does,
    *        we forward all arguments to WeightedL2LocalizableProduct (which, in turn, forwards them to
-   *        LocalizableProductDefault). In addition, we want to allow to specify an over_integrate parameter, which is
+   *        LocalizableProductBase). In addition, we want to allow to specify an over_integrate parameter, which is
    *        passen on to WeightedL2LocalizableProduct. This leads to two kind of ctors, where over_integrate is a
-   *        non-negative integer and ...args are the arguments for LocalizableProductDefault (i.e., a grid_view, a range
+   *        non-negative integer and ...args are the arguments for LocalizableProductBase (i.e., a grid_view, a range
    *        and possibly a source):
 \code
 L2LocalizableProduct(over_integrate, ...args);
@@ -170,7 +170,7 @@ public:
    *
    *        We suffer from the same problems as L2LocalizableProduct, see also the documentation of
    *        \sa L2LocalizableProduct::L2LocalizableProduct(). This ctor can be used as follows, where over_integrate is
-   *        a non-negative integer and ...args are the arguments for MatrixOperatorDefault (i.e., possibly a matrix,
+   *        a non-negative integer and ...args are the arguments for MatrixOperatorBase (i.e., possibly a matrix,
    *        a range space, possibly a grid_view and possibly a source space):
 \code
 L2LocalizableProduct(over_integrate, ...args);

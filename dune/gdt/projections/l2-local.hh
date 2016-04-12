@@ -12,7 +12,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/l2-projection.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
 
@@ -41,9 +41,9 @@ public:
 
 
 template <class GridViewImp, class SourceImp, class RangeImp>
-class L2LocalProjectionLocalizableOperator : public LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp>
+class L2LocalProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
   typedef LocalL2ProjectionOperator LocalOperatorType;
 
 public:

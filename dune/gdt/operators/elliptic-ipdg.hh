@@ -14,7 +14,7 @@
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -31,10 +31,9 @@ template <class DiffusionFactorType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticIpdgMatrixOperator
-    : public MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
+    : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
-  typedef MatrixOperatorDefault<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
-      BaseType;
+  typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume> BaseType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalVolumeOperatorType;
   typedef LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType,

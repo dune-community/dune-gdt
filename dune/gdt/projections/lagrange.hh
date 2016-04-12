@@ -12,7 +12,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/lagrange-projection.hh>
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/operators/default.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
@@ -25,9 +25,9 @@ namespace GDT {
  * \note Do we have to set all range DoFs to infinity here?
  */
 template <class GridViewImp, class SourceImp, class RangeImp>
-class LagrangeProjectionLocalizableOperator : public LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp>
+class LagrangeProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorDefault<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
 
 public:
   template <class... Args>
