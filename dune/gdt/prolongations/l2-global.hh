@@ -68,7 +68,7 @@ public:
     try {
       BaseOperatorType::apply();
     } catch (Stuff::Exceptions::reinterpretation_error& ee) {
-      DUNE_THROW(Exceptions::prolongation_error,
+      DUNE_THROW(prolongation_error,
                  "This prolongation (using a global L2 projection) failed, because the source could not be "
                      << "reinterpreted on the given grid view!\n"
                      << "This was the original error:\n\n"

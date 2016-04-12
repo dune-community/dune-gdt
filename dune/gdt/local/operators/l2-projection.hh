@@ -89,7 +89,7 @@ public:
     try {
       Stuff::LA::Solver<Stuff::LA::CommonDenseMatrix<R>>(local_matrix).apply(local_vector, local_solution);
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(Exceptions::projection_error,
+      DUNE_THROW(projection_error,
                  "L2 projection failed because a local matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());

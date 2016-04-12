@@ -89,7 +89,7 @@ public:
     try {
       Stuff::LA::Solver<MatrixType>(lhs_operator_.matrix()).apply(rhs_functional_.vector(), range_.vector());
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(Exceptions::projection_error,
+      DUNE_THROW(projection_error,
                  "L2 projection failed because a global matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());

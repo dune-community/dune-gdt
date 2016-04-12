@@ -10,7 +10,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Exceptions {
 
 
 class operator_error : public Dune::Exception
@@ -26,7 +25,6 @@ class projection_error : public operator_error
 };
 
 
-} // namespace Exceptions
 } // namespace GDT
 } // namespace Dune
 

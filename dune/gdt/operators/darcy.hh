@@ -166,7 +166,7 @@ private:
     try {
       Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(Exceptions::operator_error,
+      DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());
