@@ -18,7 +18,7 @@
 #include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/cg/fem.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/pdelab.hh>
+#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {

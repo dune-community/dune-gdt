@@ -13,11 +13,10 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operators {
 
 
 template <class GridViewType, class DiffusionFactorType, class DiffusionTensorType>
-class DiffusiveFluxReconstruction
+class DiffusiveFluxReconstructionOperator
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
@@ -36,8 +35,8 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstruction(const GridViewType& grid_view, const DiffusionFactorType& diffusion_factor,
-                              const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
+  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view, const DiffusionFactorType& diffusion_factor,
+                                      const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -197,19 +196,18 @@ private:
   const DiffusionFactorType& diffusion_factor_;
   const DiffusionTensorType& diffusion_tensor_;
   const size_t over_integrate_;
-}; // class DiffusiveFluxReconstruction
+}; // class DiffusiveFluxReconstructionOperator
 
 
 template <class GV, class DF, class DT>
-DiffusiveFluxReconstruction<GV, DF, DT>
-make_diffusive_flux_reconstruction(const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor,
-                                   const size_t over_integrate = 0)
+DiffusiveFluxReconstructionOperator<GV, DF, DT>
+make_diffusive_flux_reconstruction_operator(const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor,
+                                            const size_t over_integrate = 0)
 {
-  return DiffusiveFluxReconstruction<GV, DF, DT>(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
+  return DiffusiveFluxReconstructionOperator<GV, DF, DT>(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
 }
 
 
-} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 

@@ -27,22 +27,21 @@
 
 namespace Dune {
 namespace GDT {
-namespace Operators {
 
 
 // forward
 template <class GridViewImp, class FieldImp = double>
-class OswaldInterpolation;
+class OswaldInterpolationOperator;
 
 
 namespace internal {
 
 
 template <class GridViewImp, class FieldImp>
-class OswaldInterpolationTraits
+class OswaldInterpolationOperatorTraits
 {
 public:
-  typedef OswaldInterpolation<GridViewImp, FieldImp> derived_type;
+  typedef OswaldInterpolationOperator<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
 };
@@ -52,15 +51,16 @@ public:
 
 
 template <class GridViewImp, class FieldImp>
-class OswaldInterpolation : public OperatorInterface<internal::OswaldInterpolationTraits<GridViewImp, FieldImp>>
+class OswaldInterpolationOperator
+    : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp>>
 {
 public:
-  typedef internal::OswaldInterpolationTraits<GridViewImp, FieldImp> Traits;
+  typedef internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
   static const size_t dimDomain = GridViewType::dimension;
 
-  OswaldInterpolation(const GridViewType& grd_vw, const bool zero_boundary = true)
+  OswaldInterpolationOperator(const GridViewType& grd_vw, const bool zero_boundary = true)
     : grid_view_(grd_vw)
     , zero_boundary_(zero_boundary)
   {
@@ -194,10 +194,9 @@ private:
 
   const GridViewType& grid_view_;
   const bool zero_boundary_;
-}; // class OswaldInterpolation
+}; // class OswaldInterpolationOperator
 
 
-} // namespace Operators
 } // namespace GDT
 } // namespace Dune
 

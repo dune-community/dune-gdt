@@ -122,7 +122,7 @@ public:
   {
     if (prepared_)
       return;
-    const Operators::OswaldInterpolation<GridViewType> oswald_interpolation_operator(grid_view_);
+    const OswaldInterpolationOperator<GridViewType> oswald_interpolation_operator(grid_view_);
     oswald_interpolation_operator.apply(discrete_solution_, oswald_interpolation_);
     result_   = 0.0;
     prepared_ = true;
@@ -227,7 +227,7 @@ public:
   {
     if (prepared_)
       return;
-    const Operators::DiffusiveFluxReconstruction<GridViewType, DiffusionFactorType, DiffusionTensorType>
+    const DiffusiveFluxReconstructionOperator<GridViewType, DiffusionFactorType, DiffusionTensorType>
         diffusive_flux_reconstruction(grid_view_, diffusion_factor_, diffusion_tensor_, over_integrate_);
     diffusive_flux_reconstruction.apply(discrete_solution_, diffusive_flux_);
     result_   = 0.0;
@@ -362,7 +362,7 @@ public:
   {
     if (prepared_)
       return;
-    const Operators::DiffusiveFluxReconstruction<GridViewType, DiffusionFactorType, DiffusionTensorType>
+    const DiffusiveFluxReconstructionOperator<GridViewType, DiffusionFactorType, DiffusionTensorType>
         diffusive_flux_reconstruction(grid_view_, diffusion_factor_reconstruction_, diffusion_tensor_, over_int_);
     diffusive_flux_reconstruction.apply(discrete_solution_, diffusive_flux_);
     result_   = 0.0;
