@@ -15,7 +15,7 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localoperator/interfaces.hh>
+#include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 

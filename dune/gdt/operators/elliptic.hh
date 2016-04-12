@@ -19,7 +19,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
-#include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 #include "interfaces.hh"

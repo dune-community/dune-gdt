@@ -13,7 +13,7 @@
 #include <dune/stuff/la/container.hh>
 
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/spaces/interface.hh>
 

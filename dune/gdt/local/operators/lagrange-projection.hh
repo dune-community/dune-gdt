@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALOPERATOR_LAGRANGE_PROJECTION_HH
-#define DUNE_GDT_LOCALOPERATOR_LAGRANGE_PROJECTION_HH
+#ifndef DUNE_GDT_LOCAL_OPERATORS_LAGRANGE_PROJECTION_HH
+#define DUNE_GDT_LOCAL_OPERATORS_LAGRANGE_PROJECTION_HH
 
 #include <type_traits>
 
@@ -104,4 +104,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALOPERATOR_LAGRANGE_PROJECTION_HH
+#endif // DUNE_GDT_LOCAL_OPERATORS_LAGRANGE_PROJECTION_HH

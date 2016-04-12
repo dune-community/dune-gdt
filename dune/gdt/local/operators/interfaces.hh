@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALOPERATOR_INTERFACES_HH
-#define DUNE_GDT_LOCALOPERATOR_INTERFACES_HH
+#ifndef DUNE_GDT_LOCAL_OPERATORS_INTERFACES_HH
+#define DUNE_GDT_LOCAL_OPERATORS_INTERFACES_HH
 
 #include <vector>
 
@@ -254,4 +254,4 @@ struct is_local_boundary_twoform : public std::is_base_of<internal::IsLocalBound
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALOPERATOR_INTERFACES_HH
+#endif // DUNE_GDT_LOCAL_OPERATORS_INTERFACES_HH

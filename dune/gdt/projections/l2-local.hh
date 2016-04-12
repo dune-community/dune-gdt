@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/entity.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localoperator/l2-projection.hh>
+#include <dune/gdt/local/operators/l2-projection.hh>
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/dg/interface.hh>

@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALOPERATOR_DIRICHLET_PROJECTION_HH
-#define DUNE_GDT_LOCALOPERATOR_DIRICHLET_PROJECTION_HH
+#ifndef DUNE_GDT_LOCAL_OPERATORS_DIRICHLET_PROJECTION_HH
+#define DUNE_GDT_LOCAL_OPERATORS_DIRICHLET_PROJECTION_HH
 
 #include <dune/stuff/functions/interfaces.hh>
 
@@ -79,4 +79,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALOPERATOR_DIRICHLET_PROJECTION_HH
+#endif // DUNE_GDT_LOCAL_OPERATORS_DIRICHLET_PROJECTION_HH

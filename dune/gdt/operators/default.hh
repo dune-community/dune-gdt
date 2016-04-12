@@ -15,7 +15,7 @@
 #include <dune/gdt/assembler/wrapper.hh>
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localoperator/interfaces.hh>
+#include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 #include "interfaces.hh"

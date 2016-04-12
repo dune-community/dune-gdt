@@ -20,7 +20,7 @@
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/local/fluxes/godunov.hh>
 #include <dune/gdt/local/fluxes/laxfriedrichs.hh>
-#include <dune/gdt/localoperator/fv.hh>
+#include <dune/gdt/local/operators/fv.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/default.hh>
 
@@ -125,8 +125,8 @@ public:
   typedef typename SourceType::RangeFieldType RangeFieldType;
   typedef typename RangeType::SpaceType::GridViewType GridViewType;
   static const size_t dimDomain = GridViewType::dimension;
-  typedef typename Dune::GDT::LocalCouplingFVOperator<NumericalCouplingFluxType> LocalCouplingOperatorType;
-  typedef typename Dune::GDT::LocalBoundaryFVOperator<NumericalBoundaryFluxType> LocalBoundaryOperatorType;
+  typedef typename Dune::GDT::LocalCouplingFvOperator<NumericalCouplingFluxType> LocalCouplingOperatorType;
+  typedef typename Dune::GDT::LocalBoundaryFvOperator<NumericalBoundaryFluxType> LocalBoundaryOperatorType;
 
   template <class... LocalOperatorArgTypes>
   AdvectionLocalizableDefault(const AnalyticalFluxType& analytical_flux,
@@ -165,7 +165,7 @@ public:
   typedef typename SourceType::RangeFieldType RangeFieldType;
   typedef typename RangeType::SpaceType::GridViewType GridViewType;
   static const size_t dimDomain = GridViewType::dimension;
-  typedef typename Dune::GDT::LocalReconstructionFVOperator<MatrixType, BoundaryValueFunctionType, slope_limiter>
+  typedef typename Dune::GDT::LocalReconstructionFvOperator<MatrixType, BoundaryValueFunctionType, slope_limiter>
       LocalOperatorType;
 
   LinearReconstructionLocalizable(const SourceType& source, RangeType& range, const MatrixType& eigenvectors,
@@ -407,7 +407,7 @@ class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::Advec
 public:
   typedef internal::AdvectionRHSOperatorTraits<RHSEvaluationImp> Traits;
   typedef typename Traits::RHSEvaluationType RHSEvaluationType;
-  typedef LocalRHSFVOperator<RHSEvaluationType> LocalOperatorType;
+  typedef LocalRhsFvOperator<RHSEvaluationType> LocalOperatorType;
 
   AdvectionRHSOperator(const RHSEvaluationType& rhs_evaluation)
     : local_operator_(rhs_evaluation)

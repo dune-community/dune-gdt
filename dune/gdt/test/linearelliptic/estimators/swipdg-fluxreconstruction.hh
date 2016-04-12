@@ -14,7 +14,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/playground/localevaluation/ESV2007.hh>

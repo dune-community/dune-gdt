@@ -10,7 +10,7 @@
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/la/container.hh>
 
-#include <dune/gdt/localoperator/integrals.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 

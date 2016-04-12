@@ -10,7 +10,7 @@
 #include <dune/stuff/la/container/vector-interface.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/localoperator/lagrange-projection.hh>
+#include <dune/gdt/local/operators/lagrange-projection.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/operators/default.hh>
 #include <dune/gdt/operators/interfaces.hh>

@@ -10,7 +10,7 @@
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/grid/layers.hh>
 
-#include <dune/gdt/localoperator/dirichlet-projection.hh>
+#include <dune/gdt/local/operators/dirichlet-projection.hh>
 #include <dune/gdt/operators/default.hh>
 
 namespace Dune {

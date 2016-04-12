@@ -1,5 +1,5 @@
-#ifndef DUNE_GDT_LOCALOPERATOR_FV_HH
-#define DUNE_GDT_LOCALOPERATOR_FV_HH
+#ifndef DUNE_GDT_LOCAL_OPERATORS_FV_HH
+#define DUNE_GDT_LOCAL_OPERATORS_FV_HH
 
 #include "interfaces.hh"
 
@@ -16,16 +16,16 @@ enum class SlopeLimiters
 
 // forwards
 template <class NumericalFluxType>
-class LocalCouplingFVOperator;
+class LocalCouplingFvOperator;
 
 template <class NumericalFluxType>
-class LocalBoundaryFVOperator;
+class LocalBoundaryFvOperator;
 
 template <class RHSEvaluationImp>
-class LocalRHSFVOperator;
+class LocalRhsFvOperator;
 
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-class LocalReconstructionFVOperator;
+class LocalReconstructionFvOperator;
 
 
 namespace internal {
@@ -33,27 +33,27 @@ namespace internal {
 
 // Traits
 template <class NumericalFluxType>
-struct LocalCouplingFVOperatorTraits
+struct LocalCouplingFvOperatorTraits
 {
-  typedef LocalCouplingFVOperator<NumericalFluxType> derived_type;
+  typedef LocalCouplingFvOperator<NumericalFluxType> derived_type;
 };
 
 template <class NumericalFluxType>
-struct LocalBoundaryFVOperatorTraits
+struct LocalBoundaryFvOperatorTraits
 {
-  typedef LocalBoundaryFVOperator<NumericalFluxType> derived_type;
+  typedef LocalBoundaryFvOperator<NumericalFluxType> derived_type;
 };
 
 template <class RHSEvaluationImp>
-struct LocalRHSFVOperatorTraits
+struct LocalRhsFvOperatorTraits
 {
-  typedef LocalRHSFVOperator<RHSEvaluationImp> derived_type;
+  typedef LocalRhsFvOperator<RHSEvaluationImp> derived_type;
 };
 
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-struct LocalReconstructionFVOperatorTraits
+struct LocalReconstructionFvOperatorTraits
 {
-  typedef LocalReconstructionFVOperator<MatrixImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
+  typedef LocalReconstructionFvOperator<MatrixImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
   typedef MatrixImp MatrixType;
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   typedef typename BoundaryValueFunctionType::RangeFieldType RangeFieldType;
@@ -142,12 +142,12 @@ struct ChooseLimiter<SlopeLimiters::no_slope, VectorType>
 
 
 template <class NumericalFluxType>
-class LocalCouplingFVOperator
-    : public LocalCouplingOperatorInterface<internal::LocalCouplingFVOperatorTraits<NumericalFluxType>>
+class LocalCouplingFvOperator
+    : public LocalCouplingOperatorInterface<internal::LocalCouplingFvOperatorTraits<NumericalFluxType>>
 {
 public:
   template <class... Args>
-  explicit LocalCouplingFVOperator(Args&&... args)
+  explicit LocalCouplingFvOperator(Args&&... args)
     : numerical_flux_(std::forward<Args>(args)...)
   {
   }
@@ -182,12 +182,12 @@ private:
 
 
 template <class NumericalFluxType>
-class LocalBoundaryFVOperator
-    : public LocalBoundaryOperatorInterface<internal::LocalBoundaryFVOperatorTraits<NumericalFluxType>>
+class LocalBoundaryFvOperator
+    : public LocalBoundaryOperatorInterface<internal::LocalBoundaryFvOperatorTraits<NumericalFluxType>>
 {
 public:
   template <class... Args>
-  explicit LocalBoundaryFVOperator(Args&&... args)
+  explicit LocalBoundaryFvOperator(Args&&... args)
     : numerical_flux_(std::forward<Args>(args)...)
   {
   }
@@ -216,10 +216,10 @@ private:
  *  TODO: implement as integral operator??
  * */
 template <class RHSEvaluationImp>
-class LocalRHSFVOperator : public LocalOperatorInterface<internal::LocalRHSFVOperatorTraits<RHSEvaluationImp>>
+class LocalRhsFvOperator : public LocalOperatorInterface<internal::LocalRhsFvOperatorTraits<RHSEvaluationImp>>
 {
 public:
-  explicit LocalRHSFVOperator(const RHSEvaluationImp& rhs_evaluation)
+  explicit LocalRhsFvOperator(const RHSEvaluationImp& rhs_evaluation)
     : rhs_evaluation_(rhs_evaluation)
   {
   }
@@ -241,11 +241,11 @@ private:
 
 
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
-class LocalReconstructionFVOperator
-    : public LocalOperatorInterface<internal::LocalReconstructionFVOperatorTraits<MatrixImp, BoundaryValueFunctionImp,
+class LocalReconstructionFvOperator
+    : public LocalOperatorInterface<internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp,
                                                                                   slope_limiter>>
 {
-  typedef internal::LocalReconstructionFVOperatorTraits<MatrixImp, BoundaryValueFunctionImp, slope_limiter> Traits;
+  typedef internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp, slope_limiter> Traits;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimRange = Traits::dimRange;
   typedef typename DSC::FieldVector<RangeFieldType, dimRange> StuffFieldVectorType;
@@ -254,7 +254,7 @@ public:
   typedef typename Traits::MatrixType MatrixType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
 
-  explicit LocalReconstructionFVOperator(const MatrixType& eigenvectors, const MatrixType& eigenvectors_inverse,
+  explicit LocalReconstructionFvOperator(const MatrixType& eigenvectors, const MatrixType& eigenvectors_inverse,
                                          const BoundaryValueFunctionType& boundary_values)
     : eigenvectors_(eigenvectors)
     , eigenvectors_inverse_(eigenvectors_inverse)
@@ -334,4 +334,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALOPERATOR_FV_HH
+#endif // DUNE_GDT_LOCAL_OPERATORS_FV_HH

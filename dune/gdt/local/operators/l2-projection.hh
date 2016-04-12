@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_LOCALOPERATOR_L2_PROJECTION_HH
-#define DUNE_GDT_LOCALOPERATOR_L2_PROJECTION_HH
+#ifndef DUNE_GDT_LOCAL_OPERATORS_L2_PROJECTION_HH
+#define DUNE_GDT_LOCAL_OPERATORS_L2_PROJECTION_HH
 
 #include <type_traits>
 
@@ -17,7 +17,6 @@
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
-#include <dune/gdt/localoperator/integrals.hh>
 #include <dune/gdt/spaces/fv/interface.hh>
 
 #include "integrals.hh"
@@ -130,4 +129,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALOPERATOR_L2_PROJECTION_HH
+#endif // DUNE_GDT_LOCAL_OPERATORS_L2_PROJECTION_HH
