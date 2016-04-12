@@ -18,7 +18,7 @@
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/local/integrands/ESV2007.hh>
-#include <dune/gdt/playground/operators/fluxreconstruction.hh>
+#include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/pdelab.hh>
 
