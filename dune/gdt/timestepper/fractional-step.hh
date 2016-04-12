@@ -21,7 +21,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace TimeStepper {
+
 
 /**
  * Takes two time steppers and performs a simple fractional step scheme (see e.g. LeVeque, "Finite Volume Methods for
@@ -30,8 +30,8 @@ namespace TimeStepper {
  * are taken from the first time stepper.
  */
 template <class FirstStepperImp, class SecondStepperImp>
-class FractionalStep : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType,
-                                                   typename FirstStepperImp::TimeFieldType>
+class FractionalTimeStepper : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType,
+                                                          typename FirstStepperImp::TimeFieldType>
 {
   typedef TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType, typename FirstStepperImp::TimeFieldType>
       BaseType;
@@ -50,7 +50,7 @@ public:
   using BaseType::current_time;
   using BaseType::solution;
 
-  FractionalStep(FirstStepperType& first_stepper, SecondStepperType& second_stepper)
+  FractionalTimeStepper(FirstStepperType& first_stepper, SecondStepperType& second_stepper)
     : BaseType(first_stepper.current_time(), first_stepper.current_solution())
     , first_stepper_(first_stepper)
     , second_stepper_(second_stepper)
@@ -74,11 +74,10 @@ public:
 private:
   FirstStepperType& first_stepper_;
   SecondStepperType& second_stepper_;
-}; // class FractionalStep
+}; // class FractionalTimeStepper
 
 
-} // namespace TimeStepper
-} // namespace Stuff
+} // namespace GDT
 } // namespace Dune
 
 #endif // DUNE_GDT_TIMESTEPPER_FRACTIONAL_STEP_HH

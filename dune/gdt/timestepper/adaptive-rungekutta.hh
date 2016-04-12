@@ -20,7 +20,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace TimeStepper {
 
 
 enum class AdaptiveRungeKuttaMethods
@@ -42,28 +41,28 @@ struct AdaptiveButcherArrayProvider
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in AdaptiveRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in AdaptiveRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicMatrix<RangeFieldType>();
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in AdaptiveRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in AdaptiveRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in AdaptiveRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in AdaptiveRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in AdaptiveRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in AdaptiveRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicVector<TimeFieldType>();
   }
 };
@@ -193,7 +192,7 @@ public:
  * Timestepper using adaptive Runge Kutta methods to solve equations of the form u_t = r * L(u, t) where u is a
  * discrete function, L an operator acting on u and \alpha a scalar factor (e.g. -1).
  * The specific Runge Kutta method can be chosen as the third template argument. If your desired Runge Kutta method is
- * not contained in Dune::GDT::TimeStepper::AdaptiveRungeKuttaMethods, choose AdaptiveRungeKuttaMethods::other and
+ * not contained in AdaptiveRungeKuttaMethods, choose AdaptiveRungeKuttaMethods::other and
  * supply a DynamicMatrix< RangeFieldType > A and vectors b_1, b_2 (DynamicVector< RangeFieldType >) and c
  * (DynamicVector< TimeFieldType >) in the constructor. Here, A, b_1, b_2 and c form the butcher tableau (see
  * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods#Embedded_methods, A is composed of the coefficients
@@ -210,7 +209,7 @@ public:
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
           AdaptiveRungeKuttaMethods method                                 = AdaptiveRungeKuttaMethods::dormand_prince>
-class AdaptiveRungeKutta : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+class AdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
   typedef typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
@@ -229,7 +228,7 @@ public:
   typedef typename std::vector<std::pair<TimeFieldType, DiscreteFunctionType>> SolutionType;
 
   /**
-   * \brief Constructor for AdaptiveRungeKutta time stepper
+   * \brief Constructor for AdaptiveRungeKuttaTimeStepper time stepper
    * \param op Operator L
    * \param initial_values Discrete function containing initial values for u at time t_0.
    * \param r Scalar factor (see above, default is 1)
@@ -242,13 +241,13 @@ public:
    * \param b_2 Second set of coefficients (only provide if you use AdaptiveRungeKuttaMethods::other)
    * \param c Coefficients for time steps (only provide if you use AdaptiveRungeKuttaMethods::other)
    */
-  AdaptiveRungeKutta(const OperatorType& op, const DiscreteFunctionType& initial_values, const RangeFieldType r = 1.0,
-                     const double t_0 = 0.0, const RangeFieldType tol = 1e-4,
-                     const TimeFieldType scale_factor_min = 0.2, const TimeFieldType scale_factor_max = 5,
-                     const MatrixType& A     = ButcherArrayProviderType::A(),
-                     const VectorType& b_1   = ButcherArrayProviderType::b_1(),
-                     const VectorType& b_2   = ButcherArrayProviderType::b_2(),
-                     const TimeVectorType& c = ButcherArrayProviderType::c())
+  AdaptiveRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r = 1.0, const double t_0 = 0.0, const RangeFieldType tol = 1e-4,
+                                const TimeFieldType scale_factor_min = 0.2, const TimeFieldType scale_factor_max = 5,
+                                const MatrixType& A     = ButcherArrayProviderType::A(),
+                                const VectorType& b_1   = ButcherArrayProviderType::b_1(),
+                                const VectorType& b_2   = ButcherArrayProviderType::b_2(),
+                                const TimeVectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
@@ -282,7 +281,7 @@ public:
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_intermediate_stages_.emplace_back(current_solution());
     }
-  } // constructor AdaptiveRungeKutta
+  } // constructor AdaptiveRungeKuttaTimeStepper
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -363,11 +362,10 @@ private:
   std::vector<DiscreteFunctionType> u_intermediate_stages_;
   const size_t num_stages_;
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
-}; // class AdaptiveRungeKutta
+}; // class AdaptiveRungeKuttaTimeStepper
 
 
-} // namespace TimeStepper
-} // namespace Stuff
+} // namespace GDT
 } // namespace Dune
 
 #endif // DUNE_GDT_TIMESTEPPER_ADAPTIVE_RUNGEKUTTA_HH

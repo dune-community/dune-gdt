@@ -21,10 +21,9 @@
 
 namespace Dune {
 namespace GDT {
-namespace TimeStepper {
 
 
-enum class RungeKuttaMethods
+enum class ExplicitRungeKuttaMethods
 {
   euler,
   second_order_ssp,
@@ -38,27 +37,28 @@ namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType, RungeKuttaMethods method = RungeKuttaMethods::other>
+template <class RangeFieldType, class TimeFieldType,
+          ExplicitRungeKuttaMethods method = ExplicitRungeKuttaMethods::other>
 struct ButcherArrayProvider
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in ExplicitRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicMatrix<RangeFieldType>();
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in ExplicitRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
     DUNE_THROW(Dune::NotImplemented,
-               "You have to provide a Butcher array in ExplicitRungeKutta's constructor for this method!");
+               "You have to provide a Butcher array in ExplicitRungeKuttaTimeStepper's constructor for this method!");
     return Dune::DynamicVector<TimeFieldType>();
   }
 };
@@ -66,7 +66,7 @@ struct ButcherArrayProvider
 
 // Euler
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::euler>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::euler>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -86,7 +86,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::eu
 
 // Second order SSP
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::second_order_ssp>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::second_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -106,7 +106,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::se
 
 // Third order SSP
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::third_order_ssp>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::third_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -128,7 +128,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::th
 
 // Classic fourth order RK
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::classic_fourth_order>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::classic_fourth_order>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -159,7 +159,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::cl
  * Timestepper using explicit Runge Kutta methods to solve equations of the form u_t = r * L(u, t) where u is a
  * discrete function, L an operator acting on u and r a scalar factor (e.g. -1).
  * The specific Runge Kutta method can be chosen as the third template argument. If your desired Runge Kutta method is
- * not contained in Dune::GDT::TimeStepper::RungeKuttaMethods, choose RungeKuttaMethods::other and supply a
+ * not contained in ExplicitRungeKuttaMethods, choose ExplicitRungeKuttaMethods::other and supply a
  * DynamicMatrix< RangeFieldType > A and vectors (DynamicVector< RangeFieldType >) b and c in the constructor. Here, A,
  * b and c form the butcher tableau (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is
  * composed of the coefficients a_{ij}, b of b_j and c of c_j). The default is a forward euler method.
@@ -168,8 +168,8 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, RungeKuttaMethods::cl
  * \tparam DiscreteFunctionImp Type of initial values
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
-          RungeKuttaMethods method                                         = RungeKuttaMethods::euler>
-class ExplicitRungeKutta : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+          ExplicitRungeKuttaMethods method                                 = ExplicitRungeKuttaMethods::euler>
+class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
   typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
@@ -196,14 +196,15 @@ public:
    * \param initial_values Discrete function containing initial values for u at time t_0.
    * \param r Scalar factor (see above, default is 1)
    * \param t_0 Initial time (default is 0)
-   * \param A Coefficient matrix (only provide if you use RungeKuttaMethods::other)
-   * \param b Coefficient vector (only provide if you use RungeKuttaMethods::other)
-   * \param c Coefficients for time steps (only provide if you use RungeKuttaMethods::other)
+   * \param A Coefficient matrix (only provide if you use ExplicitRungeKuttaMethods::other)
+   * \param b Coefficient vector (only provide if you use ExplicitRungeKuttaMethods::other)
+   * \param c Coefficients for time steps (only provide if you use ExplicitRungeKuttaMethods::other)
    */
-  ExplicitRungeKutta(const OperatorType& op, const DiscreteFunctionType& initial_values, const RangeFieldType r = 1.0,
-                     const double t_0 = 0.0, const MatrixType& A = ButcherArrayProviderType::A(),
-                     const VectorType& b     = ButcherArrayProviderType::b(),
-                     const TimeVectorType& c = ButcherArrayProviderType::c())
+  ExplicitRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r = 1.0, const double t_0 = 0.0,
+                                const MatrixType& A     = ButcherArrayProviderType::A(),
+                                const VectorType& b     = ButcherArrayProviderType::b(),
+                                const TimeVectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
@@ -313,8 +314,7 @@ private:
 };
 
 
-} // namespace TimeStepper
-} // namespace Stuff
+} // namespace GDT
 } // namespace Dune
 
 #endif // DUNE_GDT_TIMESTEPPER_EXPLICIT_RUNGEKUTTA_HH

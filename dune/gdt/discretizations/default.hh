@@ -65,7 +65,7 @@ public:
   typedef typename FVSpaceType::RangeFieldType RangeFieldType;
   typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
   typedef DiscreteFunction<FVSpaceType, VectorType> DiscreteFunctionType;
-  typedef std::map<double, DiscreteFunctionType, Dune::GDT::TimeStepper::internal::FloatCmpLt> DiscreteSolutionType;
+  typedef std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt> DiscreteSolutionType;
 }; // class NonStationaryDefaultTraits
 
 
@@ -343,8 +343,8 @@ public:
 
       typedef
           typename std::conditional<use_adaptive_timestepper,
-                                    typename Dune::GDT::TimeStepper::AdaptiveRungeKutta<OperatorType, FVFunctionType>,
-                                    typename Dune::GDT::TimeStepper::ExplicitRungeKutta<OperatorType, FVFunctionType>>::
+                                    typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<OperatorType, FVFunctionType>,
+                                    typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorType, FVFunctionType>>::
               type OperatorTimeStepperType;
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
 
@@ -355,11 +355,11 @@ public:
         // use fractional step method
         typedef typename std::
             conditional<use_adaptive_timestepper,
-                        typename Dune::GDT::TimeStepper::AdaptiveRungeKutta<RHSOperatorType, FVFunctionType>,
-                        typename Dune::GDT::TimeStepper::ExplicitRungeKutta<RHSOperatorType, FVFunctionType>>::type
+                        typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<RHSOperatorType, FVFunctionType>,
+                        typename Dune::GDT::ExplicitRungeKuttaTimeStepper<RHSOperatorType, FVFunctionType>>::type
                 RHSOperatorTimeStepperType;
         RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-        typedef typename Dune::GDT::TimeStepper::FractionalStep<OperatorTimeStepperType, RHSOperatorTimeStepperType>
+        typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
             TimeStepperType;
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
         timestepper.solve(t_end, dt, num_save_steps, solution);

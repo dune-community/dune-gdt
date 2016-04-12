@@ -19,8 +19,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace TimeStepper {
-
 namespace internal {
 
 
@@ -257,8 +255,7 @@ private:
 }; // class TimeStepperInterface
 
 
-} // namespace TimeStepper
-} // namespace Stuff
+} // namespace GDT
 } // namespace Dune
 
 #endif // DUNE_GDT_TIMESTEPPER_INTERFACE_HH
