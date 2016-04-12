@@ -1,5 +1,5 @@
-#ifndef DUNE_GDT_LOCALFLUXES_RHS_HH
-#define DUNE_GDT_LOCALFLUXES_RHS_HH
+#ifndef DUNE_GDT_LOCAL_FLUXES_RHS_HH
+#define DUNE_GDT_LOCAL_FLUXES_RHS_HH
 
 #include <dune/stuff/functions/checkerboard.hh>
 
@@ -8,14 +8,15 @@
 namespace Dune {
 namespace GDT {
 
+
 /** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::Stuff::Functions::Checkerboard.
  *  TODO: static_assert for CheckerboardFunctionImp
  * */
 template <class CheckerboardFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class CheckerboardBasedRHS : public RHSEvaluationInterface<E, D, d, R, r, rC>
+class CheckerboardBasedRhsEvaluationFluxInterface : public RhsEvaluationFluxInterface<E, D, d, R, r, rC>
 {
-  typedef RHSEvaluationInterface<E, D, d, R, r, rC> BaseType;
-  typedef CheckerboardBasedRHS<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
+  typedef RhsEvaluationFluxInterface<E, D, d, R, r, rC> BaseType;
+  typedef CheckerboardBasedRhsEvaluationFluxInterface<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
 
 public:
   // function q(u,x) for fixed x, i.e. only dependent on u
@@ -23,7 +24,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::DomainType;
 
-  CheckerboardBasedRHS(const CheckerboardFunctionType& checkerboard_function)
+  CheckerboardBasedRhsEvaluationFluxInterface(const CheckerboardFunctionType& checkerboard_function)
     : checkerboard_function_(checkerboard_function)
   {
   }
@@ -36,7 +37,7 @@ public:
 
   static std::string static_id()
   {
-    return "gdt.checkerboardbasedrhs";
+    return "gdt.CheckerboardBasedRhsEvaluationFluxInterface";
   }
 
   static std::unique_ptr<ThisType> create(const Dune::Stuff::Common::Configuration checkerboard_config,
@@ -47,9 +48,10 @@ public:
 
 private:
   const CheckerboardFunctionType checkerboard_function_;
-}; // class CheckerboardBasedRHS ...
+}; // class CheckerboardBasedRhsEvaluationFluxInterface ...
+
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALFLUXES_RHS_HH
+#endif // DUNE_GDT_LOCAL_FLUXES_RHS_HH

@@ -17,9 +17,9 @@
 #include <dune/stuff/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/localfluxes/interfaces.hh>
-#include <dune/gdt/localfluxes/godunov.hh>
-#include <dune/gdt/localfluxes/laxfriedrichs.hh>
+#include <dune/gdt/local/fluxes/interfaces.hh>
+#include <dune/gdt/local/fluxes/godunov.hh>
+#include <dune/gdt/local/fluxes/laxfriedrichs.hh>
 #include <dune/gdt/localoperator/fv.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/default.hh>
@@ -106,10 +106,10 @@ class AdvectionLocalizableDefault
 
   static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
-  static_assert(is_numerical_coupling_flux<NumericalCouplingFluxImp>::value,
-                "NumericalCouplingFluxImp has to be derived from NumericalCouplingFluxInterface!");
-  static_assert(is_numerical_boundary_flux<NumericalBoundaryFluxImp>::value,
-                "NumericalBoundaryFluxImp has to be derived from NumericalBoundaryFluxInterface!");
+  static_assert(is_local_numerical_coupling_flux<NumericalCouplingFluxImp>::value,
+                "NumericalCouplingFluxImp has to be derived from LocalNumericalCouplingFluxInterface!");
+  static_assert(is_local_numerical_boundary_flux<NumericalBoundaryFluxImp>::value,
+                "NumericalBoundaryFluxImp has to be derived from LocalNumericalBoundaryFluxInterface!");
   //  static_assert(std::is_base_of< ???, BoundaryValueFunctionImp >::value,
   //                "BoundaryValueFunctionImp has to be derived from ???!");
   static_assert(is_discrete_function<SourceImp>::value, "SourceImp has to be derived from DiscreteFunction!");
@@ -199,12 +199,12 @@ public:
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
-  typedef typename Dune::GDT::LaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType, dimDomain>
-      NumericalCouplingFluxType;
+  typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType,
+                                                                      dimDomain> NumericalCouplingFluxType;
   typedef typename Dune::GDT::
-      LaxFriedrichsNumericalDirichletBoundaryFlux<AnalyticalFluxType,
-                                                  typename BoundaryValueFunctionType::TimeIndependentFunctionType,
-                                                  LocalizableFunctionType, dimDomain> NumericalBoundaryFluxType;
+      LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxType,
+                                                       typename BoundaryValueFunctionType::TimeIndependentFunctionType,
+                                                       LocalizableFunctionType, dimDomain> NumericalBoundaryFluxType;
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueFunctionType& boundary_values, const LocalizableFunctionType& dx,
@@ -251,7 +251,7 @@ private:
   const bool entity_geometries_equal_;
 }; // class AdvectionLaxFriedrichsOperator
 
-// TODO: remove eigen dependency of GodunovNumericalCouplingFlux/GodunovNumericalBoundaryFlux
+// TODO: remove eigen dependency of LocalGodunovNumericalCouplingFlux/LocalGodunovNumericalBoundaryFlux
 #if HAVE_EIGEN
 
 namespace internal {
@@ -282,11 +282,11 @@ private:
   typedef typename Dune::Stuff::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
-  typedef typename Dune::GDT::GodunovNumericalCouplingFlux<AnalyticalFluxType, dimDomain> NumericalCouplingFluxType;
   typedef
-      typename Dune::GDT::GodunovNumericalBoundaryFlux<AnalyticalFluxType,
-                                                       typename BoundaryValueFunctionType::TimeIndependentFunctionType,
-                                                       dimDomain> NumericalBoundaryFluxType;
+      typename Dune::GDT::LocalGodunovNumericalCouplingFlux<AnalyticalFluxType, dimDomain> NumericalCouplingFluxType;
+  typedef typename Dune::GDT::LocalGodunovNumericalBoundaryFlux<AnalyticalFluxType, typename BoundaryValueFunctionType::
+                                                                                        TimeIndependentFunctionType,
+                                                                dimDomain> NumericalBoundaryFluxType;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
                            const bool is_linear = false, const bool use_linear_reconstruction = false)

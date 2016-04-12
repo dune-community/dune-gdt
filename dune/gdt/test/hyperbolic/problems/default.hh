@@ -11,8 +11,8 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 
-#include <dune/gdt/localfluxes/analytical.hh>
-#include <dune/gdt/localfluxes/rhs.hh>
+#include <dune/gdt/local/fluxes/analytical.hh>
+#include <dune/gdt/local/fluxes/rhs.hh>
 
 #include "interface.hh"
 
@@ -48,7 +48,8 @@ public:
   typedef typename DS::Functions::Expression<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSExpressionFunctionType, E, D, d, R, r, rC>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRHS<RHSCheckerboardFunctionType, E, D, d, R, r, rC> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R, r,
+                                                                          rC> DefaultRHSType;
 
   using typename BaseType::FluxType;
   using typename BaseType::RHSType;

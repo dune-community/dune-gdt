@@ -82,7 +82,8 @@ public:
   typedef typename DS::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRHS<RHSCheckerboardFunctionType, E, D, d, R, dimRange, 1> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R,
+                                                                          dimRange, 1> DefaultRHSType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
 

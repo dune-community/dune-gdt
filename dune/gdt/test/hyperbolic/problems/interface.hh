@@ -16,7 +16,7 @@
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/functions/checkerboard.hh>
 
-#include <dune/gdt/localfluxes/interfaces.hh>
+#include <dune/gdt/local/fluxes/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -44,8 +44,8 @@ public:
 
   typedef Dune::GDT::AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                                        dimRangeCols> FluxType;
-  typedef Dune::GDT::RHSEvaluationInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                            dimRangeCols> RHSType;
+  typedef Dune::GDT::RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
+                                                dimRangeCols> RHSType;
   typedef Dune::Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                                     dimRangeCols> InitialValueType;
   typedef

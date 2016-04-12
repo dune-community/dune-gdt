@@ -1,5 +1,5 @@
-#ifndef DUNE_GDT_LOCALFLUXES_INTERFACES_HH
-#define DUNE_GDT_LOCALFLUXES_INTERFACES_HH
+#ifndef DUNE_GDT_LOCAL_FLUXES_INTERFACES_HH
+#define DUNE_GDT_LOCAL_FLUXES_INTERFACES_HH
 
 #include <dune/grid/yaspgrid.hh>
 
@@ -33,8 +33,9 @@ class IsRHSEvaluation
 
 
 template <class Traits>
-class NumericalCouplingFluxInterface : public Stuff::CRTPInterface<NumericalCouplingFluxInterface<Traits>, Traits>,
-                                       internal::IsNumericalCouplingFlux
+class LocalNumericalCouplingFluxInterface
+    : public Stuff::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
+      internal::IsNumericalCouplingFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -67,12 +68,13 @@ public:
                             intersection,
                             x_intersection);
   }
-}; // class NumericalCouplingFluxInterface
+}; // class LocalNumericalCouplingFluxInterface
 
 
 template <class Traits>
-class NumericalBoundaryFluxInterface : public Stuff::CRTPInterface<NumericalBoundaryFluxInterface<Traits>, Traits>,
-                                       internal::IsNumericalBoundaryFlux
+class LocalNumericalBoundaryFluxInterface
+    : public Stuff::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
+      internal::IsNumericalBoundaryFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -93,7 +95,7 @@ public:
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection))
     return this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection);
   }
-}; // class NumericalBoundaryFluxInterface
+}; // class LocalNumericalBoundaryFluxInterface
 
 
 /** Analytical flux f for problem of the form delta_t u + div f(u,x,t) = 0 where u: R^d \to R^{r \times rC}.
@@ -132,6 +134,7 @@ public:
   virtual FluxJacobianRangeType jacobian(const RangeType& u, const E& entity, const DomainType& x_local,
                                          const double t_ = 0) const = 0;
 }; // class AnalyticalFluxInterface<..., false>
+
 
 /** Analytical flux f for problem of the form delta_t u + div f(u,x,t,\nabla u) = 0 where u: R^d \to R^r \times rC}.
  *  TODO: implement for rC > 1.
@@ -213,7 +216,7 @@ public:
  * TODO: implement for rC > 1.
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class RHSEvaluationInterface : internal::IsRHSEvaluation
+class RhsEvaluationFluxInterface : internal::IsRHSEvaluation
 {
   static_assert(rC == 1, "Not implemented for rC > 1");
 
@@ -225,7 +228,7 @@ public:
   static const size_t dimRange     = r;
   static const size_t dimRangeCols = rC;
 
-  virtual ~RHSEvaluationInterface() = default;
+  virtual ~RhsEvaluationFluxInterface() = default;
 
   typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
@@ -238,12 +241,12 @@ public:
 
 
 template <class T>
-struct is_numerical_coupling_flux : std::is_base_of<internal::IsNumericalCouplingFlux, T>
+struct is_local_numerical_coupling_flux : std::is_base_of<internal::IsNumericalCouplingFlux, T>
 {
 };
 
 template <class T>
-struct is_numerical_boundary_flux : std::is_base_of<internal::IsNumericalBoundaryFlux, T>
+struct is_local_numerical_boundary_flux : std::is_base_of<internal::IsNumericalBoundaryFlux, T>
 {
 };
 
@@ -261,4 +264,4 @@ struct is_rhs_evaluation : std::is_base_of<internal::IsRHSEvaluation, T>
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALFLUXES_INTERFACES_HH
+#endif // DUNE_GDT_LOCAL_FLUXES_INTERFACES_HH

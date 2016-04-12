@@ -52,8 +52,9 @@ public:
       RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
                                                        RangeFieldImp, dimRange, 1> RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRHS<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp, dimDomain,
-                                                   RangeFieldImp, dimRange, 1> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, EntityImp,
+                                                                          DomainFieldImp, dimDomain, RangeFieldImp,
+                                                                          dimRange, 1> DefaultRHSType;
   typedef typename DefaultRHSType::RangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;

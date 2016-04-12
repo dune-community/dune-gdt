@@ -1,5 +1,5 @@
-#ifndef DUNE_GDT_LOCALFLUXES_ANALYTICAL_HH
-#define DUNE_GDT_LOCALFLUXES_ANALYTICAL_HH
+#ifndef DUNE_GDT_LOCAL_FLUXES_ANALYTICAL_HH
+#define DUNE_GDT_LOCAL_FLUXES_ANALYTICAL_HH
 
 #include <dune/stuff/common/configuration.hh>
 
@@ -7,6 +7,7 @@
 
 namespace Dune {
 namespace GDT {
+
 
 template <class GlobalFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC>
 class GlobalFunctionBasedAnalyticalFlux : public AutonomousAnalyticalFluxInterface<E, D, d, R, r, rC>
@@ -40,7 +41,7 @@ public:
 
   static std::string static_id()
   {
-    return "gdt.globalfunctionbasedanalyticalflux";
+    return "gdt.GlobalFunctionBasedAnalyticalFluxflux";
   }
 
   static std::unique_ptr<ThisType> create(const DSC::Configuration global_function_config,
@@ -50,9 +51,10 @@ public:
   } // ... create(...)
 private:
   const GlobalFunctionType global_function_;
-};
+}; // class GlobalFunctionBasedAnalyticalFlux
+
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALFLUXES_ANALYTICAL_HH
+#endif // DUNE_GDT_LOCAL_FLUXES_ANALYTICAL_HH
