@@ -40,7 +40,7 @@ public:
   static const size_t dimRange     = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::RangeFieldType;
-  typedef typename Dune::GDT::Spaces::FV::Default<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
+  typedef typename Dune::GDT::FvSpace<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
   typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
   typedef typename Dune::GDT::Mapper::ProductFiniteVolume<GridViewType, dimRange, 1> MapperType;
 }; // class FvProductSpaceTraits

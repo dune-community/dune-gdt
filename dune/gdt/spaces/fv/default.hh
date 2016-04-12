@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_FV_DEFAULT_HH
-#define DUNE_GDT_SPACES_FV_DEFAULT_HH
+#ifndef DUNE_GDT_SPACES_FV_SPACE_HH
+#define DUNE_GDT_SPACES_FV_SPACE_HH
 
 #include <dune/stuff/common/type_utils.hh>
 
@@ -16,13 +16,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace FV {
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class Default
+class FvSpace
 {
   static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
 };
@@ -32,13 +30,13 @@ namespace internal {
 
 
 /**
- *  \brief Traits class for Spaces::CG::FemBased.
+ *  \brief Traits class for FvSpace.
  */
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class DefaultTraits
+class FvSpaceTraits
 {
 public:
-  typedef Default<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   static const int polOrder    = 0;
   static const bool continuous = false;
   typedef GridViewImp GridViewType;
@@ -53,23 +51,23 @@ public:
   static const bool needs_grid_view                       = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
-}; // class DefaultTraits
+}; // class FvSpaceTraits
 
 
 } // namespace internal
 
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
-class Default<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public FvSpaceInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+class FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
+    : public FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
                               rangeDim, 1>
 {
-  typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef FvSpaceInterface<internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
+  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
                            rangeDim, 1> BaseType;
 
 public:
-  typedef typename internal::DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
+  typedef typename internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
@@ -82,21 +80,21 @@ private:
 public:
   using typename BaseType::CommunicatorType;
 
-  Default(GridViewType gv)
+  FvSpace(GridViewType gv)
     : grid_view_(gv)
     , mapper_(grid_view_)
     , communicator_(CommunicationChooserType::create(grid_view_))
   {
   }
 
-  Default(const ThisType& other)
+  FvSpace(const ThisType& other)
     : grid_view_(other.grid_view_)
     , mapper_(other.mapper_)
     , communicator_(CommunicationChooserType::create(grid_view_))
   {
   }
 
-  Default(ThisType&& source) = default;
+  FvSpace(ThisType&& source) = FvSpace;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -132,27 +130,23 @@ private:
   const GridViewType grid_view_;
   const MapperType mapper_;
   const std::unique_ptr<CommunicatorType> communicator_;
-}; // class Default< ..., 1, 1 >
-
-
-} // namespace FV
+}; // class FvSpace< ..., 1, 1 >
 
 
 template <class R, size_t r, size_t rC, class GV>
-FV::Default<GV, R, r, rC> make_fv(const GV& grid_view)
+FV::FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
 {
-  return FV::Default<GV, R, r, rC>(grid_view);
+  return FV::FvSpace<GV, R, r, rC>(grid_view);
 }
 
 template <class R, size_t r, class GV>
-FV::Default<GV, R, r, 1> make_fv(const GV& grid_view)
+FV::FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
 {
-  return FV::Default<GV, R, r, 1>(grid_view);
+  return FV::FvSpace<GV, R, r, 1>(grid_view);
 }
 
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_FV_DEFAULT_HH
+#endif // DUNE_GDT_SPACES_FV_SPACE_HH
