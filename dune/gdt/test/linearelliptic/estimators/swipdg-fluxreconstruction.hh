@@ -170,7 +170,7 @@ class LocalResidualESV2007 : public Stuff::Grid::Codim0ReturnFunctor<GridViewTyp
       ThisType;
   typedef typename ForceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef Spaces::RT::PdelabBased<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
+  typedef DunePdelabRtSpaceWrapper<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
   typedef typename DiffusiveFluxType::DivergenceType DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
@@ -284,7 +284,7 @@ class LocalDiffusiveFluxESV2007
       BaseType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef Spaces::RT::PdelabBased<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
+  typedef DunePdelabRtSpaceWrapper<GridViewType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
   typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType,
                                                                                  RTN0DiscreteFunctionType,

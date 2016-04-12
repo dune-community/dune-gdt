@@ -20,7 +20,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
-#include <dune/gdt/spaces/rt/pdelab.hh>
+#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -61,7 +61,7 @@ public:
 
   template <class GV, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>, V>& range) const
+             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
@@ -78,9 +78,9 @@ public:
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_en(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_ne(1, 1, 0);
-    std::vector<typename Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
+    std::vector<typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
         basis_values(rtn0_space.mapper().maxNumDofs(),
-                     typename Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
+                     typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
@@ -246,7 +246,7 @@ public:
 
   template <class GV, class V>
   void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>, V>& range) const
+             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
@@ -261,9 +261,9 @@ public:
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_en(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_ne(1, 1, 0);
-    std::vector<typename Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
+    std::vector<typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
         basis_values(rtn0_space.mapper().maxNumDofs(),
-                     typename Spaces::RT::PdelabBased<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
+                     typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {

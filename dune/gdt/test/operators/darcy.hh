@@ -27,7 +27,7 @@ namespace Test {
 
 /**
  * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
- *       DuneFemCgSpaceWrapper, Spaces::RT::PdelabBased and FvSpace work correctly.
+ *       DuneFemCgSpaceWrapper, DunePdelabRtSpaceWrapper and FvSpace work correctly.
  * \todo This test is rather old and could be refactored in terms of the other operator tests.
  * \todo Missing ctor and make_darcy_operator tests.
  */
@@ -89,7 +89,7 @@ struct DarcyOperatorTest : public ::testing::Test
         return 3.12e-15;
       else
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
-    } else if (std::is_base_of<Spaces::RT::PdelabBased<GPV, 0, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+    } else if (std::is_base_of<DunePdelabRtSpaceWrapper<GPV, 0, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
       typedef FvSpace<GV, RangeFieldType, dimDomain> FvSpaceType;
       const FvSpaceType fv_space(grid_view);
       VectorType fv_desired_output_vector(fv_space.mapper().size());

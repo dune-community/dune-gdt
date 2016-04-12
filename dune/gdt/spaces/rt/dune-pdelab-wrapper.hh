@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_SPACES_RT_PDELAB_HH
-#define DUNE_GDT_SPACES_RT_PDELAB_HH
+#ifndef DUNE_GDT_SPACES_RT_DUNE_PDELAB_WRAPPER_HH
+#define DUNE_GDT_SPACES_RT_DUNE_PDELAB_WRAPPER_HH
 
 #include <type_traits>
 #include <limits>
@@ -32,28 +32,26 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
-namespace RT {
 
 #if HAVE_DUNE_PDELAB
 
 
 // forward, to be used in the traits and to allow for specialization
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBased
+class DunePdelabRtSpaceWrapper
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "Untested for these dimensions or polynomial order!");
-}; // class PdelabBased
+}; // class DunePdelabRtSpaceWrapper
 
 
 namespace internal {
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class PdelabBasedTraits
+class DunePdelabRtSpaceWrapperTraits
 {
 public:
-  typedef PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef DunePdelabRtSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
   static const int polOrder    = polynomialOrder;
   static const bool continuous = false;
@@ -99,32 +97,33 @@ public:
   typedef PDELab::GridFunctionSpace<GridViewType, FEMapType> BackendType;
   typedef Mapper::ContinuousPdelabWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef BaseFunctionSet::PiolaTransformedPdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
-                                                         RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+  typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
+                                                             RangeFieldType, rangeDim,
+                                                             rangeDimCols> BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
-  friend class PdelabBased<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
-}; // class PdelabBasedTraits
+  friend class DunePdelabRtSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
+}; // class DunePdelabRtSpaceWrapperTraits
 
 
 } // namespace internal
 
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
-class PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
-    : public Spaces::RTInterface<internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+class DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
+    : public Spaces::RTInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
                                  GridViewImp::dimension, rangeDim, 1>
 {
-  typedef PdelabBased<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Spaces::RTInterface<internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
+  typedef DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef Spaces::RTInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
                               GridViewImp::dimension, rangeDim, 1> BaseType;
 
 public:
-  typedef internal::PdelabBasedTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;
+  typedef internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;
 
   using BaseType::dimDomain;
   using BaseType::polOrder;
@@ -142,7 +141,7 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  PdelabBased(GridViewType gV)
+  DunePdelabRtSpaceWrapper(GridViewType gV)
     : grid_view_(gV)
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
@@ -157,7 +156,7 @@ public:
    * \note  Manually implemented bc of the std::mutex and our space creation policy
    *        (see https://github.com/pymor/dune-gdt/issues/28)
    */
-  PdelabBased(const ThisType& other)
+  DunePdelabRtSpaceWrapper(const ThisType& other)
     : grid_view_(other.grid_view_)
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
@@ -175,7 +174,7 @@ public:
    * \note  Manually implemented bc of the std::mutex and our space creation policy
    *        (see https://github.com/pymor/dune-gdt/issues/28)
    */
-  PdelabBased(ThisType&& source)
+  DunePdelabRtSpaceWrapper(ThisType&& source)
     : grid_view_(source.grid_view_)
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
@@ -248,14 +247,14 @@ private:
   mutable std::unique_ptr<CommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
-}; // class PdelabBased< ..., 0, ..., 1 >
+}; // class DunePdelabRtSpaceWrapper< ..., 0, ..., 1 >
 
 
 #else // HAVE_DUNE_PDELAB
 
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
-class PdelabBased
+class DunePdelabRtSpaceWrapper
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "You are missing dune-pdelab!");
 };
@@ -264,9 +263,7 @@ class PdelabBased
 #endif // HAVE_DUNE_PDELAB
 
 
-} // namespace RT
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_RT_PDELAB_HH
+#endif // DUNE_GDT_SPACES_RT_DUNE_PDELAB_WRAPPER_HH
