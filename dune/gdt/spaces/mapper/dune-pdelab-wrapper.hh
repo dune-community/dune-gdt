@@ -24,36 +24,35 @@
 
 namespace Dune {
 namespace GDT {
-namespace Mapper {
 
 #if HAVE_DUNE_PDELAB
 
 
 // forwards
 template <class PdelabSpaceImp, size_t rangeDim>
-class ContinuousPdelabWrapper;
+class DunePdelabCgMapperWrapper;
 
 template <class PdelabSpaceImp>
-class DiscontinuousPdelabWrapper;
+class DunePdelabDgMapperWrapper;
 
 
 namespace internal {
 
 
 template <class PdelabSpaceImp, size_t rangeDim>
-class ContinuousPdelabWrapperTraits
+class DunePdelabCgMapperWrapperTraits
 {
 public:
-  typedef ContinuousPdelabWrapper<PdelabSpaceImp, rangeDim> derived_type;
+  typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, rangeDim> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
 };
 
 template <class PdelabSpaceImp>
-class DiscontinuousPdelabWrapperTraits
+class DunePdelabDgMapperWrapperTraits
 {
 public:
-  typedef DiscontinuousPdelabWrapper<PdelabSpaceImp> derived_type;
+  typedef DunePdelabDgMapperWrapper<PdelabSpaceImp> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
 };
@@ -150,36 +149,36 @@ protected:
 
 
 template <class PdelabSpaceImp, size_t rangeDim = 1>
-class ContinuousPdelabWrapper
+class DunePdelabCgMapperWrapper
     : public DefaultProductMapperFromTuple<
           typename PdelabSpaceImp::Traits::GridViewType,
-          typename DSC::make_identical_tuple<ContinuousPdelabWrapper<PdelabSpaceImp, 1>, rangeDim>::type>::type
+          typename DSC::make_identical_tuple<DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>, rangeDim>::type>::type
 {
-  typedef ContinuousPdelabWrapper<PdelabSpaceImp, 1> ScalarValuedMapperType;
+  typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, 1> ScalarValuedMapperType;
   typedef typename DefaultProductMapperFromTuple<
       typename PdelabSpaceImp::Traits::GridViewType,
       typename Dune::Stuff::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::type>::type BaseType;
 
 public:
-  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, rangeDim>::BackendType BackendType;
-  ContinuousPdelabWrapper(const BackendType& pdelab_space)
+  typedef typename internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, rangeDim>::BackendType BackendType;
+  DunePdelabCgMapperWrapper(const BackendType& pdelab_space)
     : BaseType(pdelab_space.gridView(),
                DSC::make_identical_tuple<ScalarValuedMapperType, rangeDim>::create(pdelab_space))
   {
   }
-}; // class ContinuousPdelabWrapper
+}; // class DunePdelabCgMapperWrapper
 
 
 template <class PdelabSpaceImp>
-class ContinuousPdelabWrapper<PdelabSpaceImp, 1>
-    : public internal::PdelabWrapperBase<internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, 1>>
+class DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>
+    : public internal::PdelabWrapperBase<internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, 1>>
 {
 public:
-  typedef typename internal::ContinuousPdelabWrapperTraits<PdelabSpaceImp, 1> Traits;
+  typedef typename internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, 1> Traits;
   typedef typename Traits::EntityType EntityType;
 
   template <class... Args>
-  ContinuousPdelabWrapper(Args&&... args)
+  DunePdelabCgMapperWrapper(Args&&... args)
     : internal::PdelabWrapperBase<Traits>(std::forward<Args>(args)...)
   {
   }
@@ -189,19 +188,19 @@ protected:
   {
     return this->lfs_.dofIndex(localIndex).entityIndex()[1];
   }
-}; // class ContinuousPdelabWrapper
+}; // class DunePdelabCgMapperWrapper
 
 
 template <class PdelabSpaceImp>
-class DiscontinuousPdelabWrapper
-    : public internal::PdelabWrapperBase<internal::DiscontinuousPdelabWrapperTraits<PdelabSpaceImp>>
+class DunePdelabDgMapperWrapper
+    : public internal::PdelabWrapperBase<internal::DunePdelabDgMapperWrapperTraits<PdelabSpaceImp>>
 {
 public:
-  typedef typename internal::DiscontinuousPdelabWrapperTraits<PdelabSpaceImp> Traits;
+  typedef typename internal::DunePdelabDgMapperWrapperTraits<PdelabSpaceImp> Traits;
   typedef typename Traits::EntityType EntityType;
 
   template <class... Args>
-  DiscontinuousPdelabWrapper(Args&&... args)
+  DunePdelabDgMapperWrapper(Args&&... args)
     : internal::PdelabWrapperBase<Traits>(std::forward<Args>(args)...)
   {
   }
@@ -211,20 +210,20 @@ protected:
   {
     return this->lfs_.dofIndex(localIndex).entityIndex()[1] * this->numDofs(entity) + localIndex;
   }
-}; // class DiscontinuousPdelabWrapper
+}; // class DunePdelabDgMapperWrapper
 
 
 #else // HAVE_DUNE_PDELAB
 
 
 template <class PdelabSpaceImp>
-class ContinuousPdelabWrapper
+class DunePdelabCgMapperWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
 };
 
 template <class PdelabSpaceImp>
-class DiscontinuousPdelabWrapper
+class DunePdelabDgMapperWrapper
 {
   static_assert(Dune::AlwaysFalse<PdelabSpaceImp>::value, "You are missing dune-pdelab!");
 };
@@ -232,7 +231,6 @@ class DiscontinuousPdelabWrapper
 
 #endif // HAVE_DUNE_PDELAB
 
-} // namespace Mapper
 } // namespace GDT
 } // namespace Dune
 

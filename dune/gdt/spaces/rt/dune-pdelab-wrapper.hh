@@ -95,7 +95,7 @@ private:
 
 public:
   typedef PDELab::GridFunctionSpace<GridViewType, FEMapType> BackendType;
-  typedef Mapper::ContinuousPdelabWrapper<BackendType> MapperType;
+  typedef DunePdelabCgMapperWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
                                                              RangeFieldType, rangeDim,

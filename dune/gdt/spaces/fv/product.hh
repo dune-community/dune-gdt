@@ -42,7 +42,7 @@ public:
   using typename BaseType::RangeFieldType;
   typedef typename Dune::GDT::FvSpace<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
   typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
-  typedef typename Dune::GDT::Mapper::ProductFiniteVolume<GridViewType, dimRange, 1> MapperType;
+  typedef typename Dune::GDT::FvProductMapper<GridViewType, dimRange, 1> MapperType;
 }; // class FvProductSpaceTraits
 
 

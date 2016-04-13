@@ -43,7 +43,7 @@ public:
   typedef typename GridViewType::IndexSet BackendType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef RangeFieldImp RangeFieldType;
-  typedef Mapper::FiniteVolume<GridViewType, rangeDim, rangeDimCols> MapperType;
+  typedef FvMapper<GridViewType, rangeDim, rangeDimCols> MapperType;
   typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
                                         GridViewType::dimension, RangeFieldType, rangeDim,
                                         rangeDimCols> BaseFunctionSetType;

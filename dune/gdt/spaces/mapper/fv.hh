@@ -17,18 +17,17 @@
 
 namespace Dune {
 namespace GDT {
-namespace Mapper {
 
 
 // forward
 template <class GridViewImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
-class FiniteVolume
+class FvMapper
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
 };
 
 template <class GridViewImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
-class ProductFiniteVolume
+class FvProductMapper
 {
   static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
 };
@@ -38,23 +37,23 @@ namespace internal {
 
 
 template <class GridViewImp, size_t rangeDim, size_t rangeDimCols>
-class FiniteVolumeTraits
+class FvMapperTraits
 {
   static_assert(rangeDim >= 1, "Really?");
   static_assert(rangeDimCols >= 1, "Really?");
 
 public:
   typedef GridViewImp GridViewType;
-  typedef FiniteVolume<GridViewType, rangeDim, rangeDimCols> derived_type;
+  typedef FvMapper<GridViewType, rangeDim, rangeDimCols> derived_type;
   typedef typename GridViewImp::IndexSet BackendType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
 };
 
 template <class GridViewImp, size_t rangeDim, size_t rangeDimCols>
-class ProductFiniteVolumeTraits : public internal::FiniteVolumeTraits<GridViewImp, rangeDim, rangeDimCols>
+class FvProductMapperTraits : public internal::FvMapperTraits<GridViewImp, rangeDim, rangeDimCols>
 {
 public:
-  typedef ProductFiniteVolume<GridViewImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvProductMapper<GridViewImp, rangeDim, rangeDimCols> derived_type;
   static const size_t dimRange = rangeDim;
 };
 
@@ -63,19 +62,18 @@ public:
 
 
 template <class GridViewImp, size_t rangeDim>
-class FiniteVolume<GridViewImp, rangeDim, 1>
-    : public MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>>
+class FvMapper<GridViewImp, rangeDim, 1> : public MapperInterface<internal::FvMapperTraits<GridViewImp, rangeDim, 1>>
 {
-  typedef MapperInterface<internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1>> InterfaceType;
+  typedef MapperInterface<internal::FvMapperTraits<GridViewImp, rangeDim, 1>> InterfaceType;
   static const size_t dimRange = rangeDim;
 
 public:
-  typedef internal::FiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;
+  typedef internal::FvMapperTraits<GridViewImp, rangeDim, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FiniteVolume(const GridViewType& grid_view)
+  FvMapper(const GridViewType& grid_view)
     : backend_(grid_view.indexSet())
   {
   }
@@ -119,21 +117,21 @@ public:
 
 private:
   const BackendType& backend_;
-}; // class FiniteVolume< ..., rangeDim, 1 >
+}; // class FvMapper< ..., rangeDim, 1 >
 
 
 template <class GridViewImp>
-class FiniteVolume<GridViewImp, 1, 1> : public MapperInterface<internal::FiniteVolumeTraits<GridViewImp, 1, 1>>
+class FvMapper<GridViewImp, 1, 1> : public MapperInterface<internal::FvMapperTraits<GridViewImp, 1, 1>>
 {
-  typedef MapperInterface<internal::FiniteVolumeTraits<GridViewImp, 1, 1>> InterfaceType;
+  typedef MapperInterface<internal::FvMapperTraits<GridViewImp, 1, 1>> InterfaceType;
 
 public:
-  typedef internal::FiniteVolumeTraits<GridViewImp, 1, 1> Traits;
+  typedef internal::FvMapperTraits<GridViewImp, 1, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FiniteVolume(const GridViewType& grid_view)
+  FvMapper(const GridViewType& grid_view)
     : backend_(grid_view.indexSet())
   {
   }
@@ -175,24 +173,24 @@ public:
 
 private:
   const BackendType& backend_;
-}; // class FiniteVolume< ..., 1, 1 >
+}; // class FvMapper< ..., 1, 1 >
 
 
 template <class GridViewImp, size_t rangeDim>
-class ProductFiniteVolume<GridViewImp, rangeDim, 1>
-    : public ProductMapperInterface<internal::ProductFiniteVolumeTraits<GridViewImp, rangeDim, 1>>
+class FvProductMapper<GridViewImp, rangeDim, 1>
+    : public ProductMapperInterface<internal::FvProductMapperTraits<GridViewImp, rangeDim, 1>>
 {
-  typedef ProductMapperInterface<internal::ProductFiniteVolumeTraits<GridViewImp, rangeDim, 1>> BaseType;
-  typedef FiniteVolume<GridViewImp, rangeDim, 1> FiniteVolumeMapperType;
+  typedef ProductMapperInterface<internal::FvProductMapperTraits<GridViewImp, rangeDim, 1>> BaseType;
+  typedef FvMapper<GridViewImp, rangeDim, 1> FvMapperMapperType;
 
 public:
-  typedef internal::ProductFiniteVolumeTraits<GridViewImp, rangeDim, 1> Traits;
+  typedef internal::FvProductMapperTraits<GridViewImp, rangeDim, 1> Traits;
   typedef typename Traits::GridViewType GridViewType;
   static const size_t dimRange = Traits::dimRange;
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
-  ProductFiniteVolume(const GridViewType& grid_view)
+  FvProductMapper(const GridViewType& grid_view)
     : fv_mapper_(grid_view)
   {
   }
@@ -265,11 +263,10 @@ public:
   }
 
 private:
-  const FiniteVolumeMapperType fv_mapper_;
-}; // class ProductFiniteVolume< ..., rangeDim, 1 >
+  const FvMapperMapperType fv_mapper_;
+}; // class FvProductMapper< ..., rangeDim, 1 >
 
 
-} // namespace Mapper
 } // namespace GDT
 } // namespace Dune
 
