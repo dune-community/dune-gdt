@@ -74,8 +74,8 @@ public:
   }
 
   template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<Spaces::Block<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
-             DiscreteFunction<Spaces::Block<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+  void apply(const ConstDiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
+             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
   {
     apply_dg_fem(source, range);
   }

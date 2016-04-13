@@ -19,20 +19,19 @@
 
 namespace Dune {
 namespace GDT {
-namespace Spaces {
 
 #if HAVE_DUNE_GRID_MULTISCALE
 
 
 template <class LocalSpaceImp>
-class Block;
+class BlockSpace;
 
 
 namespace internal {
 
 
 template <class LocalSpaceType>
-class BlockTraits
+class BlockSpaceTraits
 {
   static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, LocalSpaceType::dimDomain,
                                                LocalSpaceType::dimRange, LocalSpaceType::dimRangeCols>,
@@ -41,7 +40,7 @@ class BlockTraits
   typedef grid::Multiscale::Default<typename LocalSpaceType::GridViewType::Grid> MsGridType;
 
 public:
-  typedef Block<LocalSpaceType> derived_type;
+  typedef BlockSpace<LocalSpaceType> derived_type;
   static const int polOrder    = LocalSpaceType::polOrder;
   static const bool continuous = false;
   typedef typename LocalSpaceType::BackendType BackendType;
@@ -54,7 +53,7 @@ public:
   static const Stuff::Grid::ChoosePartView part_view_type = LocalSpaceType::part_view_type;
 
   static const bool needs_grid_view = LocalSpaceType::needs_grid_view;
-}; // class BlockTraits
+}; // class BlockSpaceTraits
 
 
 } // namespace internal
@@ -65,15 +64,15 @@ public:
  *       be enough to hold a copy of the global grid view in this space (if the ms_grid is not needed elsewhere)
  */
 template <class LocalSpaceImp>
-class Block : public SpaceInterface<internal::BlockTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain,
-                                    LocalSpaceImp::dimRange, LocalSpaceImp::dimRangeCols>
+class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain,
+                                         LocalSpaceImp::dimRange, LocalSpaceImp::dimRangeCols>
 {
-  typedef SpaceInterface<internal::BlockTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain, LocalSpaceImp::dimRange,
+  typedef SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain, LocalSpaceImp::dimRange,
                          LocalSpaceImp::dimRangeCols> BaseType;
-  typedef Block<LocalSpaceImp> ThisType;
+  typedef BlockSpace<LocalSpaceImp> ThisType;
 
 public:
-  typedef internal::BlockTraits<LocalSpaceImp> Traits;
+  typedef internal::BlockSpaceTraits<LocalSpaceImp> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
@@ -86,8 +85,8 @@ public:
 
   typedef grid::Multiscale::Default<typename GridViewType::Grid> MsGridType;
 
-  Block(const std::shared_ptr<const MsGridType>& ms_grid,
-        const std::vector<std::shared_ptr<const LocalSpaceType>>& local_spaces)
+  BlockSpace(const std::shared_ptr<const MsGridType>& ms_grid,
+             const std::vector<std::shared_ptr<const LocalSpaceType>>& local_spaces)
     : ms_grid_(ms_grid)
     , grid_view_(ms_grid_->globalGridView())
     , local_spaces_(local_spaces)
@@ -101,11 +100,11 @@ public:
                      << "\n"
                      << "  Number of local spaces given: "
                      << local_spaces_.size());
-  } // Block(...)
+  } // BlockSpace(...)
 
-  Block(const ThisType& other) = default;
+  BlockSpace(const ThisType& other) = default;
 
-  Block(ThisType&& source) = default;
+  BlockSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -199,7 +198,7 @@ private:
 
 
 template <class LocalSpaceImp>
-class Block
+class BlockSpace
 {
   static_assert(Dune::AlwaysFalse<LocalSpaceImp>::value, "You are missing dune-grid-multiscale!");
 };
@@ -207,7 +206,6 @@ class Block
 
 #endif // HAVE_DUNE_GRID_MULTISCALE
 
-} // namespace Spaces
 } // namespace GDT
 } // namespace Dune
 
