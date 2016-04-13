@@ -31,7 +31,7 @@ namespace LinearElliptic {
  * \brief Discretizes a linear elliptic PDE using an interior penalty discontinuous Galerkin Finite Element method.
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
-          ChooseSpaceBackend spacebackend                = Spaces::default_dg_backend,
+          ChooseSpaceBackend spacebackend                = default_dg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
           class RangeFieldType = double, size_t dimRange = 1,
           LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>

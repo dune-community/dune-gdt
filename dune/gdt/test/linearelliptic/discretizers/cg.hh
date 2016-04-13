@@ -35,7 +35,7 @@ namespace LinearElliptic {
  * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
-          ChooseSpaceBackend space_backend               = Spaces::default_cg_backend,
+          ChooseSpaceBackend space_backend               = default_cg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
           class RangeFieldType = double, size_t dimRange = 1>
 class CGDiscretizer
