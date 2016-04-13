@@ -10,8 +10,6 @@
 #include <limits>
 #include <mutex>
 
-#include <dune/common/deprecated.hh>
-
 #include <dune/geometry/genericgeometry/topologytypes.hh>
 #include <dune/geometry/referenceelements.hh>
 

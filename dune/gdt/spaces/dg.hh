@@ -8,8 +8,6 @@
 
 #include <memory>
 
-#include <dune/common/deprecated.hh>
-
 #if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/provider/interface.hh>
 #endif
@@ -81,14 +79,6 @@ public:
   }
 #endif // HAVE_DUNE_GRID_MULTISCALE
 }; // class DGProvider
-
-
-template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
-          class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
-class DUNE_DEPRECATED_MSG("Use DGProvider instead (02.02.2015)!") DiscontinuousLagrangeProvider
-    : public DGProvider<GridType, layer_type, backend_type, polOrder, RangeFieldType, dimRange, dimRangeCols>
-{
-};
 
 
 } // namespace Spaces

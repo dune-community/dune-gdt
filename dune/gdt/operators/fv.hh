@@ -20,8 +20,6 @@
 #include <dune/gdt/localfluxes/interfaces.hh>
 #include <dune/gdt/localfluxes/godunov.hh>
 #include <dune/gdt/localfluxes/laxfriedrichs.hh>
-#include <dune/gdt/localoperator/codim0.hh>
-#include <dune/gdt/localoperator/codim1.hh>
 #include <dune/gdt/localoperator/fv.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/default.hh>

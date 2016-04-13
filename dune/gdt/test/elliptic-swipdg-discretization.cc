@@ -1,1 +1,0 @@
-../../../test/elliptic-swipdg-discretization.cc
