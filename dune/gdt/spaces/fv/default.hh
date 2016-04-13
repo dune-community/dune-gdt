@@ -94,7 +94,7 @@ public:
   {
   }
 
-  FvSpace(ThisType&& source) = FvSpace;
+  FvSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -134,15 +134,15 @@ private:
 
 
 template <class R, size_t r, size_t rC, class GV>
-FV::FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
 {
-  return FV::FvSpace<GV, R, r, rC>(grid_view);
+  return FvSpace<GV, R, r, rC>(grid_view);
 }
 
 template <class R, size_t r, class GV>
-FV::FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
 {
-  return FV::FvSpace<GV, R, r, 1>(grid_view);
+  return FvSpace<GV, R, r, 1>(grid_view);
 }
 
 

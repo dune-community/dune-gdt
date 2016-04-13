@@ -29,9 +29,9 @@ namespace internal {
 
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class FvProductSpaceTraits : public DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
+class FvProductSpaceTraits : public FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef DefaultTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
   typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
@@ -59,7 +59,7 @@ class FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
   typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
                                       GridViewImp::dimension, rangeDim, 1> BaseType;
-  typedef Default<GridViewImp, RangeFieldImp, rangeDim, 1> DefaultFVSpaceType;
+  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> FvSpaceFVSpaceType;
 
 public:
   typedef typename internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
@@ -97,7 +97,7 @@ public:
     return product_fv_mapper_;
   }
 
-  // The remaining methods are redirected to Default
+  // The remaining methods are redirected to FvSpace
   const GridViewType& grid_view() const
   {
     return default_fv_space_.grid_view();
@@ -119,7 +119,7 @@ public:
   }
 
 private:
-  const DefaultFVSpaceType default_fv_space_;
+  const FvSpaceFVSpaceType default_fv_space_;
   const MapperType product_fv_mapper_;
   const FactorSpaceType factor_space_;
 }; // class FvProductSpace< ..., 1 >

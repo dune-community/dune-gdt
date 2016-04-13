@@ -37,7 +37,7 @@ public:
                                                                    : FluxTimeStepperCombinations::godunov_euler));
   typedef
       typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
-  typedef typename FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
+  typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef InStationaryDefaultDiscretization<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
                                             use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
 
