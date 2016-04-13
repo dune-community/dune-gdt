@@ -38,8 +38,8 @@ public:
   typedef
       typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
   typedef typename FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
-  typedef Discretizations::NonStationaryDefault<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
-                                                use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
+  typedef InStationaryDefaultDiscretization<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
+                                            use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error

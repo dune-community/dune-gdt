@@ -47,7 +47,7 @@ public:
   typedef typename SpaceProvider::Type SpaceType;
   typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::MatrixType MatrixType;
   typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::VectorType VectorType;
-  typedef Discretizations::StationaryContainerBasedDefault<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
+  typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::cg;
   static const int polOrder                     = pol;

@@ -22,73 +22,74 @@
 
 namespace Dune {
 namespace GDT {
-namespace Discretizations {
 
 
 // forward
 template <class ProblemType, class AnsatzSpaceType, class MatrixType, class VectorType,
           class TestSpaceType = AnsatzSpaceType>
-class StationaryContainerBasedDefault;
+class StationaryContainerBasedDefaultDiscretization;
 
 template <class ProblemImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
           bool use_linear_reconstruction>
-class NonStationaryDefault;
+class InStationaryDefaultDiscretization;
 
 
 namespace internal {
 
 
 template <class ProblemImp, class AnsatzSpaceImp, class MatrixImp, class VectorImp, class TestSpaceImp>
-class StationaryContainerBasedDefaultTraits
+class StationaryContainerBasedDefaultDiscretizationTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
 public:
-  typedef StationaryContainerBasedDefault<ProblemImp, AnsatzSpaceImp, MatrixImp, VectorImp, TestSpaceImp> derived_type;
+  typedef StationaryContainerBasedDefaultDiscretization<ProblemImp, AnsatzSpaceImp, MatrixImp, VectorImp, TestSpaceImp>
+      derived_type;
   typedef ProblemImp ProblemType;
   typedef AnsatzSpaceImp AnsatzSpaceType;
   typedef TestSpaceImp TestSpaceType;
   typedef MatrixImp MatrixType;
   typedef VectorImp VectorType;
-}; // class StationaryContainerBasedDefaultTraits
+}; // class StationaryContainerBasedDefaultDiscretizationTraits
 
 
 template <class TestCaseImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
           bool use_linear_reconstruction>
-class NonStationaryDefaultTraits
+class InStationaryDefaultDiscretizationTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
 public:
-  typedef NonStationaryDefault<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
-                               use_linear_reconstruction> derived_type;
+  typedef InStationaryDefaultDiscretization<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
+                                            use_linear_reconstruction> derived_type;
   typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp FVSpaceType;
   typedef typename FVSpaceType::RangeFieldType RangeFieldType;
   typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
   typedef DiscreteFunction<FVSpaceType, VectorType> DiscreteFunctionType;
   typedef std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt> DiscreteSolutionType;
-}; // class NonStationaryDefaultTraits
+}; // class InStationaryDefaultDiscretizationTraits
 
 
 } // namespace internal
 
 
 template <class ProblemImp, class AnsatzSpaceImp, class MatrixImp, class VectorImp, class TestSpaceImp>
-class StationaryContainerBasedDefault
+class StationaryContainerBasedDefaultDiscretization
     : public ContainerBasedStationaryDiscretizationInterface<internal::
-                                                                 StationaryContainerBasedDefaultTraits<ProblemImp,
-                                                                                                       AnsatzSpaceImp,
-                                                                                                       MatrixImp,
-                                                                                                       VectorImp,
-                                                                                                       TestSpaceImp>>
+                                                                 StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
+                                                                                                                     AnsatzSpaceImp,
+                                                                                                                     MatrixImp,
+                                                                                                                     VectorImp,
+                                                                                                                     TestSpaceImp>>
 {
   typedef ContainerBasedStationaryDiscretizationInterface<internal::
-                                                              StationaryContainerBasedDefaultTraits<ProblemImp,
-                                                                                                    AnsatzSpaceImp,
-                                                                                                    MatrixImp,
-                                                                                                    VectorImp,
-                                                                                                    TestSpaceImp>>
+                                                              StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
+                                                                                                                  AnsatzSpaceImp,
+                                                                                                                  MatrixImp,
+                                                                                                                  VectorImp,
+                                                                                                                  TestSpaceImp>>
       BaseType;
-  typedef StationaryContainerBasedDefault<ProblemImp, AnsatzSpaceImp, MatrixImp, VectorImp, TestSpaceImp> ThisType;
+  typedef StationaryContainerBasedDefaultDiscretization<ProblemImp, AnsatzSpaceImp, MatrixImp, VectorImp, TestSpaceImp>
+      ThisType;
 
 public:
   using typename BaseType::ProblemType;
@@ -97,8 +98,9 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::VectorType;
 
-  StationaryContainerBasedDefault(const ProblemType& prblm, AnsatzSpaceType ansatz_sp, TestSpaceType test_sp,
-                                  MatrixType system_mtrx, VectorType rhs_vec, VectorType dirichlet)
+  StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm, AnsatzSpaceType ansatz_sp,
+                                                TestSpaceType test_sp, MatrixType system_mtrx, VectorType rhs_vec,
+                                                VectorType dirichlet)
     : problem_(prblm)
     , ansatz_space_(ansatz_sp)
     , test_space_(test_sp)
@@ -109,8 +111,8 @@ public:
   {
   }
 
-  StationaryContainerBasedDefault(const ProblemType& prblm, AnsatzSpaceType ansatz_sp, MatrixType system_mtrx,
-                                  VectorType rhs_vec, VectorType dirichlet)
+  StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm, AnsatzSpaceType ansatz_sp,
+                                                MatrixType system_mtrx, VectorType rhs_vec, VectorType dirichlet)
     : problem_(prblm)
     , ansatz_space_(ansatz_sp)
     , test_space_(ansatz_space_)
@@ -121,8 +123,8 @@ public:
   {
   }
 
-  StationaryContainerBasedDefault(const ProblemType& prblm, AnsatzSpaceType ansatz_sp, TestSpaceType test_sp,
-                                  MatrixType system_mtrx, VectorType rhs_vec)
+  StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm, AnsatzSpaceType ansatz_sp,
+                                                TestSpaceType test_sp, MatrixType system_mtrx, VectorType rhs_vec)
     : problem_(prblm)
     , ansatz_space_(ansatz_sp)
     , test_space_(test_sp)
@@ -133,8 +135,8 @@ public:
   {
   }
 
-  StationaryContainerBasedDefault(const ProblemType& prblm, AnsatzSpaceType ansatz_sp, MatrixType system_mtrx,
-                                  VectorType rhs_vec)
+  StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm, AnsatzSpaceType ansatz_sp,
+                                                MatrixType system_mtrx, VectorType rhs_vec)
     : problem_(prblm)
     , ansatz_space_(ansatz_sp)
     , test_space_(ansatz_space_)
@@ -145,7 +147,7 @@ public:
   {
   }
 
-  StationaryContainerBasedDefault(ThisType&& /*source*/) = default;
+  StationaryContainerBasedDefaultDiscretization(ThisType&& /*source*/) = default;
 
   /// \name Required by StationaryDiscretizationInterface.
   /// \{
@@ -202,7 +204,7 @@ private:
   const VectorType rhs_vector_;
   const VectorType dirichlet_shift_;
   const bool has_dirichlet_shift_;
-}; // class StationaryContainerBasedDefault
+}; // class StationaryContainerBasedDefaultDiscretization
 
 
 namespace internal {
@@ -238,19 +240,21 @@ struct AdvectionOperatorCreator<OperatorType, true>
 
 template <class TestCaseImp, class FVSpaceImp, bool use_lax_friedrichs_flux, bool use_adaptive_timestepper,
           bool use_linear_reconstruction>
-class NonStationaryDefault
-    : public NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<TestCaseImp, FVSpaceImp,
-                                                                                       use_lax_friedrichs_flux,
-                                                                                       use_adaptive_timestepper,
-                                                                                       use_linear_reconstruction>>
+class InStationaryDefaultDiscretization
+    : public NonStationaryDiscretizationInterface<internal::
+                                                      InStationaryDefaultDiscretizationTraits<TestCaseImp, FVSpaceImp,
+                                                                                              use_lax_friedrichs_flux,
+                                                                                              use_adaptive_timestepper,
+                                                                                              use_linear_reconstruction>>
 {
-  typedef NonStationaryDiscretizationInterface<internal::NonStationaryDefaultTraits<TestCaseImp, FVSpaceImp,
-                                                                                    use_lax_friedrichs_flux,
-                                                                                    use_adaptive_timestepper,
-                                                                                    use_linear_reconstruction>>
+  typedef NonStationaryDiscretizationInterface<internal::
+                                                   InStationaryDefaultDiscretizationTraits<TestCaseImp, FVSpaceImp,
+                                                                                           use_lax_friedrichs_flux,
+                                                                                           use_adaptive_timestepper,
+                                                                                           use_linear_reconstruction>>
       BaseType;
-  typedef NonStationaryDefault<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
-                               use_linear_reconstruction> ThisType;
+  typedef InStationaryDefaultDiscretization<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
+                                            use_linear_reconstruction> ThisType;
 
 public:
   typedef TestCaseImp TestCaseType;
@@ -260,7 +264,7 @@ public:
   using typename BaseType::VectorType;
   using typename BaseType::DiscreteFunctionType;
 
-  NonStationaryDefault(const TestCaseImp& tst_cs, const std::shared_ptr<const FVSpaceType> fv_space_ptr)
+  InStationaryDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const FVSpaceType> fv_space_ptr)
     : test_case_(tst_cs)
     , fv_space_(fv_space_ptr)
   {
@@ -381,10 +385,9 @@ public:
 private:
   const TestCaseType& test_case_;
   const std::shared_ptr<const FVSpaceType> fv_space_;
-}; // class NonStationaryDefault
+}; // class InStationaryDefaultDiscretization
 
 
-} // namespace Discretizations
 } // namespace GDT
 } // namespace Dune
 
