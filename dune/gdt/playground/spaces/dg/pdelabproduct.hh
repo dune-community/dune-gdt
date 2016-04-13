@@ -12,11 +12,10 @@
 
 #include <dune/stuff/common/tuple.hh>
 
-#include <dune/gdt/playground/mapper/productdgpdelab.hh>
-
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
 #include <dune/gdt/playground/spaces/dg/pdelab.hh>
+#include <dune/gdt/playground/spaces/mapper/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -51,7 +50,7 @@ public:
   using typename BaseType::BackendType;
   using typename BaseType::EntityType;
   using typename BaseType::RangeFieldType;
-  typedef Mapper::ProductDG<BackendType, rangeDim, rangeDimCols> MapperType;
+  typedef ProductDgMapper<BackendType, rangeDim, rangeDimCols> MapperType;
   using BaseType::part_view_type;
   using BaseType::needs_grid_view;
 

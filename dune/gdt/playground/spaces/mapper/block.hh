@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_MAPPER_BLOCK_HH
-#define DUNE_GDT_MAPPER_BLOCK_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/type_utils.hh>
@@ -15,24 +15,23 @@
 
 #include <dune/gdt/spaces/interface.hh>
 
-#include "../../mapper/interface.hh"
+#include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
-namespace Mapper {
 
 #if HAVE_DUNE_GRID_MULTISCALE
 
 
 template <class LocalSpaceImp>
-class Block;
+class BlockMapper;
 
 
 namespace internal {
 
 
 template <class LocalSpaceType>
-class BlockTraits
+class BlockMapperTraits
 {
   static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, LocalSpaceType::dimDomain,
                                                LocalSpaceType::dimRange, LocalSpaceType::dimRangeCols>,
@@ -40,22 +39,22 @@ class BlockTraits
                 "LocalSpaceType has to be derived from SpaceInterface!");
 
 public:
-  typedef Block<LocalSpaceType> derived_type;
+  typedef BlockMapper<LocalSpaceType> derived_type;
   typedef typename LocalSpaceType::EntityType EntityType;
   typedef typename LocalSpaceType::MapperType::BackendType BackendType;
-}; // class BlockTraits
+}; // class BlockMapperTraits
 
 
 } // namespace internal
 
 
 template <class LocalSpaceImp>
-class Block : public MapperInterface<internal::BlockTraits<LocalSpaceImp>>
+class BlockMapper : public MapperInterface<internal::BlockMapperTraits<LocalSpaceImp>>
 {
-  typedef MapperInterface<internal::BlockTraits<LocalSpaceImp>> BaseType;
+  typedef MapperInterface<internal::BlockMapperTraits<LocalSpaceImp>> BaseType;
 
 public:
-  typedef internal::BlockTraits<LocalSpaceImp> Traits;
+  typedef internal::BlockMapperTraits<LocalSpaceImp> Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
   typedef LocalSpaceImp LocalSpaceType;
@@ -130,8 +129,8 @@ private:
   }; // class Compute< ..., EntityType >
 
 public:
-  Block(const std::shared_ptr<const MsGridType> ms_grid,
-        const std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces)
+  BlockMapper(const std::shared_ptr<const MsGridType> ms_grid,
+              const std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces)
     : ms_grid_(ms_grid)
     , local_spaces_(local_spaces)
     , num_blocks_(local_spaces_.size())
@@ -151,7 +150,7 @@ public:
       global_start_indices_.push_back(size_);
       size_ += local_spaces_[bb]->mapper().size();
     }
-  } // Block(...)
+  } // BlockMapper(...)
 
   size_t numBlocks() const
   {
@@ -208,14 +207,14 @@ private:
   size_t size_;
   size_t max_num_dofs_;
   std::vector<size_t> global_start_indices_;
-}; // class Block
+}; // class BlockMapper
 
 
 #else // HAVE_DUNE_GRID_MULTISCALE
 
 
 template <class LocalSpaceImp>
-class Block
+class BlockMapper
 {
   static_assert(AlwaysFalse<LocalSpaceImp>::value, "You are missing dune-grid-multiscale!");
 };
@@ -223,8 +222,7 @@ class Block
 
 #endif // HAVE_DUNE_GRID_MULTISCALE
 
-} // namespace Mapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_MAPPER_BLOCK_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH

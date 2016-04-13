@@ -13,7 +13,7 @@
 #include <dune/grid/multiscale/default.hh>
 #endif
 
-#include <dune/gdt/playground/mapper/block.hh>
+#include "mapper/block.hh"
 
 #include "../../spaces/interface.hh"
 
@@ -45,7 +45,7 @@ public:
   static const int polOrder    = LocalSpaceType::polOrder;
   static const bool continuous = false;
   typedef typename LocalSpaceType::BackendType BackendType;
-  typedef Mapper::Block<LocalSpaceType> MapperType;
+  typedef BlockMapper<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
   typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
   typedef typename MsGridType::GlobalGridViewType GridViewType;

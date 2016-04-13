@@ -3,8 +3,8 @@
 // Copyright holders: Felix Schindler
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 
-#ifndef DUNE_GDT_PLAYGROUND_MAPPER_PRODUCTDGPDELAB_HH
-#define DUNE_GDT_PLAYGROUND_MAPPER_PRODUCTDGPDELAB_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH
 
 #include <dune/common/dynvector.hh>
 
@@ -16,12 +16,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Mapper {
 
 
 // forward
 template <class PdelabSpaceImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
-class ProductDG
+class ProductDgMapper
 {
   static_assert(AlwaysFalse<PdelabSpaceImp>::value, "Not available for these dimensions!");
 };
@@ -31,13 +30,13 @@ namespace internal {
 
 
 template <class PdelabSpaceImp, size_t rangeDim, size_t rangeDimCols>
-class ProductDGTraits
+class ProductDgMapperTraits
 {
   static_assert(rangeDim >= 1, "Really?");
   static_assert(rangeDimCols >= 1, "Really?");
 
 public:
-  typedef ProductDG<PdelabSpaceImp, rangeDim, rangeDimCols> derived_type;
+  typedef ProductDgMapper<PdelabSpaceImp, rangeDim, rangeDimCols> derived_type;
   typedef PdelabSpaceImp BackendType;
   typedef typename BackendType::Element EntityType;
 };
@@ -47,19 +46,19 @@ public:
 
 
 template <class PdelabSpaceImp, size_t rangeDim>
-class ProductDG<PdelabSpaceImp, rangeDim, 1>
-    : public ProductMapperInterface<internal::ProductDGTraits<PdelabSpaceImp, rangeDim, 1>>
+class ProductDgMapper<PdelabSpaceImp, rangeDim, 1>
+    : public ProductMapperInterface<internal::ProductDgMapperTraits<PdelabSpaceImp, rangeDim, 1>>
 {
-  typedef ProductMapperInterface<internal::ProductDGTraits<PdelabSpaceImp, rangeDim, 1>> InterfaceType;
+  typedef ProductMapperInterface<internal::ProductDgMapperTraits<PdelabSpaceImp, rangeDim, 1>> InterfaceType;
   static const size_t dimRange = rangeDim;
 
 public:
-  typedef internal::ProductDGTraits<PdelabSpaceImp, rangeDim, 1> Traits;
+  typedef internal::ProductDgMapperTraits<PdelabSpaceImp, rangeDim, 1> Traits;
   typedef typename Traits::BackendType BackendType;
-  typedef DiscontinuousPdelabWrapper<BackendType> FactorMapperType;
+  typedef DunePdelabDgMapperWrapper<BackendType> FactorMapperType;
   typedef typename Traits::EntityType EntityType;
 
-  ProductDG(const BackendType& pdelab_space)
+  ProductDgMapper(const BackendType& pdelab_space)
     : backend_(pdelab_space)
     , factor_mapper_(pdelab_space)
   {
@@ -154,11 +153,10 @@ public:
 private:
   const BackendType& backend_;
   const FactorMapperType factor_mapper_;
-}; // class ProductDG< ..., rangeDim, 1 >
+}; // class ProductDgMapper< ..., rangeDim, 1 >
 
 
-} // namespace Mapper
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PLAYGROUND_MAPPER_PRODUCTDGPDELAB_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_MAPPER_DUNE_PDELAB_WRAPPER_HH
