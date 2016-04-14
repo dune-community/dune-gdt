@@ -1,7 +1,10 @@
 # This file is part of the dune-gdt project:
-#   /home/falbr_01/Projects/dune/dune-hdd-demos/dune-hdd/test
-# Copyright holders: Felix Schindler
+#   https://github.com/dune-community/dune-gdt
+# Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+# Authors:
+#   Felix Schindler (2016)
+#   Tobias Leibner  (2016)
 
 # expectation targets
 add_library(expectations_hyperbolic_fv_discretizations_yaspgrid

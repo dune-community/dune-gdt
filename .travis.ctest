@@ -1,3 +1,10 @@
+# This file is part of the dune-gdt project:
+#   https://github.com/dune-community/dune-gdt
+# Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+# License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+# Authors:
+#   Felix Schindler (2016)
+
 string(SUBSTRING "$ENV{TRAVIS_COMMIT}" 0 7 COMMIT_ID)
 set(CTEST_SITE "travis")
 set(CTEST_BUILD_NAME "$ENV{TRAVIS_BUILD_NUMBER}-${COMMIT_ID}-$ENV{TRAVIS_OS_NAME}-$ENV{CXX}")
