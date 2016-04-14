@@ -1,3 +1,50 @@
+# This file is part of the dune-gdt project:
+#   https://github.com/dune-community/dune-gdt
+# Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+# License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+# Authors:
+#   Felix Schindler (2013 - 2014, 2016)
+
+Barbara Verfürth <b_verf01@uni-muenster.de> b_verf01 <b_verf01@uni-muenster.de>
 Felix Schindler <f_albr01@4028485c-44d9-4cde-a312-5a4635ee2db9>
 Felix Schindler <felix.albrecht@4028485c-44d9-4cde-a312-5a4635ee2db9>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <felix.albrecht@mail.uni-muenster.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <felix.albrecht@math.uni-muenster.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <felix.albrecht@uni-muenster.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <felix@almob.(none)>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <felix@server.(none)>
+Felix Schindler <felix.schindler@wwu.de> Felix Albrecht <mail@felixalbrecht.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Schindler <ftalbrecht@users.noreply.github.com>
+Felix Schindler <felix.schindler@wwu.de> Felix Tobias Albrecht <f_albr01@BARNEY.uni-muenster.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Tobias Albrecht <f_albr01@SCORPION.uni-muenster.de>
+Felix Schindler <felix.schindler@wwu.de> Felix Tobias Albrecht <falbr_01@BARNEY.(none)>
+Kirsten Weber <k_webe11@wwu.de> Kirsten <kirsten@kirsten>
+Kirsten Weber <k_webe11@wwu.de> Kirsten Weber <k_webe11@LOCKHEED.uni-muenster.de>
+Kirsten Weber <k_webe11@wwu.de> Kirsten Weber <k_webe11@pingpong.(none)>
+Kirsten Weber <k_webe11@wwu.de> Kirsten Weber <k_webe11@wwu.de>
 Kirsten Weber <kirsten@kirsten>
+Martin Drohmann <m_droh01@4028485c-44d9-4cde-a312-5a4635ee2db9>
+Martin Nolte <nolte@4028485c-44d9-4cde-a312-5a4635ee2db9>
+Rene Milk <rene.milk@wwu.de> Rene Milk <kosh@cpt-awesome.(none)>
+Rene Milk <rene.milk@wwu.de> Rene Milk <kosh@koshmob.(none)>
+Rene Milk <rene.milk@wwu.de> Rene Milk <koshi@springlobby.info>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@BARNEY.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@DUNE-PROJECT.(none)>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@DUNE-PROJECT.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@JAX.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@LOCKHEED.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@SCORPION.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <r_milk01@stinson.(none)>
+Rene Milk <rene.milk@wwu.de> Rene Milk <rene.milk@uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Rene Milk <renemilk@users.noreply.github.com>
+Stefan Girke <stefan.girke@gmx.de> Stefan <stefan@stefan.(none)>
+Stefan Girke <stefan.girke@gmx.de> Stefan Girke <s_girk01@pris.(none)>
+Tobias Leibner <tobias.leibner@uni-muenster.de> Tobias Leibner <tobias.leibner@googlemail.com>
+Tobias Leibner <tobias.leibner@uni-muenster.de> tobiasleibner <tobias.leibner@googlemail.com>
+
+# geratene duneadm zuordnung
+Felix Schindler <felix.schindler@wwu.de> Mario Ohlberger <duneadm@BARNEY.(none)>
+Felix Schindler <felix.schindler@wwu.de> Mario Ohlberger <duneadm@JAX.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@DUNE-PROJECT.(none)>
+Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@SCORPION.uni-muenster.de>
+Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@zivsmp001.cvos.cluster>
