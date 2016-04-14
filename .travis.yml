@@ -42,7 +42,6 @@ before_install:
   - cd $HOME
   - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
   - cd $HOME/src
-  - git checkout refactor_operators_functionals
   - git submodule update --init --recursive
   - git submodule status
   # our local scripts look for an OPTS env entry
