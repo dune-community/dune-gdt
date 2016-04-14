@@ -14,6 +14,7 @@
 
 #include <dune/stuff/common/exceptions.hh>
 #include <dune/stuff/common/fvector.hh>
+#include <dune/stuff/common/fmatrix.hh>
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
@@ -219,7 +220,7 @@ private:
               const auto xx_intersection         = quadrature_it->position();
               const auto normal                  = intersection.unitOuterNormal(xx_intersection);
               const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-              const FieldType weigth             = quadrature_it->weight();
+              const FieldType weight             = quadrature_it->weight();
               const auto xx_entity               = intersection.geometryInInside().global(xx_intersection);
               const auto xx_neighbor             = intersection.geometryInOutside().global(xx_intersection);
               // evaluate
@@ -236,8 +237,8 @@ private:
               const auto basis_values = local_basis.evaluate(xx_entity);
               const auto basis_value  = basis_values[local_DoF_index];
               // compute integrals
-              lhs += integration_factor * weigth * (basis_value * normal);
-              rhs += integration_factor * weigth * -1.0 * ((function_value * source_gradient) * normal);
+              lhs += integration_factor * weight * (basis_value * normal);
+              rhs += integration_factor * weight * -1.0 * compute_value(function_value, source_gradient, normal);
             } // do a face quadrature
             // set DoF
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
@@ -258,7 +259,7 @@ private:
             const auto xx_intersection    = quadrature_it->position();
             const auto normal             = intersection.unitOuterNormal(xx_intersection);
             const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const auto weigth             = quadrature_it->weight();
+            const auto weight             = quadrature_it->weight();
             const auto xx_entity          = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             const ValueType function_value = local_function->evaluate(xx_entity);
@@ -266,8 +267,8 @@ private:
             const auto basis_values        = local_basis.evaluate(xx_entity);
             const auto basis_value         = basis_values[local_DoF_index];
             // compute integrals
-            lhs += integration_factor * weigth * (basis_value * normal);
-            rhs += integration_factor * weigth * -1.0 * ((function_value * source_gradient) * normal);
+            lhs += integration_factor * weight * (basis_value * normal);
+            rhs += integration_factor * weight * -1.0 * compute_value(function_value, source_gradient, normal);
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
@@ -278,6 +279,21 @@ private:
       } // walk the intersections
     } // walk the grid
   } // ... redirect_apply(...)
+
+  template <class R, int d>
+  R compute_value(const FieldVector<R, 1>& function_value, const FieldVector<R, d>& source_gradient,
+                  const FieldVector<R, d>& normal) const
+  {
+    return function_value * (source_gradient * normal);
+  }
+
+  template <class R, int d>
+  typename std::enable_if<(d > 1), R>::type compute_value(const Stuff::Common::FieldMatrix<R, d, d>& function_value,
+                                                          const FieldVector<R, d>& source_gradient,
+                                                          const FieldVector<R, d>& normal) const
+  {
+    return (function_value * source_gradient) * normal;
+  }
 
   const GridViewType& grid_view_;
   const FunctionImp& function_;
