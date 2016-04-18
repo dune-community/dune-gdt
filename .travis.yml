@@ -35,8 +35,8 @@ before_install:
     : ${BUILD_CMD:="ninja -k 10000 -j 2"} && export BUILD_CMD
   # workaround for https://github.com/travis-ci/travis-ci/issues/5285
   - sudo -E apt-get install -y -q python-pip python3-pip
-  - sudo -E pip3 install virtualenv cpp-coveralls
-  - sudo -E pip install virtualenv cpp-coveralls
+  - sudo -E pip3 install -U requests virtualenv cpp-coveralls
+  - sudo -E pip install -U requests virtualenv cpp-coveralls
   - for ii in http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis5_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/metis_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis-dev_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis-dev_3.1.1-4build1_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis3.1_3.1.1-4build1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
   - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
