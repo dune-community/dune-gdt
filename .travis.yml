@@ -160,59 +160,45 @@ matrix:
           - ['g++-5', 'gcc-5']
       env: CC=gcc-5 TESTS=operator BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_default BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_fem BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_pdelab BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_default BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_fem BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_pdelab BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=other BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
 
@@ -229,58 +215,44 @@ matrix:
           - ['clang-3.7']
       env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=projection_default BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=space BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=other BLD=${DBG} CXX=clang++-3.7
     - os: linux
-      compiler: clang
       addons:  *clang37
       env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
