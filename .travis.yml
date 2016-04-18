@@ -30,9 +30,9 @@ addons:
 
 before_install:
   - |-
-    : ${OPTS:="config.opts/travis.make.release"} && export OPTS
+    : ${OPTS:="config.opts/travis.ninja.release"} && export OPTS
   - |-
-    : ${BUILD_CMD:="make -k -j 1"} && export BUILD_CMD
+    : ${BUILD_CMD:="ninja -k 10000 -j 2"} && export BUILD_CMD
   # workaround for https://github.com/travis-ci/travis-ci/issues/5285
   - sudo -E apt-get install -y -q python-pip python3-pip
   - sudo -E pip3 install virtualenv cpp-coveralls
@@ -99,10 +99,13 @@ env:
     - PATH=${BASEDIR}/local/bin:$PATH
     - LD_LIBRARY_PATH=${BASEDIR}/local/lib64:${BASEDIR}/local/lib:$LD_LIBRARY_PATH
     - PKG_CONFIG_PATH=${BASEDIR}/local/lib64/pkgconfig:${BASEDIR}/local/lib/pkgconfig:${BASEDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
-    - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
+    - MY_MODULE=dune-gdt 
+    - DUNE_BUILD_DIR=${HOME}/dune_build/ 
+    - INSTALL_DIR=$HOME/dune 
+    - CTEST_OUTPUT_ON_FAILURE=1
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
-    - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
-    - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
+    - DBG="${DCTL_ARGS} --opts=config.opts/travis.ninja.debug"
+    - REL="${DCTL_ARGS} --opts=config.opts/travis.ninja.release"
 
 matrix:
   include:
@@ -149,7 +152,6 @@ matrix:
 
 #   gcc 5
     - os: linux
-      compiler: gcc
       addons: &gcc5
         apt:
           sources:
