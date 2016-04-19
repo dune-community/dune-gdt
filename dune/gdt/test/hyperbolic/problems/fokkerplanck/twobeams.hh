@@ -71,6 +71,7 @@ class TwoBeams : public Default<E, D, d, R, momentOrder + 1>
   typedef Default<E, D, d, R, momentOrder + 1> BaseType;
 
 public:
+  static const bool linear = true;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
@@ -85,8 +86,8 @@ public:
   typedef typename DS::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R,
-                                                                          dimRange, 1> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, dimRange, 1>
+      DefaultRHSType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
 
@@ -544,11 +545,6 @@ public:
   virtual double t_end() const override
   {
     return 4.0;
-  }
-
-  virtual bool is_linear() const override
-  {
-    return true;
   }
 
   virtual bool has_non_zero_rhs() const override

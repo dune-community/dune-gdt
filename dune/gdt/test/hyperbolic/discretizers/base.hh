@@ -20,14 +20,6 @@ enum class ChooseDiscretizer
   fv
 }; // enum class ChooseDiscretizer
 
-enum class FluxTimeStepperCombinations
-{
-  godunov_euler,
-  godunov_adaptiveRK,
-  laxfriedrichs_euler,
-  godunovwithreconstruction_euler
-};
-
 
 } // namespace Hyperbolic
 } // namespace GDT

@@ -66,7 +66,8 @@ public:
     return HyperbolicEocExpectations<TestCaseType,
                                      Discretizer::type,
                                      GridViewType::dimension,
-                                     Discretizer::flux_and_timestepper_type>::rate(type);
+                                     Discretizer::numerical_flux_type,
+                                     Discretizer::time_stepper_type>::rate(type);
   } // ... expected_rate(...)
 
   virtual std::vector<double> expected_results(const std::string type) const override final
@@ -75,7 +76,8 @@ public:
     return HyperbolicEocExpectations<TestCaseType,
                                      Discretizer::type,
                                      GridViewType::dimension,
-                                     Discretizer::flux_and_timestepper_type>::results(this->test_case_, type);
+                                     Discretizer::numerical_flux_type,
+                                     Discretizer::time_stepper_type>::results(this->test_case_, type);
   }
 
   virtual std::vector<std::string> available_norms() const override final

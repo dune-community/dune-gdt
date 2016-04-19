@@ -41,6 +41,7 @@ class Boltzmann2DLineSource
       BaseType;
 
 public:
+  static const bool linear = true;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
@@ -55,9 +56,8 @@ public:
       RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
                                                        RangeFieldImp, dimRange, 1> RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, EntityImp,
-                                                                          DomainFieldImp, dimDomain, RangeFieldImp,
-                                                                          dimRange, 1> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp,
+                                                                 dimDomain, RangeFieldImp, dimRange, 1> DefaultRHSType;
   typedef typename DefaultRHSType::RangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -487,11 +487,6 @@ public:
   virtual double t_end() const override
   {
     return 3.2;
-  }
-
-  virtual bool is_linear() const override
-  {
-    return true;
   }
 
   virtual bool has_non_zero_rhs() const override

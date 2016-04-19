@@ -34,6 +34,7 @@ class Default : public ProblemInterface<E, D, d, R, r, rC>
   typedef Default<E, D, d, R, r, rC> ThisType;
 
 public:
+  static const bool linear = false;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
@@ -51,8 +52,8 @@ public:
   typedef typename DS::Functions::Expression<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSExpressionFunctionType, E, D, d, R, r, rC>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R, r,
-                                                                          rC> DefaultRHSType;
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
+      DefaultRHSType;
 
   using typename BaseType::FluxType;
   using typename BaseType::RHSType;
@@ -200,11 +201,6 @@ public:
   virtual double t_end() const override
   {
     return 1.0;
-  }
-
-  virtual bool is_linear() const override
-  {
-    return false;
   }
 
 private:

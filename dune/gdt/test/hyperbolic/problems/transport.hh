@@ -219,6 +219,7 @@ class Transport : public Default<E, D, d, R, r, rC>
   typedef Default<E, D, d, R, r, rC> BaseType;
 
 public:
+  static const bool linear = true;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
@@ -343,11 +344,6 @@ public:
   virtual double t_end() const override
   {
     return 1.0;
-  }
-
-  virtual bool is_linear() const override
-  {
-    return true;
   }
 };
 
