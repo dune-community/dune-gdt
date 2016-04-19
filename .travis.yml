@@ -30,7 +30,7 @@ addons:
 
 before_install:
   - |-
-    : ${OPTS:="config.opts/travis.ninja.release"} && export OPTS
+    : ${OPTS:="config.opts/travis.ninja"} && export OPTS
   - |-
     : ${BUILD_CMD:="ninja -k 10000 -j 2"} && export BUILD_CMD
   # workaround for https://github.com/travis-ci/travis-ci/issues/5285
@@ -104,8 +104,7 @@ env:
     - INSTALL_DIR=$HOME/dune 
     - CTEST_OUTPUT_ON_FAILURE=1
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
-    - DBG="${DCTL_ARGS} --opts=config.opts/travis.ninja.debug"
-    - REL="${DCTL_ARGS} --opts=config.opts/travis.ninja.release"
+    - DBG="${DCTL_ARGS} --opts=config.opts/travis.ninja"
 
 matrix:
   include:
