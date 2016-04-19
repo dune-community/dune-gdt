@@ -26,6 +26,7 @@ addons:
     - libsuitesparse-dev
     - lcov
     - curl
+    - ninja-build
     - python3-requests
 
 before_install:
@@ -68,15 +69,29 @@ before_script:
 script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS//_/.+}; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck; fi
-    # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
+    # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
-
+    - ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} install | grep -v "Installing"
+    - ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} package_source
 
 # runs independent of 'script' failure/success
 after_script:
+    - |
+     if [ "x${CLANG_FORMAT}" != "x" ] ; then
+        git config --global hooks.clangformat ${CLANG_FORMAT}
+        PYTHONPATH=$HOME/src/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\"${TRAVIS_BUILD_DIR}\")"
+     fi
+    - |
+      if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
+        ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} doc
+        $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
+        $HOME/src/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
+      fi
     # reset for ctest
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec make clean
     - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
+    # ctest errors on coverage gathering, this should NOT fail our entire build
+    #- ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ctest ${CTEST_ARG} || echo "CTest Failed"
 
 notifications:
   email:
@@ -213,7 +228,7 @@ matrix:
           - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
           packages:
           - *commonpackages
-          - ['clang-3.7']
+          - ['clang-3.7', 'clang-format-3.7']
       env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
     - os: linux
       addons:  *clang37
@@ -253,7 +268,7 @@ matrix:
       env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
     - os: linux
       addons:  *clang37
-      env: CC=clang-3.7 TESTS=other BLD=${DBG} CXX=clang++-3.7
+      env: CC=clang-3.7 TESTS=other BLD=${DBG} CXX=clang++-3.7 CLANG_FORMAT='/usr/bin/clang-format-3.7'
     - os: linux
       addons:  *clang37
       env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
