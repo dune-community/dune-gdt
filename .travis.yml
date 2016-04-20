@@ -68,8 +68,9 @@ before_script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}; fi
 
 script:
-  - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck; fi
+    - $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
     - ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} install | grep -v "Installing"
