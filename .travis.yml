@@ -62,6 +62,7 @@ install:
   - cp -ra ${TRAVIS_BUILD_DIR} .
 
 before_script:
+    - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}; fi
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}; fi
