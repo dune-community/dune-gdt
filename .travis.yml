@@ -73,8 +73,8 @@ script:
     - $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
-    - ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} install | grep -v "Installing"
-    - ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} package_source
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} install | grep -v "Installing"
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} package_source
 
 # runs independent of 'script' failure/success
 after_script:
@@ -85,7 +85,7 @@ after_script:
      fi
     - |
       if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
-        ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ${BUILD_CMD} doc
+        ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} doc
         $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
         $HOME/src/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
       fi
