@@ -63,7 +63,7 @@ before_script:
     - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make; fi
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make test_binaries_${TESTS}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make test_binaries_${TESTS}; fi
 
 script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
