@@ -46,8 +46,8 @@ before_install:
   - git submodule update --init --recursive
   - git submodule status
   # our local scripts look for an OPTS env entry
-  - ./local/bin/download_external_libraries.py
-  - ./local/bin/build_external_libraries.py
+  - python3 ./local/bin/download_external_libraries.py
+  - python3 ./local/bin/build_external_libraries.py
   # ensures ${MY_MODULE} from travis own checkout is used
   - echo removing modules ${MODULES_TO_DELETE}
   - rm -rf ${MODULES_TO_DELETE} ${MY_MODULE}
