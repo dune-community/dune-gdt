@@ -157,11 +157,11 @@ public:
     for (size_t ii = 0; ii < dimDomain; ++ii) {
       if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
+      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
-      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
         ++num_zeros;
 #endif // NDEBUG
-      else
+      } else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
     }
     assert(num_zeros == dimDomain - 1);

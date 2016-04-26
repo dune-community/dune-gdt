@@ -334,11 +334,6 @@ public:
   {
     return 0.25;
   }
-
-  virtual bool is_linear() const override
-  {
-    return false;
-  }
 };
 
 } // namespace Problems

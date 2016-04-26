@@ -22,8 +22,8 @@
 #include "problems.hh"
 
 
-template <class TestCaseType>
-struct hyperbolic_FV_discretization_godunov_euler : public ::testing::Test
+template <class TestCaseType, Dune::GDT::NumericalFluxes numerical_flux, Dune::GDT::TimeStepperMethods time_stepper>
+struct hyperbolic_FV_discretization_base : public ::testing::Test
 {
   static void eoc_study()
   {
@@ -36,98 +36,45 @@ struct hyperbolic_FV_discretization_godunov_euler : public ::testing::Test
 #endif
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
+    typedef typename Hyperbolic::FvDiscretizer<TestCaseType,
                                                typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
-                                               false,
-                                               false,
-                                               false> Discretizer;
+                                               numerical_flux,
+                                               time_stepper> Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
+}; // hyperbolic_FV_discretization_base
+
+template <class TestCaseType>
+struct hyperbolic_FV_discretization_godunov_euler
+    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler>
+{
 }; // hyperbolic_FV_discretization_godunov_euler
 
 template <class TestCaseType>
-struct hyperbolic_FV_discretization_godunov_adaptiveRK : public ::testing::Test
+struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
+    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov_with_reconstruction,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler>
 {
-  static void eoc_study()
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
-#else
-    TestCaseType test_case;
-#endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
-                                               typename TestCaseType::GridType,
-                                               double,
-                                               TestCaseType::dimRange,
-                                               TestCaseType::dimRangeCols,
-                                               false,
-                                               true,
-                                               false> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-  } // ... eoc_study()
+}; // hyperbolic_FV_discretization_godunovwithreconstruction_euler
+
+template <class TestCaseType>
+struct hyperbolic_FV_discretization_laxfriedrichs_euler
+    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::laxfriedrichs,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler>
+{
+}; // hyperbolic_FV_discretization_godunov_laxfriedrichs_euler
+
+template <class TestCaseType>
+struct hyperbolic_FV_discretization_godunov_adaptiveRK
+    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov,
+                                               Dune::GDT::TimeStepperMethods::dormand_prince>
+{
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK
 
-template <class TestCaseType>
-struct hyperbolic_FV_discretization_laxfriedrichs_euler : public ::testing::Test
-{
-  static void eoc_study()
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
-#else
-    TestCaseType test_case;
-#endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
-                                               typename TestCaseType::GridType,
-                                               double,
-                                               TestCaseType::dimRange,
-                                               TestCaseType::dimRangeCols,
-                                               true,
-                                               false,
-                                               false> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-  } // ... eoc_study()
-}; // hyperbolic_FV_discretization_laxfriedrichs_euler
-
-template <class TestCaseType>
-struct hyperbolic_FV_discretization_godunovwithreconstruction_euler : public ::testing::Test
-{
-  static void eoc_study()
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
-#else
-    TestCaseType test_case;
-#endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
-    typedef typename Hyperbolic::FVDiscretizer<TestCaseType,
-                                               typename TestCaseType::GridType,
-                                               double,
-                                               TestCaseType::dimRange,
-                                               TestCaseType::dimRangeCols,
-                                               false,
-                                               false,
-                                               true> Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-  } // ... eoc_study()
-}; // hyperbolic_FV_discretization_godunov_euler
 
 #endif // DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH

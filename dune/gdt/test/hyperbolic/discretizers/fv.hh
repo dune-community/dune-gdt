@@ -23,26 +23,24 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
+
 template <class TestCaseType, class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1,
-          bool use_lax_friedrichs_flux = false, bool use_adaptive_timestepper = false,
-          bool use_linear_reconstruction = false>
-class FVDiscretizer
+          NumericalFluxes numerical_flux                                                                 = NumericalFluxes::godunov,
+          TimeStepperMethods time_stepper_method                                                         = TimeStepperMethods::explicit_euler>
+class FvDiscretizer
 {
 public:
-  typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
-                           RangeFieldType, dimRange, dimRangeCols> ProblemType;
-  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
-  static const constexpr FluxTimeStepperCombinations flux_and_timestepper_type =
-      use_lax_friedrichs_flux
-          ? FluxTimeStepperCombinations::laxfriedrichs_euler
-          : (use_linear_reconstruction ? FluxTimeStepperCombinations::godunovwithreconstruction_euler
-                                       : (use_adaptive_timestepper ? FluxTimeStepperCombinations::godunov_adaptiveRK
-                                                                   : FluxTimeStepperCombinations::godunov_euler));
+  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype,
+                                       GridType::dimension, RangeFieldType, dimRange, dimRangeCols> ProblemType;
+  static const constexpr ChooseDiscretizer type               = ChooseDiscretizer::fv;
+  static const constexpr NumericalFluxes numerical_flux_type  = numerical_flux;
+  static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
+
   typedef
       typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
   typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
-  typedef InStationaryDefaultDiscretization<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
-                                            use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
+  typedef HyperbolicFVDefaultDiscretization<TestCaseType, FVSpaceType, numerical_flux, time_stepper_method,
+                                            time_stepper_method> DiscretizationType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error
@@ -61,7 +59,7 @@ public:
     logger.debug() << "grid has " << space->grid_view().indexSet().size(0) << " elements" << std::endl;
     return DiscretizationType(test_case, space);
   } // ... discretize(...)
-}; // class FVDiscretizer
+}; // class HyperbolicFvDiscretizer
 
 
 } // namespace Hyperbolic

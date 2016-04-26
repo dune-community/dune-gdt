@@ -36,8 +36,19 @@ namespace Dune {
 namespace GDT {
 
 
+enum class NumericalFluxes
+{
+  godunov,
+  godunov_with_reconstruction,
+  laxfriedrichs,
+  laxfriedrichs_with_reconstruction,
+  local_laxfriedrichs,
+  local_laxfriedrichs_with_reconstruction
+};
+
 // forwards
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+          SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperator;
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
@@ -65,7 +76,8 @@ public:
 }; // class AdvectionTraitsBase
 
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+          SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
 {
   static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
@@ -73,8 +85,8 @@ class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<Analytic
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp>
-      derived_type;
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp,
+                                         slope_limiter> derived_type;
 
 }; // class AdvectionLaxFriedrichsOperatorTraits
 
@@ -187,19 +199,141 @@ private:
 }; // class LinearReconstructionLocalizable
 
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+// TODO: remove eigen dependency of LocalGodunovNumericalCouplingFlux/LocalGodunovNumericalBoundaryFlux
+#if HAVE_EIGEN
+
+namespace internal {
+
+
+template <size_t domainDim, size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
+struct EigenvectorInitializer
+{
+  static void initialize(const AnalyticalFluxType& /*analytical_flux*/, const bool /*is_linear*/,
+                         const bool use_linear_reconstruction, MatrixType& /*eigenvectors*/,
+                         MatrixType& /*eigenvectors_inverse*/)
+  {
+    if (use_linear_reconstruction) {
+      DUNE_THROW(Dune::NotImplemented, "Linear reconstruction is only implemented in 1D!");
+    }
+  }
+}; // struct EigenvectorInitializer<...>
+
+template <size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
+struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, AnalyticalFluxType>
+{
+  static void initialize(const AnalyticalFluxType& analytical_flux, const bool is_linear,
+                         const bool use_linear_reconstruction, MatrixType& eigenvectors,
+                         MatrixType& eigenvectors_inverse)
+  {
+    if (use_linear_reconstruction) {
+      assert(is_linear && "Linear reconstruction is only implemented for linear analytical fluxes!");
+      // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x
+      // = 0. As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
+      ::Eigen::EigenSolver<typename EigenMatrixType::BackendType> eigen_solver(
+          DSC::from_string<EigenMatrixType>(
+              DSC::to_string(analytical_flux.jacobian(typename AnalyticalFluxType::RangeType(0))))
+              .backend());
+      assert(eigen_solver.info() == ::Eigen::Success);
+      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
+#ifndef NDEBUG
+      for (size_t ii = 0; ii < rangeDim; ++ii)
+        for (size_t jj = 0; jj < rangeDim; ++jj)
+          assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
+#endif
+      eigenvectors = DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.real())));
+      eigenvectors_inverse =
+          DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
+    }
+  }
+}; // struct EigenvectorInitializer<1, ...>
+
+template <class NumericalCouplingFluxType, class NumericalBoundaryFluxType, class RangeFieldType, size_t dimRange,
+          size_t dimRangeCols, SlopeLimiters slope_limiter>
+struct AdvectionOperatorApplier
+{
+  template <class AnalyticalFluxType, class BoundaryValueFunctionType, class MatrixType, class SourceType,
+            class RangeType, class... LocalOperatorArgTypes>
+  static void apply(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
+                    const MatrixType& eigenvectors, const MatrixType& eigenvectors_inverse, const SourceType& source,
+                    RangeType& range, const double time, const bool use_linear_reconstruction,
+                    LocalOperatorArgTypes&&... local_operator_args)
+  {
+    const auto current_boundary_values = boundary_values.evaluate_at_time(time);
+    if (use_linear_reconstruction) {
+      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridViewType,
+                                              1, // polOrder
+                                              RangeFieldType,
+                                              dimRange,
+                                              dimRangeCols> DGSpaceType;
+      typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
+      const auto dg_space       = DSC::make_unique<DGSpaceType>(range.space().grid_view());
+      const auto reconstruction = DSC::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
+      LinearReconstructionLocalizable<SourceType,
+                                      ReconstructedDiscreteFunctionType,
+                                      typename BoundaryValueFunctionType::ExpressionFunctionType,
+                                      MatrixType,
+                                      slope_limiter> reconstruction_operator(source,
+                                                                             *reconstruction,
+                                                                             eigenvectors,
+                                                                             eigenvectors_inverse,
+                                                                             *current_boundary_values);
+      reconstruction_operator.apply();
+      AdvectionLocalizableDefault<AnalyticalFluxType,
+                                  NumericalCouplingFluxType,
+                                  NumericalBoundaryFluxType,
+                                  typename BoundaryValueFunctionType::ExpressionFunctionType,
+                                  ReconstructedDiscreteFunctionType,
+                                  RangeType> localizable_operator(analytical_flux,
+                                                                  *current_boundary_values,
+                                                                  *reconstruction,
+                                                                  range,
+                                                                  std::forward<LocalOperatorArgTypes>(
+                                                                      local_operator_args)...);
+      localizable_operator.apply();
+    } else {
+      AdvectionLocalizableDefault<AnalyticalFluxType,
+                                  NumericalCouplingFluxType,
+                                  NumericalBoundaryFluxType,
+                                  typename BoundaryValueFunctionType::ExpressionFunctionType,
+                                  SourceType,
+                                  RangeType> localizable_operator(analytical_flux,
+                                                                  *current_boundary_values,
+                                                                  source,
+                                                                  range,
+                                                                  std::forward<LocalOperatorArgTypes>(
+                                                                      local_operator_args)...);
+      localizable_operator.apply();
+    }
+  }
+}; // struct AdvectionOperatorApplier
+
+
+} // namespace internal
+
+
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsOperator
-    : public Dune::GDT::OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
-                                                                                         BoundaryValueFunctionImp,
-                                                                                         LocalizableFunctionImp>>
+    : public Dune::GDT::
+          OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
+                                                                           LocalizableFunctionImp, slope_limiter>>
 {
 public:
   typedef internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
-                                                         LocalizableFunctionImp> Traits;
+                                                         LocalizableFunctionImp, slope_limiter> Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
-  static const size_t dimDomain = AnalyticalFluxType::dimDomain;
+  static const size_t dimDomain    = AnalyticalFluxType::dimDomain;
+  static const size_t dimRange     = AnalyticalFluxType::dimRange;
+  static const size_t dimRangeCols = AnalyticalFluxType::dimRangeCols;
+  typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
+
+private:
+  typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::Stuff::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+
+public:
   typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType,
                                                                       dimDomain> NumericalCouplingFluxType;
   typedef typename Dune::GDT::
@@ -209,37 +343,44 @@ public:
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueFunctionType& boundary_values, const LocalizableFunctionType& dx,
-                                 const double dt, const bool is_linear = false, const bool use_local = false,
+                                 const double dt, const bool is_linear   = false,
+                                 const bool use_linear_reconstruction    = false,
+                                 const bool use_local_laxfriedrichs_flux = false,
                                  const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
     , dt_(dt)
     , is_linear_(is_linear)
-    , use_local_(use_local)
+    , use_linear_reconstruction_(use_linear_reconstruction)
+    , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , entity_geometries_equal_(entity_geometries_equal)
   {
+    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
+        analytical_flux_, is_linear_, use_linear_reconstruction_, eigenvectors_, eigenvectors_inverse_);
   }
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    const auto current_boundary_values = boundary_values_.evaluate_at_time(time);
-    AdvectionLocalizableDefault<AnalyticalFluxType,
-                                NumericalCouplingFluxType,
-                                NumericalBoundaryFluxType,
-                                typename BoundaryValueFunctionType::ExpressionFunctionType,
-                                SourceType,
-                                RangeType> localizable_operator(analytical_flux_,
-                                                                *current_boundary_values,
-                                                                source,
-                                                                range,
-                                                                dx_,
-                                                                dt_,
-                                                                is_linear_,
-                                                                use_local_,
-                                                                entity_geometries_equal_);
-    localizable_operator.apply();
+    internal::AdvectionOperatorApplier<NumericalCouplingFluxType,
+                                       NumericalBoundaryFluxType,
+                                       RangeFieldType,
+                                       dimRange,
+                                       dimRangeCols,
+                                       slope_limiter>::apply(analytical_flux_,
+                                                             boundary_values_,
+                                                             eigenvectors_,
+                                                             eigenvectors_inverse_,
+                                                             source,
+                                                             range,
+                                                             time,
+                                                             use_linear_reconstruction_,
+                                                             dx_,
+                                                             dt_,
+                                                             is_linear_,
+                                                             use_local_laxfriedrichs_flux_,
+                                                             entity_geometries_equal_);
   }
 
 private:
@@ -248,19 +389,13 @@ private:
   const LocalizableFunctionType& dx_;
   const double dt_;
   const bool is_linear_;
-  const bool use_local_;
+  const bool use_linear_reconstruction_;
+  const bool use_local_laxfriedrichs_flux_;
   const bool entity_geometries_equal_;
+  MatrixType eigenvectors_;
+  MatrixType eigenvectors_inverse_;
 }; // class AdvectionLaxFriedrichsOperator
 
-// TODO: remove eigen dependency of LocalGodunovNumericalCouplingFlux/LocalGodunovNumericalBoundaryFlux
-#if HAVE_EIGEN
-
-namespace internal {
-template <bool dimDomain_equals_1>
-struct InitializerChooser
-{
-};
-}
 
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
@@ -296,91 +431,30 @@ public:
     , is_linear_(is_linear)
     , use_linear_reconstruction_(use_linear_reconstruction)
   {
-    initialize(internal::InitializerChooser<dimDomain == 1>());
+    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
+        analytical_flux_, is_linear_, use_linear_reconstruction_, eigenvectors_, eigenvectors_inverse_);
   }
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
   {
-    const auto current_boundary_values = boundary_values_.evaluate_at_time(time);
-    if (use_linear_reconstruction_) {
-      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridViewType,
-                                              1, // polOrder
-                                              RangeFieldType,
-                                              dimRange,
-                                              dimRangeCols> DGSpaceType;
-      typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
-      const auto dg_space_      = DSC::make_unique<DGSpaceType>(range.space().grid_view());
-      const auto reconstruction = DSC::make_unique<ReconstructedDiscreteFunctionType>(*dg_space_, "reconstructed");
-      LinearReconstructionLocalizable<SourceType,
-                                      ReconstructedDiscreteFunctionType,
-                                      typename BoundaryValueFunctionType::ExpressionFunctionType,
-                                      MatrixType,
-                                      slope_limiter> reconstruction_operator(source,
-                                                                             *reconstruction,
-                                                                             eigenvectors_,
-                                                                             eigenvectors_inverse_,
-                                                                             *current_boundary_values);
-      reconstruction_operator.apply();
-      AdvectionLocalizableDefault<AnalyticalFluxType,
-                                  NumericalCouplingFluxType,
-                                  NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::ExpressionFunctionType,
-                                  ReconstructedDiscreteFunctionType,
-                                  RangeType> localizable_operator(analytical_flux_,
-                                                                  *current_boundary_values,
-                                                                  *reconstruction,
-                                                                  range,
-                                                                  is_linear_);
-      localizable_operator.apply();
-    } else {
-      AdvectionLocalizableDefault<AnalyticalFluxType,
-                                  NumericalCouplingFluxType,
-                                  NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::ExpressionFunctionType,
-                                  SourceType,
-                                  RangeType> localizable_operator(analytical_flux_,
-                                                                  *current_boundary_values,
-                                                                  source,
-                                                                  range,
-                                                                  is_linear_);
-      localizable_operator.apply();
-    }
+    internal::AdvectionOperatorApplier<NumericalCouplingFluxType,
+                                       NumericalBoundaryFluxType,
+                                       RangeFieldType,
+                                       dimRange,
+                                       dimRangeCols,
+                                       slope_limiter>::apply(analytical_flux_,
+                                                             boundary_values_,
+                                                             eigenvectors_,
+                                                             eigenvectors_inverse_,
+                                                             source,
+                                                             range,
+                                                             time,
+                                                             use_linear_reconstruction_,
+                                                             is_linear_);
   }
 
 private:
-  void initialize(const internal::InitializerChooser<false>&)
-  {
-    if (use_linear_reconstruction_) {
-      DUNE_THROW(Dune::NotImplemented, "Linear reconstruction is only implemented in 1D!");
-    }
-  }
-
-  void initialize(const internal::InitializerChooser<true>&)
-  {
-    if (use_linear_reconstruction_) {
-      assert(is_linear_ && "Linear reconstruction is only implemented for linear analytical fluxes!");
-      // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x
-      // = 0.
-      // As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
-      ::Eigen::EigenSolver<typename EigenMatrixType::BackendType> eigen_solver(
-          DSC::from_string<EigenMatrixType>(
-              DSC::to_string(analytical_flux_.jacobian(typename AnalyticalFluxType::RangeType(0))))
-              .backend());
-      assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
-#ifndef NDEBUG
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        for (size_t jj = 0; jj < dimRange; ++jj)
-          assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
-#endif
-      eigenvectors_ = DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.real())));
-      eigenvectors_inverse_ =
-          DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
-    }
-  }
-
-
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType& boundary_values_;
   const bool is_linear_;

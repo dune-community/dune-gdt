@@ -24,7 +24,7 @@ namespace Tests {
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Dune::YaspGrid<2>, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv, 2,
-                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler, anything>
+                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::Boltzmann2DCheckerboardTestCase<Dune::YaspGrid<2>, double> TestCaseType;
@@ -47,7 +47,7 @@ public:
 
 template class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Dune::YaspGrid<2>, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 2,
-                                         Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
+                                         NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>;
 
 
 } // namespace Tests

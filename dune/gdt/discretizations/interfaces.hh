@@ -216,21 +216,20 @@ public:
 
 
 template <class Traits>
-class NonStationaryDiscretizationInterface
-    : public Stuff::CRTPInterface<NonStationaryDiscretizationInterface<Traits>, Traits>
+class FVDiscretizationInterface : public Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
 {
-  typedef Stuff::CRTPInterface<NonStationaryDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
   typedef typename Traits::ProblemType ProblemType;
-  typedef typename Traits::FVSpaceType FVSpaceType;
+  typedef typename Traits::SpaceType SpaceType;
   typedef typename Traits::VectorType VectorType;
-  typedef typename Traits::DiscreteFunctionType DiscreteFunctionType;
   typedef typename Traits::DiscreteSolutionType DiscreteSolutionType;
+  typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
 private:
-  static_assert(is_space<FVSpaceType>::value, "FVSpaceType has to be derived from SpaceInterface!");
+  static_assert(is_space<SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -242,41 +241,30 @@ public:
     return this->as_imp().problem();
   }
 
-  const FVSpaceType& fv_space() const
+  const SpaceType& space() const
   {
-    CHECK_CRTP(this->as_imp().fv_space());
-    return this->as_imp().fv_space();
+    CHECK_CRTP(this->as_imp().space());
+    return this->as_imp().space();
   }
 
-  void solve(DiscreteSolutionType& solution, const bool is_linear) const
+  void solve(DiscreteSolutionType& solution) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, is_linear));
+    CHECK_AND_CALL_CRTP(this->as_imp().solve(solution));
   }
 
   /// \}
   /// \name Provided by the interface for convenience.
   /// \{
 
-  VectorType create_vector() const
-  {
-    return VectorType(fv_space().mapper().size());
-  }
-
-  DiscreteSolutionType solve(const bool is_linear) const
+  DiscreteSolutionType solve() const
   {
     DiscreteSolutionType solution;
-    solve(solution, is_linear);
+    solve(solution);
     return solution;
   }
 
-  void visualize(const DiscreteSolutionType& solution, const std::string filename) const
-  {
-    for (size_t ii = 0; ii < solution.size(); ++ii)
-      solution[ii].second.visualize(filename, DSC::to_string(ii));
-  }
-
   /// \}
-}; // class NonStationaryDiscretizationInterface
+}; // class FVDiscretizationInterface
 
 
 namespace internal {

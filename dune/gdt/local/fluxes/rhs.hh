@@ -21,10 +21,10 @@ namespace GDT {
  *  TODO: static_assert for CheckerboardFunctionImp
  * */
 template <class CheckerboardFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class CheckerboardBasedRhsEvaluationFluxInterface : public RhsEvaluationFluxInterface<E, D, d, R, r, rC>
+class CheckerboardBasedRhsEvaluationFlux : public RhsEvaluationFluxInterface<E, D, d, R, r, rC>
 {
   typedef RhsEvaluationFluxInterface<E, D, d, R, r, rC> BaseType;
-  typedef CheckerboardBasedRhsEvaluationFluxInterface<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
+  typedef CheckerboardBasedRhsEvaluationFlux<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
 
 public:
   // function q(u,x) for fixed x, i.e. only dependent on u
@@ -32,7 +32,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::DomainType;
 
-  CheckerboardBasedRhsEvaluationFluxInterface(const CheckerboardFunctionType& checkerboard_function)
+  CheckerboardBasedRhsEvaluationFlux(const CheckerboardFunctionType& checkerboard_function)
     : checkerboard_function_(checkerboard_function)
   {
   }
@@ -45,7 +45,7 @@ public:
 
   static std::string static_id()
   {
-    return "gdt.CheckerboardBasedRhsEvaluationFluxInterface";
+    return "gdt.CheckerboardBasedRhsEvaluationFlux";
   }
 
   static std::unique_ptr<ThisType> create(const Dune::Stuff::Common::Configuration checkerboard_config,
@@ -56,7 +56,7 @@ public:
 
 private:
   const CheckerboardFunctionType checkerboard_function_;
-}; // class CheckerboardBasedRhsEvaluationFluxInterface ...
+}; // class CheckerboardBasedRhsEvaluationFlux<...>
 
 
 } // namespace GDT
