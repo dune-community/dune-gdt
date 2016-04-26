@@ -587,7 +587,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const ExpressionFunctionType linear_gradient(
         "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}});
-    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, 1.71e-13);
+    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, 1.75e-13);
   }
 
   /**
