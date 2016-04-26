@@ -35,7 +35,7 @@ before_install:
   - |-
     : ${OPTS:="config.opts/travis.ninja"} && export OPTS
   # workaround for https://github.com/travis-ci/travis-ci/issues/5285
-  - sudo -E apt-get install -y -q python-pip python3-pip libparmetis-dev libmetis-dev
+  - sudo -E apt-get install -y -q python-pip python3-pip libscotchparmetis-dev libmetis-dev
   - sudo -E pip3 install -U requests virtualenv cpp-coveralls
   - sudo -E pip install -U requests virtualenv cpp-coveralls
   - export PATH=/usr/lib/ccache:$PATH
