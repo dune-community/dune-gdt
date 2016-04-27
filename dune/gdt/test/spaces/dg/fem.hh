@@ -37,7 +37,7 @@
       SPACE_DG_FEM_YASPGRID_LEVEL(2, 1, pp), SPACE_DG_FEM_YASPGRID_LEVEL(3, 1, pp)
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 #define SPACE_DG_FEM_ALUCONFORMGRID(dd, rr, pp)                                                                        \
@@ -63,7 +63,7 @@
       SPACE_DG_FEM_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 #endif // HAVE_DUNE_FEM
 
 #endif // DUNE_GDT_TEST_SPACES_DG_FEM_HH

@@ -14,7 +14,7 @@
 
 
 typedef testing::Types<SPACES_FV
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
                        ,
                        SPACES_FV_ALUGRID
 #endif

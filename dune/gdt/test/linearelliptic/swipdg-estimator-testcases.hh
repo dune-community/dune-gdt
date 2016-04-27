@@ -18,7 +18,7 @@
 #include "problems/ESV2007.hh"
 #include "problems/spe10.hh"
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
@@ -27,14 +27,14 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2
                            Spe10Model1TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>> AluGridTestCases;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 
 namespace Dune {
 namespace GDT {
 namespace Test {
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
@@ -54,7 +54,7 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 } // namespace Test
 } // namespace GDT

@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 #include <dune/grid/alugrid.hh>
 #endif
 #include <dune/grid/sgrid.hh>
@@ -141,7 +141,7 @@ private:
     }
   };
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
   template <bool anything>
   struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
   {
@@ -162,7 +162,7 @@ private:
       return cfg;
     }
   };
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
   static Stuff::Common::Configuration grid_cfg()
   {

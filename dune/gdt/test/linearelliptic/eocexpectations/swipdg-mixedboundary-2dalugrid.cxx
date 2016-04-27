@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #include <dune/grid/alugrid.hh>
 
@@ -156,4 +156,4 @@ template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCa
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

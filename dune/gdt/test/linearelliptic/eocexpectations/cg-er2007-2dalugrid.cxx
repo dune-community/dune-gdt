@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #include <dune/grid/alugrid.hh>
 
@@ -73,4 +73,4 @@ template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<ALUG
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

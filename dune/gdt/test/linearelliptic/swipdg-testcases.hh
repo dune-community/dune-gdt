@@ -28,7 +28,7 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 
                        > SGridTestCases;
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 typedef testing::
@@ -45,7 +45,7 @@ typedef testing::
         AluGridTestCases;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 
 namespace Dune {
@@ -88,7 +88,7 @@ extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1T
                                                     LinearElliptic::ChooseDiscretizer::swipdg, 2>;
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 // ALUGrid< 2, 2, simplex, conforming >, polorder 1
@@ -197,7 +197,7 @@ extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1T
                                                     LinearElliptic::ChooseDiscretizer::swipdg, 2>;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 } // namespace Test
 } // namespace GDT

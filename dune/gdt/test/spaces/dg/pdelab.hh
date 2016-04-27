@@ -40,7 +40,7 @@
       SPACE_DG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 #define SPACE_DG_PDELAB_ALUCUBEGRID(dd, rr, pp)                                                                        \
@@ -59,7 +59,7 @@
   , SPACE_DG_PDELAB_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 #endif // HAVE_DUNE_PDELAB
 
 #endif // DUNE_GDT_TEST_SPACES_DG_PDELAB_HH
