@@ -64,7 +64,6 @@ find_file(SPE10MODEL1DATA
           DOC "Location of perm_case1.dat"
           NO_DEFAULT_PATH)
 
-add_subdirectory(m4)
 add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
