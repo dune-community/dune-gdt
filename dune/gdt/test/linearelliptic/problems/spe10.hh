@@ -10,7 +10,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_SPE10_HH
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/grid/alugrid.hh>
+#include <dune/alugrid/grid.hh>
 #endif
 #include <dune/grid/sgrid.hh>
 
