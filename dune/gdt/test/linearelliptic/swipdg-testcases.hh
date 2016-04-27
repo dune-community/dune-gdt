@@ -9,7 +9,7 @@
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_TESTCASES_HH
 
 #include <dune/grid/sgrid.hh>
-#include <dune/alugrid/grid.hh>
+#include <dune/alugrid/dgf.hh>
 
 #include <dune/stuff/test/gtest/gtest.h>
 

@@ -10,5 +10,5 @@
 Module: dune-gdt
 Version: 0.2-dev
 Maintainer: felix.schindler@wwu.de
-Depends: dune-common (>= 2.4) dune-stuff (>= 2.2)dune-grid
+Depends: dune-common (>= 2.4) dune-stuff (>= 2.2) dune-grid
 Suggests: dune-fem (>= 1.3) dune-pdelab dune-grid-multiscale dune-alugrid

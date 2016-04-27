@@ -11,6 +11,7 @@
 
 #include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
+#include <dune/alugrid/3d/gridfactory.hh>
 #include "linearelliptic/cg-discretization.hh"
 #include "linearelliptic/cg-testcases.hh"
 

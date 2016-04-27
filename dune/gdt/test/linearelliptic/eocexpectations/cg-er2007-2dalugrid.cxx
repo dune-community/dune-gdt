@@ -9,7 +9,7 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include <dune/alugrid/grid.hh>
+#include <dune/alugrid/dgf.hh>
 
 #include "../problems/ER2007.hh"
 #include "../eocexpectations.hh"

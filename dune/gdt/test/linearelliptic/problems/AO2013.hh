@@ -9,7 +9,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
+#include <dune/alugrid/dgf.hh>
 #endif
 #include <dune/grid/sgrid.hh>
 

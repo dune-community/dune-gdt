@@ -12,8 +12,7 @@
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
-#include <dune/alugrid/grid.hh>
+#include <dune/alugrid/dgf.hh>
 #endif
 
 #include <dune/gdt/spaces/tools.hh>
