@@ -48,10 +48,10 @@ enum class NumericalFluxes
 
 // forwards
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
-          SlopeLimiters slope_limiter>
+          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsOperator;
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionGodunovOperator;
 
 template <class RHSEvaluationImp>
@@ -312,7 +312,7 @@ struct AdvectionOperatorApplier
 
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
-          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
+          SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperator
     : public Dune::GDT::
           OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
@@ -398,7 +398,7 @@ private:
 
 
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter >
 class AdvectionGodunovOperator
     : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
                                                                                    BoundaryValueFunctionImp,
@@ -464,6 +464,13 @@ private:
 }; // class AdvectionGodunovOperator
 
 #else // HAVE_EIGEN
+
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+          SlopeLimiters slope_limiter>
+class AdvectionLaxFriedrichsOperator
+{
+  static_assert(AlwaysFalse<AnalyticalFluxImp>::value, "You are missing eigen!");
+};
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
 class AdvectionGodunovOperator
