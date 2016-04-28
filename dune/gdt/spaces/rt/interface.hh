@@ -120,7 +120,7 @@ public:
       // make sure this index has not been already taken by another intersection
       assert(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits<size_t>::infinity());
       // walk the corners of the intersection
-      for (size_t cc = 0; cc < num_intersections; ++cc) {
+      for (size_t cc = 0; cc < intersection_geometry.corners(); ++cc) {
         corner = intersection_geometry.corner(boost::numeric_cast<int>(cc));
         // check which vertices lie on the intersection
         for (size_t vv = 0; vv < num_intersections; ++vv)
