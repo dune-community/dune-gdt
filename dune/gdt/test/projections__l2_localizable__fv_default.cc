@@ -17,7 +17,7 @@ typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRI
                        SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)
 #if HAVE_DUNE_ALUGRID
                                                     ,
-                       SPACE_FV_ALUCONFORMGRID(2, 1), SPACE_FV_ALUCONFORMGRID(3, 1), SPACE_FV_ALUCUBEGRID(2, 1),
+                       SPACE_FV_ALUCONFORMGRID(2, 1), SPACE_FV_ALUCUBEGRID(2, 1),
                        SPACE_FV_ALUCUBEGRID(3, 1)
 #endif // HAVE_DUNE_ALUGRID
                        > SpaceTypes;
