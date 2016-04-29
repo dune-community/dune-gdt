@@ -66,8 +66,8 @@ struct L2LocalProlongationOperatorTest
     this->prepare(tolerance);
 
     auto grid_view     = this->fine_space_.grid_view();
-    const auto& source = this->coarse_discrete_function_;
-    auto& range        = this->fine_discrete_function_;
+    const auto& DUNE_UNUSED(source) = this->coarse_discrete_function_;
+    auto& DUNE_UNUSED(range)        = this->fine_discrete_function_;
 
     ProlongationOperatorType DUNE_UNUSED(w_over_integrate)(0, grid_view);
     ProlongationOperatorType DUNE_UNUSED(wo_over_integrate)(grid_view);
