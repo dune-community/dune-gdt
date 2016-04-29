@@ -128,6 +128,8 @@ public:
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     // check
     assert(this->grid_view().indexSet().contains(entity));
+    if(!entity.hasBoundaryIntersections())
+      return std::set<size_t>();
     // prepare
     std::set<size_t> localDirichletDofs;
     std::vector<DomainType> dirichlet_vertices;
