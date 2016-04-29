@@ -48,7 +48,7 @@
 
 #define SPACES_DG_FEM_ALUGRID(pp)                                                                                      \
   SPACE_DG_FEM_ALUCONFORMGRID(2, 1, pp)                                                                                \
-  , SPACE_DG_FEM_ALUCONFORMGRID(3, 1, pp), SPACE_DG_FEM_ALUCUBEGRID(2, 1, pp), SPACE_DG_FEM_ALUCUBEGRID(3, 1, pp)
+  , SPACE_DG_FEM_ALUCUBEGRID(2, 1, pp), SPACE_DG_FEM_ALUCUBEGRID(3, 1, pp)
 
 
 #define SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(dd, rr, pp)                                                                  \
@@ -59,7 +59,7 @@
 
 #define SPACES_DG_FEM_ALUGRID_LEVEL(pp)                                                                                \
   SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(2, 1, pp)                                                                          \
-  , SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(3, 1, pp), SPACE_DG_FEM_ALUCUBEGRID_LEVEL(2, 1, pp),                             \
+  , SPACE_DG_FEM_ALUCUBEGRID_LEVEL(2, 1, pp),                             \
       SPACE_DG_FEM_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 

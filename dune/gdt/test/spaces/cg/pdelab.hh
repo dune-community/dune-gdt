@@ -51,7 +51,7 @@
 
 #define SPACES_CG_PDELAB_ALUGRID(pp)                                                                                   \
   SPACE_CG_PDELAB_ALUCONFORMGRID(2, 1, pp)                                                                             \
-  , SPACE_CG_PDELAB_ALUCONFORMGRID(3, 1, pp), SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp),                                   \
+  ,  SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp),                                   \
       SPACE_CG_PDELAB_ALUCUBEGRID(3, 1, pp)
 
 
