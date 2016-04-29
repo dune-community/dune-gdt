@@ -54,8 +54,8 @@ struct DarcyOperatorTest : public ::testing::Test
   void produces_correct_results() const
   {
     GridProviderType grid_provider(0.0, 1.0, 4);
+    grid_provider.global_refine(1);
     auto& grid = grid_provider.grid();
-    grid.globalRefine(1);
 
     typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {"x[1]", "x[0]"});

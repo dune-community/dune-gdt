@@ -30,7 +30,7 @@ struct ProlongationOperatorsBaseGridHolder
   ProlongationOperatorsBaseGridHolder()
     : grid_provider_(0.0, 1.0, 2u)
   {
-    grid_provider_.grid().globalRefine(1);
+    grid_provider_.global_refine(1);
   }
 
   GridProviderType grid_provider_;
