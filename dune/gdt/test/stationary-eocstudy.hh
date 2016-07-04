@@ -147,7 +147,7 @@ public:
       current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_)));
       current_solution_vector_on_level_ = Stuff::Common::make_unique<VectorType>(current_discretization_->solve());
-      time_to_solution_ = timer.elapsed();
+      time_to_solution_                 = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
       // prolong to reference grid part

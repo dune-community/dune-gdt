@@ -95,7 +95,8 @@ public:
   typedef typename EllipticType::DiffusionTensorType DiffusionTensorType;
   typedef std::tuple<std::shared_ptr<typename DirichletType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
-                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
+                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>>
+      LocalfunctionTupleType;
   typedef typename EllipticType::EntityType EntityType;
   typedef typename EllipticType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = EllipticType::dimDomain;
@@ -151,7 +152,7 @@ public:
   }
 
   Inner(const ThisType& other) = default;
-  Inner(ThisType&& source) = default;
+  Inner(ThisType&& source)     = default;
 
   /// \name Required by LocalFaceIntegrandInterface< ..., 4 >.
   /// \{
@@ -468,8 +469,8 @@ public:
     const TensorType local_diffusion_tensor_value_en = local_diffusion_tensor_en.evaluate(local_point_en);
     const auto local_diffusion_factor_value_ne       = local_diffusion_factor_ne.evaluate(local_point_ne);
     const TensorType local_diffusion_tensor_value_ne = local_diffusion_tensor_ne.evaluate(local_point_ne);
-    const auto diffusion_value_en                    = local_diffusion_tensor_value_en * local_diffusion_factor_value_en;
-    const auto diffusion_value_ne                    = local_diffusion_tensor_value_ne * local_diffusion_factor_value_ne;
+    const auto diffusion_value_en = local_diffusion_tensor_value_en * local_diffusion_factor_value_en;
+    const auto diffusion_value_ne = local_diffusion_tensor_value_ne * local_diffusion_factor_value_ne;
     //    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
     //    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     // compute penalty factor (see Epshteyn, Riviere, 2007)
@@ -477,10 +478,10 @@ public:
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
     const R sigma = LocalSipdgIntegrands::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R delta_plus   = normal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * normal);
-    const R delta_minus  = normal * (/*local_diffusion_tensor_en*/ diffusion_value_en * normal);
-    const R gamma        = (delta_plus * delta_minus) / (delta_plus + delta_minus);
-    const R penalty      = (/*local_diffusion_factor **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R delta_plus  = normal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * normal);
+    const R delta_minus = normal * (/*local_diffusion_tensor_en*/ diffusion_value_en * normal);
+    const R gamma       = (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    const R penalty = (/*local_diffusion_factor **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
     const R weight_plus  = delta_minus / (delta_plus + delta_minus);
     const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // evaluate bases
@@ -615,7 +616,7 @@ public:
   }
 
   BoundaryLHS(const ThisType& other) = default;
-  BoundaryLHS(ThisType&& source) = default;
+  BoundaryLHS(ThisType&& source)     = default;
 
   /// \name Required by LocalFaceIntegrandInterface< ..., 2 >
 
@@ -881,7 +882,7 @@ public:
   }
 
   BoundaryRHS(const ThisType& other) = default;
-  BoundaryRHS(ThisType&& source) = default;
+  BoundaryRHS(ThisType&& source)     = default;
 
   /// \name Required by LocalFaceIntegrandInterface< ..., 1 >.
   /// \{
@@ -937,7 +938,7 @@ public:
     const size_t test_order          = test_base.order();
     const size_t test_gradient_order = std::max(ssize_t(test_order) - 1, ssize_t(0));
     const size_t diffusionOrder      = local_diffusion_factor.order() + local_diffusion_tensor.order();
-    const size_t dirichletOrder = local_dirichlet.order();
+    const size_t dirichletOrder      = local_dirichlet.order();
     return std::max(test_order + dirichletOrder, diffusionOrder + test_gradient_order + dirichletOrder);
   } // ... order(...)
 

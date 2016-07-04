@@ -64,7 +64,7 @@ public:
  * \todo Check parallel case: there is probably/definitely communication missing in apply2!
  */
 template <class GridViewImp, class RangeImp, class SourceImp = RangeImp,
-          class FieldImp                                     = typename RangeImp::RangeFieldType>
+          class FieldImp = typename RangeImp::RangeFieldType>
 class LocalizableProductBase : public Stuff::Grid::Walker<GridViewImp>
 {
   typedef Stuff::Grid::Walker<GridViewImp> BaseType;
@@ -131,7 +131,8 @@ public:
                                           typename LocalVolumeTwoFormInterface<V>::derived_type,
                                           RangeType,
                                           SourceType,
-                                          FieldType> AccumulateFunctor;
+                                          FieldType>
+        AccumulateFunctor;
     local_volume_twoforms_.emplace_back(
         new AccumulateFunctor(grid_view(), local_volume_twoform.as_imp(), range_, source_, *where));
     BaseType::add(*local_volume_twoforms_.back(), where);
@@ -177,7 +178,8 @@ class MatrixOperatorBase
       public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
 {
   typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                                               FieldImp, pt>> BaseOperatorType;
+                                                               FieldImp, pt>>
+      BaseOperatorType;
   typedef SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp> BaseAssemblerType;
   typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> ThisType;
 
@@ -301,7 +303,8 @@ public:
   {
     typedef internal::LocalVolumeTwoFormWrapper<ThisType,
                                                 typename LocalVolumeTwoFormInterface<V>::derived_type,
-                                                MatrixType> WrapperType;
+                                                MatrixType>
+        WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_.access()));
   }
@@ -313,7 +316,8 @@ public:
   {
     typedef internal::LocalCouplingTwoFormWrapper<ThisType,
                                                   typename LocalCouplingTwoFormInterface<C>::derived_type,
-                                                  MatrixType> WrapperType;
+                                                  MatrixType>
+        WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_coupling_twoform.as_imp(), matrix_.access()));
   }
@@ -325,7 +329,8 @@ public:
   {
     typedef internal::LocalBoundaryTwoFormWrapper<ThisType,
                                                   typename LocalBoundaryTwoFormInterface<B>::derived_type,
-                                                  MatrixType> WrapperType;
+                                                  MatrixType>
+        WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_.access()));
   }
@@ -461,7 +466,8 @@ public:
     typedef LocalOperatorApplicator<GridViewType,
                                     typename LocalOperatorInterface<L>::derived_type,
                                     SourceType,
-                                    RangeType> Applicator;
+                                    RangeType>
+        Applicator;
     local_operators_codim_0.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::add(*local_operators_codim_0.back(), where);
   } // ... add(...)
@@ -474,7 +480,8 @@ public:
     typedef LocalCouplingOperatorApplicator<GridViewType,
                                             typename LocalCouplingOperatorInterface<T>::derived_type,
                                             SourceType,
-                                            RangeType> Applicator;
+                                            RangeType>
+        Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::add(*local_operators_codim_1.back(), where);
   } // ... add(...)
@@ -487,7 +494,8 @@ public:
     typedef LocalBoundaryOperatorApplicator<GridViewType,
                                             typename LocalBoundaryOperatorInterface<T>::derived_type,
                                             SourceType,
-                                            RangeType> Applicator;
+                                            RangeType>
+        Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::add(*local_operators_codim_1.back(), where);
   } // ... add(...)

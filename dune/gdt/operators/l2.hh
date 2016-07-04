@@ -40,7 +40,8 @@ class L2LocalizableProduct
   typedef WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                                   typename GridView::ctype, GridView::dimension, Field,
                                                                   1>,
-                                       GridView, Range, Source, Field> BaseType;
+                                       GridView, Range, Source, Field>
+      BaseType;
 
   // The following tag and the two ctors are unfortunately necessary. There should have been two ctors,
   //     L2LocalizableProduct(Args&& ...args)
@@ -141,7 +142,8 @@ class L2MatrixOperator
       FunctionProvider;
   typedef WeightedL2MatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                               typename GridView::ctype, GridView::dimension, Field, 1>,
-                                   RangeSpace, Matrix, GridView, SourceSpace, Field> BaseType;
+                                   RangeSpace, Matrix, GridView, SourceSpace, Field>
+      BaseType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see above for an explanation.
   template <bool anything>

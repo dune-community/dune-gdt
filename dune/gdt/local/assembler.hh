@@ -73,7 +73,7 @@ public:
     assert(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
-      const size_t global_ii = global_row_indices[ii];
+      const size_t global_ii       = global_row_indices[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t global_jj = global_col_indices[jj];
         global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
@@ -99,7 +99,8 @@ class LocalVolumeTwoFormAccumulator : public Stuff::Grid::internal::Codim0Return
                 "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
 
   typedef LocalVolumeTwoFormAccumulator<GridViewImp, LocalVolumeTwoFormType, TestFunctionType, AnsatzFunctionType,
-                                        FieldType> ThisType;
+                                        FieldType>
+      ThisType;
   typedef Stuff::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType> BaseType;
 
 public:
@@ -120,7 +121,7 @@ public:
   }
 
   LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
-  virtual ~LocalVolumeTwoFormAccumulator() = default;
+  virtual ~LocalVolumeTwoFormAccumulator()             = default;
 
   virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const override final
   {
@@ -286,7 +287,7 @@ public:
     for (size_t ii = 0; ii < rows_en; ++ii) {
       const auto& local_matrix_en_en_row = local_matrix_en_en[ii];
       const auto& local_matrix_en_ne_row = local_matrix_en_ne[ii];
-      const size_t global_ii = global_row_indices_en[ii];
+      const size_t global_ii             = global_row_indices_en[ii];
       for (size_t jj = 0; jj < cols_en; ++jj) {
         const size_t global_jj = global_col_indices_en[jj];
         global_matrix_en_en.add_to_entry(global_ii, global_jj, local_matrix_en_en_row[jj]);
@@ -299,7 +300,7 @@ public:
     for (size_t ii = 0; ii < rows_ne; ++ii) {
       const auto& local_matrix_ne_en_row = local_matrix_ne_en[ii];
       const auto& local_matrix_ne_ne_row = local_matrix_ne_ne[ii];
-      const size_t global_ii = global_row_indices_ne[ii];
+      const size_t global_ii             = global_row_indices_ne[ii];
       for (size_t jj = 0; jj < cols_en; ++jj) {
         const size_t global_jj = global_col_indices_en[jj];
         global_matrix_ne_en.add_to_entry(global_ii, global_jj, local_matrix_ne_en_row[jj]);
@@ -421,7 +422,7 @@ public:
     assert(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
-      const size_t global_ii = global_row_indices[ii];
+      const size_t global_ii       = global_row_indices[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t global_jj = global_col_indices[jj];
         global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
@@ -545,7 +546,7 @@ public:
     // prepare
     const auto entity_ptr = intersection.inside();
     const auto& entity    = *entity_ptr;
-    const size_t size = test_space.mapper().numDofs(entity);
+    const size_t size     = test_space.mapper().numDofs(entity);
     Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);

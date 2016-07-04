@@ -62,7 +62,8 @@ class HyperbolicFVDefaultDiscretizationTraits
   // no checks of the arguments needed, those are done in the interfaces
 public:
   typedef HyperbolicFVDefaultDiscretization<TestCaseImp, FVSpaceImp, numerical_flux, time_stepper_method,
-                                            rhs_time_stepper_method> derived_type;
+                                            rhs_time_stepper_method>
+      derived_type;
   typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp SpaceType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
@@ -299,7 +300,8 @@ class HyperbolicFVDefaultDiscretization
                                                                                       rhs_time_stepper_method>>
       BaseType;
   typedef HyperbolicFVDefaultDiscretization<TestCaseImp, FVSpaceImp, numerical_flux, time_stepper_method,
-                                            rhs_time_stepper_method> ThisType;
+                                            rhs_time_stepper_method>
+      ThisType;
 
 public:
   typedef TestCaseImp TestCaseType;
@@ -319,7 +321,8 @@ private:
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
   typedef typename Dune::Stuff::Functions::Constant<typename SpaceType::EntityType, DomainFieldType, dimDomain,
-                                                    RangeFieldType, 1, 1> ConstantFunctionType;
+                                                    RangeFieldType, 1, 1>
+      ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRHSOperator<RHSType> RHSOperatorType;
   typedef typename std::
       conditional<numerical_flux == NumericalFluxes::laxfriedrichs
@@ -334,8 +337,8 @@ private:
                                       time_stepper_method>::TimeStepperType OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RHSOperatorType, DiscreteFunctionType, RangeFieldType,
                                       rhs_time_stepper_method>::TimeStepperType RHSOperatorTimeStepperType;
-  typedef
-      typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
+      TimeStepperType;
 
 public:
   HyperbolicFVDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const SpaceType> fv_space_ptr)

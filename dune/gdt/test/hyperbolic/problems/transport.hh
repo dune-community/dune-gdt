@@ -101,8 +101,9 @@ template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFi
 class InitialValues
     : public DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef typename DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                               rangeDimCols> BaseType;
+  typedef
+      typename DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
+          BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -163,11 +164,13 @@ class TransportSolution
           typename LocalizableFunctionType::EntityType, typename LocalizableFunctionType::DomainFieldType,
           LocalizableFunctionType::dimDomain, typename LocalizableFunctionType::RangeFieldType,
           LocalizableFunctionType::dimRange, LocalizableFunctionType::dimRangeCols>,
-      double> BaseType;
+      double>
+      BaseType;
   using typename BaseType::TimeIndependentFunctionType;
   typedef PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
                                     typename LocalizableFunctionType::DomainFieldType,
-                                    LocalizableFunctionType::dimDomain> DomainTransportFunctionType;
+                                    LocalizableFunctionType::dimDomain>
+      DomainTransportFunctionType;
 
   typedef typename DomainTransportFunctionType::DomainType DomainType;
 
@@ -225,8 +228,8 @@ public:
   using typename BaseType::DummyEntityType;
   typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
       FluxAffineFunctionType;
-  typedef
-      typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, r, rC> DefaultFluxType;
+  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, r, rC>
+      DefaultFluxType;
   using typename BaseType::DefaultInitialValueType;
   using typename BaseType::DefaultRHSType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -269,7 +272,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -292,7 +295,7 @@ public:
     ConfigType flux_config;
     flux_config["A.0"] = "[1]";
     flux_config["A.1"] = "[2]";
-    flux_config["b"] = "[0 0; 0 0]";
+    flux_config["b"]   = "[0 0; 0 0]";
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config;
     initial_value_config["lower_left"]  = "[0.0 0.0 0.0]";
@@ -301,7 +304,7 @@ public:
       initial_value_config["num_elements"] = "[5]";
     else
       initial_value_config["num_elements"] = "[5 5 1]";
-    initial_value_config["variable"] = "x";
+    initial_value_config["variable"]       = "x";
     if (dimDomain == 1)
       initial_value_config["values"] = "[0.0 "
                                        "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2)) "
@@ -315,7 +318,7 @@ public:
                         "2)*((x[1]-0.4)^2)*exp(0.02-((x[1]-0.2)^2)-((x[1]-0.4)^2)) 0 0 0 ")
           + std::string("0 0 0 0 0 ") + std::string("0 0 0 1 0 ") + std::string("0 0 0 0 0]");
     initial_value_config["order"] = "10";
-    initial_value_config["name"] = static_id();
+    initial_value_config["name"]  = static_id();
     config.add(initial_value_config, "initial_values", true);
     if (sub_name.empty())
       return config;
@@ -419,7 +422,8 @@ public:
     out << "+======================================================================+\n"
         << "|+====================================================================+|\n"
         << "||  Testcase: Transport                                               ||\n"
-        << "|+--------------------------------------------------------------------+|\n" << domainstring
+        << "|+--------------------------------------------------------------------+|\n"
+        << domainstring
         << "||  time = [0, " + DSC::toString(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = u[0]                                                       ||\n"

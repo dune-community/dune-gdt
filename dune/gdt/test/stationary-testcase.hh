@@ -37,7 +37,8 @@ private:
                 "ProblemImp::FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
   typedef Stuff::Functions::Constant<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
                                      FunctionType::dimDomain, typename FunctionType::RangeFieldType,
-                                     FunctionType::dimRange> ConstantFunctionType;
+                                     FunctionType::dimRange>
+      ConstantFunctionType;
 
 public:
   template <class... Args>

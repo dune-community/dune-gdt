@@ -23,8 +23,8 @@ namespace Tests {
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                Hyperbolic::ChooseDiscretizer::fv, 2,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1> TestCaseType;
@@ -51,8 +51,8 @@ public:
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                Hyperbolic::ChooseDiscretizer::fv, 2,
-                                NumericalFluxes::godunov, TimeStepperMethods::dormand_prince, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                TimeStepperMethods::dormand_prince, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1> TestCaseType;
@@ -79,8 +79,8 @@ public:
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                Hyperbolic::ChooseDiscretizer::fv, 2,
-                                NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::laxfriedrichs,
+                                TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1> TestCaseType;
@@ -106,16 +106,16 @@ public:
 }; // HyperbolicEocExpectations
 
 template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 2,
-                                         NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                         TimeStepperMethods::explicit_euler>;
 
 template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 2,
-                                         NumericalFluxes::godunov, TimeStepperMethods::dormand_prince>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                         TimeStepperMethods::dormand_prince>;
 
 template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 2,
-                                         NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::laxfriedrichs,
+                                         TimeStepperMethods::explicit_euler>;
 
 
 } // namespace Tests

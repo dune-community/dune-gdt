@@ -47,7 +47,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   {
     std::vector<DomainFieldType> ret(dimDomain, DomainFieldType(0));
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      ret[ii] = source[ii];
+      ret[ii]      = source[ii];
     return ret;
   }
 
@@ -90,16 +90,16 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (auto cc : DSC::valueRange(entity.template count<dimDomain>())) {
-        const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex_ptr                         = entity.template subEntity<dimDomain>(cc);
+        const DomainType vertex                       = vertex_ptr->geometry().center();
         vertex_to_indices_map[convert_vector(vertex)] = std::set<size_t>();
       }
     }
 
     // walk the grid again to find all DoF ids
-    auto functor                = [&](const typename GridProviderType::EntityType& entity) {
+    auto functor = [&](const typename GridProviderType::EntityType& entity) {
       const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
-      const auto basis = this->space_.base_function_set(entity);
+      const auto basis          = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));

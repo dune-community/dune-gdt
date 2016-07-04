@@ -20,7 +20,8 @@ typedef testing::Types<SPACES_DG_PDELAB(1)
                            ,
                        SPACES_DG_PDELAB_ALUGRID(1)
 #endif
-                       > SpaceTypes;
+                       >
+    SpaceTypes;
 
 TYPED_TEST_CASE(L2ProjectionOperatorTest, SpaceTypes);
 TYPED_TEST(L2ProjectionOperatorTest, constructible_by_ctor)

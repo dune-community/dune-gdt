@@ -59,7 +59,8 @@ class FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
 {
   typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                      GridViewImp::dimension, rangeDim, 1> BaseType;
+                                      GridViewImp::dimension, rangeDim, 1>
+      BaseType;
   typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> FvSpaceFVSpaceType;
 
 public:
@@ -80,7 +81,7 @@ public:
   }
 
   FvProductSpace(const ThisType& other) = default;
-  FvProductSpace(ThisType&& source) = default;
+  FvProductSpace(ThisType&& source)     = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 

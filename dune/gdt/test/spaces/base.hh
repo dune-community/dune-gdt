@@ -168,7 +168,7 @@ public:
     D_PatternType d_pattern_face                   = space_.compute_face_pattern();
     D_PatternType d_pattern_face_view              = space_.compute_face_pattern(d_grid_view);
     D_PatternType d_pattern_face_other             = space_.compute_face_pattern(space_);
-    D_PatternType d_pattern_face_view_other = space_.compute_face_pattern(d_grid_view, space_);
+    D_PatternType d_pattern_face_view_other        = space_.compute_face_pattern(d_grid_view, space_);
     EXPECT_EQ(d_pattern, d_pattern_other);
     EXPECT_EQ(d_pattern, d_pattern_view);
     EXPECT_EQ(d_pattern, d_pattern_view_other);
@@ -202,7 +202,7 @@ public:
     I_PatternType i_pattern_face                   = i_space.compute_face_pattern();
     I_PatternType i_pattern_face_view              = i_space.compute_face_pattern(i_grid_view);
     I_PatternType i_pattern_face_other             = i_space.compute_face_pattern(i_space);
-    I_PatternType i_pattern_face_view_other = i_space.compute_face_pattern(i_grid_view, i_space);
+    I_PatternType i_pattern_face_view_other        = i_space.compute_face_pattern(i_grid_view, i_space);
     EXPECT_EQ(&i_backend, &d_backend);
     EXPECT_EQ(&i_mapper, &d_mapper);
     EXPECT_EQ(&i_grid_view, &d_grid_view);
@@ -229,11 +229,11 @@ public:
       const D_EntityType& entity = *entity_it;
       // * as the derived type
       D_BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      size_t d_bfs_size = d_base_function_set.size();
+      size_t d_bfs_size                         = d_base_function_set.size();
       EXPECT_EQ(d_bfs_size, d_mapper.numDofs(entity));
       // * as the interface type
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
-      size_t i_bfs_size = i_base_function_set.size();
+      size_t i_bfs_size                         = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
     } // walk the grid
   } // ... fulfills_interface()
@@ -242,7 +242,7 @@ public:
   {
     SpaceType foop(space_);
     auto DUNE_UNUSED(aa) = foop.mapper().size();
-    SpaceType cp = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
+    SpaceType cp         = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
     auto DUNE_UNUSED(bb) = cp.mapper().size();
   } // ... check_for_correct_copy()
 
@@ -277,7 +277,7 @@ public:
     const InterfaceType& i_mapper  = static_cast<const InterfaceType&>(d_mapper);
     const D_BackendType& i_backend = i_mapper.backend();
     size_t i_size                  = i_mapper.size();
-    size_t i_maxNumDofs = i_mapper.maxNumDofs();
+    size_t i_maxNumDofs            = i_mapper.maxNumDofs();
     EXPECT_EQ(&i_backend, &d_backend);
     EXPECT_EQ(i_size, d_size);
     EXPECT_EQ(i_maxNumDofs, d_maxNumDofs);
@@ -349,7 +349,8 @@ public:
                                      d_dimDomain,
                                      D_RangeFieldType,
                                      d_dimRange,
-                                     d_dimRangeCols> InterfaceType;
+                                     d_dimRangeCols>
+        InterfaceType;
     typedef typename InterfaceType::derived_type derived_type;
     typedef typename InterfaceType::BackendType I_BackendType;
     typedef typename InterfaceType::EntityType I_EntityType;
@@ -391,7 +392,7 @@ public:
       //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
-      const I_BackendType& i_backend = i_base_function_set.backend();
+      const I_BackendType& i_backend     = i_base_function_set.backend();
       EXPECT_EQ(&d_backend, &i_backend);
       size_t i_order = i_base_function_set.order();
       EXPECT_EQ(i_order, d_order);

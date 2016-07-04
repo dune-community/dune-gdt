@@ -117,7 +117,8 @@ public:
   {
     typedef internal::LocalVolumeFunctionalWrapper<ThisType,
                                                    typename LocalVolumeFunctionalInterface<F>::derived_type,
-                                                   VectorType> WrapperType;
+                                                   VectorType>
+        WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(this->test_space_, where, local_volume_functional.as_imp(), vector_.access()));
   }
@@ -129,7 +130,8 @@ public:
   {
     typedef internal::LocalFaceFunctionalWrapper<ThisType,
                                                  typename LocalFaceFunctionalInterface<F>::derived_type,
-                                                 VectorType> WrapperType;
+                                                 VectorType>
+        WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(this->test_space_, where, local_face_functional.as_imp(), vector_.access()));
   }

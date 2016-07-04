@@ -20,7 +20,8 @@ typedef testing::Types<SPACES_DG_PDELAB_LEVEL(1)
                            ,
                        SPACES_DG_PDELAB_ALUGRID_LEVEL(1)
 #endif
-                       > SpaceTypes;
+                       >
+    SpaceTypes;
 
 TYPED_TEST_CASE(ProlongationTest, SpaceTypes);
 TYPED_TEST(ProlongationTest, produces_correct_results)

@@ -47,8 +47,8 @@ struct L2ProjectionOperatorTest
 {
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
-    auto DUNE_UNUSED(op_w_over_integrate) = make_l2_projection_operator(grid_view, 1);
+    const auto& grid_view                  = this->space_.grid_view();
+    auto DUNE_UNUSED(op_w_over_integrate)  = make_l2_projection_operator(grid_view, 1);
     auto DUNE_UNUSED(op_wo_over_integrate) = make_l2_projection_operator(grid_view);
   } // ... constructible_by_factory(...)
 

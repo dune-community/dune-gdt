@@ -105,7 +105,8 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
                                          GridViewType,
                                          ScalarFunctionType,
                                          ScalarFunctionType,
-                                         double> CtorTestProductType;
+                                         double>
+        CtorTestProductType;
     CtorTestProductType DUNE_UNUSED(wo_over_integrate)(weight, grid_view, range, source);
     CtorTestProductType DUNE_UNUSED(with_over_integrate)(1, weight, grid_view, range, source);
   } // ... constructible_by_ctor(...)
@@ -117,7 +118,7 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
     const auto& source    = this->scalar_function_;
     const auto& range     = this->scalar_function_;
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_weighted_l2_localizable_product(weight, grid_view, range, source);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_weighted_l2_localizable_product(weight, grid_view, range, source);
     auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_localizable_product(weight, grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
@@ -310,7 +311,7 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight    = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_weighted_l2_operator(grid_view, weight);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_weighted_l2_operator(grid_view, weight);
     auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_operator(grid_view, weight, 1);
   } // ... constructible_by_factory()
 

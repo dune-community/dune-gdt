@@ -74,7 +74,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -107,7 +107,7 @@ public:
     initial_value_config["lower_left"]   = "[0.0 0.0 0.0]";
     initial_value_config["upper_right"]  = "[1.0 1.0 1.0]";
     initial_value_config["num_elements"] = "[1 1 1]";
-    initial_value_config["variable"] = "x";
+    initial_value_config["variable"]     = "x";
     if (dimDomain == 1)
       initial_value_config["values"] = "sin(pi*x[0])";
     else
@@ -202,7 +202,8 @@ public:
     out << "+======================================================================+\n"
         << "|+====================================================================+|\n"
         << "||  Testcase: Burgers                                                 ||\n"
-        << "|+--------------------------------------------------------------------+|\n" << domainstring
+        << "|+--------------------------------------------------------------------+|\n"
+        << domainstring
         << "||  time = [0, " + DSC::toString(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = 0.5*u[0]^2                                                 ||\n"

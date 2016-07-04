@@ -204,8 +204,9 @@ prolong_l2(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& s
 }
 
 template <class SS, class SV, class RS, class RV>
-void prolong_l2(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range,
-                const size_t over_integrate = 0)
+void
+prolong_l2(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range,
+           const size_t over_integrate = 0)
 {
   make_l2_prolongation_operator(range.space().grid_view(), over_integrate)->apply(source, range);
 }

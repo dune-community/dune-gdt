@@ -173,13 +173,13 @@ public:
     const auto local_functions_tuple_entity   = numerical_flux_.local_functions(*entity_ptr);
     const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(*neighbor_ptr);
     const DSC::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
-                           LocalDiscreteFunction<SpaceType, VectorType>::dimRange> result =
-        numerical_flux_.evaluate(local_functions_tuple_entity,
-                                 local_functions_tuple_neighbor,
-                                 *local_source_entity,
-                                 *local_source_neighbor,
-                                 intersection,
-                                 geometry_intersection.local(geometry_intersection.center()));
+                           LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
+        result = numerical_flux_.evaluate(local_functions_tuple_entity,
+                                          local_functions_tuple_neighbor,
+                                          *local_source_entity,
+                                          *local_source_neighbor,
+                                          intersection,
+                                          geometry_intersection.local(geometry_intersection.center()));
     local_range_entity.vector().add(result * (1.0 / entity_ptr->geometry().volume()));
     local_range_neighbor.vector().add(result * (-1.0 / neighbor_ptr->geometry().volume()));
   }
@@ -239,7 +239,7 @@ public:
     const auto local_source_entity = source.local_function(entity);
     const auto x_local             = entity.geometry().local(entity.geometry().center());
     const auto u                   = local_source_entity->evaluate(x_local);
-    const auto result = rhs_evaluation_.evaluate(u, entity, x_local);
+    const auto result              = rhs_evaluation_.evaluate(u, entity, x_local);
     local_range.vector().add(result);
   }
 
@@ -289,7 +289,7 @@ public:
       if (intersection.neighbor()) {
         const auto neighbor_ptr    = intersection.outside();
         const auto neighbor_center = neighbor_ptr->geometry().center();
-        const bool boundary = intersection.boundary();
+        const bool boundary        = intersection.boundary();
         if ((neighbor_center[0] < entity_center[0] && !boundary) || (neighbor_center[0] > entity_center[0] && boundary))
           u_left =
               source.local_discrete_function(*neighbor_ptr)->evaluate(neighbor_ptr->geometry().local(neighbor_center));
@@ -313,7 +313,7 @@ public:
     const StuffFieldVectorType w_slope_left     = w_entity - w_left;
     const StuffFieldVectorType w_slope_right    = w_right - w_entity;
     const StuffFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
-    const StuffFieldVectorType w_slope = internal::ChooseLimiter<slope_limiter, StuffFieldVectorType>::limit(
+    const StuffFieldVectorType w_slope          = internal::ChooseLimiter<slope_limiter, StuffFieldVectorType>::limit(
         w_slope_left, w_slope_right, w_centered_slope);
     const StuffFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
     const StuffFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;

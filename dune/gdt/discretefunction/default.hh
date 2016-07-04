@@ -78,7 +78,8 @@ struct visualize_helper<ii, true>
     }
     ConstDiscreteFunction<
         typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-        typename DiscreteFunctionType::VectorType> factor_discrete_function(factor_space, factor_vector);
+        typename DiscreteFunctionType::VectorType>
+        factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(
         filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
@@ -133,7 +134,8 @@ class ConstDiscreteFunction
                 "Types do not match!");
   typedef Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                               SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                              SpaceImp::dimRange, SpaceImp::dimRangeCols> BaseType;
+                                              SpaceImp::dimRange, SpaceImp::dimRangeCols>
+      BaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
@@ -363,8 +365,8 @@ auto discrete_function = make_discrete_function< VectorType >(space);
 \endcode
  */
 template <class VectorType, class SpaceType>
-DiscreteFunction<SpaceType, VectorType> make_discrete_function(const SpaceType& space,
-                                                               const std::string nm = "gdt.discretefunction")
+DiscreteFunction<SpaceType, VectorType>
+make_discrete_function(const SpaceType& space, const std::string nm = "gdt.discretefunction")
 {
   return DiscreteFunction<SpaceType, VectorType>(space, nm);
 }

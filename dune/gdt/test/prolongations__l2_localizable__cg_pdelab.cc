@@ -20,7 +20,8 @@ typedef testing::Types<SPACES_CG_PDELAB_LEVEL(1)
                            ,
                        SPACES_CG_PDELAB_ALUGRID_LEVEL(1)
 #endif
-                       > SpaceTypes;
+                       >
+    SpaceTypes;
 
 TYPED_TEST_CASE(L2ProlongationLocalizableOperatorTest, SpaceTypes);
 TYPED_TEST(L2ProlongationLocalizableOperatorTest, constructible_by_ctor)

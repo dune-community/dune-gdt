@@ -38,7 +38,8 @@ class DuneFemLocalfunctionsWrapperTraits
 {
 public:
   typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                       rangeDimCols> derived_type;
+                                       rangeDimCols>
+      derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType BackendType;
   typedef typename BackendType::EntityType EntityType;
 };
@@ -56,13 +57,15 @@ class DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domain
 {
   typedef BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
                                                                                 domainDim, RangeFieldImp, rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      BaseType;
   typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
 
 public:
   typedef internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                       rangeDim, 1> Traits;
+                                                       rangeDim, 1>
+      Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 

@@ -460,7 +460,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -498,7 +498,7 @@ public:
     ConfigType flux_config;
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"]    = GetData::create_flux_matrix();
-    flux_config["b"] = DSC::to_string(RangeType(0));
+    flux_config["b"]    = DSC::to_string(RangeType(0));
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"]   = "[0.0]";
@@ -513,13 +513,13 @@ public:
     initial_value_config["num_elements"] = "[1]";
     initial_value_config["variable"]     = "x";
     initial_value_config["values.0"]     = GetData::create_initial_values();
-    initial_value_config["name"] = static_id();
+    initial_value_config["name"]         = static_id();
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config;
     boundary_value_config["type"]       = BoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"] = "10";
+    boundary_value_config["order"]      = "10";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;

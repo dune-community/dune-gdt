@@ -46,18 +46,22 @@ public:
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
   typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange,
-                                                  dimDomain> FluxAffineFunctionType;
+                                                  dimDomain>
+      FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
-                                                                dimDomain, RangeFieldImp, dimRange, 1> DefaultFluxType;
+                                                                dimDomain, RangeFieldImp, dimRange, 1>
+      DefaultFluxType;
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
   typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename DS::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
       RHSAffineFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
-                                                       RangeFieldImp, dimRange, 1> RHSCheckerboardFunctionType;
+                                                       RangeFieldImp, dimRange, 1>
+      RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp,
-                                                                 dimDomain, RangeFieldImp, dimRange, 1> DefaultRHSType;
+                                                                 dimDomain, RangeFieldImp, dimRange, 1>
+      DefaultRHSType;
   typedef typename DefaultRHSType::RangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -135,7 +139,7 @@ protected:
           if (l < momentOrder) {
             X[row][pos(l + 1, m - 1)] = 0.5 * D(l + 1, m - 1);
             X[row][pos(l + 1, m + 1)] = -0.5 * F(l + 1, m + 1);
-            Z[row][pos(l + 1, m)] = B(l + 1, m);
+            Z[row][pos(l + 1, m)]     = B(l + 1, m);
           }
         }
       }
@@ -235,7 +239,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -268,13 +272,13 @@ public:
     initial_value_config["num_elements"] = "[1 1]";
     initial_value_config["variable"]     = "x";
     initial_value_config["values.0"]     = GetData::create_initial_values();
-    initial_value_config["name"] = static_id();
+    initial_value_config["name"]         = static_id();
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config;
     boundary_value_config["type"]       = BoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"] = "0";
+    boundary_value_config["order"]      = "0";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -387,7 +391,7 @@ protected:
           for (size_t l = 1; l <= momentOrder; ++l)
             for (size_t m = 0; m <= l; ++m)
               S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
-          size_t number = 7 * row + col;
+          size_t number                             = 7 * row + col;
           rhs_config["A." + DSC::to_string(number)] = DSC::to_string(S, precision);
           rhs_config["b." + DSC::to_string(number)] = DSC::to_string(q);
         }
@@ -427,7 +431,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -458,7 +462,7 @@ public:
     initial_value_config["num_elements"] = "[1 1]";
     initial_value_config["variable"]     = "x";
     initial_value_config["values.0"]     = GetData::create_initial_values();
-    initial_value_config["name"] = static_id();
+    initial_value_config["name"]         = static_id();
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config = BaseType::default_config().sub("boundary_values");
     config.add(boundary_value_config, "boundary_values");

@@ -25,7 +25,8 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 
                        ,
                        Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::SGrid<2, 2>>
 #endif
-                       > SGridTestCases;
+                       >
+    SGridTestCases;
 
 
 #if HAVE_DUNE_ALUGRID

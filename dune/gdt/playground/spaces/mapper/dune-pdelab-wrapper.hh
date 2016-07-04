@@ -134,9 +134,9 @@ public:
     if (ret.size() < factor_mapper_num_dofs)
       ret.resize(factor_mapper_num_dofs);
     const auto factor_mapper_size_times_factor_index = factor_mapper_.size() * factor_index;
-    const auto factor_mapper_global_indices = factor_mapper_.globalIndices(entity);
+    const auto factor_mapper_global_indices          = factor_mapper_.globalIndices(entity);
     for (size_t jj = 0; jj < factor_mapper_num_dofs; ++jj)
-      ret[jj] = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
+      ret[jj]      = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
   } // ... globalIndices(...)
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const

@@ -26,7 +26,8 @@ typedef testing::Types<Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Du
                        Dune::GDT::Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>>,
                        Dune::GDT::Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double, 5>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Dune::YaspGrid<1>, double, 1, 1>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1, 1>> YaspGridTestCasesAll;
+                       Dune::GDT::Hyperbolic::TransportTestCase<Dune::YaspGrid<2>, double, 1, 1>>
+    YaspGridTestCasesAll;
 
 typedef testing::Types<Dune::GDT::Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>>,
                        Dune::GDT::Hyperbolic::ShockTubeTestCase<Dune::YaspGrid<1>>,

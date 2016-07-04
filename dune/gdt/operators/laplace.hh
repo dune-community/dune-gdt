@@ -40,7 +40,8 @@ class LaplaceLocalizableProduct
   typedef EllipticLocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                                 typename GridView::ctype, GridView::dimension, Field,
                                                                 1>,
-                                     void, GridView, Range, Source, Field> BaseType;
+                                     void, GridView, Range, Source, Field>
+      BaseType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see there for an explanation.
   template <bool anything>
@@ -130,7 +131,8 @@ class LaplaceMatrixOperator
       FunctionProvider;
   typedef EllipticMatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                             typename GridView::ctype, GridView::dimension, Field, 1>,
-                                 void, RangeSpace, Matrix, GridView, SourceSpace, Field> BaseType;
+                                 void, RangeSpace, Matrix, GridView, SourceSpace, Field>
+      BaseType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see there for an explanation.
   template <bool anything>

@@ -81,7 +81,7 @@ public:
     const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>> local_l2_functional(over_integrate_, source);
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
-    const size_t size = local_basis.size();
+    const size_t size       = local_basis.size();
     Stuff::LA::CommonDenseMatrix<R> local_matrix(size, size);
     Stuff::LA::CommonDenseVector<R> local_vector(size);
     // assemble

@@ -48,7 +48,8 @@ class DuneFemWrapperTraits
 {
 public:
   typedef DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                         rangeDimCols> derived_type;
+                         rangeDimCols>
+      derived_type;
   typedef typename Dune::Fem::DefaultBasisFunctionSet<EntityImp, ShapeFunctionSetImp> BackendType;
   typedef EntityImp EntityType;
 };
@@ -68,11 +69,13 @@ class DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, 
       ThisType;
   typedef BaseFunctionSetInterface<internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
                                                                   domainDim, RangeFieldImp, rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      BaseType;
 
 public:
   typedef internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                         rangeDim, 1> Traits;
+                                         rangeDim, 1>
+      Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainType DomainType;

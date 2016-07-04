@@ -69,7 +69,7 @@ public:
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii = 0; ii < range_vector.size(); ++ii)
+    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     const LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType> inner_evaluation(
         diffusion_factor_, diffusion_tensor_);
@@ -103,7 +103,7 @@ public:
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor = *neighbor_ptr;
+          const auto& neighbor    = *neighbor_ptr;
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_diffusion_factor_neighbor = diffusion_factor_.local_function(neighbor);
             const auto local_diffusion_tensor_neighbor = diffusion_tensor_.local_function(neighbor);
@@ -254,7 +254,7 @@ public:
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii = 0; ii < range_vector.size(); ++ii)
+    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     const LocalEllipticIpdgIntegrands::Inner<LocalizableFunctionType> inner_evaluation(diffusion_);
     const LocalEllipticIpdgIntegrands::BoundaryLHS<LocalizableFunctionType> boundary_evaluation(diffusion_);
@@ -285,7 +285,7 @@ public:
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor = *neighbor_ptr;
+          const auto& neighbor    = *neighbor_ptr;
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_diffusion_neighbor    = diffusion_.local_function(neighbor);
             const auto local_source_neighbor       = source.local_function(neighbor);

@@ -37,7 +37,8 @@ public:
   typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
   typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
-                                              dimDomain> DiffusionTensorType;
+                                              dimDomain>
+      DiffusionTensorType;
   typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 

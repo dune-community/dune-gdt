@@ -151,7 +151,7 @@ private:
         const auto integration_element = entity.geometry().integrationElement(xx);
         const ValueType function_value = local_function->evaluate(xx);
         const auto source_gradient     = local_source->jacobian(xx);
-        const auto basis_value = basis.evaluate(xx);
+        const auto basis_value         = basis.evaluate(xx);
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
           rhs.add_to_entry(global_ii,
@@ -186,8 +186,8 @@ private:
     static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
     const auto& rtn0_space = range.space();
     auto& range_vector     = range.vector();
-    const auto infinity = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii = 0; ii < range_vector.size(); ++ii)
+    const auto infinity    = std::numeric_limits<FieldType>::infinity();
+    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
@@ -206,7 +206,7 @@ private:
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor = *neighbor_ptr;
+          const auto& neighbor    = *neighbor_ptr;
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_function_neighbor    = function_.local_function(neighbor);
             const auto local_source_neighbor      = source.local_function(neighbor);
@@ -216,7 +216,7 @@ private:
             FieldType lhs                = 0;
             FieldType rhs                = 0;
             const size_t integrand_order = local_function->order();
-            const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+            const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
                 intersection.type(), boost::numeric_cast<int>(integrand_order));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
@@ -255,7 +255,7 @@ private:
           FieldType lhs                = 0;
           FieldType rhs                = 0;
           const size_t integrand_order = local_function->order();
-          const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+          const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
               intersection.type(), boost::numeric_cast<int>(integrand_order));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
@@ -304,7 +304,8 @@ private:
 
 
 template <class G, class F>
-std::unique_ptr<DarcyOperator<G, F>> make_darcy(const G& grid_view, const F& function)
+std::unique_ptr<DarcyOperator<G, F>>
+make_darcy(const G& grid_view, const F& function)
 {
   return std::unique_ptr<DarcyOperator<G, F>>(new DarcyOperator<G, F>(grid_view, function));
 }

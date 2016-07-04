@@ -42,7 +42,8 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
                                                numerical_flux,
-                                               time_stepper> Discretizer;
+                                               time_stepper>
+        Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()

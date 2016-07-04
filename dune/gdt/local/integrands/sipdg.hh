@@ -120,7 +120,8 @@ public:
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double default_beta(const size_t dimDomain)
+static inline double
+default_beta(const size_t dimDomain)
 {
   return 1.0 / (dimDomain - 1.0);
 }
@@ -129,7 +130,8 @@ static inline double default_beta(const size_t dimDomain)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double inner_sigma(const size_t pol_order)
+static inline double
+inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -156,7 +158,8 @@ static inline double inner_sigma(const size_t pol_order)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double boundary_sigma(const size_t pol_order)
+static inline double
+boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -611,7 +614,7 @@ public:
     const size_t testOrder         = testBase.order();
     const size_t testGradientOrder = boost::numeric_cast<size_t>(std::max(ssize_t(testOrder) - 1, ssize_t(0)));
     const size_t diffusionOrder    = localDiffusion.order();
-    const size_t dirichletOrder = localDirichlet.order();
+    const size_t dirichletOrder    = localDirichlet.order();
     return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
   } // ... order(...)
 

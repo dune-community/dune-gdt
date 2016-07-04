@@ -84,7 +84,8 @@ class PiolaTransformedDunePdelabWrapperTraits
 
 public:
   typedef PiolaTransformedDunePdelabWrapper<PdelabSpaceImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                            rangeDim> derived_type;
+                                            rangeDim>
+      derived_type;
 
 private:
   typedef PDELab::LocalFunctionSpace<PdelabSpaceImp, PDELab::TrialSpaceTag> PdelabLFSType;
@@ -113,7 +114,8 @@ class DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, R
   typedef DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
   typedef BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
                                                                      domainDim, RangeFieldImp, 1, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, 1, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+      BaseType;
 
 public:
   typedef internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
@@ -140,7 +142,7 @@ public:
     backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
   } // DunePdelabWrapper(...)
 
-  DunePdelabWrapper(ThisType&& source) = default;
+  DunePdelabWrapper(ThisType&& source)         = default;
   DunePdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
@@ -198,11 +200,13 @@ class DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, R
   typedef DunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
   typedef BaseFunctionSetInterface<internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp,
                                                                      domainDim, RangeFieldImp, rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      BaseType;
 
 public:
   typedef internal::DunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                            rangeDim, 1> Traits;
+                                            rangeDim, 1>
+      Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
@@ -227,7 +231,7 @@ public:
     backend_ = std::unique_ptr<BackendType>(new BackendType(FESwitchType::basis(lfs_->finiteElement())));
   } // DunePdelabWrapper(...)
 
-  DunePdelabWrapper(ThisType&& source) = default;
+  DunePdelabWrapper(ThisType&& source)         = default;
   DunePdelabWrapper(const ThisType& /*other*/) = delete;
 
   ThisType& operator=(const ThisType& /*other*/) = delete;
@@ -302,15 +306,18 @@ class PiolaTransformedDunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldI
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
   typedef PiolaTransformedDunePdelabWrapper<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                            rangeDim, 1> ThisType;
+                                            rangeDim, 1>
+      ThisType;
   typedef BaseFunctionSetInterface<internal::PiolaTransformedDunePdelabWrapperTraits<PdelabSpaceType, EntityImp,
                                                                                      DomainFieldImp, domainDim,
                                                                                      RangeFieldImp, rangeDim>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      BaseType;
 
 public:
   typedef internal::PiolaTransformedDunePdelabWrapperTraits<PdelabSpaceType, EntityImp, DomainFieldImp, domainDim,
-                                                            RangeFieldImp, rangeDim> Traits;
+                                                            RangeFieldImp, rangeDim>
+      Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 

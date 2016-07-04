@@ -165,7 +165,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
  * \tparam DiscreteFunctionImp Type of initial values
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
-          TimeStepperMethods method                                        = TimeStepperMethods::explicit_euler>
+          TimeStepperMethods method = TimeStepperMethods::explicit_euler>
 class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
@@ -274,7 +274,7 @@ public:
     TimeFieldType initial_t          = t;
     // start with initial dt
     TimeFieldType current_dt = initial_dt;
-    size_t num_refinements = 0;
+    size_t num_refinements   = 0;
     while (num_refinements < max_refinements) {
       std::cout << "Trying time step length dt = " << current_dt << "... " << std::flush;
       bool unlikely_value_occured = false;
@@ -295,13 +295,13 @@ public:
         if (num_steps == max_steps_per_dt) {
           std::cout << "looks fine" << std::endl;
           u_n.vector() = initial_u_n.vector();
-          t = initial_t;
+          t            = initial_t;
           return std::make_pair(bool(true), current_dt);
         }
       }
       // if there was a value above threshold start over with smaller dt
       u_n.vector() = initial_u_n.vector();
-      t = initial_t;
+      t            = initial_t;
       current_dt /= dt_refinement_factor;
       ++num_refinements;
     }

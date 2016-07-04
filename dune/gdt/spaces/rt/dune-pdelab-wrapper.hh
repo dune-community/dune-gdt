@@ -81,17 +81,19 @@ private:
   struct FeMap<G, true, true, false>
   {
     typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder,
-                                                       Dune::GeometryType::simplex> Type;
+                                                       Dune::GeometryType::simplex>
+        Type;
   };
   template <class G>
   struct FeMap<G, true, false, true>
   {
     typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder,
-                                                       Dune::GeometryType::cube> Type;
+                                                       Dune::GeometryType::cube>
+        Type;
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+  static const bool simplicial_  = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                                    == GenericGeometry::SimplexTopology<dimDomain>::type::id);
   static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                               == GenericGeometry::CubeTopology<dimDomain>::type::id);
@@ -102,8 +104,8 @@ public:
   typedef DunePdelabCgMapperWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
-                                                             RangeFieldType, rangeDim,
-                                                             rangeDimCols> BaseFunctionSetType;
+                                                             RangeFieldType, rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
@@ -124,7 +126,8 @@ class DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
 {
   typedef DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
   typedef RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
-                           GridViewImp::dimension, rangeDim, 1> BaseType;
+                           GridViewImp::dimension, rangeDim, 1>
+      BaseType;
 
 public:
   typedef internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1> Traits;

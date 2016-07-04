@@ -86,14 +86,15 @@ public:
 private:
   typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType, FiniteElementType,
                                                       Dune::FemLocalFunctions::NoTransformation,
-                                                      Dune::FemLocalFunctions::SimpleStorage, polOrder,
-                                                      polOrder> BaseFunctionSetMapType;
+                                                      Dune::FemLocalFunctions::SimpleStorage, polOrder, polOrder>
+      BaseFunctionSetMapType;
 
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
   typedef BaseFunctionSet::DuneFemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain,
-                                                        RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+                                                        RangeFieldType, rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
@@ -112,7 +113,8 @@ class DuneFemLocalfunctionsCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFie
                               GridPartImp::dimension, RangeFieldImp, 1, 1>
 {
   typedef CgSpaceInterface<DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridPartImp::dimension, RangeFieldImp, 1, 1> BaseType;
+                           GridPartImp::dimension, RangeFieldImp, 1, 1>
+      BaseType;
   typedef DuneFemLocalfunctionsCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
@@ -166,7 +168,7 @@ public:
       gridView_           = other.gridView_;
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
       backend_            = other.backend_;
-      mapper_ = other.mapper_;
+      mapper_             = other.mapper_;
       tmp_global_indices_.resize(mapper_->maxNumDofs());
     }
     return *this;

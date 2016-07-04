@@ -84,7 +84,7 @@ public:
   }
 
   LocalVolumeIntegralFunctional(const ThisType& other) = default;
-  LocalVolumeIntegralFunctional(ThisType&& source) = default;
+  LocalVolumeIntegralFunctional(ThisType&& source)     = default;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base, Dune::DynamicVector<R>& ret) const
@@ -93,7 +93,7 @@ public:
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
-    const auto& quadrature       = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
     // prepare storage
     const size_t size = test_base.size();
     ret *= 0.0;

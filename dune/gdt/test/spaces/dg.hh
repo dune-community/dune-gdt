@@ -37,7 +37,7 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
   {
     std::vector<DomainFieldType> ret(dimDomain, DomainFieldType(0));
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      ret[ii] = source[ii];
+      ret[ii]      = source[ii];
     return ret;
   }
 
@@ -50,8 +50,8 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (auto cc : DSC::valueRange(entity.template count<dimDomain>())) {
-        const auto vertex_ptr   = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex_ptr                               = entity.template subEntity<dimDomain>(cc);
+        const DomainType vertex                             = vertex_ptr->geometry().center();
         vertex_to_indices_map[convert_vector(vertex)].first = std::set<size_t>();
         ++vertex_to_indices_map[convert_vector(vertex)].second;
       }
@@ -60,7 +60,7 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity        = *entity_it;
       const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
-      const auto basis = this->space_.base_function_set(entity);
+      const auto basis          = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
         const auto vertex_ptr   = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
@@ -109,7 +109,7 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
     for (const auto& entry : vertex_to_indices_map) {
       const auto vertex_ids               = entry.second.first;
       size_t number_of_associated_DoF_ids = vertex_ids.size();
-      size_t number_of_adjacent_entitys = entry.second.second;
+      size_t number_of_adjacent_entitys   = entry.second.second;
       EXPECT_EQ(number_of_associated_DoF_ids, number_of_adjacent_entitys);
     }
   } // ... maps_correctly()

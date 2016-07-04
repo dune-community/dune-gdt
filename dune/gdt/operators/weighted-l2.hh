@@ -28,7 +28,7 @@ namespace GDT {
 // //////////////////////////// //
 
 template <class WeightFunctionType, class GridView, class Range, class Source = Range,
-          class Field                                                         = typename Range::RangeFieldType>
+          class Field = typename Range::RangeFieldType>
 class WeightedL2LocalizableProduct : public LocalizableProductBase<GridView, Range, Source, Field>
 {
   typedef LocalizableProductBase<GridView, Range, Source, Field> BaseType;

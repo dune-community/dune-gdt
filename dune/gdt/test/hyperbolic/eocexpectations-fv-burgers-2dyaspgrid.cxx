@@ -23,8 +23,8 @@ namespace Tests {
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1>,
-                                Hyperbolic::ChooseDiscretizer::fv, 2,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1> TestCaseType;
@@ -39,7 +39,7 @@ public:
         return {3.60e-04, 1.70e-04};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
-     } else {
+    } else {
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     }
     return {};
@@ -47,8 +47,8 @@ public:
 }; // HyperbolicEocExpectations
 
 template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 2,
-                                         NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                         TimeStepperMethods::explicit_euler>;
 
 
 } // namespace Tests

@@ -193,7 +193,7 @@ protected:
         return str;
       } else {
         const auto& basefunctions_right = basefunctions_values_at_plusone();
-        std::string str = "[";
+        std::string str                 = "[";
         for (size_t cc = 0; cc < dimRange; ++cc) {
           if (cc > 0)
             str += " ";
@@ -225,7 +225,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -261,7 +261,7 @@ public:
     boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"] = "10";
+    boundary_value_config["order"]      = "10";
     config.add(boundary_value_config, "boundary_values", true);
     if (sub_name.empty())
       return config;

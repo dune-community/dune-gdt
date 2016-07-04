@@ -49,8 +49,8 @@ public:
   typedef RangeFieldImp RangeFieldType;
   typedef FvMapper<GridViewType, rangeDim, rangeDimCols> MapperType;
   typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
-                                        GridViewType::dimension, RangeFieldType, rangeDim,
-                                        rangeDimCols> BaseFunctionSetType;
+                                        GridViewType::dimension, RangeFieldType, rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
@@ -68,7 +68,8 @@ class FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
 {
   typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                           rangeDim, 1> BaseType;
+                           rangeDim, 1>
+      BaseType;
 
 public:
   typedef typename internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
@@ -138,13 +139,15 @@ private:
 
 
 template <class R, size_t r, size_t rC, class GV>
-FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, rC>
+make_fv_space(const GV& grid_view)
 {
   return FvSpace<GV, R, r, rC>(grid_view);
 }
 
 template <class R, size_t r, class GV>
-FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, 1>
+make_fv_space(const GV& grid_view)
 {
   return FvSpace<GV, R, r, 1>(grid_view);
 }

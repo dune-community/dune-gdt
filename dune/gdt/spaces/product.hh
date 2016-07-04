@@ -32,7 +32,8 @@ namespace internal {
 
 
 template <class T>
-constexpr T staticMax(T a, T b)
+constexpr T
+staticMax(T a, T b)
 {
   return a > b ? a : b;
 }
@@ -102,7 +103,8 @@ class DefaultProductSpace
   typedef DefaultProductSpace<SpaceImps...> ThisType;
   typedef Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
                                     std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                    GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1> BaseType;
+                                    GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>
+      BaseType;
 
 public:
   typedef typename internal::DefaultProductSpaceTraits<SpaceImps...> Traits;

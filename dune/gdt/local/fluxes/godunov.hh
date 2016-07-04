@@ -66,7 +66,7 @@ public:
   typedef typename AnalyticalFluxType::FluxJacobianRangeType FluxJacobianRangeType;
   typedef std::tuple<double> LocalfunctionTupleType;
   static const size_t dimDomain = domainDim;
-  static const size_t dimRange = AnalyticalFluxType::dimRange;
+  static const size_t dimRange  = AnalyticalFluxType::dimRange;
   static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
 }; // class LocalGodunovNumericalCouplingFluxTraits
@@ -156,7 +156,7 @@ public:
         coord = ii;
 #ifndef NDEBUG
       else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
-          ++num_zeros;
+        ++num_zeros;
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
 #endif // NDEBUG
@@ -169,12 +169,12 @@ public:
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_[coord].mv(delta_u, negative_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk] = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk]      = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_[coord].mv(delta_u, positive_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk]      = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
     }
     return ret;
   } // RangeType evaluate(...) const
@@ -277,7 +277,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange  = Traits::dimRange;
   typedef typename DS::Functions::Affine<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
-                                         RangeFieldType, dimRange, 1> AffineFunctionType;
+                                         RangeFieldType, dimRange, 1>
+      AffineFunctionType;
 
   explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear,
                                              const bool reinit_jacobians = true)
@@ -382,8 +383,8 @@ private:
           DSC::to_string(jacobian_neg_eigen, 15));
       jacobian_pos_ = DSC::from_string<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>>(
           DSC::to_string(jacobian_pos_eigen, 15));
-      jacobian_neg_function_  = AffineFunctionType(jacobian_neg_, RangeType(0), true);
-      jacobian_pos_function_  = AffineFunctionType(jacobian_pos_, RangeType(0), true);
+      jacobian_neg_function_ = AffineFunctionType(jacobian_neg_, RangeType(0), true);
+      jacobian_pos_function_ = AffineFunctionType(jacobian_pos_, RangeType(0), true);
     }
   } // void calculate_jacobians(...)
 
@@ -430,7 +431,8 @@ class LocalGodunovNumericalBoundaryFlux
 {
 public:
   typedef internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
-                                                            domainDim> Traits;
+                                                            domainDim>
+      Traits;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -470,7 +472,7 @@ public:
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i                     = local_source_entity.evaluate(x_intersection_entity_coords);
-    const RangeType u_j                     = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
+    const RangeType u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
     // get flux values
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
 
@@ -491,7 +493,7 @@ public:
         coord = ii;
 #ifndef NDEBUG
       else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
-          ++num_zeros;
+        ++num_zeros;
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
 #endif // NDEBUG
@@ -504,12 +506,12 @@ public:
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_[coord].mv(delta_u, negative_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk] = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk]      = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_[coord].mv(delta_u, positive_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk]      = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
     }
     return ret;
   } // void evaluate(...) const
@@ -617,7 +619,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange  = Traits::dimRange;
   typedef typename DS::Functions::Affine<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
-                                         RangeFieldType, dimRange, 1> AffineFunctionType;
+                                         RangeFieldType, dimRange, 1>
+      AffineFunctionType;
   explicit LocalGodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueFunctionType& boundary_values,
                                              const bool is_linear = false, const bool reinit_jacobians = true)
@@ -643,7 +646,7 @@ public:
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i                     = local_source_entity.evaluate(x_intersection_entity_coords);
-    const RangeType u_j                     = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
+    const RangeType u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
 
     if (!jacobians_constructed_ && is_linear_)
       initialize_jacobians();

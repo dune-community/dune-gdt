@@ -97,8 +97,8 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
   template <class ProductImp>
   void localizable_product_test(ProductImp& prod)
   {
-    const auto& DUNE_UNUSED(source) = prod.source();
-    const auto& DUNE_UNUSED(range) = prod.range();
+    const auto& DUNE_UNUSED(source)    = prod.source();
+    const auto& DUNE_UNUSED(range)     = prod.range();
     auto& DUNE_UNUSED(non_const_range) = prod.range();
 
     Stuff::Grid::Walker<GridViewType> walker(this->space_.grid_view());
@@ -120,10 +120,10 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
   template <class OperatorImp>
   void matrix_operator_test(OperatorImp& op)
   {
-    const auto& DUNE_UNUSED(matrix) = op.matrix();
-    auto& DUNE_UNUSED(non_const_matrix) = op.matrix();
+    const auto& DUNE_UNUSED(matrix)       = op.matrix();
+    auto& DUNE_UNUSED(non_const_matrix)   = op.matrix();
     const auto& DUNE_UNUSED(source_space) = op.source_space();
-    const auto& DUNE_UNUSED(range_space) = op.range_space();
+    const auto& DUNE_UNUSED(range_space)  = op.range_space();
 
     Stuff::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(op);

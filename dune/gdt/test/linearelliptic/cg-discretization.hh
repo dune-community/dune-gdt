@@ -43,7 +43,8 @@ struct linearelliptic_CG_discretization : public ::testing::Test
                                           la_backend,
                                           1,
                                           typename TestCaseType::ProblemType::RangeFieldType,
-                                          1> Discretizer;
+                                          1>
+        Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));

@@ -19,7 +19,8 @@ typedef testing::Types<SPACES_CG_PDELAB(1)
                            ,
                        SPACES_CG_PDELAB_ALUGRID(1)
 #endif
-                       > CG_Spaces_Pdelab;
+                       >
+    CG_Spaces_Pdelab;
 
 TYPED_TEST_CASE(CG_Space, CG_Spaces_Pdelab);
 TYPED_TEST(CG_Space, fulfills_interface)
@@ -46,7 +47,8 @@ typedef testing::Types<SPACES_CG_PDELAB(1)
                            ,
                        SPACES_CG_PDELAB_ALUGRID(1)
 #endif
-                       > P1Q1_CG_Spaces_Pdelab;
+                       >
+    P1Q1_CG_Spaces_Pdelab;
 
 TYPED_TEST_CASE(P1Q1_CG_Space, P1Q1_CG_Spaces_Pdelab);
 TYPED_TEST(P1Q1_CG_Space, fulfills_continuous_interface)

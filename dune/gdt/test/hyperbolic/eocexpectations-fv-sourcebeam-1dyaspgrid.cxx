@@ -23,8 +23,8 @@ namespace Tests {
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
-                                Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 1, NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double> TestCaseType;
@@ -47,8 +47,8 @@ public:
 
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
-                                Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov_with_reconstruction, TimeStepperMethods::explicit_euler, anything>
+                                Hyperbolic::ChooseDiscretizer::fv, 1, NumericalFluxes::godunov_with_reconstruction,
+                                TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double> TestCaseType;
@@ -72,12 +72,13 @@ public:
 }; // HyperbolicEocExpectations
 
 template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
-                                         Hyperbolic::ChooseDiscretizer::fv, 1,
-                                         NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>;
+                                         Hyperbolic::ChooseDiscretizer::fv, 1, NumericalFluxes::godunov,
+                                         TimeStepperMethods::explicit_euler>;
 
 template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Dune::YaspGrid<1>, double>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1,
-                                         NumericalFluxes::godunov_with_reconstruction, TimeStepperMethods::explicit_euler>;
+                                         NumericalFluxes::godunov_with_reconstruction,
+                                         TimeStepperMethods::explicit_euler>;
 
 
 } // namespace Tests

@@ -18,7 +18,8 @@ typedef testing::Types<SPACES_FV
                        ,
                        SPACES_FV_ALUGRID
 #endif
-                       > FV_Spaces;
+                       >
+    FV_Spaces;
 
 TYPED_TEST_CASE(FV_Space, FV_Spaces);
 TYPED_TEST(FV_Space, fulfills_interface)

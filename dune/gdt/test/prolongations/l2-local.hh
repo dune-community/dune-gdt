@@ -46,9 +46,9 @@ struct L2LocalProlongationLocalizableOperatorTest
     const auto& source = this->coarse_discrete_function_;
     auto& range        = this->fine_discrete_function_;
 
-    auto DUNE_UNUSED(w_gv_w_oi) = make_local_l2_prolongation_localizable_operator(grid_view, source, range, 1);
-    auto DUNE_UNUSED(w_gv_wo_oi) = make_local_l2_prolongation_localizable_operator(grid_view, source, range);
-    auto DUNE_UNUSED(wo_gv_w_oi) = make_local_l2_prolongation_localizable_operator(source, range, 1);
+    auto DUNE_UNUSED(w_gv_w_oi)   = make_local_l2_prolongation_localizable_operator(grid_view, source, range, 1);
+    auto DUNE_UNUSED(w_gv_wo_oi)  = make_local_l2_prolongation_localizable_operator(grid_view, source, range);
+    auto DUNE_UNUSED(wo_gv_w_oi)  = make_local_l2_prolongation_localizable_operator(source, range, 1);
     auto DUNE_UNUSED(wo_gv_wo_oi) = make_local_l2_prolongation_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 };
@@ -65,7 +65,7 @@ struct L2LocalProlongationOperatorTest
   {
     this->prepare(tolerance);
 
-    auto grid_view     = this->fine_space_.grid_view();
+    auto grid_view                  = this->fine_space_.grid_view();
     const auto& DUNE_UNUSED(source) = this->coarse_discrete_function_;
     auto& DUNE_UNUSED(range)        = this->fine_discrete_function_;
 
@@ -79,7 +79,7 @@ struct L2LocalProlongationOperatorTest
 
     auto grid_view = this->fine_space_.grid_view();
 
-    auto DUNE_UNUSED(w_over_integrate) = make_local_l2_prolongation_operator(grid_view, 1);
+    auto DUNE_UNUSED(w_over_integrate)  = make_local_l2_prolongation_operator(grid_view, 1);
     auto DUNE_UNUSED(wo_over_integrate) = make_local_l2_prolongation_operator(grid_view);
   } // ... constructible_by_factory(...)
 };
