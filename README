@@ -18,11 +18,11 @@ using the main DUNE discretization modules, like dune-fem
 dune-pdelab (http://www.dune-project.org/pdelab/).
 
 New users may best try out this module by using the git supermodule
-dune-gdt-demos (http://users.dune-project.org/projects/dune-gdt-demos).
-Experienced DUNE users may go ahead. As usual, you will have to call autogen,
+dune-gdt-super (https://github.com/dune-community/dune-gdt-super).
+Experienced DUNE users may go ahead. As usual, you will have to call
 configure and make using dunecontrol
 (see http://www.dune-project.org/doc/installation-notes.html), working
-examples are located in 'tests/'...
+examples are located in 'dune/gdt/test/'...
 
 If you want to start hacking go ahead and fork us on github.com:
-https://github.com/pymor/dune-gdt/
+https://github.com/dune-community/dune-gdt/
