@@ -33,31 +33,36 @@ namespace SwipdgFluxreconstrutionEstimators {
 static const size_t over_integrate = 2;
 
 
-static std::string local_nonconformity_ESV2007_id()
+static std::string
+local_nonconformity_ESV2007_id()
 {
   return "eta_NC_ESV2007";
 }
 
 
-static std::string local_residual_ESV2007_id()
+static std::string
+local_residual_ESV2007_id()
 {
   return "eta_R_ESV2007";
 }
 
 
-static std::string local_diffusive_flux_ESV2007_id()
+static std::string
+local_diffusive_flux_ESV2007_id()
 {
   return "eta_DF_ESV2007";
 }
 
 
-static std::string ESV2007_id()
+static std::string
+ESV2007_id()
 {
   return "eta_ESV2007";
 }
 
 
-static std::string ESV2007_alternative_summation_id()
+static std::string
+ESV2007_alternative_summation_id()
 {
   return ESV2007_id() + "_alternative_summation";
 }
@@ -133,7 +138,7 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_difference = difference_.local_function(entity);
-    const auto result = local_operator_.apply2(*local_difference, *local_difference);
+    const auto result           = local_operator_.apply2(*local_difference, *local_difference);
     assert(result.rows() >= 1);
     assert(result.cols() >= 1);
     return result[0][0];
@@ -239,7 +244,7 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_difference = difference_.local_function(entity);
-    auto result = local_operator_.apply2(*local_difference, *local_difference);
+    auto result                 = local_operator_.apply2(*local_difference, *local_difference);
     assert(result.rows() >= 1);
     assert(result.cols() >= 1);
     return result[0][0];
@@ -374,7 +379,7 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_discrete_solution = discrete_solution_.local_function(entity);
-    auto result = local_operator_.apply2(*local_discrete_solution, *local_discrete_solution);
+    auto result                        = local_operator_.apply2(*local_discrete_solution, *local_discrete_solution);
     assert(result.rows() >= 1);
     assert(result.cols() >= 1);
     return result[0][0];
@@ -553,7 +558,8 @@ class ESV2007AlternativeSummation
     : public ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridViewType>
 {
   typedef ESV2007AlternativeSummation<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType,
-                                      GridViewType> ThisType;
+                                      GridViewType>
+      ThisType;
   typedef ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridViewType> BaseType;
 
 public:

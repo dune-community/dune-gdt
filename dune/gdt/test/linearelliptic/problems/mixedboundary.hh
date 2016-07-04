@@ -64,7 +64,7 @@ public:
     return cfg;
   }
 
-  MixedBoundaryProblem(const size_t integration_order = default_integration_order,
+  MixedBoundaryProblem(const size_t integration_order              = default_integration_order,
                        const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
                        const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),

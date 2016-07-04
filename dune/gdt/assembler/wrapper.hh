@@ -155,7 +155,8 @@ class LocalVolumeTwoFormWrapper
 {
   typedef DSC::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>> LocalAssemblerProvider;
   typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
-                                                   MatrixType> BaseType;
+                                                   MatrixType>
+      BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -238,7 +239,8 @@ class LocalCouplingTwoFormWrapper
   typedef DSC::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>> LocalAssemblerProvider;
   typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
-                                                     MatrixType> BaseType;
+                                                     MatrixType>
+      BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -321,7 +323,8 @@ class LocalBoundaryTwoFormWrapper
   typedef DSC::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>> LocalAssemblerProvider;
   typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
-                                                     MatrixType> BaseType;
+                                                     MatrixType>
+      BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -398,8 +401,8 @@ class LocalVolumeFunctionalWrapper
 {
   typedef DSC::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>> LocalAssemblerProvider;
   typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                      LocalVolumeFunctionalAssembler<LocalFunctionalType>,
-                                                      VectorType> BaseType;
+                                                      LocalVolumeFunctionalAssembler<LocalFunctionalType>, VectorType>
+      BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -475,8 +478,8 @@ class LocalFaceFunctionalWrapper
 {
   typedef DSC::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>> LocalAssemblerProvider;
   typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                    LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
-                                                    VectorType> BaseType;
+                                                    LocalFaceFunctionalAssembler<LocalFaceFunctionalType>, VectorType>
+      BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;

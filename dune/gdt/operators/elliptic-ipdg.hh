@@ -29,7 +29,7 @@ namespace GDT {
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
           class RangeSpace, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
-          class Matrix                                                 = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class Matrix   = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticIpdgMatrixOperator
@@ -39,7 +39,8 @@ class EllipticIpdgMatrixOperator
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalVolumeOperatorType;
   typedef LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType,
-                                                                           method>> LocalCouplingOperatorType;
+                                                                           method>>
+      LocalCouplingOperatorType;
   typedef LocalBoundaryIntegralOperator<LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType,
                                                                                  DiffusionTensorType, method>>
       LocalBoundaryOperatorType;

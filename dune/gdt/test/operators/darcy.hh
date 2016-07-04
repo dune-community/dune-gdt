@@ -72,7 +72,7 @@ struct DarcyOperatorTest : public ::testing::Test
         desired_output(
             "x", std::vector<std::string>({"x[1]", "x[0]"}), 1, "desired output", {{"0.0", "1.0"}, {"1.0", "0.0"}});
 
-    const RangeFieldType l2_error          = make_l2_operator(range_space.grid_view(), 2)->induced_norm(desired_output - range);
+    const RangeFieldType l2_error = make_l2_operator(range_space.grid_view(), 2)->induced_norm(desired_output - range);
     const RangeFieldType l2_error_expected = expected_result_("l2", desired_output, range_space.grid_view());
     EXPECT_LE(l2_error, l2_error_expected);
 

@@ -19,7 +19,8 @@ using namespace Dune::GDT::Test;
 typedef testing::Types<
     /*std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
                       ,*/ std::
-        pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>> SpaceTypes;
+        pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>>
+    SpaceTypes;
 
 TYPED_TEST_CASE(DarcyOperatorTest, SpaceTypes);
 TYPED_TEST(DarcyOperatorTest, produces_correct_results)

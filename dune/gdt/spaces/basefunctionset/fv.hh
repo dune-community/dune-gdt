@@ -52,7 +52,8 @@ class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
   typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1,
                                                                 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, 1, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+      BaseType;
 
 public:
   typedef internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> Traits;
@@ -120,7 +121,8 @@ class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
   typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
                                                                 rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> BaseType;
+                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      BaseType;
 
 public:
   typedef internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> Traits;

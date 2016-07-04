@@ -84,7 +84,7 @@ public:
   {
     const auto& grid_view = backend_.gridView();
     const auto it_end     = grid_view.template end<0>();
-    std::size_t count = 0;
+    std::size_t count     = 0;
     for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       lfs_.bind(entity);
@@ -128,7 +128,7 @@ public:
       ret.resize(numLocalDofs);
     // compute
     for (size_t ii = 0; ii < numLocalDofs; ++ii)
-      ret[ii] = mapToGlobal(entity, ii);
+      ret[ii]      = mapToGlobal(entity, ii);
   } // ... globalIndices(...)
 
   using InterfaceType::globalIndices;

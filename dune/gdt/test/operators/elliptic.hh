@@ -106,7 +106,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        GridViewType,
                                        ScalarFunctionType,
                                        ScalarFunctionType,
-                                       double> OnlyFactorType;
+                                       double>
+        OnlyFactorType;
     OnlyFactorType DUNE_UNUSED(factor_only)(diffusion_factor, grid_view, range, source);
     OnlyFactorType DUNE_UNUSED(factor_only_with_over_integrate)(1, diffusion_factor, grid_view, range, source);
 
@@ -115,7 +116,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        GridViewType,
                                        ExpressionFunctionType,
                                        ExpressionFunctionType,
-                                       double> OnlyTensorType;
+                                       double>
+        OnlyTensorType;
     OnlyTensorType DUNE_UNUSED(tensor_only)(diffusion_tensor, grid_view, range, source);
     OnlyTensorType DUNE_UNUSED(tensor_only_with_over_integrate)(1, diffusion_tensor, grid_view, range, source);
 
@@ -124,7 +126,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        GridViewType,
                                        ExpressionFunctionType,
                                        ExpressionFunctionType,
-                                       double> BothType;
+                                       double>
+        BothType;
     BothType DUNE_UNUSED(both)(diffusion_factor, diffusion_tensor, grid_view, range, source);
     BothType DUNE_UNUSED(both_with_over_integrate)(1, diffusion_factor, diffusion_tensor, grid_view, range, source);
   } // ... constructible_by_ctor(...)
@@ -156,7 +159,7 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
     auto product = make_elliptic_localizable_product(
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     const auto result = product->apply2();
-    auto product_tbb = make_elliptic_localizable_product(
+    auto product_tbb  = make_elliptic_localizable_product(
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
@@ -352,25 +355,24 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_4)(diffusion_factor, diffusion_tensor, space);
+                           double>
+        DUNE_UNUSED(both_no_matrix_4)(diffusion_factor, diffusion_tensor, space);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_5)(diffusion_factor, diffusion_tensor, space, grid_view);
+                           double>
+        DUNE_UNUSED(both_no_matrix_5)(diffusion_factor, diffusion_tensor, space, grid_view);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_6)(diffusion_factor,
-                                                                 diffusion_tensor,
-                                                                 space,
-                                                                 space,
-                                                                 grid_view);
+                           double>
+        DUNE_UNUSED(both_no_matrix_6)(diffusion_factor, diffusion_tensor, space, space, grid_view);
     //     with over_integrate
     //       simplified argument list
     EllipticMatrixOperator<ExpressionFunctionType, TensorFunctionType, SpaceType> DUNE_UNUSED(both_no_matrix_7)(
@@ -386,30 +388,24 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_10)(1, diffusion_factor, diffusion_tensor, space);
+                           double>
+        DUNE_UNUSED(both_no_matrix_10)(1, diffusion_factor, diffusion_tensor, space);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_11)(1,
-                                                                  diffusion_factor,
-                                                                  diffusion_tensor,
-                                                                  space,
-                                                                  grid_view);
+                           double>
+        DUNE_UNUSED(both_no_matrix_11)(1, diffusion_factor, diffusion_tensor, space, grid_view);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_no_matrix_12)(1,
-                                                                  diffusion_factor,
-                                                                  diffusion_tensor,
-                                                                  space,
-                                                                  space,
-                                                                  grid_view);
+                           double>
+        DUNE_UNUSED(both_no_matrix_12)(1, diffusion_factor, diffusion_tensor, space, space, grid_view);
     //   with matrix
     //     without over_integrate
     //       simplified argument list
@@ -426,30 +422,24 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_matrix_4)(diffusion_factor, diffusion_tensor, matrix, space);
+                           double>
+        DUNE_UNUSED(both_matrix_4)(diffusion_factor, diffusion_tensor, matrix, space);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_matrix_5)(diffusion_factor,
-                                                              diffusion_tensor,
-                                                              matrix,
-                                                              space,
-                                                              grid_view);
+                           double>
+        DUNE_UNUSED(both_matrix_5)(diffusion_factor, diffusion_tensor, matrix, space, grid_view);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_matrix_6)(diffusion_factor,
-                                                              diffusion_tensor,
-                                                              matrix,
-                                                              space,
-                                                              space,
-                                                              grid_view);
+                           double>
+        DUNE_UNUSED(both_matrix_6)(diffusion_factor, diffusion_tensor, matrix, space, space, grid_view);
     //     with over_integrate
     //       simplified argument list
     EllipticMatrixOperator<ExpressionFunctionType, TensorFunctionType, SpaceType> DUNE_UNUSED(both_matrix_7)(
@@ -465,19 +455,16 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_matrix_10)(1, diffusion_factor, diffusion_tensor, matrix, space);
+                           double>
+        DUNE_UNUSED(both_matrix_10)(1, diffusion_factor, diffusion_tensor, matrix, space);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
                            MatrixType,
                            GridViewType,
                            SpaceType,
-                           double> DUNE_UNUSED(both_matrix_11)(1,
-                                                               diffusion_factor,
-                                                               diffusion_tensor,
-                                                               matrix,
-                                                               space,
-                                                               grid_view);
+                           double>
+        DUNE_UNUSED(both_matrix_11)(1, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
     EllipticMatrixOperator<ExpressionFunctionType,
                            TensorFunctionType,
                            SpaceType,
@@ -493,7 +480,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& space            = this->space_;
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_view        = this->space_.grid_view();
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
     // both diffusion factor and tensor
@@ -564,7 +551,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     project(space.grid_view(), function, discrete_function, 2);
     // compute product
     const auto result = op->apply2(discrete_function, discrete_function);
-    auto op_tbb = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
+    auto op_tbb       = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     op_tbb->assemble(true);
     const auto result_tbb = op_tbb->apply2(discrete_function, discrete_function);
     EXPECT_DOUBLE_EQ(result_tbb, result);
@@ -655,13 +642,13 @@ struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public Oper
     const auto& diffusion_tensor = this->tensor_function_;
     const auto& grid_view        = this->space_.grid_view();
 
-    auto DUNE_UNUSED(only_factor) = make_elliptic_operator(grid_view, diffusion_factor);
+    auto DUNE_UNUSED(only_factor)        = make_elliptic_operator(grid_view, diffusion_factor);
     auto DUNE_UNUSED(only_factor_w_over) = make_elliptic_operator(grid_view, diffusion_factor, 1);
 
-    auto DUNE_UNUSED(only_tensor) = make_elliptic_operator(grid_view, diffusion_tensor);
+    auto DUNE_UNUSED(only_tensor)        = make_elliptic_operator(grid_view, diffusion_tensor);
     auto DUNE_UNUSED(only_tensor_w_over) = make_elliptic_operator(grid_view, diffusion_tensor, 1);
 
-    auto DUNE_UNUSED(both) = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
+    auto DUNE_UNUSED(both)        = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
     auto DUNE_UNUSED(both_w_over) = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor, 1);
   } // ... constructible_by_factory()
 

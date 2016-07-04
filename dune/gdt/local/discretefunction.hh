@@ -44,7 +44,8 @@ class ConstLocalDiscreteFunction
                 "Types do not match!");
   typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                         SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                        SpaceImp::dimRangeCols> BaseType;
+                                        SpaceImp::dimRangeCols>
+      BaseType;
   typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
@@ -121,7 +122,7 @@ public:
       }
     } else {
       for (size_t ii = 0; ii < localVector_->size(); ++ii)
-        ret[ii] = localVector_->get(ii);
+        ret[ii]      = localVector_->get(ii);
     }
   } // ... evaluate(...)
 

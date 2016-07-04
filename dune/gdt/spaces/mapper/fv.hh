@@ -108,7 +108,7 @@ public:
       ret.resize(dimRange);
     const size_t base = dimRange * backend_.index(entity);
     for (size_t ii = 0; ii < dimRange; ++ii)
-      ret[ii] = base + ii;
+      ret[ii]      = base + ii;
   } // ... globalIndices(...)
 
   using InterfaceType::globalIndices;

@@ -69,7 +69,8 @@ public:
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
-                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
@@ -84,7 +85,8 @@ class DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>
                               GridPartImp::dimension, r, 1>
 {
   typedef CgSpaceInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
-                           GridPartImp::dimension, r, 1> BaseType;
+                           GridPartImp::dimension, r, 1>
+      BaseType;
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> ThisType;
 
 public:
@@ -120,7 +122,7 @@ public:
   {
   }
 
-  DuneFemCgSpaceWrapper(const ThisType& other) = default;
+  DuneFemCgSpaceWrapper(const ThisType& other)      = default;
   explicit DuneFemCgSpaceWrapper(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;

@@ -116,7 +116,8 @@ public:
   typedef typename Helper<single_factor_given, single_tensor_given>::TensorType DiffusionTensorType;
   typedef LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType> derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
-                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>> LocalfunctionTupleType;
+                     std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>>
+      LocalfunctionTupleType;
 }; // class LocalEllipticIntegrandTraits
 
 
@@ -133,7 +134,8 @@ class LocalEllipticIntegrand
                                            2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>,
-                                        2> BaseType;
+                                        2>
+      BaseType;
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> ThisType;
 
 public:
@@ -178,7 +180,7 @@ public:
   }
 
   LocalEllipticIntegrand(const ThisType& other) = default;
-  LocalEllipticIntegrand(ThisType&& source) = default;
+  LocalEllipticIntegrand(ThisType&& source)     = default;
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{

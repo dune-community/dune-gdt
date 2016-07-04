@@ -56,8 +56,8 @@ private:
                                                                                        DiffusionTensorType>
       LocalDiffusiveFluxESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007<SpaceType, VectorType, FunctionType,
-                                                                     DiffusionFactorType,
-                                                                     DiffusionTensorType> ESV2007Estimator;
+                                                                     DiffusionFactorType, DiffusionTensorType>
+      ESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
       ESV2007AlternativeSummation<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
           ESV2007AlternativeSummationEstimator;
@@ -164,7 +164,8 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
                                             polOrder,
                                             typename TestCaseType::ProblemType::RangeFieldType,
                                             1,
-                                            LocalEllipticIpdgIntegrands::Method::swipdg> Discretizer;
+                                            LocalEllipticIpdgIntegrands::Method::swipdg>
+        Discretizer;
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));

@@ -33,7 +33,7 @@ namespace GDT {
 template <class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, // <- may be void
           class Space, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
-          class Vector                                            = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
+          class Vector   = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
 class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
@@ -111,7 +111,8 @@ public:
 
 private:
   const LocalFaceIntegralFunctional<LocalEllipticIpdgIntegrands::BoundaryRHS<DirichletType, DiffusionFactorType,
-                                                                             DiffusionTensorType>> local_functional_;
+                                                                             DiffusionTensorType>>
+      local_functional_;
 }; // class EllipticIpdgDirichletVectorFunctional
 
 

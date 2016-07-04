@@ -143,7 +143,7 @@ public:
                               const std::string filename_prefix, SolutionType& sol)
   {
     TimeFieldType dt = initial_dt;
-    TimeFieldType t = current_time();
+    TimeFieldType t  = current_time();
     assert(DSC::FloatCmp::ge(t_end - t, 0.0));
     size_t time_step_counter = 0;
 

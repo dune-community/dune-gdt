@@ -544,7 +544,8 @@ class EllipticOperator
                                                                 Field>>
 {
   typedef OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
-                                                             Field>> BaseType;
+                                                             Field>>
+      BaseType;
   typedef LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType> LocalIntegrandType;
 
 public:

@@ -110,7 +110,7 @@ public:
   }
 
   LocalVolumeIntegralOperator(const ThisType& other) = default;
-  LocalVolumeIntegralOperator(ThisType&& source) = default;
+  LocalVolumeIntegralOperator(ThisType&& source)     = default;
 
   using BaseType::apply2;
 
@@ -123,7 +123,7 @@ public:
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, ansatz_base, test_base) + over_integrate_;
-    const auto& quadrature       = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
     // prepare storage
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
@@ -142,7 +142,7 @@ public:
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         const auto& evaluation_result_row = evaluation_result[ii];
-        auto& ret_row = ret[ii];
+        auto& ret_row                     = ret[ii];
         for (size_t jj = 0; jj < cols; ++jj)
           ret_row[jj] += evaluation_result_row[jj] * integration_factor * quadrature_weight;
       } // compute integral

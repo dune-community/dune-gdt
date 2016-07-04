@@ -213,7 +213,7 @@ public:
     return jacobian(u);
   }
 
-  virtual FluxRangeType evaluate(const RangeType& u) const = 0;
+  virtual FluxRangeType evaluate(const RangeType& u) const         = 0;
   virtual FluxJacobianRangeType jacobian(const RangeType& u) const = 0;
 };
 

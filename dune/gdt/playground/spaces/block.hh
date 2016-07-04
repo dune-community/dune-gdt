@@ -72,7 +72,8 @@ class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceIm
                                          LocalSpaceImp::dimRange, LocalSpaceImp::dimRangeCols>
 {
   typedef SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain, LocalSpaceImp::dimRange,
-                         LocalSpaceImp::dimRangeCols> BaseType;
+                         LocalSpaceImp::dimRangeCols>
+      BaseType;
   typedef BlockSpace<LocalSpaceImp> ThisType;
 
 public:

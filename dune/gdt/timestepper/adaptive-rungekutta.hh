@@ -209,7 +209,7 @@ public:
  * \tparam method Adaptive Runge-Kutta method that is used (default is AdaptiveRungeKuttaMethods::dormand_prince)
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
-          AdaptiveRungeKuttaMethods method                                 = AdaptiveRungeKuttaMethods::dormand_prince>
+          AdaptiveRungeKuttaMethods method = AdaptiveRungeKuttaMethods::dormand_prince>
 class AdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
@@ -301,7 +301,7 @@ public:
       size_t first_stage_to_compute = 0;
       if (last_stage_of_previous_step_) {
         u_intermediate_stages_[0].vector() = last_stage_of_previous_step_->vector();
-        first_stage_to_compute = 1;
+        first_stage_to_compute             = 1;
       }
 
       for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii) {
@@ -340,7 +340,7 @@ public:
     } // while (mixed_error > tol_)
 
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_ = DSC::make_unique<DiscreteFunctionType>(u_n);
+      last_stage_of_previous_step_         = DSC::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->vector() = u_intermediate_stages_[num_stages_ - 1].vector();
 
     t += actual_dt;

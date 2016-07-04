@@ -44,7 +44,8 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
                                             polOrder,
                                             typename TestCaseType::ProblemType::RangeFieldType,
                                             1,
-                                            LocalEllipticIpdgIntegrands::Method::swipdg> Discretizer;
+                                            LocalEllipticIpdgIntegrands::Method::swipdg>
+        Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));

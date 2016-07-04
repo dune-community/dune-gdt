@@ -66,7 +66,8 @@ private:
 
 
 template <class V>
-std::ostream& operator<<(std::ostream& out, const ConstLocalDoFVector<V>& vector)
+std::ostream&
+operator<<(std::ostream& out, const ConstLocalDoFVector<V>& vector)
 {
   out << "[";
   const size_t sz = vector.size();

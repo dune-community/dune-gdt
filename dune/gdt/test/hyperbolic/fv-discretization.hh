@@ -43,7 +43,8 @@ struct hyperbolic_FV_discretization_godunov_euler : public ::testing::Test
                                                TestCaseType::dimRangeCols,
                                                false,
                                                false,
-                                               false> Discretizer;
+                                               false>
+        Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
@@ -70,7 +71,8 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK : public ::testing::Test
                                                TestCaseType::dimRangeCols,
                                                false,
                                                true,
-                                               false> Discretizer;
+                                               false>
+        Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
@@ -97,7 +99,8 @@ struct hyperbolic_FV_discretization_laxfriedrichs_euler : public ::testing::Test
                                                TestCaseType::dimRangeCols,
                                                true,
                                                false,
-                                               false> Discretizer;
+                                               false>
+        Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
@@ -124,7 +127,8 @@ struct hyperbolic_FV_discretization_godunovwithreconstruction_euler : public ::t
                                                TestCaseType::dimRangeCols,
                                                false,
                                                false,
-                                               true> Discretizer;
+                                               true>
+        Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()

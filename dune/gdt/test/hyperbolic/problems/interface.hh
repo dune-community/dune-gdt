@@ -46,14 +46,17 @@ public:
   static const size_t dimRangeCols = rC;
 
   typedef Dune::GDT::AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                       dimRangeCols> FluxType;
+                                                       dimRangeCols>
+      FluxType;
   typedef Dune::GDT::RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                dimRangeCols> RHSType;
+                                                dimRangeCols>
+      RHSType;
   typedef Dune::Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                    dimRangeCols> InitialValueType;
-  typedef
-      typename Dune::Stuff::Functions::TimeDependentExpression<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                               dimRange, dimRangeCols, double> BoundaryValueType;
+                                                    dimRangeCols>
+      InitialValueType;
+  typedef typename Dune::Stuff::Functions::TimeDependentExpression<EntityType, DomainFieldType, dimDomain,
+                                                                   RangeFieldType, dimRange, dimRangeCols, double>
+      BoundaryValueType;
   typedef Dune::Stuff::Common::Configuration ConfigType;
   typedef DS::TimeDependentFunctionInterface<
       typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>

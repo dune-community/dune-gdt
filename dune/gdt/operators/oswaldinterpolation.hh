@@ -101,7 +101,7 @@ private:
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity        = *entity_it;
       const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
-      const auto basis = source.space().base_function_set(entity);
+      const auto basis          = source.space().base_function_set(entity);
       if (basis.size() != num_vertices)
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
 
@@ -136,7 +136,7 @@ private:
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
-        const size_t global_DoF_index                           = source.space().mapper().mapToGlobal(entity, local_DoF_index);
+        const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_index);
         global_DoF_id_to_global_vertex_id_map[global_DoF_index] = global_vertex_id;
         global_vertex_id_to_global_DoF_id_map[global_vertex_id].insert(global_DoF_index);
       } // loop over all vertices
@@ -154,9 +154,9 @@ private:
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we
               // loop over all vertices of the entity
               for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-                const auto vertex_ptr       = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+                const auto vertex_ptr = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
                 const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
-                const auto vertex = vertex_ptr->geometry().center();
+                const auto vertex           = vertex_ptr->geometry().center();
                 if (Stuff::Common::FloatCmp::eq(global_intersection_corner, vertex))
                   boundary_vertices.insert(global_vertex_id);
               } // loop over all vertices of the entity

@@ -94,7 +94,7 @@ private:
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+  static const bool simplicial_  = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                                    == GenericGeometry::SimplexTopology<dimDomain>::type::id);
   static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                               == GenericGeometry::CubeTopology<dimDomain>::type::id);
@@ -106,7 +106,8 @@ public:
   typedef DunePdelabDgMapperWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                             rangeDim, rangeDimCols> BaseFunctionSetType;
+                                             rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
   static const bool needs_grid_view                       = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
@@ -155,7 +156,8 @@ class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1
 {
   typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
   typedef DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridViewImp::dimension, 1, 1> BaseType;
+                           GridViewImp::dimension, 1, 1>
+      BaseType;
 
 public:
   using typename BaseType::Traits;
@@ -271,11 +273,13 @@ class DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldIm
   typedef
       typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
                                                                                          RangeFieldImp, rangeDim, 1>,
-                                         GridViewImp::dimension, rangeDim, 1> BaseType;
+                                         GridViewImp::dimension, rangeDim, 1>
+          BaseType;
 
 public:
-  typedef typename internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp,
-                                                                   rangeDim, 1> Traits;
+  typedef
+      typename internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
+          Traits;
   using typename BaseType::GridViewType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;

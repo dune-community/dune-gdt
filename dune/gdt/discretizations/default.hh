@@ -62,7 +62,8 @@ class InStationaryDefaultDiscretizationTraits
   // no checks of the arguments needed, those are done in the interfaces
 public:
   typedef InStationaryDefaultDiscretization<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
-                                            use_linear_reconstruction> derived_type;
+                                            use_linear_reconstruction>
+      derived_type;
   typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp FVSpaceType;
   typedef typename FVSpaceType::RangeFieldType RangeFieldType;
@@ -257,7 +258,8 @@ class InStationaryDefaultDiscretization
                                                                                            use_linear_reconstruction>>
       BaseType;
   typedef InStationaryDefaultDiscretization<TestCaseImp, FVSpaceImp, use_lax_friedrichs_flux, use_adaptive_timestepper,
-                                            use_linear_reconstruction> ThisType;
+                                            use_linear_reconstruction>
+      ThisType;
 
 public:
   typedef TestCaseImp TestCaseType;

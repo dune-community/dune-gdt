@@ -51,8 +51,9 @@ public:
   typedef typename DS::Functions::Expression<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
   typedef typename DS::Functions::FunctionCheckerboard<RHSExpressionFunctionType, E, D, d, R, r, rC>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R, r,
-                                                                          rC> DefaultRHSType;
+  typedef
+      typename Dune::GDT::CheckerboardBasedRhsEvaluationFluxInterface<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
+          DefaultRHSType;
 
   using typename BaseType::FluxType;
   using typename BaseType::RHSType;
@@ -100,7 +101,7 @@ public:
     flux_config["variable"]   = "u";
     flux_config["expression"] = "[0 0 0]";
     flux_config["order"]      = "0";
-    flux_config["gradient"] = "[0 0 0; 0 0 0; 0 0 0]";
+    flux_config["gradient"]   = "[0 0 0; 0 0 0; 0 0 0]";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"]   = "[0.0 0.0 0.0]";
@@ -108,19 +109,19 @@ public:
     rhs_config["num_elements"] = "[1 1 1]";
     rhs_config["variable"]     = "u";
     rhs_config["values"]       = "[0]";
-    rhs_config["name"] = static_id();
+    rhs_config["name"]         = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
     initial_value_config["type"]       = InitialValueType::static_id();
     initial_value_config["variable"]   = "x";
     initial_value_config["expression"] = "[0 0 0]";
-    initial_value_config["order"] = "0";
+    initial_value_config["order"]      = "0";
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config;
     boundary_value_config["type"]       = BoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = "[0 0 0]";
-    boundary_value_config["order"] = "1";
+    boundary_value_config["order"]      = "1";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -131,7 +132,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;

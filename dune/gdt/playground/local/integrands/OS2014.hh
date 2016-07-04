@@ -62,11 +62,13 @@ class LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits
 
 public:
   typedef LocalDiffusiveFluxEstimateStarOS2014Integrand<DiffusionFactorType, DiffusionFactorHatType,
-                                                        DiffusionTensorType, DiffusiveFluxType> derived_type;
+                                                        DiffusionTensorType, DiffusiveFluxType>
+      derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionFactorHatType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>,
-                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
+                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>>
+      LocalfunctionTupleType;
   typedef typename DiffusionFactorType::EntityType EntityType;
   typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = DiffusionFactorType::dimDomain;
@@ -90,11 +92,13 @@ class LocalDiffusiveFluxEstimateStarOS2014Integrand
                                                                                                 DiffusionFactorHatType,
                                                                                                 DiffusionTensorType,
                                                                                                 DiffusiveFluxType>,
-                                        2> BaseType;
+                                        2>
+      BaseType;
 
 public:
   typedef internal::LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType, DiffusionFactorHatType,
-                                                                        DiffusionTensorType, DiffusiveFluxType> Traits;
+                                                                        DiffusionTensorType, DiffusiveFluxType>
+      Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
@@ -128,7 +132,7 @@ public:
     const auto local_diffusion_factor     = std::get<0>(localFuncs);
     const auto local_diffusion_factor_hat = std::get<1>(localFuncs);
     const auto local_diffusion_tensor     = std::get<2>(localFuncs);
-    const auto local_diffusive_flux = std::get<3>(localFuncs);
+    const auto local_diffusive_flux       = std::get<3>(localFuncs);
     return order(*local_diffusion_factor,
                  *local_diffusion_factor_hat,
                  *local_diffusion_tensor,
@@ -169,7 +173,7 @@ public:
     const auto local_diffusion_factor     = std::get<0>(localFuncs);
     const auto local_diffusion_factor_hat = std::get<1>(localFuncs);
     const auto local_diffusion_tensor     = std::get<2>(localFuncs);
-    const auto local_diffusive_flux = std::get<3>(localFuncs);
+    const auto local_diffusive_flux       = std::get<3>(localFuncs);
     evaluate(*local_diffusion_factor,
              *local_diffusion_factor_hat,
              *local_diffusion_tensor,

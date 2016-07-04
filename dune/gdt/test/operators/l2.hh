@@ -53,7 +53,7 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
     const auto& source    = this->scalar_function_;
     const auto& range     = this->scalar_function_;
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_l2_localizable_product(grid_view, range, source);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_l2_localizable_product(grid_view, range, source);
     auto DUNE_UNUSED(with_over_integrate) = make_l2_localizable_product(grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
@@ -232,7 +232,7 @@ struct L2OperatorTest : public WeightedL2ProductBase<SpaceType>, public Operator
   {
     const auto& grid_view = this->space_.grid_view();
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_l2_operator(grid_view);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_l2_operator(grid_view);
     auto DUNE_UNUSED(with_over_integrate) = make_l2_operator(grid_view, 1);
   } // ... constructible_by_factory()
 

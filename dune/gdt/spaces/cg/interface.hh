@@ -92,7 +92,7 @@ public:
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
     std::vector<RangeType> tmp_basis_values(basis.size(), RangeType(0));
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
-    const auto num_vertices = reference_element.size(dimDomain);
+    const auto num_vertices       = reference_element.size(dimDomain);
     assert(num_vertices >= 0);
     assert(boost::numeric_cast<size_t>(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
@@ -201,7 +201,7 @@ public:
       // calculate by using lagrange grid {x = \sum_{j=0}^d \lambda_j a_j | \sum_j lambda_j = 1}, where a_j are the
       // vertices of the entity and \lambda_j \in {\frac{m}{polOrder} | m = 0, ... , polOrder}
       std::vector<double> possible_coefficients(polOrder < 1 ? 0 : polOrder - 1);
-      for (int m = 0; m < polOrder; ++m)
+      for (int m                 = 0; m < polOrder; ++m)
         possible_coefficients[m] = m / polOrder;
       std::set<std::vector<double>> possible_coefficient_vectors;
       possible_convex_combination_coefficients(

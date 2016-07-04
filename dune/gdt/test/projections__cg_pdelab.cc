@@ -20,7 +20,8 @@ typedef testing::Types<SPACES_CG_PDELAB(1)
                            ,
                        SPACES_CG_PDELAB_ALUGRID(1)
 #endif
-                       > SpaceTypes;
+                       >
+    SpaceTypes;
 
 TYPED_TEST_CASE(ProjectionTest, SpaceTypes);
 TYPED_TEST(ProjectionTest, produces_correct_results)

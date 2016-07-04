@@ -45,7 +45,7 @@ struct LagrangeProlongationLocalizableOperatorTest
     const auto& source = this->coarse_discrete_function_;
     auto& range        = this->fine_discrete_function_;
 
-    auto DUNE_UNUSED(w_gv) = make_lagrange_prolongation_localizable_operator(grid_view, source, range);
+    auto DUNE_UNUSED(w_gv)  = make_lagrange_prolongation_localizable_operator(grid_view, source, range);
     auto DUNE_UNUSED(wo_gv) = make_lagrange_prolongation_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 };

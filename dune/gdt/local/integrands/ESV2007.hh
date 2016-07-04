@@ -59,7 +59,8 @@ public:
       derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionFactorType::LocalfunctionType>,
                      std::shared_ptr<typename DiffusionTensorType::LocalfunctionType>,
-                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
+                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>>
+      LocalfunctionTupleType;
   typedef typename DiffusionFactorType::EntityType EntityType;
   typedef typename DiffusionFactorType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = DiffusionFactorType::dimDomain;
@@ -83,7 +84,8 @@ class LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveF
 public:
   typedef LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionType, DiffusiveFluxType> derived_type;
   typedef std::tuple<std::shared_ptr<typename DiffusionType::LocalfunctionType>,
-                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>> LocalfunctionTupleType;
+                     std::shared_ptr<typename DiffusiveFluxType::LocalfunctionType>>
+      LocalfunctionTupleType;
   typedef typename DiffusionType::EntityType EntityType;
   typedef typename DiffusionType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = DiffusionType::dimDomain;
@@ -102,7 +104,8 @@ class LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionType, DiffusiveFluxTyp
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType,
                                                                                                    DiffusiveFluxType>,
-                                        2> BaseType;
+                                        2>
+      BaseType;
 
 public:
   typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType> Traits;
@@ -187,12 +190,12 @@ public:
     // evaluate test gradient
     const size_t rows         = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
-    auto left_sum = test_gradients[0];
+    auto left_sum             = test_gradients[0];
     assert(test_gradients.size() == rows);
     // evaluate ansatz gradient
     const size_t cols           = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
-    auto right_sum = ansatz_gradients[0];
+    auto right_sum              = ansatz_gradients[0];
     assert(ansatz_gradients.size() == rows);
     // compute
     assert(ret.rows() >= rows);
@@ -230,11 +233,13 @@ class LocalDiffusiveFluxEstimateESV2007Integrand
   typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
                                                                                                    DiffusiveFluxType,
                                                                                                    DiffusionTensorType>,
-                                        2> BaseType;
+                                        2>
+      BaseType;
 
 public:
   typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType, DiffusiveFluxType,
-                                                                     DiffusionTensorType> Traits;
+                                                                     DiffusionTensorType>
+      Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
@@ -268,7 +273,7 @@ public:
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
-    const auto local_diffusive_flux = std::get<2>(localFuncs);
+    const auto local_diffusive_flux   = std::get<2>(localFuncs);
     return order(*local_diffusion_factor, *local_diffusion_tensor, *local_diffusive_flux, testBase, ansatzBase);
   } // ... order(...)
 
@@ -281,7 +286,7 @@ public:
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
-    const auto local_diffusive_flux = std::get<2>(localFuncs);
+    const auto local_diffusive_flux   = std::get<2>(localFuncs);
     evaluate(*local_diffusion_factor,
              *local_diffusion_tensor,
              *local_diffusive_flux,

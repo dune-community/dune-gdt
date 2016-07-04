@@ -30,7 +30,8 @@ class FVDiscretizer
 {
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
-                           RangeFieldType, dimRange, dimRangeCols> ProblemType;
+                           RangeFieldType, dimRange, dimRangeCols>
+      ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
   static const constexpr FluxTimeStepperCombinations flux_and_timestepper_type =
       use_lax_friedrichs_flux
@@ -38,11 +39,12 @@ public:
           : (use_linear_reconstruction ? FluxTimeStepperCombinations::godunovwithreconstruction_euler
                                        : (use_adaptive_timestepper ? FluxTimeStepperCombinations::godunov_adaptiveRK
                                                                    : FluxTimeStepperCombinations::godunov_euler));
-  typedef
-      typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType> GridViewType;
+  typedef typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType>
+      GridViewType;
   typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef InStationaryDefaultDiscretization<TestCaseType, FVSpaceType, use_lax_friedrichs_flux,
-                                            use_adaptive_timestepper, use_linear_reconstruction> DiscretizationType;
+                                            use_adaptive_timestepper, use_linear_reconstruction>
+      DiscretizationType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error

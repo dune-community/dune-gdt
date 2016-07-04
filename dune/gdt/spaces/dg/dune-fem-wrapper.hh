@@ -70,7 +70,8 @@ public:
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
   typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
-                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols> BaseFunctionSetType;
+                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+      BaseFunctionSetType;
   static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
   static const bool needs_grid_view                       = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
@@ -89,7 +90,8 @@ class DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
 {
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
   typedef DgSpaceInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridPartImp::dimension, 1, 1> BaseType;
+                           GridPartImp::dimension, 1, 1>
+      BaseType;
 
 public:
   using typename BaseType::Traits;

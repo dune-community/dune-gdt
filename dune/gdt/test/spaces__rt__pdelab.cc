@@ -22,7 +22,8 @@ typedef testing::Types<SPACES_RT_PDELAB
                        ,
                        SPACES_RT_PDELAB_ALUGRID
 #endif
-                       > RT_Spaces;
+                       >
+    RT_Spaces;
 
 TYPED_TEST_CASE(RT_Space, RT_Spaces);
 TYPED_TEST(RT_Space, fulfills_interface)

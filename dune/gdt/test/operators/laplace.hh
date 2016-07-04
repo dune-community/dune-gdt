@@ -53,7 +53,7 @@ struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, pu
     const auto& source    = this->scalar_function_;
     const auto& range     = this->scalar_function_;
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_laplace_localizable_product(grid_view, range, source);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_laplace_localizable_product(grid_view, range, source);
     auto DUNE_UNUSED(with_over_integrate) = make_laplace_localizable_product(grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
@@ -233,7 +233,7 @@ struct LaplaceOperatorTest : public EllipticProductBase<SpaceType>, public Opera
   {
     const auto& grid_view = this->space_.grid_view();
 
-    auto DUNE_UNUSED(wo_over_integrate) = make_laplace_operator(grid_view);
+    auto DUNE_UNUSED(wo_over_integrate)   = make_laplace_operator(grid_view);
     auto DUNE_UNUSED(with_over_integrate) = make_laplace_operator(grid_view, 1);
   } // ... constructible_by_factory()
 

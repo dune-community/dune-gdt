@@ -38,14 +38,15 @@ namespace LinearElliptic {
  * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
-          ChooseSpaceBackend space_backend               = default_cg_backend,
+          ChooseSpaceBackend space_backend    = default_cg_backend,
           Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
           class RangeFieldType = double, size_t dimRange = 1>
 class CGDiscretizer
 {
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
-                           RangeFieldType, dimRange> ProblemType;
+                           RangeFieldType, dimRange>
+      ProblemType;
   typedef CgSpaceProvider<GridType, layer, space_backend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
   typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::MatrixType MatrixType;

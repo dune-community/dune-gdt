@@ -173,7 +173,8 @@ class ShocktubeSolution
           typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
 {
   typedef typename DS::TimeDependentFunctionInterface<
-      typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double> BaseType;
+      typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+      BaseType;
   using typename BaseType::TimeIndependentFunctionType;
   typedef ShocktubeSolutionAtSpecificTime<EntityType, DomainFieldType, RangeFieldType> SolutionAtSpecificTimeType;
 
@@ -277,7 +278,7 @@ public:
     rhs_config["num_elements"] = "[1]";
     rhs_config["variable"]     = "u";
     rhs_config["values.0"]     = "[0 0 0]";
-    rhs_config["name"] = static_id();
+    rhs_config["name"]         = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
     initial_value_config["lower_left"]   = "[0.0]";
@@ -286,13 +287,13 @@ public:
     initial_value_config["variable"]     = "x";
     initial_value_config["values.0"]     = "[1 0 2.5]";
     initial_value_config["values.1"]     = "[0.125 0 0.25]";
-    initial_value_config["order"] = "0";
+    initial_value_config["order"]        = "0";
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config    = DefaultBoundaryValueType::default_config();
     boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = "[1-x[0]*0.875 0 2.5-x[0]*2.25]";
-    boundary_value_config["order"] = "1";
+    boundary_value_config["order"]      = "1";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -303,7 +304,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;

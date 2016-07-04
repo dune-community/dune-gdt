@@ -95,7 +95,7 @@ public:
     rhs_config["num_elements"] = "[1]";
     rhs_config["variable"]     = "u";
     rhs_config["values.0"]     = "[0 0]";
-    rhs_config["name"] = static_id();
+    rhs_config["name"]         = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
     initial_value_config["lower_left"]   = "[0.0]";
@@ -107,13 +107,13 @@ public:
     initial_value_config["values.2"]     = "[1+((x[0]-4)^2)*((x[0]-6)^2)*exp(2-((x[0]-4)^2)-((x[0]-6)^2)) 0]";
     initial_value_config["values.3"]     = "[1 0]";
     initial_value_config["values.4"]     = "[1 0]";
-    initial_value_config["order"] = "10";
+    initial_value_config["order"]        = "10";
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config    = DefaultBoundaryValueType::default_config();
     boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
     boundary_value_config["variable"]   = "x";
     boundary_value_config["expression"] = "[0 0 0]";
-    boundary_value_config["order"] = "0";
+    boundary_value_config["order"]      = "0";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -124,7 +124,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;

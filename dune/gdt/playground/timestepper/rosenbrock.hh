@@ -169,7 +169,7 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
  * \todo Implement concept of jacobian/time derivative of operator and finish implementation of this method.
  */
 template <class OperatorImp, class DiscreteFunctionImp, class SolverImp, class TimeFieldImp = double,
-          RosenbrockTimeStepperMethods method                                               = RosenbrockTimeStepperMethods::GRK4T>
+          RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::GRK4T>
 class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
@@ -279,7 +279,7 @@ public:
     for (size_t ii = 0; ii < Gamma.rows(); ++ii) {
       if (DSC::FloatCmp::ne(gamma, Gamma_[ii]))
         gamma_ii_equal_for_all_i_ = false;
-      d_[ii] = 0.0;
+      d_[ii]                      = 0.0;
       for (size_t jj = 0; jj <= ii; ++jj)
         d_[ii] += Gamma[ii][jj];
     }

@@ -194,7 +194,8 @@ prolong_lagrange(const GridViewType& grid_view, const ConstDiscreteFunction<SS, 
 }
 
 template <class SS, class SV, class RS, class RV>
-void prolong_lagrange(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range)
+void
+prolong_lagrange(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range)
 {
   make_lagrange_prolongation_operator(range.space().grid_view())->apply(source, range);
 }

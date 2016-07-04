@@ -29,7 +29,7 @@ namespace GDT {
 
 
 template <class TestSpaceImp, class GridViewImp = typename TestSpaceImp::GridViewType,
-          class AnsatzSpaceImp                  = TestSpaceImp>
+          class AnsatzSpaceImp = TestSpaceImp>
 class SystemAssembler : public DSG::Walker<GridViewImp>
 {
   static_assert(GDT::is_space<TestSpaceImp>::value, "TestSpaceImp has to be derived from SpaceInterface!");
@@ -110,7 +110,8 @@ public:
     assert(matrix.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
                                                                LocalVolumeTwoFormAssembler<V>,
-                                                               typename M::derived_type> WrapperType;
+                                                               typename M::derived_type>
+        WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
@@ -124,7 +125,8 @@ public:
     assert(matrix.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
                                                                  LocalCouplingTwoFormAssembler<V>,
-                                                                 typename M::derived_type> WrapperType;
+                                                                 typename M::derived_type>
+        WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
@@ -138,7 +140,8 @@ public:
     assert(matrix.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType,
                                                                  LocalBoundaryTwoFormAssembler<V>,
-                                                                 typename M::derived_type> WrapperType;
+                                                                 typename M::derived_type>
+        WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
   } // ... add(...)
@@ -151,7 +154,8 @@ public:
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
                                                                   LocalVolumeFunctionalAssembler<L>,
-                                                                  typename V::derived_type> WrapperType;
+                                                                  typename V::derived_type>
+        WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 
@@ -163,7 +167,8 @@ public:
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,
                                                                 LocalFaceFunctionalAssembler<L>,
-                                                                typename V::derived_type> WrapperType;
+                                                                typename V::derived_type>
+        WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
   } // ... add(...)
 

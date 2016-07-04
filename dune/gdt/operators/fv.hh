@@ -195,17 +195,20 @@ class AdvectionLaxFriedrichsOperator
 {
 public:
   typedef internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
-                                                         LocalizableFunctionImp> Traits;
+                                                         LocalizableFunctionImp>
+      Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType,
-                                                                      dimDomain> NumericalCouplingFluxType;
+                                                                      dimDomain>
+      NumericalCouplingFluxType;
   typedef typename Dune::GDT::
       LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxType,
                                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType,
-                                                       LocalizableFunctionType, dimDomain> NumericalBoundaryFluxType;
+                                                       LocalizableFunctionType, dimDomain>
+          NumericalBoundaryFluxType;
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueFunctionType& boundary_values, const LocalizableFunctionType& dx,
@@ -230,15 +233,16 @@ public:
                                 NumericalBoundaryFluxType,
                                 typename BoundaryValueFunctionType::ExpressionFunctionType,
                                 SourceType,
-                                RangeType> localizable_operator(analytical_flux_,
-                                                                *current_boundary_values,
-                                                                source,
-                                                                range,
-                                                                dx_,
-                                                                dt_,
-                                                                is_linear_,
-                                                                use_local_,
-                                                                entity_geometries_equal_);
+                                RangeType>
+        localizable_operator(analytical_flux_,
+                             *current_boundary_values,
+                             source,
+                             range,
+                             dx_,
+                             dt_,
+                             is_linear_,
+                             use_local_,
+                             entity_geometries_equal_);
     localizable_operator.apply();
   }
 
@@ -283,11 +287,12 @@ private:
   typedef typename Dune::Stuff::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
-  typedef
-      typename Dune::GDT::LocalGodunovNumericalCouplingFlux<AnalyticalFluxType, dimDomain> NumericalCouplingFluxType;
-  typedef typename Dune::GDT::LocalGodunovNumericalBoundaryFlux<AnalyticalFluxType, typename BoundaryValueFunctionType::
-                                                                                        TimeIndependentFunctionType,
-                                                                dimDomain> NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::LocalGodunovNumericalCouplingFlux<AnalyticalFluxType, dimDomain>
+      NumericalCouplingFluxType;
+  typedef typename Dune::GDT::
+      LocalGodunovNumericalBoundaryFlux<AnalyticalFluxType,
+                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType, dimDomain>
+          NumericalBoundaryFluxType;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
                            const bool is_linear = false, const bool use_linear_reconstruction = false)
@@ -308,7 +313,8 @@ public:
                                               1, // polOrder
                                               RangeFieldType,
                                               dimRange,
-                                              dimRangeCols> DGSpaceType;
+                                              dimRangeCols>
+          DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
       const auto dg_space_      = DSC::make_unique<DGSpaceType>(range.space().grid_view());
       const auto reconstruction = DSC::make_unique<ReconstructedDiscreteFunctionType>(*dg_space_, "reconstructed");
@@ -316,22 +322,17 @@ public:
                                       ReconstructedDiscreteFunctionType,
                                       typename BoundaryValueFunctionType::ExpressionFunctionType,
                                       MatrixType,
-                                      slope_limiter> reconstruction_operator(source,
-                                                                             *reconstruction,
-                                                                             eigenvectors_,
-                                                                             eigenvectors_inverse_,
-                                                                             *current_boundary_values);
+                                      slope_limiter>
+          reconstruction_operator(
+              source, *reconstruction, eigenvectors_, eigenvectors_inverse_, *current_boundary_values);
       reconstruction_operator.apply();
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
                                   typename BoundaryValueFunctionType::ExpressionFunctionType,
                                   ReconstructedDiscreteFunctionType,
-                                  RangeType> localizable_operator(analytical_flux_,
-                                                                  *current_boundary_values,
-                                                                  *reconstruction,
-                                                                  range,
-                                                                  is_linear_);
+                                  RangeType>
+          localizable_operator(analytical_flux_, *current_boundary_values, *reconstruction, range, is_linear_);
       localizable_operator.apply();
     } else {
       AdvectionLocalizableDefault<AnalyticalFluxType,
@@ -339,11 +340,8 @@ public:
                                   NumericalBoundaryFluxType,
                                   typename BoundaryValueFunctionType::ExpressionFunctionType,
                                   SourceType,
-                                  RangeType> localizable_operator(analytical_flux_,
-                                                                  *current_boundary_values,
-                                                                  source,
-                                                                  range,
-                                                                  is_linear_);
+                                  RangeType>
+          localizable_operator(analytical_flux_, *current_boundary_values, source, range, is_linear_);
       localizable_operator.apply();
     }
   }
