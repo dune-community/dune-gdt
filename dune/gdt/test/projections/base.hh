@@ -56,7 +56,7 @@ struct LocalizableProjectionOperatorBase : public internal::ProjectionOperatorBa
         this->space_.grid_view(), this->function_, this->discrete_function_);
   }
 
-  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  void produces_correct_results(const RangeFieldType& tolerance)
   {
     this->discrete_function_.vector() *= 0.0;
     LocalizableProjectionOperatorType projection_operator(
