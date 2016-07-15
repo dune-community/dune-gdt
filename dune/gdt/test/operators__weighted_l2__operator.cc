@@ -29,13 +29,13 @@ TYPED_TEST(WeightedL2OperatorTest, apply_is_callable)
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments(this->dimDomain == 3 ? 2.14e-14 : 1e-15);
+  this->correct_for_constant_arguments(this->dimDomain == 3 ? 2.14e-14 : 3.5531e-15);
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments(this->dimDomain == 3 ? 5.33e-15 : 1.78e-15);
+  this->correct_for_linear_arguments(this->dimDomain == 3 ? 5.33e-15 : 3.553e-15);
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_quadratic_arguments)
 {
-  this->correct_for_quadratic_arguments(1.78e-15);
+  this->correct_for_quadratic_arguments(3.553e-15);
 }
