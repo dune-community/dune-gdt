@@ -34,7 +34,7 @@ TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, constructible_by_factory)
 }
 TYPED_TEST(LagrangeProjectionLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results();
+  this->produces_correct_results(LocalizableProjectionOperator_default_tolerance);
 }
 
 

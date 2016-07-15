@@ -9,7 +9,6 @@
 
 #include "projections/l2-global.hh"
 #include "spaces/cg/pdelab.hh"
-
 using namespace Dune::GDT::Test;
 
 #if HAVE_DUNE_PDELAB
@@ -34,7 +33,10 @@ TYPED_TEST(L2GlobalProjectionOperatorTest, constructible_by_factory)
 }
 TYPED_TEST(L2GlobalProjectionOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results();
+  typedef typename TypeParam::GridViewType::Grid Grid;
+  const auto tolerance =
+      Dune::Stuff::Grid::is_alugrid<Grid>::value ? 3.8e-11 : LocalizableProjectionOperator_default_tolerance;
+  this->produces_correct_results(tolerance);
 }
 
 
