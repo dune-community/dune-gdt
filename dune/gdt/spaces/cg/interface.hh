@@ -165,7 +165,10 @@ public:
         else
           ++failures;
       }
-      assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
+      // asserts valid for polorder 1 only
+      assert(ones == 1);
+      assert(zeros == (basis.size() - 1));
+      assert(failures == 0);
     }
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs_order_1(...)
