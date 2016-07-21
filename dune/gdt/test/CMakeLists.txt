@@ -13,7 +13,6 @@ BEGIN_TESTCASES()
 END_TESTCASES()
 
 foreach (test ${testnames})
-  set_tests_properties(${test} PROPERTIES TIMEOUT 1800)
   add_dune_alugrid_flags(${test})
   TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
   if (${test} MATCHES spaces)
