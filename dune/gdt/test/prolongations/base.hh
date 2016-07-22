@@ -66,7 +66,7 @@ struct ProlongationOperatorsBase
   {
   }
 
-  void prepare(const double tolerance = 1e-15)
+  void prepare(const double tolerance)
   {
     if (prepared_)
       return;
