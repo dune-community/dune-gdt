@@ -35,8 +35,8 @@ TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, constructible_by_factory)
 TYPED_TEST(L2GlobalProjectionLocalizableOperatorTest, produces_correct_results)
 {
   typedef typename TypeParam::GridViewType::Grid Grid;
-  const auto tolerance =
-      Dune::Stuff::Grid::is_alugrid<Grid>::value ? 3.8e-11 : LocalizableProjectionOperator_default_tolerance;
+  const auto tolerance = Dune::Stuff::Grid::is_alugrid<Grid>::value ? LocalizableProjectionOperator_alugrid_tolerance
+                                                                    : LocalizableProjectionOperator_default_tolerance;
   this->produces_correct_results(tolerance);
 }
 
