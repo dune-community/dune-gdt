@@ -23,7 +23,7 @@ struct ProlongationTest : public internal::ProlongationOperatorsBase<SpaceType, 
 
   using BaseType::prepare;
 
-  void produces_correct_results(const double& tolerance = 1e-15)
+  void produces_correct_results(const double& tolerance)
   {
     prepare(tolerance);
 
