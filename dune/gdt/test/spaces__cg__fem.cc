@@ -21,20 +21,20 @@ typedef testing::Types<SPACES_CG_FEM(1)
 #endif
                        > CG_Spaces_Fem;
 
-TYPED_TEST_CASE(CG_Space, CG_Spaces_Fem);
-TYPED_TEST(CG_Space, fulfills_interface)
+TYPED_TEST_CASE(LeafCG_Space, CG_Spaces_Fem);
+TYPED_TEST(LeafCG_Space, fulfills_interface)
 {
   this->fulfills_interface();
 }
-TYPED_TEST(CG_Space, mapper_fulfills_interface)
+TYPED_TEST(LeafCG_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
 }
-TYPED_TEST(CG_Space, basefunctionset_fulfills_interface)
+TYPED_TEST(LeafCG_Space, basefunctionset_fulfills_interface)
 {
   this->basefunctionset_fulfills_interface();
 }
-TYPED_TEST(CG_Space, check_for_correct_copy)
+TYPED_TEST(LeafCG_Space, check_for_correct_copy)
 {
   this->check_for_correct_copy();
 }
@@ -46,12 +46,12 @@ typedef testing::Types<SPACES_CG_FEM(1)
 #endif
                        > P1Q1_CG_Spaces_Fem;
 
-TYPED_TEST_CASE(P1Q1_CG_Space, P1Q1_CG_Spaces_Fem);
-TYPED_TEST(P1Q1_CG_Space, fulfills_continuous_interface)
+TYPED_TEST_CASE(LeafP1Q1_CG_Space, P1Q1_CG_Spaces_Fem);
+TYPED_TEST(LeafP1Q1_CG_Space, fulfills_continuous_interface)
 {
   this->fulfills_continuous_interface();
 }
-TYPED_TEST(P1Q1_CG_Space, maps_correctly)
+TYPED_TEST(LeafP1Q1_CG_Space, maps_correctly)
 {
   this->maps_correctly();
 }

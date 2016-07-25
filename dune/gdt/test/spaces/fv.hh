@@ -12,7 +12,7 @@
 
 
 template <class SpaceType>
-class FV_Space : public SpaceBase<SpaceType>
+class FV_Space : public LeafSpaceBase<SpaceType>
 {
 };
 

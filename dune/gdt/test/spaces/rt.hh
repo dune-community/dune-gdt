@@ -18,7 +18,7 @@
 
 
 template <class SpaceType>
-class RT_Space : public SpaceBase<SpaceType>
+class RT_Space : public LeafSpaceBase<SpaceType>
 {
   template <class T, size_t d, size_t r, size_t rC>
   void matches_signature(const Dune::GDT::RtSpaceInterface<T, d, r, rC>& /*space*/)

@@ -35,32 +35,48 @@
 
 #define SPACES_CG_PDELAB_LEVEL(pp)                                                                                     \
   SPACE_CG_PDELAB_SGRID_LEVEL(1, 1, pp)                                                                                \
-  , SPACE_CG_PDELAB_SGRID_LEVEL(2, 1, pp), SPACE_CG_PDELAB_SGRID_LEVEL(3, 1, pp),                                      \
-      SPACE_CG_PDELAB_YASPGRID_LEVEL(1, 1, pp), SPACE_CG_PDELAB_YASPGRID_LEVEL(2, 1, pp),                              \
-      SPACE_CG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
+  , SPACE_CG_PDELAB_SGRID_LEVEL(2, 1, pp) \
+  , SPACE_CG_PDELAB_SGRID_LEVEL(3, 1, pp) \
+  , SPACE_CG_PDELAB_YASPGRID_LEVEL(1, 1, pp) \
+  , SPACE_CG_PDELAB_YASPGRID_LEVEL(2, 1, pp) \
+  , SPACE_CG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
 
 
 #if HAVE_DUNE_ALUGRID
 
 
-#define SPACE_CG_PDELAB_ALUCONFORMGRID(dd, rr, pp)                                                                     \
-  Dune::GDT::DunePdelabCgSpaceWrapper<AluConform##dd##dLeafGridViewType, pp, double, rr>
+#define SPACE_CG_PDELAB_ALUSIMPLEXGRID(dd, rr, pp)                                                                     \
+  Dune::GDT::DunePdelabCgSpaceWrapper<AluConform##dd##dLeafGridViewType, pp, double, rr> \
+   , Dune::GDT::DunePdelabCgSpaceWrapper<AluSimplex##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACE_CG_PDELAB_ALUCUBEGRID(dd, rr, pp)                                                                        \
   Dune::GDT::DunePdelabCgSpaceWrapper<AluCube##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACES_CG_PDELAB_ALUGRID(pp)                                                                                   \
-  SPACE_CG_PDELAB_ALUCONFORMGRID(2, 1, pp)                                                                             \
-  ,  SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp),                                   \
-      SPACE_CG_PDELAB_ALUCUBEGRID(3, 1, pp)
-
-
+  SPACE_CG_PDELAB_ALUSIMPLEXGRID(2, 1, pp)                                                                             \
+  ,  SPACE_CG_PDELAB_ALUCUBEGRID(2, 1, pp)                                   \
+  ,  SPACE_CG_PDELAB_ALUCUBEGRID(3, 1, pp) \
+  ,  SPACE_CG_PDELAB_ALUSIMPLEXGRID(3, 1, pp)
+  
 #define SPACE_CG_PDELAB_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                  \
   Dune::GDT::DunePdelabCgSpaceWrapper<AluCube##dd##dLevelGridViewType, pp, double, rr>
 
+#define SPACE_CG_PDELAB_ALUSIMPLEXGRID_LEVEL(dd, rr, pp)                                                                  \
+  Dune::GDT::DunePdelabCgSpaceWrapper<AluSimplex##dd##dLevelGridViewType, pp, double, rr>
+
 #define SPACES_CG_PDELAB_ALUGRID_LEVEL(pp)                                                                             \
   SPACE_CG_PDELAB_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                          \
-  , SPACE_CG_PDELAB_ALUCUBEGRID_LEVEL(3, 1, pp)
+  , SPACE_CG_PDELAB_ALUCUBEGRID_LEVEL(3, 1, pp) \
+  , SPACE_CG_PDELAB_ALUSIMPLEXGRID_LEVEL(2, 1, pp)                                                                          \
+  , SPACE_CG_PDELAB_ALUSIMPLEXGRID_LEVEL(3, 1, pp)
+
+#define FAILING_SPACES_CG_PDELAB_ALUGRID_LEVEL(pp)                                                                             \
+    Dune::GDT::DunePdelabCgSpaceWrapper<AluConform3dLevelGridViewType, pp, double, 1> \
+    , Dune::GDT::DunePdelabCgSpaceWrapper<AluConform2dLevelGridViewType, pp, double, 1>
+
+#define FAILING_SPACES_CG_PDELAB_ALUGRID_LEAF(pp) \
+     Dune::GDT::DunePdelabCgSpaceWrapper<AluConform3dLeafGridViewType, pp, double, 1> \
+    , Dune::GDT::DunePdelabCgSpaceWrapper<AluConform2dLeafGridViewType, pp, double, 1>
 
 
 #endif // HAVE_DUNE_ALUGRID

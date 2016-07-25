@@ -18,13 +18,13 @@
 
 
 template <class SpaceType>
-class DG_Space : public SpaceBase<SpaceType>
+class DG_Space : public LeafSpaceBase<SpaceType>
 {
 };
 
 
 template <class SpaceType>
-struct P1Q1_DG_Space : public SpaceBase<SpaceType>
+struct P1Q1_DG_Space : public LeafSpaceBase<SpaceType>
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;

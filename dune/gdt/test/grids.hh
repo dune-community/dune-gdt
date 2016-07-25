@@ -56,6 +56,14 @@ typedef typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform2dGridType, t
 typedef
     typename Dune::GDT::SpaceTools::LevelGridPartView<AluConform2dGridType, true>::Type AluConform2dLevelGridViewType;
 
+typedef Dune::ALUGrid<3, 3, Dune::simplex, Dune::conforming> AluConform3dGridType;
+typedef
+    typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform3dGridType, false>::Type AluConform3dLeafGridPartType;
+typedef
+    typename Dune::GDT::SpaceTools::LevelGridPartView<AluConform3dGridType, false>::Type AluConform3dLevelGridPartType;
+typedef typename Dune::GDT::SpaceTools::LeafGridPartView<AluConform3dGridType, true>::Type AluConform3dLeafGridViewType;
+typedef
+    typename Dune::GDT::SpaceTools::LevelGridPartView<AluConform3dGridType, true>::Type AluConform3dLevelGridViewType;
 
 
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming> AluSimplex2dGridType;

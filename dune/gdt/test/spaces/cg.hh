@@ -28,13 +28,18 @@
 
 
 template <class SpaceType>
-class CG_Space : public SpaceBase<SpaceType>
+class LevelCG_Space : public LevelSpaceBase<SpaceType>
+{
+};
+
+template <class SpaceType>
+class LeafCG_Space : public LeafSpaceBase<SpaceType>
 {
 };
 
 
-template <class SpaceType>
-struct P1Q1_CG_Space : public SpaceBase<SpaceType>
+template <class SpaceType, template <class S> class Base>
+struct P1Q1_CG_Space : public Base<SpaceType>
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
@@ -64,21 +69,21 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   {
     using namespace Dune::Stuff;
     matches_signature(this->space_);
-    const auto entity_ptr                   = this->space_.grid_view().template begin<0>();
-    const auto& entity                      = *entity_ptr;
-    const auto basis                        = this->space_.base_function_set(entity);
-    std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
-    EXPECT_EQ(lagrange_points.size(), basis.size());
-    typedef typename SpaceType::IntersectionType IntersectionType;
-    typedef typename SpaceType::RangeFieldType RangeFieldType;
-    Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
-    std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
-    Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
-        boundary_info, this->space_.mapper().size(), true);
-    Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(
-        boundary_info, this->space_.mapper().size(), false);
-    this->space_.local_constraints(entity, dirichlet_constraints_set);
-    this->space_.local_constraints(entity, dirichlet_constraints_clear);
+    for(auto&& entity : elements(this->space_.grid_view())) {
+        const auto basis                        = this->space_.base_function_set(entity);
+        std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
+        EXPECT_EQ(lagrange_points.size(), basis.size());
+        typedef typename SpaceType::IntersectionType IntersectionType;
+        typedef typename SpaceType::RangeFieldType RangeFieldType;
+        Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
+        std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
+        Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
+            boundary_info, this->space_.mapper().size(), true);
+        Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(
+            boundary_info, this->space_.mapper().size(), false);
+        this->space_.local_constraints(entity, dirichlet_constraints_set);
+        this->space_.local_constraints(entity, dirichlet_constraints_clear);
+    }
   }
 
   void maps_correctly()
@@ -152,5 +157,9 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   } // ... maps_correctly()
 }; // struct P1Q1_CG_Space
 
+template <class Space>
+using LeafP1Q1_CG_Space = P1Q1_CG_Space<Space, LeafSpaceBase>;
+template <class Space>
+using LevelP1Q1_CG_Space = P1Q1_CG_Space<Space, LevelSpaceBase>;
 
 #endif // DUNE_GDT_TEST_SPACES_CG_HH

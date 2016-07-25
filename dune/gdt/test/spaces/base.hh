@@ -49,12 +49,24 @@ private:
 
 
 template <class Space, class Provider>
-class DerivedHolder : public BaseHolder<Space>
+class LevelDerivedHolder : public BaseHolder<Space>
 {
   typedef BaseHolder<Space> BaseType;
 
 public:
-  DerivedHolder(Provider& p)
+  LevelDerivedHolder(Provider& p)
+    : BaseType(Space(p.template level<Space::part_view_type>(0)))
+  {
+  }
+};
+
+template <class Space, class Provider>
+class LeafDerivedHolder : public BaseHolder<Space>
+{
+  typedef BaseHolder<Space> BaseType;
+
+public:
+  LeafDerivedHolder(Provider& p)
     : BaseType(Space(p.template leaf<Space::part_view_type>()))
   {
   }
@@ -67,13 +79,14 @@ public:
 template <class SpaceType>
 class SpaceBase : public ::testing::Test
 {
+  public: 
   typedef typename SpaceType::GridViewType::Grid GridType;
   typedef DSG::Providers::Cube<GridType> ProviderType;
 
-public:
-  SpaceBase()
-    : grid_provider_(0.0, 1.0, 3u)
-    , space_(grid_provider_.template leaf<SpaceType::part_view_type>())
+
+  SpaceBase(ProviderType& grid_provider, SpaceType& space)
+   : grid_provider_(grid_provider)
+  , space_(space)
   {
   }
 
@@ -238,13 +251,7 @@ public:
     } // walk the grid
   } // ... fulfills_interface()
 
-  void check_for_correct_copy()
-  {
-    SpaceType foop(space_);
-    auto DUNE_UNUSED(aa) = foop.mapper().size();
-    SpaceType cp = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
-    auto DUNE_UNUSED(bb) = cp.mapper().size();
-  } // ... check_for_correct_copy()
+  virtual void check_for_correct_copy() = 0;
 
   /**
     * \brief Checks the spaces mapper for it's interface compliance.
@@ -399,8 +406,55 @@ public:
   } // ... basefunctionset_fulfills_interface()
 
 protected:
-  ProviderType grid_provider_;
-  SpaceType space_;
+  ProviderType& grid_provider_;
+  SpaceType& space_;
 }; // struct SpaceBase
+
+template <class SpaceType>
+class LevelSpaceBase : public SpaceBase<SpaceType> {
+  typedef SpaceBase<SpaceType> BaseType;
+  typedef typename BaseType::ProviderType ProviderType;
+public:
+  LevelSpaceBase()
+  : BaseType(p_grid_provider_, p_space_)
+  , p_grid_provider_(0.0, 1.0, 3u, 2)
+  , p_space_(p_grid_provider_.template level<SpaceType::part_view_type>(1))
+  {}
+  
+  virtual void check_for_correct_copy()
+  {
+    SpaceType foop(p_space_);
+    auto DUNE_UNUSED(aa) = foop.mapper().size();
+    SpaceType cp = LevelDerivedHolder<SpaceType, ProviderType>(p_grid_provider_).space();
+    auto DUNE_UNUSED(bb) = cp.mapper().size();
+  } // ... check_for_correct_copy()
+  
+protected:
+  ProviderType p_grid_provider_;
+  SpaceType p_space_;
+};
+
+template <class SpaceType>
+class LeafSpaceBase : public SpaceBase<SpaceType> {
+  typedef SpaceBase<SpaceType> BaseType;
+  typedef typename BaseType::ProviderType ProviderType;
+public:
+  LeafSpaceBase()
+  : BaseType(p_grid_provider_, p_space_)
+  , p_grid_provider_(0.0, 1.0, 3u)
+  , p_space_(p_grid_provider_.template leaf<SpaceType::part_view_type>())
+  {}
+  
+    virtual void check_for_correct_copy()
+  {
+    SpaceType foop(p_space_);
+    auto DUNE_UNUSED(aa) = foop.mapper().size();
+    SpaceType cp = LeafDerivedHolder<SpaceType, ProviderType>(p_grid_provider_).space();
+    auto DUNE_UNUSED(bb) = cp.mapper().size();
+  } // ... check_for_correct_copy()
+protected:
+  ProviderType p_grid_provider_;
+  SpaceType p_space_;
+};
 
 #endif // DUNE_GDT_TEST_SPACES_BASE_HH
