@@ -22,12 +22,12 @@ namespace Test {
 // polorder 1, conforming
 
 template <bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<Alu2NonConformSimplex,
                                                                                 double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
-  typedef LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
+  typedef LinearElliptic::ESV2007TestCase<Alu2NonConformSimplex, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
@@ -56,8 +56,7 @@ public:
 }; // LinearEllipticSwipdgEstimatorExpectations
 
 
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                                 conforming>,
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<Alu2NonConformSimplex,
                                                                                          double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 

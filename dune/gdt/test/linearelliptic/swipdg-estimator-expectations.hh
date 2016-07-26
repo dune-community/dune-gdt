@@ -18,6 +18,9 @@
 namespace Dune {
 namespace GDT {
 namespace Test {
+
+typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming> Alu2NonConformSimplex;
+
 namespace internal {
 
 

@@ -26,7 +26,7 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 
 
 #if HAVE_DUNE_ALUGRID
 
-//COnforming simplex is currently borked in ALU, see test_spaces_pdelab_failing_alugrids -> disabled here
+//! \todo Conforming simplex is currently borked in ALU, see test_spaces_pdelab_failing_alugrids -> disabled here
 typedef testing::
     Types<//Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>,

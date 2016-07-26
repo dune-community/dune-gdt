@@ -30,17 +30,17 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 
 
 #if HAVE_DUNE_ALUGRID
 
-
+//! \todo Conforming simplex is currently borked in ALU, see test_spaces_pdelab_failing_alugrids -> disabled here
 typedef testing::
-    Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+    Types<//Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>,
-          Dune::GDT::LinearElliptic::ER2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+//          Dune::GDT::LinearElliptic::ER2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::ER2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>,
-          Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+//          Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>,
-          Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+//          Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>,
-          Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+//          Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
           Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>>>
         AluGridTestCases;
 

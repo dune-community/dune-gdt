@@ -20,11 +20,10 @@
 
 #if HAVE_DUNE_ALUGRID
 
-
-typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
-                       Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>,
+typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::GDT::Test::Alu2NonConformSimplex>,
+                       Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::GDT::Test::Alu2NonConformSimplex>,
                        Dune::GDT::LinearElliptic::
-                           Spe10Model1TestCase<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>> AluGridTestCases;
+                           Spe10Model1TestCase<Dune::GDT::Test::Alu2NonConformSimplex>> AluGridTestCases;
 
 
 #endif // HAVE_DUNE_ALUGRID
@@ -37,19 +36,15 @@ namespace Test {
 #if HAVE_DUNE_ALUGRID
 
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                                       conforming>,
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<Alu2NonConformSimplex,
                                                                                                double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                                        conforming>,
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<Alu2NonConformSimplex,
                                                                                                 double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
-                                                                                                            simplex,
-                                                                                                            conforming>,
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<Alu2NonConformSimplex,
                                                                                                     double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 
