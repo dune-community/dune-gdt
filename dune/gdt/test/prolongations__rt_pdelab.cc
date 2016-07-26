@@ -25,7 +25,7 @@ typedef testing::Types<SPACES_RT_PDELAB_LEVEL
 TYPED_TEST_CASE(ProlongationTest, SpaceTypes);
 TYPED_TEST(ProlongationTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->produces_correct_results(pdelab_rt_tolerance(*this));
 }
 
 
