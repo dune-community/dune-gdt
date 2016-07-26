@@ -26,19 +26,19 @@ typedef testing::Types<SPACES_RT_PDELAB_LEVEL
 TYPED_TEST_CASE(L2ProlongationOperatorTest, SpaceTypes);
 TYPED_TEST(L2ProlongationOperatorTest, constructible_by_ctor)
 {
-  this->constructible_by_ctor(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(pdelab_rt_tolerance(*this));
 }
 TYPED_TEST(L2ProlongationOperatorTest, constructible_by_factory)
 {
-  this->constructible_by_factory(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(pdelab_rt_tolerance(*this));
 }
 TYPED_TEST(L2ProlongationOperatorTest, free_function_callable)
 {
-  this->free_function_callable(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->constructible_by_ctor(pdelab_rt_tolerance(*this));
 }
 TYPED_TEST(L2ProlongationOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.05e-1 : 1.45e-1);
+  this->produces_correct_results(pdelab_rt_tolerance(*this));
 }
 
 

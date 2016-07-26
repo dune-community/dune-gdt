@@ -23,6 +23,17 @@ typedef testing::Types<SPACES_CG_PDELAB_LEVEL(1)
                        >
     SpaceTypes;
 
+template <class T>
+double
+get_tolerance(const T& param)
+{
+  typedef typename T::GridViewType::Grid Grid;
+  const auto dim       = param.dimDomain;
+  const auto tolerance = Dune::Stuff::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 2.49e-14 : 1e-15)
+                                                                               : (dim == 3 ? 2.49e-14 : 1e-15);
+  return tolerance;
+}
+
 TYPED_TEST_CASE(L2ProlongationLocalizableOperatorTest, SpaceTypes);
 TYPED_TEST(L2ProlongationLocalizableOperatorTest, constructible_by_ctor)
 {
@@ -34,7 +45,7 @@ TYPED_TEST(L2ProlongationLocalizableOperatorTest, constructible_by_factory)
 }
 TYPED_TEST(L2ProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.49e-14 : 1e-15);
+  this->produces_correct_results(get_tolerance(*this));
 }
 
 
