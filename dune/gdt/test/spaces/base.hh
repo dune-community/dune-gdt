@@ -81,6 +81,7 @@ class SpaceBase : public ::testing::Test
 {
   public: 
   typedef typename SpaceType::GridViewType::Grid GridType;
+  static const auto dimDomain = SpaceType::GridViewType::dimension;
   typedef DSG::Providers::Cube<GridType> ProviderType;
 
 

@@ -23,9 +23,11 @@ typedef testing::Types<
 TYPED_TEST_CASE(LevelCG_Space, CG_Spaces_Pdelab_Level);
 TYPED_TEST(LevelCG_Space, fulfills_interface)
 {
-  this->fulfills_interface();
+  if (TypeParam::dimDomain == 2)
+    this->fulfills_interface();
+  else
+    EXPECT_DEATH(this->fulfills_interface(), ".*");
 }
-
 TYPED_TEST(LevelCG_Space, mapper_fulfills_interface)
 {
   this->mapper_fulfills_interface();
@@ -49,7 +51,7 @@ typedef testing::Types<
 TYPED_TEST_CASE(LevelP1Q1_CG_Space, P1Q1_CG_Spaces_Pdelab_Level);
 TYPED_TEST(LevelP1Q1_CG_Space, fulfills_continuous_interface)
 {
-  this->fulfills_continuous_interface();
+  EXPECT_DEATH(this->fulfills_continuous_interface(), ".*");
 }
 TYPED_TEST(LevelP1Q1_CG_Space, maps_correctly)
 {
