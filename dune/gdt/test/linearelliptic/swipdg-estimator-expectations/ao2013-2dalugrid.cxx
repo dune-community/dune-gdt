@@ -32,22 +32,22 @@ public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "energy")
-      return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
+      return {1.32e-01, 7.47e-02, 3.81e-02, 1.70e-02};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
-      return {9.57e-02, 1.10e-01, 5.12e-02, 2.17e-02};
+      return {1.30e-01, 1.42e-01, 6.30e-02, 2.65e-02};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
-      return {1.03e-15, 5.20e-13, 4.68e-13, 1.19e-12};
+      return {4.81e-16, 1.04e-14, 2.56e-15, 1.88e-13};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id())
-      return {1.12e-01, 6.54e-02, 3.54e-02, 1.90e-02};
+      return {1.56e-01, 8.93e-02, 4.87e-02, 2.61e-02};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
       return {1.48e-01, 1.28e-01, 6.22e-02, 2.89e-02};
     else if (type == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
-      return {1.62e+00, 2.45e+00, 2.32e+00, 2.40e+00};
+      return {1.54e+00, 2.24e+00, 2.09e+00, 2.18e+00};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id())
       return {4.56e-01, 4.19e-01, 2.94e-01, 2.02e-01};
     else if (type
              == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id())
-      return {5.01e+00, 8.01e+00, 1.10e+01, 1.68e+01};
+      return {4.05e+00, 6.44e+00, 8.77e+00, 1.35e+01};
     else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};

@@ -33,7 +33,7 @@ public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     if (type == "energy")
-      return {3.33e-01, 1.63e-01, 8.07e-02, 4.01e-02};
+      return {3.32e-01, 1.63e-01, 8.07e-02, 4.01e-02};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
       return {1.99e-01, 9.86e-02, 4.91e-02, 2.46e-02};
     else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())

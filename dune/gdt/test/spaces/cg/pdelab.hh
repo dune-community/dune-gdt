@@ -87,7 +87,7 @@ double pdelab_cg_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim = param.dimDomain;
-  const auto tolerance = Dune::Stuff::Grid::is_conforming_alugrid<Grid>::value
+  const auto tolerance = Dune::Stuff::Grid::is_alugrid<Grid>::value
       ? (dim == 3 ? 1.35e-13 : 1.4e-14)
       : (dim == 3 ? 2.49e-14 : 1e-15);
   return tolerance;
