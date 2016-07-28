@@ -14,6 +14,13 @@
 
 #if HAVE_DUNE_PDELAB
 
+//! the death exceptions captures asserts that aren't there in release mode
+#ifndef NDEBUG
+# define EXPECT_ALU_DEATH(statement, regex) EXPECT_DEATH(statement, regex)
+#else
+# define EXPECT_ALU_DEATH(statement, regex) statement;
+#endif
+
 typedef testing::Types<
 #if HAVE_DUNE_ALUGRID
                        FAILING_SPACES_CG_PDELAB_ALUGRID_LEVEL(1)
@@ -26,7 +33,7 @@ TYPED_TEST(LevelCG_Space, fulfills_interface)
   if (TypeParam::dimDomain == 2)
     this->fulfills_interface();
   else
-    EXPECT_DEATH(this->fulfills_interface(), ".*");
+    EXPECT_ALU_DEATH(this->fulfills_interface(), ".*");
 }
 TYPED_TEST(LevelCG_Space, mapper_fulfills_interface)
 {
@@ -51,7 +58,7 @@ typedef testing::Types<
 TYPED_TEST_CASE(LevelP1Q1_CG_Space, P1Q1_CG_Spaces_Pdelab_Level);
 TYPED_TEST(LevelP1Q1_CG_Space, fulfills_continuous_interface)
 {
-  EXPECT_DEATH(this->fulfills_continuous_interface(), ".*");
+  EXPECT_ALU_DEATH(this->fulfills_continuous_interface(), ".*");
 }
 TYPED_TEST(LevelP1Q1_CG_Space, maps_correctly)
 {
