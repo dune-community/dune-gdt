@@ -577,7 +577,12 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   void correct_for_constant_arguments() const
   {
     const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
-    this->check(compute(constant_gradient), factor_value_ * 1.0, 5.05e-13);
+    #ifndef NDEBUG
+      const double tolerance = 5.05e-13;
+    #else
+      const double tolerance = 6.54e-13;
+    #endif
+    this->check(compute(constant_gradient), factor_value_ * 1.0, tolerance);
   }
 
   /**
@@ -587,7 +592,12 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const ExpressionFunctionType linear_gradient(
         "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}});
-    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, 1.75e-13);
+    #ifndef NDEBUG
+      const double tolerance = 1.75e-13;
+    #else
+      const double tolerance = 2.65e-13;
+    #endif
+    this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, tolerance);
   }
 
   /**
