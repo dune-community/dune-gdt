@@ -38,5 +38,10 @@ TYPED_TEST(EllipticLocalizableProductTest, correct_for_linear_arguments)
 }
 TYPED_TEST(EllipticLocalizableProductTest, correct_for_quadratic_arguments)
 {
-  this->correct_for_quadratic_arguments(this->dimDomain == 1 ? 1e-15 : 3.56e-15);
+#ifndef NDEBUG
+  const double tolerance = 1e-15;
+#else
+  const double tolerance = 1.78e-15;
+#endif
+  this->correct_for_quadratic_arguments(this->dimDomain == 1 ? tolerance : 3.56e-15);
 }
