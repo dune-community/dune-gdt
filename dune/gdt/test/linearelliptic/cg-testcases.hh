@@ -9,7 +9,7 @@
 #define DUNE_GDT_TEST_LINEARELLIPTIC_CG_TESTCASES_HH
 
 #include <dune/grid/sgrid.hh>
-#include <dune/alugrid/dgf.hh>
+#include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/test/gtest/gtest.h>
 
@@ -25,7 +25,7 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 
     SGridTestCases;
 
 
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
 
 
 typedef testing::
@@ -42,7 +42,7 @@ typedef testing::
         AluGridTestCases;
 
 
-#endif // HAVE_DUNE_ALUGRID
+#endif // HAVE_ALUGRID
 
 
 namespace Dune {
@@ -68,7 +68,7 @@ extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1T
                                                     LinearElliptic::ChooseDiscretizer::cg, 1>;
 
 
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
 
 
 // ALUGrid< 2, 2, simplex, conforming >
@@ -124,7 +124,7 @@ extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1T
                                                     LinearElliptic::ChooseDiscretizer::cg, 1>;
 
 
-#endif // HAVE_DUNE_ALUGRID
+#endif // HAVE_ALUGRID
 
 } // namespace Test
 } // namespace GDT

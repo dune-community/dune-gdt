@@ -18,7 +18,7 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-#if HAVE_DUNE_PDELAB && HAVE_EIGEN && HAVE_DUNE_ALUGRID
+#if HAVE_DUNE_PDELAB && HAVE_EIGEN && HAVE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_CG_discretization, AluGridTestCases);
 TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_pdelab_and_eigen_and_alugrid)

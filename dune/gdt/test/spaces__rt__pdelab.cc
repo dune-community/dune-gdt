@@ -18,7 +18,7 @@
 
 
 typedef testing::Types<SPACES_RT_PDELAB
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
                        ,
                        SPACES_RT_PDELAB_ALUGRID
 #endif
@@ -48,7 +48,7 @@ TYPED_TEST(RT_Space, matches_raviart_thomas_signature)
 }
 
 
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
 
 typedef testing::Types<SPACE_RT_PDELAB_ALUCONFORMGRID(2)> RT_2d_Spaces;
 
@@ -58,13 +58,13 @@ TYPED_TEST(RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interfa
   this->fulfills_raviart_thomas_2d_simplicial_interface();
 }
 
-#else // HAVE_DUNE_ALUGRID
+#else // HAVE_ALUGRID
 
 TEST(DISABLED_RT_2d_simplicial_Space, fulfills_raviart_thomas_2d_simplicial_interface)
 {
 }
 
-#endif // HAVE_DUNE_ALUGRID
+#endif // HAVE_ALUGRID
 #else // HAVE_DUNE_PDELAB
 
 

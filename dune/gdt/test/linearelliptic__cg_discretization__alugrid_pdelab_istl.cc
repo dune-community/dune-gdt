@@ -11,7 +11,6 @@
 
 #include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include <dune/alugrid/3d/gridfactory.hh>
 #include "linearelliptic/cg-discretization.hh"
 #include "linearelliptic/cg-testcases.hh"
 
@@ -19,7 +18,7 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-#if HAVE_DUNE_PDELAB && HAVE_DUNE_ISTL && HAVE_DUNE_ALUGRID
+#if HAVE_DUNE_PDELAB && HAVE_DUNE_ISTL && HAVE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_CG_discretization, AluGridTestCases);
 TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_pdelab_and_istl_and_alugrid)

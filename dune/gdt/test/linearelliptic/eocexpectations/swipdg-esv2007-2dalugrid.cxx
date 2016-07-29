@@ -7,9 +7,9 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
 
-#include <dune/alugrid/dgf.hh>
+#include <dune/grid/alugrid.hh>
 
 #include "../problems/ESV2007.hh"
 #include "../eocexpectations.hh"
@@ -126,4 +126,4 @@ template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<ALU
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_ALUGRID
+#endif // HAVE_ALUGRID

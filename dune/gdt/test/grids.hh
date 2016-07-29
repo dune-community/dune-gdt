@@ -11,8 +11,8 @@
 
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
-#if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/dgf.hh>
+#if HAVE_ALUGRID
+#include <dune/grid/alugrid.hh>
 #endif
 
 #include <dune/gdt/spaces/tools.hh>
@@ -45,7 +45,7 @@ YASPGRID_TYPES(2)
 YASPGRID_TYPES(3)
 #undef YASPGRID_TYPES
 
-#if HAVE_DUNE_ALUGRID
+#if HAVE_ALUGRID
 
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming> AluConform2dGridType;
 typedef
@@ -95,6 +95,6 @@ typedef typename Dune::GDT::SpaceTools::LevelGridPartView<AluCube3dGridType, fal
 typedef typename Dune::GDT::SpaceTools::LeafGridPartView<AluCube3dGridType, true>::Type AluCube3dLeafGridViewType;
 typedef typename Dune::GDT::SpaceTools::LevelGridPartView<AluCube3dGridType, true>::Type AluCube3dLevelGridViewType;
 
-#endif // HAVE_DUNE_ALUGRID
+#endif // HAVE_ALUGRID
 
 #endif // DUNE_GDT_TEST_GRIDS_HH
