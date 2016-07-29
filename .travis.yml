@@ -42,7 +42,7 @@ before_install:
   - cd $HOME
   - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
   - cd $HOME/src
-  - git checkout dune-2.4
+  - git checkout xt+core_2.4_switchover
   - git submodule update --init --recursive
   - git submodule status
   # our local scripts look for an OPTS env entry
