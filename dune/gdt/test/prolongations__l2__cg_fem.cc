@@ -38,7 +38,7 @@ TYPED_TEST(L2ProlongationOperatorTest, free_function_callable)
 }
 TYPED_TEST(L2ProlongationOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.49e-14 : LocalizableProjectionOperator_default_tolerance);
+  this->produces_correct_results(this->dimDomain == 3 ? 2.49e-14 : this->default_tolerance);
 }
 
 

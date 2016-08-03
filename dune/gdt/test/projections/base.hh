@@ -38,6 +38,9 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
     EXPECT_LE(l2_error, tolerance) << "l2_error:  " << std::scientific << l2_error << "\n"
                                    << "tolerance: " << std::scientific << tolerance;
   }
+
+  static const constexpr double default_tolerance = 1e-15;
+  static const constexpr double alugrid_tolerance = 3.8e-11;
 }; // struct ProjectionOperatorBase
 
 
@@ -56,7 +59,7 @@ struct LocalizableProjectionOperatorBase : public internal::ProjectionOperatorBa
         this->space_.grid_view(), this->function_, this->discrete_function_);
   }
 
-  void produces_correct_results(const RangeFieldType& tolerance)
+  void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
   {
     this->discrete_function_.vector() *= 0.0;
     LocalizableProjectionOperatorType projection_operator(

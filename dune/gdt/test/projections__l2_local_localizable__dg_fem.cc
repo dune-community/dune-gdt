@@ -7,6 +7,8 @@
 
 #include <dune/stuff/test/main.hxx>
 
+#include <dune/stuff/grid/information.hh>
+
 #include "projections/l2-local.hh"
 #include "spaces/dg/fem.hh"
 
@@ -35,8 +37,7 @@ TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
 TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
 {
   typedef typename TypeParam::GridViewType::Grid Grid;
-  const auto tolerance = Dune::Stuff::Grid::is_alugrid<Grid>::value ? LocalizableProjectionOperator_alugrid_tolerance
-                                                                    : LocalizableProjectionOperator_default_tolerance;
+  const auto tolerance = Dune::Stuff::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   this->produces_correct_results(tolerance);
 }
 
