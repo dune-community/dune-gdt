@@ -7,6 +7,8 @@
 
 #include <dune/stuff/test/main.hxx> // <- This one has to come first!
 
+#include <dune/stuff/grid/information.hh>
+
 #include "prolongations.hh"
 #include "spaces/cg/fem.hh"
 

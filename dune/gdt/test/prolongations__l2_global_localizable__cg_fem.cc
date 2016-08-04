@@ -34,7 +34,7 @@ TYPED_TEST(L2GlobalProlongationLocalizableOperatorTest, constructible_by_factory
 }
 TYPED_TEST(L2GlobalProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 2.49e-14 : 1e-15);
+  this->produces_correct_results(this->dimDomain == 3 ? 1.06e-13 : 1e-15);
 }
 
 
