@@ -80,14 +80,19 @@ public:
   virtual size_t expected_rate(const std::string type) override final
   {
     // If you get an undefined reference here from the linker, see the explanation in LinearEllipticEocStudy!
-    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType, Discretizer::type, polOrder>::rate(type);
+    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType,
+                                                     Discretizer::type,
+                                                     polOrder,
+                                                     Discretizer::la_backend>::rate(type);
   }
 
   virtual std::vector<double> expected_results(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker, see above!
-    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType, Discretizer::type, polOrder>::results(
-        this->test_case_, type);
+    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType,
+                                                     Discretizer::type,
+                                                     polOrder,
+                                                     Discretizer::la_backend>::results(this->test_case_, type);
   }
 
   virtual std::vector<std::string> available_norms() const override final

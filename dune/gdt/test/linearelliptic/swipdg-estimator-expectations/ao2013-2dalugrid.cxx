@@ -20,10 +20,10 @@ namespace Test {
 
 // polorder 1, conforming
 
-template <bool anything>
+template <Stuff::LA::ChooseBackend la_backend, bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
                                                                                double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, la_backend, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
   typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
@@ -58,7 +58,15 @@ public:
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
                                                                                                 conforming>,
                                                                                         double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                         Stuff::LA::ChooseBackend::eigen_sparse>;
+
+
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
+                                                                                                conforming>,
+                                                                                        double, 1>,
+                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                         Stuff::LA::ChooseBackend::istl_sparse>;
 
 
 } // namespace Test
