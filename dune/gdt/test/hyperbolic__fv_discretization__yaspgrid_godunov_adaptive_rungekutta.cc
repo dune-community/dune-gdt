@@ -23,11 +23,7 @@ using namespace Dune::GDT;
 TYPED_TEST_CASE(hyperbolic_FV_discretization_godunov_adaptiveRK, YaspGridTestCasesPartial);
 TYPED_TEST(hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)
 {
-#if HAVE_DUNE_XT_GRID
   this->eoc_study();
-#else
-  EXPECT_DEATH(this->eoc_study(), ".*");
-#endif
 }
 
 #else
