@@ -24,7 +24,7 @@ namespace Tests {
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                Hyperbolic::FluxTimeStepperCombinations::godunov_euler, anything>
+                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1> TestCaseType;
@@ -33,15 +33,16 @@ public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      if (test_case.num_refinements() == 1)
+      if (test_case.num_refinements() == 1) {
         if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
           return {8.96e-02, 3.87e-02};
         else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {1.33e-02, 6.34e-03};
         else
           EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
-      else
+       } else {
         return {1.13e-01, 6.17e-02, 2.88e-02, 1.24e-02, 4.82e-03};
+      }
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -51,7 +52,7 @@ public:
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK, anything>
+                                NumericalFluxes::godunov, TimeStepperMethods::dormand_prince, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1> TestCaseType;
@@ -60,15 +61,16 @@ public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      if (test_case.num_refinements() == 1)
+      if (test_case.num_refinements() == 1) {
         if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
           return {8.64e-02, 3.72e-02};
         else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {1.33e-02, 6.33e-03};
         else
           EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
-      else
+       } else {
         return {1.15e-01, 6.48e-02, 3.31e-02, 1.52e-02, 5.68e-03};
+      }
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -78,7 +80,7 @@ public:
 template <bool anything>
 class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv, 1,
-                                Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler, anything>
+                                NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1> TestCaseType;
@@ -104,15 +106,15 @@ public:
 
 template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1,
-                                         Hyperbolic::FluxTimeStepperCombinations::godunov_euler>;
+                                         NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>;
 
 template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1,
-                                         Hyperbolic::FluxTimeStepperCombinations::godunov_adaptiveRK>;
+                                         NumericalFluxes::godunov, TimeStepperMethods::dormand_prince>;
 
 template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<1>, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 1,
-                                         Hyperbolic::FluxTimeStepperCombinations::laxfriedrichs_euler>;
+                                         NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler>;
 
 
 } // namespace Tests

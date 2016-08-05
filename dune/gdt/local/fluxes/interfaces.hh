@@ -16,7 +16,6 @@
 
 namespace Dune {
 namespace GDT {
-
 namespace internal {
 
 
@@ -107,8 +106,8 @@ public:
 
 
 /** Analytical flux f for problem of the form delta_t u + div f(u,x,t) = 0 where u: R^d \to R^{r \times rC}.
- *  TODO: implement for rC > 1.
- *  TODO: determine correct FluxJacobianRangeType. */
+ *  \todo: implement for rC > 1.
+ *  \todo: determine correct FluxJacobianRangeType. */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1, bool gradient = false>
 class AnalyticalFluxInterface : internal::IsAnalyticalFlux
 {
@@ -145,8 +144,8 @@ public:
 
 
 /** Analytical flux f for problem of the form delta_t u + div f(u,x,t,\nabla u) = 0 where u: R^d \to R^r \times rC}.
- *  TODO: implement for rC > 1.
- *  TODO: determine correct FluxJacobianRangeType. */
+ *  \todo: implement for rC > 1.
+ *  \todo: determine correct FluxJacobianRangeType. */
 template <class E, class D, size_t d, class R, size_t r, size_t rC>
 class AnalyticalFluxInterface<E, D, d, R, r, rC, true> : internal::IsAnalyticalFlux
 {
@@ -187,7 +186,7 @@ public:
  * Interface for analytical fluxes f that do not depend explicitly on the spatial variable x, the temporal variable t or
  * the gradient \nabla u. The corresponding PDE takes the form delta_t u + div f(u) = 0 where u: R^d \to
  * R^{r \times rC}. The flux f(u) is a function f: R^{r \times rC} \to R^{r \times rC \times d}.
- * TODO: implement for rC > 1.
+ * \todo: implement for rC > 1.
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
 class AutonomousAnalyticalFluxInterface : public AnalyticalFluxInterface<E, D, d, R, r, rC, false>
@@ -221,8 +220,7 @@ public:
 /**
  * Interface for right-hand side q of the PDE delta_t u + div f(u,x,t) = q(u,x,t) where u: R^d \to
  * R^{r \times rC}.
- * TODO: implement for rC > 1.
- * \todo Drop in favor of AnalyticalFluxInterface
+ * \todo: implement for rC > 1.
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
 class RhsEvaluationFluxInterface : internal::IsRHSEvaluation

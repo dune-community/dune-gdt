@@ -23,21 +23,20 @@ namespace Dune {
 namespace GDT {
 
 
-enum class AdaptiveRungeKuttaMethods
-{
-  bogacki_shampine,
-  dormand_prince,
-  other
-};
-
-
 namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType,
-          AdaptiveRungeKuttaMethods method = AdaptiveRungeKuttaMethods::other>
+template <class RangeFieldType, class TimeFieldType, TimeStepperMethods method>
 struct AdaptiveButcherArrayProvider
+{
+  static_assert(AlwaysFalse<RangeFieldType>::value,
+                "You cannot use AdaptiveRungeKuttaTimeStepper with this value of TimeStepperMethods!");
+};
+
+// user-provided Butcher array
+template <class RangeFieldType, class TimeFieldType>
+struct AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::adaptive_rungekutta_other>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -70,7 +69,7 @@ struct AdaptiveButcherArrayProvider
 
 // Bogacki-Shampine (adaptive RK23)
 template <class RangeFieldType, class TimeFieldType>
-class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, AdaptiveRungeKuttaMethods::bogacki_shampine>
+class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::bogacki_shampine>
 {
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
@@ -105,7 +104,7 @@ public:
 
 // Dormand-Prince (adaptive RK45)
 template <class RangeFieldType, class TimeFieldType>
-class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, AdaptiveRungeKuttaMethods::dormand_prince>
+class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::dormand_prince>
 {
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
@@ -209,7 +208,7 @@ public:
  * \tparam method Adaptive Runge-Kutta method that is used (default is AdaptiveRungeKuttaMethods::dormand_prince)
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
-          AdaptiveRungeKuttaMethods method = AdaptiveRungeKuttaMethods::dormand_prince>
+          TimeStepperMethods method                                        = TimeStepperMethods::dormand_prince>
 class AdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;

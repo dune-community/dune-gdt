@@ -14,6 +14,7 @@
 #include <dune/stuff/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
+#include <dune/gdt/discretizations/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -42,8 +43,8 @@ public:
 
 } // namespace internal
 
-template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain,
-          Hyperbolic::FluxTimeStepperCombinations flux_timestepper, bool anything = true>
+template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, NumericalFluxes num_flux,
+          TimeStepperMethods time_stepper, bool anything = true>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

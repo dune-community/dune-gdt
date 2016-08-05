@@ -156,11 +156,6 @@ public:
   {
     return 3;
   }
-
-  virtual bool is_linear() const override
-  {
-    return false;
-  }
 };
 
 

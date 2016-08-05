@@ -188,11 +188,6 @@ public:
     return 7.0;
   }
 
-  virtual bool is_linear() const override
-  {
-    return true;
-  }
-
   virtual bool has_non_zero_rhs() const override
   {
     return false;

@@ -205,9 +205,8 @@ public:
       Timer timer;
       current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.level_of(current_refinement_), test_case_.periodic_directions()));
-      current_solution_on_level_ = Stuff::Common::make_unique<DiscreteSolutionType>(
-          current_discretization_->solve(test_case_.problem().is_linear()));
-      time_to_solution_ = timer.elapsed();
+      current_solution_on_level_ = Stuff::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
+      time_to_solution_          = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
       assert(reference_solution_);
@@ -301,8 +300,7 @@ protected:
     if (!reference_solution_computed_) {
       reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
-      reference_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(
-          reference_discretization_->solve(test_case_.problem().is_linear()));
+      reference_solution_          = Stuff::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         size_t counter                       = 0;

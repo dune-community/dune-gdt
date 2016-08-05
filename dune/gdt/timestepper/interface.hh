@@ -20,6 +20,21 @@
 
 namespace Dune {
 namespace GDT {
+
+
+enum class TimeStepperMethods
+{
+  bogacki_shampine,
+  dormand_prince,
+  adaptive_rungekutta_other,
+  explicit_euler,
+  explicit_rungekutta_second_order_ssp,
+  explicit_rungekutta_third_order_ssp,
+  explicit_rungekutta_classic_fourth_order,
+  explicit_rungekutta_other
+};
+
+
 namespace internal {
 
 
@@ -31,7 +46,9 @@ struct FloatCmpLt
     return DSC::FloatCmp::lt(a, b);
   }
 };
-}
+
+
+} // namespace internal
 
 
 template <class DiscreteFunctionImp, class TimeFieldImp>

@@ -24,23 +24,20 @@ namespace Dune {
 namespace GDT {
 
 
-enum class ExplicitRungeKuttaMethods
-{
-  euler,
-  second_order_ssp,
-  third_order_ssp,
-  classic_fourth_order,
-  other
-};
-
-
 namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType,
-          ExplicitRungeKuttaMethods method = ExplicitRungeKuttaMethods::other>
+template <class RangeFieldType, class TimeFieldType, TimeStepperMethods method>
 struct ButcherArrayProvider
+{
+  static_assert(AlwaysFalse<RangeFieldType>::value,
+                "You cannot use ExplicitRungeKuttaTimeStepper with this value of TimeStepperMethods!");
+};
+
+// user-provided Butcher array
+template <class RangeFieldType, class TimeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_other>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -64,10 +61,9 @@ struct ButcherArrayProvider
   }
 };
 
-
 // Euler
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::euler>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_euler>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -87,7 +83,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMet
 
 // Second order SSP
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::second_order_ssp>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_second_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -107,7 +103,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMet
 
 // Third order SSP
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::third_order_ssp>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_third_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -129,7 +125,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMet
 
 // Classic fourth order RK
 template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMethods::classic_fourth_order>
+struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_classic_fourth_order>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -169,7 +165,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, ExplicitRungeKuttaMet
  * \tparam DiscreteFunctionImp Type of initial values
  */
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
-          ExplicitRungeKuttaMethods method = ExplicitRungeKuttaMethods::euler>
+          TimeStepperMethods method                                        = TimeStepperMethods::explicit_euler>
 class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
@@ -231,6 +227,15 @@ public:
       u_intermediate_stages_.emplace_back(current_solution());
     }
   } // constructor
+
+  /**
+   * \brief Constructor ignoring the tol argument for compatibility with AdaptiveRungeKuttaTimeStepper
+   */
+  ExplicitRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r, const double t_0, const RangeFieldType /*tol*/)
+    : ExplicitRungeKuttaTimeStepper(op, initial_values, r, t_0)
+  {
+  }
 
   virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
   {
