@@ -43,6 +43,10 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
   static const constexpr double alugrid_tolerance = 3.8e-11;
 }; // struct ProjectionOperatorBase
 
+template <class T>
+constexpr double ProjectionOperatorBase<T>::default_tolerance;
+template <class T>
+constexpr double ProjectionOperatorBase<T>::alugrid_tolerance;
 
 } // namespace internal
 

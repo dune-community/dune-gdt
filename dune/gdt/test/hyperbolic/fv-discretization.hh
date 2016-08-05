@@ -55,7 +55,6 @@ struct hyperbolic_FV_discretization_godunov_euler
                                                Dune::GDT::TimeStepperMethods::explicit_euler>
 {
 }; // hyperbolic_FV_discretization_godunov_euler
-        Discretizer;
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
@@ -63,7 +62,6 @@ struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
                                                Dune::GDT::TimeStepperMethods::explicit_euler>
 {
 }; // hyperbolic_FV_discretization_godunovwithreconstruction_euler
-        Discretizer;
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_laxfriedrichs_euler
@@ -78,7 +76,5 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK
                                                Dune::GDT::TimeStepperMethods::dormand_prince>
 {
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK
-
-        Discretizer;
 
 #endif // DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH
