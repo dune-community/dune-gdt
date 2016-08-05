@@ -13,6 +13,7 @@
 
 #include <dune/gdt/test/grids.hh>
 
+#include <dune/stuff/grid/information.hh>
 
 #define SPACE_RT_PDELAB_SGRID(dd) Dune::GDT::DunePdelabRtSpaceWrapper<S##dd##dLeafGridViewType, 0, double, dd>
 

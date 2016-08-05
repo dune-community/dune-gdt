@@ -13,6 +13,8 @@
 
 #include <dune/gdt/test/grids.hh>
 
+#include <dune/stuff/grid/information.hh>
+
 #if HAVE_DUNE_FEM
 
 
