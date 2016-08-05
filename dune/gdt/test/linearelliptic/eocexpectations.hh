@@ -50,7 +50,7 @@ public:
   {
     EXPECT_TRUE(false) << "Please record the expected results for\n"
                        << "  TestCaseType: " << Stuff::Common::Typename<TestCaseType>::value() << "\n"
-                       << "  ChooseDiscretizer: ??\n"
+                       << "  ChooseDiscretizer: " << int(disc) << "\n"
                        << "  polOrder: " << polOrder << "\n"
                        << "  type: " << type << "\n"
                        << "Please put an appropriate specialiaztion of LinearEllipticEocExpectations for these\n"

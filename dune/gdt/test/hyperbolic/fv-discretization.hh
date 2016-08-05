@@ -77,5 +77,4 @@ struct hyperbolic_FV_discretization_godunov_adaptiveRK
 {
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK
 
-
 #endif // DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH

@@ -36,25 +36,54 @@ namespace GDT {
 namespace Test {
 
 #if HAVE_ALUGRID
+#if HAVE_EIGEN
 
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
                                                                                                        conforming>,
                                                                                                double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                         conforming>,
                                                                                                 double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
                                                                                                             simplex,
                                                                                                             conforming>,
                                                                                                     double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
 
 
+#endif // HAVE_EIGEN
+#if HAVE_DUNE_ISTL
+
+
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
+                                                                                                       conforming>,
+                                                                                               double, 1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
+                                                                                                        conforming>,
+                                                                                                double, 1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
+                                                                                                            simplex,
+                                                                                                            conforming>,
+                                                                                                    double, 1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+
+
+#endif // HAVE_DUNE_ISTL
 #endif // HAVE_ALUGRID
 
 } // namespace Test

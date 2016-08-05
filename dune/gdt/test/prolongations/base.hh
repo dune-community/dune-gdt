@@ -56,6 +56,9 @@ struct ProlongationOperatorsBase
   typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;
   typedef Dune::GDT::DiscreteFunction<FineSpaceType, VectorType> FineDiscreteFunctionType;
 
+  static constexpr double default_tolerance = 1e-15;
+  static constexpr double alugrid_tolerance = 3.8e-11;
+
   ProlongationOperatorsBase()
     : function_("x", "x[0]", 1, "function")
     , coarse_space_(grid_provider_.template level<CoarseSpaceType::part_view_type>(0))
@@ -84,7 +87,7 @@ struct ProlongationOperatorsBase
     prepared_ = true;
   } // ... prepare(...)
 
-  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  void produces_correct_results(const RangeFieldType& tolerance = default_tolerance)
   {
     prepare(tolerance);
     ProlongationOperatorType(fine_space_.grid_view()).apply(coarse_discrete_function_, fine_discrete_function_);
@@ -103,6 +106,10 @@ struct ProlongationOperatorsBase
   bool prepared_;
 }; // ProlongationOperatorsBase
 
+template <class T, class U>
+constexpr double ProlongationOperatorsBase<T,U>::default_tolerance;
+template <class T, class U>
+constexpr double ProlongationOperatorsBase<T,U>::alugrid_tolerance;
 
 } // namespace internal
 
@@ -123,7 +130,7 @@ struct LocalizableProlongationOperatorBase : public internal::ProlongationOperat
 
   using BaseType::prepare;
 
-  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
   {
     prepare(tolerance);
     ProlongationOperatorType(fine_space_.grid_view(), coarse_discrete_function_, fine_discrete_function_).apply();
@@ -154,7 +161,7 @@ struct ProlongationOperatorBase : public internal::ProlongationOperatorsBase<Coa
 
   using BaseType::prepare;
 
-  void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
+  void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
   {
     prepare(tolerance);
     ProlongationOperatorType op(fine_space_.grid_view());

@@ -9,6 +9,8 @@
 #ifndef DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 
+#include <dune/stuff/grid/information.hh>
+
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 #include <dune/gdt/test/grids.hh>

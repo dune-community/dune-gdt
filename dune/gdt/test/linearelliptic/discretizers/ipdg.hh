@@ -33,10 +33,9 @@ namespace LinearElliptic {
  * \brief Discretizes a linear elliptic PDE using an interior penalty discontinuous Galerkin Finite Element method.
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
-          ChooseSpaceBackend spacebackend     = default_dg_backend,
-          Stuff::LA::ChooseBackend la_backend = Stuff::LA::default_sparse_backend, int pol = 1,
-          class RangeFieldType = double, size_t dimRange = 1,
-          LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
+          ChooseSpaceBackend spacebackend = default_dg_backend,
+          Stuff::LA::ChooseBackend la = Stuff::LA::default_sparse_backend, int pol = 1, class RangeFieldType = double,
+          size_t dimRange = 1, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class IpdgDiscretizer
 {
 public:
@@ -45,12 +44,13 @@ public:
       ProblemType;
   typedef DgSpaceProvider<GridType, layer, spacebackend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
-  typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::MatrixType MatrixType;
-  typedef typename Stuff::LA::Container<RangeFieldType, la_backend>::VectorType VectorType;
+  typedef typename Stuff::LA::Container<RangeFieldType, la>::MatrixType MatrixType;
+  typedef typename Stuff::LA::Container<RangeFieldType, la>::VectorType VectorType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
-  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::swipdg;
-  static const int polOrder                     = pol;
+  static const constexpr ChooseDiscretizer type              = ChooseDiscretizer::swipdg;
+  static const constexpr Stuff::LA::ChooseBackend la_backend = la;
+  static const int polOrder                                  = pol;
 
   static std::string static_id() //                                                        int() needed, otherwise we
   { //                                                                                     get a linker error
