@@ -37,7 +37,7 @@ before_install:
   - sudo -E apt-get install -y -q python-pip python3-pip
   - sudo -E pip3 install virtualenv cpp-coveralls
   - sudo -E pip install virtualenv cpp-coveralls
-  - sudo -E add-apt-repository -y ppa:git-core/ppa && sudo -E aptitude update && sudo -E aptitude install git
+  - sudo -E add-apt-repository -y ppa:git-core/ppa && sudo -E aptitude update && sudo -E aptitude install git -yq
   - for ii in http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis5_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/metis_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis-dev_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis-dev_3.1.1-4build1_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis3.1_3.1.1-4build1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
   - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
