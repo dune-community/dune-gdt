@@ -401,7 +401,7 @@ private:
 
 
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
 class AdvectionGodunovOperator
     : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
                                                                                    BoundaryValueFunctionImp,
