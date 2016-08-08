@@ -33,7 +33,7 @@ results_LinearEllipticSwipdgEstimatorExpectationsSpe10Model1TestCaseALUGrid22sim
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
     return {2.74e+00, 1.84e+00};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
-    return {2.26e-11, 4.40e-12};
+    return {2.26e-11, 4.39e-12};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id())
     return {1.22e+00, 7.62e-01};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
@@ -70,11 +70,14 @@ class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestC
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
-#ifndef NDEBUG
+
     if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
+#ifndef NDEBUG
       return {2.97e-11, 9.14e-13};
-    else
+#else
+      return {1.07e-12, 2.60e-12};
 #endif
+    else
       return internal::
           results_LinearEllipticSwipdgEstimatorExpectationsSpe10Model1TestCaseALUGrid22simplexconformingdouble1swipdg1(
               test_case, type);
