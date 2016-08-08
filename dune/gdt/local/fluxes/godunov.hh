@@ -156,7 +156,7 @@ public:
         coord = ii;
 #ifndef NDEBUG
       else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
-          ++num_zeros;
+        ++num_zeros;
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
 #endif // NDEBUG
@@ -493,7 +493,7 @@ public:
         coord = ii;
 #ifndef NDEBUG
       else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
-          ++num_zeros;
+        ++num_zeros;
       else
         DUNE_THROW(Dune::NotImplemented, "Godunov flux is only implemented for axis parallel cube grids");
 #endif // NDEBUG

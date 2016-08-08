@@ -107,9 +107,9 @@ struct ProlongationOperatorsBase
 }; // ProlongationOperatorsBase
 
 template <class T, class U>
-constexpr double ProlongationOperatorsBase<T,U>::default_tolerance;
+constexpr double ProlongationOperatorsBase<T, U>::default_tolerance;
 template <class T, class U>
-constexpr double ProlongationOperatorsBase<T,U>::alugrid_tolerance;
+constexpr double ProlongationOperatorsBase<T, U>::alugrid_tolerance;
 
 } // namespace internal
 

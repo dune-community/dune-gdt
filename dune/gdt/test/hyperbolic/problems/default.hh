@@ -54,7 +54,6 @@ public:
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
       DefaultRHSType;
-          DefaultRHSType;
 
   using typename BaseType::FluxType;
   using typename BaseType::RHSType;
