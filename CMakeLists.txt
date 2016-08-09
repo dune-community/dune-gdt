@@ -40,6 +40,8 @@ file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/../${_mod}/*.hh")
 list(APPEND COMMON_HEADER ${HEADER_LIST})
 endforeach(_mod DEPENDENCIES)
 set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
+file( GLOB_RECURSE gdt_src "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx" )
+add_format(${gdt} ${gdt_src})
 
 #disable most warnings from dependent modules
 foreach(_mod ${ALL_DEPENDENCIES})
