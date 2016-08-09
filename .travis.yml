@@ -74,6 +74,7 @@ script:
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make headercheck; fi
     - $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
+    - unset GH_TOKEN
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
