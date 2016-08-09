@@ -107,9 +107,14 @@ class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<A
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
-    return internal::
-        results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
-            test_case, type);
+#ifndef NDEBUG
+    if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
+      return {8.38e-16, 5.20e-13, 4.68e-13, 1.19e-12};
+    else
+#endif
+      return internal::
+          results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
+              test_case, type);
   }
 }; // LinearEllipticSwipdgEstimatorExpectations
 

@@ -108,6 +108,10 @@ class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestC
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
+#ifndef NDEBUG
+    if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
+      return {2.26e-11, 4.45e-12};
+#endif
     return internal::
         results_LinearEllipticSwipdgEstimatorExpectationsSpe10Model1TestCaseALUGrid22simplexconformingdouble1swipdg1(
             test_case, type);
