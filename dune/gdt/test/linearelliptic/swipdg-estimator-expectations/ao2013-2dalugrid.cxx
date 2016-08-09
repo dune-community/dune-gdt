@@ -71,7 +71,7 @@ public:
   {
     if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
 #ifndef NDEBUG
-      return {7.62e-16, 8.48e-13, 1.18e-13, 2.47e-13};
+      return {7.92e-16, 2.38e-12, 1.94e-13, 8.16e-14};
 #else
       return {6.73e-16, 2.38e-12, 1.94e-13, 8.14e-14};
 #endif
