@@ -19,7 +19,7 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>

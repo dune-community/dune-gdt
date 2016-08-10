@@ -15,7 +15,7 @@
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/la/container.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>

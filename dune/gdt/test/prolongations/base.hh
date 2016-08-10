@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/la/container.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/projections.hh>

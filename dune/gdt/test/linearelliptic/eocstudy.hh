@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_EOCSTUDY_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_EOCSTUDY_HH
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/operators/l2.hh>

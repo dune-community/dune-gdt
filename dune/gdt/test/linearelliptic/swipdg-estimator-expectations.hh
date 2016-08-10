@@ -11,7 +11,7 @@
 
 #include <dune/stuff/common/type_utils.hh>
 #include <dune/stuff/la/container/container-interface.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
 #include "estimators/swipdg-fluxreconstruction.hh"

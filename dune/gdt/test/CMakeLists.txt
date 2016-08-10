@@ -13,8 +13,6 @@ BEGIN_TESTCASES()
 END_TESTCASES()
 
 foreach (test ${testnames})
-  add_dune_alugrid_flags(${test})
-  TARGET_LINK_LIBRARIES(${test} ${COMMON_LIBS})
   if (${test} MATCHES spaces)
     list(APPEND spaces_test_binaries ${test})
   elseif (${test} MATCHES operators)

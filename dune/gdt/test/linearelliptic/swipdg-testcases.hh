@@ -11,7 +11,7 @@
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/alugrid.hh>
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "eocexpectations.hh"
 #include "problems.hh"

@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_ELLIPTIC_HH
 #define DUNE_GDT_TEST_OPERATORS_ELLIPTIC_HH
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/elliptic.hh>

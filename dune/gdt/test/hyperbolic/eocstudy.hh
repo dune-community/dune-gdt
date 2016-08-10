@@ -11,7 +11,7 @@
 
 #include <dune/grid/common/gridview.hh>
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "../instationary-eocstudy.hh"
 #include "eocexpectations.hh"

@@ -8,7 +8,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/test/hyperbolic/eocexpectations.hh>
 #include <dune/gdt/test/hyperbolic/problems/2dboltzmann.hh>
