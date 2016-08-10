@@ -20,7 +20,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridTestCases);
+TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, YaspGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_sgrid_order_1)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::istl_sparse, 1>();

@@ -11,7 +11,7 @@
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
 #endif
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include <dune/stuff/functions/checkerboard.hh>
 #include <dune/stuff/functions/constant.hh>
@@ -100,7 +100,7 @@ private:
   };
 
   template <bool anything>
-  struct Helper<SGrid<2, 2>, anything>
+  struct Helper<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, anything>
   {
     static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
     {

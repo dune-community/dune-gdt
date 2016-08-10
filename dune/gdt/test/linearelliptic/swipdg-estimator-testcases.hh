@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_ESTIMATOR_TESTCASES_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_ESTIMATOR_TESTCASES_HH
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 #include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/test/gtest/gtest.h>

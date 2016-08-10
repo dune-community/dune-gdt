@@ -13,7 +13,7 @@
 using namespace Dune::GDT::Test;
 
 
-typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRID(3, 1)> ConstantSpaces;
+typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)> ConstantSpaces;
 
 TYPED_TEST_CASE(EllipticLocalizableProductTest, ConstantSpaces);
 TYPED_TEST(EllipticLocalizableProductTest, constructible_by_ctor)

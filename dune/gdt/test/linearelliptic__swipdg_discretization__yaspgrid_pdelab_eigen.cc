@@ -20,7 +20,7 @@ using namespace Dune::GDT;
 
 #if HAVE_DUNE_PDELAB && HAVE_EIGEN
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, SGridTestCases);
+TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, YaspGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_pdelab_and_eigen_and_sgrid_order_1)
 {
   this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::eigen_sparse, 1>();

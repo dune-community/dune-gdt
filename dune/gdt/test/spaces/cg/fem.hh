@@ -18,25 +18,16 @@
 #if HAVE_DUNE_FEM
 
 
-#define SPACE_CG_FEM_SGRID(dd, rr, pp) Dune::GDT::DuneFemCgSpaceWrapper<S##dd##dLeafGridPartType, pp, double, rr>
-
 #define SPACE_CG_FEM_YASPGRID(dd, rr, pp) Dune::GDT::DuneFemCgSpaceWrapper<Yasp##dd##dLeafGridPartType, pp, double, rr>
 
 #define SPACES_CG_FEM(pp)                                                                                              \
-  SPACE_CG_FEM_SGRID(1, 1, pp)                                                                                         \
-  , SPACE_CG_FEM_SGRID(2, 1, pp), SPACE_CG_FEM_SGRID(3, 1, pp), SPACE_CG_FEM_YASPGRID(1, 1, pp),                       \
-      SPACE_CG_FEM_YASPGRID(2, 1, pp), SPACE_CG_FEM_YASPGRID(3, 1, pp)
-
-
-#define SPACE_CG_FEM_SGRID_LEVEL(dd, rr, pp) Dune::GDT::DuneFemCgSpaceWrapper<S##dd##dLevelGridPartType, pp, double, rr>
+  SPACE_CG_FEM_YASPGRID(1, 1, pp), SPACE_CG_FEM_YASPGRID(2, 1, pp), SPACE_CG_FEM_YASPGRID(3, 1, pp)
 
 #define SPACE_CG_FEM_YASPGRID_LEVEL(dd, rr, pp)                                                                        \
   Dune::GDT::DuneFemCgSpaceWrapper<Yasp##dd##dLevelGridPartType, pp, double, rr>
 
 #define SPACES_CG_FEM_LEVEL(pp)                                                                                        \
-  SPACE_CG_FEM_SGRID_LEVEL(1, 1, pp)                                                                                   \
-  , SPACE_CG_FEM_SGRID_LEVEL(2, 1, pp), SPACE_CG_FEM_SGRID_LEVEL(3, 1, pp), SPACE_CG_FEM_YASPGRID_LEVEL(1, 1, pp),     \
-      SPACE_CG_FEM_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_FEM_YASPGRID_LEVEL(3, 1, pp)
+  SPACE_CG_FEM_YASPGRID_LEVEL(1, 1, pp), SPACE_CG_FEM_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_FEM_YASPGRID_LEVEL(3, 1, pp)
 
 
 #if HAVE_ALUGRID

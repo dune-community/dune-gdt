@@ -17,23 +17,14 @@
 
 #include <dune/stuff/grid/information.hh>
 
-#define SPACE_RT_PDELAB_SGRID(dd) Dune::GDT::DunePdelabRtSpaceWrapper<S##dd##dLeafGridViewType, 0, double, dd>
-
 #define SPACE_RT_PDELAB_YASPGRID(dd) Dune::GDT::DunePdelabRtSpaceWrapper<Yasp##dd##dLeafGridViewType, 0, double, dd>
 
-#define SPACES_RT_PDELAB                                                                                               \
-  SPACE_RT_PDELAB_SGRID(2)                                                                                             \
-  , SPACE_RT_PDELAB_SGRID(3), SPACE_RT_PDELAB_YASPGRID(2), SPACE_RT_PDELAB_YASPGRID(3)
-
-
-#define SPACE_RT_PDELAB_SGRID_LEVEL(dd) Dune::GDT::DunePdelabRtSpaceWrapper<S##dd##dLevelGridViewType, 0, double, dd>
+#define SPACES_RT_PDELAB SPACE_RT_PDELAB_YASPGRID(2), SPACE_RT_PDELAB_YASPGRID(3)
 
 #define SPACE_RT_PDELAB_YASPGRID_LEVEL(dd)                                                                             \
   Dune::GDT::DunePdelabRtSpaceWrapper<Yasp##dd##dLevelGridViewType, 0, double, dd>
 
-#define SPACES_RT_PDELAB_LEVEL                                                                                         \
-  SPACE_RT_PDELAB_SGRID_LEVEL(2)                                                                                       \
-  , SPACE_RT_PDELAB_SGRID_LEVEL(3), SPACE_RT_PDELAB_YASPGRID_LEVEL(2), SPACE_RT_PDELAB_YASPGRID_LEVEL(3)
+#define SPACES_RT_PDELAB_LEVEL SPACE_RT_PDELAB_YASPGRID_LEVEL(2), SPACE_RT_PDELAB_YASPGRID_LEVEL(3)
 
 #if HAVE_ALUGRID
 

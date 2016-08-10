@@ -20,28 +20,18 @@
 #if HAVE_DUNE_PDELAB
 
 
-#define SPACE_CG_PDELAB_SGRID(dd, rr, pp) Dune::GDT::DunePdelabCgSpaceWrapper<S##dd##dLeafGridViewType, pp, double, rr>
-
 #define SPACE_CG_PDELAB_YASPGRID(dd, rr, pp)                                                                           \
   Dune::GDT::DunePdelabCgSpaceWrapper<Yasp##dd##dLeafGridViewType, pp, double, rr>
 
 #define SPACES_CG_PDELAB(pp)                                                                                           \
-  SPACE_CG_PDELAB_SGRID(1, 1, pp)                                                                                      \
-  , SPACE_CG_PDELAB_SGRID(2, 1, pp), SPACE_CG_PDELAB_SGRID(3, 1, pp), SPACE_CG_PDELAB_YASPGRID(1, 1, pp),              \
-      SPACE_CG_PDELAB_YASPGRID(2, 1, pp), SPACE_CG_PDELAB_YASPGRID(3, 1, pp)
-
-
-#define SPACE_CG_PDELAB_SGRID_LEVEL(dd, rr, pp)                                                                        \
-  Dune::GDT::DunePdelabCgSpaceWrapper<S##dd##dLevelGridViewType, pp, double, rr>
+  SPACE_CG_PDELAB_YASPGRID(1, 1, pp), SPACE_CG_PDELAB_YASPGRID(2, 1, pp), SPACE_CG_PDELAB_YASPGRID(3, 1, pp)
 
 #define SPACE_CG_PDELAB_YASPGRID_LEVEL(dd, rr, pp)                                                                     \
   Dune::GDT::DunePdelabCgSpaceWrapper<Yasp##dd##dLevelGridViewType, pp, double, rr>
 
 #define SPACES_CG_PDELAB_LEVEL(pp)                                                                                     \
-  SPACE_CG_PDELAB_SGRID_LEVEL(1, 1, pp)                                                                                \
-  , SPACE_CG_PDELAB_SGRID_LEVEL(2, 1, pp), SPACE_CG_PDELAB_SGRID_LEVEL(3, 1, pp),                                      \
-      SPACE_CG_PDELAB_YASPGRID_LEVEL(1, 1, pp), SPACE_CG_PDELAB_YASPGRID_LEVEL(2, 1, pp),                              \
-      SPACE_CG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
+  SPACE_CG_PDELAB_YASPGRID_LEVEL(1, 1, pp)                                                                             \
+  , SPACE_CG_PDELAB_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_PDELAB_YASPGRID_LEVEL(3, 1, pp)
 
 
 #if HAVE_ALUGRID

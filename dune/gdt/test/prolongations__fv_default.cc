@@ -13,8 +13,7 @@
 using namespace Dune::GDT::Test;
 
 
-typedef testing::Types<SPACE_FV_SGRID_LEVEL(1, 1), SPACE_FV_SGRID_LEVEL(2, 1), SPACE_FV_SGRID_LEVEL(3, 1),
-                       SPACE_FV_YASPGRID_LEVEL(1, 1), SPACE_FV_YASPGRID_LEVEL(2, 1), SPACE_FV_YASPGRID_LEVEL(3, 1)
+typedef testing::Types<SPACE_FV_YASPGRID_LEVEL(1, 1), SPACE_FV_YASPGRID_LEVEL(2, 1), SPACE_FV_YASPGRID_LEVEL(3, 1)
 #if HAVE_ALUGRID
                                                                                          ,
                        SPACE_FV_ALUCONFORMGRID_LEVEL(2, 1), SPACE_FV_ALUCONFORMGRID_LEVEL(3, 1),

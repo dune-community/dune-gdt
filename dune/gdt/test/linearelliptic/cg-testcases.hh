@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_CG_TESTCASES_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_CG_TESTCASES_HH
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 #include <dune/grid/alugrid.hh>
 
 #include <dune/stuff/test/gtest/gtest.h>
@@ -17,12 +17,15 @@
 #include "problems.hh"
 
 
-typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::ER2007TestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Dune::SGrid<2, 2>>,
-                       Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::SGrid<2, 2>>>
-    SGridTestCases;
+typedef testing::
+    Types<Dune::GDT::LinearElliptic::AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>,
+          Dune::GDT::LinearElliptic::ER2007TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>,
+          Dune::GDT::LinearElliptic::ESV2007TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>,
+          Dune::GDT::LinearElliptic::
+              MixedBoundaryTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>,
+          Dune::GDT::LinearElliptic::Spe10Model1TestCase<Dune::YaspGrid<2,
+                                                                        Dune::EquidistantOffsetCoordinates<double, 2>>>>
+        YaspGridTestCases;
 
 
 #if HAVE_ALUGRID
@@ -50,22 +53,39 @@ namespace GDT {
 namespace Test {
 
 
-// SGrid< 2, 2 >
+// YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::cg, 1>;
+extern template class
+    LinearEllipticEocExpectations<LinearElliptic::
+                                      AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                     double, 1>,
+                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<SGrid<2, 2>, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::cg, 1>;
+extern template class
+    LinearEllipticEocExpectations<LinearElliptic::
+                                      ER2007TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                     double, 1>,
+                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<SGrid<2, 2>, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::cg, 1>;
+extern template class
+    LinearEllipticEocExpectations<LinearElliptic::
+                                      ESV2007TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                      double, 1>,
+                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<SGrid<2, 2>, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::cg, 1>;
+extern template class
+    LinearEllipticEocExpectations<LinearElliptic::
+                                      MixedBoundaryTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double,
+                                                                                                                 2>>,
+                                                            double, 1>,
+                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<SGrid<2, 2>, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::cg, 1>;
+extern template class
+    LinearEllipticEocExpectations<LinearElliptic::
+                                      Spe10Model1TestCase<Dune::YaspGrid<2,
+                                                                         Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                          double, 1>,
+                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
 
 
 #if HAVE_ALUGRID

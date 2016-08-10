@@ -18,17 +18,17 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#if HAVE_DUNE_FEM && HAVE_EIGEN
 
-TYPED_TEST_CASE(linearelliptic_CG_discretization, SGridTestCases);
-TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_fem_and_istl_and_sgrid)
+TYPED_TEST_CASE(linearelliptic_CG_discretization, YaspGridTestCases);
+TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_fem_and_eigen_and_sgrid)
 {
-  this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::istl_sparse>();
+  this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse>();
 }
 
 #else
 
-TEST(DISABLED_linearelliptic_CG_discretization, eoc_study_using_fem_and_istl_and_sgrid)
+TEST(DISABLED_linearelliptic_CG_discretization, eoc_study_using_fem_and_eigen_and_sgrid)
 {
 }
 

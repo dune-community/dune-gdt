@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include "../problems/AO2013.hh"
 #include "../eocexpectations.hh"
@@ -19,11 +19,14 @@ namespace Test {
 
 
 template <bool anything>
-class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1>,
+class LinearEllipticEocExpectations<LinearElliptic::
+                                        AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                       double, 1>,
                                     LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
     : public internal::LinearEllipticEocExpectationsBase<1>
 {
-  typedef LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1> TestCaseType;
+  typedef LinearElliptic::AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, double, 1>
+      TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -50,11 +53,14 @@ public:
 }; // LinearEllipticEocExpectations
 
 template <bool anything>
-class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1>,
+class LinearEllipticEocExpectations<LinearElliptic::
+                                        AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                       double, 1>,
                                     LinearElliptic::ChooseDiscretizer::swipdg, 2, anything>
     : public internal::LinearEllipticEocExpectationsBase<2>
 {
-  typedef LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1> TestCaseType;
+  typedef LinearElliptic::AO2013TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, double, 1>
+      TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -81,9 +87,19 @@ public:
 }; // LinearEllipticEocExpectations
 
 
-template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1>,
+template class LinearEllipticEocExpectations<LinearElliptic::
+                                                 AO2013TestCase<Dune::
+                                                                    YaspGrid<2,
+                                                                             Dune::EquidistantOffsetCoordinates<double,
+                                                                                                                2>>,
+                                                                double, 1>,
                                              LinearElliptic::ChooseDiscretizer::swipdg, 1>;
-template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<SGrid<2, 2>, double, 1>,
+template class LinearEllipticEocExpectations<LinearElliptic::
+                                                 AO2013TestCase<Dune::
+                                                                    YaspGrid<2,
+                                                                             Dune::EquidistantOffsetCoordinates<double,
+                                                                                                                2>>,
+                                                                double, 1>,
                                              LinearElliptic::ChooseDiscretizer::swipdg, 2>;
 
 

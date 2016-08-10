@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
 #include "../problems/ESV2007.hh"
 #include "../eocexpectations.hh"
@@ -19,11 +19,15 @@ namespace Test {
 
 
 template <bool anything>
-class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<SGrid<2, 2>, double, 1>,
+class LinearEllipticEocExpectations<LinearElliptic::
+                                        ESV2007TestCase<Dune::YaspGrid<2,
+                                                                       Dune::EquidistantOffsetCoordinates<double, 2>>,
+                                                        double, 1>,
                                     LinearElliptic::ChooseDiscretizer::cg, 1, anything>
     : public internal::LinearEllipticEocExpectationsBase<1>
 {
-  typedef LinearElliptic::ESV2007TestCase<SGrid<2, 2>, double, 1> TestCaseType;
+  typedef LinearElliptic::ESV2007TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, double, 1>
+      TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
@@ -39,7 +43,12 @@ public:
 }; // LinearEllipticEocExpectations
 
 
-template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<SGrid<2, 2>, double, 1>,
+template class LinearEllipticEocExpectations<LinearElliptic::
+                                                 ESV2007TestCase<Dune::
+                                                                     YaspGrid<2,
+                                                                              Dune::EquidistantOffsetCoordinates<double,
+                                                                                                                 2>>,
+                                                                 double, 1>,
                                              LinearElliptic::ChooseDiscretizer::cg, 1>;
 
 

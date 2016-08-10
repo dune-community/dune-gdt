@@ -9,7 +9,6 @@
 #ifndef DUNE_GDT_TEST_GRIDS_HH
 #define DUNE_GDT_TEST_GRIDS_HH
 
-#include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
@@ -17,29 +16,19 @@
 
 #include <dune/gdt/spaces/tools.hh>
 
-#define SGRID_TYPES(dim)                                                                                               \
-  typedef                                                                                                              \
-      typename Dune::GDT::SpaceTools::LeafGridPartView<Dune::SGrid<dim, dim>, false>::Type S##dim##dLeafGridPartType;  \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView<Dune::SGrid<dim, dim>, false>::Type                        \
-      S##dim##dLevelGridPartType;                                                                                      \
-  typedef                                                                                                              \
-      typename Dune::GDT::SpaceTools::LeafGridPartView<Dune::SGrid<dim, dim>, true>::Type S##dim##dLeafGridViewType;   \
-  typedef                                                                                                              \
-      typename Dune::GDT::SpaceTools::LevelGridPartView<Dune::SGrid<dim, dim>, true>::Type S##dim##dLevelGridViewType;
-SGRID_TYPES(1)
-SGRID_TYPES(2)
-SGRID_TYPES(3)
-#undef SGRID_TYPES
-
 #define YASPGRID_TYPES(dim)                                                                                            \
-  typedef                                                                                                              \
-      typename Dune::GDT::SpaceTools::LeafGridPartView<Dune::YaspGrid<dim>, false>::Type Yasp##dim##dLeafGridPartType; \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView<Dune::YaspGrid<dim>, false>::Type                          \
-      Yasp##dim##dLevelGridPartType;                                                                                   \
-  typedef                                                                                                              \
-      typename Dune::GDT::SpaceTools::LeafGridPartView<Dune::YaspGrid<dim>, true>::Type Yasp##dim##dLeafGridViewType;  \
-  typedef typename Dune::GDT::SpaceTools::LevelGridPartView<Dune::YaspGrid<dim>, true>::Type                           \
-      Yasp##dim##dLevelGridViewType;
+  typedef typename Dune::GDT::SpaceTools::                                                                             \
+      LeafGridPartView<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>, false>::Type              \
+          Yasp##dim##dLeafGridPartType;                                                                                \
+  typedef typename Dune::GDT::SpaceTools::                                                                             \
+      LevelGridPartView<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>, false>::Type             \
+          Yasp##dim##dLevelGridPartType;                                                                               \
+  typedef typename Dune::GDT::SpaceTools::                                                                             \
+      LeafGridPartView<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>, true>::Type               \
+          Yasp##dim##dLeafGridViewType;                                                                                \
+  typedef typename Dune::GDT::SpaceTools::                                                                             \
+      LevelGridPartView<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>, true>::Type              \
+          Yasp##dim##dLevelGridViewType;
 YASPGRID_TYPES(1)
 YASPGRID_TYPES(2)
 YASPGRID_TYPES(3)
