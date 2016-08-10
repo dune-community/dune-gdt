@@ -33,7 +33,7 @@ TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_constant_arguments)
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments(this->dimDomain == 3 ? 5.33e-15 : 3.553e-15);
+  this->correct_for_linear_arguments(this->dimDomain == 3 ? 7.11e-15 : 3.553e-15);
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_quadratic_arguments)
 {

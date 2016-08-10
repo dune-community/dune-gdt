@@ -52,7 +52,7 @@ TYPED_TEST(EllipticMatrixOperatorTest, is_matrix_operator)
 #if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments();
+  this->correct_for_constant_arguments(6.90e-13);
 }
 #else
 TEST(DISABLED_EllipticMatrixOperatorTest, correct_for_constant_arguments)

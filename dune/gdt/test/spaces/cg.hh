@@ -89,23 +89,23 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     const auto entity_end_it = this->space_.grid_view().template end<0>();
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      for (auto cc : DSC::valueRange(entity.template count<dimDomain>())) {
-        const auto vertex_ptr                         = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex                       = vertex_ptr->geometry().center();
-        vertex_to_indices_map[convert_vector(vertex)] = std::set<size_t>();
+      for (auto cc : DSC::valueRange(entity.subEntities(dimDomain))) {
+        const auto vertex                                    = entity.template subEntity<dimDomain>(cc);
+        const DomainType vertex_center                       = vertex.geometry().center();
+        vertex_to_indices_map[convert_vector(vertex_center)] = std::set<size_t>();
       }
     }
 
     // walk the grid again to find all DoF ids
     auto functor = [&](const typename GridProviderType::EntityType& entity) {
-      const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
+      const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis          = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex_ptr   = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex              = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
+        const DomainType vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
-        const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
+        const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         EXPECT_EQ(basis_values.size(), num_vertices);
         size_t ones            = 0;
         size_t zeros           = 0;
@@ -124,13 +124,13 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
              << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
-             << ", vertex " << cc << ": [ " << vertex << "], ";
+             << ", vertex " << cc << ": [ " << vertex_center << "], ";
           Common::print(basis_values, "basis_values", ss);
           EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = this->space_.mapper().mapToGlobal(entity, local_DoF_index);
-        vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
+        vertex_to_indices_map[convert_vector(vertex_center)].insert(global_DoF_index);
       }
     };
     DSG::Walker<GridViewType> walker(this->space_.grid_view());

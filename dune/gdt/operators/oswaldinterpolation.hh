@@ -100,18 +100,18 @@ private:
     // walk the grid to create the maps explained above and to find the boundary vertices
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity        = *entity_it;
-      const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
+      const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis          = source.space().base_function_set(entity);
       if (basis.size() != num_vertices)
         DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-        const auto vertex_ptr       = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
-        const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
-        const auto vertex           = vertex_ptr->geometry().center();
+        const auto vertex           = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+        const auto global_vertex_id = grid_view_.indexSet().index(*vertex);
+        const auto vertex_center    = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
-        const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
+        const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         if (basis_values.size() != num_vertices)
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones            = 0;
@@ -131,7 +131,7 @@ private:
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
              << ", num_vertices = " << num_vertices << ", entity " << grid_view_.indexSet().index(entity) << ", vertex "
-             << local_vertex_id << ": [ " << vertex << "], ";
+             << local_vertex_id << ": [ " << vertex_center << "], ";
           Stuff::Common::print(basis_values, "basis_values", ss);
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
         }
@@ -154,10 +154,10 @@ private:
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we
               // loop over all vertices of the entity
               for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-                const auto vertex_ptr = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
-                const auto global_vertex_id = grid_view_.indexSet().index(*vertex_ptr);
-                const auto vertex           = vertex_ptr->geometry().center();
-                if (Stuff::Common::FloatCmp::eq(global_intersection_corner, vertex))
+                const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+                const auto global_vertex_id = grid_view_.indexSet().index(vertex);
+                const auto vertex_center    = vertex.geometry().center();
+                if (Stuff::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
                   boundary_vertices.insert(global_vertex_id);
               } // loop over all vertices of the entity
             } // loop over all intersection corners
@@ -169,7 +169,7 @@ private:
     // walk the grid for the second time
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity      = *entity_it;
-      const auto num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
+      const auto num_vertices = entity.subEntities(dimDomain);
       // get the local functions
       const auto local_source             = source.local_discrete_function(entity);
       const auto& local_source_DoF_vector = local_source->vector();

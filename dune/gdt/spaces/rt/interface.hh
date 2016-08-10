@@ -59,7 +59,7 @@ public:
     static_assert(dimDomain == 2, "Not implemented!");
     static_assert(polOrder == 0, "Not implemented!");
     // prepare
-    const auto num_intersections = boost::numeric_cast<size_t>(entity.template count<1>());
+    const auto num_intersections = entity.subEntities(1);
     std::vector<size_t> local_DoF_index_of_vertex(num_intersections, std::numeric_limits<size_t>::infinity());
     std::vector<size_t> local_DoF_index_of_intersection(num_intersections, std::numeric_limits<size_t>::infinity());
     typedef typename BaseFunctionSetType::DomainType DomainType;
@@ -76,10 +76,9 @@ public:
     // find the basis function index that corresponds to each vertex of the entity
     // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
     // therefore we walk the vertices
-    assert(num_intersections == boost::numeric_cast<size_t>(entity.template count<dimDomain>()));
+    assert(num_intersections == entity.subEntities(dimDomain));
     for (size_t vv = 0; vv < num_intersections; ++vv) {
-      const auto vertex_ptr = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(vv));
-      const auto& vertex    = *vertex_ptr;
+      const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(vv));
       // get the vertex coordinates
       vertices[vv]              = vertex.geometry().center();
       const auto& vertex_entity = reference_element.position(boost::numeric_cast<int>(vv), dimDomain);

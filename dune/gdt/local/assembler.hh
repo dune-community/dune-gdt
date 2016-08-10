@@ -244,10 +244,8 @@ public:
     assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
     assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());
     assert(global_matrix_ne_en.cols() >= ansatz_space_en.mapper().size());
-    const auto entityPtr   = intersection.inside();
-    const auto& entity     = *entityPtr;
-    const auto neighborPtr = intersection.outside();
-    const auto& neighbor   = *neighborPtr;
+    const auto entity   = intersection.inside();
+    const auto neighbor = intersection.outside();
     // prepare
     const size_t rows_en = test_space_en.mapper().numDofs(entity);
     const size_t cols_en = ansatz_space_en.mapper().numDofs(entity);
@@ -401,8 +399,7 @@ public:
   void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
                 const IntersectionType& intersection, Stuff::LA::MatrixInterface<M, R>& global_matrix) const
   {
-    const auto entityPtr = intersection.inside();
-    const auto& entity   = *entityPtr;
+    const auto entity = intersection.inside();
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
@@ -544,9 +541,8 @@ public:
                 Stuff::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
-    const auto entity_ptr = intersection.inside();
-    const auto& entity    = *entity_ptr;
-    const size_t size     = test_space.mapper().numDofs(entity);
+    const auto entity = intersection.inside();
+    const size_t size = test_space.mapper().numDofs(entity);
     Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);

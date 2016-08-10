@@ -314,8 +314,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour    = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
@@ -367,8 +366,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour    = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
