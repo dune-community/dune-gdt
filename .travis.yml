@@ -30,6 +30,7 @@ addons:
     - curl
     - ninja-build
     - python3-requests
+    - libeigen3-dev
 
 before_install:
   - |-
