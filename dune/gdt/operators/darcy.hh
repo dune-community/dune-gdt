@@ -205,8 +205,7 @@ private:
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor    = *neighbor_ptr;
+          const auto neighbor = intersection.outside();
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_function_neighbor    = function_.local_function(neighbor);
             const auto local_source_neighbor      = source.local_function(neighbor);

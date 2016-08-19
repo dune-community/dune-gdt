@@ -288,7 +288,7 @@ public:
       const auto& intersection = *i_it;
       if (intersection.neighbor()) {
         const auto neighbor        = intersection.outside();
-        const auto neighbor_center = neighbor->geometry().center();
+        const auto neighbor_center = neighbor.geometry().center();
         const bool boundary        = intersection.boundary();
         if ((neighbor_center[0] < entity_center[0] && !boundary) || (neighbor_center[0] > entity_center[0] && boundary))
           u_left = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));

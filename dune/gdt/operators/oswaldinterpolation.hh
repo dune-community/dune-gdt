@@ -108,7 +108,7 @@ private:
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
         const auto vertex           = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
-        const auto global_vertex_id = grid_view_.indexSet().index(*vertex);
+        const auto global_vertex_id = grid_view_.indexSet().index(vertex);
         const auto vertex_center    = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
