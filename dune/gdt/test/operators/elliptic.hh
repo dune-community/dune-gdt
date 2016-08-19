@@ -558,17 +558,22 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     return result;
   } // ... compute(...)
 
-  /**
-   * \note we can not use the base variant bc. of the projection in compute()
-   */
   void correct_for_constant_arguments() const
   {
-    const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
 #ifndef NDEBUG
     const double tolerance = 5.05e-13;
 #else
     const double tolerance = 6.54e-13;
 #endif
+    correct_for_constant_arguments(tolerance);
+  }
+
+  /**
+   * \note we can not use the base variant bc. of the projection in compute()
+   */
+  void correct_for_constant_arguments(const double tolerance) const
+  {
+    const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
     this->check(compute(constant_gradient), factor_value_ * 1.0, tolerance);
   }
 
