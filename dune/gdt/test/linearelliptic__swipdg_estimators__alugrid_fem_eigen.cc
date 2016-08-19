@@ -9,7 +9,7 @@
 #define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
-#include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
+#include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "linearelliptic/swipdg-estimators.hh"
 #include "linearelliptic/swipdg-estimator-testcases.hh"

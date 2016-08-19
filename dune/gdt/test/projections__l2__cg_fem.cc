@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include <dune/stuff/grid/information.hh>
 

@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/stuff/test/main.hxx> // <- This one has to come first!
+#include <dune/xt/common/test/main.hxx> // <- This one has to come first!
 
 #include "projections.hh"
 #include "spaces/cg/fem.hh"
