@@ -40,6 +40,7 @@ before_install:
   - sudo -E pip3 install -U requests virtualenv cpp-coveralls
   - sudo -E pip install -U requests virtualenv cpp-coveralls
   # workaround for gnutls bug is using git built against curl-openssl
+  - sudo -E rm /etc/apt/sources.list.d/*git*.list
   - sudo -E add-apt-repository -y ppa:pymor/travis && sudo -E aptitude update && sudo -E aptitude install git -yq
   - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
