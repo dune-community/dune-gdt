@@ -162,8 +162,10 @@ public:
       // visualize
       if (!visualize_prefix_.empty()) {
         this->test_case_.problem().visualize(current_discretization_->ansatz_space().grid_view(),
-                                             visualize_prefix_ + "_problem_" + Dune::XT::Common::to_string(current_refinement_));
-        current_refinement_solution.visualize(visualize_prefix_ + "_solution_" + Dune::XT::Common::to_string(current_refinement_));
+                                             visualize_prefix_ + "_problem_"
+                                                 + Dune::XT::Common::to_string(current_refinement_));
+        current_refinement_solution.visualize(visualize_prefix_ + "_solution_"
+                                              + Dune::XT::Common::to_string(current_refinement_));
       }
     }
     return time_to_solution_;

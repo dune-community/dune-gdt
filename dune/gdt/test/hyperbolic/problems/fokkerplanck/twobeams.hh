@@ -271,8 +271,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += Dune::XT::Common::to_string(50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]),
-                                precision)
+          str += Dune::XT::Common::to_string(
+                     50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]), precision)
                  + "*x[0]+" + Dune::XT::Common::to_string(50 * basefunctions_values_at_plusone()[rr], precision);
         }
         str += "]";
@@ -353,7 +353,8 @@ protected:
       //        velocity_grid_config["type"] = "provider.cube";
       //        velocity_grid_config["lower_left"] = "[-1.0]";
       //        velocity_grid_config["upper_right"] = "[1.0]";
-      //        velocity_grid_config["num_elements"] = "[" + Dune::XT::Common::to_string(basefunction_values[0].size() - 1) + "]";
+      //        velocity_grid_config["num_elements"] = "[" + Dune::XT::Common::to_string(basefunction_values[0].size() -
+      //        1) + "]";
       //        VelocityGridProviderType velocity_grid_provider =
       //        *(VelocityGridProviderType::create(velocity_grid_config));
       //        velocity_grid_ = velocity_grid_provider.grid_ptr();
@@ -398,7 +399,8 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          const CGJacobianType jacobian_ii(DomainType(-1),
       //                                           DomainType(1),
-      //                                           Dune::XT::Common::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
+      //                                           Dune::XT::Common::FieldVector< size_t, dimDomain
+      //                                           >(velocity_grid_view_->size(0)),
       //                                           basefunction_jacobians_values[ii]);
       //          basefunction_jacobians.emplace_back(jacobian_ii);
       //        }

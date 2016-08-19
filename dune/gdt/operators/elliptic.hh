@@ -131,8 +131,9 @@ typename std::enable_if<Stuff::is_localizable_function<DiffusionType>::value
 make_elliptic_localizable_product(const DiffusionType& diffusion, const GridViewType& grid_view, const RangeType& range,
                                   const SourceType& source, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticLocalizableProduct<DiffusionType, void, GridViewType, RangeType, SourceType>>(
-      over_integrate, diffusion, grid_view, range, source);
+  return Dune::XT::Common::
+      make_unique<EllipticLocalizableProduct<DiffusionType, void, GridViewType, RangeType, SourceType>>(
+          over_integrate, diffusion, grid_view, range, source);
 }
 
 /**
@@ -151,10 +152,10 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
                                   const RangeType& range, const SourceType& source, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticLocalizableProduct<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     GridViewType,
-                                                     RangeType,
-                                                     SourceType>>(
+                                                                  DiffusionTensorType,
+                                                                  GridViewType,
+                                                                  RangeType,
+                                                                  SourceType>>(
       over_integrate, diffusion_factor, diffusion_tensor, grid_view, range, source);
 }
 
@@ -264,8 +265,9 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
 make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
                               const SpaceType& space, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
-      over_integrate, diffusion_factor, diffusion_tensor, space);
+  return Dune::XT::Common::
+      make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
+          over_integrate, diffusion_factor, diffusion_tensor, space);
 }
 
 /**
@@ -287,10 +289,10 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
                               const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
-                                                 DiffusionTensorType,
-                                                 SpaceType,
-                                                 MatrixType,
-                                                 GridViewType>>(
+                                                              DiffusionTensorType,
+                                                              SpaceType,
+                                                              MatrixType,
+                                                              GridViewType>>(
       over_integrate, diffusion_factor, diffusion_tensor, space, grid_view);
 }
 
@@ -315,11 +317,11 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
                               const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
-                                                 DiffusionTensorType,
-                                                 RangeSpaceType,
-                                                 MatrixType,
-                                                 GridViewType,
-                                                 SourceSpaceType>>(
+                                                              DiffusionTensorType,
+                                                              RangeSpaceType,
+                                                              MatrixType,
+                                                              GridViewType,
+                                                              SourceSpaceType>>(
       over_integrate, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
 }
 
@@ -338,8 +340,9 @@ typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::val
 make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
                               MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
-      over_integrate, diffusion_factor, diffusion_tensor, matrix, space);
+  return Dune::XT::Common::
+      make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
+          over_integrate, diffusion_factor, diffusion_tensor, matrix, space);
 }
 
 /**
@@ -357,10 +360,10 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
-                                                 DiffusionTensorType,
-                                                 SpaceType,
-                                                 MatrixType,
-                                                 GridViewType>>(
+                                                              DiffusionTensorType,
+                                                              SpaceType,
+                                                              MatrixType,
+                                                              GridViewType>>(
       over_integrate, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
 }
 
@@ -381,11 +384,11 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
-                                                 DiffusionTensorType,
-                                                 RangeSpaceType,
-                                                 MatrixType,
-                                                 GridViewType,
-                                                 SourceSpaceType>>(
+                                                              DiffusionTensorType,
+                                                              RangeSpaceType,
+                                                              MatrixType,
+                                                              GridViewType,
+                                                              SourceSpaceType>>(
       over_integrate, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
 }
 
@@ -425,8 +428,9 @@ typename std::
     make_elliptic_matrix_operator(const DiffusionType& diffusion, const SpaceType& space, const GridViewType& grid_view,
                                   const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>(
-      over_integrate, diffusion, space, grid_view);
+  return Dune::XT::Common::
+      make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>(
+          over_integrate, diffusion, space, grid_view);
 }
 
 /**
@@ -448,11 +452,11 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, const RangeSpaceTy
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType,
-                                                 void,
-                                                 RangeSpaceType,
-                                                 MatrixType,
-                                                 GridViewType,
-                                                 SourceSpaceType>>(
+                                                              void,
+                                                              RangeSpaceType,
+                                                              MatrixType,
+                                                              GridViewType,
+                                                              SourceSpaceType>>(
       over_integrate, diffusion, range_space, source_space, grid_view);
 }
 
@@ -484,8 +488,9 @@ typename std::
     make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const SpaceType& space,
                                   const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>(
-      over_integrate, diffusion, matrix, space, grid_view);
+  return Dune::XT::Common::
+      make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>(
+          over_integrate, diffusion, matrix, space, grid_view);
 }
 
 /**
@@ -502,11 +507,11 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType,
-                                                 void,
-                                                 RangeSpaceType,
-                                                 MatrixType,
-                                                 GridViewType,
-                                                 SourceSpaceType>>(
+                                                              void,
+                                                              RangeSpaceType,
+                                                              MatrixType,
+                                                              GridViewType,
+                                                              SourceSpaceType>>(
       over_integrate, diffusion, matrix, range_space, source_space, grid_view);
 }
 
@@ -633,8 +638,9 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
                                                          typename DiffusionType::RangeFieldType>>>::type
 make_elliptic_operator(const GridViewType& grid_view, const DiffusionType& diffusion, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticOperator<DiffusionType, void, GridViewType, typename DiffusionType::RangeFieldType>>(
-      over_integrate, grid_view, diffusion);
+  return Dune::XT::Common::
+      make_unique<EllipticOperator<DiffusionType, void, GridViewType, typename DiffusionType::RangeFieldType>>(
+          over_integrate, grid_view, diffusion);
 }
 
 template <class GridViewType, class DiffusionFactorType, class DiffusionTensorType>
@@ -647,9 +653,9 @@ make_elliptic_operator(const GridViewType& grid_view, const DiffusionFactorType&
                        const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticOperator<DiffusionFactorType,
-                                           DiffusionTensorType,
-                                           GridViewType,
-                                           typename DiffusionFactorType::RangeFieldType>>(
+                                                        DiffusionTensorType,
+                                                        GridViewType,
+                                                        typename DiffusionFactorType::RangeFieldType>>(
       over_integrate, grid_view, diffusion_factor, diffusion_tensor);
 }
 

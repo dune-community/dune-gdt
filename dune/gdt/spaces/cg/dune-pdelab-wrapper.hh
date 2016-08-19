@@ -106,9 +106,9 @@ public:
   static const bool needs_grid_view                       = true;
 
   typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
-  typedef
-      typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         rangeDim>::type SpaceTupleType;
+  typedef typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder,
+                                                                                   RangeFieldImp, 1, 1>,
+                                                          rangeDim>::type SpaceTupleType;
 
 private:
   friend class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;

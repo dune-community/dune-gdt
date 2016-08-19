@@ -89,7 +89,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
+          str +=
+              "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
         }
         str += "]";
         return str;
@@ -98,8 +99,10 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + Dune::XT::Common::to_string(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr])
-                 + "*x[0]/7.0+" + Dune::XT::Common::to_string(basefunctions_values_at_plusone()[rr]) + ")*exp((-(t-1)^2)/2)";
+          str += "50*(" + Dune::XT::Common::to_string(basefunctions_values_at_minusone()[rr]
+                                                      - basefunctions_values_at_plusone()[rr])
+                 + "*x[0]/7.0+" + Dune::XT::Common::to_string(basefunctions_values_at_plusone()[rr])
+                 + ")*exp((-(t-1)^2)/2)";
         }
         str += "]";
         return str;

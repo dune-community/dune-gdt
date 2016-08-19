@@ -96,8 +96,8 @@ make_l2_projection_localizable_operator(const SourceType& source, DiscreteFuncti
                                         const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
-                                                          SourceType,
-                                                          DiscreteFunction<SpaceType, VectorType>>>(
+                                                                       SourceType,
+                                                                       DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, range.space().grid_view(), source, range);
 } // ... make_l2_projection_localizable_operator(...)
 

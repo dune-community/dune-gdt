@@ -175,7 +175,7 @@ public:
     const auto local_functions_tuple_entity   = numerical_flux_.local_functions(entity);
     const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(neighbor);
     const Dune::XT::Common::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
-                           LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
+                                        LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
         result = numerical_flux_.evaluate(local_functions_tuple_entity,
                                           local_functions_tuple_neighbor,
                                           *local_source_entity,
@@ -313,8 +313,8 @@ public:
     const XTFieldVectorType w_slope_left     = w_entity - w_left;
     const XTFieldVectorType w_slope_right    = w_right - w_entity;
     const XTFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
-    const XTFieldVectorType w_slope          = internal::ChooseLimiter<slope_limiter, XTFieldVectorType>::limit(
-        w_slope_left, w_slope_right, w_centered_slope);
+    const XTFieldVectorType w_slope =
+        internal::ChooseLimiter<slope_limiter, XTFieldVectorType>::limit(w_slope_left, w_slope_right, w_centered_slope);
     const XTFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
     const XTFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
     const XTFieldVectorType w_reconstructed_right = w_entity + half_w_slope;

@@ -198,7 +198,8 @@ protected:
           if (cc > 0)
             str += " ";
           str += Dune::XT::Common::to_string(0.5 * basefunctions_right[cc], precision) + "+("
-                 + Dune::XT::Common::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc], precision)
+                 + Dune::XT::Common::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc],
+                                               precision)
                  + ")*x[0]/3.0";
         }
         str += "]";

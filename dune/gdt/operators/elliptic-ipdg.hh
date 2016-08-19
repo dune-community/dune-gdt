@@ -165,10 +165,10 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
 }
 
@@ -220,11 +220,11 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType,
-                                                     GridViewType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType,
+                                                                  GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_view);
 }
 
@@ -251,11 +251,11 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     method,
-                                                     MatrixType,
-                                                     GridViewType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  method,
+                                                                  MatrixType,
+                                                                  GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_view);
 }
 
@@ -284,12 +284,12 @@ typename std::
         const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     RangeSpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType,
-                                                     GridViewType,
-                                                     SourceSpaceType>>(
+                                                                  DiffusionTensorType,
+                                                                  RangeSpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType,
+                                                                  GridViewType,
+                                                                  SourceSpaceType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
 }
 
@@ -317,12 +317,12 @@ typename std::
         const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     RangeSpaceType,
-                                                     method,
-                                                     MatrixType,
-                                                     GridViewType,
-                                                     SourceSpaceType>>(
+                                                                  DiffusionTensorType,
+                                                                  RangeSpaceType,
+                                                                  method,
+                                                                  MatrixType,
+                                                                  GridViewType,
+                                                                  SourceSpaceType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
 }
 
@@ -345,10 +345,10 @@ make_elliptic_ipdg_matrix_operator(
     MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space);
 }
 
@@ -396,11 +396,11 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType,
-                                                     GridViewType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType,
+                                                                  GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
 }
 
@@ -427,11 +427,11 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     SpaceType,
-                                                     method,
-                                                     MatrixType,
-                                                     GridViewType>>(
+                                                                  DiffusionTensorType,
+                                                                  SpaceType,
+                                                                  method,
+                                                                  MatrixType,
+                                                                  GridViewType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
 }
 
@@ -455,12 +455,12 @@ typename std::
         const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     RangeSpaceType,
-                                                     LocalEllipticIpdgIntegrands::default_method,
-                                                     MatrixType,
-                                                     GridViewType,
-                                                     SourceSpaceType>>(
+                                                                  DiffusionTensorType,
+                                                                  RangeSpaceType,
+                                                                  LocalEllipticIpdgIntegrands::default_method,
+                                                                  MatrixType,
+                                                                  GridViewType,
+                                                                  SourceSpaceType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
 }
 
@@ -488,12 +488,12 @@ typename std::
         const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                     DiffusionTensorType,
-                                                     RangeSpaceType,
-                                                     method,
-                                                     MatrixType,
-                                                     GridViewType,
-                                                     SourceSpaceType>>(
+                                                                  DiffusionTensorType,
+                                                                  RangeSpaceType,
+                                                                  method,
+                                                                  MatrixType,
+                                                                  GridViewType,
+                                                                  SourceSpaceType>>(
       over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
 }
 

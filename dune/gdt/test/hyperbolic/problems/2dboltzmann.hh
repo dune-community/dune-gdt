@@ -391,7 +391,7 @@ protected:
           for (size_t l = 1; l <= momentOrder; ++l)
             for (size_t m = 0; m <= l; ++m)
               S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
-          size_t number                             = 7 * row + col;
+          size_t number                                          = 7 * row + col;
           rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(S, precision);
           rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(q);
         }

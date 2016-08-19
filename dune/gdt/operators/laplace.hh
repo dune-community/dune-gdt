@@ -220,7 +220,8 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_laplace_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(over_integrate, space, grid_view);
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(
+      over_integrate, space, grid_view);
 }
 
 /**
@@ -238,8 +239,9 @@ typename std::
     make_laplace_matrix_operator(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
                                  const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
-      over_integrate, range_space, source_space, grid_view);
+  return Dune::XT::Common::
+      make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
+          over_integrate, range_space, source_space, grid_view);
 }
 
 // with matrix
@@ -281,8 +283,9 @@ typename std::
                                  const SourceSpaceType& source_space, const GridViewType& grid_view,
                                  const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
-      over_integrate, matrix, range_space, source_space, grid_view);
+  return Dune::XT::Common::
+      make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
+          over_integrate, matrix, range_space, source_space, grid_view);
 }
 
 

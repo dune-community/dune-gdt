@@ -67,7 +67,8 @@ public:
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
-  typedef typename Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+  typedef typename Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp,
+                                                              typename internal::FloatCmpLt>>
       SolutionStorageProviderType;
 
 protected:

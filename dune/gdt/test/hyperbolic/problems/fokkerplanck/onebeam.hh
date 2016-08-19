@@ -116,8 +116,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr]) + "*x[0]+"
-                 + Dune::XT::Common::to_string(onebeam_left_boundary_values()[rr]);
+          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr])
+                 + "*x[0]+" + Dune::XT::Common::to_string(onebeam_left_boundary_values()[rr]);
         }
         str += "]";
         return str;

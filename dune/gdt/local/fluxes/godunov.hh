@@ -152,7 +152,8 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1))
+          || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
 #ifndef NDEBUG
       else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
@@ -185,8 +186,8 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
     std::vector<EigenMatrixType> jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(
-          Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii], 15), dimRange, dimRange));
+      jacobian_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(
+          Dune::XT::Common::to_string(jacobian[ii], 15), dimRange, dimRange));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -199,8 +200,8 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
     std::vector<EigenMatrixType> jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(
-          Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii], 15), dimRange, dimRange));
+      jacobian_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(
+          Dune::XT::Common::to_string(jacobian[ii], 15), dimRange, dimRange));
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
   } // void reinitialize_jacobians(...)
@@ -335,7 +336,8 @@ private:
   void initialize_jacobians() const
   {
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
-    EigenMatrixType jacobian_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15)));
+    EigenMatrixType jacobian_eigen(
+        Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15)));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -346,7 +348,8 @@ private:
     RangeType u_mean = u_i + u_j;
     u_mean *= RangeFieldType(0.5);
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
-    EigenMatrixType jacobian_eigen = Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15));
+    EigenMatrixType jacobian_eigen =
+        Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15));
 
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
@@ -489,7 +492,8 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1))
+          || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
 #ifndef NDEBUG
       else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0)))
@@ -522,7 +526,8 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
     std::vector<EigenMatrixType> jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii])));
+      jacobian_eigen.emplace_back(
+          Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii])));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -535,7 +540,8 @@ private:
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
     std::vector<EigenMatrixType> jacobian_eigen;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      jacobian_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii])));
+      jacobian_eigen.emplace_back(
+          Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian[ii])));
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));
   } // void reinitialize_jacobians(...)
@@ -568,10 +574,10 @@ private:
                                          * eigenvectors_inverse.real());
       EigenMatrixType jacobian_pos_eigen(eigenvectors.real() * diag_jacobian_pos_tmp.backend()
                                          * eigenvectors_inverse.real());
-      jacobian_neg_[ii] =
-          Dune::XT::Common::from_string<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>>(Dune::XT::Common::to_string(jacobian_neg_eigen));
-      jacobian_pos_[ii] =
-          Dune::XT::Common::from_string<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>>(Dune::XT::Common::to_string(jacobian_pos_eigen));
+      jacobian_neg_[ii] = Dune::XT::Common::from_string<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>>(
+          Dune::XT::Common::to_string(jacobian_neg_eigen));
+      jacobian_pos_[ii] = Dune::XT::Common::from_string<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>>(
+          Dune::XT::Common::to_string(jacobian_pos_eigen));
     }
   } // void calculate_jacobians(...)
 
@@ -675,7 +681,8 @@ private:
   void initialize_jacobians() const
   {
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(RangeType(0)));
-    EigenMatrixType jacobian_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15)));
+    EigenMatrixType jacobian_eigen(
+        Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15)));
     calculate_jacobians(std::move(jacobian_eigen));
     jacobians_constructed_ = true;
   } // void initialize_jacobians()
@@ -686,7 +693,8 @@ private:
     RangeType u_mean = u_i + u_j;
     u_mean *= RangeFieldType(0.5);
     const FluxJacobianRangeType jacobian(analytical_flux_.jacobian(u_mean));
-    EigenMatrixType jacobian_eigen = Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15));
+    EigenMatrixType jacobian_eigen =
+        Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian, 15));
 
     // calculate jacobian_neg and jacobian_pos
     calculate_jacobians(std::move(jacobian_eigen));

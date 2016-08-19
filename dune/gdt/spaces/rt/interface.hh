@@ -160,8 +160,8 @@ public:
   template <class G, class S, size_t d, size_t r, size_t rC>
   PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn() << "Returning largest possible pattern!"
-                                                                          << std::endl;
+    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn()
+        << "Returning largest possible pattern!" << std::endl;
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 

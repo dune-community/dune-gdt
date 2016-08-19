@@ -151,8 +151,8 @@ typename std::
                                                    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2GlobalProjectionLocalizableOperator<GridViewType,
-                                                                SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>>>(
+                                                                             SourceType,
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, grid_view, source, range);
 } // ... make_global_l2_projection_localizable_operator(...)
 
@@ -167,8 +167,8 @@ typename std::
                                                    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType,
-                                                                SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>>>(
+                                                                             SourceType,
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, range.space().grid_view(), source, range);
 } // ... make_global_l2_projection_localizable_operator(...)
 

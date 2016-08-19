@@ -64,8 +64,9 @@ public:
   void visualize(const GridView<G>& grid_view, std::string filename, const bool subsampling = true,
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    auto vtk_writer = subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
-                                  : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
+    auto vtk_writer =
+        subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
+                    : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
     auto diffusion = Stuff::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
     add_function_visualization(grid_view, diffusion_factor(), *vtk_writer);
     add_function_visualization(grid_view, diffusion_tensor(), *vtk_writer);

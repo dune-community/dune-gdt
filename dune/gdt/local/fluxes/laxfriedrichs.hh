@@ -166,7 +166,8 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1))
+          || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
       else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
@@ -188,8 +189,10 @@ public:
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(
+              Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(
+              Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
         }
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -270,8 +273,9 @@ typename Dune::XT::Common::PerThreadValue<
     LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, domainDim>::max_derivative_;
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
-typename Dune::XT::Common::PerThreadValue<bool> LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp,
-                                                                          domainDim>::max_derivative_calculated_(false);
+typename Dune::XT::Common::PerThreadValue<bool>
+    LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp,
+                                            domainDim>::max_derivative_calculated_(false);
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
 typename Dune::XT::Common::PerThreadValue<bool>
@@ -343,8 +347,10 @@ public:
         *max_derivative_        = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(
+            Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(
+            Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
@@ -491,7 +497,8 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1))
+          || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
       else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
@@ -512,8 +519,10 @@ public:
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(
+              Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(
+              Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
         }
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -678,8 +687,10 @@ public:
         *max_derivative_        = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(
+            Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(
+            Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(

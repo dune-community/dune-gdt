@@ -138,11 +138,13 @@ private:
 
   void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant<2>) const
   {
-    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2) && xx[1] < 0.4)
+    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2)
+        && xx[1] < 0.4)
       ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
                * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000 * std::pow(xx[1] - 0.2, 2)
                * std::pow(xx[1] - 0.4, 2) * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
-    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6) && xx[1] < 0.8)
+    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6)
+             && xx[1] < 0.8)
       ret[0] = 1;
     else
       ret[0] = 0;
@@ -386,8 +388,10 @@ public:
         initial_values,
         reference_grid_view_,
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
-        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
-        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
+            problem_.grid_config()["lower_left"]),
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
+            problem_.grid_config()["upper_right"]));
   }
 
   virtual const ProblemType& problem() const override final

@@ -244,7 +244,8 @@ public:
         size_t counter = 0;
         for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
              ++current_solution_it, ++counter)
-          current_solution_it->second.visualize(visualize_prefix_ + "_solution_" + Dune::XT::Common::to_string(current_refinement_),
+          current_solution_it->second.visualize(visualize_prefix_ + "_solution_"
+                                                    + Dune::XT::Common::to_string(current_refinement_),
                                                 Dune::XT::Common::to_string(counter));
       }
     }
@@ -308,8 +309,9 @@ protected:
         for (auto reference_solution_it = reference_solution_->begin();
              reference_solution_it != reference_solution_it_end;
              ++reference_solution_it, ++counter)
-          reference_solution_it->second.visualize(
-              visualize_prefix_ + "_reference" + Dune::XT::Common::to_string(current_refinement_), Dune::XT::Common::to_string(counter));
+          reference_solution_it->second.visualize(visualize_prefix_ + "_reference"
+                                                      + Dune::XT::Common::to_string(current_refinement_),
+                                                  Dune::XT::Common::to_string(counter));
       }
     }
   } // ... compute_reference_solution()
@@ -336,8 +338,9 @@ protected:
         for (auto discrete_exact_solution_it = discrete_exact_solution_->begin();
              discrete_exact_solution_it != discrete_exact_solution_it_end;
              ++discrete_exact_solution_it, ++counter)
-          discrete_exact_solution_it->second.visualize(
-              visualize_prefix_ + "_exact_solution" + Dune::XT::Common::to_string(current_refinement_), Dune::XT::Common::to_string(counter));
+          discrete_exact_solution_it->second.visualize(visualize_prefix_ + "_exact_solution"
+                                                           + Dune::XT::Common::to_string(current_refinement_),
+                                                       Dune::XT::Common::to_string(counter));
       }
       discrete_exact_solution_computed_ = true;
     }

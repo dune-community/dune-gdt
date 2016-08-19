@@ -241,9 +241,10 @@ struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, Analytic
         for (size_t jj = 0; jj < rangeDim; ++jj)
           assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
 #endif
-      eigenvectors = Dune::XT::Common::from_string<MatrixType>(Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.real())));
-      eigenvectors_inverse =
-          Dune::XT::Common::from_string<MatrixType>(Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
+      eigenvectors = Dune::XT::Common::from_string<MatrixType>(
+          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.real())));
+      eigenvectors_inverse = Dune::XT::Common::from_string<MatrixType>(
+          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
     }
   }
 }; // struct EigenvectorInitializer<1, ...>
@@ -268,8 +269,9 @@ struct AdvectionOperatorApplier
                                               dimRangeCols>
           DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
-      const auto dg_space       = Dune::XT::Common::make_unique<DGSpaceType>(range.space().grid_view());
-      const auto reconstruction = Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
+      const auto dg_space = Dune::XT::Common::make_unique<DGSpaceType>(range.space().grid_view());
+      const auto reconstruction =
+          Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
       LinearReconstructionLocalizable<SourceType,
                                       ReconstructedDiscreteFunctionType,
                                       typename BoundaryValueFunctionType::ExpressionFunctionType,

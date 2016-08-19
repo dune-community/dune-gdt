@@ -143,11 +143,11 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     const SpaceType& space, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                DiffusionFactorType,
-                                                                DiffusionTensorType,
-                                                                SpaceType,
-                                                                method,
-                                                                VectorType>>(
+                                                                             DiffusionFactorType,
+                                                                             DiffusionTensorType,
+                                                                             SpaceType,
+                                                                             method,
+                                                                             VectorType>>(
       over_integrate, boundary_info, dirichlet, diffusion_factor, diffusion_tensor, space);
 }
 
@@ -206,11 +206,11 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     VectorType& vector, const SpaceType& space, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                DiffusionFactorType,
-                                                                DiffusionTensorType,
-                                                                SpaceType,
-                                                                method,
-                                                                VectorType>>(
+                                                                             DiffusionFactorType,
+                                                                             DiffusionTensorType,
+                                                                             SpaceType,
+                                                                             method,
+                                                                             VectorType>>(
       over_integrate, boundary_info, dirichlet, diffusion_factor, diffusion_tensor, vector, space);
 }
 

@@ -75,7 +75,9 @@ public:
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
-        "[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; " + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
+        "[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; " + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " "
+        + Dune::XT::Common::to_string(1.0 / 3.0, 15)
+        + " "
         + Dune::XT::Common::to_string(4.0 / 9.0, 15)
         + " 0]");
   }
@@ -83,14 +85,16 @@ public:
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(4.0 / 9.0, 15)
+        "[" + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
+        + Dune::XT::Common::to_string(4.0 / 9.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(7.0 / 24.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 4.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15)
+        "[" + Dune::XT::Common::to_string(7.0 / 24.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 4.0, 15) + " "
+        + Dune::XT::Common::to_string(1.0 / 3.0, 15)
         + " "
         + Dune::XT::Common::to_string(1.0 / 8.0, 15)
         + " 0]");
@@ -153,7 +157,8 @@ public:
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(35.0 / 384.0, 15) + " 0 " + Dune::XT::Common::to_string(500.0 / 1113.0, 15) + " "
+        "[" + Dune::XT::Common::to_string(35.0 / 384.0, 15) + " 0 " + Dune::XT::Common::to_string(500.0 / 1113.0, 15)
+        + " "
         + Dune::XT::Common::to_string(125.0 / 192.0, 15)
         + " "
         + Dune::XT::Common::to_string(-2187.0 / 6784.0, 15)
@@ -165,7 +170,9 @@ public:
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(5179.0 / 57600.0, 15) + " 0 " + Dune::XT::Common::to_string(7571.0 / 16695.0, 15) + " "
+        "[" + Dune::XT::Common::to_string(5179.0 / 57600.0, 15) + " 0 "
+        + Dune::XT::Common::to_string(7571.0 / 16695.0, 15)
+        + " "
         + Dune::XT::Common::to_string(393.0 / 640.0, 15)
         + " "
         + Dune::XT::Common::to_string(-92097.0 / 339200.0, 15)
@@ -178,8 +185,8 @@ public:
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.2 0.3 0.8 " + Dune::XT::Common::to_string(8.0 / 9.0, 15)
-                                                                + " 1 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>(
+        "[0 0.2 0.3 0.8 " + Dune::XT::Common::to_string(8.0 / 9.0, 15) + " 1 1]");
   }
 }; // Dormand-Prince (RK45)
 

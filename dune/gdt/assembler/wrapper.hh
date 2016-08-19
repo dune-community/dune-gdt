@@ -152,7 +152,8 @@ class LocalVolumeTwoFormWrapper
       public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                       LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>, MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
                                                    MatrixType>
       BaseType;
@@ -192,11 +193,11 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalCouplingTwoFormMatrixAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                             const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
-                                             const LocalCouplingTwoFormAssemblerType& local_assembler,
-                                             MatrixType& matrix)
+  LocalCouplingTwoFormMatrixAssemblerWrapper(
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+      const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+      const LocalCouplingTwoFormAssemblerType& local_assembler, MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -235,7 +236,8 @@ class LocalCouplingTwoFormWrapper
                                                         LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
                                                         MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
                                                      MatrixType>
@@ -276,11 +278,11 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalBoundaryTwoFormMatrixAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                             const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
-                                             const LocalBoundaryTwoFormAssemblerType& local_assembler,
-                                             MatrixType& matrix)
+  LocalBoundaryTwoFormMatrixAssemblerWrapper(
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+      const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+      const LocalBoundaryTwoFormAssemblerType& local_assembler, MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -319,7 +321,8 @@ class LocalBoundaryTwoFormWrapper
                                                         LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
                                                         MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
                                                      MatrixType>
@@ -398,7 +401,8 @@ class LocalVolumeFunctionalWrapper
                                                          LocalVolumeFunctionalAssembler<LocalFunctionalType>,
                                                          VectorType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>
+      LocalAssemblerProvider;
   typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
                                                       LocalVolumeFunctionalAssembler<LocalFunctionalType>, VectorType>
       BaseType;
@@ -475,7 +479,8 @@ class LocalFaceFunctionalWrapper
                                                        LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
                                                        VectorType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>
+      LocalAssemblerProvider;
   typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
                                                     LocalFaceFunctionalAssembler<LocalFaceFunctionalType>, VectorType>
       BaseType;

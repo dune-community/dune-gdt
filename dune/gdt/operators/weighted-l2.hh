@@ -73,8 +73,9 @@ typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::valu
 make_weighted_l2_localizable_product(const WeightFunctionType& weight, const GridViewType& grid_view,
                                      const RangeType& range, const SourceType& source, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridViewType, RangeType, SourceType>>(
-      over_integrate, weight, grid_view, range, source);
+  return Dune::XT::Common::
+      make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridViewType, RangeType, SourceType>>(
+          over_integrate, weight, grid_view, range, source);
 }
 
 
@@ -155,8 +156,9 @@ typename std::
     make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const SpaceType& space,
                                      const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
-      over_integrate, weight, space, grid_view);
+  return Dune::XT::Common::
+      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
+          over_integrate, weight, space, grid_view);
 }
 
 /**
@@ -178,10 +180,10 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const RangeSp
                                  const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                   RangeSpaceType,
-                                                   MatrixType,
-                                                   GridViewType,
-                                                   SourceSpaceType>>(
+                                                                RangeSpaceType,
+                                                                MatrixType,
+                                                                GridViewType,
+                                                                SourceSpaceType>>(
       over_integrate, weight, range_space, source_space, grid_view);
 }
 
@@ -213,8 +215,9 @@ typename std::
     make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix, const SpaceType& space,
                                      const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
-      over_integrate, weight, matrix, space, grid_view);
+  return Dune::XT::Common::
+      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>(
+          over_integrate, weight, matrix, space, grid_view);
 }
 
 /**
@@ -231,10 +234,10 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& m
                                  const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                   RangeSpaceType,
-                                                   MatrixType,
-                                                   GridViewType,
-                                                   SourceSpaceType>>(
+                                                                RangeSpaceType,
+                                                                MatrixType,
+                                                                GridViewType,
+                                                                SourceSpaceType>>(
       over_integrate, weight, matrix, range_space, source_space, grid_view);
 }
 

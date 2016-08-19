@@ -231,7 +231,8 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_l2_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>(over_integrate, space, grid_view);
+  return Dune::XT::Common::make_unique<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>(
+      over_integrate, space, grid_view);
 }
 
 /**

@@ -83,8 +83,8 @@ make_l2_prolongation_localizable_operator(const GridViewType& grid_view, const C
                                           DiscreteFunction<RS, RV>& range, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<GridViewType,
-                                                            ConstDiscreteFunction<SS, SV>,
-                                                            DiscreteFunction<RS, RV>>>(
+                                                                         ConstDiscreteFunction<SS, SV>,
+                                                                         DiscreteFunction<RS, RV>>>(
       over_integrate, grid_view, source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 
@@ -95,8 +95,8 @@ make_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SS, SV>& s
                                           const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<typename RS::GridViewType,
-                                                            ConstDiscreteFunction<SS, SV>,
-                                                            DiscreteFunction<RS, RV>>>(
+                                                                         ConstDiscreteFunction<SS, SV>,
+                                                                         DiscreteFunction<RS, RV>>>(
       over_integrate, range.space().grid_view(), source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 

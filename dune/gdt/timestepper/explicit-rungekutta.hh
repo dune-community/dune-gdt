@@ -113,7 +113,8 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
   static Dune::DynamicVector<RangeFieldType> b()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(2.0 / 3.0, 15)
+        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " "
+        + Dune::XT::Common::to_string(2.0 / 3.0, 15)
         + "]");
   }
 
@@ -129,13 +130,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
+        "[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15)
+        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
+        + Dune::XT::Common::to_string(1.0 / 3.0, 15)
         + " "
         + Dune::XT::Common::to_string(1.0 / 6.0, 15)
         + "]");

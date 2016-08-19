@@ -55,8 +55,8 @@ typename std::
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridViewType,
-                                                                SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>>>(
+                                                                             SourceType,
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
       grid_view, source, range);
 }
 
@@ -71,8 +71,8 @@ typename std::
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
-                                                                SourceType,
-                                                                DiscreteFunction<SpaceType, VectorType>>>(
+                                                                             SourceType,
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
       range.space().grid_view(), source, range);
 }
 

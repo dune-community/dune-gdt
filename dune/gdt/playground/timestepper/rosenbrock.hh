@@ -83,18 +83,20 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
-                                                                + " 0.796920457938 0.0730795420615 0 0;"
-                                                                + " 0.796920457938 0.0730795420615 0 0]");
+                                                                             + " 0.796920457938 0.0730795420615 0 0;"
+                                                                             + " 0.796920457938 0.0730795420615 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>("[0.199293275701 0.482645235674 0.0680614886256 0.25]");
+    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+        "[0.199293275701 0.482645235674 0.0680614886256 0.25]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>("[0.346325833758  0.285693175712 0.367980990530 0]");
+    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+        "[0.346325833758  0.285693175712 0.367980990530 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
@@ -117,18 +119,20 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.462 0 0 0;"
-                                                                + " -0.0815668168327 0.961775150166 0 0;"
-                                                                + " -0.0815668168327 0.961775150166 0 0]");
+                                                                             + " -0.0815668168327 0.961775150166 0 0;"
+                                                                             + " -0.0815668168327 0.961775150166 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<double>>("[0.217487371653 0.486229037990 0 0.296283590357]");
+    return Dune::XT::Common::fromString<Dune::DynamicVector<double>>(
+        "[0.217487371653 0.486229037990 0 0.296283590357]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>("[-0.717088504499 1.77617912176 -0.0590906172617 0]");
+    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+        "[-0.717088504499 1.77617912176 -0.0590906172617 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
@@ -251,7 +255,8 @@ public:
         assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
                && "A has to be a lower triangular matrix with 0 on the main diagonal!");
         if (jj == ii)
-          assert(Dune::XT::Common::FloatCmp::ne(Gamma_[ii][jj], 0.0) && "The diagonal entries of Gamma must not vanish!");
+          assert(Dune::XT::Common::FloatCmp::ne(Gamma_[ii][jj], 0.0)
+                 && "The diagonal entries of Gamma must not vanish!");
         else
           assert(Dune::XT::Common::FloatCmp::eq(Gamma_[ii][jj], 0.0) && "Gamma has to be a lower triangular matrix!");
       }
