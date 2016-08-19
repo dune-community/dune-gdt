@@ -9,8 +9,8 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_EOCSTUDY_HH
 #define DUNE_GDT_TEST_STATIONARY_EOCSTUDY_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/information.hh>
 
 #include <dune/gdt/discretizations/default.hh>
@@ -25,9 +25,9 @@ namespace Test {
 
 
 template <class TestCaseImp, class DiscretizerImp>
-class StationaryEocStudy : public Stuff::Common::ConvergenceStudy
+class StationaryEocStudy : public XT::Common::ConvergenceStudy
 {
-  typedef Stuff::Common::ConvergenceStudy BaseType;
+  typedef XT::Common::ConvergenceStudy BaseType;
 
 protected:
   typedef TestCaseImp TestCaseType;
@@ -50,7 +50,7 @@ public:
     , test_case_(test_case)
     , current_refinement_(0)
     , last_computed_refinement_(std::numeric_limits<size_t>::max())
-    , grid_widths_(num_refinements() + 1, -1.0)
+    , grid_widths_(test_case.num_refinements() + 1, -1.0)
     , time_to_solution_(0)
     , reference_solution_computed_(false)
     , current_discretization_(nullptr)
@@ -65,7 +65,7 @@ public:
 
   virtual ~StationaryEocStudy() = default;
 
-  virtual size_t num_refinements() override final
+  virtual size_t num_refinements() const override final
   {
     return test_case_.num_refinements();
   }
@@ -119,7 +119,7 @@ public:
     return current_num_DoFs_;
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() override final
+  virtual size_t current_grid_size() const override final
   {
     assert(current_refinement_ <= num_refinements());
     return test_case_.level_view(test_case_.level_of(current_refinement_)).indexSet().size(0);
@@ -162,8 +162,8 @@ public:
       // visualize
       if (!visualize_prefix_.empty()) {
         this->test_case_.problem().visualize(current_discretization_->ansatz_space().grid_view(),
-                                             visualize_prefix_ + "_problem_" + DSC::to_string(current_refinement_));
-        current_refinement_solution.visualize(visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_));
+                                             visualize_prefix_ + "_problem_" + Dune::XT::Common::to_string(current_refinement_));
+        current_refinement_solution.visualize(visualize_prefix_ + "_solution_" + Dune::XT::Common::to_string(current_refinement_));
       }
     }
     return time_to_solution_;

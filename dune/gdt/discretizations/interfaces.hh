@@ -9,9 +9,9 @@
 #ifndef DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
 #define DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
 
-#include <dune/stuff/common/configuration.hh>
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/configuration.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/la/solver.hh>
 
 #include <dune/gdt/exceptions.hh>

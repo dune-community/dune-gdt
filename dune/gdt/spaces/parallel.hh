@@ -19,7 +19,7 @@
 #endif
 
 #include <dune/stuff/la/container/istl.hh>
-#include <dune/stuff/common/parallel/helper.hh>
+#include <dune/xt/common/parallel/helper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -27,10 +27,10 @@ namespace GDT {
 
 template <class ViewImp,
           bool is_parallel =
-              Dune::Stuff::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
+              Dune::XT::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
 struct CommunicationChooser
 {
-  typedef Dune::Stuff::SequentialCommunication Type;
+  typedef Dune::XT::SequentialCommunication Type;
 
   static Type* create(const ViewImp& /*gridView*/)
   {

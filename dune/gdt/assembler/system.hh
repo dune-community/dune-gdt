@@ -17,7 +17,7 @@
 #include <dune/common/version.hh>
 
 #include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/common/parallel/helper.hh>
+#include <dune/xt/common/parallel/helper.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
@@ -184,8 +184,8 @@ public:
   }
 
 protected:
-  const DS::PerThreadValue<const TestSpaceType> test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType> test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
 }; // class SystemAssembler
 
 

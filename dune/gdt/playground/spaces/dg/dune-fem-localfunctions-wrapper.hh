@@ -26,8 +26,8 @@
 #include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-#include <dune/stuff/common/color.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/color.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/mapper/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/basefunctionset/dune-fem-localfunctions-wrapper.hh>

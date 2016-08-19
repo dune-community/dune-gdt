@@ -149,7 +149,7 @@ public:
     result_ += compute_locally(entity);
   }
 
-  virtual ReturnType result() const
+  virtual ReturnType result() const override
   {
     return result_;
   }

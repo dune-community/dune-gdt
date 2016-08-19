@@ -15,7 +15,7 @@
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 
 #include "twobeams.hh"
 
@@ -115,12 +115,12 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) { // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::to_string(-1.0 - cc * (cc + 1), precision);
+                  A_str += Dune::XT::Common::to_string(-1.0 - cc * (cc + 1), precision);
                 else
                   A_str += "0";
               } else { // 2 <= x <= 3
                 if (cc == rr)
-                  A_str += DSC::to_string(-5.0 * cc * (cc + 1), precision);
+                  A_str += Dune::XT::Common::to_string(-5.0 * cc * (cc + 1), precision);
                 else
                   A_str += "0";
               }
@@ -128,8 +128,8 @@ protected:
           }
           A_str += "]";
           q_str += "]";
-          rhs_config["A." + DSC::to_string(ii)] = A_str;
-          rhs_config["b." + DSC::to_string(ii)] = q_str;
+          rhs_config["A." + Dune::XT::Common::to_string(ii)] = A_str;
+          rhs_config["b." + Dune::XT::Common::to_string(ii)] = q_str;
         }
       } else {
         MatrixType S_M_inverse(S());
@@ -138,7 +138,7 @@ protected:
           std::string A_str = "[";
           std::string q_str = "[";
           if (ii == 2) // 1 <= x <= 1.5
-            q_str = DSC::to_string(base_integrated(), precision);
+            q_str = Dune::XT::Common::to_string(base_integrated(), precision);
           for (size_t rr = 0; rr < dimRange; ++rr) {
             if (rr > 0) {
               A_str += "; ";
@@ -157,18 +157,18 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) { // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::to_string(-1.0 - S_M_inverse[rr][cc], precision);
+                  A_str += Dune::XT::Common::to_string(-1.0 - S_M_inverse[rr][cc], precision);
                 else
-                  A_str += DSC::to_string(-S_M_inverse[rr][cc], precision);
+                  A_str += Dune::XT::Common::to_string(-S_M_inverse[rr][cc], precision);
               } else { // 2 <= x <= 3
-                A_str += DSC::to_string(-5.0 * S_M_inverse[rr][cc], precision);
+                A_str += Dune::XT::Common::to_string(-5.0 * S_M_inverse[rr][cc], precision);
               }
             }
           }
           A_str += "]";
           q_str += "]";
-          rhs_config["A." + DSC::to_string(ii)] = A_str;
-          rhs_config["b." + DSC::to_string(ii)] = q_str;
+          rhs_config["A." + Dune::XT::Common::to_string(ii)] = A_str;
+          rhs_config["b." + Dune::XT::Common::to_string(ii)] = q_str;
         }
       }
     } // ... create_rhs_values()
@@ -197,8 +197,8 @@ protected:
         for (size_t cc = 0; cc < dimRange; ++cc) {
           if (cc > 0)
             str += " ";
-          str += DSC::to_string(0.5 * basefunctions_right[cc], precision) + "+("
-                 + DSC::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc], precision)
+          str += Dune::XT::Common::to_string(0.5 * basefunctions_right[cc], precision) + "+("
+                 + Dune::XT::Common::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc], precision)
                  + ")*x[0]/3.0";
         }
         str += "]";
@@ -346,7 +346,7 @@ public:
         << "||  Testcase: Fokker-Planck SourceBeam                                                                ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 3]                                                                                   ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                                                   ||\n"
         << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
         << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"

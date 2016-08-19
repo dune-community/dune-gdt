@@ -12,7 +12,7 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/spaces/basefunctionset/interface.hh>

@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_LAPLACE_HH
 #define DUNE_GDT_TEST_OPERATORS_LAPLACE_HH
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/projections.hh>

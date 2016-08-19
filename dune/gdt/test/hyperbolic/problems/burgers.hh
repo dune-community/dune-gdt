@@ -204,7 +204,7 @@ public:
         << "||  Testcase: Burgers                                                 ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = 0.5*u[0]^2                                                 ||\n"
         << "||  rhs = 0                                                           ||\n"

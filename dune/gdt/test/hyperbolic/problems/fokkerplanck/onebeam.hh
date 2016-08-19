@@ -14,7 +14,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 
 #include "twobeams.hh"
 
@@ -86,8 +86,8 @@ protected:
           }
         }
         A_str += "]";
-        rhs_config["A." + DSC::to_string(ii)] = A_str;
-        rhs_config["b." + DSC::to_string(ii)] = DSC::to_string(RangeType(0));
+        rhs_config["A." + Dune::XT::Common::to_string(ii)] = A_str;
+        rhs_config["b." + Dune::XT::Common::to_string(ii)] = Dune::XT::Common::to_string(RangeType(0));
       }
     } // ... create_rhs_values()
 
@@ -103,11 +103,11 @@ protected:
           if (rr > 0)
             str += " ";
           if (rr == 0)
-            str += DSC::to_string(0.0002 - get_left_boundary_value(rr)) + "*x[0]+"
-                   + DSC::to_string(get_left_boundary_value(rr));
+            str += Dune::XT::Common::to_string(0.0002 - get_left_boundary_value(rr)) + "*x[0]+"
+                   + Dune::XT::Common::to_string(get_left_boundary_value(rr));
           else
-            str += DSC::to_string(0.0 - get_left_boundary_value(rr)) + "*x[0]+"
-                   + DSC::to_string(get_left_boundary_value(rr));
+            str += Dune::XT::Common::to_string(0.0 - get_left_boundary_value(rr)) + "*x[0]+"
+                   + Dune::XT::Common::to_string(get_left_boundary_value(rr));
         }
         str += "]";
         return str;
@@ -116,8 +116,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr]) + "*x[0]+"
-                 + DSC::to_string(onebeam_left_boundary_values()[rr]);
+          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr] - onebeam_left_boundary_values()[rr]) + "*x[0]+"
+                 + Dune::XT::Common::to_string(onebeam_left_boundary_values()[rr]);
         }
         str += "]";
         return str;

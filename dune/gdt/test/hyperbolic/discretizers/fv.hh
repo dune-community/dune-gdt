@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_FV_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_FV_HH
 
-#include <dune/stuff/common/timedlogging.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/stuff/grid/provider.hh>
 #include <dune/stuff/grid/periodicview.hh>
 
@@ -46,7 +46,7 @@ public:
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error
-    return std::string("gdt.hyperbolic.discretization.fv.dim") + DSC::to_string(int(GridType::dimension));
+    return std::string("gdt.hyperbolic.discretization.fv.dim") + Dune::XT::Common::to_string(int(GridType::dimension));
   }
 
   static DiscretizationType
@@ -54,7 +54,7 @@ public:
              const int level                                            = 0,
              const std::bitset<GridType::dimension> periodic_directions = std::bitset<GridType::dimension>())
   {
-    auto logger = Stuff::Common::TimedLogger().get(static_id());
+    auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
     auto space =
         std::make_shared<const FVSpaceType>(GridViewType(grid_provider.level_view(level), periodic_directions));

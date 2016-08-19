@@ -11,7 +11,7 @@
 
 #include <tuple>
 
-#include <dune/stuff/common/tuple.hh>
+#include <dune/xt/common/tuple.hh>
 
 #include <dune/gdt/spaces/basefunctionset/product.hh>
 #include <dune/gdt/spaces/mapper/product.hh>
@@ -166,7 +166,7 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return base_function_set_helper(entity, typename DSC::create_indices<sizeof...(SpaceImps)>::type());
+    return base_function_set_helper(entity, typename Dune::XT::Common::create_indices<sizeof...(SpaceImps)>::type());
   }
 
   CommunicatorType& communicator() const
@@ -176,7 +176,7 @@ public:
 
 private:
   template <size_t... S>
-  BaseFunctionSetType base_function_set_helper(const EntityType& entity, DSC::indices<S...>) const
+  BaseFunctionSetType base_function_set_helper(const EntityType& entity, Dune::XT::Common::indices<S...>) const
   {
     return BaseFunctionSetType(entity, std::get<S>(spaces_).base_function_set(entity)...);
   }

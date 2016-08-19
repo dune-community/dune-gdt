@@ -13,8 +13,8 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/stuff/la/container.hh>
 
 #include "interface.hh"
@@ -67,17 +67,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0]");
   }
 };
 
@@ -87,17 +87,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 1 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 1 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1]");
   }
 };
 
@@ -107,19 +107,19 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0; 1 0 0; 0.25 0.25 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0; 1 0 0; 0.25 0.25 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(2.0 / 3.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(2.0 / 3.0, 15)
         + "]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1 0.5]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1 0.5]");
   }
 };
 
@@ -129,21 +129,21 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(1.0 / 6.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15)
         + " "
-        + DSC::to_string(1.0 / 6.0, 15)
+        + Dune::XT::Common::to_string(1.0 / 6.0, 15)
         + "]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.5 0.5 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.5 0.5 1]");
   }
 };
 
@@ -217,7 +217,7 @@ public:
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0)
+        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
                && "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }

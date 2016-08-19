@@ -15,7 +15,7 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/local/dof-vector.hh>

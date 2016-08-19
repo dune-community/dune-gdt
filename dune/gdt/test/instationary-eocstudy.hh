@@ -9,8 +9,8 @@
 #ifndef DUNE_GDT_TEST_INSTATIONARY_EOCSTUDY_HH
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDY_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/information.hh>
@@ -97,9 +97,9 @@ private:
 
 
 template <class TestCaseImp, class DiscretizerImp>
-class NonStationaryEocStudy : public Stuff::Common::ConvergenceStudy
+class NonStationaryEocStudy : public XT::Common::ConvergenceStudy
 {
-  typedef Stuff::Common::ConvergenceStudy BaseType;
+  typedef XT::Common::ConvergenceStudy BaseType;
 
 protected:
   typedef TestCaseImp TestCaseType;
@@ -137,7 +137,7 @@ public:
 
   virtual ~NonStationaryEocStudy() = default;
 
-  virtual size_t num_refinements() override final
+  virtual size_t num_refinements() const override final
   {
     return test_case_.num_refinements();
   }
@@ -177,7 +177,7 @@ public:
     return test_case_.grid().size(level, 0);
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() override final
+  virtual size_t current_grid_size() const override final
   {
     assert(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
@@ -244,8 +244,8 @@ public:
         size_t counter = 0;
         for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
              ++current_solution_it, ++counter)
-          current_solution_it->second.visualize(visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_),
-                                                DSC::to_string(counter));
+          current_solution_it->second.visualize(visualize_prefix_ + "_solution_" + Dune::XT::Common::to_string(current_refinement_),
+                                                Dune::XT::Common::to_string(counter));
       }
     }
     return time_to_solution_;
@@ -266,10 +266,10 @@ public:
       if (test_case_.provides_exact_solution()) {
         compute_discrete_exact_solution_vector();
         assert(discrete_exact_solution_);
-        difference = DSC::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
+        difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
       } else {
         assert(reference_solution_);
-        difference = DSC::make_unique<DiscreteSolutionType>(*reference_solution_);
+        difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       }
       for (auto& difference_at_time : *difference) {
         auto time = difference_at_time.first;
@@ -309,7 +309,7 @@ protected:
              reference_solution_it != reference_solution_it_end;
              ++reference_solution_it, ++counter)
           reference_solution_it->second.visualize(
-              visualize_prefix_ + "_reference" + DSC::to_string(current_refinement_), DSC::to_string(counter));
+              visualize_prefix_ + "_reference" + Dune::XT::Common::to_string(current_refinement_), Dune::XT::Common::to_string(counter));
       }
     }
   } // ... compute_reference_solution()
@@ -317,7 +317,7 @@ protected:
   void compute_discrete_exact_solution_vector()
   {
     if (!discrete_exact_solution_computed_) {
-      discrete_exact_solution_ = DSC::make_unique<DiscreteSolutionType>();
+      discrete_exact_solution_ = Dune::XT::Common::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
       const auto exact_solution            = test_case_.exact_solution();
       const auto reference_solution_it_end = reference_solution_->end();
@@ -337,7 +337,7 @@ protected:
              discrete_exact_solution_it != discrete_exact_solution_it_end;
              ++discrete_exact_solution_it, ++counter)
           discrete_exact_solution_it->second.visualize(
-              visualize_prefix_ + "_exact_solution" + DSC::to_string(current_refinement_), DSC::to_string(counter));
+              visualize_prefix_ + "_exact_solution" + Dune::XT::Common::to_string(current_refinement_), Dune::XT::Common::to_string(counter));
       }
       discrete_exact_solution_computed_ = true;
     }

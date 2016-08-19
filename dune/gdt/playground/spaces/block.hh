@@ -10,8 +10,8 @@
 #ifndef DUNE_GDT_SPACES_BLOCK_HH
 #define DUNE_GDT_SPACES_BLOCK_HH
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/default.hh>

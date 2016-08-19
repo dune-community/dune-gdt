@@ -15,7 +15,7 @@
 
 #include <dune/common/densematrix.hh>
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "elliptic.hh"

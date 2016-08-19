@@ -49,12 +49,12 @@ public:
 
   virtual ~LinearEllipticEocStudy() = default;
 
-  virtual std::string identifier() override
+  virtual std::string identifier() const override
   {
     return Discretizer::static_id();
   }
 
-  virtual size_t expected_rate(const std::string type) override
+  virtual size_t expected_rate(const std::string type) const override
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
     // specialization of LinearEllipticEocExpectations!

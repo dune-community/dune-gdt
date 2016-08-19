@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_PROJECTIONS_DIRICHLET_HH
 #define DUNE_GDT_PROJECTIONS_DIRICHLET_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/grid/layers.hh>
 
@@ -49,7 +49,7 @@ make_localizable_dirichlet_projection_operator(
     const Stuff::Grid::BoundaryInfoInterface<typename Stuff::Grid::Intersection<GridViewType>::Type>& boundary_info,
     const SourceType& source, RangeType& range)
 {
-  return DSC::make_unique<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>(
+  return Dune::XT::Common::make_unique<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>(
       boundary_info, grid_view, source, range);
 }
 

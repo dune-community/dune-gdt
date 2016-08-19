@@ -10,7 +10,7 @@
 
 #include <type_traits>
 
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>

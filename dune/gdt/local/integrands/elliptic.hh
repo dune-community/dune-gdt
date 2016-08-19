@@ -18,8 +18,8 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 
-#include <dune/stuff/common/fmatrix.hh>
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
 

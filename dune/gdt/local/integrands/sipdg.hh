@@ -15,13 +15,13 @@
 
 #include <dune/common/dynmatrix.hh>
 
-#include <dune/stuff/common/color.hh>
+#include <dune/xt/common/color.hh>
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-#include <dune/stuff/common/timedlogging.hh>
+#include <dune/xt/common/timedlogging.hh>
 #endif
 #endif
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include "interfaces.hh"
@@ -143,7 +143,7 @@ inner_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
+    Dune::XT::Common::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
@@ -171,7 +171,7 @@ boundary_sigma(const size_t pol_order)
   else {
 #ifndef NDEBUG
 #ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-    DSC::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
+    Dune::XT::Common::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;

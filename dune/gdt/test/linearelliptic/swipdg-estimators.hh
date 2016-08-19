@@ -9,7 +9,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATORS_HH
 
 #include <dune/stuff/functions/spe10.hh>
-#include <dune/stuff/test/common.hh>
+#include <dune/xt/common/test/common.hh>
 
 #include "discretizers/ipdg.hh"
 #include "eocstudy.hh"
@@ -72,12 +72,12 @@ public:
 
   virtual ~LinearEllipticSwipdgEstimatorStudy() = default;
 
-  virtual std::string identifier() override final
+  virtual std::string identifier() const override final
   {
-    return "gdt.linearelliptic.estimators.swipdg.polorder_" + DSC::toString(int(polOrder));
+    return "gdt.linearelliptic.estimators.swipdg.polorder_" + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  virtual size_t expected_rate(const std::string type) override final
+  virtual size_t expected_rate(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker, see the explanation in LinearEllipticEocStudy!
     return LinearEllipticSwipdgEstimatorExpectations<TestCaseType,
@@ -137,7 +137,7 @@ public:
 
   std::map<std::string, std::vector<double>> run(std::ostream& out, const bool print_timings = false)
   {
-    return Stuff::Common::ConvergenceStudy::run(false, out, print_timings);
+    return XT::Common::ConvergenceStudy::run(false, out, print_timings);
   }
 }; // class LinearEllipticSwipdgEstimatorStudy
 
@@ -173,9 +173,9 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
     } catch (Dune::Stuff::Exceptions::spe10_data_file_missing&) {
-      Dune::Stuff::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
+      Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
     }
   } // ... eoc_study()

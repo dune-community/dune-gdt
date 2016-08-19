@@ -82,7 +82,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
 make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
                                         DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<L2ProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<SpaceType, VectorType>>>(
           over_integrate, grid_view, source, range);
 } // ... make_l2_projection_localizable_operator(...)
@@ -95,7 +95,7 @@ typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_
 make_l2_projection_localizable_operator(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
                                         const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
+  return Dune::XT::Common::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
                                                           SourceType,
                                                           DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, range.space().grid_view(), source, range);
@@ -192,7 +192,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2ProjectionOperator<GridViewType>>>::type
 make_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProjectionOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2ProjectionOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 

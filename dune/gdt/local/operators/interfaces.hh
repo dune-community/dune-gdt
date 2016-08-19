@@ -13,8 +13,8 @@
 
 #include <dune/common/dynmatrix.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>

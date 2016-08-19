@@ -10,7 +10,7 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/stuff/common/ranges.hh>
+#include <dune/xt/common/ranges.hh>
 
 #include <dune/gdt/spaces/rt/interface.hh>
 
@@ -52,7 +52,7 @@ public:
 
   void fulfills_raviart_thomas_2d_simplicial_interface()
   {
-    for (const auto& entity : DSC::entityRange(this->space_.grid_view()))
+    for (const auto& entity : elements(this->space_.grid_view()))
       auto DUNE_UNUSED(local_DoF_indices) = this->space_.local_DoF_indices(entity);
   }
 }; // class RT_2d_simplicial_Space

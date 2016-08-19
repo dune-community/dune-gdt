@@ -48,10 +48,10 @@ public:
     return "gdt.CheckerboardBasedRhsEvaluationFlux";
   }
 
-  static std::unique_ptr<ThisType> create(const Dune::Stuff::Common::Configuration checkerboard_config,
+  static std::unique_ptr<ThisType> create(const Dune::XT::Common::Configuration checkerboard_config,
                                           const std::string sub_name = static_id())
   {
-    return DSC::make_unique<ThisType>(*(CheckerboardFunctionType::create(checkerboard_config, sub_name)));
+    return Dune::XT::Common::make_unique<ThisType>(*(CheckerboardFunctionType::create(checkerboard_config, sub_name)));
   } // ... create(...)
 
 private:

@@ -71,7 +71,7 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_linear_arguments)
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_linear_arguments)
 {
-  std::cerr << DSC::colorStringRed("Missing dependencies!") << std::endl;
+  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
 }
 #endif
 
@@ -88,6 +88,6 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments)
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments)
 {
-  std::cerr << DSC::colorStringRed("Missing dependencies!") << std::endl;
+  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
 }
 #endif

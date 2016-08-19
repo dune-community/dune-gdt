@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_PROJECTIONS_LAGRANGE_HH
 #define DUNE_GDT_PROJECTIONS_LAGRANGE_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/la/container/vector-interface.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -54,7 +54,7 @@ typename std::
     make_lagrange_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
-  return DSC::make_unique<LagrangeProjectionLocalizableOperator<GridViewType,
+  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridViewType,
                                                                 SourceType,
                                                                 DiscreteFunction<SpaceType, VectorType>>>(
       grid_view, source, range);
@@ -70,7 +70,7 @@ typename std::
     make_lagrange_projection_localizable_operator(const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
-  return DSC::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
+  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
                                                                 SourceType,
                                                                 DiscreteFunction<SpaceType, VectorType>>>(
       range.space().grid_view(), source, range);
@@ -158,7 +158,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProjectionOperator<GridViewType>>>::type
 make_lagrange_projection_operator(const GridViewType& grid_view)
 {
-  return DSC::make_unique<LagrangeProjectionOperator<GridViewType>>(grid_view);
+  return Dune::XT::Common::make_unique<LagrangeProjectionOperator<GridViewType>>(grid_view);
 }
 
 

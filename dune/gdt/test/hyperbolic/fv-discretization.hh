@@ -13,7 +13,7 @@
 #define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
-#include <dune/stuff/test/common.hh>
+#include <dune/xt/common/test/common.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/test/hyperbolic/eocstudy.hh>
@@ -45,7 +45,7 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
                                                time_stepper>
         Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_base
 

@@ -127,10 +127,10 @@ public:
 private:
   void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant<1>) const
   {
-    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
+    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
       ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
                * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2));
-    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
+    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
       ret[0] = 1;
     else
       ret[0] = 0;
@@ -138,11 +138,11 @@ private:
 
   void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant<2>) const
   {
-    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && DSC::FloatCmp::ge(xx[1], 0.2) && xx[1] < 0.4)
+    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2) && xx[1] < 0.4)
       ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
                * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000 * std::pow(xx[1] - 0.2, 2)
                * std::pow(xx[1] - 0.4, 2) * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
-    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && DSC::FloatCmp::ge(xx[1], 0.6) && xx[1] < 0.8)
+    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6) && xx[1] < 0.8)
       ret[0] = 1;
     else
       ret[0] = 0;
@@ -190,7 +190,7 @@ public:
     DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
     typedef typename DS::Functions::Composition<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
         CompositionType;
-    return DSC::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
+    return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
   }
 
   virtual std::string type() const
@@ -385,9 +385,9 @@ public:
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         initial_values,
         reference_grid_view_,
-        DSC::from_string<typename DSC::FieldVector<D, d>>("[1.0 2.0]"),
-        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
-        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
   }
 
   virtual const ProblemType& problem() const override final
@@ -424,7 +424,7 @@ public:
         << "||  Testcase: Transport                                               ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = u[0]                                                       ||\n"
         << "||  rhs = 0                                                           ||\n"

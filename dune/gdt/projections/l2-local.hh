@@ -8,8 +8,8 @@
 #ifndef DUNE_GDT_PROJECTIONS_L2_LOCAL_HH
 #define DUNE_GDT_PROJECTIONS_L2_LOCAL_HH
 
-#include <dune/stuff/common/timedlogging.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/timedlogging.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/grid/entity.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -85,13 +85,13 @@ private:
   {
     static inline void issue()
     {
-      DSC::TimedLogger().get("gdt.l2localprojectionlocalizableoperator").warn()
+      Dune::XT::Common::TimedLogger().get("gdt.l2localprojectionlocalizableoperator").warn()
           << "You are using this operator to project onto a continuous discrete function space (see below)!\n"
           << "Consider to use L2GlobalProjectionLocalizableOperator instead!\n"
           << "You can disable this warning by defining "
           << "DUNE_GDT_PROJECTIONS_L2_LOCAL_LOCALIZABLE_DISABLE_WARNING\n"
-          << "at compile time or by disabling the Dune::Stuff::Common::TimedLogger() instance at runtime.\n"
-          << "The type of the range space is: " << DSC::Typename<S>::value() << std::endl;
+          << "at compile time or by disabling the Dune::XT::Common::TimedLogger() instance at runtime.\n"
+          << "The type of the range space is: " << Dune::XT::Common::Typename<S>::value() << std::endl;
     } // ... issue_warning(...)
   };
 
@@ -117,7 +117,7 @@ typename std::
                                                   DiscreteFunction<SpaceType, VectorType>& range,
                                                   const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProjectionLocalizableOperator<GridViewType,
+  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<GridViewType,
                                                                SourceType,
                                                                DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, grid_view, source, range);
@@ -133,7 +133,7 @@ typename std::
                                                   DiscreteFunction<SpaceType, VectorType>& range,
                                                   const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType,
+  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType,
                                                                SourceType,
                                                                DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, range.space().grid_view(), source, range);
@@ -212,7 +212,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2LocalProjectionOperator<GridViewType>>>::type
 make_local_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProjectionOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2LocalProjectionOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 

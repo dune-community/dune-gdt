@@ -95,7 +95,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_sp
         const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<L2GlobalProlongationLocalizableOperator<GridViewType,
                                                           ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                           DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
@@ -113,7 +113,7 @@ make_global_l2_prolongation_localizable_operator(const ConstDiscreteFunction<Sou
                                                  DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
                                                  const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2GlobalProlongationLocalizableOperator<
+  return Dune::XT::Common::make_unique<L2GlobalProlongationLocalizableOperator<
       typename RangeSpaceType::GridViewType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
       DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_view(), source, range);
@@ -191,7 +191,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2GlobalProlongationOperator<GridViewType>>>::type
 make_global_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2GlobalProlongationOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2GlobalProlongationOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 

@@ -19,7 +19,7 @@
 #include <dune/fem/space/lagrange/space.hh>
 #endif // HAVE_DUNE_FEM
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 

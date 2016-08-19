@@ -8,8 +8,8 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_TESTCASE_HH
 #define DUNE_GDT_TEST_STATIONARY_TESTCASE_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/provider/eoc.hh>

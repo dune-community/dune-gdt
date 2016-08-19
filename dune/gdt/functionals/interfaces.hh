@@ -12,7 +12,7 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>

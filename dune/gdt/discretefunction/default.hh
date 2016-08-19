@@ -20,13 +20,13 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/ranges.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/ranges.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -53,7 +53,7 @@ struct visualize_helper
   {
     static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
     discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+        filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 
@@ -81,7 +81,7 @@ struct visualize_helper<ii, true>
         typename DiscreteFunctionType::VectorType>
         factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+        filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
   }
 };
 
@@ -193,7 +193,7 @@ public:
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
     assert(space_->grid_view().indexSet().contains(entity));
-    return DSC::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
+    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
   }
 
   virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
@@ -260,7 +260,7 @@ protected:
                                                                                                       *this);
   } // ... redirect_visualize(...)
 
-  const DS::PerThreadValue<SpaceType> space_;
+  const Dune::XT::Common::PerThreadValue<SpaceType> space_;
 
 private:
   const VectorType& vector_;
@@ -333,7 +333,7 @@ public:
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
     assert(space_->grid_view().indexSet().contains(entity));
-    return DSC::make_unique<LocalDiscreteFunctionType>(*space_, this->storage_access(), entity);
+    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->storage_access(), entity);
   }
 
 private:

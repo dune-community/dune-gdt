@@ -14,7 +14,7 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/la/container/interfaces.hh>
 

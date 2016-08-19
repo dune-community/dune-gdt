@@ -13,8 +13,8 @@
 #include <type_traits>
 
 #include <dune/stuff/aliases.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/la/container/common.hh>
 #include <dune/stuff/la/container/interfaces.hh>
@@ -231,8 +231,8 @@ struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, Analytic
       // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x
       // = 0. As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
       ::Eigen::EigenSolver<typename EigenMatrixType::BackendType> eigen_solver(
-          DSC::from_string<EigenMatrixType>(
-              DSC::to_string(analytical_flux.jacobian(typename AnalyticalFluxType::RangeType(0))))
+          Dune::XT::Common::from_string<EigenMatrixType>(
+              Dune::XT::Common::to_string(analytical_flux.jacobian(typename AnalyticalFluxType::RangeType(0))))
               .backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto eigen_eigenvectors = eigen_solver.eigenvectors();
@@ -241,9 +241,9 @@ struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, Analytic
         for (size_t jj = 0; jj < rangeDim; ++jj)
           assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
 #endif
-      eigenvectors = DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.real())));
+      eigenvectors = Dune::XT::Common::from_string<MatrixType>(Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.real())));
       eigenvectors_inverse =
-          DSC::from_string<MatrixType>(DSC::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
+          Dune::XT::Common::from_string<MatrixType>(Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real())));
     }
   }
 }; // struct EigenvectorInitializer<1, ...>
@@ -268,8 +268,8 @@ struct AdvectionOperatorApplier
                                               dimRangeCols>
           DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
-      const auto dg_space       = DSC::make_unique<DGSpaceType>(range.space().grid_view());
-      const auto reconstruction = DSC::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
+      const auto dg_space       = Dune::XT::Common::make_unique<DGSpaceType>(range.space().grid_view());
+      const auto reconstruction = Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
       LinearReconstructionLocalizable<SourceType,
                                       ReconstructedDiscreteFunctionType,
                                       typename BoundaryValueFunctionType::ExpressionFunctionType,
@@ -332,7 +332,7 @@ public:
 
 private:
   typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
-  typedef typename Dune::Stuff::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
   typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType,
@@ -418,7 +418,7 @@ public:
 
 private:
   typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
-  typedef typename Dune::Stuff::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
   typedef typename Dune::GDT::LocalGodunovNumericalCouplingFlux<AnalyticalFluxType, dimDomain>

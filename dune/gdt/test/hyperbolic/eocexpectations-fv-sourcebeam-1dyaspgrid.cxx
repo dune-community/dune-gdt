@@ -33,12 +33,12 @@ public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      if (DSC::FloatCmp::eq(test_case.t_end(), 4.0))
+      if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0))
         return {3.25e-01, 1.63e-01};
-      else if (DSC::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
+      else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
         return {9.16e-02, 4.08e-02};
       else
-        EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
+        EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
@@ -58,9 +58,9 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1) {
-        if (DSC::FloatCmp::eq(test_case.t_end(), 4.0))
+        if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0))
           return {2.63e-01, 1.39e-01};
-        else if (DSC::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
+        else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
           return {7.07e-02, 3.13e-02};
         else
           EXPECT_TRUE(false) << "test results missing for type: " << type;

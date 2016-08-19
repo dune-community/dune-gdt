@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_HH
 #define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
 #include <dune/stuff/la/container.hh>
@@ -142,7 +142,7 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
     const SpaceType& space, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
+  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
                                                                 DiffusionFactorType,
                                                                 DiffusionTensorType,
                                                                 SpaceType,
@@ -205,7 +205,7 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
     VectorType& vector, const SpaceType& space, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
+  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
                                                                 DiffusionFactorType,
                                                                 DiffusionTensorType,
                                                                 SpaceType,

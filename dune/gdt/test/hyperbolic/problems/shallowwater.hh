@@ -215,7 +215,7 @@ public:
         << "||  Testcase: Shallow Water                                           ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << "||  domain = [0, 10]                                                  ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = [u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]                        ||\n"
         << "||  rhs = 0                                                           ||\n"

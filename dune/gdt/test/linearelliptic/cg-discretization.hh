@@ -12,7 +12,7 @@
 #define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
-#include <dune/stuff/test/common.hh>
+#include <dune/xt/common/test/common.hh>
 #include <dune/stuff/functions/spe10.hh>
 #include <dune/stuff/la/container.hh>
 
@@ -47,9 +47,9 @@ struct linearelliptic_CG_discretization : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
     } catch (Dune::Stuff::Exceptions::spe10_data_file_missing&) {
-      Dune::Stuff::Common::TimedLogger().get("gdt.test.linearelliptic.cg.discretization").warn()
+      Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.cg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
     }
   } // ... eoc_study()

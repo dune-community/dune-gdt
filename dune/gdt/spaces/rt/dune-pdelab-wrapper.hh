@@ -24,9 +24,9 @@
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/mapper/dune-pdelab-wrapper.hh>

@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_PROLONGATIONS_L2_LOCAL_HH
 #define DUNE_GDT_PROLONGATIONS_L2_LOCAL_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/discretefunction/reinterpret.hh>
 #include <dune/gdt/exceptions.hh>
@@ -104,7 +104,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_sp
         const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<L2LocalProlongationLocalizableOperator<GridViewType,
                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
@@ -122,7 +122,7 @@ make_local_l2_prolongation_localizable_operator(const ConstDiscreteFunction<Sour
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
                                                 const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProlongationLocalizableOperator<
+  return Dune::XT::Common::make_unique<L2LocalProlongationLocalizableOperator<
       typename RangeSpaceType::GridViewType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
       DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_view(), source, range);
@@ -200,7 +200,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2LocalProlongationOperator<GridViewType>>>::type
 make_local_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2LocalProlongationOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2LocalProlongationOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 

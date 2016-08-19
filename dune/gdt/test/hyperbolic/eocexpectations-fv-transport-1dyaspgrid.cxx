@@ -34,12 +34,12 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1)
-        if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
+        if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
           return {3.33e-01, 2.95e-01};
-        else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
+        else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {5.02e-02, 3.51e-02};
         else
-          EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
+          EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
       else
         return {3.44e-01, 3.10e-01, 2.40e-01, 1.64e-01, 1.09e-01};
     } else
@@ -61,12 +61,12 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1)
-        if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
+        if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
           return {3.36e-01, 3.05e-01};
-        else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
+        else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {5.03e-02, 3.55e-02};
         else
-          EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
+          EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
       else
         return {3.46e-01, 3.19e-01, 2.72e-01, 2.10e-01, 1.51e-01};
     } else
@@ -88,12 +88,12 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1) {
-        if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
+        if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
           return {3.46e-01, 3.35e-01};
-        else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
+        else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {5.69e-02, 4.67e-02};
         else
-          EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
+          EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
       } else {
         return {3.57e-01, 3.48e-01, 3.12e-01, 2.50e-01, 1.87e-01};
       }
@@ -116,9 +116,9 @@ public:
   {
     if (type == "L1") {
       if (test_case.num_refinements() == 1) {
-        if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
+        if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
           return {4.75e-01, 2.81e-01};
-        else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
+        else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
           return {4.75e-02, 2.81e-02};
         else
           EXPECT_TRUE(false) << "test results missing for type: " << type;

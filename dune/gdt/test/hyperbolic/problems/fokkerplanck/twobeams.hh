@@ -17,7 +17,7 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/la/container.hh>
@@ -188,7 +188,7 @@ protected:
       }
       A_str += "]";
       rhs_config["A.0"] = A_str;
-      rhs_config["b.0"] = DSC::to_string(FluxRangeType(0));
+      rhs_config["b.0"] = Dune::XT::Common::to_string(FluxRangeType(0));
     } // ... create_rhs_values(...)
 
     // flux matrix is D*M^(-1)
@@ -206,9 +206,9 @@ protected:
             if (cc > 0)
               str += " ";
             if (cc == rr - 1)
-              str += DSC::to_string(double(rr) / (2.0 * double(rr) + 1.0), precision);
+              str += Dune::XT::Common::to_string(double(rr) / (2.0 * double(rr) + 1.0), precision);
             else if (cc == rr + 1)
-              str += DSC::to_string((double(rr) + 1.0) / (2.0 * double(rr) + 1.0), precision);
+              str += Dune::XT::Common::to_string((double(rr) + 1.0) / (2.0 * double(rr) + 1.0), precision);
             else
               str += "0";
           }
@@ -217,7 +217,7 @@ protected:
         return str;
       } else {
         MatrixType D_M_inverse(M_inverse());
-        return DSC::to_string(D_M_inverse.leftmultiply(DD()), precision);
+        return Dune::XT::Common::to_string(D_M_inverse.leftmultiply(DD()), precision);
       }
     } // ... create_flux_matrix()
 
@@ -243,7 +243,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(0.0001 * base_integrated()[rr], precision);
+          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr], precision);
         }
         str += "]";
         return str;
@@ -262,7 +262,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0), precision) + "*x[0]+1)";
+          str += "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0), precision) + "*x[0]+1)";
         }
         str += "]";
         return str;
@@ -271,9 +271,9 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]),
+          str += Dune::XT::Common::to_string(50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]),
                                 precision)
-                 + "*x[0]+" + DSC::to_string(50 * basefunctions_values_at_plusone()[rr], precision);
+                 + "*x[0]+" + Dune::XT::Common::to_string(50 * basefunctions_values_at_plusone()[rr], precision);
         }
         str += "]";
         return str;
@@ -343,7 +343,7 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          std::string line;
       //          std::getline(basefunction_file, line);
-      //          basefunction_values[ii] = DSC::tokenize(line,
+      //          basefunction_values[ii] = Dune::XT::Common::tokenize(line,
       //                                                  ",",
       //                                                  boost::algorithm::token_compress_mode_type::token_compress_on);
       //        }
@@ -353,7 +353,7 @@ protected:
       //        velocity_grid_config["type"] = "provider.cube";
       //        velocity_grid_config["lower_left"] = "[-1.0]";
       //        velocity_grid_config["upper_right"] = "[1.0]";
-      //        velocity_grid_config["num_elements"] = "[" + DSC::to_string(basefunction_values[0].size() - 1) + "]";
+      //        velocity_grid_config["num_elements"] = "[" + Dune::XT::Common::to_string(basefunction_values[0].size() - 1) + "]";
       //        VelocityGridProviderType velocity_grid_provider =
       //        *(VelocityGridProviderType::create(velocity_grid_config));
       //        velocity_grid_ = velocity_grid_provider.grid_ptr();
@@ -367,13 +367,13 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
       //          for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
-      //            basefunction_ii_values[jj] = DSC::from_string< R >(basefunction_values[ii][jj]);
+      //            basefunction_ii_values[jj] = Dune::XT::Common::from_string< R >(basefunction_values[ii][jj]);
       //          }
       //          basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
       //          basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
       //          basefunctions_.emplace_back(CGFunctionType(cg_space,
       //                                                    basefunction_ii_values,
-      //                                                    "Basefunction " + DSC::to_string(ii)));
+      //                                                    "Basefunction " + Dune::XT::Common::to_string(ii)));
       //        }
 
       //        // get jacobians of basefunctions. jacobians are piecewise constant, so use Checkerboard as
@@ -398,7 +398,7 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          const CGJacobianType jacobian_ii(DomainType(-1),
       //                                           DomainType(1),
-      //                                           DSC::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
+      //                                           Dune::XT::Common::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
       //                                           basefunction_jacobians_values[ii]);
       //          basefunction_jacobians.emplace_back(jacobian_ii);
       //        }
@@ -498,7 +498,7 @@ public:
     ConfigType flux_config;
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"]    = GetData::create_flux_matrix();
-    flux_config["b"]    = DSC::to_string(RangeType(0));
+    flux_config["b"]    = Dune::XT::Common::to_string(RangeType(0));
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"]   = "[0.0]";

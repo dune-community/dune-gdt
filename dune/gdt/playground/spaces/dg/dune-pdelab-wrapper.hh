@@ -24,8 +24,8 @@
 #include <dune/pdelab/constraints/conforming.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/common/tuple.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/tuple.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/la/container/istl.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -141,7 +141,7 @@ public:
 
   typedef typename Dune::GDT::DunePdelabDgSpaceWrapper<GridViewType, polOrder, RangeFieldType, 1, dimRangeCols>
       FactorSpaceType;
-  typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
+  typedef typename Dune::XT::Common::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
 };
 
 

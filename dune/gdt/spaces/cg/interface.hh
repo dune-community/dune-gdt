@@ -18,8 +18,9 @@
 
 #include <dune/geometry/referenceelements.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/ranges.hh>
 
 #include "../interface.hh"
 
@@ -55,7 +56,7 @@ public:
   using typename BaseType::PatternType;
 
 private:
-  typedef DSC::FieldVector<DomainFieldType, dimDomain> StuffDomainType;
+  typedef Dune::XT::Common::FieldVector<DomainFieldType, dimDomain> StuffDomainType;
   static const constexpr RangeFieldType compare_tolerance_ = 1e-13;
 
 public:
@@ -98,7 +99,7 @@ public:
     // prepare return vector
     std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
     // loop over all vertices
-    for (auto ii : DSC::valueRange(num_vertices)) {
+    for (auto ii : Dune::XT::Common::value_range(num_vertices)) {
       // get the local coordinate of the iith vertex
       const auto local_vertex = reference_element.position(ii, dimDomain);
       // evaluate the basefunctionset
@@ -144,7 +145,7 @@ public:
       if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (auto cc : DSC::valueRange(geometry.corners()))
+        for (auto cc : Dune::XT::Common::value_range(geometry.corners()))
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
       } // only work on dirichlet ones
     } // loop over all intersections
@@ -197,7 +198,7 @@ public:
       if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (auto cc : DSC::valueRange(geometry.corners())) {
+        for (auto cc : Dune::XT::Common::value_range(geometry.corners())) {
           dirichlet_vertices_intersection.emplace_back(entity.geometry().local(geometry.corner(cc)));
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
         }
@@ -289,9 +290,9 @@ private:
       for (auto& vec : vectors_in) {
         for (const auto& coeff : possible_coefficients) {
           if ((vec.size() != final_size - 1
-               && DSC::FloatCmp::le(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))
+               && Dune::XT::Common::FloatCmp::le(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))
               || (vec.size() == final_size - 1
-                  && DSC::FloatCmp::eq(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))) {
+                  && Dune::XT::Common::FloatCmp::eq(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))) {
             std::vector<double> vec_copy = vec;
             vec_copy.push_back(coeff);
             vectors_out.insert(vec_copy);

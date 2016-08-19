@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_SPACES_FV_SPACE_HH
 #define DUNE_GDT_SPACES_FV_SPACE_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/fv.hh>
 #include <dune/gdt/spaces/mapper/fv.hh>

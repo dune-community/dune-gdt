@@ -23,7 +23,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/common/fmatrix.hh>
+#include <dune/xt/common/fmatrix.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/la/container/eigen.hh>
@@ -166,9 +166,9 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
-      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
+      else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
         ++num_zeros;
 #endif // NDEBUG
@@ -188,8 +188,8 @@ public:
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
         }
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -257,24 +257,24 @@ private:
   const bool is_linear_;
   const bool use_local_;
   const bool entity_geometries_equal_;
-  static typename DS::PerThreadValue<DomainType> max_derivative_;
-  static typename DS::PerThreadValue<bool> max_derivative_calculated_;
-  static typename DS::PerThreadValue<bool> geometry_evaluated_;
-  mutable typename DS::PerThreadValue<RangeFieldType> vol_intersection_;
-  mutable typename DS::PerThreadValue<int> num_neighbors_;
+  static typename Dune::XT::Common::PerThreadValue<DomainType> max_derivative_;
+  static typename Dune::XT::Common::PerThreadValue<bool> max_derivative_calculated_;
+  static typename Dune::XT::Common::PerThreadValue<bool> geometry_evaluated_;
+  mutable typename Dune::XT::Common::PerThreadValue<RangeFieldType> vol_intersection_;
+  mutable typename Dune::XT::Common::PerThreadValue<int> num_neighbors_;
 }; // class LocalLaxFriedrichsNumericalCouplingFlux
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<
+typename Dune::XT::Common::PerThreadValue<
     typename LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, domainDim>::DomainType>
     LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, domainDim>::max_derivative_;
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<bool> LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp,
+typename Dune::XT::Common::PerThreadValue<bool> LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp,
                                                                           domainDim>::max_derivative_calculated_(false);
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<bool>
+typename Dune::XT::Common::PerThreadValue<bool>
     LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, domainDim>::geometry_evaluated_(
         false);
 
@@ -343,8 +343,8 @@ public:
         *max_derivative_        = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
@@ -404,17 +404,17 @@ private:
   const double dt_;
   const bool is_linear_;
   const bool use_local_;
-  static typename DS::PerThreadValue<RangeFieldType> max_derivative_;
-  static typename DS::PerThreadValue<bool> max_derivative_calculated_;
+  static typename Dune::XT::Common::PerThreadValue<RangeFieldType> max_derivative_;
+  static typename Dune::XT::Common::PerThreadValue<bool> max_derivative_calculated_;
 }; // class LocalLaxFriedrichsNumericalCouplingFlux< ... , 1 >
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
-typename DS::PerThreadValue<
+typename Dune::XT::Common::PerThreadValue<
     typename LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, 1>::RangeFieldType>
     LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, 1>::max_derivative_(0);
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
-typename DS::PerThreadValue<bool>
+typename Dune::XT::Common::PerThreadValue<bool>
     LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, 1>::max_derivative_calculated_(
         false);
 
@@ -491,9 +491,9 @@ public:
     size_t num_zeros = 0;
 #endif // NDEBUG
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
+      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1)) || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
         coord = ii;
-      else if (DSC::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
+      else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
 #ifndef NDEBUG
         ++num_zeros;
 #endif // NDEBUG
@@ -512,8 +512,8 @@ public:
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
-          jacobian_u_i_eigen.emplace_back(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_i[ii], 15)));
-          jacobian_u_j_eigen.emplace_back(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_j[ii], 15)));
+          jacobian_u_i_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i[ii], 15)));
+          jacobian_u_j_eigen.emplace_back(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j[ii], 15)));
         }
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -582,28 +582,28 @@ private:
   const bool is_linear_;
   const bool use_local_;
   const bool entity_geometries_equal_;
-  static typename DS::PerThreadValue<DomainType> max_derivative_;
-  static typename DS::PerThreadValue<bool> max_derivative_calculated_;
-  static typename DS::PerThreadValue<bool> geometry_evaluated_;
-  mutable typename DS::PerThreadValue<RangeFieldType> vol_intersection_;
-  mutable typename DS::PerThreadValue<int> num_neighbors_;
+  static typename Dune::XT::Common::PerThreadValue<DomainType> max_derivative_;
+  static typename Dune::XT::Common::PerThreadValue<bool> max_derivative_calculated_;
+  static typename Dune::XT::Common::PerThreadValue<bool> geometry_evaluated_;
+  mutable typename Dune::XT::Common::PerThreadValue<RangeFieldType> vol_intersection_;
+  mutable typename Dune::XT::Common::PerThreadValue<int> num_neighbors_;
 }; // class LocalLaxFriedrichsDirichletNumericalBoundaryFlux
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<
+typename Dune::XT::Common::PerThreadValue<
     typename LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                               LocalizableFunctionImp, domainDim>::DomainType>
     LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                      LocalizableFunctionImp, domainDim>::max_derivative_;
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<bool>
+typename Dune::XT::Common::PerThreadValue<bool>
     LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                      LocalizableFunctionImp,
                                                      domainDim>::max_derivative_calculated_(false);
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, size_t domainDim>
-typename DS::PerThreadValue<bool>
+typename Dune::XT::Common::PerThreadValue<bool>
     LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                      LocalizableFunctionImp, domainDim>::geometry_evaluated_(false);
 
@@ -678,8 +678,8 @@ public:
         *max_derivative_        = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
-        EigenMatrixType jacobian_u_i_eigen(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_i, 15)));
-        EigenMatrixType jacobian_u_j_eigen(DSC::from_string<EigenMatrixType>(DSC::to_string(jacobian_u_j, 15)));
+        EigenMatrixType jacobian_u_i_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
+        EigenMatrixType jacobian_u_j_eigen(Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
         ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
@@ -740,19 +740,19 @@ private:
   const double dt_;
   const bool is_linear_;
   const bool use_local_;
-  static typename DS::PerThreadValue<RangeFieldType> max_derivative_;
-  static typename DS::PerThreadValue<bool> max_derivative_calculated_;
+  static typename Dune::XT::Common::PerThreadValue<RangeFieldType> max_derivative_;
+  static typename Dune::XT::Common::PerThreadValue<bool> max_derivative_calculated_;
 }; // class LocalLaxFriedrichsDirichletNumericalBoundaryFlux< ... , 1 >
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
-typename DS::PerThreadValue<
+typename Dune::XT::Common::PerThreadValue<
     typename LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                               LocalizableFunctionImp, 1>::RangeFieldType>
     LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                      LocalizableFunctionImp, 1>::max_derivative_(0);
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
-typename DS::PerThreadValue<bool>
+typename Dune::XT::Common::PerThreadValue<bool>
     LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp,
                                                      LocalizableFunctionImp, 1>::max_derivative_calculated_(false);
 
@@ -804,7 +804,7 @@ public:
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
     const FluxRangeType f_u_i_temp = analytical_flux_.evaluate(u_i);
-    DSC::FieldMatrix<RangeFieldType, dimRange, dimDomain> f_u_i;
+    Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimDomain> f_u_i;
     for (size_t ii = 0; ii < dimRange; ++ii) {
       f_u_i[ii] = f_u_i_temp[ii];
     }

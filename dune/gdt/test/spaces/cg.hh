@@ -15,8 +15,8 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/stuff/common/print.hh>
-#include <dune/stuff/common/ranges.hh>
+#include <dune/xt/common/print.hh>
+#include <dune/xt/common/ranges.hh>
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
@@ -89,7 +89,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     const auto entity_end_it = this->space_.grid_view().template end<0>();
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      for (auto cc : DSC::valueRange(entity.subEntities(dimDomain))) {
+      for (auto cc : Dune::XT::Common::value_range(entity.subEntities(dimDomain))) {
         const auto vertex                                    = entity.template subEntity<dimDomain>(cc);
         const DomainType vertex_center                       = vertex.geometry().center();
         vertex_to_indices_map[convert_vector(vertex_center)] = std::set<size_t>();

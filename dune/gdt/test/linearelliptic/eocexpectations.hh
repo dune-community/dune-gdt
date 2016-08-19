@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_EOCEXPECTATIONS_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"

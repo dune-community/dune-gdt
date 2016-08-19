@@ -13,8 +13,8 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
 
 #include "interface.hh"
 
@@ -74,31 +74,31 @@ class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMet
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>(
-        "[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; " + DSC::to_string(2.0 / 9.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15) + " "
-        + DSC::to_string(4.0 / 9.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
+        "[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; " + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
+        + Dune::XT::Common::to_string(4.0 / 9.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(2.0 / 9.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15) + " " + DSC::to_string(4.0 / 9.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(4.0 / 9.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(7.0 / 24.0, 15) + " " + DSC::to_string(1.0 / 4.0, 15) + " " + DSC::to_string(1.0 / 3.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(7.0 / 24.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 4.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15)
         + " "
-        + DSC::to_string(1.0 / 8.0, 15)
+        + Dune::XT::Common::to_string(1.0 / 8.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0.5 0.75 1 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0.5 0.75 1 0]");
   }
 };
 
@@ -109,76 +109,76 @@ class AdaptiveButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMet
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::from_string<Dune::DynamicMatrix<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
         std::string("[0 0 0 0 0 0 0;") + " 0.2 0 0 0 0 0 0;" + " 0.075 0.225 0 0 0 0 0;" + " "
-        + DSC::to_string(44.0 / 45.0, 15)
+        + Dune::XT::Common::to_string(44.0 / 45.0, 15)
         + " "
-        + DSC::to_string(-56.0 / 15.0, 15)
+        + Dune::XT::Common::to_string(-56.0 / 15.0, 15)
         + " "
-        + DSC::to_string(32.0 / 9.0, 15)
+        + Dune::XT::Common::to_string(32.0 / 9.0, 15)
         + " 0 0 0 0;"
         + " "
-        + DSC::to_string(19372.0 / 6561.0, 15)
+        + Dune::XT::Common::to_string(19372.0 / 6561.0, 15)
         + " "
-        + DSC::to_string(-25360.0 / 2187.0, 15)
+        + Dune::XT::Common::to_string(-25360.0 / 2187.0, 15)
         + " "
-        + DSC::to_string(64448.0 / 6561.0, 15)
+        + Dune::XT::Common::to_string(64448.0 / 6561.0, 15)
         + " "
-        + DSC::to_string(-212.0 / 729.0, 15)
+        + Dune::XT::Common::to_string(-212.0 / 729.0, 15)
         + " 0 0 0;"
         + " "
-        + DSC::to_string(9017.0 / 3168.0, 15)
+        + Dune::XT::Common::to_string(9017.0 / 3168.0, 15)
         + " "
-        + DSC::to_string(-355.0 / 33.0, 15)
+        + Dune::XT::Common::to_string(-355.0 / 33.0, 15)
         + " "
-        + DSC::to_string(46732.0 / 5247.0, 15)
+        + Dune::XT::Common::to_string(46732.0 / 5247.0, 15)
         + " "
-        + DSC::to_string(49.0 / 176.0, 15)
+        + Dune::XT::Common::to_string(49.0 / 176.0, 15)
         + " "
-        + DSC::to_string(-5103.0 / 18656.0, 15)
+        + Dune::XT::Common::to_string(-5103.0 / 18656.0, 15)
         + " 0 0;"
         + " "
-        + DSC::to_string(35.0 / 384.0, 15)
+        + Dune::XT::Common::to_string(35.0 / 384.0, 15)
         + " 0 "
-        + DSC::to_string(500.0 / 1113.0, 15)
+        + Dune::XT::Common::to_string(500.0 / 1113.0, 15)
         + " "
-        + DSC::to_string(125.0 / 192.0, 15)
+        + Dune::XT::Common::to_string(125.0 / 192.0, 15)
         + " "
-        + DSC::to_string(-2187.0 / 6784.0, 15)
+        + Dune::XT::Common::to_string(-2187.0 / 6784.0, 15)
         + " "
-        + DSC::to_string(11.0 / 84.0, 15)
+        + Dune::XT::Common::to_string(11.0 / 84.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(35.0 / 384.0, 15) + " 0 " + DSC::to_string(500.0 / 1113.0, 15) + " "
-        + DSC::to_string(125.0 / 192.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(35.0 / 384.0, 15) + " 0 " + Dune::XT::Common::to_string(500.0 / 1113.0, 15) + " "
+        + Dune::XT::Common::to_string(125.0 / 192.0, 15)
         + " "
-        + DSC::to_string(-2187.0 / 6784.0, 15)
+        + Dune::XT::Common::to_string(-2187.0 / 6784.0, 15)
         + " "
-        + DSC::to_string(11.0 / 84.0, 15)
+        + Dune::XT::Common::to_string(11.0 / 84.0, 15)
         + " 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return DSC::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + DSC::to_string(5179.0 / 57600.0, 15) + " 0 " + DSC::to_string(7571.0 / 16695.0, 15) + " "
-        + DSC::to_string(393.0 / 640.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[" + Dune::XT::Common::to_string(5179.0 / 57600.0, 15) + " 0 " + Dune::XT::Common::to_string(7571.0 / 16695.0, 15) + " "
+        + Dune::XT::Common::to_string(393.0 / 640.0, 15)
         + " "
-        + DSC::to_string(-92097.0 / 339200.0, 15)
+        + Dune::XT::Common::to_string(-92097.0 / 339200.0, 15)
         + " "
-        + DSC::to_string(187.0 / 2100.0, 15)
+        + Dune::XT::Common::to_string(187.0 / 2100.0, 15)
         + " "
-        + DSC::to_string(1.0 / 40.0, 15)
+        + Dune::XT::Common::to_string(1.0 / 40.0, 15)
         + "]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.2 0.3 0.8 " + DSC::to_string(8.0 / 9.0, 15)
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.2 0.3 0.8 " + Dune::XT::Common::to_string(8.0 / 9.0, 15)
                                                                 + " 1 1]");
   }
 }; // Dormand-Prince (RK45)
@@ -262,9 +262,9 @@ public:
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
   {
-    assert(DSC::FloatCmp::gt(tol_, 0.0));
-    assert(DSC::FloatCmp::le(scale_factor_min_, 1.0));
-    assert(DSC::FloatCmp::ge(scale_factor_max_, 1.0));
+    assert(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
+    assert(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
+    assert(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(b_1_.size() == A_.rows());
     assert(b_2_.size() == A_.rows());
@@ -272,7 +272,7 @@ public:
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0)
+        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
                && "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
@@ -295,7 +295,7 @@ public:
     auto& t   = current_time();
     auto& u_n = current_solution();
 
-    while (DSC::FloatCmp::gt(mixed_error, tol_)) {
+    while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {
       actual_dt *= time_step_scale_factor;
       size_t first_stage_to_compute = 0;
       if (last_stage_of_previous_step_) {
@@ -339,7 +339,7 @@ public:
     } // while (mixed_error > tol_)
 
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_         = DSC::make_unique<DiscreteFunctionType>(u_n);
+      last_stage_of_previous_step_         = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->vector() = u_intermediate_stages_[num_stages_ - 1].vector();
 
     t += actual_dt;

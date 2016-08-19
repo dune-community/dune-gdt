@@ -19,7 +19,7 @@
 #include <dune/fem/space/discontinuousgalerkin/lagrange.hh>
 #endif
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 

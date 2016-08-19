@@ -29,7 +29,7 @@
 #include <dune/pdelab/constraints/conforming.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -107,7 +107,7 @@ public:
 
   typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
   typedef
-      typename DSC::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+      typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
                                          rangeDim>::type SpaceTupleType;
 
 private:

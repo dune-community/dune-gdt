@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_BASE_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_BASE_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 
 #include "interface.hh"
 

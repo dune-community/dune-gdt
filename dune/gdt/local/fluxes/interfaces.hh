@@ -11,7 +11,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 #include <dune/stuff/functions/interfaces.hh>
 
 namespace Dune {

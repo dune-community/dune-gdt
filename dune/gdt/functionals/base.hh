@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_FUNCTIONALS_BASE_HH
 #define DUNE_GDT_FUNCTIONALS_BASE_HH
 
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/la/container/vector-interface.hh>
 
@@ -150,7 +150,7 @@ public:
   }
 
 private:
-  DSC::StorageProvider<VectorType> vector_;
+  Dune::XT::Common::StorageProvider<VectorType> vector_;
 }; // class VectorFunctionalBase
 
 

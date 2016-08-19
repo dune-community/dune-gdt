@@ -57,7 +57,7 @@ TYPED_TEST(EllipticMatrixOperatorTest, correct_for_constant_arguments)
 #else
 TEST(DISABLED_EllipticMatrixOperatorTest, correct_for_constant_arguments)
 {
-  std::cerr << DSC::colorStringRed("Missing dependencies!") << std::endl;
+  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
 }
 #endif
 
@@ -73,10 +73,10 @@ TYPED_TEST(EllipticMatrixOperatorTest, correct_for_quadratic_arguments)
 #else // HAVE_DUNE_FEM
 TEST(DISABLED_EllipticMatrixOperatorTest, correct_for_linear_arguments)
 {
-  std::cerr << DSC::colorStringRed("Missing dependencies!") << std::endl;
+  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
 }
 TEST(DISABLED_EllipticMatrixOperatorTest, correct_for_quadratic_arguments)
 {
-  std::cerr << DSC::colorStringRed("Missing dependencies!") << std::endl;
+  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
 }
 #endif // HAVE_DUNE_FEM

@@ -11,6 +11,8 @@
 
 #include "interfaces.hh"
 
+#include <dune/xt/common/fvector.hh>
+
 namespace Dune {
 namespace GDT {
 
@@ -88,7 +90,7 @@ struct ChooseLimiter<SlopeLimiters::minmod, VectorType>
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs < slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
-      else if (DSC::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
+      else if (Dune::XT::Common::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_right[ii];
       else
         ret[ii] = 0.0;
@@ -115,7 +117,7 @@ struct ChooseLimiter<SlopeLimiters::superbee, VectorType>
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs > slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
-      else if (DSC::FloatCmp::le(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
+      else if (Dune::XT::Common::FloatCmp::le(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_right[ii];
       else
         ret[ii] = 0.0;
@@ -172,7 +174,7 @@ public:
     const auto geometry_intersection          = intersection.geometry();
     const auto local_functions_tuple_entity   = numerical_flux_.local_functions(entity);
     const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(neighbor);
-    const DSC::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
+    const Dune::XT::Common::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
                            LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
         result = numerical_flux_.evaluate(local_functions_tuple_entity,
                                           local_functions_tuple_neighbor,
@@ -256,7 +258,7 @@ class LocalReconstructionFvOperator
   typedef internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp, slope_limiter> Traits;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename DSC::FieldVector<RangeFieldType, dimRange> StuffFieldVectorType;
+  typedef typename Dune::XT::Common::FieldVector<RangeFieldType, dimRange> XTFieldVectorType;
 
 public:
   typedef typename Traits::MatrixType MatrixType;
@@ -304,22 +306,22 @@ public:
 
     // diagonalize the system of equations from u_t + A*u_x = 0 to w_t + D*w_x = 0 where D = R^(-1)*A*R, w = R^(-1)*u
     // and R matrix of eigenvectors of A
-    const StuffFieldVectorType w_left(eigenvectors_inverse_ * u_left);
-    const StuffFieldVectorType w_right(eigenvectors_inverse_ * u_right);
-    const StuffFieldVectorType w_entity(eigenvectors_inverse_ * u_entity);
+    const XTFieldVectorType w_left(eigenvectors_inverse_ * u_left);
+    const XTFieldVectorType w_right(eigenvectors_inverse_ * u_right);
+    const XTFieldVectorType w_entity(eigenvectors_inverse_ * u_entity);
 
-    const StuffFieldVectorType w_slope_left     = w_entity - w_left;
-    const StuffFieldVectorType w_slope_right    = w_right - w_entity;
-    const StuffFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
-    const StuffFieldVectorType w_slope          = internal::ChooseLimiter<slope_limiter, StuffFieldVectorType>::limit(
+    const XTFieldVectorType w_slope_left     = w_entity - w_left;
+    const XTFieldVectorType w_slope_right    = w_right - w_entity;
+    const XTFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
+    const XTFieldVectorType w_slope          = internal::ChooseLimiter<slope_limiter, XTFieldVectorType>::limit(
         w_slope_left, w_slope_right, w_centered_slope);
-    const StuffFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
-    const StuffFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
-    const StuffFieldVectorType w_reconstructed_right = w_entity + half_w_slope;
+    const XTFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
+    const XTFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
+    const XTFieldVectorType w_reconstructed_right = w_entity + half_w_slope;
 
     // convert back to u variable
-    const StuffFieldVectorType u_reconstructed_left(eigenvectors_ * w_reconstructed_left);
-    const StuffFieldVectorType u_reconstructed_right(eigenvectors_ * w_reconstructed_right);
+    const XTFieldVectorType u_reconstructed_left(eigenvectors_ * w_reconstructed_left);
+    const XTFieldVectorType u_reconstructed_right(eigenvectors_ * w_reconstructed_right);
 
     for (size_t factor_index = 0; factor_index < dimRange; ++factor_index) {
       // set values on dofs, dof with local index 0 for each factor space corresponds to basis function 1 - x, local

@@ -11,7 +11,7 @@
 
 #include <type_traits>
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 

@@ -19,9 +19,9 @@
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #endif
 
-#include <dune/stuff/common/parallel/threadstorage.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/common/tuple.hh>
+#include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/tuple.hh>
 
 #include "interfaces.hh"
 #include "product.hh"
@@ -156,18 +156,18 @@ template <class PdelabSpaceImp, size_t rangeDim = 1>
 class DunePdelabCgMapperWrapper
     : public DefaultProductMapperFromTuple<
           typename PdelabSpaceImp::Traits::GridViewType,
-          typename DSC::make_identical_tuple<DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>, rangeDim>::type>::type
+          typename Dune::XT::Common::make_identical_tuple<DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>, rangeDim>::type>::type
 {
   typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, 1> ScalarValuedMapperType;
   typedef typename DefaultProductMapperFromTuple<
       typename PdelabSpaceImp::Traits::GridViewType,
-      typename Dune::Stuff::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::type>::type BaseType;
+      typename Dune::XT::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::type>::type BaseType;
 
 public:
   typedef typename internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, rangeDim>::BackendType BackendType;
   DunePdelabCgMapperWrapper(const BackendType& pdelab_space)
     : BaseType(pdelab_space.gridView(),
-               DSC::make_identical_tuple<ScalarValuedMapperType, rangeDim>::create(pdelab_space))
+               Dune::XT::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::create(pdelab_space))
   {
   }
 }; // class DunePdelabCgMapperWrapper

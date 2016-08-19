@@ -162,7 +162,7 @@ private:
   const LocalVolumeTwoFormType& local_operator_;
   const TestFunctionType& test_function_;
   const AnsatzFunctionType& ansatz_function_;
-  DS::PerThreadValue<FieldType> result_;
+  Dune::XT::Common::PerThreadValue<FieldType> result_;
   bool finalized_;
   const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
   FieldType finalized_result_;

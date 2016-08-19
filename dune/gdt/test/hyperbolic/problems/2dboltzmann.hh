@@ -15,7 +15,7 @@
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 
@@ -106,8 +106,8 @@ protected:
       for (size_t l = 1; l <= momentOrder; ++l)
         for (size_t m = 0; m <= l; ++m)
           S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
-      rhs_config["A.0"] = DSC::to_string(S, precision);
-      rhs_config["b"]   = DSC::to_string(RangeType(0));
+      rhs_config["A.0"] = Dune::XT::Common::to_string(S, precision);
+      rhs_config["b"]   = Dune::XT::Common::to_string(RangeType(0));
     } // ... create_rhs_values(...)
 
     static void create_flux_matrices(ConfigType& flux_config)
@@ -143,9 +143,9 @@ protected:
           }
         }
       }
-      flux_config["A.0"] = DSC::to_string(X, precision);
-      flux_config["A.1"] = DSC::to_string(Z, precision);
-      flux_config["b"]   = DSC::to_string(FluxRangeType(0));
+      flux_config["A.0"] = Dune::XT::Common::to_string(X, precision);
+      flux_config["A.1"] = Dune::XT::Common::to_string(Z, precision);
+      flux_config["b"]   = Dune::XT::Common::to_string(FluxRangeType(0));
     } // ... create_flux_matrix()
 
     // initial value is max(exp(-10*((x-0.5)^2 + (y-0.5)^2)/sigma^2), 10^(-4)) with sigma = 0.02 for \psi_0^0 and 0 else
@@ -392,8 +392,8 @@ protected:
             for (size_t m = 0; m <= l; ++m)
               S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
           size_t number                             = 7 * row + col;
-          rhs_config["A." + DSC::to_string(number)] = DSC::to_string(S, precision);
-          rhs_config["b." + DSC::to_string(number)] = DSC::to_string(q);
+          rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(S, precision);
+          rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(q);
         }
       }
     } // ... create_rhs_values(...)
@@ -551,7 +551,7 @@ public:
         << "||  Testcase: Boltzmann 2D Checkerboard                                                               ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 7] x [0, 7]                                                                          ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                                                  ||\n"
         << "||  flux = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                ||\n"
         << "||  rhs = see http://dx.doi.org/10.1016/j.jcp.2005.04.011 Section 4.1                                 ||\n"

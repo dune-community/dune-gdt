@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATOR_EXPECTATIONS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATOR_EXPECTATIONS_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/la/container/container-interface.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 

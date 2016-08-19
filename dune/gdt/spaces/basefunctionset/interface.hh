@@ -12,7 +12,7 @@
 #define DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
 
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 
 namespace Dune {
 namespace GDT {

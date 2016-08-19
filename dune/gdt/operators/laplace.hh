@@ -11,7 +11,7 @@
 #include <limits>
 #include <type_traits>
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/grid/entity.hh>
 
@@ -106,7 +106,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
 make_laplace_localizable_product(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
                                  const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceLocalizableProduct<GridViewType, RangeType, SourceType>>(
+  return Dune::XT::Common::make_unique<LaplaceLocalizableProduct<GridViewType, RangeType, SourceType>>(
       over_integrate, grid_view, range, source);
 }
 
@@ -203,7 +203,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType>>>::type
 make_laplace_matrix_operator(const SpaceType& space, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType>>(over_integrate, space);
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType>>(over_integrate, space);
 }
 
 /**
@@ -220,7 +220,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_laplace_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(over_integrate, space, grid_view);
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(over_integrate, space, grid_view);
 }
 
 /**
@@ -238,7 +238,7 @@ typename std::
     make_laplace_matrix_operator(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
                                  const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
       over_integrate, range_space, source_space, grid_view);
 }
 
@@ -252,7 +252,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType>>>::type
 make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType>>(over_integrate, matrix, space);
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType>>(over_integrate, matrix, space);
 }
 
 /**
@@ -265,7 +265,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Spac
 make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
                              const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(
       over_integrate, matrix, space, grid_view);
 }
 
@@ -281,7 +281,7 @@ typename std::
                                  const SourceSpaceType& source_space, const GridViewType& grid_view,
                                  const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
+  return Dune::XT::Common::make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
       over_integrate, matrix, range_space, source_space, grid_view);
 }
 
@@ -378,7 +378,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<LaplaceOperator<GridViewType>>>::type
 make_laplace_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<LaplaceOperator<GridViewType>>(grid_view, over_integrate);
+  return Dune::XT::Common::make_unique<LaplaceOperator<GridViewType>>(grid_view, over_integrate);
 }
 
 

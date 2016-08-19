@@ -17,7 +17,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/matrix.hh>
+#include <dune/xt/common/matrix.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/type_traits.hh>

@@ -14,7 +14,7 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider/interface.hh>
 

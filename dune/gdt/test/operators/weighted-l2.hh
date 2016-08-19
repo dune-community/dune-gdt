@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_WEIGHTED_L2_HH
 #define DUNE_GDT_TEST_OPERATORS_WEIGHTED_L2_HH
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/projections.hh>
@@ -40,7 +40,7 @@ struct WeightedL2ProductBase
 
   WeightedL2ProductBase(const double weight_value = 42)
     : weight_value_(weight_value)
-    , weight_("x", DSC::to_string(double(weight_value_)), 0) // linker error if double(...) is missing
+    , weight_("x", Dune::XT::Common::to_string(double(weight_value_)), 0) // linker error if double(...) is missing
     , constant_("x", "1.0", 0)
     , linear_("x", "x[0] - 1.0", 1)
     , quadratic_("x", "x[0]*x[0]", 2)

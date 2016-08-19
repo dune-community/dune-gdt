@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 
 #include "twobeams.hh"
 
@@ -87,7 +87,7 @@ protected:
             }
           }
           str += "]";
-          std::string entry        = "values." + DSC::to_string(ii);
+          std::string entry        = "values." + Dune::XT::Common::to_string(ii);
           initial_value_cfg[entry] = str;
         }
       } else {
@@ -97,12 +97,12 @@ protected:
             if (rr > 0)
               str += " ";
             if (ii == 3)
-              str += DSC::to_string(10 * base_integrated()[rr]);
+              str += Dune::XT::Common::to_string(10 * base_integrated()[rr]);
             else
-              str += DSC::to_string(0.0001 * base_integrated()[rr]);
+              str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
           }
           str += "]";
-          std::string entry        = "values." + DSC::to_string(ii);
+          std::string entry        = "values." + Dune::XT::Common::to_string(ii);
           initial_value_cfg[entry] = str;
         }
       }
@@ -124,20 +124,20 @@ protected:
             if (cc > 0)
               A_str += " ";
             if (cc == rr)
-              A_str += DSC::to_string(-0.005 * cc * (cc + 1));
+              A_str += Dune::XT::Common::to_string(-0.005 * cc * (cc + 1));
             else
               A_str += "0";
           }
         }
         A_str += "]";
         rhs_config["A.0"] = A_str;
-        rhs_config["b.0"] = DSC::to_string(RangeType(0));
+        rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
       } else {
         MatrixType S_M_inverse(S());
         S_M_inverse.rightmultiply(M_inverse());
         S_M_inverse *= -0.005;
-        rhs_config["A.0"] = DSC::to_string(S_M_inverse);
-        rhs_config["b.0"] = DSC::to_string(RangeType(0));
+        rhs_config["A.0"] = Dune::XT::Common::to_string(S_M_inverse);
+        rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
       }
     } // ... create_rhs_values()
 
@@ -165,7 +165,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(0.0001 * base_integrated()[rr]);
+          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
         }
         str += "]";
         return str;

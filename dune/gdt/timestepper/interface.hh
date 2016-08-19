@@ -13,8 +13,8 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/stuff/la/container.hh>
 
 
@@ -43,7 +43,7 @@ struct FloatCmpLt
   template <class A, class B>
   bool operator()(const A& a, const B& b) const
   {
-    return DSC::FloatCmp::lt(a, b);
+    return Dune::XT::Common::FloatCmp::lt(a, b);
   }
 };
 
@@ -53,8 +53,8 @@ struct FloatCmpLt
 
 template <class DiscreteFunctionImp, class TimeFieldImp>
 class TimeStepperInterface
-    : DSC::StorageProvider<DiscreteFunctionImp>,
-      DSC::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+    : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>,
+      Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
 {
 public:
   typedef DiscreteFunctionImp DiscreteFunctionType;
@@ -66,8 +66,8 @@ public:
   typedef typename SolutionType::value_type TimeAndDiscreteFunctionPairType;
 
 private:
-  typedef typename DSC::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
-  typedef typename DSC::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+  typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
+  typedef typename Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
       SolutionStorageProviderType;
 
 protected:
@@ -161,7 +161,7 @@ public:
   {
     TimeFieldType dt = initial_dt;
     TimeFieldType t  = current_time();
-    assert(DSC::FloatCmp::ge(t_end - t, 0.0));
+    assert(Dune::XT::Common::FloatCmp::ge(t_end - t, 0.0));
     size_t time_step_counter = 0;
 
     const TimeFieldType save_interval = (t_end - t) / num_save_steps;
@@ -172,14 +172,14 @@ public:
     if (save_solution)
       sol.insert(std::make_pair(t, current_solution()));
     if (visualize)
-      current_solution().visualize(filename_prefix, DSC::to_string(0));
+      current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(0));
 
-    while (DSC::FloatCmp::lt(t, t_end)) {
+    while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       TimeFieldType max_dt = dt;
       // match saving times and t_end exactly
-      if (DSC::FloatCmp::gt(t + dt, t_end))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
         max_dt = t_end - t;
-      if (DSC::FloatCmp::gt(t + dt, next_save_time) && num_save_steps != size_t(-1))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, next_save_time) && num_save_steps != size_t(-1))
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep
@@ -190,11 +190,11 @@ public:
       ++time_step_counter;
 
       // check if data should be written in this timestep (and write)
-      if (DSC::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
+      if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
         if (save_solution)
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
         if (visualize)
-          current_solution().visualize(filename_prefix, DSC::to_string(save_step_counter));
+          current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
         if (output_progress)
           std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_save_time += save_interval;
@@ -242,7 +242,7 @@ public:
     const auto it = solution().find(t);
     if (it == solution().end())
       DUNE_THROW(Dune::InvalidStateException,
-                 "There is no solution for time " + DSC::to_string(t) + " stored in this object!");
+                 "There is no solution for time " + Dune::XT::Common::to_string(t) + " stored in this object!");
     return it->second;
   }
 
@@ -252,7 +252,7 @@ public:
     size_t counter = 0;
     for (const auto& pair : solution()) {
       pair.second.template visualize_factor<factor>(
-          prefix + "factor_" + DSC::to_string(factor), DSC::to_string(counter), true);
+          prefix + "factor_" + Dune::XT::Common::to_string(factor), Dune::XT::Common::to_string(counter), true);
       ++counter;
     }
   }
@@ -261,7 +261,7 @@ public:
   {
     size_t counter = 0;
     for (const auto& pair : solution()) {
-      pair.second.visualize(prefix, DSC::to_string(counter));
+      pair.second.visualize(prefix, Dune::XT::Common::to_string(counter));
       ++counter;
     }
   }

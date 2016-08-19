@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_OPERATORS_BASE_HH
 #define DUNE_GDT_OPERATORS_BASE_HH
 
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/la/container/pattern.hh>
@@ -404,7 +404,7 @@ protected:
   using BaseAssemblerType::codim1_functors_;
 
 private:
-  DSC::StorageProvider<MatrixType> matrix_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_;
 }; // class MatrixOperatorBase
 
 

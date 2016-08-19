@@ -16,10 +16,10 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/stuff/aliases.hh>
-#include <dune/stuff/common/vector.hh>
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/print.hh>
-#include <dune/stuff/common/ranges.hh>
+#include <dune/xt/common/vector.hh>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/print.hh>
+#include <dune/xt/common/ranges.hh>
 #include <dune/stuff/grid/walker.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -149,7 +149,7 @@ private:
           const auto& intersection = *intersectionIt;
           if (intersection.boundary() && !intersection.neighbor()) {
             const auto& intersection_geometry = intersection.geometry();
-            for (auto local_intersection_corner_id : DSC::valueRange(intersection_geometry.corners())) {
+            for (auto local_intersection_corner_id : Dune::XT::Common::value_range(intersection_geometry.corners())) {
               const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we
               // loop over all vertices of the entity

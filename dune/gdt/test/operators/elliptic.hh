@@ -39,7 +39,7 @@ struct EllipticProductBase
 
   EllipticProductBase(const double factor_value = 42.)
     : factor_value_(factor_value)
-    , factor_("x", DSC::to_string(factor_value_), 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
+    , factor_("x", Dune::XT::Common::to_string(factor_value_), 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
     , constant_gradient_("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
     , linear_gradient_("x", "fake_value", 2, "affine gradient", {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}})
     , quadratic_gradient_("x", "fake_value", 3, "quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}})

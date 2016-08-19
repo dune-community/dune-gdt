@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_PROLONGATIONS_LAGRANGE_HH
 #define DUNE_GDT_PROLONGATIONS_LAGRANGE_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
@@ -97,7 +97,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
         const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<LagrangeProlongationLocalizableOperator<GridViewType,
                                                           ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                           DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
@@ -111,7 +111,7 @@ std::unique_ptr<LagrangeProlongationLocalizableOperator<typename RangeSpaceType:
 make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range)
 {
-  return DSC::make_unique<LagrangeProlongationLocalizableOperator<
+  return Dune::XT::Common::make_unique<LagrangeProlongationLocalizableOperator<
       typename RangeSpaceType::GridViewType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
       DiscreteFunction<RangeSpaceType, RangeVectorType>>>(range.space().grid_view(), source, range);
@@ -181,7 +181,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationOperator<GridViewType>>>::type
 make_lagrange_prolongation_operator(const GridViewType& grid_view)
 {
-  return DSC::make_unique<LagrangeProlongationOperator<GridViewType>>(grid_view);
+  return Dune::XT::Common::make_unique<LagrangeProlongationOperator<GridViewType>>(grid_view);
 }
 
 

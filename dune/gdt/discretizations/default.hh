@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/information.hh>
 #include <dune/stuff/la/container/common.hh>
 
@@ -424,7 +424,7 @@ public:
   void visualize(const DiscreteSolutionType& solution, const std::string filename) const
   {
     for (size_t ii = 0; ii < solution.size(); ++ii)
-      solution[ii].second.visualize(filename, DSC::to_string(ii));
+      solution[ii].second.visualize(filename, Dune::XT::Common::to_string(ii));
   }
 
 private:

@@ -33,12 +33,12 @@ public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
     if (type == "L1") {
-      if (DSC::FloatCmp::eq(test_case.t_end(), 1.0))
+      if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {1.79e-03, 8.44e-04};
-      else if (DSC::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
+      else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
         return {3.60e-04, 1.70e-04};
       else
-        EXPECT_TRUE(false) << "test results missing for t_end = " << DSC::toString(test_case.t_end());
+        EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     }

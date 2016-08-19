@@ -9,8 +9,8 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_CG_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_CG_HH
 
-#include <dune/stuff/common/timedlogging.hh>
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/timedlogging.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider.hh>
@@ -59,13 +59,13 @@ public:
 
   static std::string static_id() // int() needed, otherwise we get a
   { // linker error
-    return std::string("gdt.linearelliptic.discretization.cg.order_") + DSC::to_string(int(polOrder));
+    return std::string("gdt.linearelliptic.discretization.cg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
   static DiscretizationType discretize(Stuff::Grid::ProviderInterface<GridType>& grid_provider,
                                        const ProblemType& problem, const int level = 0)
   {
-    auto logger = Stuff::Common::TimedLogger().get(static_id());
+    auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
     auto space = SpaceProvider::create(grid_provider, level);
     logger.debug() << "grid has " << space.grid_view().indexSet().size(0) << " elements" << std::endl;

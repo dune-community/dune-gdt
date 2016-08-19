@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_SPACES_FV_INTERFACE_HH
 #define DUNE_GDT_SPACES_FV_INTERFACE_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "../interface.hh"
 

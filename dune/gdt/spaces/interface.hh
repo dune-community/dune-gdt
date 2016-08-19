@@ -21,11 +21,11 @@
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/parallel/threadstorage.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/common/ranges.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/ranges.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/la/container/pattern.hh>
@@ -252,7 +252,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
 
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto testBase   = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, globalRows);
@@ -296,7 +296,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto test_base_entity   = base_function_set(entity);
       const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
@@ -356,7 +356,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto test_base_entity = base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       // walk the intersections

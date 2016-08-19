@@ -15,10 +15,10 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/fvector.hh>
-#include <dune/stuff/common/fmatrix.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/la/container.hh>
 #include <dune/stuff/la/solver.hh>
