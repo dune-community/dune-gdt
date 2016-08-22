@@ -454,7 +454,7 @@ public:
       Dune::DynamicMatrix<R>& ret_en_en, Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
       Dune::DynamicMatrix<R>& ret_ne_en) const
   {
-    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
+    typedef XT::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
     ret_en_en *= 0.0;
     ret_ne_ne *= 0.0;
@@ -783,7 +783,7 @@ public:
            const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
            Dune::DynamicMatrix<R>& ret) const
   {
-    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
+    typedef XT::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
@@ -956,7 +956,7 @@ public:
            const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
            Dune::DynamicVector<R>& ret) const
   {
-    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
+    typedef XT::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates

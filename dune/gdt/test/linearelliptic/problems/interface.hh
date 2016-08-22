@@ -56,9 +56,9 @@ public:
 
   virtual const FunctionType& neumann() const = 0;
 
-  virtual const Stuff::Common::Configuration& grid_cfg() const = 0;
+  virtual const XT::Common::Configuration& grid_cfg() const = 0;
 
-  virtual const Stuff::Common::Configuration& boundary_info_cfg() const = 0;
+  virtual const XT::Common::Configuration& boundary_info_cfg() const = 0;
 
   template <class G>
   void visualize(const GridView<G>& grid_view, std::string filename, const bool subsampling = true,

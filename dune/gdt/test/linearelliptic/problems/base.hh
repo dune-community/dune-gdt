@@ -29,8 +29,8 @@ public:
   using typename BaseType::FunctionType;
 
   ProblemBase(const DiffusionFactorType& diff_fac, const DiffusionTensorType& diff_ten, const FunctionType& forc,
-              const FunctionType& dir, const FunctionType& neum, Stuff::Common::Configuration grd_cfg,
-              Stuff::Common::Configuration bnd_cfg)
+              const FunctionType& dir, const FunctionType& neum, XT::Common::Configuration grd_cfg,
+              XT::Common::Configuration bnd_cfg)
     : diffusion_factor_(diff_fac)
     , diffusion_tensor_(diff_ten)
     , force_(forc)
@@ -45,8 +45,8 @@ public:
    * \note Do not manually delete these pointers, they are managed automaticall from here on!
    */
   ProblemBase(const DiffusionFactorType* diff_fac, const DiffusionTensorType* diff_ten, const FunctionType* forc,
-              const FunctionType* dir, const FunctionType* neum, Stuff::Common::Configuration grd_cfg,
-              Stuff::Common::Configuration bnd_cfg)
+              const FunctionType* dir, const FunctionType* neum, XT::Common::Configuration grd_cfg,
+              XT::Common::Configuration bnd_cfg)
     : diffusion_factor_(diff_fac)
     , diffusion_tensor_(diff_ten)
     , force_(forc)
@@ -82,24 +82,24 @@ public:
     return neumann_.access();
   }
 
-  virtual const Stuff::Common::Configuration& grid_cfg() const override
+  virtual const XT::Common::Configuration& grid_cfg() const override
   {
     return grid_cfg_;
   }
 
-  virtual const Stuff::Common::Configuration& boundary_info_cfg() const override
+  virtual const XT::Common::Configuration& boundary_info_cfg() const override
   {
     return boundary_info_cfg_;
   }
 
 protected:
-  const Stuff::Common::ConstStorageProvider<DiffusionFactorType> diffusion_factor_;
-  const Stuff::Common::ConstStorageProvider<DiffusionTensorType> diffusion_tensor_;
-  const Stuff::Common::ConstStorageProvider<FunctionType> force_;
-  const Stuff::Common::ConstStorageProvider<FunctionType> dirichlet_;
-  const Stuff::Common::ConstStorageProvider<FunctionType> neumann_;
-  const Stuff::Common::Configuration grid_cfg_;
-  const Stuff::Common::Configuration boundary_info_cfg_;
+  const XT::Common::ConstStorageProvider<DiffusionFactorType> diffusion_factor_;
+  const XT::Common::ConstStorageProvider<DiffusionTensorType> diffusion_tensor_;
+  const XT::Common::ConstStorageProvider<FunctionType> force_;
+  const XT::Common::ConstStorageProvider<FunctionType> dirichlet_;
+  const XT::Common::ConstStorageProvider<FunctionType> neumann_;
+  const XT::Common::Configuration grid_cfg_;
+  const XT::Common::Configuration boundary_info_cfg_;
 }; // class ProblemBase
 
 

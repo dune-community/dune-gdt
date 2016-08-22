@@ -27,14 +27,14 @@ namespace GDT {
 
 template <class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
 class LaplaceLocalizableProduct
-    : Stuff::Common::ConstStorageProvider<Stuff::Functions::Constant<
+    : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
           typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
       public EllipticLocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                                    typename GridView::ctype, GridView::dimension, Field,
                                                                    1>,
                                         void, GridView, Range, Source, Field>
 {
-  typedef Stuff::Common::ConstStorageProvider<Stuff::Functions::Constant<
+  typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
       typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
   typedef EllipticLocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
@@ -120,13 +120,13 @@ template <class RangeSpace,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class LaplaceMatrixOperator
-    : Stuff::Common::ConstStorageProvider<Stuff::Functions::Constant<
+    : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
           typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
       public EllipticMatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
                                                                typename GridView::ctype, GridView::dimension, Field, 1>,
                                     void, RangeSpace, Matrix, GridView, SourceSpace, Field>
 {
-  typedef Stuff::Common::ConstStorageProvider<Stuff::Functions::Constant<
+  typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
       typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
   typedef EllipticMatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
@@ -350,7 +350,7 @@ public:
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const Stuff::Common::Configuration& /*opts*/) const
+                     const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "yet");
   }
@@ -361,7 +361,7 @@ public:
     return {"depends_on_the_vector_type_of_the_discrete_function"};
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
     DUNE_THROW(NotImplemented, "yet");
   }

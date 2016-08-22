@@ -106,13 +106,13 @@ private:
   template <class R, size_t r>
   struct Helper<R, r, r>
   {
-    typedef Stuff::Common::FieldMatrix<R, r, r> type;
+    typedef XT::Common::FieldMatrix<R, r, r> type;
   };
 
   template <class R>
   struct Helper<R, 1, 1>
   {
-    typedef Stuff::Common::FieldVector<R, 1> type;
+    typedef XT::Common::FieldVector<R, 1> type;
   };
 
   typedef typename Helper<typename FunctionImp::RangeFieldType, FunctionImp::dimRange, FunctionImp::dimRangeCols>::type
@@ -290,7 +290,7 @@ private:
   }
 
   template <class R, int d>
-  typename std::enable_if<(d > 1), R>::type compute_value(const Stuff::Common::FieldMatrix<R, d, d>& function_value,
+  typename std::enable_if<(d > 1), R>::type compute_value(const XT::Common::FieldMatrix<R, d, d>& function_value,
                                                           const FieldVector<R, d>& source_gradient,
                                                           const FieldVector<R, d>& normal) const
   {

@@ -47,22 +47,22 @@ class Spe10Model1Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
   typedef Stuff::Functions::Spe10::Model1<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> Spe10FunctionType;
 
 public:
-  static Stuff::Common::Configuration default_grid_cfg()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    Stuff::Common::Configuration cfg;
+    XT::Common::Configuration cfg;
     cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
     cfg["lower_left"]  = "[0 0]";
     cfg["upper_right"] = "[5 1]";
     return cfg;
   }
 
-  static Stuff::Common::Configuration default_boundary_info_cfg()
+  static XT::Common::Configuration default_boundary_info_cfg()
   {
     return Stuff::Grid::BoundaryInfoConfigs::AllDirichlet::default_config();
   }
 
-  Spe10Model1Problem(const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
-                     const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
+  Spe10Model1Problem(const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
+                     const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new Spe10FunctionType(Stuff::Functions::Spe10::internal::model1_filename,
                                      grd_cfg.get<typename Spe10FunctionType::DomainType>("lower_left"),
                                      grd_cfg.get<typename Spe10FunctionType::DomainType>("upper_right"),
@@ -99,7 +99,7 @@ private:
   struct Helper
   {
     static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       return cfg;
     }
@@ -108,7 +108,7 @@ private:
   template <bool anything>
   struct Helper<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[100 20]";
       return cfg;
@@ -119,7 +119,7 @@ private:
   template <bool anything>
   struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"]    = "[100 20]";
       cfg["num_refinements"] = "1";
@@ -130,7 +130,7 @@ private:
   template <bool anything>
   struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[100 20]";
       return cfg;
@@ -138,7 +138,7 @@ private:
   };
 #endif // HAVE_ALUGRID
 
-  static Stuff::Common::Configuration grid_cfg()
+  static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
     cfg      = Helper<typename std::decay<G>::type>::value(cfg);

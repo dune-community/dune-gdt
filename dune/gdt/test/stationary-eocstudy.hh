@@ -144,9 +144,9 @@ public:
       assert(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
-      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
+      current_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_)));
-      current_solution_vector_on_level_ = Stuff::Common::make_unique<VectorType>(current_discretization_->solve());
+      current_solution_vector_on_level_ = XT::Common::make_unique<VectorType>(current_discretization_->solve());
       time_to_solution_                 = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
@@ -154,7 +154,7 @@ public:
       compute_reference_solution();
       assert(reference_discretization_);
       if (!current_solution_vector_)
-        current_solution_vector_ = Stuff::Common::make_unique<VectorType>(reference_discretization_->create_vector());
+        current_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->create_vector());
       DiscreteFunctionType reference_refinement_solution(
           reference_discretization_->ansatz_space(), *current_solution_vector_, "solution on reference grid part");
       prolong(current_refinement_solution, reference_refinement_solution);
@@ -216,9 +216,9 @@ protected:
   void compute_reference_solution()
   {
     if (!reference_solution_computed_) {
-      reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
+      reference_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.reference_level()));
-      reference_solution_vector_   = Stuff::Common::make_unique<VectorType>(reference_discretization_->solve());
+      reference_solution_vector_   = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       // visualize
       if (!visualize_prefix_.empty()) {

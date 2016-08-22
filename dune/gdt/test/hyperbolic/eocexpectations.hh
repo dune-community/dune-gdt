@@ -51,7 +51,7 @@ public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     EXPECT_TRUE(false) << "Please record the expected results for\n"
-                       << "  TestCaseType: " << Stuff::Common::Typename<TestCaseType>::value() << "\n"
+                       << "  TestCaseType: " << XT::Common::Typename<TestCaseType>::value() << "\n"
                        << "  ChooseDiscretizer: ??\n"
                        << "  type: " << type << "\n"
                        << "Please put an appropriate specialization of HyperbolicEocExpectations for these\n"

@@ -89,7 +89,7 @@ public:
       size_t nonzeros = 0;
       for (size_t ii = 0; ii < num_intersections; ++ii) {
         // we would like to check against 0, but there is a bug in dune-commons FloatCmp
-        if (Stuff::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
+        if (XT::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
           // this is a candidate for the basis function we are looking for
           local_DoF_index_of_vertex[vv] = ii;
           ++zeros;
@@ -123,7 +123,7 @@ public:
         corner = intersection_geometry.corner(boost::numeric_cast<int>(cc));
         // check which vertices lie on the intersection
         for (size_t vv = 0; vv < num_intersections; ++vv)
-          if (Stuff::Common::FloatCmp::eq(vertices[vv], corner))
+          if (XT::Common::FloatCmp::eq(vertices[vv], corner))
             lies_on_intersection[vv] = true;
       } // walk the corners of the intersection
       // now see if we find a vertex that does not lie on the intersection

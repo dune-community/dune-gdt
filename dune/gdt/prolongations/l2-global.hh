@@ -38,12 +38,12 @@ public:
 
 template <class GridViewImp, class SourceImp, class RangeImp>
 class L2GlobalProlongationLocalizableOperator
-    : Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
+    : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
       public L2GlobalProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
 {
   static_assert(is_const_discrete_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
-  typedef Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>> SourceStorage;
+  typedef XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>> SourceStorage;
   typedef L2GlobalProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
       BaseOperatorType;
 
@@ -165,7 +165,7 @@ public:
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const Stuff::Common::Configuration& /*opts*/) const
+                     const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -175,7 +175,7 @@ public:
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

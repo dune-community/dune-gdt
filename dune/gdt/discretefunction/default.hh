@@ -272,9 +272,9 @@ private:
 
 
 template <class SpaceImp, class VectorImp>
-class DiscreteFunction : Stuff::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
+class DiscreteFunction : XT::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
 {
-  typedef Stuff::Common::StorageProvider<VectorImp> VectorProviderBaseType;
+  typedef XT::Common::StorageProvider<VectorImp> VectorProviderBaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> BaseType;
   typedef DiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -288,33 +288,33 @@ public:
 
   DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   DiscreteFunction(const SpaceType& sp, VectorType&& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(new VectorType(sp.mapper().size()))
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   // manual copy ctor needed bc. of the storage provider
   DiscreteFunction(const ThisType& other)
     : VectorProviderBaseType(new VectorType(other.vector()))
-    , BaseType(other.space(), VectorProviderBaseType::storage_access(), other.name())
+    , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
   {
   }
 
   // manual move ctor needed bc. of the storage provider
   DiscreteFunction(ThisType&& source)
     : VectorProviderBaseType(new VectorType(source.vector()))
-    , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
+    , BaseType(source.space(), VectorProviderBaseType::access(), source.name())
   {
   }
 
@@ -328,7 +328,7 @@ public:
 
   VectorType& vector()
   {
-    return this->storage_access();
+    return this->access();
   }
 
   using BaseType::local_discrete_function;
@@ -336,7 +336,7 @@ public:
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
     assert(space_->grid_view().indexSet().contains(entity));
-    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->storage_access(), entity);
+    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->access(), entity);
   }
 
 private:

@@ -132,7 +132,7 @@ private:
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
              << ", num_vertices = " << num_vertices << ", entity " << grid_view_.indexSet().index(entity) << ", vertex "
              << local_vertex_id << ": [ " << vertex_center << "], ";
-          Stuff::Common::print(basis_values, "basis_values", ss);
+          XT::Common::print(basis_values, "basis_values", ss);
           DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
@@ -157,7 +157,7 @@ private:
                 const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
                 const auto global_vertex_id = grid_view_.indexSet().index(vertex);
                 const auto vertex_center    = vertex.geometry().center();
-                if (Stuff::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
+                if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
                   boundary_vertices.insert(global_vertex_id);
               } // loop over all vertices of the entity
             } // loop over all intersection corners

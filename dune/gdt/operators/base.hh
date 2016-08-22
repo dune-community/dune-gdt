@@ -376,7 +376,7 @@ public:
 
   template <class R, class S>
   void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const Stuff::Common::Configuration& opts) const
+                     const XT::Common::Configuration& opts) const
   {
     this->assemble();
     LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
@@ -384,7 +384,7 @@ public:
 
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
-                     ConstDiscreteFunction<RangeSpaceType, S>& source, const Stuff::Common::Configuration& opts) const
+                     ConstDiscreteFunction<RangeSpaceType, S>& source, const XT::Common::Configuration& opts) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }
@@ -394,7 +394,7 @@ public:
     return LinearSolverType::types();
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& type) const
+  XT::Common::Configuration invert_options(const std::string& type) const
   {
     return LinearSolverType::options(type);
   }

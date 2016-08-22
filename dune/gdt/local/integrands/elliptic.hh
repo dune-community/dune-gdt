@@ -148,8 +148,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
 private:
-  typedef Stuff::Common::ConstStorageProvider<DiffusionFactorType> DiffusionFactorProvider;
-  typedef Stuff::Common::ConstStorageProvider<DiffusionTensorType> DiffusionTensorProvider;
+  typedef XT::Common::ConstStorageProvider<DiffusionFactorType> DiffusionFactorProvider;
+  typedef XT::Common::ConstStorageProvider<DiffusionTensorType> DiffusionTensorProvider;
   using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
@@ -244,7 +244,7 @@ public:
                 const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatz_base,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    typedef Stuff::Common::FieldMatrix<R, d, d> TensorType;
+    typedef XT::Common::FieldMatrix<R, d, d> TensorType;
     ret *= 0.0;
     // evaluate local functions
     const auto diffusion_factor_value       = local_diffusion_factor.evaluate(localPoint);

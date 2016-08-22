@@ -203,15 +203,15 @@ public:
       assert(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
-      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
+      current_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.level_of(current_refinement_), test_case_.periodic_directions()));
-      current_solution_on_level_ = Stuff::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
+      current_solution_on_level_ = XT::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
       time_to_solution_          = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
       assert(reference_solution_);
       if (!current_solution_)
-        current_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
+        current_solution_ = XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       // time prolongation
       DiscreteSolutionType time_prolongated_current_solution_on_level;
       const auto time_prolongated_current_solution_on_level_it_end = time_prolongated_current_solution_on_level.end();
@@ -299,9 +299,9 @@ protected:
   void compute_reference_solution()
   {
     if (!reference_solution_computed_) {
-      reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
+      reference_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
-      reference_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
+      reference_solution_ = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         size_t counter                       = 0;

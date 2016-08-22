@@ -65,7 +65,7 @@ public:
   //  }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& range, SourceType& source, const Stuff::Common::Configuration& opts) const
+  void apply_inverse(const RangeType& range, SourceType& source, const XT::Common::Configuration& opts) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply_inverse(range, source, opts));
   }
@@ -76,7 +76,7 @@ public:
     return this->as_imp().invert_options();
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& type) const
+  XT::Common::Configuration invert_options(const std::string& type) const
   {
     CHECK_CRTP(this->as_imp().invert_options(type));
     return this->as_imp().invert_options(type);

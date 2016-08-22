@@ -69,11 +69,11 @@ public:
     if (types.empty())
       DUNE_THROW(Stuff::Exceptions::internal_error,
                  "Reported solver_types() of the derived class (see below) must not be empty!\n\n  "
-                     << Stuff::Common::Typename<derived_type>::value());
+                     << XT::Common::Typename<derived_type>::value());
     return types;
   } // ... solver_types(...)
 
-  Stuff::Common::Configuration solver_options(const std::string type = "") const
+  XT::Common::Configuration solver_options(const std::string type = "") const
   {
     CHECK_CRTP(this->as_imp().solver_options(type));
     auto opts = this->as_imp().solver_options(type);
@@ -82,11 +82,11 @@ public:
                  "Reported solver_options() of the derived class (see below) for type '"
                      << type
                      << "'must not be empty!\n\n  "
-                     << Stuff::Common::Typename<derived_type>::value());
+                     << XT::Common::Typename<derived_type>::value());
     return opts;
   } // ... solver_options(...)
 
-  void solve(VectorType& solution, const Stuff::Common::Configuration& options) const
+  void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, options));
   }
@@ -110,7 +110,7 @@ public:
     solve(solution, solver_options(solver_types().at(0)));
   }
 
-  VectorType solve(const Stuff::Common::Configuration& options) const
+  VectorType solve(const XT::Common::Configuration& options) const
   {
     VectorType solution = create_vector();
     solve(solution, options);
@@ -197,14 +197,14 @@ public:
     return LinearSolverType::types();
   }
 
-  Stuff::Common::Configuration solver_options(const std::string type = "") const
+  XT::Common::Configuration solver_options(const std::string type = "") const
   {
     return LinearSolverType::options(type);
   }
 
   using BaseType::solve;
 
-  void solve(VectorType& solution, const Stuff::Common::Configuration& options) const
+  void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
     LinearSolverType(system_matrix()).apply(rhs_vector(), solution, options);
     if (has_dirichlet_shift())

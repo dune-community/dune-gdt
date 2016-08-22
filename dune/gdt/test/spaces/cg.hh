@@ -125,7 +125,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
              << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex_center << "], ";
-          Common::print(basis_values, "basis_values", ss);
+          Dune::XT::Common::print(basis_values, "basis_values", ss);
           EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii

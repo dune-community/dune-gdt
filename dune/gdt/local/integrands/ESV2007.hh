@@ -339,7 +339,7 @@ public:
     DomainType right_sum(0);
     // evaluate local functions
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point);
-    typedef Stuff::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
+    typedef XT::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point);
     const TensorType diffusion_value        = diffusion_tensor_value * diffusion_factor_value;
     // TODO: there is no documented way to assert that the inversion was successfull, so find one or check the matrix

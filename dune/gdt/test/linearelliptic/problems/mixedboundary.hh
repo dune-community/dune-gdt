@@ -46,18 +46,18 @@ class MixedBoundaryProblem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 public:
   static const size_t default_integration_order = 2;
 
-  static Stuff::Common::Configuration default_grid_cfg()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    Stuff::Common::Configuration cfg;
+    XT::Common::Configuration cfg;
     cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
     cfg["lower_left"]  = "[0 0]";
     cfg["upper_right"] = "[1 1]";
     return cfg;
   }
 
-  static Stuff::Common::Configuration default_boundary_info_cfg()
+  static XT::Common::Configuration default_boundary_info_cfg()
   {
-    Stuff::Common::Configuration cfg;
+    XT::Common::Configuration cfg;
     cfg["type"]      = Stuff::Grid::BoundaryInfoConfigs::NormalBased::static_id();
     cfg["default"]   = "dirichlet";
     cfg["neumann.0"] = "[1 0]";
@@ -65,8 +65,8 @@ public:
   }
 
   MixedBoundaryProblem(const size_t integration_order              = default_integration_order,
-                       const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
-                       const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
+                       const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
+                       const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
                new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
                                               "diffusion_tensor"),
@@ -96,7 +96,7 @@ private:
   struct Helper
   {
     static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       return cfg;
     }
@@ -105,7 +105,7 @@ private:
   template <bool anything>
   struct Helper<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[2 2]";
       return cfg;
@@ -116,7 +116,7 @@ private:
   template <bool anything>
   struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"]    = "[2 2]";
       cfg["num_refinements"] = "1";
@@ -127,7 +127,7 @@ private:
   template <bool anything>
   struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[2 2]";
       return cfg;
@@ -135,7 +135,7 @@ private:
   };
 #endif // HAVE_ALUGRID
 
-  static Stuff::Common::Configuration grid_cfg()
+  static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
     cfg      = Helper<typename std::decay<G>::type>::value(cfg);
