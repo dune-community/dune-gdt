@@ -26,5 +26,8 @@
 #define DUNE_AVOID_SGRID_DEPRE_WARNING_BECAUSE_I_KNOW_WHAT_IM_DOING 1
 #endif
 
+// is_alugrid<>
+#include <dune/xt/grid/information.hh>
+
 /* end dune-gdt */
 // NEVER delete/alter above comment, dune's cmake relies on it
