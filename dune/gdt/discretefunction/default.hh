@@ -24,7 +24,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/la/container/interfaces.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/xt/common/memory.hh>
 
@@ -132,7 +132,7 @@ class ConstDiscreteFunction
                                                  SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
   static_assert(is_space<SpaceImp>::value, "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(Stuff::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
   typedef Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
@@ -354,7 +354,7 @@ make_const_discrete_function(const SpaceType& space, const VectorType& vector,
 
 
 template <class SpaceType, class VectorType>
-typename std::enable_if<is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         DiscreteFunction<SpaceType, VectorType>>::type
 make_discrete_function(const SpaceType& space, VectorType& vector, const std::string nm = "gdt.discretefunction")
 {

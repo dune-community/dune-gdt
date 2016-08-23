@@ -17,9 +17,9 @@
 
 #include <dune/xt/common/crtp.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/la/container/pattern.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/la/container/pattern.hh>
+#include <dune/xt/la/solver.hh>
 #include <dune/xt/common/configuration.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -34,7 +34,7 @@ namespace GDT {
  *       switch (to a lot of methods). Either this gets merged with the new Parameter or we need a different paradigm.
  */
 template <class Traits>
-class OperatorInterface : public Stuff::CRTPInterface<OperatorInterface<Traits>, Traits>
+class OperatorInterface : public XT::CRTPInterface<OperatorInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

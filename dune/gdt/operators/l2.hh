@@ -126,7 +126,7 @@ make_l2_localizable_product(const GridViewType& grid_view, const RangeType& rang
 // //////////////// //
 
 template <class RangeSpace,
-          class Matrix   = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class Matrix   = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class L2MatrixOperator
@@ -210,7 +210,7 @@ auto op = make_l2_matrix_operator< MatrixType >(space);
 \endcode
  */
 template <class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType>>>::type
 make_l2_matrix_operator(const SpaceType& space, const size_t over_integrate = 0)
 {
@@ -226,7 +226,7 @@ auto op = make_l2_matrix_operator< MatrixType >(space, grid_view);
 \endcode
  */
 template <class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_l2_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -243,7 +243,7 @@ auto op = make_l2_matrix_operator< MatrixType >(range_space, source_space, grid_
 \endcode
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::
     type
@@ -261,7 +261,7 @@ typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<Rang
  *        used).
  */
 template <class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType>>>::type
 make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
 {
@@ -272,7 +272,7 @@ make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t
  * \brief Creates an L2 matrix operator (source and range space are given by space).
  */
 template <class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
@@ -286,7 +286,7 @@ make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridVi
  * \brief Creates an L2 matrix operator.
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::
     type
@@ -341,7 +341,7 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename Stuff::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
         MatrixType;
     auto op = make_l2_matrix_operator<MatrixType>(source.space(), range.space(), grid_view_, over_integrate_);
     op->apply(source, range);

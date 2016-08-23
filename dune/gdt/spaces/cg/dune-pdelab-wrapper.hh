@@ -19,7 +19,7 @@
 
 #if HAVE_DUNE_ISTL
 #include <dune/istl/paamg/pinfo.hh>
-#include <dune/stuff/la/solver/istl_amg.hh>
+#include <dune/xt/la/solver/istl/amg.hh>
 #endif
 
 #if HAVE_DUNE_PDELAB

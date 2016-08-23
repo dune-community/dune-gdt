@@ -10,7 +10,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/la/container/vector-interface.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/assembler/wrapper.hh>
 #include <dune/gdt/assembler/system.hh>
@@ -35,8 +35,8 @@ namespace internal {
 template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
 class VectorFunctionalBaseTraits
 {
-  static_assert(Stuff::LA::is_vector<VectorImp>::value,
-                "VectorType has to be derived from Stuff::LA::vectorInterface!");
+  static_assert(XT::LA::is_vector<VectorImp>::value,
+                "VectorType has to be derived from XT::LA::vectorInterface!");
   static_assert(is_space<SpaceImp>::value, "SpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename SpaceImp::GridViewType::template Codim<0>::Entity,
                              typename GridViewImp::template Codim<0>::Entity>::value,
@@ -137,7 +137,7 @@ public:
   }
 
   template <class S>
-  FieldType apply(const Stuff::LA::VectorInterface<S>& source) const
+  FieldType apply(const XT::LA::VectorInterface<S>& source) const
   {
     const_cast<ThisType&>(*this).assemble();
     return vector().dot(source.as_imp());

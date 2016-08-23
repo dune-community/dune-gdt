@@ -20,7 +20,7 @@
 #include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include "../default.hh"
 
@@ -130,7 +130,7 @@ protected:
     //                                                VelocityFieldImp, dimDomain,
     //                                                R, 1, 1 >                 VelocityExpressionFunctionType;
 
-    typedef typename Dune::Stuff::LA::CommonDenseVector<R> VectorType;
+    typedef typename Dune::XT::LA::CommonDenseVector<R> VectorType;
     //    typedef typename Dune::GDT::CgSpaceProvider< VelocityGridType,
     //                                                    DSG::ChooseLayer::leaf,
     //                                                    Dune::GDT::ChooseSpaceBackend::pdelab,

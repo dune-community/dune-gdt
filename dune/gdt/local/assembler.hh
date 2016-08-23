@@ -15,7 +15,7 @@
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/grid/walker/wrapper.hh>
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/la/container/interfaces.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
@@ -45,14 +45,14 @@ public:
    *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
    *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
    *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the
+   *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
    * type of global_matrix
    *  \tparam R           RangeFieldType, i.e. double
    */
   template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType,
             class M, class R>
   void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const EntityType& entity, Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                const EntityType& entity, XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
@@ -231,10 +231,10 @@ public:
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
                 const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
-                Stuff::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
-                Stuff::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
-                Stuff::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
-                Stuff::LA::MatrixInterface<MNE, R>& global_matrix_ne_en) const
+                XT::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
+                XT::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
+                XT::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
+                XT::LA::MatrixInterface<MNE, R>& global_matrix_ne_en) const
   {
     assert(global_matrix_en_en.rows() >= test_space_en.mapper().size());
     assert(global_matrix_en_en.cols() >= ansatz_space_en.mapper().size());
@@ -317,7 +317,7 @@ public:
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
                 const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
-                Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     assemble(test_space_en,
              ansatz_space_en,
@@ -397,7 +397,7 @@ public:
   template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC,
             class IntersectionType, class M, class R>
   void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const IntersectionType& intersection, Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                const IntersectionType& intersection, XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     const auto entity = intersection.inside();
     // prepare
@@ -495,13 +495,13 @@ public:
    *  \tparam r          dimRange of test_space
    *  \tparam rC         dimRangeCols of test_space
    *  \tparam EntityType A model of Dune::Entity< 0 >
-   *  \tparam V          Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type
+   *  \tparam V          Traits of the Dune::XT::LA::Container::VectorInterface implementation, representing the type
    * of global_vector
    *  \tparam R          RangeFieldType, i.e. double
    */
   template <class S, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
   void assemble(const SpaceInterface<S, d, r, rC>& test_space, const EntityType& entity,
-                Stuff::LA::VectorInterface<V, R>& global_vector) const
+                XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
     const size_t size = test_space.mapper().numDofs(entity);
@@ -538,7 +538,7 @@ public:
 
   template <class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R>
   void assemble(const SpaceInterface<T, d, r, rC>& test_space, const IntersectionType& intersection,
-                Stuff::LA::VectorInterface<V, R>& global_vector) const
+                XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
     const auto entity = intersection.inside();

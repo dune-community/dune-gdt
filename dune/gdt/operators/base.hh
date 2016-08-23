@@ -12,7 +12,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/la/container/pattern.hh>
+#include <dune/xt/la/container/pattern.hh>
 
 #include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/assembler/wrapper.hh>
@@ -40,8 +40,8 @@ template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceS
           ChoosePattern pt>
 class MatrixOperatorBaseTraits
 {
-  static_assert(Stuff::LA::is_matrix<MatrixImp>::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(XT::LA::is_matrix<MatrixImp>::value,
+                "MatrixType has to be derived from XT::LA::MatrixInterface!");
   static_assert(is_space<RangeSpaceImp>::value, "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<SourceSpaceImp>::value, "SourceSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename RangeSpaceImp::GridViewType::template Codim<0>::Entity,
@@ -188,14 +188,14 @@ public:
       Traits;
   typedef typename BaseAssemblerType::TestSpaceType RangeSpaceType;
   typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
-  typedef Stuff::LA::SparsityPatternDefault PatternType;
+  typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridViewType;
 
 private:
-  typedef Stuff::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
+  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
 
   template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
   struct Compute
@@ -336,7 +336,7 @@ public:
   }
 
   template <class S, class R>
-  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range) const
+  void apply(const XT::LA::VectorInterface<S>& source, XT::LA::VectorInterface<R>& range) const
   {
     const_cast<ThisType&>(*this).assemble();
     matrix().mv(source.as_imp(), range.as_imp());
@@ -349,7 +349,7 @@ public:
   }
 
   template <class R, class S>
-  FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source) const
+  FieldType apply2(const XT::LA::VectorInterface<R>& range, const XT::LA::VectorInterface<S>& source) const
   {
     const_cast<ThisType&>(*this).assemble();
     auto tmp = range.copy();
@@ -375,7 +375,7 @@ public:
   using BaseOperatorType::apply_inverse;
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
+  void apply_inverse(const XT::LA::VectorInterface<R>& range, XT::LA::VectorInterface<S>& source,
                      const XT::Common::Configuration& opts) const
   {
     this->assemble();

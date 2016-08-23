@@ -12,7 +12,7 @@
 
 #include <dune/stuff/functions/expression.hh>
 #include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/darcy.hh>
@@ -49,7 +49,7 @@ struct DarcyOperatorTest : public ::testing::Test
   static const size_t dimDomain = SourceSpaceType::dimDomain;
   typedef double RangeFieldType;
 
-  typedef typename Dune::Stuff::LA::Container<RangeFieldType>::VectorType VectorType;
+  typedef typename Dune::XT::LA::Container<RangeFieldType>::VectorType VectorType;
 
   void produces_correct_results() const
   {

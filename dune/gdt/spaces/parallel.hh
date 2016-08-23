@@ -18,7 +18,7 @@
 #include <dune/pdelab/backend/istl/parallelhelper.hh>
 #endif
 
-#include <dune/stuff/la/container/istl.hh>
+#include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
 
 namespace Dune {
@@ -68,7 +68,7 @@ struct CommunicationChooser<ViewImp, true>
 #endif
   {
 #if HAVE_DUNE_PDELAB
-    Stuff::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
+    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
     PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
 #endif // HAVE_DUNE_PDELAB

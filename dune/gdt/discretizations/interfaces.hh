@@ -12,7 +12,7 @@
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -23,9 +23,9 @@ namespace GDT {
 
 
 template <class Traits>
-class StationaryDiscretizationInterface : public Stuff::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
+class StationaryDiscretizationInterface : public XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
 {
-  typedef Stuff::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
@@ -37,8 +37,8 @@ public:
 private:
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
-  static_assert(Stuff::LA::is_vector<VectorType>::value,
-                "VectorType has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<VectorType>::value,
+                "VectorType has to be derived from XT::LA::VectorInterface!");
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -150,7 +150,7 @@ public:
   using typename BaseType::VectorType;
 
 private:
-  typedef typename Stuff::LA::Solver<MatrixType> LinearSolverType;
+  typedef typename XT::LA::Solver<MatrixType> LinearSolverType;
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -216,9 +216,9 @@ public:
 
 
 template <class Traits>
-class FVDiscretizationInterface : public Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
+class FVDiscretizationInterface : public XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
 {
-  typedef Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;

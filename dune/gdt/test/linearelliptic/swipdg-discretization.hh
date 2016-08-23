@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/test/common.hh>
 #include <dune/stuff/functions/spe10.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -25,7 +25,7 @@
 template <class TestCaseType>
 struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::Stuff::LA::ChooseBackend la_backend, int polOrder>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::ChooseBackend la_backend, int polOrder>
   static void eoc_study()
   {
     using namespace Dune;

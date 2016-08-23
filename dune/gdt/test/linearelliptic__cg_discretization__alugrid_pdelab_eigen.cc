@@ -23,7 +23,7 @@ using namespace Dune::GDT;
 TYPED_TEST_CASE(linearelliptic_CG_discretization, AluGridTestCases);
 TYPED_TEST(linearelliptic_CG_discretization, eoc_study_using_pdelab_and_eigen_and_alugrid)
 {
-  this->template eoc_study<ChooseSpaceBackend::pdelab, Stuff::LA::ChooseBackend::eigen_sparse>();
+  this->template eoc_study<ChooseSpaceBackend::pdelab, XT::LA::ChooseBackend::eigen_sparse>();
 }
 
 #else

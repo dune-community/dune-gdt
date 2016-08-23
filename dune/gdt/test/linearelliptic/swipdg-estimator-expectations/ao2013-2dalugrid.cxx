@@ -61,7 +61,7 @@ template <bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
                                                                                double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                Stuff::LA::ChooseBackend::eigen_sparse, anything>
+                                                XT::LA::ChooseBackend::eigen_sparse, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
   typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
@@ -88,7 +88,7 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013T
                                                                                                 conforming>,
                                                                                         double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                         XT::LA::ChooseBackend::eigen_sparse>;
 
 
 #endif // HAVE_EIGEN
@@ -99,7 +99,7 @@ template <bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
                                                                                double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                Stuff::LA::ChooseBackend::istl_sparse, anything>
+                                                XT::LA::ChooseBackend::istl_sparse, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
   typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
@@ -123,7 +123,7 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013T
                                                                                                 conforming>,
                                                                                         double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::istl_sparse>;
+                                                         XT::LA::ChooseBackend::istl_sparse>;
 
 
 #endif // HAVE_DUNE_ISTL

@@ -103,7 +103,7 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -118,7 +118,7 @@ public:
 
   template <class V, class M>
   void add(const LocalCouplingTwoFormAssembler<V>& local_assembler,
-           Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -133,7 +133,7 @@ public:
 
   template <class V, class M>
   void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
-           Stuff::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -148,7 +148,7 @@ public:
 
   template <class L, class V>
   void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
-           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
+           XT::LA::VectorInterface<V, RangeFieldType>& vector,
            const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
@@ -161,7 +161,7 @@ public:
 
   template <class L, class V>
   void add(const LocalFaceFunctionalAssembler<L>& local_assembler,
-           Stuff::LA::VectorInterface<V, RangeFieldType>& vector,
+           XT::LA::VectorInterface<V, RangeFieldType>& vector,
            const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());

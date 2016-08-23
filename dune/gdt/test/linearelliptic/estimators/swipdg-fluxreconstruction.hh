@@ -11,7 +11,7 @@
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/grid/walker/functors.hh>
 #include <dune/stuff/playground/functions/ESV2007.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
@@ -480,13 +480,13 @@ public:
     return std::sqrt(estimator.result());
   } // ... estimate(...)
 
-  static Stuff::LA::CommonDenseVector<ReturnType>
+  static XT::LA::CommonDenseVector<ReturnType>
   estimate_local(const GridViewType& grid_view, const SpaceType& space, const VectorType& vector,
                  const ForceType& force, const DiffusionFactorType& diffusion_factor_norm,
                  const DiffusionFactorType& diffusion_factor_reconstruction,
                  const DiffusionTensorType& diffusion_tensor, const size_t over_int = over_integrate)
   {
-    Stuff::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
+    XT::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
                                                               0.0);
     ReturnType eta_squared = 0.0;
     ThisType estimator(grid_view,
@@ -619,13 +619,13 @@ public:
     return std::sqrt(estimator.result());
   } // ... estimate(...)
 
-  static Stuff::LA::CommonDenseVector<ReturnType>
+  static XT::LA::CommonDenseVector<ReturnType>
   estimate_local(const GridViewType& grid_view, const SpaceType& space, const VectorType& vector,
                  const ForceType& force, const DiffusionFactorType& diffusion_factor_norm,
                  const DiffusionFactorType& diffusion_factor_reconstruction,
                  const DiffusionTensorType& diffusion_tensor, const size_t over_int = over_integrate)
   {
-    Stuff::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
+    XT::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
                                                               0.0);
     ThisType estimator(grid_view,
                        space,

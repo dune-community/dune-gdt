@@ -27,7 +27,7 @@ namespace GDT {
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
                             && Stuff::is_localizable_function<SourceType>::value && is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
         const size_t /*over_integrate*/ = 0)
@@ -38,7 +38,7 @@ project(const GridViewType& grid_view, const SourceType& source, DiscreteFunctio
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
                             && Stuff::is_localizable_function<SourceType>::value && !is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
         const size_t over_integrate = 0)
@@ -49,7 +49,7 @@ project(const GridViewType& grid_view, const SourceType& source, DiscreteFunctio
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t /*over_integrate*/ = 0)
 {
@@ -58,7 +58,7 @@ project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && !is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {

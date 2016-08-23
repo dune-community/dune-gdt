@@ -26,7 +26,7 @@
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/la/container/eigen.hh>
+#include <dune/xt/la/container/eigen.hh>
 
 #include "interfaces.hh"
 #include "godunov.hh"
@@ -197,10 +197,10 @@ public:
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
           // create EigenSolver
-          ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
+          ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
               jacobian_u_i_eigen[ii].backend());
           assert(eigen_solver_u_i.info() == ::Eigen::Success);
-          ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
+          ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
               jacobian_u_j_eigen[ii].backend());
           assert(eigen_solver_u_j.info() == ::Eigen::Success);
           const auto eigenvalues_u_i =
@@ -353,10 +353,10 @@ public:
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
-        ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
+        ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
             jacobian_u_i_eigen.backend());
         assert(eigen_solver_u_i.info() == ::Eigen::Success);
-        ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
+        ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
             jacobian_u_j_eigen.backend());
         assert(eigen_solver_u_j.info() == ::Eigen::Success);
         const auto eigenvalues_u_i =
@@ -527,10 +527,10 @@ public:
 #if HAVE_EIGEN
         for (size_t ii = 0; ii < dimDomain; ++ii) {
           // create EigenSolver
-          ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
+          ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
               jacobian_u_i_eigen[ii].backend());
           assert(eigen_solver_u_i.info() == ::Eigen::Success);
-          ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
+          ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
               jacobian_u_j_eigen[ii].backend());
           assert(eigen_solver_u_j.info() == ::Eigen::Success);
           const auto eigenvalues_u_i =
@@ -693,10 +693,10 @@ public:
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_j, 15)));
 #if HAVE_EIGEN
         // create EigenSolver
-        ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
+        ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_i(
             jacobian_u_i_eigen.backend());
         assert(eigen_solver_u_i.info() == ::Eigen::Success);
-        ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
+        ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver_u_j(
             jacobian_u_j_eigen.backend());
         assert(eigen_solver_u_j.info() == ::Eigen::Success);
         const auto eigenvalues_u_i =

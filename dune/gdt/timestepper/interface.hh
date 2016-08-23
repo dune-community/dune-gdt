@@ -15,7 +15,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 
 namespace Dune {

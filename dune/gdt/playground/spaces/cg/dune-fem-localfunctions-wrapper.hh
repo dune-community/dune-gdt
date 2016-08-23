@@ -140,7 +140,7 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef Dune::XT::LA::SparsityPatternDefault PatternType;
   using typename BaseType::DomainType;
   using typename BaseType::BoundaryInfoType;
 

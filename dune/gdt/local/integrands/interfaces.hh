@@ -40,7 +40,7 @@ class LocalVolumeIntegrandInterface
  */
 template <class Traits>
 class LocalVolumeIntegrandInterface<Traits, 1>
-    : public Stuff::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 1>, Traits>
+    : public XT::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 1>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -97,7 +97,7 @@ public:
  **/
 template <class Traits>
 class LocalVolumeIntegrandInterface<Traits, 2>
-    : public Stuff::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 2>, Traits>
+    : public XT::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 2>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -168,7 +168,7 @@ class LocalFaceIntegrandInterface
  */
 template <class Traits>
 class LocalFaceIntegrandInterface<Traits, 1>
-    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
+    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -227,7 +227,7 @@ public:
  */
 template <class Traits>
 class LocalFaceIntegrandInterface<Traits, 2>
-    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
+    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -289,7 +289,7 @@ public:
  */
 template <class Traits>
 class LocalFaceIntegrandInterface<Traits, 4>
-    : public Stuff::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
+    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

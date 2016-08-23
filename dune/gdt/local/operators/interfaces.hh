@@ -59,7 +59,7 @@ class IsLocalBoundaryTwoForm
 
 
 template <class Traits>
-class LocalOperatorInterface : public Stuff::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
+class LocalOperatorInterface : public XT::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
                                internal::IsLocalOperator
 {
 public:
@@ -78,7 +78,7 @@ public:
 
 
 template <class Traits>
-class LocalCouplingOperatorInterface : public Stuff::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
+class LocalCouplingOperatorInterface : public XT::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
                                        internal::IsLocalCouplingOperator
 {
 public:
@@ -93,7 +93,7 @@ public:
 
 
 template <class Traits>
-class LocalBoundaryOperatorInterface : public Stuff::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
+class LocalBoundaryOperatorInterface : public XT::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
                                        internal::IsLocalBoundaryOperator
 {
 public:
@@ -107,7 +107,7 @@ public:
 
 
 template <class Traits>
-class LocalVolumeTwoFormInterface : public Stuff::CRTPInterface<LocalVolumeTwoFormInterface<Traits>, Traits>,
+class LocalVolumeTwoFormInterface : public XT::CRTPInterface<LocalVolumeTwoFormInterface<Traits>, Traits>,
                                     internal::IsLocalVolumeTwoForm
 {
 public:
@@ -146,7 +146,7 @@ public:
 
 
 template <class Traits>
-class LocalCouplingTwoFormInterface : public Stuff::CRTPInterface<LocalCouplingTwoFormInterface<Traits>, Traits>,
+class LocalCouplingTwoFormInterface : public XT::CRTPInterface<LocalCouplingTwoFormInterface<Traits>, Traits>,
                                       internal::IsLocalCouplingTwoForm
 {
 public:
@@ -189,7 +189,7 @@ public:
 
 
 template <class Traits>
-class LocalBoundaryTwoFormInterface : public Stuff::CRTPInterface<LocalBoundaryTwoFormInterface<Traits>, Traits>,
+class LocalBoundaryTwoFormInterface : public XT::CRTPInterface<LocalBoundaryTwoFormInterface<Traits>, Traits>,
                                       internal::IsLocalBoundaryTwoForm
 {
 public:

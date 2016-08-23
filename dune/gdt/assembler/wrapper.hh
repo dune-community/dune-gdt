@@ -14,7 +14,7 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/la/container/interfaces.hh>
 #include <dune/stuff/grid/walker.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
 #include <dune/stuff/grid/walker/functors.hh>

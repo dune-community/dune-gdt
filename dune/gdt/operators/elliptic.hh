@@ -17,7 +17,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/grid/layers.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
@@ -167,7 +167,7 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
           class RangeSpace,
-          class Matrix   = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class Matrix   = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticMatrixOperator
@@ -257,7 +257,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(factor, tensor, space);
 \endcode
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
@@ -279,7 +279,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(factor, tensor, space, gri
 \endcode
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
@@ -305,7 +305,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(factor, tensor, range_spac
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class RangeSpaceType,
           class SourceSpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
                             && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
@@ -334,7 +334,7 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType>
 typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
-                            && Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                MatrixType>>>::type
 make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
@@ -351,7 +351,7 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
-                            && Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                MatrixType, GridViewType>>>::type
@@ -374,7 +374,7 @@ template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType
           class SourceSpaceType, class GridViewType>
 typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
-                            && Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
                                                                MatrixType, GridViewType, SourceSpaceType>>>::type
@@ -403,7 +403,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(diffusion, space);
 \endcode
  */
 template <class MatrixType, class DiffusionType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
                             && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType>>>::type
 make_elliptic_matrix_operator(const DiffusionType& diffusion, const SpaceType& space, const size_t over_integrate = 0)
@@ -422,7 +422,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(diffusion, space, grid_vie
  */
 template <class MatrixType, class DiffusionType, class SpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
+    enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
                   && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>>::type
     make_elliptic_matrix_operator(const DiffusionType& diffusion, const SpaceType& space, const GridViewType& grid_view,
@@ -442,7 +442,7 @@ auto op = make_elliptic_matrix_operator< MatrixType >(diffusion, range_space, so
 \endcode
  */
 template <class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionType>::value
                             && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, RangeSpaceType, MatrixType,
@@ -467,7 +467,7 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, const RangeSpaceTy
  *        grid_view of the space is used).
  */
 template <class DiffusionType, class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionType>::value && Stuff::LA::is_matrix<MatrixType>::value
+typename std::enable_if<Stuff::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
                             && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType>>>::type
 make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const SpaceType& space,
@@ -482,7 +482,7 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix
  */
 template <class DiffusionType, class MatrixType, class SpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::is_localizable_function<DiffusionType>::value && Stuff::LA::is_matrix<MatrixType>::value
+    enable_if<Stuff::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
                   && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>>::type
     make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const SpaceType& space,
@@ -497,7 +497,7 @@ typename std::
  * \brief Creates an elliptic matrix operator (single diffusion given).
  */
 template <class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionType>::value && Stuff::LA::is_matrix<MatrixType>::value
+typename std::enable_if<Stuff::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
                             && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, RangeSpaceType, MatrixType,
@@ -576,7 +576,7 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename Stuff::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
         MatrixType;
     auto op = make_elliptic_matrix_operator<MatrixType>(data_functions_.diffusion_factor(),
                                                         data_functions_.diffusion_tensor(),

@@ -14,7 +14,7 @@
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/grid/provider/cube.hh>
 #include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/interfaces.hh>
@@ -44,8 +44,8 @@ struct OperatorBaseTraits
       FunctionType;
   typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
       TensorFunctionType;
-  typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_backend>::MatrixType MatrixType;
-  typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_backend>::VectorType VectorType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 }; // class OperatorBaseTraits
 

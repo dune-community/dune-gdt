@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/grid/information.hh>
-#include <dune/stuff/la/container/common.hh>
+#include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
 #include <dune/gdt/timestepper/factory.hh>
@@ -67,7 +67,7 @@ public:
   typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp SpaceType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
+  typedef typename Dune::XT::LA::CommonDenseVector<RangeFieldType> VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt> DiscreteSolutionType;
 }; // class InStationaryDefaultDiscretizationTraits

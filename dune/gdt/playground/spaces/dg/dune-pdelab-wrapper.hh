@@ -26,7 +26,7 @@
 
 #include <dune/xt/common/tuple.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/la/container/istl.hh>
+#include <dune/xt/la/container/istl.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>

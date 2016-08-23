@@ -11,8 +11,8 @@
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/memory.hh>
-#include <dune/stuff/la/container.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -57,7 +57,7 @@ public:
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
   typedef typename RangeType::VectorType VectorType;
-  typedef typename Stuff::LA::Container<typename RangeType::RangeFieldType, VectorType::sparse_matrix_type>::MatrixType
+  typedef typename XT::LA::Container<typename RangeType::RangeFieldType, VectorType::sparse_matrix_type>::MatrixType
       MatrixType;
 
 private:
@@ -89,7 +89,7 @@ public:
       return;
     BaseType::apply();
     try {
-      Stuff::LA::Solver<MatrixType>(lhs_operator_.matrix()).apply(rhs_functional_.vector(), range_.vector());
+      XT::LA::Solver<MatrixType>(lhs_operator_.matrix()).apply(rhs_functional_.vector(), range_.vector());
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(projection_error,
                  "L2 projection failed because a global matrix could not be inverted!\n\n"
@@ -143,7 +143,7 @@ private:
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+                  && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_global_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
@@ -159,7 +159,7 @@ typename std::
 template <class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                  && Stuff::LA::is_vector<VectorType>::value,
+                  && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_global_l2_projection_localizable_operator(const SourceType& source,

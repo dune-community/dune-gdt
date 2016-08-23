@@ -16,8 +16,8 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/la/container/common.hh>
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/la/container/common.hh>
+#include <dune/xt/la/container/interfaces.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/local/fluxes/interfaces.hh>
@@ -333,7 +333,7 @@ public:
   typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
 
 private:
-  typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
   typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
@@ -419,7 +419,7 @@ public:
   typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
 
 private:
-  typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
   typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:

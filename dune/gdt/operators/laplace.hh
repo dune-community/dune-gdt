@@ -116,7 +116,7 @@ make_laplace_localizable_product(const GridViewType& grid_view, const RangeType&
 // ///////////////////// //
 
 template <class RangeSpace,
-          class Matrix   = typename Stuff::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class Matrix   = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class LaplaceMatrixOperator
@@ -199,7 +199,7 @@ auto op = make_laplace_matrix_operator< MatrixType >(space);
 \endcode
  */
 template <class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType>>>::type
 make_laplace_matrix_operator(const SpaceType& space, const size_t over_integrate = 0)
 {
@@ -215,7 +215,7 @@ auto op = make_laplace_matrix_operator< MatrixType >(space, grid_view);
 \endcode
  */
 template <class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_laplace_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -233,7 +233,7 @@ auto op = make_laplace_matrix_operator< MatrixType >(range_space, source_space, 
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+    enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::type
     make_laplace_matrix_operator(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
@@ -250,7 +250,7 @@ typename std::
  * \brief Creates a Laplace matrix operator (source and range space are given by space, grid_view of the space is used).
  */
 template <class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType>>>::type
 make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
 {
@@ -261,7 +261,7 @@ make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const s
  * \brief Creates a Laplace matrix operator (source and range space are given by space).
  */
 template <class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && Stuff::Grid::is_grid_layer<GridViewType>::value,
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
@@ -276,7 +276,7 @@ make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const G
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+    enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
               std::unique_ptr<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::type
     make_laplace_matrix_operator(MatrixType& matrix, const RangeSpaceType& range_space,
@@ -332,7 +332,7 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename Stuff::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
         MatrixType;
     auto op = make_laplace_matrix_operator<MatrixType>(source.space(), range.space(), grid_view_, over_integrate_);
     op->apply(source, range);

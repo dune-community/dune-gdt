@@ -76,7 +76,7 @@ public:
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
                             && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
@@ -89,7 +89,7 @@ make_l2_projection_localizable_operator(const GridViewType& grid_view, const Sou
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
@@ -199,7 +199,7 @@ make_l2_projection_operator(const GridViewType& grid_view, const size_t over_int
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
                             && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0)
@@ -210,7 +210,7 @@ project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunc
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {

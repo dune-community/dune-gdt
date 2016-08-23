@@ -13,8 +13,8 @@
 
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/la/container/common.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/la/container/common.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/exceptions.hh>
@@ -82,15 +82,15 @@ public:
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
     const size_t size       = local_basis.size();
-    Stuff::LA::CommonDenseMatrix<R> local_matrix(size, size);
-    Stuff::LA::CommonDenseVector<R> local_vector(size);
+    XT::LA::CommonDenseMatrix<R> local_matrix(size, size);
+    XT::LA::CommonDenseVector<R> local_vector(size);
     // assemble
     local_l2_operator.apply2(local_basis, local_basis, local_matrix.backend());
     local_l2_functional.apply(local_basis, local_vector.backend());
     // solve
-    Stuff::LA::CommonDenseVector<R> local_solution(size);
+    XT::LA::CommonDenseVector<R> local_solution(size);
     try {
-      Stuff::LA::Solver<Stuff::LA::CommonDenseMatrix<R>>(local_matrix).apply(local_vector, local_solution);
+      XT::LA::Solver<XT::LA::CommonDenseMatrix<R>>(local_matrix).apply(local_vector, local_solution);
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(projection_error,
                  "L2 projection failed because a local matrix could not be inverted!\n\n"
@@ -115,7 +115,7 @@ public:
     // create local L2 volume integral functional
     typedef Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>> local_l2_functional(over_integrate_, source);
-    Stuff::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
+    XT::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
     const auto& entity = local_range.entity();
     local_l2_functional.apply(local_range.basis(), local_vector.backend());
     local_vector /= entity.geometry().volume();

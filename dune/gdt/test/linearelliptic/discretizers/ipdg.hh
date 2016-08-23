@@ -13,7 +13,7 @@
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/layers.hh>
 #include <dune/stuff/grid/provider.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretizations/default.hh>
@@ -34,7 +34,7 @@ namespace LinearElliptic {
  */
 template <class GridType, Stuff::Grid::ChooseLayer layer = Stuff::Grid::ChooseLayer::leaf,
           ChooseSpaceBackend spacebackend = default_dg_backend,
-          Stuff::LA::ChooseBackend la = Stuff::LA::default_sparse_backend, int pol = 1, class RangeFieldType = double,
+          XT::LA::ChooseBackend la = XT::LA::default_sparse_backend, int pol = 1, class RangeFieldType = double,
           size_t dimRange = 1, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class IpdgDiscretizer
 {
@@ -44,12 +44,12 @@ public:
       ProblemType;
   typedef DgSpaceProvider<GridType, layer, spacebackend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
-  typedef typename Stuff::LA::Container<RangeFieldType, la>::MatrixType MatrixType;
-  typedef typename Stuff::LA::Container<RangeFieldType, la>::VectorType VectorType;
+  typedef typename XT::LA::Container<RangeFieldType, la>::MatrixType MatrixType;
+  typedef typename XT::LA::Container<RangeFieldType, la>::VectorType VectorType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
   static const constexpr ChooseDiscretizer type              = ChooseDiscretizer::swipdg;
-  static const constexpr Stuff::LA::ChooseBackend la_backend = la;
+  static const constexpr XT::LA::ChooseBackend la_backend = la;
   static const int polOrder                                  = pol;
 
   static std::string static_id() //                                                        int() needed, otherwise we

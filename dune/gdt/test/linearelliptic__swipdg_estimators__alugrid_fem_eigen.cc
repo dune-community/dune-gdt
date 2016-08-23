@@ -23,7 +23,7 @@ using namespace Dune::GDT;
 TYPED_TEST_CASE(linearelliptic_SWIPDG_estimators, AluGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
 {
-  this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::eigen_sparse, 1>();
+  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::ChooseBackend::eigen_sparse, 1>();
 }
 
 #else

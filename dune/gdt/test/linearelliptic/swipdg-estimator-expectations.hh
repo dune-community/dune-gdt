@@ -10,7 +10,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATOR_EXPECTATIONS_HH
 
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/la/container/container-interface.hh>
+#include <dune/xt/la/container/container-interface.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
@@ -55,7 +55,7 @@ public:
 } // namespace internal
 
 
-template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, Stuff::LA::ChooseBackend la_backend,
+template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, XT::LA::ChooseBackend la_backend,
           bool anything = true>
 class LinearEllipticSwipdgEstimatorExpectations
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<polOrder>

@@ -28,7 +28,7 @@
 #include <dune/xt/common/ranges.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/layers.hh>
-#include <dune/stuff/la/container/pattern.hh>
+#include <dune/xt/la/container/pattern.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
@@ -90,7 +90,7 @@ struct ChooseGridPartView<ChooseSpaceBackend::fem>
 
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class SpaceInterface : public Stuff::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
+class SpaceInterface : public XT::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -121,7 +121,7 @@ public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
   typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
   static const Stuff::Grid::ChoosePartView part_view_type = Traits::part_view_type;
 

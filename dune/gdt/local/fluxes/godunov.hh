@@ -26,7 +26,7 @@
 #include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/interfaces.hh>
 #include <dune/stuff/functions/affine.hh>
-#include <dune/stuff/la/container/eigen.hh>
+#include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include "interfaces.hh"
@@ -68,7 +68,7 @@ public:
   static const size_t dimDomain = domainDim;
   static const size_t dimRange  = AnalyticalFluxType::dimRange;
   static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef typename Dune::Stuff::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
 }; // class LocalGodunovNumericalCouplingFluxTraits
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp,
@@ -214,7 +214,7 @@ private:
       diag_jacobian_pos_tmp.scal(RangeFieldType(0));
       diag_jacobian_neg_tmp.scal(RangeFieldType(0));
       // create EigenSolver
-      ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
+      ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
           jacobian[ii].backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
@@ -362,7 +362,7 @@ private:
     diag_jacobian_pos_tmp.scal(RangeFieldType(0));
     diag_jacobian_neg_tmp.scal(RangeFieldType(0));
     // create EigenSolver
-    ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
+    ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
         jacobian.backend());
     assert(eigen_solver.info() == ::Eigen::Success);
     const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
@@ -554,7 +554,7 @@ private:
       diag_jacobian_pos_tmp.scal(RangeFieldType(0));
       diag_jacobian_neg_tmp.scal(RangeFieldType(0));
       // create EigenSolver
-      ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
+      ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
           jacobian[ii].backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
@@ -707,7 +707,7 @@ private:
     diag_jacobian_pos_tmp.scal(RangeFieldType(0));
     diag_jacobian_neg_tmp.scal(RangeFieldType(0));
     // create EigenSolver
-    ::Eigen::EigenSolver<typename Stuff::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
+    ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
         jacobian.backend());
     assert(eigen_solver.info() == ::Eigen::Success);
     const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex

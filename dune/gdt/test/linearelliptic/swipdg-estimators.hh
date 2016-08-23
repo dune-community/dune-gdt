@@ -150,7 +150,7 @@ public:
 template <class TestCaseType>
 struct linearelliptic_SWIPDG_estimators : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::Stuff::LA::ChooseBackend la_backend, int polOrder>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::ChooseBackend la_backend, int polOrder>
   static void eoc_study()
   {
     using namespace Dune;

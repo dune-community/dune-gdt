@@ -22,7 +22,7 @@ namespace GDT {
 
 
 template <class Traits>
-class LocalVolumeFunctionalInterface : public Stuff::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
+class LocalVolumeFunctionalInterface : public XT::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -36,7 +36,7 @@ public:
 
 
 template <class Traits>
-class LocalFaceFunctionalInterface : public Stuff::CRTPInterface<LocalFaceFunctionalInterface<Traits>, Traits>
+class LocalFaceFunctionalInterface : public XT::CRTPInterface<LocalFaceFunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

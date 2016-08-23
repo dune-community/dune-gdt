@@ -92,8 +92,8 @@ public:
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
 typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_space<SourceSpaceType>::value
-                            && Stuff::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
-                            && Stuff::LA::is_vector<RangeVectorType>::value,
+                            && XT::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
+                            && XT::LA::is_vector<RangeVectorType>::value,
                         std::unique_ptr<L2LocalProlongationLocalizableOperator<GridViewType,
                                                                                ConstDiscreteFunction<SourceSpaceType,
                                                                                                      SourceVectorType>,
@@ -112,8 +112,8 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_sp
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
-typename std::enable_if<is_space<SourceSpaceType>::value && Stuff::LA::is_vector<SourceVectorType>::value
-                            && is_space<RangeSpaceType>::value && Stuff::LA::is_vector<RangeVectorType>::value,
+typename std::enable_if<is_space<SourceSpaceType>::value && XT::LA::is_vector<SourceVectorType>::value
+                            && is_space<RangeSpaceType>::value && XT::LA::is_vector<RangeVectorType>::value,
                         std::unique_ptr<L2LocalProlongationLocalizableOperator<
                             typename RangeSpaceType::GridViewType,
                             ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,

@@ -20,8 +20,8 @@
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
@@ -127,7 +127,7 @@ private:
       const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
-    typedef typename Stuff::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
+    typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(
         range.space().mapper().size(), range.space().mapper().size(), range.space().compute_volume_pattern());
     V rhs(range.space().mapper().size());
@@ -168,7 +168,7 @@ private:
 
     // solve
     try {
-      Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
+      XT::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
     } catch (Stuff::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"

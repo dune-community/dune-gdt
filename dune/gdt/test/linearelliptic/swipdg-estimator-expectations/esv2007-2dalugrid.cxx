@@ -21,7 +21,7 @@ namespace Test {
 
 // polorder 1, conforming
 
-template <Stuff::LA::ChooseBackend la_backend, bool anything>
+template <XT::LA::ChooseBackend la_backend, bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
                                                                                 double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1, la_backend, anything>
@@ -60,14 +60,14 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007
                                                                                                  conforming>,
                                                                                          double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                         XT::LA::ChooseBackend::eigen_sparse>;
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                  conforming>,
                                                                                          double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::istl_sparse>;
+                                                         XT::LA::ChooseBackend::istl_sparse>;
 
 
 } // namespace Test

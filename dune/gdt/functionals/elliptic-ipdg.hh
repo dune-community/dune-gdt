@@ -11,7 +11,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/stuff/grid/boundaryinfo.hh>
 #include <dune/stuff/grid/intersection.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
@@ -33,7 +33,7 @@ namespace GDT {
 template <class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, // <- may be void
           class Space, LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
-          class Vector   = typename Stuff::LA::Container<typename Space::RangeFieldType>::VectorType,
+          class Vector   = typename XT::LA::Container<typename Space::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType, class Field = typename Space::RangeFieldType>
 class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
@@ -130,7 +130,7 @@ private:
 
 template <class VectorType, LocalEllipticIpdgIntegrands::Method method, class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType>
-typename std::enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<DirichletType>::value
+typename std::enable_if<XT::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<DirichletType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionFactorType,
@@ -155,7 +155,7 @@ make_elliptic_ipdg_dirichlet_vector_functional(
 
 template <class VectorType, class DirichletType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
 typename std::
-    enable_if<Stuff::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<DirichletType>::value
+    enable_if<XT::LA::is_vector<VectorType>::value && Stuff::is_localizable_function<DirichletType>::value
                   && Stuff::is_localizable_function<DiffusionFactorType>::value
                   && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
               std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionFactorType,
@@ -195,7 +195,7 @@ template <LocalEllipticIpdgIntegrands::Method method, class DirichletType, class
 typename std::enable_if<Stuff::is_localizable_function<DirichletType>::value
                             && Stuff::is_localizable_function<DiffusionFactorType>::value
                             && Stuff::is_localizable_function<DiffusionTensorType>::value
-                            && Stuff::LA::is_vector<VectorType>::value && is_space<SpaceType>::value,
+                            && XT::LA::is_vector<VectorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionFactorType,
                                                                               DiffusionTensorType, SpaceType, method,
                                                                               VectorType>>>::type

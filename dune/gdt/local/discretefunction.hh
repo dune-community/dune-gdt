@@ -36,10 +36,10 @@ class ConstLocalDiscreteFunction
                                                SpaceImp::dimRangeCols>,
                                 SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits,
+  static_assert(std::is_base_of<Dune::XT::LA::VectorInterface<typename VectorImp::Traits,
                                                                  typename VectorImp::Traits::ScalarType>,
                                 VectorImp>::value,
-                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+                "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
   typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
