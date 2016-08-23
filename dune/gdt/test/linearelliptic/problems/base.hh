@@ -44,14 +44,14 @@ public:
   /**
    * \note Do not manually delete these pointers, they are managed automaticall from here on!
    */
-  ProblemBase(const DiffusionFactorType* diff_fac, const DiffusionTensorType* diff_ten, const FunctionType* forc,
-              const FunctionType* dir, const FunctionType* neum, XT::Common::Configuration grd_cfg,
+  ProblemBase(const DiffusionFactorType*&& diff_fac, const DiffusionTensorType*&& diff_ten, const FunctionType*&& forc,
+              const FunctionType*&& dir, const FunctionType*&& neum, XT::Common::Configuration grd_cfg,
               XT::Common::Configuration bnd_cfg)
-    : diffusion_factor_(diff_fac)
-    , diffusion_tensor_(diff_ten)
-    , force_(forc)
-    , dirichlet_(dir)
-    , neumann_(neum)
+    : diffusion_factor_(std::move(diff_fac))
+    , diffusion_tensor_(std::move(diff_ten))
+    , force_(std::move(forc))
+    , dirichlet_(std::move(dir))
+    , neumann_(std::move(neum))
     , grid_cfg_(grd_cfg)
     , boundary_info_cfg_(bnd_cfg)
   {
