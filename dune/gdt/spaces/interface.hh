@@ -26,8 +26,8 @@
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/layers.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/la/container/pattern.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
@@ -71,21 +71,21 @@ struct ChooseGridPartView;
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::gdt>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+  static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::pdelab>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+  static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::fem>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
+  static const XT::Grid::Backends type = XT::Grid::Backends::part;
 };
 
 
@@ -120,10 +120,10 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
+  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
-  static const Stuff::Grid::ChoosePartView part_view_type = Traits::part_view_type;
+  static const XT::Grid::Backends part_view_type = Traits::part_view_type;
 
   static const bool needs_grid_view = Traits::needs_grid_view;
 
@@ -522,12 +522,13 @@ namespace internal {
 template <class S>
 struct is_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits) DXTC_has_static_member_initialize_once(dimDomain)
+      DXTC_has_static_member_initialize_once(dimRange) DXTC_has_static_member_initialize_once(dimRangeCols)
 
           static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+      bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                          && DXTC_has_static_member(dimRange)<S>::value
+                          && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_space_helper
 
 

@@ -19,7 +19,7 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 
 #include "../default.hh"
@@ -120,7 +120,7 @@ protected:
     //    typedef D                                                            VelocityFieldImp;
     //    typedef typename Dune::YaspGrid< dimDomain, Dune::EquidistantOffsetCoordinates< double, dimDomain > >
     //    VelocityGridType;
-    //    typedef Dune::Stuff::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
+    //    typedef Dune::XT::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
     //    typedef typename VelocityGridType::LeafGridView                                   VelocityGridViewType;
     //    typedef typename VelocityGridType::template Codim< 0 >::Entity                    VelocityEntityType;
     //    typedef typename DS::LocalizableFunctionInterface< VelocityEntityType,
@@ -132,7 +132,7 @@ protected:
 
     typedef typename Dune::XT::LA::CommonDenseVector<R> VectorType;
     //    typedef typename Dune::GDT::CgSpaceProvider< VelocityGridType,
-    //                                                    DSG::ChooseLayer::leaf,
+    //                                                    XT::Grid::Layers::leaf,
     //                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
     //                                                    1, R, 1, 1 >          CGProviderType;
     //    typedef typename CGProviderType::Type                                             CGSpaceType;

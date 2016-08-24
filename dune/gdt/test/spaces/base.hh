@@ -18,7 +18,7 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -68,11 +68,11 @@ template <class SpaceType>
 class SpaceBase : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType::Grid GridType;
-  typedef DSG::Providers::Cube<GridType> ProviderType;
+  typedef Dune::XT::Grid::GridProvider<GridType> ProviderType;
 
 public:
   SpaceBase()
-    : grid_provider_(0.0, 1.0, 3u)
+    : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
     , space_(grid_provider_.template leaf<SpaceType::part_view_type>())
   {
   }

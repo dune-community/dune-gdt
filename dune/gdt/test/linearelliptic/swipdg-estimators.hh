@@ -130,7 +130,7 @@ public:
     else if (type == "efficiency_" + ESV2007AlternativeSummationEstimator::id())
       return estimate(vector, ESV2007AlternativeSummationEstimator::id()) / this->current_error_norm("energy");
     else
-      DUNE_THROW(Stuff::Exceptions::wrong_input_given,
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see available_estimators()!");
     return 0.;
   } // ... estimate(...)
@@ -150,7 +150,7 @@ public:
 template <class TestCaseType>
 struct linearelliptic_SWIPDG_estimators : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::ChooseBackend la_backend, int polOrder>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::Backends la_backend, int polOrder>
   static void eoc_study()
   {
     using namespace Dune;
@@ -163,7 +163,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
-                                            Stuff::Grid::ChooseLayer::level,
+                                            XT::Grid::Layers::level,
                                             space_backend,
                                             la_backend,
                                             polOrder,
@@ -174,7 +174,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing&) {
+    } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
     }

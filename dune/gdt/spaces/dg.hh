@@ -17,8 +17,8 @@
 #endif
 
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/grid/layers.hh>
-#include <dune/stuff/grid/provider/interface.hh>
+#include <dune/xt/grid/layers.hh>
+#include <dune/xt/grid/gridprovider/provider.hh>
 
 #include "interface.hh"
 #include "dg/dune-fem-wrapper.hh"
@@ -29,14 +29,14 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridType, Stuff::Grid::ChooseLayer layer_type, ChooseSpaceBackend backend_type, int polOrder,
+template <class GridType, XT::Grid::Layers layer_type, ChooseSpaceBackend backend_type, int polOrder,
           class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class DgSpaceProvider
 {
-  static const Stuff::Grid::ChoosePartView part_view_type = ChooseGridPartView<backend_type>::type;
+  static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;
 
 public:
-  typedef typename Stuff::Grid::Layer<GridType, layer_type, part_view_type>::Type GridLayerType;
+  typedef typename XT::Grid::Layer<GridType, layer_type, part_view_type>::type GridLayerType;
 
 private:
   template <class G, int p, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
@@ -57,7 +57,7 @@ private:
     typedef GDT::DunePdelabDgSpaceWrapper<GridLayerType, p, R, r> Type;
   };
 
-  typedef Stuff::Grid::ProviderInterface<GridType> GridProviderType;
+  typedef XT::Grid::GridProvider<GridType> GridProviderType;
 #if HAVE_DUNE_GRID_MULTISCALE
   typedef grid::Multiscale::ProviderInterface<GridType> MsGridProviderType;
 #endif

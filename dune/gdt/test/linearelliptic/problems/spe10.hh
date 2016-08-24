@@ -17,8 +17,8 @@
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/indicator.hh>
 #include <dune/stuff/functions/spe10.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/stationary-testcase.hh>
 
@@ -50,7 +50,7 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration cfg;
-    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
+    cfg["type"]        = XT::Grid::cube_gridprovider_default_config()["type"];
     cfg["lower_left"]  = "[0 0]";
     cfg["upper_right"] = "[5 1]";
     return cfg;
@@ -58,7 +58,7 @@ public:
 
   static XT::Common::Configuration default_boundary_info_cfg()
   {
-    return Stuff::Grid::BoundaryInfoConfigs::AllDirichlet::default_config();
+    return XT::Grid::alldirichlet_boundaryinfo_default_config();
   }
 
   Spe10Model1Problem(const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
@@ -149,7 +149,7 @@ public:
   using typename BaseType::GridType;
 
   Spe10Model1TestCase(const size_t num_refs = 1)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
   {
   }

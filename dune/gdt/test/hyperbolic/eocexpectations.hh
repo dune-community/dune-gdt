@@ -19,6 +19,10 @@
 namespace Dune {
 namespace GDT {
 namespace Tests {
+
+using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
+using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
+
 namespace internal {
 
 

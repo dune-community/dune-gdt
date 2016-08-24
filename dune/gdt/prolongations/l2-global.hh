@@ -69,7 +69,7 @@ public:
   {
     try {
       BaseOperatorType::apply();
-    } catch (Stuff::Exceptions::reinterpretation_error& ee) {
+    } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
       DUNE_THROW(prolongation_error,
                  "This prolongation (using a global L2 projection) failed, because the source could not be "
                      << "reinterpreted on the given grid view!\n"
@@ -82,7 +82,7 @@ public:
 
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_space<SourceSpaceType>::value
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && is_space<SourceSpaceType>::value
                             && XT::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
                             && XT::LA::is_vector<RangeVectorType>::value,
                         std::unique_ptr<L2GlobalProlongationLocalizableOperator<GridViewType,
@@ -132,7 +132,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -187,7 +187,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2GlobalProlongationOperator<GridViewType>>>::type
 make_global_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {

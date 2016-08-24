@@ -22,12 +22,11 @@ namespace Tests {
 
 
 template <bool anything>
-class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1>,
-                                Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
-                                TimeStepperMethods::explicit_euler, anything>
+class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 2,
+                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler, anything>
     : public internal::HyperbolicEocExpectationsBase<2>
 {
-  typedef Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1> TestCaseType;
+  typedef Hyperbolic::BurgersTestCase<Yasp2, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -46,7 +45,7 @@ public:
   } // ... results(...)
 }; // HyperbolicEocExpectations
 
-template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Dune::YaspGrid<2>, double, 1>,
+template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>,
                                          Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
                                          TimeStepperMethods::explicit_euler>;
 

@@ -23,11 +23,11 @@ using namespace Dune::GDT;
 TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, AluGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
 {
-  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::ChooseBackend::eigen_sparse, 1>();
+  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::eigen_sparse, 1>();
 }
 TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_eigen_and_alugrid_order_2)
 {
-  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::ChooseBackend::eigen_sparse, 2>();
+  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::eigen_sparse, 2>();
 }
 
 #else

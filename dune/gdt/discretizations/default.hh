@@ -13,7 +13,7 @@
 #include <vector>
 
 #include <dune/xt/common/exceptions.hh>
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/information.hh>
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
@@ -193,7 +193,7 @@ public:
   const VectorType& dirichlet_shift() const
   {
     if (!has_dirichlet_shift_)
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call dirichlet_shift() if has_dirichlet_shift() is false!");
     return dirichlet_shift_;
   }
@@ -382,7 +382,7 @@ public:
       const RangeFieldType CFL = problem().CFL();
 
       // calculate dx and choose initial dt
-      Dune::Stuff::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(fv_space_->grid_view());
+      Dune::XT::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(fv_space_->grid_view());
       RangeFieldType dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);

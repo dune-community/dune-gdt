@@ -55,7 +55,7 @@ public:
 } // namespace internal
 
 
-template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, XT::LA::ChooseBackend la_backend,
+template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, XT::LA::Backends la_backend,
           bool anything = true>
 class LinearEllipticSwipdgEstimatorExpectations
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<polOrder>

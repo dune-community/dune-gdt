@@ -15,8 +15,8 @@
 
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/stationary-testcase.hh>
 
@@ -48,23 +48,21 @@ public:
 
   static XT::Common::Configuration default_grid_cfg()
   {
-    XT::Common::Configuration cfg;
-    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
-    cfg["lower_left"]  = "[0 0]";
-    cfg["upper_right"] = "[1 1]";
+    XT::Common::Configuration cfg = XT::Grid::cube_gridprovider_default_config();
+    cfg["lower_left"]             = "[0 0]";
+    cfg["upper_right"]            = "[1 1]";
     return cfg;
   }
 
   static XT::Common::Configuration default_boundary_info_cfg()
   {
-    XT::Common::Configuration cfg;
-    cfg["type"]      = Stuff::Grid::BoundaryInfoConfigs::NormalBased::static_id();
-    cfg["default"]   = "dirichlet";
-    cfg["neumann.0"] = "[1 0]";
+    XT::Common::Configuration cfg = XT::Grid::normalbased_boundaryinfo_default_config();
+    cfg["default"]                = "dirichlet";
+    cfg["neumann.0"]              = "[1 0]";
     return cfg;
   }
 
-  MixedBoundaryProblem(const size_t integration_order              = default_integration_order,
+  MixedBoundaryProblem(const size_t integration_order           = default_integration_order,
                        const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                        const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
@@ -146,7 +144,7 @@ public:
   using typename BaseType::GridType;
 
   MixedBoundaryTestCase(const size_t num_refs = 3)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
   {
   }

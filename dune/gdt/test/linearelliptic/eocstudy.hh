@@ -96,7 +96,7 @@ public:
                                     over_integrate_)
           ->induced_norm(function);
     else
-      DUNE_THROW(Stuff::Exceptions::wrong_input_given,
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
   } // ... compute_norm(...)
 

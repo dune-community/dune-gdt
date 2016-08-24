@@ -9,13 +9,13 @@
 #ifndef DUNE_GDT_TEST_SPACES_CG_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_CG_PDELAB_HH
 
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
 
 #include <dune/gdt/test/grids.hh>
 
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #if HAVE_DUNE_PDELAB
 
@@ -66,8 +66,8 @@ pdelab_cg_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim       = param.dimDomain;
-  const auto tolerance = Dune::Stuff::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.35e-13 : 1.4e-14)
-                                                                               : (dim == 3 ? 2.49e-14 : 1e-15);
+  const auto tolerance = Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.35e-13 : 1.4e-14)
+                                                                            : (dim == 3 ? 2.49e-14 : 1e-15);
   return tolerance;
 }
 

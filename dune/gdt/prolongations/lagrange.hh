@@ -73,7 +73,7 @@ public:
   {
     try {
       BaseOperatorType::apply();
-    } catch (Stuff::Exceptions::reinterpretation_error& ee) {
+    } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
       DUNE_THROW(prolongation_error,
                  "This prolongation (using a lagrange projection) failed, because the source could not be reinterpreted"
                      << " on the given grid view!\n"
@@ -86,7 +86,7 @@ public:
 
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationLocalizableOperator<GridViewType,
                                                                                 ConstDiscreteFunction<SourceSpaceType,
                                                                                                       SourceVectorType>,
@@ -130,7 +130,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -177,7 +177,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationOperator<GridViewType>>>::type
 make_lagrange_prolongation_operator(const GridViewType& grid_view)
 {
@@ -186,7 +186,7 @@ make_lagrange_prolongation_operator(const GridViewType& grid_view)
 
 
 template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value, void>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type
 prolong_lagrange(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source,
                  DiscreteFunction<RS, RV>& range)
 {

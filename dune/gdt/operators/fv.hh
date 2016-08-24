@@ -15,7 +15,7 @@
 #include <dune/stuff/aliases.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/stuff/grid/walker/apply-on.hh>
+#include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/interfaces.hh>
 
@@ -152,9 +152,9 @@ public:
     , local_boundary_operator_(analytical_flux, boundary_values,
                                std::forward<LocalOperatorArgTypes>(local_operator_args)...)
   {
-    this->add(local_operator_, new DSG::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_operator_, new DSG::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new DSG::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
+    this->add(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->add(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
+    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
   }
 
 private:

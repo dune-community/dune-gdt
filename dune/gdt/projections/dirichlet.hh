@@ -9,8 +9,8 @@
 #define DUNE_GDT_PROJECTIONS_DIRICHLET_HH
 
 #include <dune/xt/common/memory.hh>
-#include <dune/stuff/grid/intersection.hh>
-#include <dune/stuff/grid/layers.hh>
+#include <dune/xt/grid/intersection.hh>
+#include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/local/operators/dirichlet-projection.hh>
 #include <dune/gdt/operators/base.hh>
@@ -26,7 +26,7 @@ class DirichletProjectionLocalizableOperator : public LocalizableOperatorBase<Gr
 
 public:
   using typename BaseType::IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
+  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
 
   template <class... Args>
   explicit DirichletProjectionLocalizableOperator(const BoundaryInfoType& boundary_info, Args&&... args)
@@ -46,7 +46,7 @@ template <class GridViewType, class SourceType, class RangeType>
 std::unique_ptr<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>
 make_localizable_dirichlet_projection_operator(
     const GridViewType& grid_view,
-    const Stuff::Grid::BoundaryInfoInterface<typename Stuff::Grid::Intersection<GridViewType>::Type>& boundary_info,
+    const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GridViewType>::Type>& boundary_info,
     const SourceType& source, RangeType& range)
 {
   return Dune::XT::Common::make_unique<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>(

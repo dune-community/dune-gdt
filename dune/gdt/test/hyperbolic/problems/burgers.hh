@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
@@ -171,7 +171,7 @@ public:
   using typename BaseType::GridType;
 
   BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {

@@ -57,7 +57,8 @@ public:
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
   typedef typename RangeType::VectorType VectorType;
-  typedef typename XT::LA::Container<typename RangeType::RangeFieldType, VectorType::sparse_matrix_type>::MatrixType
+  typedef typename XT::LA::Container<typename RangeType::RangeFieldType, VectorType::Traits::sparse_matrix_type>::MatrixType
+
       MatrixType;
 
 private:
@@ -69,8 +70,8 @@ public:
   L2GlobalProjectionLocalizableOperator(const size_t over_integrate, GridViewType grd_vw, const SourceType& src,
                                         RangeType& rng)
     : BaseType(grd_vw, src, rng)
-    , lhs_operator_(over_integrate, range_.space(), grid_view_)
-    , rhs_functional_(over_integrate, source_, range_.space(), grid_view_)
+    , lhs_operator_(over_integrate, range_.space(), BaseType::grid_view())
+    , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_view())
     , solved_(false)
   {
     this->add(lhs_operator_);
@@ -90,7 +91,7 @@ public:
     BaseType::apply();
     try {
       XT::LA::Solver<MatrixType>(lhs_operator_.matrix()).apply(rhs_functional_.vector(), range_.vector());
-    } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+    } catch (XT::Common::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(projection_error,
                  "L2 projection failed because a global matrix could not be inverted!\n\n"
                      << "This was the original error: "
@@ -130,7 +131,6 @@ private:
 #endif
   }
 
-  using BaseType::grid_view_;
   using BaseType::source_;
   using BaseType::range_;
 
@@ -142,7 +142,7 @@ private:
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
@@ -185,7 +185,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -241,7 +241,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2GlobalProjectionOperator<GridViewType>>>::type
 make_global_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {

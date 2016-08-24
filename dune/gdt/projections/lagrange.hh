@@ -9,6 +9,7 @@
 #define DUNE_GDT_PROJECTIONS_LAGRANGE_HH
 
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -47,7 +48,7 @@ private:
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<LagrangeProjectionLocalizableOperator<GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
@@ -109,7 +110,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -154,7 +155,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProjectionOperator<GridViewType>>>::type
 make_lagrange_projection_operator(const GridViewType& grid_view)
 {
@@ -163,9 +164,8 @@ make_lagrange_projection_operator(const GridViewType& grid_view)
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && XT::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_lagrange(const GridViewType& grid_view, const SourceType& source,
                  DiscreteFunction<SpaceType, VectorType>& range)

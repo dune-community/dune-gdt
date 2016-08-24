@@ -125,6 +125,7 @@ public:
   std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    static const XT::Grid::DirichletBoundary dirichlet{};
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     // check
@@ -142,7 +143,7 @@ public:
       // only work on dirichlet ones
       const auto& intersection = *intersection_it;
       // actual dirichlet intersections + process boundaries for parallel runs
-      if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
+      if (boundaryInfo.type(intersection) == dirichlet || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
         for (auto cc : Dune::XT::Common::value_range(geometry.corners()))
@@ -312,12 +313,13 @@ namespace internal {
 template <class S>
 struct is_cg_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits) DXTC_has_static_member_initialize_once(dimDomain)
+      DXTC_has_static_member_initialize_once(dimRange) DXTC_has_static_member_initialize_once(dimRangeCols)
 
           static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+      bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                          && DXTC_has_static_member(dimRange)<S>::value
+                          && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_cg_space_helper
 
 

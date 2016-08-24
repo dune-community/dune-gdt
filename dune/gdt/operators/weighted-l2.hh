@@ -11,7 +11,7 @@
 #include <type_traits>
 
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/layers.hh>
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/local/integrands/product.hh>
@@ -65,7 +65,7 @@ private:
  */
 template <class WeightFunctionType, class GridViewType, class RangeType, class SourceType>
 typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
-                            && Stuff::Grid::is_grid_layer<GridViewType>::value
+                            && XT::Grid::is_layer<GridViewType>::value
                             && Stuff::is_localizable_function<RangeType>::value
                             && Stuff::is_localizable_function<SourceType>::value,
                         std::unique_ptr<WeightedL2LocalizableProduct<WeightFunctionType, GridViewType, RangeType,
@@ -151,7 +151,7 @@ auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space, grid_vie
 template <class MatrixType, class WeightFunctionType, class SpaceType, class GridViewType>
 typename std::
     enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<WeightFunctionType>::value
-                  && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                  && is_space<SpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>>::type
     make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const SpaceType& space,
                                      const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -172,7 +172,7 @@ template <class MatrixType, class WeightFunctionType, class RangeSpaceType, clas
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && Stuff::is_localizable_function<WeightFunctionType>::value
                             && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
-                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType,
                                                                  GridViewType, SourceSpaceType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const RangeSpaceType& range_space,
@@ -210,7 +210,7 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& m
 template <class WeightFunctionType, class MatrixType, class SpaceType, class GridViewType>
 typename std::
     enable_if<Stuff::is_localizable_function<WeightFunctionType>::value && XT::LA::is_matrix<MatrixType>::value
-                  && is_space<SpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                  && is_space<SpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridViewType>>>::type
     make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix, const SpaceType& space,
                                      const GridViewType& grid_view, const size_t over_integrate = 0)
@@ -226,7 +226,7 @@ typename std::
 template <class WeightFunctionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
                             && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType,
                                                                  GridViewType, SourceSpaceType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight, MatrixType& matrix,
@@ -286,7 +286,7 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::Traits::sparse_matrix_type>::MatrixType
         MatrixType;
     auto op = make_weighted_l2_matrix_operator<MatrixType>(
         weight_, source.space(), range.space(), grid_view_, over_integrate_);
@@ -334,7 +334,7 @@ private:
 
 template <class GridViewType, class WeightFunctionType>
 typename std::enable_if<Stuff::is_localizable_function<WeightFunctionType>::value
-                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<WeightedL2Operator<WeightFunctionType, GridViewType,
                                                            typename WeightFunctionType::RangeFieldType>>>::type
 make_weighted_l2_operator(const GridViewType& grid_view, const WeightFunctionType& weight,

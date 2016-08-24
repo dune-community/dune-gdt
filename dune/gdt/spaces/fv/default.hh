@@ -51,8 +51,8 @@ public:
   typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
                                         GridViewType::dimension, RangeFieldType, rangeDim, rangeDimCols>
       BaseFunctionSetType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
-  static const bool needs_grid_view                       = true;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const bool needs_grid_view              = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class FvSpaceTraits

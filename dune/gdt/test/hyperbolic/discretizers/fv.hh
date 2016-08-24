@@ -10,8 +10,8 @@
 #define DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_FV_HH
 
 #include <dune/xt/common/timedlogging.hh>
-#include <dune/stuff/grid/provider.hh>
-#include <dune/stuff/grid/periodicview.hh>
+#include <dune/xt/grid/gridprovider/provider.hh>
+#include <dune/xt/grid/periodic_gridview.hh>
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/spaces/fv/product.hh>
@@ -37,7 +37,9 @@ public:
   static const constexpr NumericalFluxes numerical_flux_type  = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
 
-  typedef typename DSG::PeriodicGridView<typename Stuff::Grid::ProviderInterface<GridType>::LevelGridViewType>
+  typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType> GridViewImp;
+  typedef Dune::GridView<XT::Grid::internal::PeriodicGridViewTraits<
+      typename XT::Grid::GridProvider<GridType>::LevelGridViewType, false>>
       GridViewType;
   typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef HyperbolicFVDefaultDiscretization<TestCaseType, FVSpaceType, numerical_flux, time_stepper_method,
@@ -50,14 +52,13 @@ public:
   }
 
   static DiscretizationType
-  discretize(Stuff::Grid::ProviderInterface<GridType>& grid_provider, const TestCaseType& test_case,
-             const int level                                            = 0,
+  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const TestCaseType& test_case, const int level = 0,
              const std::bitset<GridType::dimension> periodic_directions = std::bitset<GridType::dimension>())
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
-    auto space =
-        std::make_shared<const FVSpaceType>(GridViewType(grid_provider.level_view(level), periodic_directions));
+    GridViewImp imp(grid_provider.level_view(level), periodic_directions);
+    auto space = std::make_shared<const FVSpaceType>(GridViewType(imp));
     logger.debug() << "grid has " << space->grid_view().indexSet().size(0) << " elements" << std::endl;
     return DiscretizationType(test_case, space);
   } // ... discretize(...)

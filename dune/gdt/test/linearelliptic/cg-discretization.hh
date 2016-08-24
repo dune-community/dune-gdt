@@ -25,7 +25,7 @@
 template <class TestCaseType>
 struct linearelliptic_CG_discretization : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::ChooseBackend la_backend>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::Backends la_backend>
   static void eoc_study()
   {
     using namespace Dune;
@@ -38,7 +38,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
     test_case.print_header(DSC_LOG_INFO);
     DSC_LOG_INFO << std::endl;
     typedef LinearElliptic::CGDiscretizer<typename TestCaseType::GridType,
-                                          Stuff::Grid::ChooseLayer::level,
+                                          XT::Grid::Layers::level,
                                           space_backend,
                                           la_backend,
                                           1,
@@ -48,7 +48,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing&) {
+    } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.cg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
     }

@@ -15,7 +15,7 @@
 #include <dune/common/unused.hh>
 
 #include <dune/xt/common/crtp.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/la/container/interfaces.hh>
 
 namespace Dune {
@@ -70,7 +70,7 @@ class DirichletConstraints : public ConstraintsInterface<internal::DirichletCons
 
 public:
   typedef internal::DirichletConstraintsTraits<IntersectionType> Traits;
-  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
+  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
 
   DirichletConstraints(const BoundaryInfoType& bnd_info, const size_t sz, const bool set = true)
     : boundary_info_(bnd_info)

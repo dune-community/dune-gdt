@@ -17,7 +17,7 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/stuff/functions/affine.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include "default.hh"
 
@@ -528,7 +528,7 @@ public:
   using typename BaseType::LevelGridViewType;
 
   Boltzmann2DCheckerboardTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {

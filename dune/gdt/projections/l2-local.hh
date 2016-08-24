@@ -10,7 +10,7 @@
 
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/grid/entity.hh>
+#include <dune/xt/grid/entity.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/l2-projection.hh>
@@ -109,7 +109,7 @@ private:
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2LocalProjectionLocalizableOperator<GridViewType, SourceType,
                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
@@ -152,7 +152,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -208,7 +208,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2LocalProjectionOperator<GridViewType>>>::type
 make_local_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {

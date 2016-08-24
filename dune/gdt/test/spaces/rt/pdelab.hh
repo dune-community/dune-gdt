@@ -9,13 +9,13 @@
 #ifndef DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 #define DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
 
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 #include <dune/gdt/test/grids.hh>
 
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #define SPACE_RT_PDELAB_YASPGRID(dd) Dune::GDT::DunePdelabRtSpaceWrapper<Yasp##dd##dLeafGridViewType, 0, double, dd>
 
@@ -58,7 +58,7 @@ pdelab_rt_tolerance(const T& param)
   typedef typename T::GridViewType::Grid Grid;
   const auto dim = param.dimDomain;
   const auto tolerance =
-      Dune::Stuff::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1 : 1.06) : (dim == 3 ? 2.05e-1 : 1.45e-1);
+      Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1 : 1.06) : (dim == 3 ? 2.05e-1 : 1.45e-1);
   return tolerance;
 }
 

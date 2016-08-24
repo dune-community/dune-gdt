@@ -74,9 +74,8 @@ public:
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && XT::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
@@ -113,7 +112,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -188,7 +187,7 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2ProjectionOperator<GridViewType>>>::type
 make_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
@@ -197,9 +196,8 @@ make_l2_projection_operator(const GridViewType& grid_view, const size_t over_int
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && XT::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0)

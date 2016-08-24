@@ -30,7 +30,6 @@ struct WeightedL2ProductBase
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = SpaceType::dimDomain;

@@ -110,7 +110,7 @@ public:
       }
       return norm;
     } else {
-      DUNE_THROW(Stuff::Exceptions::wrong_input_given,
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
       return 0.0;
     }

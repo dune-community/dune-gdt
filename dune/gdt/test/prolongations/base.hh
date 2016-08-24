@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 #define DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/stuff/functions/expression.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -25,10 +25,10 @@ namespace internal {
 template <class GridType>
 struct ProlongationOperatorsBaseGridHolder
 {
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
+  typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
 
   ProlongationOperatorsBaseGridHolder()
-    : grid_provider_(0.0, 1.0, 2u)
+    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 2u))
   {
     grid_provider_.global_refine(1);
   }
@@ -79,7 +79,7 @@ struct ProlongationOperatorsBase
     const auto coarse_l2_error =
         make_l2_operator(coarse_space_.grid_view(), 2)->induced_norm(function_ - coarse_discrete_function_);
     if (coarse_l2_error > tolerance)
-      DUNE_THROW(Dune::Stuff::Exceptions::internal_error,
+      DUNE_THROW(Dune::XT::Common::Exceptions::internal_error,
                  "This should not happen, the L2 product and projection operators are tested elsewhere!\n"
                      << coarse_l2_error
                      << " vs. "

@@ -16,7 +16,7 @@
 #include <dune/common/deprecated.hh>
 #include <dune/common/version.hh>
 
-#include <dune/stuff/grid/walker.hh>
+#include <dune/xt/grid/walker.hh>
 #include <dune/xt/common/parallel/helper.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -30,13 +30,13 @@ namespace GDT {
 
 template <class TestSpaceImp, class GridViewImp = typename TestSpaceImp::GridViewType,
           class AnsatzSpaceImp = TestSpaceImp>
-class SystemAssembler : public DSG::Walker<GridViewImp>
+class SystemAssembler : public XT::Grid::Walker<GridViewImp>
 {
   static_assert(GDT::is_space<TestSpaceImp>::value, "TestSpaceImp has to be derived from SpaceInterface!");
   static_assert(GDT::is_space<AnsatzSpaceImp>::value, "AnsatzSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType>::value,
                 "Types do not match!");
-  typedef DSG::Walker<GridViewImp> BaseType;
+  typedef XT::Grid::Walker<GridViewImp> BaseType;
   typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp> ThisType;
 
 public:
@@ -48,8 +48,8 @@ public:
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
 
-  typedef DSG::ApplyOn::WhichEntity<GridViewType> ApplyOnWhichEntity;
-  typedef DSG::ApplyOn::WhichIntersection<GridViewType> ApplyOnWhichIntersection;
+  typedef XT::Grid::ApplyOn::WhichEntity<GridViewType> ApplyOnWhichEntity;
+  typedef XT::Grid::ApplyOn::WhichIntersection<GridViewType> ApplyOnWhichIntersection;
 
   SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridViewType grd_vw)
     : BaseType(grd_vw)
@@ -95,7 +95,7 @@ public:
 
   template <class C>
   void add(ConstraintsInterface<C>& constraints,
-           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType, typename C::derived_type>
         WrapperType;
@@ -104,7 +104,7 @@ public:
 
   template <class V, class M>
   void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -117,9 +117,8 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler,
-           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -132,9 +131,8 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
-           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -147,9 +145,8 @@ public:
   } // ... add(...)
 
   template <class L, class V>
-  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
-           XT::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichEntity* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
+           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
@@ -160,9 +157,8 @@ public:
   } // ... add(...)
 
   template <class L, class V>
-  void add(const LocalFaceFunctionalAssembler<L>& local_assembler,
-           XT::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichIntersection* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  void add(const LocalFaceFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
+           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,

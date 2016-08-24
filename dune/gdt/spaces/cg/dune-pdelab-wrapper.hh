@@ -102,8 +102,8 @@ public:
   typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                              rangeDim, rangeDimCols>
       BaseFunctionSetType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
-  static const bool needs_grid_view                       = true;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const bool needs_grid_view              = true;
 
   typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
   typedef typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder,

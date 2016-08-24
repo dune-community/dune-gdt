@@ -13,8 +13,8 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/information.hh>
-#include <dune/stuff/grid/provider/eoc.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/gridprovider/eoc.hh>
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretizations/interfaces.hh>
@@ -32,9 +32,9 @@ namespace Tests {
  * TODO: choose suitable SolutionType for Problems (provide Interface?)
  */
 template <class GridImp, class ProblemImp>
-class NonStationaryTestCase : public Stuff::Grid::Providers::EOC<GridImp>
+class NonStationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
 {
-  typedef Stuff::Grid::Providers::EOC<GridImp> EocBaseType;
+  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
 
 public:
   typedef ProblemImp ProblemType;
@@ -82,10 +82,10 @@ public:
   virtual const std::shared_ptr<const SolutionType> exact_solution() const
   {
     if (provides_exact_solution())
-      DUNE_THROW(Stuff::Exceptions::you_have_to_implement_this,
+      DUNE_THROW(XT::Common::Exceptions::you_have_to_implement_this,
                  "If provides_exact_solution() is true, exact_solution() has to be implemented!");
     else
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call exact_solution() if provides_exact_solution() is false!");
     return zero_;
   }
@@ -112,7 +112,7 @@ protected:
   typedef typename DiscreteSolutionType::key_type TimeFieldType;
 
   typedef typename TestCaseType::InitialValueType InitialValueType;
-  typedef typename TestCaseType::template Level<Stuff::Grid::ChoosePartView::view>::Type GridViewType;
+  typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
   NonStationaryEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
@@ -147,7 +147,7 @@ public:
     std::vector<std::string> ret = available_norms();
     for (auto estimator : available_estimators()) {
       if (is_norm(estimator))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "We do not want to handle the case that norms and estimators have the same name!");
       ret.push_back(estimator);
     }
@@ -189,8 +189,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level      = test_case_.level_of(current_refinement_);
-      const auto grid_view = test_case_.template level<Stuff::Grid::ChoosePartView::view>(level);
-      Stuff::Grid::Dimensions<GridViewType> dimensions(grid_view);
+      const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
+      XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -301,7 +301,7 @@ protected:
     if (!reference_solution_computed_) {
       reference_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
-      reference_solution_ = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
+      reference_solution_          = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         size_t counter                       = 0;

@@ -28,7 +28,6 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   static const size_t dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;

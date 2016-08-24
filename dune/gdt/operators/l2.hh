@@ -13,7 +13,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/grid/entity.hh>
+#include <dune/xt/grid/entity.hh>
 
 #include "weighted-l2.hh"
 
@@ -28,16 +28,16 @@ namespace GDT {
 template <class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
 class L2LocalizableProduct
     : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
-          typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
-      public WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
+          typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
+      public WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
                                                                      typename GridView::ctype, GridView::dimension,
                                                                      Field, 1>,
                                           GridView, Range, Source, Field>
 {
   typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
-      typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
+      typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
-  typedef WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
+  typedef WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
                                                                   typename GridView::ctype, GridView::dimension, Field,
                                                                   1>,
                                        GridView, Range, Source, Field>
@@ -109,8 +109,7 @@ L2LocalizableProduct(...args);
  * \sa L2LocalizableProduct
  */
 template <class GridViewType, class RangeType, class SourceType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<RangeType>::value
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<RangeType>::value
                             && Stuff::is_localizable_function<SourceType>::value,
                         std::unique_ptr<L2LocalizableProduct<GridViewType, RangeType, SourceType>>>::type
 make_l2_localizable_product(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
@@ -125,22 +124,21 @@ make_l2_localizable_product(const GridViewType& grid_view, const RangeType& rang
 // L2MatrixOperator //
 // //////////////// //
 
-template <class RangeSpace,
-          class Matrix   = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+template <class RangeSpace, class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class L2MatrixOperator
     : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
-          typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
-      public WeightedL2MatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
+          typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
+      public WeightedL2MatrixOperator<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
                                                                  typename GridView::ctype, GridView::dimension, Field,
                                                                  1>,
                                       RangeSpace, Matrix, GridView, SourceSpace, Field>
 {
   typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
-      typename Stuff::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
+      typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
-  typedef WeightedL2MatrixOperator<Stuff::Functions::Constant<typename Stuff::Grid::Entity<GridView>::type,
+  typedef WeightedL2MatrixOperator<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
                                                               typename GridView::ctype, GridView::dimension, Field, 1>,
                                    RangeSpace, Matrix, GridView, SourceSpace, Field>
       BaseType;
@@ -227,7 +225,7 @@ auto op = make_l2_matrix_operator< MatrixType >(space, grid_view);
  */
 template <class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
-                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_l2_matrix_operator(const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
 {
@@ -244,7 +242,7 @@ auto op = make_l2_matrix_operator< MatrixType >(range_space, source_space, grid_
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::
     type
     make_l2_matrix_operator(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
@@ -273,7 +271,7 @@ make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const size_t
  */
 template <class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
-                            && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
 make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
                         const size_t over_integrate = 0)
@@ -287,7 +285,7 @@ make_l2_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridVi
  */
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value && Stuff::Grid::is_grid_layer<GridViewType>::value,
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2MatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::
     type
     make_l2_matrix_operator(MatrixType& matrix, const RangeSpaceType& range_space, const SourceSpaceType& source_space,
@@ -341,7 +339,7 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::sparse_matrix_type>::MatrixType
+    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::Traits::sparse_matrix_type>::MatrixType
         MatrixType;
     auto op = make_l2_matrix_operator<MatrixType>(source.space(), range.space(), grid_view_, over_integrate_);
     op->apply(source, range);
@@ -386,8 +384,7 @@ private:
 // //////////////// //
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
-                        std::unique_ptr<L2Operator<GridViewType>>>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, std::unique_ptr<L2Operator<GridViewType>>>::type
 make_l2_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2Operator<GridViewType>>(grid_view, over_integrate);

@@ -9,8 +9,8 @@
 #define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_HH
 
 #include <dune/xt/common/memory.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/intersection.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/intersection.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/local/integrands/elliptic.hh>
@@ -52,13 +52,13 @@ public:
                                                && (std::is_same<Diffusion, DiffusionFactorType>::value)
                                                && sizeof(Diffusion)>::type,
             class... Args>
-  explicit EllipticIpdgDirichletVectorFunctional(
-      const Stuff::Grid::BoundaryInfoInterface<IntersectionType>& boundary_info, const DirichletType& dirichlet,
-      const Diffusion& diffusion, Args&&... args)
+  explicit EllipticIpdgDirichletVectorFunctional(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
+                                                 const DirichletType& dirichlet, const Diffusion& diffusion,
+                                                 Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion)
   {
-    this->add(local_functional_, new Stuff::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename Diffusion,
@@ -66,13 +66,14 @@ public:
                                                && (std::is_same<Diffusion, DiffusionFactorType>::value)
                                                && sizeof(Diffusion)>::type,
             class... Args>
-  explicit EllipticIpdgDirichletVectorFunctional(
-      const size_t over_integrate, const Stuff::Grid::BoundaryInfoInterface<IntersectionType>& boundary_info,
-      const DirichletType& dirichlet, const Diffusion& diffusion, Args&&... args)
+  explicit EllipticIpdgDirichletVectorFunctional(const size_t over_integrate,
+                                                 const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
+                                                 const DirichletType& dirichlet, const Diffusion& diffusion,
+                                                 Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion)
   {
-    this->add(local_functional_, new Stuff::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   /// \}
@@ -84,13 +85,14 @@ public:
                                                && (std::is_same<DiffusionFactor, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactor)>::type,
             class... Args>
-  explicit EllipticIpdgDirichletVectorFunctional(
-      const Stuff::Grid::BoundaryInfoInterface<IntersectionType>& boundary_info, const DirichletType& dirichlet,
-      const DiffusionFactor& diffusion_factor, const DiffusionTensor& diffusion_tensor, Args&&... args)
+  explicit EllipticIpdgDirichletVectorFunctional(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
+                                                 const DirichletType& dirichlet,
+                                                 const DiffusionFactor& diffusion_factor,
+                                                 const DiffusionTensor& diffusion_tensor, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_functional_, new Stuff::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename DiffusionFactor, typename DiffusionTensor,
@@ -98,14 +100,15 @@ public:
                                                && (std::is_same<DiffusionFactor, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactor)>::type,
             class... Args>
-  explicit EllipticIpdgDirichletVectorFunctional(
-      const size_t over_integrate, const Stuff::Grid::BoundaryInfoInterface<IntersectionType>& boundary_info,
-      const DirichletType& dirichlet, const DiffusionFactor& diffusion_factor, const DiffusionTensor& diffusion_tensor,
-      Args&&... args)
+  explicit EllipticIpdgDirichletVectorFunctional(const size_t over_integrate,
+                                                 const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
+                                                 const DirichletType& dirichlet,
+                                                 const DiffusionFactor& diffusion_factor,
+                                                 const DiffusionTensor& diffusion_tensor, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_functional_, new Stuff::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
   /// \}
 
@@ -139,8 +142,8 @@ typename std::enable_if<XT::LA::is_vector<VectorType>::value && Stuff::is_locali
 make_elliptic_ipdg_dirichlet_vector_functional(
     const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
-    const SpaceType& space, const size_t over_integrate = 0)
+    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info, const SpaceType& space,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
                                                                              DiffusionFactorType,
@@ -165,7 +168,7 @@ typename std::
     make_elliptic_ipdg_dirichlet_vector_functional(
         const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
         const DiffusionTensorType& diffusion_tensor,
-        const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
+        const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
         const SpaceType& space, const size_t over_integrate = 0)
 {
   return make_elliptic_ipdg_dirichlet_vector_functional<VectorType, LocalEllipticIpdgIntegrands::default_method>(
@@ -202,8 +205,8 @@ typename std::enable_if<Stuff::is_localizable_function<DirichletType>::value
 make_elliptic_ipdg_dirichlet_vector_functional(
     const DirichletType& dirichlet, const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const Stuff::Grid::BoundaryInfoInterface<typename SpaceType::GridViewType::Intersection>& boundary_info,
-    VectorType& vector, const SpaceType& space, const size_t over_integrate = 0)
+    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info, VectorType& vector,
+    const SpaceType& space, const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
                                                                              DiffusionFactorType,

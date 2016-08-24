@@ -11,7 +11,7 @@
 #define DUNE_GDT_TEST_OPERATORS_DARCY_HH
 
 #include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
@@ -43,7 +43,7 @@ struct DarcyOperatorTest : public ::testing::Test
 
   typedef typename RangeSpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
+  typedef XT::Grid::GridProvider<GridType> GridProviderType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::ctype DomainFieldType;
   static const size_t dimDomain = SourceSpaceType::dimDomain;
@@ -53,7 +53,7 @@ struct DarcyOperatorTest : public ::testing::Test
 
   void produces_correct_results() const
   {
-    GridProviderType grid_provider(0.0, 1.0, 4);
+    GridProviderType grid_provider(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 4));
     grid_provider.global_refine(1);
     auto& grid = grid_provider.grid();
 
@@ -92,7 +92,7 @@ struct DarcyOperatorTest : public ::testing::Test
       else if (type == "h1")
         return 3.12e-15;
       else
-        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
+        DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, type);
     } else if (std::is_base_of<DunePdelabRtSpaceWrapper<GPV, 0, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
       typedef FvSpace<GV, RangeFieldType, dimDomain> FvSpaceType;
       const FvSpaceType fv_space(grid_view);
@@ -104,9 +104,9 @@ struct DarcyOperatorTest : public ::testing::Test
       } else if (type == "h1") {
         return make_laplace_operator(grid_view, 2)->induced_norm(desired_output - fv_desired_output);
       } else
-        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
+        DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, type);
     } else
-      DUNE_THROW(Dune::Stuff::Exceptions::internal_error, type);
+      DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, type);
   } // ... expected_result_(...)
 }; // struct DarcyOperatorTest
 

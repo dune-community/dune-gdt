@@ -93,14 +93,14 @@ namespace internal {
 template <class F>
 struct is_problem_helper
 {
-  DSC_has_typedef_initialize_once(EntityType) DSC_has_typedef_initialize_once(DomainFieldType)
-      DSC_has_typedef_initialize_once(RangeFieldType) DSC_has_static_member_initialize_once(dimDomain)
-          DSC_has_static_member_initialize_once(dimRange)
+  DXTC_has_typedef_initialize_once(EntityType) DXTC_has_typedef_initialize_once(DomainFieldType)
+      DXTC_has_typedef_initialize_once(RangeFieldType) DXTC_has_static_member_initialize_once(dimDomain)
+          DXTC_has_static_member_initialize_once(dimRange)
 
               static const
-      bool is_candidate = DSC_has_typedef(EntityType)<F>::value && DSC_has_typedef(DomainFieldType)<F>::value
-                          && DSC_has_typedef(RangeFieldType)<F>::value && DSC_has_static_member(dimDomain)<F>::value
-                          && DSC_has_static_member(dimRange)<F>::value;
+      bool is_candidate = DXTC_has_typedef(EntityType)<F>::value && DXTC_has_typedef(DomainFieldType)<F>::value
+                          && DXTC_has_typedef(RangeFieldType)<F>::value && DXTC_has_static_member(dimDomain)<F>::value
+                          && DXTC_has_static_member(dimRange)<F>::value;
 }; // class is_problem_helper
 
 

@@ -169,7 +169,7 @@ private:
     // solve
     try {
       XT::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
-    } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+    } catch (XT::Common::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
                      << "This was the original error: "
@@ -277,7 +277,7 @@ private:
           assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... redirect_apply(...)

@@ -20,7 +20,7 @@
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/print.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/stuff/grid/walker.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
@@ -103,7 +103,7 @@ private:
       const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis          = source.space().base_function_set(entity);
       if (basis.size() != num_vertices)
-        DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis.size() = " << basis.size());
+        DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
@@ -113,7 +113,7 @@ private:
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         if (basis_values.size() != num_vertices)
-          DUNE_THROW(Dune::Stuff::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+          DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones            = 0;
         size_t zeros           = 0;
         size_t failures        = 0;
@@ -133,7 +133,7 @@ private:
              << ", num_vertices = " << num_vertices << ", entity " << grid_view_.indexSet().index(entity) << ", vertex "
              << local_vertex_id << ": [ " << vertex_center << "], ";
           XT::Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW(Dune::Stuff::Exceptions::internal_error, ss.str());
+          DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_index);

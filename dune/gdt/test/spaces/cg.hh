@@ -17,7 +17,7 @@
 
 #include <dune/xt/common/print.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/stuff/grid/walker.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
@@ -38,7 +38,6 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   static const size_t dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -71,7 +70,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
     typedef typename SpaceType::RangeFieldType RangeFieldType;
-    Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
+    Dune::XT::Grid::AllDirichletBoundaryInfo<IntersectionType> boundary_info;
     std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
     Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
         boundary_info, this->space_.mapper().size(), true);
@@ -97,7 +96,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     }
 
     // walk the grid again to find all DoF ids
-    auto functor = [&](const typename GridProviderType::EntityType& entity) {
+    auto functor = [&](const typename Dune::XT::Grid::Entity<GridViewType>::Type& entity) {
       const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis          = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
@@ -133,7 +132,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
         vertex_to_indices_map[convert_vector(vertex_center)].insert(global_DoF_index);
       }
     };
-    DSG::Walker<GridViewType> walker(this->space_.grid_view());
+    Dune::XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(functor);
     walker.walk();
     // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive

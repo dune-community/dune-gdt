@@ -43,20 +43,20 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                                        conforming>,
                                                                                                double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                         conforming>,
                                                                                                 double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
                                                                                                             simplex,
                                                                                                             conforming>,
                                                                                                     double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 
 #endif // HAVE_EIGEN
@@ -67,20 +67,20 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                                        conforming>,
                                                                                                double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                         conforming>,
                                                                                                 double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
                                                                                                             simplex,
                                                                                                             conforming>,
                                                                                                     double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                XT::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 
 #endif // HAVE_DUNE_ISTL

@@ -167,8 +167,7 @@ class LocalFaceIntegrandInterface
  *  \brief  Interface for unary codim 1 evaluations.
  */
 template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 1>
-    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
+class LocalFaceIntegrandInterface<Traits, 1> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -226,8 +225,7 @@ public:
  *  \brief  Interface for binary codim 1 evaluations.
  */
 template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 2>
-    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
+class LocalFaceIntegrandInterface<Traits, 2> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -288,8 +286,7 @@ public:
  *  \brief  Interface for quaternary codim 1 evaluations.
  */
 template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 4>
-    : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
+class LocalFaceIntegrandInterface<Traits, 4> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

@@ -81,8 +81,8 @@ public:
   static const int polOrder    = internal::maxPolOrder<SpaceImps...>::polOrder;
   static const bool continuous = internal::allContinuous<SpaceImps...>::value;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
-  static const bool needs_grid_view                       = true;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const bool needs_grid_view              = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class ProductSpaceTraits

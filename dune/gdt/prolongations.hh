@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_PROLONGATIONS_HH
 #define DUNE_GDT_PROLONGATIONS_HH
 
-#include <dune/stuff/grid/layers.hh>
+#include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -25,8 +25,7 @@ namespace GDT {
 
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && is_cg_space<RangeSpaceType>::value,
-                        void>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && is_cg_space<RangeSpaceType>::value, void>::type
 prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t /*over_integrate*/ = 0)
 {
@@ -35,8 +34,7 @@ prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceTy
 
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value && !is_cg_space<RangeSpaceType>::value,
-                        void>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && !is_cg_space<RangeSpaceType>::value, void>::type
 prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
 {

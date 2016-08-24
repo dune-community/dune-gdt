@@ -12,7 +12,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/stuff/functions/constant.hh>
 #include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/provider/eoc.hh>
+#include <dune/xt/grid/gridprovider/eoc.hh>
 
 namespace Dune {
 namespace GDT {
@@ -24,9 +24,9 @@ namespace Test {
  *         defines the type of the solution of the problem.
  */
 template <class GridImp, class ProblemImp>
-class StationaryTestCase : public Stuff::Grid::Providers::EOC<GridImp>
+class StationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
 {
-  typedef Stuff::Grid::Providers::EOC<GridImp> EocBaseType;
+  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
 
 public:
   typedef ProblemImp ProblemType;
@@ -72,10 +72,10 @@ public:
   virtual const FunctionType& exact_solution() const
   {
     if (provides_exact_solution())
-      DUNE_THROW(Stuff::Exceptions::you_have_to_implement_this,
+      DUNE_THROW(XT::Common::Exceptions::you_have_to_implement_this,
                  "If provides_exact_solution() is true, exact_solution() has to be implemented!");
     else
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call exact_solution() if provides_exact_solution() is false!");
     return zero_;
   }

@@ -37,8 +37,7 @@ public:
 private:
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
-  static_assert(XT::LA::is_vector<VectorType>::value,
-                "VectorType has to be derived from XT::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<VectorType>::value, "VectorType has to be derived from XT::LA::VectorInterface!");
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -67,7 +66,7 @@ public:
     CHECK_CRTP(this->as_imp().solver_types());
     auto types = this->as_imp().solver_types();
     if (types.empty())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Reported solver_types() of the derived class (see below) must not be empty!\n\n  "
                      << XT::Common::Typename<derived_type>::value());
     return types;
@@ -78,7 +77,7 @@ public:
     CHECK_CRTP(this->as_imp().solver_options(type));
     auto opts = this->as_imp().solver_options(type);
     if (opts.empty())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Reported solver_options() of the derived class (see below) for type '"
                      << type
                      << "'must not be empty!\n\n  "
@@ -183,7 +182,7 @@ public:
   const VectorType& dirichlet_shift() const
   {
     if (!has_dirichlet_shift())
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call dirichlet_shift() if has_dirichlet_shift() is false!");
     CHECK_CRTP(this->as_imp().dirichlet_shift());
     return this->as_imp().dirichlet_shift();
@@ -273,9 +272,9 @@ namespace internal {
 template <class D>
 struct is_stationary_discretization_helper
 {
-  DSC_has_typedef_initialize_once(Traits)
+  DXTC_has_typedef_initialize_once(Traits)
 
-      static const bool is_candidate = DSC_has_typedef(Traits)<D>::value;
+      static const bool is_candidate = DXTC_has_typedef(Traits)<D>::value;
 };
 
 
