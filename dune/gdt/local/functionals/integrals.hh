@@ -87,7 +87,8 @@ public:
   LocalVolumeIntegralFunctional(ThisType&& source)     = default;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base, Dune::DynamicVector<R>& ret) const
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
+             Dune::DynamicVector<R>& ret) const
   {
     const auto& entity         = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
@@ -148,8 +149,8 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base, const IntersectionType& intersection,
-             Dune::DynamicVector<R>& ret) const
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
+             const IntersectionType& intersection, Dune::DynamicVector<R>& ret) const
   {
     const auto& entity         = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);

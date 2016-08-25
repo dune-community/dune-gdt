@@ -133,9 +133,11 @@ private:
 
 template <class VectorType, LocalEllipticIpdgIntegrands::Method method, class DirichletType, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType>
-typename std::enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<DirichletType>::value
+typename std::enable_if<XT::LA::is_vector<VectorType>::value
+                            && XT::Functions::is_localizable_function<DirichletType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
+                            && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionFactorType,
                                                                               DiffusionTensorType, SpaceType, method,
                                                                               VectorType>>>::type

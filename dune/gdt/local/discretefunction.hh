@@ -29,8 +29,8 @@ namespace GDT {
 template <class SpaceImp, class VectorImp>
 class ConstLocalDiscreteFunction
     : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                           SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                           SpaceImp::dimRangeCols>
+                                                   SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                   SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
   static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange,
                                                SpaceImp::dimRangeCols>,
@@ -43,8 +43,8 @@ class ConstLocalDiscreteFunction
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
   typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                        SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                        SpaceImp::dimRangeCols>
+                                                SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                SpaceImp::dimRange, SpaceImp::dimRangeCols>
       BaseType;
   typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 

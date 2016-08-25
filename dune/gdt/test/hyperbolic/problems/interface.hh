@@ -51,15 +51,16 @@ public:
   typedef Dune::GDT::RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                                 dimRangeCols>
       RHSType;
-  typedef Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                    dimRangeCols>
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                                                            dimRange, dimRangeCols>
       InitialValueType;
   typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType, DomainFieldType, dimDomain,
-                                                                   RangeFieldType, dimRange, dimRangeCols, double>
+                                                                        RangeFieldType, dimRange, dimRangeCols, double>
       BoundaryValueType;
   typedef Dune::XT::Common::Configuration ConfigType;
   typedef Dune::XT::Functions::TimeDependentFunctionInterface<
-      typename Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
+      typename Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                                                                 dimRange, 1>>
       SolutionType;
 
   virtual ~ProblemInterface()

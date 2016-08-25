@@ -89,9 +89,9 @@ public:
    * \sa    redirect_apply
    */
   template <class S, class V, size_t r, size_t rC>
-  void
-  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
-        DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r,
+                                                               rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     redirect_apply(range.space(), source, range);
   }
@@ -122,10 +122,10 @@ private:
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
   template <class T, class S, class V>
-  void redirect_apply(
-      const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
-      DiscreteFunction<S, V>& range) const
+  void redirect_apply(const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
+                      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain,
+                                                                        FieldType, 1, 1>& source,
+                      DiscreteFunction<S, V>& range) const
   {
     typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(

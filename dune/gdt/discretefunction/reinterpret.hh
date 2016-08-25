@@ -18,10 +18,12 @@ namespace GDT {
 
 template <class DiscreteFunctionType>
 class ReinterpretDiscreteFunction
-    : public XT::Functions::ReinterpretFunction<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
+    : public XT::Functions::ReinterpretFunction<DiscreteFunctionType,
+                                                typename DiscreteFunctionType::SpaceType::GridViewType>
 {
   static_assert(is_const_discrete_function<DiscreteFunctionType>::value, "");
-  typedef XT::Functions::ReinterpretFunction<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
+  typedef XT::Functions::ReinterpretFunction<DiscreteFunctionType,
+                                             typename DiscreteFunctionType::SpaceType::GridViewType>
       BaseType;
 
 public:

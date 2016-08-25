@@ -127,9 +127,9 @@ public:
   RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
                      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_entity,
+                                                                 dimRange, 1>& local_source_entity,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_neighbor,
+                                                                 dimRange, 1>& local_source_neighbor,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
@@ -277,8 +277,8 @@ public:
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange  = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
-                                         RangeFieldType, dimRange, 1>
+  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType,
+                                                 dimRange, RangeFieldType, dimRange, 1>
       AffineFunctionType;
 
   explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear,
@@ -299,9 +299,9 @@ public:
   RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
                      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_entity,
+                                                                 dimRange, 1>& local_source_entity,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_neighbor,
+                                                                 dimRange, 1>& local_source_neighbor,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
@@ -469,7 +469,7 @@ public:
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_entity,
+                                                                 dimRange, 1>& local_source_entity,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
@@ -624,8 +624,8 @@ public:
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange  = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType, dimRange,
-                                         RangeFieldType, dimRange, 1>
+  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType,
+                                                 dimRange, RangeFieldType, dimRange, 1>
       AffineFunctionType;
   explicit LocalGodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueFunctionType& boundary_values,
@@ -646,7 +646,7 @@ public:
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
                      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                         dimRange, 1>& local_source_entity,
+                                                                 dimRange, 1>& local_source_entity,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {

@@ -57,9 +57,10 @@ public:
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
   typedef typename RangeType::VectorType VectorType;
-  typedef typename XT::LA::Container<typename RangeType::RangeFieldType, VectorType::Traits::sparse_matrix_type>::MatrixType
+  typedef
+      typename XT::LA::Container<typename RangeType::RangeFieldType, VectorType::Traits::sparse_matrix_type>::MatrixType
 
-      MatrixType;
+          MatrixType;
 
 private:
   typedef typename RangeType::SpaceType SpaceType;
@@ -203,7 +204,8 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<S, V>> op(

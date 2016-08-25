@@ -74,8 +74,9 @@ public:
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                            && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
@@ -130,7 +131,8 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     redirect<S::continuous>::apply(grid_view_, source, range, over_integrate_);
   }
@@ -196,8 +198,9 @@ make_l2_projection_operator(const GridViewType& grid_view, const size_t over_int
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                            && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0)

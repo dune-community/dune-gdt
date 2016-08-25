@@ -20,7 +20,8 @@ namespace Test {
 
 
 /**
- * \tparam ProblemType has to provide a type FunctionType (derived from XT::Functions::LocalizableFunctionInterface) which
+ * \tparam ProblemType has to provide a type FunctionType (derived from XT::Functions::LocalizableFunctionInterface)
+ * which
  *         defines the type of the solution of the problem.
  */
 template <class GridImp, class ProblemImp>
@@ -36,8 +37,8 @@ private:
   static_assert(XT::Functions::is_localizable_function<FunctionType>::value,
                 "ProblemImp::FunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   typedef XT::Functions::ConstantFunction<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
-                                     FunctionType::dimDomain, typename FunctionType::RangeFieldType,
-                                     FunctionType::dimRange>
+                                          FunctionType::dimDomain, typename FunctionType::RangeFieldType,
+                                          FunctionType::dimRange>
       ConstantFunctionType;
 
 public:

@@ -127,7 +127,8 @@ public:
   size_t
   order(const LocalfunctionTupleType& localFuncs,
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-        const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase) const
+        const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase)
+      const
   {
     const auto local_diffusion_factor     = std::get<0>(localFuncs);
     const auto local_diffusion_factor_hat = std::get<1>(localFuncs);
@@ -143,15 +144,18 @@ public:
 
   template <class R, size_t rLD, size_t rCLD, size_t rLDT, size_t rCLDT, size_t rLDF, size_t rCLDF, size_t rT,
             size_t rCT, size_t rA, size_t rCA>
-  size_t order(
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>& local_diffusion_factor,
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>&
-          local_diffusion_factor_hat,
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT, rCLDT>&
-          local_diffusion_tensor,
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>& local_diffusive_flux,
-      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base) const
+  size_t
+  order(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>&
+            local_diffusion_factor,
+        const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>&
+            local_diffusion_factor_hat,
+        const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDT, rCLDT>&
+            local_diffusion_tensor,
+        const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLDF, rCLDF>&
+            local_diffusive_flux,
+        const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+        const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base)
+      const
   {
     // TODO: there is no way to guess the order of (local_diffusion_factor * local_diffusion_tensor)^-1,
     //       so we take local_diffusion_factor.order() + local_diffusion_tensor.order()
@@ -165,10 +169,11 @@ public:
   } // ... order(...)
 
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(const LocalfunctionTupleType& localFuncs,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
-                const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
+  void evaluate(
+      const LocalfunctionTupleType& localFuncs,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion_factor     = std::get<0>(localFuncs);
     const auto local_diffusion_factor_hat = std::get<1>(localFuncs);
@@ -187,10 +192,12 @@ public:
   template <class R>
   void evaluate(
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor,
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor_hat,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>&
+          local_diffusion_factor_hat,
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain, dimDomain>&
           local_diffusion_tensor,
-      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain>& local_diffusive_flux,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, dimDomain>&
+          local_diffusive_flux,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
       const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const

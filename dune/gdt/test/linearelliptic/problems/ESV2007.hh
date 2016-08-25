@@ -63,11 +63,11 @@ public:
   ESV2007Problem(const size_t integration_order           = default_integration_order,
                  const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
-    : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
-               new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
-                                              "diffusion_tensor"),
-               new ForceType(integration_order, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
-               new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
+    : BaseType(
+          new ScalarConstantFunctionType(1, "diffusion_factor"),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
+          new ForceType(integration_order, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
+          new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
   {
   }
 }; // class ESV2007Problem< ..., 1 >

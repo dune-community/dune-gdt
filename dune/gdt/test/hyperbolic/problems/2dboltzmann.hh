@@ -45,8 +45,8 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange,
-                                                  dimDomain>
+  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp,
+                                                       dimRange, dimDomain>
       FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
                                                                 dimDomain, RangeFieldImp, dimRange, 1>
@@ -56,8 +56,8 @@ public:
   using typename BaseType::DefaultInitialValueType;
   typedef typename XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
       RHSAffineFunctionType;
-  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
-                                                       RangeFieldImp, dimRange, 1>
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, EntityImp, DomainFieldImp,
+                                                               dimDomain, RangeFieldImp, dimRange, 1>
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp,
                                                                  dimDomain, RangeFieldImp, dimRange, 1>

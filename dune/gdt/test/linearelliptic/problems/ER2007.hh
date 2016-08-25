@@ -65,8 +65,7 @@ public:
                 const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(
           new ScalarConstantFunctionType(1, "diffusion_factor"),
-          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
-                                         "diffusion_tensor"),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
           new ExpressionFunctionType("x", "64.0*pi*pi*(cos(8.0*pi*x[0])+cos(8.0*pi*x[1]))", integration_order, "force"),
           new ExpressionFunctionType("x", "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])", integration_order, "dirichlet"),
           new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)

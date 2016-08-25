@@ -170,7 +170,8 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2LocalProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<S, V>> op(

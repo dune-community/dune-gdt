@@ -42,7 +42,8 @@ struct OperatorBaseTraits
       ScalarFunctionType;
   typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+  typedef Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
+                                                dimDomain>
       TensorFunctionType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;

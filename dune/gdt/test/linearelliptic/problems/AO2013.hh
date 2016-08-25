@@ -41,7 +41,8 @@ class AO2013Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Dune::XT::Functions::CheckerboardFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> CheckerboardFunctionType;
+  typedef Dune::XT::Functions::CheckerboardFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+      CheckerboardFunctionType;
 
 public:
   static XT::Common::Configuration default_grid_cfg()
@@ -59,15 +60,15 @@ public:
 
   AO2013Problem(const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
-    : BaseType(new CheckerboardFunctionType({0.0, 0.0}, {1.0, 1.0}, {6, 6},
-                                            {1.0, 1.0,  1.0, 0.1, 0.1, 0.1, 1.0, 0.01, 1.0, 0.1, 0.1, 0.1,
-                                             1.0, 1.0,  1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1,
-                                             1.0, 0.01, 1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1},
-                                            "diffusion_factor"),
-               new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
-                                              "diffusion_tensor"),
-               new ScalarConstantFunctionType(1, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
-               new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
+    : BaseType(
+          new CheckerboardFunctionType({0.0, 0.0}, {1.0, 1.0}, {6, 6},
+                                       {1.0, 1.0,  1.0, 0.1, 0.1, 0.1, 1.0, 0.01, 1.0, 0.1, 0.1, 0.1,
+                                        1.0, 1.0,  1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1,
+                                        1.0, 0.01, 1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1},
+                                       "diffusion_factor"),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
+          new ScalarConstantFunctionType(1, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
+          new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
   {
   }
 }; // class AO2013Problem< ..., 1 >

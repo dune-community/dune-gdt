@@ -125,12 +125,14 @@ public:
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
   typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
-  typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
   typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
-  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
@@ -162,12 +164,14 @@ public:
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
   typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
 
-  typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
   typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
-  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::JacobianRangeType
@@ -237,7 +241,8 @@ public:
 
   virtual ~RhsEvaluationFluxInterface() = default;
 
-  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;

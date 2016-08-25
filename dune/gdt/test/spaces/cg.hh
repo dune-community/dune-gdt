@@ -61,7 +61,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 
   void fulfills_continuous_interface()
   {
-    
+
     matches_signature(this->space_);
     const auto entity_ptr                   = this->space_.grid_view().template begin<0>();
     const auto& entity                      = *entity_ptr;

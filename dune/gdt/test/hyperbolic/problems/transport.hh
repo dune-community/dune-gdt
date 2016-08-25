@@ -28,7 +28,8 @@ template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
 {
-  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1> BaseType;
+  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
+      BaseType;
   typedef PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim> ThisType;
 
 public:
@@ -98,12 +99,12 @@ private:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
           size_t rangeDimCols>
-class InitialValues
-    : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
+class InitialValues : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                                                    rangeDim, rangeDimCols>
 {
-  typedef
-      typename XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
-          BaseType;
+  typedef typename XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                                          rangeDimCols>
+      BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -190,8 +191,9 @@ public:
   virtual std::unique_ptr<TimeIndependentFunctionType> evaluate_at_time(const double t) const
   {
     DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
-    typedef typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
-        CompositionType;
+    typedef
+        typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
+            CompositionType;
     return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
   }
 

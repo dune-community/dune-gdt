@@ -321,7 +321,7 @@ private:
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
   typedef typename Dune::XT::Functions::ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain,
-                                                    RangeFieldType, 1, 1>
+                                                         RangeFieldType, 1, 1>
       ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRHSOperator<RHSType> RHSOperatorType;
   typedef typename std::

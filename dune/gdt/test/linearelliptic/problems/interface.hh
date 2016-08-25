@@ -37,7 +37,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
-                                              dimDomain>
+                                                      dimDomain>
       DiffusionTensorType;
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
@@ -81,7 +81,8 @@ private:
   template <class GridViewType, class F, class VTKWriterType>
   void add_function_visualization(const GridViewType& /*grid_view*/, const F& function, VTKWriterType& vtk_writer) const
   {
-    typedef XT::Functions::VisualizationAdapterFunction<GridViewType, F::dimRange, F::dimRangeCols> VisualizationAdapter;
+    typedef XT::Functions::VisualizationAdapterFunction<GridViewType, F::dimRange, F::dimRangeCols>
+        VisualizationAdapter;
     vtk_writer.addVertexData(std::make_shared<VisualizationAdapter>(function));
   }
 }; // ProblemInterface

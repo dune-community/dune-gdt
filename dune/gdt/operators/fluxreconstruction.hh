@@ -63,8 +63,9 @@ public:
   }
 
   template <class GV, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+  void
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
@@ -247,8 +248,9 @@ public:
   }
 
   template <class GV, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+  void
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();

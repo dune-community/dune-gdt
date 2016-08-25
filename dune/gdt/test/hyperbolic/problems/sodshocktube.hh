@@ -170,10 +170,12 @@ private:
 template <class EntityType, class DomainFieldType, class RangeFieldType>
 class ShocktubeSolution
     : public XT::Functions::TimeDependentFunctionInterface<
-          typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+          typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>,
+          double>
 {
   typedef typename XT::Functions::TimeDependentFunctionInterface<
-      typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+      typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>,
+      double>
       BaseType;
   using typename BaseType::TimeIndependentFunctionType;
   typedef ShocktubeSolutionAtSpecificTime<EntityType, DomainFieldType, RangeFieldType> SolutionAtSpecificTimeType;

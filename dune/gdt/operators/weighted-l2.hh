@@ -131,7 +131,8 @@ auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space);
  */
 template <class MatrixType, class WeightFunctionType, class SpaceType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<WeightFunctionType>::value && is_space<SpaceType>::value,
+                            && XT::Functions::is_localizable_function<WeightFunctionType>::value
+                            && is_space<SpaceType>::value,
                         std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight, const SpaceType& space,
                                  const size_t over_integrate = 0)
@@ -286,8 +287,8 @@ public:
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range) const
   {
-    typedef typename XT::LA::Container<typename VectorType::ScalarType, VectorType::Traits::sparse_matrix_type>::MatrixType
-        MatrixType;
+    typedef typename XT::LA::Container<typename VectorType::ScalarType,
+                                       VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_weighted_l2_matrix_operator<MatrixType>(
         weight_, source.space(), range.space(), grid_view_, over_integrate_);
     op->apply(source, range);
