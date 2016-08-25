@@ -10,7 +10,7 @@
 
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/walker/functors.hh>
-#include <dune/stuff/playground/functions/ESV2007.hh>
+#include <dune/xt/functions/ESV2007.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -181,7 +181,7 @@ class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridViewType
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
   typedef typename DiffusiveFluxType::DivergenceType DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
-  typedef typename Stuff::Functions::ESV2007::Cutoff<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
+  typedef typename XT::Functions::ESV2007::CutoffFunction<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
   typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>> LocalOperatorType;
 
 public:

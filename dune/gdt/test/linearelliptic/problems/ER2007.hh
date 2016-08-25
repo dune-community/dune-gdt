@@ -13,8 +13,8 @@
 #endif
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/expression.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/expression.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -39,9 +39,9 @@ class ER2007Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Stuff::Functions::Expression<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
 
 public:
   static const size_t default_integration_order = 3;
@@ -65,7 +65,7 @@ public:
                 const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(
           new ScalarConstantFunctionType(1, "diffusion_factor"),
-          new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
                                          "diffusion_tensor"),
           new ExpressionFunctionType("x", "64.0*pi*pi*(cos(8.0*pi*x[0])+cos(8.0*pi*x[1]))", integration_order, "force"),
           new ExpressionFunctionType("x", "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])", integration_order, "dirichlet"),
@@ -83,7 +83,7 @@ class ER2007TestCase
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef Stuff::Functions::Expression<E, D, d, R, r> ExactSolutionType;
+  typedef XT::Functions::ExpressionFunction<E, D, d, R, r> ExactSolutionType;
 
 public:
   typedef LinearElliptic::ER2007Problem<E, D, d, R, r> ProblemType;

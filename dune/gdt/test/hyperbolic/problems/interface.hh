@@ -15,9 +15,9 @@
 
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/exceptions.hh>
-#include <dune/stuff/functions/default.hh>
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/default.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
 
@@ -51,15 +51,15 @@ public:
   typedef Dune::GDT::RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                                 dimRangeCols>
       RHSType;
-  typedef Dune::Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
                                                     dimRangeCols>
       InitialValueType;
-  typedef typename Dune::Stuff::Functions::TimeDependentExpression<EntityType, DomainFieldType, dimDomain,
+  typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType, DomainFieldType, dimDomain,
                                                                    RangeFieldType, dimRange, dimRangeCols, double>
       BoundaryValueType;
   typedef Dune::XT::Common::Configuration ConfigType;
-  typedef DS::TimeDependentFunctionInterface<
-      typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
+  typedef Dune::XT::Functions::TimeDependentFunctionInterface<
+      typename Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
       SolutionType;
 
   virtual ~ProblemInterface()

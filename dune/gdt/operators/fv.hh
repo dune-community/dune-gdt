@@ -12,7 +12,6 @@
 #include <memory>
 #include <type_traits>
 
-#include <dune/stuff/aliases.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
@@ -80,8 +79,8 @@ template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class Localiz
           SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
 {
-  static_assert(Stuff::is_localizable_function<LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;

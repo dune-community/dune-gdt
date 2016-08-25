@@ -9,7 +9,7 @@
 #define DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 
 #include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/stuff/functions/expression.hh>
+#include <dune/xt/functions/expression.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
@@ -50,7 +50,7 @@ struct ProlongationOperatorsBase
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef typename FineSpaceType::RangeFieldType RangeFieldType;
   static const size_t dimRange = FineSpaceType::dimRange;
-  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
   typedef typename Dune::XT::LA::Container<RangeFieldType>::VectorType VectorType;
   typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;

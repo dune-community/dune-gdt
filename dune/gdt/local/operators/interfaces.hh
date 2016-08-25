@@ -15,7 +15,7 @@
 
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 
@@ -67,7 +67,7 @@ public:
 
   /**
    * \brief Applies the local operator.
-   * \param source Should be a Stuff::LocalizableFunctionInterface or a ConstDiscreteFunction.
+   * \param source Should be a XT::Functions::LocalizableFunctionInterface or a ConstDiscreteFunction.
    */
   template <class SourceType, class RangeSpaceType, class VectorType>
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
@@ -115,8 +115,8 @@ public:
 
   /**
    *  \brief Applies the local operator as a two-form.
-   *  \tparam T       Traits of the test Stuff::LocalfunctionSetInterface implementation
-   *  \tparam A       Traits of the ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam T       Traits of the test XT::Functions::LocalfunctionSetInterface implementation
+   *  \tparam A       Traits of the ansatz XT::Functions::LocalfunctionSetInterface implementation
    *  \tparam D       DomainFieldType
    *  \tparam d       dimDomain
    *  \tparam R       RangeFieldType
@@ -124,8 +124,8 @@ public:
    *  \tparam rC{T,a} dimRangeCols of the {test_base,ansatz_base}
    */
   template <class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-              const Stuff::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
+              const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
               Dune::DynamicMatrix<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, ret));
@@ -135,8 +135,8 @@ public:
    * \sa apply2
    */
   template <class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  Dune::DynamicMatrix<R> apply2(const Stuff::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-                                const Stuff::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base) const
+  Dune::DynamicMatrix<R> apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
+                                const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base) const
   {
     Dune::DynamicMatrix<R> ret(test_base.size(), ansatz_base.size(), 0.);
     apply2(test_base, ansatz_base, ret);
@@ -154,10 +154,10 @@ public:
 
   /**
    *  \brief Applies the local operator associated with inner faces as a two-form.
-   *  \tparam TE      Traits of the entity test Stuff::LocalfunctionSetInterface implementation
-   *  \tparam AE      Traits of the entity ansatz Stuff::LocalfunctionSetInterface implementation
-   *  \tparam TN      Traits of the neighbor test Stuff::LocalfunctionSetInterface implementation
-   *  \tparam AN      Traits of the neighbor ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam TE      Traits of the entity test XT::Functions::LocalfunctionSetInterface implementation
+   *  \tparam AE      Traits of the entity ansatz XT::Functions::LocalfunctionSetInterface implementation
+   *  \tparam TN      Traits of the neighbor test XT::Functions::LocalfunctionSetInterface implementation
+   *  \tparam AN      Traits of the neighbor ansatz XT::Functions::LocalfunctionSetInterface implementation
    *  \tparam IntersectionType
    *  \tparam D       DomainFieldType
    *  \tparam d       dimDomain
@@ -167,10 +167,10 @@ public:
    */
   template <class TE, class AE, class TN, class AN, class IntersectionType, class D, size_t d, class R, size_t rT,
             size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<TE, D, d, R, rT, rCT>& test_base_en,
-              const Stuff::LocalfunctionSetInterface<AE, D, d, R, rA, rCA>& ansatz_base_en,
-              const Stuff::LocalfunctionSetInterface<TN, D, d, R, rT, rCT>& test_base_ne,
-              const Stuff::LocalfunctionSetInterface<AN, D, d, R, rA, rCA>& ansatz_base_ne,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<TE, D, d, R, rT, rCT>& test_base_en,
+              const XT::Functions::LocalfunctionSetInterface<AE, D, d, R, rA, rCA>& ansatz_base_en,
+              const XT::Functions::LocalfunctionSetInterface<TN, D, d, R, rT, rCT>& test_base_ne,
+              const XT::Functions::LocalfunctionSetInterface<AN, D, d, R, rA, rCA>& ansatz_base_ne,
               const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret_en_en,
               Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
               Dune::DynamicMatrix<R>& ret_ne_en) const
@@ -197,8 +197,8 @@ public:
 
   /**
    *  \brief Applies the local operator associated with boundary faces as a two-form.
-   *  \tparam T       Traits of the test Stuff::LocalfunctionSetInterface implementation
-   *  \tparam A       Traits of the ansatz Stuff::LocalfunctionSetInterface implementation
+   *  \tparam T       Traits of the test XT::Functions::LocalfunctionSetInterface implementation
+   *  \tparam A       Traits of the ansatz XT::Functions::LocalfunctionSetInterface implementation
    *  \tparam IntersectionType
    *  \tparam D       DomainFieldType
    *  \tparam d       dimDomain
@@ -208,8 +208,8 @@ public:
    */
   template <class T, class A, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
             size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-              const Stuff::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
+              const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
               const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, intersection, ret));

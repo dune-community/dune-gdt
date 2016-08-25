@@ -11,7 +11,7 @@
 #ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
 #define DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
 
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/common/crtp.hh>
 
 namespace Dune {
@@ -20,15 +20,15 @@ namespace GDT {
 
 /**
  *  \brief  The purpose of this interface is just to be used for template matching and to allow for access to the
- *          backend. All other functionality is enforced by Stuff::LocalfunctionSetInterface.
+ *          backend. All other functionality is enforced by XT::Functions::LocalfunctionSetInterface.
  *
- *          \see Stuff::LocalfunctionSetInterface for the template parameters D, d, R, r and rC.
+ *          \see XT::Functions::LocalfunctionSetInterface for the template parameters D, d, R, r and rC.
  */
 template <class Traits, class D, size_t d, class R, size_t r, size_t rC = 1>
-class BaseFunctionSetInterface : public Stuff::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
+class BaseFunctionSetInterface : public XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
                                  public XT::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
 {
-  typedef Stuff::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
+  typedef XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
 
 public:
   typedef typename Traits::derived_type derived_type;

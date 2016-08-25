@@ -13,7 +13,7 @@
 #endif
 
 #include <dune/xt/common/test/common.hh>
-#include <dune/stuff/functions/spe10.hh>
+#include <dune/xt/functions/spe10/model1.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/spaces/interface.hh>

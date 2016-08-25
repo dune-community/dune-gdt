@@ -19,7 +19,7 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/solver.hh>
 
@@ -45,8 +45,8 @@ namespace internal {
 template <class GridViewImp, class FunctionImp>
 class DarcyOperatorTraits
 {
-  static_assert(Stuff::is_localizable_function<FunctionImp>::value,
-                "FunctionImp has to be derived from Stuff::IsLocalizableFunction!");
+  static_assert(XT::Functions::is_localizable_function<FunctionImp>::value,
+                "FunctionImp has to be derived from XT::Functions::is_localizable_function!");
   static_assert(std::is_same<typename GridViewImp::ctype, typename FunctionImp::DomainFieldType>::value,
                 "Types do not match!");
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
@@ -90,7 +90,7 @@ public:
    */
   template <class S, class V, size_t r, size_t rC>
   void
-  apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
         DiscreteFunction<S, V>& range) const
   {
     redirect_apply(range.space(), source, range);
@@ -124,7 +124,7 @@ private:
   template <class T, class S, class V>
   void redirect_apply(
       const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
+      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
     typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
@@ -180,7 +180,7 @@ private:
   template <class T, class S, class V>
   void redirect_apply(
       const RtSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
     static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");

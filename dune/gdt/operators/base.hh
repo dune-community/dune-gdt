@@ -13,6 +13,7 @@
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/la/container/pattern.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/assembler/wrapper.hh>
@@ -76,10 +77,10 @@ public:
   typedef FieldImp FieldType;
 
 private:
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(Stuff::is_localizable_function<RangeType>::value,
-                "RangeType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<RangeType>::value,
+                "RangeType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
                 "The EntityType of SourceType and GridViewType have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
@@ -421,8 +422,8 @@ public:
   typedef RangeImp RangeType;
 
 private:
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value, "Have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value, "Have to match!");

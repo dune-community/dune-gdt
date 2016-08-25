@@ -16,7 +16,7 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/common/matrix.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
@@ -115,8 +115,8 @@ public:
   using BaseType::apply2;
 
   template <class E, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
+              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
               Dune::DynamicMatrix<R>& ret) const
   {
     const auto& entity         = ansatz_base.entity();
@@ -186,10 +186,10 @@ public:
 
   template <class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
             size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base_en,
-              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base_en,
-              const Stuff::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& test_base_ne,
-              const Stuff::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatz_base_ne,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base_en,
+              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base_en,
+              const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& test_base_ne,
+              const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatz_base_ne,
               const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret_en_en,
               Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
               Dune::DynamicMatrix<R>& ret_ne_en) const
@@ -318,8 +318,8 @@ public:
   }
 
   template <class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-              const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
+  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
+              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
               const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret) const
   {
     // local inducing function

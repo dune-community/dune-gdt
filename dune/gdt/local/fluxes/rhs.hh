@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_RHS_HH
 #define DUNE_GDT_LOCAL_FLUXES_RHS_HH
 
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/checkerboard.hh>
 
 #include "interfaces.hh"
 
@@ -17,7 +17,7 @@ namespace Dune {
 namespace GDT {
 
 
-/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::Stuff::Functions::Checkerboard.
+/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::XT::Functions::Checkerboard.
  *  TODO: static_assert for CheckerboardFunctionImp
  * */
 template <class CheckerboardFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC = 1>

@@ -24,8 +24,8 @@
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/xt/common/fmatrix.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/la/container/eigen.hh>
 
 #include "interfaces.hh"
@@ -54,8 +54,8 @@ template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDi
 class LocalLaxFriedrichsNumericalCouplingFluxTraits
     : public LocalGodunovNumericalCouplingFluxTraits<AnalyticalFluxImp, domainDim>
 {
-  static_assert(std::is_base_of<Dune::Stuff::IsLocalizableFunction, LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from Stuff::IsLocalizableFunction.");
+  static_assert(Dune::XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
+                "LocalizableFunctionImp has to be derived from XT::Functions::is_localizable_function.");
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
@@ -147,9 +147,9 @@ public:
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple_entity,
                      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_entity,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_neighbor,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
@@ -327,9 +327,9 @@ public:
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple_entity,
                      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_entity,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_neighbor,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
@@ -479,7 +479,7 @@ public:
 
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_entity,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
@@ -669,7 +669,7 @@ public:
 
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_entity,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
@@ -807,7 +807,7 @@ public:
 
   template <class IntersectionType>
   RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple*/,
-                     const Stuff::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
+                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                                          dimRange, 1>& local_source_entity,
                      const IntersectionType& intersection,
                      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const

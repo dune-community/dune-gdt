@@ -16,7 +16,7 @@
 #include <dune/common/deprecated.hh>
 
 #include <dune/xt/common/memory.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/dof-vector.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -28,7 +28,7 @@ namespace GDT {
 
 template <class SpaceImp, class VectorImp>
 class ConstLocalDiscreteFunction
-    : public Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+    : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                            SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
                                            SpaceImp::dimRangeCols>
 {
@@ -42,7 +42,7 @@ class ConstLocalDiscreteFunction
       "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+  typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                         SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
                                         SpaceImp::dimRangeCols>
       BaseType;

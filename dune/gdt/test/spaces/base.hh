@@ -87,7 +87,6 @@ public:
   void fulfills_interface() const
   {
     static_assert(Dune::GDT::is_space<SpaceType>::value, "");
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type
@@ -252,7 +251,6 @@ public:
   void mapper_fulfills_interface() const
   {
     using namespace Dune;
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type
@@ -290,7 +288,7 @@ public:
       DynamicVector<size_t> d_globalIndices(d_numDofs, 0);
       d_mapper.globalIndices(entity, d_globalIndices);
       if (d_globalIndices.size() > d_numDofs)
-        DUNE_THROW(Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
+        DUNE_THROW(XT::Common::Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
       DynamicVector<size_t> d_globalIndices_return = d_mapper.globalIndices(entity);
       EXPECT_EQ(d_globalIndices_return, d_globalIndices);
       // * as the interface
@@ -320,7 +318,6 @@ public:
   void basefunctionset_fulfills_interface() const
   {
     using namespace Dune;
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type

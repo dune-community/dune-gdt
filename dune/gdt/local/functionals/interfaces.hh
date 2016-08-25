@@ -13,7 +13,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/crtp.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
@@ -28,7 +28,7 @@ public:
   typedef typename Traits::derived_type derived_type;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, Dune::DynamicVector<R>& ret) const
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply(testBase, ret));
   }
@@ -42,7 +42,7 @@ public:
   typedef typename Traits::derived_type derived_type;
 
   template <class E, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, const IntersectionType& intersection,
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, const IntersectionType& intersection,
              Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CR(this->as_imp().apply(testBase, intersection, ret));

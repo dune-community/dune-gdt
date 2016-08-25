@@ -16,7 +16,7 @@
 #include <dune/common/fvector.hh>
 
 #include <dune/xt/common/crtp.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
 #include <dune/xt/la/container/pattern.hh>
 #include <dune/xt/la/solver.hh>

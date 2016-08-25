@@ -18,7 +18,7 @@
 #include <dune/gdt/spaces/cg.hh>
 
 #include <dune/xt/common/string.hh>
-#include <dune/stuff/functions/affine.hh>
+#include <dune/xt/functions/affine.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 
@@ -75,7 +75,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
+  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
       FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, dimRange, 1>
       DefaultFluxType;
@@ -83,8 +83,8 @@ public:
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
   typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
-  typedef typename DS::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
-  typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
+  typedef typename XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, dimRange, 1>
       DefaultRHSType;
@@ -126,7 +126,7 @@ protected:
     //    typedef typename DS::LocalizableFunctionInterface< VelocityEntityType,
     //                                                       VelocityFieldImp, dimDomain,
     //                                                       R, 1, 1 >          VelocityFunctionType;
-    //    typedef typename DS::Functions::Expression< VelocityEntityType,
+    //    typedef typename XT::Functions::ExpressionFunction< VelocityEntityType,
     //                                                VelocityFieldImp, dimDomain,
     //                                                R, 1, 1 >                 VelocityExpressionFunctionType;
 
@@ -137,7 +137,7 @@ protected:
     //                                                    1, R, 1, 1 >          CGProviderType;
     //    typedef typename CGProviderType::Type                                             CGSpaceType;
     //    typedef Dune::GDT::DiscreteFunction< CGSpaceType, VectorType >                    CGFunctionType;
-    //    typedef typename DS::Functions::Checkerboard< typename VelocityGridType::template Codim< 0 >::Entity,
+    //    typedef typename XT::Functions::CheckerboardFunction< typename VelocityGridType::template Codim< 0 >::Entity,
     //                                                  D, dimDomain,
     //                                                  R, 1, 1 >               CGJacobianType;
     static const int precision = 15; // precision for to_string
@@ -416,10 +416,10 @@ protected:
       //          onebeam_left_boundary_values_[ii] = l2_product.apply2(onebeam_left_boundary, basefunctions_[ii]);
       //          for (size_t jj = 0; jj < dimRange; ++jj) {
       //            M_[ii][jj] = l2_product.apply2(basefunctions_[jj], basefunctions_[ii]);
-      //            const auto v_times_base = DS::Functions::Product< VelocityFunctionType,
+      //            const auto v_times_base = XT::Functions::Product< VelocityFunctionType,
       //                                                              CGFunctionType >(v, basefunctions_[jj]);
       //            const auto jacobian_times_one_minus_v_squared
-      //                = DS::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
+      //                = XT::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
       //                                                                                 basefunction_jacobians[jj]);
       //            D_[ii][jj] = l2_product.apply2(v_times_base, basefunctions_[ii]);
       //            S_[ii][jj] = l2_product.apply2(jacobian_times_one_minus_v_squared, basefunction_jacobians[ii]);

@@ -154,8 +154,8 @@ auto op = make_elliptic_ipdg_matrix_operator< MatrixType >(factor, tensor, bound
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType>>>::type
@@ -184,8 +184,8 @@ boundary_info, space);
 template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    method, MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
@@ -208,8 +208,8 @@ auto op = make_elliptic_ipdg_matrix_operator< MatrixType >(factor, tensor, bound
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
@@ -241,8 +241,8 @@ boundary_info, space, grid_view);
 template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    method, MatrixType, GridViewType>>>::type
@@ -273,8 +273,8 @@ grid_view);
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class RangeSpaceType,
           class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionFactorType>::value
-                  && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
+    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
                                                          LocalEllipticIpdgIntegrands::default_method, MatrixType,
@@ -307,8 +307,8 @@ boundary_info, range_space, source_space, grid_view);
 template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType,
           class DiffusionTensorType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<XT::LA::is_matrix<MatrixType>::value && Stuff::is_localizable_function<DiffusionFactorType>::value
-                  && Stuff::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
+    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
                   && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
                                                          method, MatrixType, GridViewType, SourceSpaceType>>>::type
@@ -335,8 +335,8 @@ typename std::
  *        space, grid_view of the space is used).
  */
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value
+typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
@@ -365,8 +365,8 @@ matrix, space);
  */
 template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class SpaceType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value
+typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
                                                                    method, MatrixType>>>::type
@@ -385,8 +385,8 @@ make_elliptic_ipdg_matrix_operator(
  *        space).
  */
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value
+typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
@@ -418,8 +418,8 @@ matrix, space, grid_view);
  */
 template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class SpaceType, class GridViewType>
-typename std::enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                            && Stuff::is_localizable_function<DiffusionTensorType>::value
+typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
@@ -445,8 +445,8 @@ make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class RangeSpaceType,
           class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                  && Stuff::is_localizable_function<DiffusionTensorType>::value && XT::LA::is_matrix<MatrixType>::value
+    enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value && XT::LA::is_matrix<MatrixType>::value
                   && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                   && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
@@ -480,8 +480,8 @@ matrix, range_space, source_space, grid_view);
 template <LocalEllipticIpdgIntegrands::Method method, class DiffusionFactorType, class DiffusionTensorType,
           class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
-    enable_if<Stuff::is_localizable_function<DiffusionFactorType>::value
-                  && Stuff::is_localizable_function<DiffusionTensorType>::value && XT::LA::is_matrix<MatrixType>::value
+    enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value && XT::LA::is_matrix<MatrixType>::value
                   && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                   && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,

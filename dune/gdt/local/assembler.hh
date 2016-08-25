@@ -12,7 +12,7 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker/wrapper.hh>
 #include <dune/xt/la/container/interfaces.hh>
@@ -93,10 +93,10 @@ class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObj
   static_assert(std::is_base_of<LocalVolumeTwoFormInterface<typename LocalVolumeTwoFormType::Traits>,
                                 LocalVolumeTwoFormType>::value,
                 "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
-  static_assert(Stuff::is_localizable_function<TestFunctionType>::value,
-                "TestFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(Stuff::is_localizable_function<AnsatzFunctionType>::value,
-                "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<TestFunctionType>::value,
+                "TestFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
+                "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
   typedef LocalVolumeTwoFormAccumulator<GridViewImp, LocalVolumeTwoFormType, TestFunctionType, AnsatzFunctionType,
                                         FieldType>
@@ -174,8 +174,8 @@ class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridView
 {
   static_assert(is_local_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
 
@@ -340,8 +340,8 @@ class LocalCouplingOperatorApplicator : public XT::Grid::internal::Codim1Object<
 {
   static_assert(is_local_coupling_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
 
@@ -437,8 +437,8 @@ class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<
 {
   static_assert(is_local_boundary_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
 

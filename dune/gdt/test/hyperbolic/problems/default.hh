@@ -11,8 +11,8 @@
 
 #include <memory>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
 
 #include <dune/gdt/local/fluxes/analytical.hh>
 #include <dune/gdt/local/fluxes/rhs.hh>
@@ -42,15 +42,15 @@ public:
   // u-variable,
   // choose an arbitrary EntityType
   typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity DummyEntityType;
-  typedef typename DS::Functions::Expression<DummyEntityType, R, r, R, r, d> FluxExpressionFunctionType;
+  typedef typename XT::Functions::ExpressionFunction<DummyEntityType, R, r, R, r, d> FluxExpressionFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxExpressionFunctionType, E, D, d, R, r, rC>
       DefaultFluxType;
-  typedef typename DS::Functions::Expression<E, D, d, R, r, rC> InitialValueExpressionFunctionType;
-  typedef typename Dune::Stuff::Functions::FunctionCheckerboard<InitialValueExpressionFunctionType, E, D, d, R, r, rC>
+  typedef typename XT::Functions::ExpressionFunction<E, D, d, R, r, rC> InitialValueExpressionFunctionType;
+  typedef typename XT::Functions::FunctionCheckerboardFunction<InitialValueExpressionFunctionType, E, D, d, R, r, rC>
       DefaultInitialValueType;
   typedef typename BaseType::BoundaryValueType DefaultBoundaryValueType;
-  typedef typename DS::Functions::Expression<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
-  typedef typename DS::Functions::FunctionCheckerboard<RHSExpressionFunctionType, E, D, d, R, r, rC>
+  typedef typename XT::Functions::ExpressionFunction<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSExpressionFunctionType, E, D, d, R, r, rC>
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
       DefaultRHSType;

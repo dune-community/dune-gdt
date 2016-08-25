@@ -13,8 +13,8 @@
 #endif
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/expression.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/expression.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -39,9 +39,9 @@ class MixedBoundaryProblem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Stuff::Functions::Expression<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
 
 public:
   static const size_t default_integration_order = 2;
@@ -66,7 +66,7 @@ public:
                        const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                        const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
-               new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
+               new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
                                               "diffusion_tensor"),
                new ScalarConstantFunctionType(1, "force"),
                new ExpressionFunctionType("x", "0.25 * x[0] * x[1]", integration_order, "dirichlet"),

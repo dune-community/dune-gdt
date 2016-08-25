@@ -13,8 +13,8 @@
 #endif
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/ESV2007.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/ESV2007.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -39,9 +39,9 @@ class ESV2007Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Stuff::Functions::ESV2007::Testcase1Force<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ForceType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef XT::Functions::ESV2007::Testcase1Force<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ForceType;
 
 public:
   static const size_t default_integration_order = 2;
@@ -64,7 +64,7 @@ public:
                  const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
-               new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
+               new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
                                               "diffusion_tensor"),
                new ForceType(integration_order, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
                new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
@@ -81,7 +81,7 @@ class ESV2007TestCase
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef Stuff::Functions::ESV2007::Testcase1ExactSolution<E, D, d, R, r> ExactSolutionType;
+  typedef XT::Functions::ESV2007::Testcase1ExactSolution<E, D, d, R, r> ExactSolutionType;
 
 public:
   typedef LinearElliptic::ESV2007Problem<E, D, d, R, r> ProblemType;

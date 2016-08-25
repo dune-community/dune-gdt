@@ -13,8 +13,8 @@
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include "default.hh"
@@ -26,9 +26,9 @@ namespace Hyperbolic {
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ShocktubeSolutionAtSpecificTime
-    : public DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
+    : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
 {
-  typedef DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1> BaseType;
+  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1> BaseType;
   typedef ShocktubeSolutionAtSpecificTime<EntityImp, DomainFieldImp, RangeFieldImp> ThisType;
 
 public:
@@ -169,11 +169,11 @@ private:
 // Solution here is not in primitive variables, i.e. u = (rho, rho v, E).
 template <class EntityType, class DomainFieldType, class RangeFieldType>
 class ShocktubeSolution
-    : public DS::TimeDependentFunctionInterface<
-          typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+    : public XT::Functions::TimeDependentFunctionInterface<
+          typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
 {
-  typedef typename DS::TimeDependentFunctionInterface<
-      typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+  typedef typename XT::Functions::TimeDependentFunctionInterface<
+      typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
       BaseType;
   using typename BaseType::TimeIndependentFunctionType;
   typedef ShocktubeSolutionAtSpecificTime<EntityType, DomainFieldType, RangeFieldType> SolutionAtSpecificTimeType;

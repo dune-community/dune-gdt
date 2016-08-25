@@ -48,7 +48,7 @@ public:
 template <class GridViewImp, class SourceImp, class RangeImp>
 class L2GlobalProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
 {
-  static_assert(Stuff::is_localizable_function<SourceImp>::value, "");
+  static_assert(XT::Functions::is_localizable_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
   typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
 
@@ -142,7 +142,7 @@ private:
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
@@ -158,7 +158,7 @@ typename std::
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+    enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
               std::unique_ptr<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
@@ -203,9 +203,9 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
   {
-    typedef Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
+    typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<S, V>> op(
         over_integrate_, grid_view_, source, range);
     op.apply();

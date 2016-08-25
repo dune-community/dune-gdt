@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_DISCRETEFUNCTION_REINTERPRET_HH
 #define DUNE_GDT_DISCRETEFUNCTION_REINTERPRET_HH
 
-#include <dune/stuff/functions/reinterpret.hh>
+#include <dune/xt/functions/reinterpret.hh>
 
 #include "default.hh"
 
@@ -18,10 +18,10 @@ namespace GDT {
 
 template <class DiscreteFunctionType>
 class ReinterpretDiscreteFunction
-    : public Stuff::Functions::Reinterpret<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
+    : public XT::Functions::ReinterpretFunction<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
 {
   static_assert(is_const_discrete_function<DiscreteFunctionType>::value, "");
-  typedef Stuff::Functions::Reinterpret<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
+  typedef XT::Functions::ReinterpretFunction<DiscreteFunctionType, typename DiscreteFunctionType::SpaceType::GridViewType>
       BaseType;
 
 public:

@@ -13,8 +13,8 @@
 #endif
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/checkerboard.hh>
-#include <dune/stuff/functions/constant.hh>
+#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -39,9 +39,9 @@ class AO2013Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Dune::Stuff::Functions::Checkerboard<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> CheckerboardFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef Dune::XT::Functions::CheckerboardFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> CheckerboardFunctionType;
 
 public:
   static XT::Common::Configuration default_grid_cfg()
@@ -64,7 +64,7 @@ public:
                                              1.0, 1.0,  1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1,
                                              1.0, 0.01, 1.0, 0.1, 0.1, 0.1, 1.0, 1.0,  1.0, 0.1, 0.1, 0.1},
                                             "diffusion_factor"),
-               new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
+               new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
                                               "diffusion_tensor"),
                new ScalarConstantFunctionType(1, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
                new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)

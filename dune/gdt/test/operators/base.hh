@@ -10,8 +10,8 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/constant.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/la/container.hh>
@@ -38,11 +38,11 @@ struct OperatorBaseTraits
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const size_t dimRange       = SpaceType::dimRange;
   static const unsigned int polOrder = SpaceType::polOrder;
-  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
+  typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
       ScalarFunctionType;
-  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+  typedef Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
       TensorFunctionType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
@@ -74,7 +74,7 @@ struct OperatorBase : public ::testing::Test
     , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_provider_.grid()))
     , scalar_function_("x", "x[0]", 1, "scalar function", {{"1.0", "0.0", "0.0"}})
     , function_("x", {"x[0]", "0", "0"}, 1)
-    , tensor_function_(Stuff::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
+    , tensor_function_(XT::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
     , discrete_function_(space_)
   {
   }

@@ -23,9 +23,9 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
@@ -127,7 +127,7 @@ struct ChooseVisualize
 
 template <class SpaceImp, class VectorImp>
 class ConstDiscreteFunction
-    : public Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+    : public XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                                  SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
                                                  SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
@@ -135,7 +135,7 @@ class ConstDiscreteFunction
   static_assert(XT::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+  typedef XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
                                               SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
                                               SpaceImp::dimRange, SpaceImp::dimRangeCols>
       BaseType;
@@ -205,9 +205,9 @@ public:
   }
 
   /**
-   * \brief Visualizes the function using Dune::Stuff::LocalizableFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid view
    *        associated with the space.
-   * \sa    Dune::Stuff::LocalizableFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::LocalizableFunctionInterface::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),

@@ -11,8 +11,8 @@
 
 #include <memory>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>

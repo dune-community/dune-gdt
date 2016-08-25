@@ -14,8 +14,8 @@
 #include <dune/grid/io/file/vtk.hh>
 
 #include <dune/xt/common/configuration.hh>
-#include <dune/stuff/functions/default.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/default.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -34,12 +34,12 @@ public:
   typedef RangeFieldImp RangeFieldType;
   static const size_t dimRange = rangeDim;
 
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
                                               dimDomain>
       DiffusionTensorType;
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   virtual ~ProblemInterface()
@@ -67,7 +67,7 @@ public:
     auto vtk_writer =
         subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
                     : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
-    auto diffusion = Stuff::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
+    auto diffusion = XT::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
     add_function_visualization(grid_view, diffusion_factor(), *vtk_writer);
     add_function_visualization(grid_view, diffusion_tensor(), *vtk_writer);
     add_function_visualization(grid_view, *diffusion, *vtk_writer);
@@ -81,7 +81,7 @@ private:
   template <class GridViewType, class F, class VTKWriterType>
   void add_function_visualization(const GridViewType& /*grid_view*/, const F& function, VTKWriterType& vtk_writer) const
   {
-    typedef Stuff::Functions::VisualizationAdapter<GridViewType, F::dimRange, F::dimRangeCols> VisualizationAdapter;
+    typedef XT::Functions::VisualizationAdapterFunction<GridViewType, F::dimRange, F::dimRangeCols> VisualizationAdapter;
     vtk_writer.addVertexData(std::make_shared<VisualizationAdapter>(function));
   }
 }; // ProblemInterface

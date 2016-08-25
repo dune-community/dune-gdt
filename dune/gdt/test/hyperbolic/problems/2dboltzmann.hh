@@ -16,7 +16,7 @@
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
 #include <dune/xt/common/string.hh>
-#include <dune/stuff/functions/affine.hh>
+#include <dune/xt/functions/affine.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include "default.hh"
@@ -45,7 +45,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange,
+  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange,
                                                   dimDomain>
       FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
@@ -54,9 +54,9 @@ public:
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
   typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
-  typedef typename DS::Functions::Affine<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
+  typedef typename XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
       RHSAffineFunctionType;
-  typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, EntityImp, DomainFieldImp, dimDomain,
                                                        RangeFieldImp, dimRange, 1>
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp,

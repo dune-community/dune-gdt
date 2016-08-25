@@ -10,8 +10,8 @@
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/exceptions.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/gridprovider/eoc.hh>
 
 namespace Dune {
@@ -20,7 +20,7 @@ namespace Test {
 
 
 /**
- * \tparam ProblemType has to provide a type FunctionType (derived from Stuff::LocalizableFunctionInterface) which
+ * \tparam ProblemType has to provide a type FunctionType (derived from XT::Functions::LocalizableFunctionInterface) which
  *         defines the type of the solution of the problem.
  */
 template <class GridImp, class ProblemImp>
@@ -33,9 +33,9 @@ public:
   typedef typename ProblemType::FunctionType FunctionType;
 
 private:
-  static_assert(Stuff::is_localizable_function<FunctionType>::value,
-                "ProblemImp::FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  typedef Stuff::Functions::Constant<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
+  static_assert(XT::Functions::is_localizable_function<FunctionType>::value,
+                "ProblemImp::FunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  typedef XT::Functions::ConstantFunction<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
                                      FunctionType::dimDomain, typename FunctionType::RangeFieldType,
                                      FunctionType::dimRange>
       ConstantFunctionType;

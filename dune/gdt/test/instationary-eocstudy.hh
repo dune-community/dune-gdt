@@ -11,8 +11,8 @@
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/exceptions.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/gridprovider/eoc.hh>
 

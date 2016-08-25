@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_TEST_OPERATORS_DARCY_HH
 #define DUNE_GDT_TEST_OPERATORS_DARCY_HH
 
-#include <dune/stuff/functions/expression.hh>
+#include <dune/xt/functions/expression.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -57,7 +57,7 @@ struct DarcyOperatorTest : public ::testing::Test
     grid_provider.global_refine(1);
     auto& grid = grid_provider.grid();
 
-    typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
+    typedef XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {"x[1]", "x[0]"});
 
     const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(grid));
@@ -68,7 +68,7 @@ struct DarcyOperatorTest : public ::testing::Test
     const DarcyOperator<GridViewType, FunctionType> darcy_operator(range_space.grid_view(), function);
     darcy_operator.apply(source, range);
 
-    const Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain>
+    const XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain>
         desired_output(
             "x", std::vector<std::string>({"x[1]", "x[0]"}), 1, "desired output", {{"0.0", "1.0"}, {"1.0", "0.0"}});
 

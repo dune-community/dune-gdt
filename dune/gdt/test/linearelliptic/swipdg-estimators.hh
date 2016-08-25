@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATORS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATORS_HH
 
-#include <dune/stuff/functions/spe10.hh>
+#include <dune/xt/functions/spe10/model1.hh>
 #include <dune/xt/common/test/common.hh>
 
 #include "discretizers/ipdg.hh"

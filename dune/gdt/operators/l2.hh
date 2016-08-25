@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #include <dune/xt/common/memory.hh>
-#include <dune/stuff/functions/constant.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/grid/entity.hh>
 
 #include "weighted-l2.hh"
@@ -27,17 +27,17 @@ namespace GDT {
 
 template <class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
 class L2LocalizableProduct
-    : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
           typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
-      public WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
+      public WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
                                                                      typename GridView::ctype, GridView::dimension,
                                                                      Field, 1>,
                                           GridView, Range, Source, Field>
 {
-  typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
+  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
       typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
-  typedef WeightedL2LocalizableProduct<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
+  typedef WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
                                                                   typename GridView::ctype, GridView::dimension, Field,
                                                                   1>,
                                        GridView, Range, Source, Field>
@@ -109,8 +109,8 @@ L2LocalizableProduct(...args);
  * \sa L2LocalizableProduct
  */
 template <class GridViewType, class RangeType, class SourceType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && Stuff::is_localizable_function<RangeType>::value
-                            && Stuff::is_localizable_function<SourceType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<RangeType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value,
                         std::unique_ptr<L2LocalizableProduct<GridViewType, RangeType, SourceType>>>::type
 make_l2_localizable_product(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
                             const size_t over_integrate = 0)
@@ -128,17 +128,17 @@ template <class RangeSpace, class Matrix = typename XT::LA::Container<typename R
           class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class L2MatrixOperator
-    : XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
           typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
-      public WeightedL2MatrixOperator<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
+      public WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
                                                                  typename GridView::ctype, GridView::dimension, Field,
                                                                  1>,
                                       RangeSpace, Matrix, GridView, SourceSpace, Field>
 {
-  typedef XT::Common::ConstStorageProvider<Stuff::Functions::Constant<
+  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
       typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
       FunctionProvider;
-  typedef WeightedL2MatrixOperator<Stuff::Functions::Constant<typename XT::Grid::Entity<GridView>::type,
+  typedef WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
                                                               typename GridView::ctype, GridView::dimension, Field, 1>,
                                    RangeSpace, Matrix, GridView, SourceSpace, Field>
       BaseType;
@@ -346,8 +346,8 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  FieldType apply2(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+  FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
   {
     auto product = make_l2_localizable_product(grid_view_, range, source, over_integrate_);
     return product->apply2();

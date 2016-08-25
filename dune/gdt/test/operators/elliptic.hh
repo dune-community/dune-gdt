@@ -33,7 +33,7 @@ struct EllipticProductBase
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  typedef Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
+  typedef XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
       ExpressionFunctionType;
 
   EllipticProductBase(const double factor_value = 42.)

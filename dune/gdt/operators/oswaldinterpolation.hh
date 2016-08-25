@@ -15,7 +15,6 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/aliases.hh>
 #include <dune/xt/common/vector.hh>
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/print.hh>
