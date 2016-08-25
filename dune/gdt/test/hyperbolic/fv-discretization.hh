@@ -34,8 +34,8 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
 #else
     TestCaseType test_case;
 #endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
+    test_case.print_header(DXTC_LOG_INFO);
+    DXTC_LOG_INFO << std::endl;
     typedef typename Hyperbolic::FvDiscretizer<TestCaseType,
                                                typename TestCaseType::GridType,
                                                double,
@@ -45,7 +45,7 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
                                                time_stepper>
         Discretizer;
     Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_base
 
