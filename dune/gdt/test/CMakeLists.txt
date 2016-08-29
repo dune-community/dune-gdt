@@ -12,8 +12,8 @@ BEGIN_TESTCASES()
 
 END_TESTCASES()
 
-foreach (test ${testnames})
-  if (${test} MATCHES spaces)
+foreach (test ${dxt_test_binaries})
+  if (test MATCHES spaces)
     list(APPEND spaces_test_binaries ${test})
   elseif (${test} MATCHES operators)
     list(APPEND operators_test_binaries ${test})
