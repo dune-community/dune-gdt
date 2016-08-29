@@ -82,31 +82,31 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
                                                                              + " 0.796920457938 0.0730795420615 0 0;"
                                                                              + " 0.796920457938 0.0730795420615 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[0.199293275701 0.482645235674 0.0680614886256 0.25]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[0.346325833758  0.285693175712 0.367980990530 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<TimeFieldType>>("[0 0.438 0.87 0.87]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.438 0.87 0.87]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
         std::string("[0.395  0 0 0;") + " -0.767672395484 0.395  0 0;" + " -0.851675323742  0.522967289188 0.395  0;"
         + " 0.288463109545 0.0880214273381 -0.337389840627 0.395]");
   }
@@ -118,31 +118,31 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.462 0 0 0;"
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.462 0 0 0;"
                                                                              + " -0.0815668168327 0.961775150166 0 0;"
                                                                              + " -0.0815668168327 0.961775150166 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<double>>(
+    return Dune::XT::Common::from_string<Dune::DynamicVector<double>>(
         "[0.217487371653 0.486229037990 0 0.296283590357]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[-0.717088504499 1.77617912176 -0.0590906172617 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicVector<TimeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
-    return Dune::XT::Common::fromString<Dune::DynamicMatrix<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
         std::string("[0.231 0 0 0;") + " -0.270629667752 0.231 0 0;" + " 0.311254483294 0.00852445628482 0.231 0;"
         + " 0.282816832044 -0.457959483281 -0.111208333333 0.231]");
   }
