@@ -34,7 +34,7 @@ TYPED_TEST(L2ProjectionLocalizableOperatorTest, constructible_by_factory)
 }
 TYPED_TEST(L2ProjectionLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(LocalizableProjectionOperator_default_tolerance);
+  this->produces_correct_results(this->default_tolerance);
 }
 
 
