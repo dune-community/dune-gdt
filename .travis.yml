@@ -226,61 +226,59 @@ matrix:
       addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
 
-#   clang 3.7
+#   clang 3.8
     - os: linux
       compiler: clang
-      addons: &clang37
+      addons: &clang38
         apt:
           sources:
           - *commonsources
-          - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          - ['ubuntu-toolchain-r-test']
           packages:
           - *commonpackages
-          - ['clang-3.7', 'clang-format-3.7']
-      env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
+      env: CC=clang-3.8 TESTS=operator BLD=${DBG} CXX=clang++-3.8"
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.7
+      env: CC=clang-3.8 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_default BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_default BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=space BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=space BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=other BLD=${DBG} CXX=clang++-3.7 CLANG_FORMAT='/usr/bin/clang-format-3.7'
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=other BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
     - os: linux
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8
