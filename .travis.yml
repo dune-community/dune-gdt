@@ -164,13 +164,13 @@ matrix:
       env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=g++-5
@@ -221,13 +221,13 @@ matrix:
       env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.8
