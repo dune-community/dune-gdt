@@ -118,9 +118,9 @@ env:
     - PATH=${SUPERDIR}/local/bin:$PATH
     - LD_LIBRARY_PATH=${SUPERDIR}/local/lib64:${SUPERDIR}/local/lib:$LD_LIBRARY_PATH
     - PKG_CONFIG_PATH=${SUPERDIR}/local/lib64/pkgconfig:${SUPERDIR}/local/lib/pkgconfig:${SUPERDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
-    - MY_MODULE=dune-gdt 
-    - DUNE_BUILD_DIR=${HOME}/dune_build/ 
-    - INSTALL_DIR=$HOME/dune 
+    - MY_MODULE=dune-gdt
+    - DUNE_BUILD_DIR=${HOME}/dune_build/
+    - INSTALL_DIR=$HOME/dune
     - CTEST_OUTPUT_ON_FAILURE=1
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
     - DBG="${DCTL_ARGS} --opts=config.opts/travis.ninja"
