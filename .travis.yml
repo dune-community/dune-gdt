@@ -127,47 +127,6 @@ env:
 
 matrix:
   include:
-#    gcc 4.9
-#    - os: linux
-#      compiler: gcc
-#      addons: &gcc49
-#        apt:
-#          sources:
-#          - *commonsources
-#          - 'ubuntu-toolchain-r-test'
-#          packages:
-#          - *commonpackages
-#          - ['g++-4.9', 'gcc-4.9']
-#      env: CC=gcc-4.9 TESTS=operator BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=prolongation BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=projection BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=space BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=headercheck BLD=${DBG} CXX=g++-4.9
-
 #   gcc 5
     - os: linux
       addons: &gcc5
