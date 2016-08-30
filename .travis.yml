@@ -35,20 +35,17 @@ addons:
 before_install:
   - |-
     : ${OPTS:="config.opts/travis.ninja"} && export OPTS
-  # workaround for https://github.com/travis-ci/travis-ci/issues/5285
-  - sudo -E apt-get install -y -q python-pip python3-pip libscotchparmetis-dev libmetis-dev
-  - sudo -E pip3 install -U requests virtualenv cpp-coveralls
-  - sudo -E pip install -U requests virtualenv cpp-coveralls
   # workaround for gnutls bug is using git built against curl-openssl
   - sudo -E rm /etc/apt/sources.list.d/*git*.list
   - sudo -E add-apt-repository -y ppa:pymor/travis && sudo -E aptitude update && sudo -E aptitude install git -yq
-  - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
   - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
-  - cd $HOME/src
+  - cd ${SUPERDIR}
   - git checkout xt+core_2.4_switchover
   - git submodule update --init --recursive
   - git submodule status
+  - ${SUPERDIR}/.travis/trusty_apt_setup.bash
+  - export PATH=/usr/lib/ccache:$PATH
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
@@ -58,7 +55,7 @@ before_install:
 
 # command to install dependencies
 install:
-  - cd $HOME/src
+  - cd ${SUPERDIR}
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
   - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
   - ${SRC_DCTRL} ${BLD} all
@@ -74,10 +71,10 @@ before_script:
 script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make headercheck; fi
-    - $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
+    - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - unset GH_TOKEN
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${SUPERDIR}/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
 
@@ -86,13 +83,13 @@ after_script:
     - |
      if [ "x${CLANG_FORMAT}" != "x" ] ; then
         git config --global hooks.clangformat ${CLANG_FORMAT}
-        PYTHONPATH=$HOME/src/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\"${TRAVIS_BUILD_DIR}\")"
+        PYTHONPATH=${SUPERDIR}/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\"${TRAVIS_BUILD_DIR}\")"
      fi
     - |
       if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
         ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make doc
-        $HOME/src/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
-        $HOME/src/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
+        ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
+        ${SUPERDIR}/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
       fi
     # reset for ctest
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make clean
@@ -117,10 +114,10 @@ cache:
 
 env:
   global:
-    - BASEDIR=$HOME/src
-    - PATH=${BASEDIR}/local/bin:$PATH
-    - LD_LIBRARY_PATH=${BASEDIR}/local/lib64:${BASEDIR}/local/lib:$LD_LIBRARY_PATH
-    - PKG_CONFIG_PATH=${BASEDIR}/local/lib64/pkgconfig:${BASEDIR}/local/lib/pkgconfig:${BASEDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
+    - SUPERDIR=${HOME}/src
+    - PATH=${SUPERDIR}/local/bin:$PATH
+    - LD_LIBRARY_PATH=${SUPERDIR}/local/lib64:${SUPERDIR}/local/lib:$LD_LIBRARY_PATH
+    - PKG_CONFIG_PATH=${SUPERDIR}/local/lib64/pkgconfig:${SUPERDIR}/local/lib/pkgconfig:${SUPERDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
     - MY_MODULE=dune-gdt 
     - DUNE_BUILD_DIR=${HOME}/dune_build/ 
     - INSTALL_DIR=$HOME/dune 
