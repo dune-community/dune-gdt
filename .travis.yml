@@ -66,11 +66,11 @@ before_script:
     - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make; fi
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make test_binaries_${TESTS}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_${TESTS}; fi
 
 script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
-    - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make headercheck; fi
+    - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck; fi
     - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - unset GH_TOKEN
@@ -91,11 +91,6 @@ after_script:
         ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
         ${SUPERDIR}/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
       fi
-    # reset for ctest
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make clean
-    - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
-    # ctest errors on coverage gathering, this should NOT fail our entire build
-    #- ${SRC_DCTRL} ${DCTRL_ARG} --only=${MY_MODULE} bexec ctest ${CTEST_ARG} || echo "CTest Failed"
 
 notifications:
   email:
