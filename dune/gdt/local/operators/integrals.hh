@@ -114,11 +114,12 @@ public:
 
   using BaseType::apply2;
 
-  template <class E, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  template <class E, class EO, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
+              const XT::Functions::LocalfunctionSetInterface<EO, D, d, R, rA, rCA>& ansatz_base,
               Dune::DynamicMatrix<R>& ret) const
   {
+    static_assert(std::is_same<EO,E>::value, "Additional EO tpl only added for clang compat");
     const auto& entity         = ansatz_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
