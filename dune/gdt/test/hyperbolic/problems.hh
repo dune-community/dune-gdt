@@ -19,7 +19,7 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
-using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
+using Yasp2 = Yasp2Grid;
 
 typedef testing::Types<Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
                        Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>, Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
@@ -42,7 +42,7 @@ typedef testing::Types<Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
 extern template class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,

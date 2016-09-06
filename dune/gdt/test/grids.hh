@@ -28,7 +28,8 @@
           Yasp##dim##dLeafGridViewType;                                                                                \
   typedef typename Dune::GDT::SpaceTools::                                                                             \
       LevelGridPartView<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>, true>::Type              \
-          Yasp##dim##dLevelGridViewType;
+          Yasp##dim##dLevelGridViewType;                                                                               \
+  typedef Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>> Yasp##dim##Grid;
 YASPGRID_TYPES(1)
 YASPGRID_TYPES(2)
 YASPGRID_TYPES(3)

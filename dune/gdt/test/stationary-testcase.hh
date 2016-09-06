@@ -59,7 +59,7 @@ public:
   {
     out << "+==============================================================+\n"
         << "|+============================================================+|\n"
-        << "||  This is a GDT::Tests::StationaryTestCase, please provide  ||\n"
+        << "||  This is a GDT::Test::StationaryTestCase, please provide   ||\n"
         << "||  a meaningful message by implementing `print_header()`     ||\n"
         << "|+============================================================+|\n"
         << "+==============================================================+" << std::endl;

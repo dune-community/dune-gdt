@@ -83,8 +83,8 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
     return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
-                                                                             + " 0.796920457938 0.0730795420615 0 0;"
-                                                                             + " 0.796920457938 0.0730795420615 0 0]");
+                                                                              + " 0.796920457938 0.0730795420615 0 0;"
+                                                                              + " 0.796920457938 0.0730795420615 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
@@ -118,9 +118,9 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.462 0 0 0;"
-                                                                             + " -0.0815668168327 0.961775150166 0 0;"
-                                                                             + " -0.0815668168327 0.961775150166 0 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
+        std::string("[0 0 0 0;") + " 0.462 0 0 0;" + " -0.0815668168327 0.961775150166 0 0;"
+        + " -0.0815668168327 0.961775150166 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()

@@ -14,11 +14,12 @@
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include "../instationary-eocstudy.hh"
-#include "eocexpectations.hh"
+#include "eocexpectations_base.hh"
+#include "all_eocexpectations.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
 
 template <class TestCaseImp, class DiscretizerImp>

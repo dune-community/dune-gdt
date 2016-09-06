@@ -17,10 +17,12 @@
 #include "../stationary-eocstudy.hh"
 #include "eocexpectations.hh"
 
+#include "eocexpectations/all.hh"
+
+
 namespace Dune {
 namespace GDT {
 namespace Test {
-
 
 template <class TestCaseImp, class DiscretizerImp>
 class LinearEllipticEocStudy : public StationaryEocStudy<TestCaseImp, DiscretizerImp>

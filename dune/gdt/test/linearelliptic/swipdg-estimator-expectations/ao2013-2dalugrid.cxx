@@ -24,8 +24,7 @@ namespace internal {
 
 std::vector<double>
 results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
-    const LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1>& /*test_case*/,
-    const std::string type)
+    const LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>& /*test_case*/, const std::string type)
 {
   if (type == "energy")
     return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
@@ -58,13 +57,12 @@ results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexc
 #if HAVE_EIGEN
 
 template <bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                               double, 1>,
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
                                                 XT::LA::Backends::eigen_sparse, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
-  typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
+  typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
@@ -96,13 +94,12 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013T
 
 
 template <bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                               double, 1>,
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
                                                 XT::LA::Backends::istl_sparse, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
-  typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
+  typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)

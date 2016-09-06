@@ -44,7 +44,7 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
                                                numerical_flux,
                                                time_stepper>
         Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
+    Dune::GDT::Test::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
     XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_base

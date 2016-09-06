@@ -119,7 +119,7 @@ public:
               const XT::Functions::LocalfunctionSetInterface<EO, D, d, R, rA, rCA>& ansatz_base,
               Dune::DynamicMatrix<R>& ret) const
   {
-    static_assert(std::is_same<EO,E>::value, "Additional EO tpl only added for clang compat");
+    static_assert(std::is_same<EO, E>::value, "Additional EO tpl only added for clang compat");
     const auto& entity         = ansatz_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature

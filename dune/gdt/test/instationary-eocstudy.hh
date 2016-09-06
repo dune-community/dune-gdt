@@ -23,7 +23,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
 
 /**
@@ -58,8 +58,8 @@ public:
   {
     out << "+===============================================================+\n"
         << "|+=============================================================+|\n"
-        << "||  This is a GDT::Tests::NonStationaryTestCase, please provide ||\n"
-        << "||  a meaningful message by implementing `print_header()`       ||\n"
+        << "||  This is a GDT::Tests:NonStationaryTestCase, please provide ||\n"
+        << "||  a meaningful message by implementing `print_header()`      ||\n"
         << "|+=============================================================+|\n"
         << "+===============================================================+" << std::endl;
   }

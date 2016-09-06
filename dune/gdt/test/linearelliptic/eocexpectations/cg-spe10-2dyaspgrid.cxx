@@ -1,58 +1,26 @@
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include "config.h"
-
-#include <dune/grid/yaspgrid.hh>
-
-#include "../problems/spe10.hh"
-#include "../eocexpectations.hh"
-
-
+#include <config.h>
+#include "cg-spe10-2dyaspgrid.hh"
 namespace Dune {
 namespace GDT {
 namespace Test {
 
-
-template <bool anything>
-class LinearEllipticEocExpectations<LinearElliptic::
-                                        Spe10Model1TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double,
-                                                                                                                 2>>,
-                                                            double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::cg, 1, anything>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+std::vector<double>
+LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<Yasp2Grid, double, 1>,
+                              LinearElliptic::ChooseDiscretizer::cg, 1>::
+    results(const LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<Yasp2Grid, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
+            const std::string type)
 {
-  typedef LinearElliptic::Spe10Model1TestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, double,
-                                              1>
-      TestCaseType;
-
-public:
-  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
-  {
-    if (type == "L2")
-      return {1.86e-02, 1.51e-02};
-    else if (type == "H1_semi")
-      return {3.31e-01, 4.32e-01};
-    else if (type == "energy")
-      return {9.58e-01, 1.37e+00};
-    else
-      EXPECT_TRUE(false) << "test results missing for type: " << type;
-    return {};
-  } // ... results(...)
-}; // LinearEllipticEocExpectations
-
-
-template class
-    LinearEllipticEocExpectations<LinearElliptic::
-                                      Spe10Model1TestCase<Dune::YaspGrid<2,
-                                                                         Dune::EquidistantOffsetCoordinates<double, 2>>,
-                                                          double, 1>,
-                                  LinearElliptic::ChooseDiscretizer::cg, 1>;
-
+  if (type == "L2")
+    return {1.86e-02, 1.51e-02};
+  else if (type == "H1_semi")
+    return {3.31e-01, 4.32e-01};
+  else if (type == "energy")
+    return {9.58e-01, 1.37e+00};
+  else
+    EXPECT_TRUE(false) << "test results missing for type: " << type;
+  return {};
+}
 
 } // namespace Test
 } // namespace GDT

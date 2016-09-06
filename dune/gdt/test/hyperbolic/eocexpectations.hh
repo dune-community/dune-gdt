@@ -15,40 +15,17 @@
 
 #include "discretizers/base.hh"
 #include <dune/gdt/discretizations/default.hh>
+#include <dune/gdt/test/grids.hh>
+
+#include "eocexpectations_base.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
-using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
-using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
-
-namespace internal {
-
-
-template <int dimDomain>
-class HyperbolicEocExpectationsBase
-{
-public:
-  static double rate(const std::string type)
-  {
-    if (type == "L1") {
-      if (dimDomain == 1)
-        return 0.5;
-      else
-        return 0.25;
-    } else {
-      EXPECT_TRUE(false) << "expected rate missing for type: " << type;
-      return 0;
-    }
-  } // ... rate(...)
-}; // class HyperbolicEocExpectationsBase
-
-
-} // namespace internal
 
 template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, NumericalFluxes num_flux,
-          TimeStepperMethods time_stepper, bool anything = true>
+          TimeStepperMethods time_stepper>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:
@@ -70,7 +47,7 @@ public:
 }; // HyperbolicEocExpectations
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

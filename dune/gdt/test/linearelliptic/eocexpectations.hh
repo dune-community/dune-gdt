@@ -14,35 +14,17 @@
 
 #include "discretizers/base.hh"
 
+#include "eocexpectations_base.hh"
+
+#include <dune/gdt/test/grids.hh>
+#include "problems.hh"
+
+
 namespace Dune {
 namespace GDT {
 namespace Test {
-namespace internal {
 
-
-template <int polOrder>
-class LinearEllipticEocExpectationsBase
-{
-public:
-  static size_t rate(const std::string type)
-  {
-    if (type == "L2")
-      return polOrder + 1;
-    else if (type == "H1_semi")
-      return polOrder;
-    else if (type == "energy")
-      return polOrder;
-    else
-      EXPECT_TRUE(false) << "expected rate missing for type: " << type;
-    return 0;
-  } // ... rate(...)
-}; // class LinearEllipticEocExpectationsBase
-
-
-} // namespace internal
-
-
-template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, bool anything = true>
+template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder>
 class LinearEllipticEocExpectations : public internal::LinearEllipticEocExpectationsBase<polOrder>
 {
 public:

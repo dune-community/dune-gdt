@@ -358,8 +358,8 @@ public:
 
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class TransportTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::Transport<typename G::template Codim<0>::Entity,
-                                                                            typename G::ctype, G::dimension, R, r, rC>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::Transport<typename G::template Codim<0>::Entity,
+                                                                           typename G::ctype, G::dimension, R, r, rC>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -371,7 +371,7 @@ public:
   typedef typename Problems::Transport<E, D, d, R, r, rC> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

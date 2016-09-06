@@ -301,9 +301,9 @@ public:
 
 template <class G, class R = double, size_t momentOrder = 5>
 class SourceBeamTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
-                                                                             typename G::ctype, G::dimension, R,
-                                                                             momentOrder>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
+                                                                            typename G::ctype, G::dimension, R,
+                                                                            momentOrder>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -316,7 +316,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

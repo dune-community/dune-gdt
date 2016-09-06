@@ -19,6 +19,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/stationary-testcase.hh>
+#include <dune/gdt/test/grids.hh>
 
 #include "base.hh"
 
@@ -100,7 +101,7 @@ private:
   };
 
   template <bool anything>
-  struct Helper<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, anything>
+  struct Helper<Yasp2Grid, anything>
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
@@ -111,7 +112,7 @@ private:
 
 #if HAVE_ALUGRID
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
+  struct Helper<AluConform2dGridType, anything>
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
@@ -122,7 +123,7 @@ private:
   };
 
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
+  struct Helper<AluSimplex2dGridType, anything>
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
