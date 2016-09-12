@@ -415,6 +415,7 @@ public:
       std::abort();
     }
 #else // HAVE_EIGEN
+    (void)solution; // silence warning during compilation
     static_assert(AlwaysFalse<DiscreteSolutionType>::value, "You are missing eigen!");
 #endif // HAVE_EIGEN
   }
