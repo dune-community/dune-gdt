@@ -33,35 +33,35 @@ namespace SwipdgFluxreconstrutionEstimators {
 static const size_t over_integrate = 2;
 
 
-static std::string
+static inline std::string
 local_nonconformity_ESV2007_id()
 {
   return "eta_NC_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 local_residual_ESV2007_id()
 {
   return "eta_R_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 local_diffusive_flux_ESV2007_id()
 {
   return "eta_DF_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 ESV2007_id()
 {
   return "eta_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 ESV2007_alternative_summation_id()
 {
   return ESV2007_id() + "_alternative_summation";
