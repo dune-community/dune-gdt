@@ -6,8 +6,8 @@
 //   Felix Schindler (2016)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
-#define DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
+#ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH
+#define DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH
 
 #include <dune/grid/common/gridview.hh>
 
@@ -134,4 +134,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
+#endif // DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH

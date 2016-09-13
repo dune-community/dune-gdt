@@ -8,6 +8,3 @@
 #include "eocexpectations-fv-transport-1dyaspgrid.hh"
 #include "eocexpectations-fv-transport-2dyaspgrid.hh"
 #include "eocexpectations.hh"
-#include "eocstudy.hh"
-#include "fv-discretization.hh"
-#include "problems.hh"

@@ -1,9 +1,13 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_BASE_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_BASE_HH
 
+#include <dune/xt/common/test/gtest/gtest.h>
+
 #include "discretizers/base.hh"
 
+#include <dune/gdt/operators/fv.hh>
 #include <dune/gdt/test/grids.hh>
+#include <dune/gdt/timestepper/interface.hh>
 
 namespace Dune {
 namespace GDT {
