@@ -8,8 +8,8 @@
 
 # expectation targets
 dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
-	    STATIC
-            EXCLUDE_FROM_ALL
+	          NO_EXPORT
+            SOURCES
             eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
             eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
             eocexpectations-fv-burgers-1dyaspgrid.cxx
