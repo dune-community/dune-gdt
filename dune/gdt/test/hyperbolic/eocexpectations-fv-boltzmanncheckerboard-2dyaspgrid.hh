@@ -6,6 +6,9 @@
 //   Felix Schindler (2016)
 //   Tobias Leibner  (2016)
 
+#ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
+#define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
+
 #include "config.h"
 
 #include <dune/grid/yaspgrid.hh>
@@ -36,3 +39,5 @@ public:
 } // namespace Tests
 } // namespace GDT
 } // namespace Dune
+
+#endif // DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH

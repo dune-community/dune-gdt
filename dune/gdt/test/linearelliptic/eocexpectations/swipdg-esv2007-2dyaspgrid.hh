@@ -5,6 +5,8 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
+#ifndef DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_ESV2007_2DYASPGRID_HH
+#define DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_ESV2007_2DYASPGRID_HH
 
 #include <dune/grid/yaspgrid.hh>
 
@@ -42,3 +44,5 @@ public:
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
+
+#endif // DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_ESV2007_2DYASPGRID_HH
