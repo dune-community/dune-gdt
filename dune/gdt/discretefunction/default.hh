@@ -381,9 +381,10 @@ namespace internal {
 template <class D>
 struct is_const_discrete_function_helper
 {
-  DXTC_has_typedef_initialize_once(SpaceType) DXTC_has_typedef_initialize_once(VectorType)
+  DXTC_has_typedef_initialize_once(SpaceType);
+  DXTC_has_typedef_initialize_once(VectorType);
 
-      static const bool is_candidate = DXTC_has_typedef(SpaceType)<D>::value && DXTC_has_typedef(VectorType)<D>::value;
+  static const bool is_candidate = DXTC_has_typedef(SpaceType)<D>::value && DXTC_has_typedef(VectorType)<D>::value;
 };
 
 

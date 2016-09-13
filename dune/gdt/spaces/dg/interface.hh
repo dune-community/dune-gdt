@@ -54,13 +54,14 @@ namespace internal {
 template <class S>
 struct is_dg_space_helper
 {
-  DXTC_has_typedef_initialize_once(Traits) DXTC_has_static_member_initialize_once(dimDomain)
-      DXTC_has_static_member_initialize_once(dimRange) DXTC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
 
-          static const
-      bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
-                          && DXTC_has_static_member(dimRange)<S>::value
-                          && DXTC_has_static_member(dimRangeCols)<S>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_dg_space_helper
 
 

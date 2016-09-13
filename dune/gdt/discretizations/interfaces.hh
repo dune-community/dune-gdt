@@ -272,9 +272,9 @@ namespace internal {
 template <class D>
 struct is_stationary_discretization_helper
 {
-  DXTC_has_typedef_initialize_once(Traits)
+  DXTC_has_typedef_initialize_once(Traits);
 
-      static const bool is_candidate = DXTC_has_typedef(Traits)<D>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<D>::value;
 };
 
 
