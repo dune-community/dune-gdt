@@ -47,6 +47,9 @@ endforeach(_mod DEPENDENCIES)
 set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
 
 #disable most warnings from dependent modules
+if (EIGEN3_FOUND)
+  add_definitions("-isystem ${EIGEN3_INCLUDE_DIR}")
+endif (EIGEN3_FOUND)
 foreach(_mod ${ALL_DEPENDENCIES})
     if(${_mod}_INCLUDE_DIRS)
         foreach( _idir ${${_mod}_INCLUDE_DIRS} )
