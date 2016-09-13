@@ -98,15 +98,15 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
   template <class ProductImp>
   void localizable_product_test(ProductImp& prod)
   {
-    const auto& DUNE_UNUSED(source)    = prod.source();
-    const auto& DUNE_UNUSED(range)     = prod.range();
-    auto& DUNE_UNUSED(non_const_range) = prod.range();
+    const auto& source DUNE_UNUSED    = prod.source();
+    const auto& range DUNE_UNUSED     = prod.range();
+    auto& non_const_range DUNE_UNUSED = prod.range();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(prod);
     walker.walk();
 
-    auto DUNE_UNUSED(result) = prod.apply2();
+    auto result DUNE_UNUSED = prod.apply2();
   } // ... localizable_product_test(...)
 }; // class LocalizableProductBase
 
@@ -121,10 +121,10 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
   template <class OperatorImp>
   void matrix_operator_test(OperatorImp& op)
   {
-    const auto& DUNE_UNUSED(matrix)       = op.matrix();
-    auto& DUNE_UNUSED(non_const_matrix)   = op.matrix();
-    const auto& DUNE_UNUSED(source_space) = op.source_space();
-    const auto& DUNE_UNUSED(range_space)  = op.range_space();
+    const auto& matrix DUNE_UNUSED       = op.matrix();
+    auto& non_const_matrix DUNE_UNUSED   = op.matrix();
+    const auto& source_space DUNE_UNUSED = op.source_space();
+    const auto& range_space DUNE_UNUSED  = op.range_space();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(op);

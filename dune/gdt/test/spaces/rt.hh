@@ -53,7 +53,7 @@ public:
   void fulfills_raviart_thomas_2d_simplicial_interface()
   {
     for (const auto& entity : elements(this->space_.grid_view()))
-      auto DUNE_UNUSED(local_DoF_indices) = this->space_.local_DoF_indices(entity);
+      auto local_DoF_indices DUNE_UNUSED = this->space_.local_DoF_indices(entity);
   }
 }; // class RT_2d_simplicial_Space
 

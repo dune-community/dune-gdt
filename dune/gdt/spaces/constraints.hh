@@ -100,7 +100,7 @@ public:
 
   inline void insert(const size_t DoF)
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(mutex_);
     assert(DoF < size_);
     dirichlet_DoFs_.insert(DoF);
   }

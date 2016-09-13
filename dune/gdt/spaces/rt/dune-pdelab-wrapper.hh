@@ -173,7 +173,7 @@ public:
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& DUNE_UNUSED(comm) = this->communicator();
+      const auto& comm DUNE_UNUSED = this->communicator();
   }
 
   /**
@@ -217,7 +217,7 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     return *communicator_;

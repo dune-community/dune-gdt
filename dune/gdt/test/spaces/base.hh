@@ -240,9 +240,9 @@ public:
   void check_for_correct_copy()
   {
     SpaceType foop(space_);
-    auto DUNE_UNUSED(aa) = foop.mapper().size();
-    SpaceType cp         = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
-    auto DUNE_UNUSED(bb) = cp.mapper().size();
+    auto aa DUNE_UNUSED = foop.mapper().size();
+    SpaceType cp        = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
+    auto bb DUNE_UNUSED = cp.mapper().size();
   } // ... check_for_correct_copy()
 
   /**

@@ -69,9 +69,9 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
     EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
-    typedef typename SpaceType::RangeFieldType RangeFieldType;
+    typedef typename SpaceType::RangeFieldType RangeFieldType DUNE_UNUSED;
     Dune::XT::Grid::AllDirichletBoundaryInfo<IntersectionType> boundary_info;
-    std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
+    std::set<size_t> local_dirichlet_DoFs DUNE_UNUSED = this->space_.local_dirichlet_DoFs(entity, boundary_info);
     Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
         boundary_info, this->space_.mapper().size(), true);
     Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(

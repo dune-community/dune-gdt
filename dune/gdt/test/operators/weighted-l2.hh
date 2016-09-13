@@ -106,8 +106,8 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
                                          ScalarFunctionType,
                                          double>
         CtorTestProductType;
-    CtorTestProductType DUNE_UNUSED(wo_over_integrate)(weight, grid_view, range, source);
-    CtorTestProductType DUNE_UNUSED(with_over_integrate)(1, weight, grid_view, range, source);
+    DUNE_UNUSED CtorTestProductType wo_over_integrate(weight, grid_view, range, source);
+    DUNE_UNUSED CtorTestProductType with_over_integrate(1, weight, grid_view, range, source);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
@@ -117,8 +117,8 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
     const auto& source    = this->scalar_function_;
     const auto& range     = this->scalar_function_;
 
-    auto DUNE_UNUSED(wo_over_integrate)   = make_weighted_l2_localizable_product(weight, grid_view, range, source);
-    auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_localizable_product(weight, grid_view, range, source, 1);
+    auto wo_over_integrate DUNE_UNUSED   = make_weighted_l2_localizable_product(weight, grid_view, range, source);
+    auto with_over_integrate DUNE_UNUSED = make_weighted_l2_localizable_product(weight, grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
@@ -175,59 +175,59 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
     // without matrix
     //   without over_integrate
     //     simplified argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_1)(weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_2)(weight, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_3)(
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_1(weight, space);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_2(weight, space, grid_view);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_3(
         weight, space, space, grid_view);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_4)(weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_5)(weight, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_6)(weight, space, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_4(weight, space);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_5(weight, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_6(weight, space, space, grid_view);
     //   with over_integrate
     //     simplified argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_7)(1, weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_8)(1, weight, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(no_matrix_9)(
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_7(1, weight, space);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_8(1, weight, space, grid_view);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_9(
         1, weight, space, space, grid_view);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_10)(1, weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_11)(1, weight, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(no_matrix_12)(1, weight, space, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_10(1, weight, space);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_11(1, weight, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        no_matrix_12(1, weight, space, space, grid_view);
     // with matrix
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
     //   without over_integrate
     //     simplified argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_1)(weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_2)(weight, matrix, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_3)(
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_1(weight, matrix, space);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_2(weight, matrix, space, grid_view);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_3(
         weight, matrix, space, space, grid_view);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_4)(weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_5)(weight, matrix, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_6)(weight, matrix, space, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_4(weight, matrix, space);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_5(weight, matrix, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_6(weight, matrix, space, space, grid_view);
     //   with over_integrate
     //     simplified argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_7)(1, weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_8)(
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_7(1, weight, matrix, space);
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_8(
         1, weight, matrix, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> DUNE_UNUSED(matrix_9)(
+    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_9(
         1, weight, matrix, space, space, grid_view);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_10)(1, weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_11)(1, weight, matrix, space, grid_view);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double>
-        DUNE_UNUSED(matrix_12)(1, weight, matrix, space, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_10(1, weight, matrix, space);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_11(1, weight, matrix, space, grid_view);
+    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridViewType, SpaceType, double> DUNE_UNUSED
+        matrix_12(1, weight, matrix, space, space, grid_view);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
@@ -238,19 +238,19 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
     // without matrix
-    auto DUNE_UNUSED(op_01) = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
-    auto DUNE_UNUSED(op_02) = make_weighted_l2_matrix_operator<MatrixType>(weight, space, 1);
-    auto DUNE_UNUSED(op_03) = make_weighted_l2_matrix_operator<MatrixType>(weight, space, grid_view);
-    auto DUNE_UNUSED(op_04) = make_weighted_l2_matrix_operator<MatrixType>(weight, space, grid_view, 1);
-    auto DUNE_UNUSED(op_05) = make_weighted_l2_matrix_operator<MatrixType>(weight, space, space, grid_view);
-    auto DUNE_UNUSED(op_06) = make_weighted_l2_matrix_operator<MatrixType>(weight, space, space, grid_view, 1);
+    auto op_01 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
+    auto op_02 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space, 1);
+    auto op_03 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space, grid_view);
+    auto op_04 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space, grid_view, 1);
+    auto op_05 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space, space, grid_view);
+    auto op_06 DUNE_UNUSED = make_weighted_l2_matrix_operator<MatrixType>(weight, space, space, grid_view, 1);
     // with matrix
-    auto DUNE_UNUSED(op_07) = make_weighted_l2_matrix_operator(weight, matrix, space);
-    auto DUNE_UNUSED(op_08) = make_weighted_l2_matrix_operator(weight, matrix, space, 1);
-    auto DUNE_UNUSED(op_09) = make_weighted_l2_matrix_operator(weight, matrix, space, grid_view);
-    auto DUNE_UNUSED(op_10) = make_weighted_l2_matrix_operator(weight, matrix, space, grid_view, 1);
-    auto DUNE_UNUSED(op_11) = make_weighted_l2_matrix_operator(weight, matrix, space, space, grid_view);
-    auto DUNE_UNUSED(op_12) = make_weighted_l2_matrix_operator(weight, matrix, space, space, grid_view, 1);
+    auto op_07 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space);
+    auto op_08 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space, 1);
+    auto op_09 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space, grid_view);
+    auto op_10 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space, grid_view, 1);
+    auto op_11 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space, space, grid_view);
+    auto op_12 DUNE_UNUSED = make_weighted_l2_matrix_operator(weight, matrix, space, space, grid_view, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
@@ -301,8 +301,8 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight    = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    WeightedL2Operator<ExpressionFunctionType, GridViewType> DUNE_UNUSED(wo_over_integrate)(weight, grid_view);
-    WeightedL2Operator<ExpressionFunctionType, GridViewType> DUNE_UNUSED(with_over_integrate)(weight, grid_view, 1);
+    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridViewType> wo_over_integrate(weight, grid_view);
+    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridViewType> with_over_integrate(weight, grid_view, 1);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
@@ -310,8 +310,8 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight    = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto DUNE_UNUSED(wo_over_integrate)   = make_weighted_l2_operator(grid_view, weight);
-    auto DUNE_UNUSED(with_over_integrate) = make_weighted_l2_operator(grid_view, weight, 1);
+    auto wo_over_integrate DUNE_UNUSED   = make_weighted_l2_operator(grid_view, weight);
+    auto with_over_integrate DUNE_UNUSED = make_weighted_l2_operator(grid_view, weight, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final

@@ -79,7 +79,7 @@ public:
 
   virtual void finalize() override final
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(constraints_.mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(constraints_.mutex_);
     constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
                                         thread_local_constraints_->dirichlet_DoFs_.end());
   }
