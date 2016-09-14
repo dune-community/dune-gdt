@@ -21,21 +21,21 @@ using namespace Dune::GDT;
 #if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
 TYPED_TEST_CASE(linearelliptic_SWIPDG_discretization, YaspGridTestCases);
-TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_sgrid_order_1)
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_yaspgrid_order_1)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::istl_sparse, 1>();
 }
-TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_sgrid_order_2)
+TYPED_TEST(linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_yaspgrid_order_2)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::istl_sparse, 2>();
 }
 
 #else
 
-TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_sgrid_order_1)
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_yaspgrid_order_1)
 {
 }
-TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_sgrid_order_2)
+TEST(DISABLED_linearelliptic_SWIPDG_discretization, eoc_study_using_fem_and_istl_and_yaspgrid_order_2)
 {
 }
 
