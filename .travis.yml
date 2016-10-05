@@ -85,8 +85,11 @@ notifications:
   email:
     on_success: change
     on_failure: change
+    on_start: never
   webhooks:
-    - https://buildtimetrend.herokuapp.com/travis
+    urls:
+      - https://buildtimetrend.herokuapp.com/travis
+      - https://webhooks.gitter.im/e/2a38e80d2722df87f945
 
 branches:
   except:
