@@ -10,17 +10,19 @@
 
 #include <dune/stuff/common/exceptions.hh>
 
-namespace Dune {
+namespace Dune
+{
 namespace GDT {
 
 
-class operator_error : public Dune::Exception
-{
+class operator_error : public Dune::Exception {
 };
 
 class prolongation_error : public operator_error
 {
-};
+}
+
+;
 
 class projection_error : public operator_error
 {
