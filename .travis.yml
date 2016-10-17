@@ -37,6 +37,8 @@ before_install:
   - sudo -E apt-get install -y -q python-pip python3-pip
   - sudo -E pip3 install virtualenv cpp-coveralls
   - sudo -E pip install virtualenv cpp-coveralls
+  # workaround for gnutls bug is using git built against curl-openssl
+  - sudo -E add-apt-repository -y ppa:pymor/travis && sudo -E aptitude update && sudo -E aptitude install git -yq
   - for ii in http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis5_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/metis_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis-dev_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis-dev_3.1.1-4build1_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis3.1_3.1.1-4build1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
   - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
@@ -69,6 +71,7 @@ script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS//_/.+}; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck; fi
     # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
+    - unset GH_TOKEN
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
 
 
@@ -82,8 +85,11 @@ notifications:
   email:
     on_success: change
     on_failure: change
+    on_start: never
   webhooks:
-    - https://buildtimetrend.herokuapp.com/travis
+    urls:
+      - https://buildtimetrend.herokuapp.com/travis
+      - https://webhooks.gitter.im/e/2a38e80d2722df87f945
 
 branches:
   except:
