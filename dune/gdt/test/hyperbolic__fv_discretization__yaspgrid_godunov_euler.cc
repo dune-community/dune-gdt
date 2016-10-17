@@ -11,7 +11,7 @@
 #endif
 
 // This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "hyperbolic/fv-discretization.hh"
 

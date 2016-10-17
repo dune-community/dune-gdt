@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "projections/l2-local.hh"
 #include "spaces/dg/pdelab.hh"
@@ -34,7 +34,7 @@ TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
 }
 TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results();
+  this->produces_correct_results(this->default_tolerance);
 }
 
 

@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
-#include <dune/stuff/test/main.hxx> // <- this one has to come first
+#include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
 #include "operators/weighted-l2.hh"
 #include "spaces/fv/default.hh"
@@ -13,7 +13,7 @@
 using namespace Dune::GDT::Test;
 
 
-typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRID(3, 1)> ConstantSpaces;
+typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)> ConstantSpaces;
 
 TYPED_TEST_CASE(WeightedL2LocalizableProductTest, ConstantSpaces);
 TYPED_TEST(WeightedL2LocalizableProductTest, constructible_by_ctor)

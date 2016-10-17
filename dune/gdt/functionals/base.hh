@@ -8,9 +8,9 @@
 #ifndef DUNE_GDT_FUNCTIONALS_BASE_HH
 #define DUNE_GDT_FUNCTIONALS_BASE_HH
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/la/container/vector-interface.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/walker/apply-on.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/assembler/wrapper.hh>
 #include <dune/gdt/assembler/system.hh>
@@ -35,8 +35,7 @@ namespace internal {
 template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
 class VectorFunctionalBaseTraits
 {
-  static_assert(Stuff::LA::is_vector<VectorImp>::value,
-                "VectorType has to be derived from Stuff::LA::vectorInterface!");
+  static_assert(XT::LA::is_vector<VectorImp>::value, "VectorType has to be derived from XT::LA::vectorInterface!");
   static_assert(is_space<SpaceImp>::value, "SpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename SpaceImp::GridViewType::template Codim<0>::Entity,
                              typename GridViewImp::template Codim<0>::Entity>::value,
@@ -79,7 +78,7 @@ public:
     , vector_(vec)
   {
     if (vector_.access().size() != this->test_space().mapper().size())
-      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "vector.size(): " << vector_.access().size() << "\n"
                                    << "space().mapper().size(): "
                                    << this->space().mapper().size());
@@ -112,8 +111,9 @@ public:
   using BaseAssemblerType::add;
 
   template <class F>
-  void add(const LocalVolumeFunctionalInterface<F>& local_volume_functional,
-           const DSG::ApplyOn::WhichEntity<GridViewType>* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  void
+  add(const LocalVolumeFunctionalInterface<F>& local_volume_functional,
+      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::LocalVolumeFunctionalWrapper<ThisType,
                                                    typename LocalVolumeFunctionalInterface<F>::derived_type,
@@ -124,9 +124,9 @@ public:
   }
 
   template <class F>
-  void
-  add(const LocalFaceFunctionalInterface<F>& local_face_functional,
-      const DSG::ApplyOn::WhichIntersection<GridViewType>* where = new DSG::ApplyOn::AllIntersections<GridViewType>())
+  void add(const LocalFaceFunctionalInterface<F>& local_face_functional,
+           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+               new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     typedef internal::LocalFaceFunctionalWrapper<ThisType,
                                                  typename LocalFaceFunctionalInterface<F>::derived_type,
@@ -137,7 +137,7 @@ public:
   }
 
   template <class S>
-  FieldType apply(const Stuff::LA::VectorInterface<S>& source) const
+  FieldType apply(const XT::LA::VectorInterface<S>& source) const
   {
     const_cast<ThisType&>(*this).assemble();
     return vector().dot(source.as_imp());
@@ -150,7 +150,7 @@ public:
   }
 
 private:
-  DSC::StorageProvider<VectorType> vector_;
+  Dune::XT::Common::StorageProvider<VectorType> vector_;
 }; // class VectorFunctionalBase
 
 

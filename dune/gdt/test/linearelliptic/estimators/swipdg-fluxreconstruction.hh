@@ -8,10 +8,10 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_ESTIMATORS_SWIPDG_FLUXRECONSTRUCTION_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_ESTIMATORS_SWIPDG_FLUXRECONSTRUCTION_HH
 
-#include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/grid/walker/functors.hh>
-#include <dune/stuff/playground/functions/ESV2007.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/walker/functors.hh>
+#include <dune/xt/functions/ESV2007.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
@@ -33,35 +33,35 @@ namespace SwipdgFluxreconstrutionEstimators {
 static const size_t over_integrate = 2;
 
 
-static std::string
+static inline std::string
 local_nonconformity_ESV2007_id()
 {
   return "eta_NC_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 local_residual_ESV2007_id()
 {
   return "eta_R_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 local_diffusive_flux_ESV2007_id()
 {
   return "eta_DF_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 ESV2007_id()
 {
   return "eta_ESV2007";
 }
 
 
-static std::string
+static inline std::string
 ESV2007_alternative_summation_id()
 {
   return ESV2007_id() + "_alternative_summation";
@@ -74,9 +74,9 @@ ESV2007_alternative_summation_id()
 template <class SpaceType, class VectorType, class DiffusionFactorType, class DiffusionTensorType,
           class GridViewType = typename SpaceType::GridViewType>
 class LocalNonconformityESV2007
-    : public Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename SpaceType::RangeFieldType>
+    : public XT::Grid::Functor::Codim0Return<GridViewType, typename SpaceType::RangeFieldType>
 {
-  typedef Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename SpaceType::RangeFieldType> BaseType;
+  typedef XT::Grid::Functor::Codim0Return<GridViewType, typename SpaceType::RangeFieldType> BaseType;
   typedef LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridViewType>
       ThisType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
@@ -106,7 +106,7 @@ public:
                              const size_t over_int = over_integrate)
   {
     ThisType estimator(grid_view, space, vector, diffusion_factor, diffusion_tensor, over_int);
-    Stuff::Grid::Walker<GridViewType> grid_walker(grid_view);
+    XT::Grid::Walker<GridViewType> grid_walker(grid_view);
     grid_walker.add(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
@@ -149,7 +149,7 @@ public:
     result_ += compute_locally(entity);
   }
 
-  virtual ReturnType result() const
+  virtual ReturnType result() const override
   {
     return result_;
   }
@@ -170,9 +170,9 @@ private:
  */
 template <class SpaceType, class VectorType, class ForceType, class DiffusionFactorType, class DiffusionTensorType,
           class GridViewType = typename SpaceType::GridViewType>
-class LocalResidualESV2007 : public Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename ForceType::RangeFieldType>
+class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridViewType, typename ForceType::RangeFieldType>
 {
-  typedef Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename ForceType::RangeFieldType> BaseType;
+  typedef XT::Grid::Functor::Codim0Return<GridViewType, typename ForceType::RangeFieldType> BaseType;
   typedef LocalResidualESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridViewType>
       ThisType;
   typedef typename ForceType::RangeFieldType RangeFieldType;
@@ -181,7 +181,7 @@ class LocalResidualESV2007 : public Stuff::Grid::Codim0ReturnFunctor<GridViewTyp
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
   typedef typename DiffusiveFluxType::DivergenceType DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
-  typedef typename Stuff::Functions::ESV2007::Cutoff<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
+  typedef typename XT::Functions::ESV2007::CutoffFunction<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
   typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>> LocalOperatorType;
 
 public:
@@ -205,7 +205,7 @@ public:
                              const DiffusionTensorType& diffusion_tensor, const size_t over_int = over_integrate)
   {
     ThisType estimator(grid_view, space, vector, force, diffusion_factor, diffusion_tensor, over_int);
-    Stuff::Grid::Walker<GridViewType> grid_walker(grid_view);
+    XT::Grid::Walker<GridViewType> grid_walker(grid_view);
     grid_walker.add(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
@@ -283,11 +283,11 @@ private:
 template <class SpaceType, class VectorType, class DiffusionFactorType, class DiffusionTensorType,
           class GridViewType = typename SpaceType::GridViewType>
 class LocalDiffusiveFluxESV2007
-    : public Stuff::Grid::Codim0ReturnFunctor<typename SpaceType::GridViewType, typename SpaceType::RangeFieldType>
+    : public XT::Grid::Functor::Codim0Return<typename SpaceType::GridViewType, typename SpaceType::RangeFieldType>
 {
   typedef LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridViewType>
       ThisType;
-  typedef Stuff::Grid::Codim0ReturnFunctor<typename SpaceType::GridViewType, typename SpaceType::RangeFieldType>
+  typedef XT::Grid::Functor::Codim0Return<typename SpaceType::GridViewType, typename SpaceType::RangeFieldType>
       BaseType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
@@ -342,7 +342,7 @@ public:
   {
     ThisType estimator(
         grid_view, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int);
-    Stuff::Grid::Walker<GridViewType> grid_walker(grid_view);
+    XT::Grid::Walker<GridViewType> grid_walker(grid_view);
     grid_walker.add(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
@@ -411,9 +411,9 @@ private:
 
 template <class SpaceType, class VectorType, class ForceType, class DiffusionFactorType, class DiffusionTensorType,
           class GridViewType = typename SpaceType::GridViewType>
-class ESV2007 : public Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename SpaceType::RangeFieldType>
+class ESV2007 : public XT::Grid::Functor::Codim0Return<GridViewType, typename SpaceType::RangeFieldType>
 {
-  typedef Stuff::Grid::Codim0ReturnFunctor<GridViewType, typename SpaceType::RangeFieldType> BaseType;
+  typedef XT::Grid::Functor::Codim0Return<GridViewType, typename SpaceType::RangeFieldType> BaseType;
   typedef ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridViewType> ThisType;
 
   typedef LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridViewType>
@@ -474,20 +474,20 @@ public:
                        diffusion_factor_reconstruction,
                        diffusion_tensor,
                        over_int);
-    Stuff::Grid::Walker<GridViewType> grid_walker(grid_view);
+    XT::Grid::Walker<GridViewType> grid_walker(grid_view);
     grid_walker.add(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
 
-  static Stuff::LA::CommonDenseVector<ReturnType>
+  static XT::LA::CommonDenseVector<ReturnType>
   estimate_local(const GridViewType& grid_view, const SpaceType& space, const VectorType& vector,
                  const ForceType& force, const DiffusionFactorType& diffusion_factor_norm,
                  const DiffusionFactorType& diffusion_factor_reconstruction,
                  const DiffusionTensorType& diffusion_tensor, const size_t over_int = over_integrate)
   {
-    Stuff::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
-                                                              0.0);
+    XT::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
+                                                           0.0);
     ReturnType eta_squared = 0.0;
     ThisType estimator(grid_view,
                        space,
@@ -613,20 +613,20 @@ public:
                        diffusion_factor_reconstruction,
                        diffusion_tensor,
                        over_int);
-    Stuff::Grid::Walker<GridViewType> grid_walker(grid_view);
+    XT::Grid::Walker<GridViewType> grid_walker(grid_view);
     grid_walker.add(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
 
-  static Stuff::LA::CommonDenseVector<ReturnType>
+  static XT::LA::CommonDenseVector<ReturnType>
   estimate_local(const GridViewType& grid_view, const SpaceType& space, const VectorType& vector,
                  const ForceType& force, const DiffusionFactorType& diffusion_factor_norm,
                  const DiffusionFactorType& diffusion_factor_reconstruction,
                  const DiffusionTensorType& diffusion_tensor, const size_t over_int = over_integrate)
   {
-    Stuff::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
-                                                              0.0);
+    XT::LA::CommonDenseVector<ReturnType> local_indicators(boost::numeric_cast<size_t>(grid_view.indexSet().size(0)),
+                                                           0.0);
     ThisType estimator(grid_view,
                        space,
                        vector,

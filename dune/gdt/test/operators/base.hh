@@ -10,12 +10,12 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/la/container.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/grid/walker.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -38,14 +38,15 @@ struct OperatorBaseTraits
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   static const size_t dimRange       = SpaceType::dimRange;
   static const unsigned int polOrder = SpaceType::polOrder;
-  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
+  typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
       ScalarFunctionType;
-  typedef Dune::Stuff::Functions::Expression<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+  typedef Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
+                                                dimDomain>
       TensorFunctionType;
-  typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_backend>::MatrixType MatrixType;
-  typedef typename Stuff::LA::Container<RangeFieldType, Stuff::LA::default_backend>::VectorType VectorType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 }; // class OperatorBaseTraits
 
@@ -59,7 +60,7 @@ struct OperatorBase : public ::testing::Test
   typedef internal::OperatorBaseTraits<SpaceType> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
+  typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::ScalarFunctionType ScalarFunctionType;
   typedef typename Traits::FunctionType FunctionType;
@@ -70,11 +71,11 @@ struct OperatorBase : public ::testing::Test
   static const size_t dimDomain = Traits::dimDomain;
 
   OperatorBase()
-    : grid_provider_(0.0, 1.0, 3u)
+    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
     , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_provider_.grid()))
     , scalar_function_("x", "x[0]", 1, "scalar function", {{"1.0", "0.0", "0.0"}})
     , function_("x", {"x[0]", "0", "0"}, 1)
-    , tensor_function_(Stuff::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
+    , tensor_function_(XT::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
     , discrete_function_(space_)
   {
   }
@@ -97,15 +98,15 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
   template <class ProductImp>
   void localizable_product_test(ProductImp& prod)
   {
-    const auto& DUNE_UNUSED(source)    = prod.source();
-    const auto& DUNE_UNUSED(range)     = prod.range();
-    auto& DUNE_UNUSED(non_const_range) = prod.range();
+    const auto& source DUNE_UNUSED    = prod.source();
+    const auto& range DUNE_UNUSED     = prod.range();
+    auto& non_const_range DUNE_UNUSED = prod.range();
 
-    Stuff::Grid::Walker<GridViewType> walker(this->space_.grid_view());
+    XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(prod);
     walker.walk();
 
-    auto DUNE_UNUSED(result) = prod.apply2();
+    auto result DUNE_UNUSED = prod.apply2();
   } // ... localizable_product_test(...)
 }; // class LocalizableProductBase
 
@@ -120,12 +121,12 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
   template <class OperatorImp>
   void matrix_operator_test(OperatorImp& op)
   {
-    const auto& DUNE_UNUSED(matrix)       = op.matrix();
-    auto& DUNE_UNUSED(non_const_matrix)   = op.matrix();
-    const auto& DUNE_UNUSED(source_space) = op.source_space();
-    const auto& DUNE_UNUSED(range_space)  = op.range_space();
+    const auto& matrix DUNE_UNUSED       = op.matrix();
+    auto& non_const_matrix DUNE_UNUSED   = op.matrix();
+    const auto& source_space DUNE_UNUSED = op.source_space();
+    const auto& range_space DUNE_UNUSED  = op.range_space();
 
-    Stuff::Grid::Walker<GridViewType> walker(this->space_.grid_view());
+    XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(op);
     walker.walk();
   } // ... matrix_operator_test(...)

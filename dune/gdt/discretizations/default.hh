@@ -12,9 +12,9 @@
 #include <utility>
 #include <vector>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/grid/information.hh>
-#include <dune/stuff/la/container/common.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/information.hh>
+#include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
 #include <dune/gdt/timestepper/factory.hh>
@@ -62,12 +62,12 @@ class HyperbolicFVDefaultDiscretizationTraits
   // no checks of the arguments needed, those are done in the interfaces
 public:
   typedef HyperbolicFVDefaultDiscretization<TestCaseImp, FVSpaceImp, numerical_flux, time_stepper_method,
-                                            rhs_time_stepper_method> derived_type;
+                                            rhs_time_stepper_method>
       derived_type;
   typedef typename TestCaseImp::ProblemType ProblemType;
   typedef FVSpaceImp SpaceType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  typedef typename Dune::Stuff::LA::CommonDenseVector<RangeFieldType> VectorType;
+  typedef typename Dune::XT::LA::CommonDenseVector<RangeFieldType> VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt> DiscreteSolutionType;
 }; // class InStationaryDefaultDiscretizationTraits
@@ -193,7 +193,7 @@ public:
   const VectorType& dirichlet_shift() const
   {
     if (!has_dirichlet_shift_)
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call dirichlet_shift() if has_dirichlet_shift() is false!");
     return dirichlet_shift_;
   }
@@ -300,7 +300,7 @@ class HyperbolicFVDefaultDiscretization
                                                                                       rhs_time_stepper_method>>
       BaseType;
   typedef HyperbolicFVDefaultDiscretization<TestCaseImp, FVSpaceImp, numerical_flux, time_stepper_method,
-                                            rhs_time_stepper_method> ThisType;
+                                            rhs_time_stepper_method>
       ThisType;
 
 public:
@@ -320,8 +320,9 @@ private:
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
-  typedef typename Dune::Stuff::Functions::Constant<typename SpaceType::EntityType, DomainFieldType, dimDomain,
-                                                    RangeFieldType, 1, 1> ConstantFunctionType;
+  typedef typename Dune::XT::Functions::ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain,
+                                                         RangeFieldType, 1, 1>
+      ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRHSOperator<RHSType> RHSOperatorType;
   typedef typename std::
       conditional<numerical_flux == NumericalFluxes::laxfriedrichs
@@ -336,8 +337,8 @@ private:
                                       time_stepper_method>::TimeStepperType OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RHSOperatorType, DiscreteFunctionType, RangeFieldType,
                                       rhs_time_stepper_method>::TimeStepperType RHSOperatorTimeStepperType;
-  typedef
-      typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
+      TimeStepperType;
 
 public:
   HyperbolicFVDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const SpaceType> fv_space_ptr)
@@ -381,7 +382,7 @@ public:
       const RangeFieldType CFL = problem().CFL();
 
       // calculate dx and choose initial dt
-      Dune::Stuff::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(fv_space_->grid_view());
+      Dune::XT::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(fv_space_->grid_view());
       RangeFieldType dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);
@@ -414,6 +415,7 @@ public:
       std::abort();
     }
 #else // HAVE_EIGEN
+    (void)solution; // silence warning during compilation
     static_assert(AlwaysFalse<DiscreteSolutionType>::value, "You are missing eigen!");
 #endif // HAVE_EIGEN
   }
@@ -423,7 +425,7 @@ public:
   void visualize(const DiscreteSolutionType& solution, const std::string filename) const
   {
     for (size_t ii = 0; ii < solution.size(); ++ii)
-      solution[ii].second.visualize(filename, DSC::to_string(ii));
+      solution[ii].second.visualize(filename, Dune::XT::Common::to_string(ii));
   }
 
 private:

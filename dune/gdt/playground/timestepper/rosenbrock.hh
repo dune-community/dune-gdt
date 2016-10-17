@@ -13,8 +13,8 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
 
 #include <dune/gdt/timestepper/interface.hh>
 
@@ -82,29 +82,31 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
-                                                                + " 0.796920457938 0.0730795420615 0 0;"
-                                                                + " 0.796920457938 0.0730795420615 0 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.438 0 0 0;"
+                                                                              + " 0.796920457938 0.0730795420615 0 0;"
+                                                                              + " 0.796920457938 0.0730795420615 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0.199293275701 0.482645235674 0.0680614886256 0.25]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[0.199293275701 0.482645235674 0.0680614886256 0.25]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[0.346325833758  0.285693175712 0.367980990530 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[0.346325833758  0.285693175712 0.367980990530 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<TimeFieldType>>("[0 0.438 0.87 0.87]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.438 0.87 0.87]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
         std::string("[0.395  0 0 0;") + " -0.767672395484 0.395  0 0;" + " -0.851675323742  0.522967289188 0.395  0;"
         + " 0.288463109545 0.0880214273381 -0.337389840627 0.395]");
   }
@@ -116,29 +118,31 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>(std::string("[0 0 0 0;") + " 0.462 0 0 0;"
-                                                                + " -0.0815668168327 0.961775150166 0 0;"
-                                                                + " -0.0815668168327 0.961775150166 0 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
+        std::string("[0 0 0 0;") + " 0.462 0 0 0;" + " -0.0815668168327 0.961775150166 0 0;"
+        + " -0.0815668168327 0.961775150166 0 0]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return DSC::fromString<Dune::DynamicVector<double>>("[0.217487371653 0.486229037990 0 0.296283590357]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<double>>(
+        "[0.217487371653 0.486229037990 0 0.296283590357]");
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return DSC::fromString<Dune::DynamicVector<RangeFieldType>>("[-0.717088504499 1.77617912176 -0.0590906172617 0]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
+        "[-0.717088504499 1.77617912176 -0.0590906172617 0]");
   }
 
   static Dune::DynamicVector<TimeFieldType> c()
   {
-    return DSC::fromString<Dune::DynamicVector<TimeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
-    return DSC::fromString<Dune::DynamicMatrix<RangeFieldType>>(
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
         std::string("[0.231 0 0 0;") + " -0.270629667752 0.231 0 0;" + " 0.311254483294 0.00852445628482 0.231 0;"
         + " 0.282816832044 -0.457959483281 -0.111208333333 0.231]");
   }
@@ -232,9 +236,9 @@ public:
     , num_stages_(A_.rows())
     , gamma_ii_equal_for_all_i_(true)
   {
-    assert(DSC::FloatCmp::gt(tol_, 0.0));
-    assert(DSC::FloatCmp::le(scale_factor_min_, 1.0));
-    assert(DSC::FloatCmp::ge(scale_factor_max_, 1.0));
+    assert(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
+    assert(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
+    assert(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(Gamma_.rows() == Gamma_.cols() && "Gamma has to be a square matrix");
     assert(Gamma_.rows() == A_.rows() && "Sizes of A and Gamma have to match!");
@@ -246,14 +250,15 @@ public:
       TimeFieldType c_calculated = 0;
       for (size_t jj = 0; jj < ii; ++jj)
         c_calculated += A_[ii][jj];
-      assert(DSC::FloatCmp::eq(c_calculated, c_[ii]));
+      assert(Dune::XT::Common::FloatCmp::eq(c_calculated, c_[ii]));
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(DSC::FloatCmp::eq(A_[ii][jj], 0.0)
+        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
                && "A has to be a lower triangular matrix with 0 on the main diagonal!");
         if (jj == ii)
-          assert(DSC::FloatCmp::ne(Gamma_[ii][jj], 0.0) && "The diagonal entries of Gamma must not vanish!");
+          assert(Dune::XT::Common::FloatCmp::ne(Gamma_[ii][jj], 0.0)
+                 && "The diagonal entries of Gamma must not vanish!");
         else
-          assert(DSC::FloatCmp::eq(Gamma_[ii][jj], 0.0) && "Gamma has to be a lower triangular matrix!");
+          assert(Dune::XT::Common::FloatCmp::eq(Gamma_[ii][jj], 0.0) && "Gamma has to be a lower triangular matrix!");
       }
     }
 #endif // NDEBUG
@@ -277,7 +282,7 @@ public:
 
     auto gamma = Gamma[0][0];
     for (size_t ii = 0; ii < Gamma.rows(); ++ii) {
-      if (DSC::FloatCmp::ne(gamma, Gamma_[ii]))
+      if (Dune::XT::Common::FloatCmp::ne(gamma, Gamma_[ii]))
         gamma_ii_equal_for_all_i_ = false;
       d_[ii]                      = 0.0;
       for (size_t jj = 0; jj <= ii; ++jj)
@@ -294,7 +299,7 @@ public:
     auto& t   = current_time();
     auto& u_n = current_solution();
 
-    while (DSC::FloatCmp::gt(mixed_error, tol_)) {
+    while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {
       actual_dt *= time_step_scale_factor;
 
       for (size_t ii = 0; ii < num_stages_; ++ii) {
@@ -321,7 +326,7 @@ public:
           system_matrix_ = jacobian_ * -1.0 * r_;
           for (size_t row = 0; row < system_matrix_.rows(); ++row)
             system_matrix_.add_to_entry(row, row, 1.0 / (Gamma_[ii][ii] * actual_dt));
-          solver_ = DSC::make_unique<SolverType>(system_matrix_);
+          solver_ = Dune::XT::Common::make_unique<SolverType>(system_matrix_);
         }
         for (size_t jj = 0; jj < ii; ++jj)
           u_intermediate_stages_[ii].vector().axpy(C_[ii][jj] / actual_dt, u_intermediate_stages_[jj].vector());

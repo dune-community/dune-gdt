@@ -14,8 +14,8 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/debug.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/unused.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -169,7 +169,7 @@ public:
 
   using InterfaceType::globalIndices;
 
-  size_t mapToGlobal(const EntityType& entity, const size_t& UNUSED_UNLESS_DEBUG(localIndex)) const
+  size_t mapToGlobal(const EntityType& entity, const size_t& DXTC_DEBUG_ONLY(localIndex)) const
   {
     assert(localIndex == 0);
     return backend_.index(entity);
@@ -218,7 +218,7 @@ public:
   }
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity,
-                     const size_t& UNUSED_UNLESS_DEBUG(local_index_in_factor)) const
+                     const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
     assert(local_index_in_factor == 0);
     assert(factor_index < numDofs(entity));
@@ -226,7 +226,7 @@ public:
   }
 
   size_t mapToLocal(const size_t factor_index, const EntityType& entity,
-                    const size_t& UNUSED_UNLESS_DEBUG(local_index_in_factor)) const
+                    const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
     assert(local_index_in_factor == 0);
     assert(factor_index < numDofs(entity));

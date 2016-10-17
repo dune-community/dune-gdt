@@ -15,13 +15,13 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/fvector.hh>
-#include <dune/stuff/common/fmatrix.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
@@ -45,8 +45,8 @@ namespace internal {
 template <class GridViewImp, class FunctionImp>
 class DarcyOperatorTraits
 {
-  static_assert(Stuff::is_localizable_function<FunctionImp>::value,
-                "FunctionImp has to be derived from Stuff::IsLocalizableFunction!");
+  static_assert(XT::Functions::is_localizable_function<FunctionImp>::value,
+                "FunctionImp has to be derived from XT::Functions::is_localizable_function!");
   static_assert(std::is_same<typename GridViewImp::ctype, typename FunctionImp::DomainFieldType>::value,
                 "Types do not match!");
   static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
@@ -89,9 +89,9 @@ public:
    * \sa    redirect_apply
    */
   template <class S, class V, size_t r, size_t rC>
-  void
-  apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
-        DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r,
+                                                               rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     redirect_apply(range.space(), source, range);
   }
@@ -106,13 +106,13 @@ private:
   template <class R, size_t r>
   struct Helper<R, r, r>
   {
-    typedef Stuff::Common::FieldMatrix<R, r, r> type;
+    typedef XT::Common::FieldMatrix<R, r, r> type;
   };
 
   template <class R>
   struct Helper<R, 1, 1>
   {
-    typedef Stuff::Common::FieldVector<R, 1> type;
+    typedef XT::Common::FieldVector<R, 1> type;
   };
 
   typedef typename Helper<typename FunctionImp::RangeFieldType, FunctionImp::dimRange, FunctionImp::dimRangeCols>::type
@@ -122,12 +122,12 @@ private:
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
   template <class T, class S, class V>
-  void redirect_apply(
-      const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
-      DiscreteFunction<S, V>& range) const
+  void redirect_apply(const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
+                      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain,
+                                                                        FieldType, 1, 1>& source,
+                      DiscreteFunction<S, V>& range) const
   {
-    typedef typename Stuff::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
+    typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(
         range.space().mapper().size(), range.space().mapper().size(), range.space().compute_volume_pattern());
     V rhs(range.space().mapper().size());
@@ -168,8 +168,8 @@ private:
 
     // solve
     try {
-      Stuff::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
-    } catch (Stuff::Exceptions::linear_solver_failed& ee) {
+      XT::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
+    } catch (XT::Common::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
                      << "This was the original error: "
@@ -180,7 +180,7 @@ private:
   template <class T, class S, class V>
   void redirect_apply(
       const RtSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
       DiscreteFunction<S, V>& range) const
   {
     static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
@@ -205,8 +205,7 @@ private:
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor    = *neighbor_ptr;
+          const auto neighbor = intersection.outside();
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_function_neighbor    = function_.local_function(neighbor);
             const auto local_source_neighbor      = source.local_function(neighbor);
@@ -278,7 +277,7 @@ private:
           assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... redirect_apply(...)
@@ -291,7 +290,7 @@ private:
   }
 
   template <class R, int d>
-  typename std::enable_if<(d > 1), R>::type compute_value(const Stuff::Common::FieldMatrix<R, d, d>& function_value,
+  typename std::enable_if<(d > 1), R>::type compute_value(const XT::Common::FieldMatrix<R, d, d>& function_value,
                                                           const FieldVector<R, d>& source_gradient,
                                                           const FieldVector<R, d>& normal) const
   {

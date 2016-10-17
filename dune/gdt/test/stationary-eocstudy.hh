@@ -9,9 +9,9 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_EOCSTUDY_HH
 #define DUNE_GDT_TEST_STATIONARY_EOCSTUDY_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretizations/interfaces.hh>
@@ -25,9 +25,9 @@ namespace Test {
 
 
 template <class TestCaseImp, class DiscretizerImp>
-class StationaryEocStudy : public Stuff::Common::ConvergenceStudy
+class StationaryEocStudy : public XT::Common::ConvergenceStudy
 {
-  typedef Stuff::Common::ConvergenceStudy BaseType;
+  typedef XT::Common::ConvergenceStudy BaseType;
 
 protected:
   typedef TestCaseImp TestCaseType;
@@ -41,7 +41,7 @@ protected:
   typedef GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
 
   typedef typename TestCaseType::FunctionType FunctionType;
-  typedef typename TestCaseType::template Level<Stuff::Grid::ChoosePartView::view>::Type GridViewType;
+  typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
   StationaryEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
@@ -50,7 +50,7 @@ public:
     , test_case_(test_case)
     , current_refinement_(0)
     , last_computed_refinement_(std::numeric_limits<size_t>::max())
-    , grid_widths_(num_refinements() + 1, -1.0)
+    , grid_widths_(test_case.num_refinements() + 1, -1.0)
     , time_to_solution_(0)
     , reference_solution_computed_(false)
     , current_discretization_(nullptr)
@@ -65,7 +65,7 @@ public:
 
   virtual ~StationaryEocStudy() = default;
 
-  virtual size_t num_refinements() override final
+  virtual size_t num_refinements() const override final
   {
     return test_case_.num_refinements();
   }
@@ -75,7 +75,7 @@ public:
     std::vector<std::string> ret = available_norms();
     for (auto estimator : available_estimators()) {
       if (is_norm(estimator))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "We do not want to handle the case that norms and estimators have the same name!");
       ret.push_back(estimator);
     }
@@ -85,7 +85,7 @@ public:
   virtual double norm_reference_solution(const std::string type) override final
   {
     if (!is_norm(type))
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call norm_reference_solution() for an estimator!\n"
                      << "type: "
                      << type
@@ -119,7 +119,7 @@ public:
     return current_num_DoFs_;
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() override final
+  virtual size_t current_grid_size() const override final
   {
     assert(current_refinement_ <= num_refinements());
     return test_case_.level_view(test_case_.level_of(current_refinement_)).indexSet().size(0);
@@ -130,8 +130,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level      = test_case_.level_of(current_refinement_);
-      const auto grid_view = test_case_.template level<Stuff::Grid::ChoosePartView::view>(level);
-      Stuff::Grid::Dimensions<GridViewType> dimensions(grid_view);
+      const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
+      XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -144,9 +144,9 @@ public:
       assert(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
-      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
+      current_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_)));
-      current_solution_vector_on_level_ = Stuff::Common::make_unique<VectorType>(current_discretization_->solve());
+      current_solution_vector_on_level_ = XT::Common::make_unique<VectorType>(current_discretization_->solve());
       time_to_solution_                 = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
@@ -154,7 +154,7 @@ public:
       compute_reference_solution();
       assert(reference_discretization_);
       if (!current_solution_vector_)
-        current_solution_vector_ = Stuff::Common::make_unique<VectorType>(reference_discretization_->create_vector());
+        current_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->create_vector());
       DiscreteFunctionType reference_refinement_solution(
           reference_discretization_->ansatz_space(), *current_solution_vector_, "solution on reference grid part");
       prolong(current_refinement_solution, reference_refinement_solution);
@@ -162,8 +162,10 @@ public:
       // visualize
       if (!visualize_prefix_.empty()) {
         this->test_case_.problem().visualize(current_discretization_->ansatz_space().grid_view(),
-                                             visualize_prefix_ + "_problem_" + DSC::to_string(current_refinement_));
-        current_refinement_solution.visualize(visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_));
+                                             visualize_prefix_ + "_problem_"
+                                                 + Dune::XT::Common::to_string(current_refinement_));
+        current_refinement_solution.visualize(visualize_prefix_ + "_solution_"
+                                              + Dune::XT::Common::to_string(current_refinement_));
       }
     }
     return time_to_solution_;
@@ -214,9 +216,9 @@ protected:
   void compute_reference_solution()
   {
     if (!reference_solution_computed_) {
-      reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(
+      reference_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.reference_level()));
-      reference_solution_vector_   = Stuff::Common::make_unique<VectorType>(reference_discretization_->solve());
+      reference_solution_vector_   = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       // visualize
       if (!visualize_prefix_.empty()) {

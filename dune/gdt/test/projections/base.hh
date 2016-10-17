@@ -59,11 +59,11 @@ struct LocalizableProjectionOperatorBase : public internal::ProjectionOperatorBa
 
   void constructible_by_ctor()
   {
-    LocalizableProjectionOperatorType DUNE_UNUSED(projection_operator)(
+    DUNE_UNUSED LocalizableProjectionOperatorType projection_operator(
         this->space_.grid_view(), this->function_, this->discrete_function_);
   }
 
-  void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
+  void produces_correct_results(const RangeFieldType& tolerance = BaseType::default_tolerance)
   {
     this->discrete_function_.vector() *= 0.0;
     LocalizableProjectionOperatorType projection_operator(
@@ -82,7 +82,7 @@ struct ProjectionOperatorBase : public internal::ProjectionOperatorBase<SpaceTyp
 
   void constructible_by_ctor()
   {
-    ProjectionOperatorType DUNE_UNUSED(projection_operator)(this->space_.grid_view());
+    DUNE_UNUSED ProjectionOperatorType projection_operator(this->space_.grid_view());
   }
 
   void produces_correct_results(const RangeFieldType& tolerance = 1e-15)

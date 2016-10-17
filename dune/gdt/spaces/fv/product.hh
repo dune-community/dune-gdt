@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_SPACES_FV_FvProductSpace_HH
 #define DUNE_GDT_SPACES_FV_FvProductSpace_HH
 
-#include <dune/stuff/common/tuple.hh>
+#include <dune/xt/common/tuple.hh>
 
 #include "default.hh"
 #include "interface.hh"
@@ -42,7 +42,7 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::RangeFieldType;
   typedef typename Dune::GDT::FvSpace<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
-  typedef typename DSC::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
+  typedef typename Dune::XT::Common::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
   typedef typename Dune::GDT::FvProductMapper<GridViewType, dimRange, 1> MapperType;
 }; // class FvProductSpaceTraits
 

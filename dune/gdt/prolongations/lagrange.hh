@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_PROLONGATIONS_LAGRANGE_HH
 #define DUNE_GDT_PROLONGATIONS_LAGRANGE_HH
 
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
@@ -48,12 +48,12 @@ public:
  */
 template <class GridViewImp, class SourceImp, class RangeImp>
 class LagrangeProlongationLocalizableOperator
-    : Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
+    : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
       public LagrangeProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
 {
   static_assert(is_const_discrete_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
-  typedef Stuff::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>> SourceStorage;
+  typedef XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>> SourceStorage;
   typedef LagrangeProjectionLocalizableOperator<GridViewImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
       BaseOperatorType;
 
@@ -73,7 +73,7 @@ public:
   {
     try {
       BaseOperatorType::apply();
-    } catch (Stuff::Exceptions::reinterpretation_error& ee) {
+    } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
       DUNE_THROW(prolongation_error,
                  "This prolongation (using a lagrange projection) failed, because the source could not be reinterpreted"
                      << " on the given grid view!\n"
@@ -86,7 +86,7 @@ public:
 
 template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationLocalizableOperator<GridViewType,
                                                                                 ConstDiscreteFunction<SourceSpaceType,
                                                                                                       SourceVectorType>,
@@ -97,7 +97,7 @@ typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
         const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<LagrangeProlongationLocalizableOperator<GridViewType,
                                                           ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                           DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
@@ -111,7 +111,7 @@ std::unique_ptr<LagrangeProlongationLocalizableOperator<typename RangeSpaceType:
 make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range)
 {
-  return DSC::make_unique<LagrangeProlongationLocalizableOperator<
+  return Dune::XT::Common::make_unique<LagrangeProlongationLocalizableOperator<
       typename RangeSpaceType::GridViewType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
       DiscreteFunction<RangeSpaceType, RangeVectorType>>>(range.space().grid_view(), source, range);
@@ -130,7 +130,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -156,7 +156,7 @@ public:
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const Stuff::Common::Configuration& /*opts*/) const
+                     const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -166,7 +166,7 @@ public:
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -177,16 +177,16 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationOperator<GridViewType>>>::type
 make_lagrange_prolongation_operator(const GridViewType& grid_view)
 {
-  return DSC::make_unique<LagrangeProlongationOperator<GridViewType>>(grid_view);
+  return Dune::XT::Common::make_unique<LagrangeProlongationOperator<GridViewType>>(grid_view);
 }
 
 
 template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value, void>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type
 prolong_lagrange(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source,
                  DiscreteFunction<RS, RV>& range)
 {

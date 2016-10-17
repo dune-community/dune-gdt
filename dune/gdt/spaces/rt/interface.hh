@@ -10,7 +10,7 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/common/timedlogging.hh>
+#include <dune/xt/common/timedlogging.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -59,7 +59,7 @@ public:
     static_assert(dimDomain == 2, "Not implemented!");
     static_assert(polOrder == 0, "Not implemented!");
     // prepare
-    const auto num_intersections = boost::numeric_cast<size_t>(entity.template count<1>());
+    const auto num_intersections = entity.subEntities(1);
     std::vector<size_t> local_DoF_index_of_vertex(num_intersections, std::numeric_limits<size_t>::infinity());
     std::vector<size_t> local_DoF_index_of_intersection(num_intersections, std::numeric_limits<size_t>::infinity());
     typedef typename BaseFunctionSetType::DomainType DomainType;
@@ -76,10 +76,9 @@ public:
     // find the basis function index that corresponds to each vertex of the entity
     // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
     // therefore we walk the vertices
-    assert(num_intersections == boost::numeric_cast<size_t>(entity.template count<dimDomain>()));
+    assert(num_intersections == entity.subEntities(dimDomain));
     for (size_t vv = 0; vv < num_intersections; ++vv) {
-      const auto vertex_ptr = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(vv));
-      const auto& vertex    = *vertex_ptr;
+      const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(vv));
       // get the vertex coordinates
       vertices[vv]              = vertex.geometry().center();
       const auto& vertex_entity = reference_element.position(boost::numeric_cast<int>(vv), dimDomain);
@@ -90,7 +89,7 @@ public:
       size_t nonzeros = 0;
       for (size_t ii = 0; ii < num_intersections; ++ii) {
         // we would like to check against 0, but there is a bug in dune-commons FloatCmp
-        if (Stuff::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
+        if (XT::Common::FloatCmp::eq(basis_values[ii] + one, one)) {
           // this is a candidate for the basis function we are looking for
           local_DoF_index_of_vertex[vv] = ii;
           ++zeros;
@@ -99,7 +98,7 @@ public:
       }
       // make sure there was only one candidate
       if (zeros != 1 || nonzeros != (num_intersections - 1))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "This must not happen for RTN0 in 2d!\n"
                        << "  zeros    = "
                        << zeros
@@ -120,11 +119,11 @@ public:
       // make sure this index has not been already taken by another intersection
       assert(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits<size_t>::infinity());
       // walk the corners of the intersection
-      for (size_t cc = 0; cc < num_intersections; ++cc) {
+      for (size_t cc = 0; cc < intersection_geometry.corners(); ++cc) {
         corner = intersection_geometry.corner(boost::numeric_cast<int>(cc));
         // check which vertices lie on the intersection
         for (size_t vv = 0; vv < num_intersections; ++vv)
-          if (Stuff::Common::FloatCmp::eq(vertices[vv], corner))
+          if (XT::Common::FloatCmp::eq(vertices[vv], corner))
             lies_on_intersection[vv] = true;
       } // walk the corners of the intersection
       // now see if we find a vertex that does not lie on the intersection
@@ -143,7 +142,7 @@ public:
       } // walk the vertices of this entity
       // make sure there was only one candidate
       if (found != 1 || missed != (num_intersections - 1))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "This must not happen for RTN0 in 2d!\n"
                        << "  found  = "
                        << found
@@ -161,8 +160,8 @@ public:
   template <class G, class S, size_t d, size_t r, size_t rC>
   PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    DSC::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn() << "Returning largest possible pattern!"
-                                                                          << std::endl;
+    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn()
+        << "Returning largest possible pattern!" << std::endl;
     return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
   }
 
@@ -184,12 +183,14 @@ namespace internal {
 template <class S>
 struct is_rt_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
 
-          static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_rt_space_helper
 
 

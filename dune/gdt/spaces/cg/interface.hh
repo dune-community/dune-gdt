@@ -18,8 +18,9 @@
 
 #include <dune/geometry/referenceelements.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/ranges.hh>
 
 #include "../interface.hh"
 
@@ -55,7 +56,7 @@ public:
   using typename BaseType::PatternType;
 
 private:
-  typedef DSC::FieldVector<DomainFieldType, dimDomain> StuffDomainType;
+  typedef Dune::XT::Common::FieldVector<DomainFieldType, dimDomain> StuffDomainType;
   static const constexpr RangeFieldType compare_tolerance_ = 1e-13;
 
 public:
@@ -98,7 +99,7 @@ public:
     // prepare return vector
     std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
     // loop over all vertices
-    for (auto ii : DSC::valueRange(num_vertices)) {
+    for (auto ii : Dune::XT::Common::value_range(num_vertices)) {
       // get the local coordinate of the iith vertex
       const auto local_vertex = reference_element.position(ii, dimDomain);
       // evaluate the basefunctionset
@@ -124,10 +125,13 @@ public:
   std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
+    static const XT::Grid::DirichletBoundary dirichlet{};
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
     // check
     assert(this->grid_view().indexSet().contains(entity));
+    if (!entity.hasBoundaryIntersections())
+      return std::set<size_t>();
     // prepare
     std::set<size_t> localDirichletDofs;
     std::vector<DomainType> dirichlet_vertices;
@@ -139,10 +143,10 @@ public:
       // only work on dirichlet ones
       const auto& intersection = *intersection_it;
       // actual dirichlet intersections + process boundaries for parallel runs
-      if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
+      if (boundaryInfo.type(intersection) == dirichlet || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (auto cc : DSC::valueRange(geometry.corners()))
+        for (auto cc : Dune::XT::Common::value_range(geometry.corners()))
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
       } // only work on dirichlet ones
     } // loop over all intersections
@@ -195,7 +199,7 @@ public:
       if (boundaryInfo.dirichlet(intersection) || (!intersection.neighbor() && !intersection.boundary())) {
         // and get the vertices of the intersection
         const auto geometry = intersection.geometry();
-        for (auto cc : DSC::valueRange(geometry.corners())) {
+        for (auto cc : Dune::XT::Common::value_range(geometry.corners())) {
           dirichlet_vertices_intersection.emplace_back(entity.geometry().local(geometry.corner(cc)));
           dirichlet_vertices.emplace_back(entity.geometry().local(geometry.corner(cc)));
         }
@@ -287,9 +291,9 @@ private:
       for (auto& vec : vectors_in) {
         for (const auto& coeff : possible_coefficients) {
           if ((vec.size() != final_size - 1
-               && DSC::FloatCmp::le(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))
+               && Dune::XT::Common::FloatCmp::le(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))
               || (vec.size() == final_size - 1
-                  && DSC::FloatCmp::eq(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))) {
+                  && Dune::XT::Common::FloatCmp::eq(std::accumulate(vec.begin(), vec.end(), 0.0) + coeff, 1.0))) {
             std::vector<double> vec_copy = vec;
             vec_copy.push_back(coeff);
             vectors_out.insert(vec_copy);
@@ -309,12 +313,14 @@ namespace internal {
 template <class S>
 struct is_cg_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
 
-          static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_cg_space_helper
 
 

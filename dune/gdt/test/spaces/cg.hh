@@ -15,9 +15,9 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/stuff/common/print.hh>
-#include <dune/stuff/common/ranges.hh>
-#include <dune/stuff/grid/walker.hh>
+#include <dune/xt/common/print.hh>
+#include <dune/xt/common/ranges.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
@@ -38,7 +38,6 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 {
   typedef typename SpaceType::GridViewType GridViewType;
   typedef typename GridViewType::Grid GridType;
-  typedef Dune::Stuff::Grid::Providers::Cube<GridType> GridProviderType;
   static const size_t dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -62,7 +61,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 
   void fulfills_continuous_interface()
   {
-    using namespace Dune::Stuff;
+
     matches_signature(this->space_);
     const auto entity_ptr                   = this->space_.grid_view().template begin<0>();
     const auto& entity                      = *entity_ptr;
@@ -70,9 +69,9 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
     EXPECT_EQ(lagrange_points.size(), basis.size());
     typedef typename SpaceType::IntersectionType IntersectionType;
-    typedef typename SpaceType::RangeFieldType RangeFieldType;
-    Dune::Stuff::Grid::BoundaryInfos::AllDirichlet<IntersectionType> boundary_info;
-    std::set<size_t> local_dirichlet_DoFs = this->space_.local_dirichlet_DoFs(entity, boundary_info);
+    typedef typename SpaceType::RangeFieldType RangeFieldType DUNE_UNUSED;
+    Dune::XT::Grid::AllDirichletBoundaryInfo<IntersectionType> boundary_info;
+    std::set<size_t> local_dirichlet_DoFs DUNE_UNUSED = this->space_.local_dirichlet_DoFs(entity, boundary_info);
     Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_set(
         boundary_info, this->space_.mapper().size(), true);
     Dune::GDT::DirichletConstraints<IntersectionType> dirichlet_constraints_clear(
@@ -83,29 +82,29 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 
   void maps_correctly()
   {
-    using namespace Dune::Stuff;
+    using namespace Dune::XT;
     // walk the grid to create a map of all vertices
     std::map<std::vector<DomainFieldType>, std::set<size_t>> vertex_to_indices_map;
     const auto entity_end_it = this->space_.grid_view().template end<0>();
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
-      for (auto cc : DSC::valueRange(entity.template count<dimDomain>())) {
-        const auto vertex_ptr                         = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex                       = vertex_ptr->geometry().center();
-        vertex_to_indices_map[convert_vector(vertex)] = std::set<size_t>();
+      for (auto cc : Dune::XT::Common::value_range(entity.subEntities(dimDomain))) {
+        const auto vertex                                    = entity.template subEntity<dimDomain>(cc);
+        const DomainType vertex_center                       = vertex.geometry().center();
+        vertex_to_indices_map[convert_vector(vertex_center)] = std::set<size_t>();
       }
     }
 
     // walk the grid again to find all DoF ids
-    auto functor = [&](const typename GridProviderType::EntityType& entity) {
-      const size_t num_vertices = boost::numeric_cast<size_t>(entity.template count<dimDomain>());
+    auto functor = [&](const typename Dune::XT::Grid::Entity<GridViewType>::Type& entity) {
+      const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis          = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex_ptr   = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
-        const DomainType vertex = vertex_ptr->geometry().center();
+        const auto vertex              = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
+        const DomainType vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
-        const auto basis_values = basis.evaluate(entity.geometry().local(vertex));
+        const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         EXPECT_EQ(basis_values.size(), num_vertices);
         size_t ones            = 0;
         size_t zeros           = 0;
@@ -124,16 +123,16 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
              << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
-             << ", vertex " << cc << ": [ " << vertex << "], ";
-          Common::print(basis_values, "basis_values", ss);
+             << ", vertex " << cc << ": [ " << vertex_center << "], ";
+          Dune::XT::Common::print(basis_values, "basis_values", ss);
           EXPECT_TRUE(false) << ss.str();
         }
         // now we know that the local DoF index of this vertex is ii
         const size_t global_DoF_index = this->space_.mapper().mapToGlobal(entity, local_DoF_index);
-        vertex_to_indices_map[convert_vector(vertex)].insert(global_DoF_index);
+        vertex_to_indices_map[convert_vector(vertex_center)].insert(global_DoF_index);
       }
     };
-    DSG::Walker<GridViewType> walker(this->space_.grid_view());
+    Dune::XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(functor);
     walker.walk();
     // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive

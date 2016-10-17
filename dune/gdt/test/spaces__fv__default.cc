@@ -7,7 +7,7 @@
 //   Rene Milk       (2014)
 
 // This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "spaces/fv.hh"
 #include "spaces/fv/default.hh"

@@ -15,8 +15,8 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/dof-vector.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -28,23 +28,23 @@ namespace GDT {
 
 template <class SpaceImp, class VectorImp>
 class ConstLocalDiscreteFunction
-    : public Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                           SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                           SpaceImp::dimRangeCols>
+    : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                                   SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                   SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
   static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange,
                                                SpaceImp::dimRangeCols>,
                                 SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_base_of<Dune::Stuff::LA::VectorInterface<typename VectorImp::Traits,
-                                                                 typename VectorImp::Traits::ScalarType>,
-                                VectorImp>::value,
-                "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(
+      std::is_base_of<Dune::XT::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
+                      VectorImp>::value,
+      "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef Stuff::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                        SpaceImp::dimDomain, typename SpaceImp::RangeFieldType, SpaceImp::dimRange,
-                                        SpaceImp::dimRangeCols>
+  typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                                SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                SpaceImp::dimRange, SpaceImp::dimRangeCols>
       BaseType;
   typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 

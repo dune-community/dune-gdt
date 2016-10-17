@@ -15,7 +15,7 @@
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 
 #include "twobeams.hh"
 
@@ -115,12 +115,12 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) { // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::to_string(-1.0 - cc * (cc + 1), precision);
+                  A_str += Dune::XT::Common::to_string(-1.0 - cc * (cc + 1), precision);
                 else
                   A_str += "0";
               } else { // 2 <= x <= 3
                 if (cc == rr)
-                  A_str += DSC::to_string(-5.0 * cc * (cc + 1), precision);
+                  A_str += Dune::XT::Common::to_string(-5.0 * cc * (cc + 1), precision);
                 else
                   A_str += "0";
               }
@@ -128,8 +128,8 @@ protected:
           }
           A_str += "]";
           q_str += "]";
-          rhs_config["A." + DSC::to_string(ii)] = A_str;
-          rhs_config["b." + DSC::to_string(ii)] = q_str;
+          rhs_config["A." + Dune::XT::Common::to_string(ii)] = A_str;
+          rhs_config["b." + Dune::XT::Common::to_string(ii)] = q_str;
         }
       } else {
         MatrixType S_M_inverse(S());
@@ -138,7 +138,7 @@ protected:
           std::string A_str = "[";
           std::string q_str = "[";
           if (ii == 2) // 1 <= x <= 1.5
-            q_str = DSC::to_string(base_integrated(), precision);
+            q_str = Dune::XT::Common::to_string(base_integrated(), precision);
           for (size_t rr = 0; rr < dimRange; ++rr) {
             if (rr > 0) {
               A_str += "; ";
@@ -157,18 +157,18 @@ protected:
                   A_str += "0";
               } else if (ii == 2 || ii == 3) { // 1 <= x <= 2
                 if (cc == rr)
-                  A_str += DSC::to_string(-1.0 - S_M_inverse[rr][cc], precision);
+                  A_str += Dune::XT::Common::to_string(-1.0 - S_M_inverse[rr][cc], precision);
                 else
-                  A_str += DSC::to_string(-S_M_inverse[rr][cc], precision);
+                  A_str += Dune::XT::Common::to_string(-S_M_inverse[rr][cc], precision);
               } else { // 2 <= x <= 3
-                A_str += DSC::to_string(-5.0 * S_M_inverse[rr][cc], precision);
+                A_str += Dune::XT::Common::to_string(-5.0 * S_M_inverse[rr][cc], precision);
               }
             }
           }
           A_str += "]";
           q_str += "]";
-          rhs_config["A." + DSC::to_string(ii)] = A_str;
-          rhs_config["b." + DSC::to_string(ii)] = q_str;
+          rhs_config["A." + Dune::XT::Common::to_string(ii)] = A_str;
+          rhs_config["b." + Dune::XT::Common::to_string(ii)] = q_str;
         }
       }
     } // ... create_rhs_values()
@@ -197,8 +197,9 @@ protected:
         for (size_t cc = 0; cc < dimRange; ++cc) {
           if (cc > 0)
             str += " ";
-          str += DSC::to_string(0.5 * basefunctions_right[cc], precision) + "+("
-                 + DSC::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc], precision)
+          str += Dune::XT::Common::to_string(0.5 * basefunctions_right[cc], precision) + "+("
+                 + Dune::XT::Common::to_string(0.5 * 0.0001 * (base_integrated()[cc]) - 0.5 * basefunctions_right[cc],
+                                               precision)
                  + ")*x[0]/3.0";
         }
         str += "]";
@@ -237,7 +238,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   static std::unique_ptr<ThisType> create(const std::string basefunctions_file)
@@ -300,9 +301,9 @@ public:
 
 template <class G, class R = double, size_t momentOrder = 5>
 class SourceBeamTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
-                                                                             typename G::ctype, G::dimension, R,
-                                                                             momentOrder>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
+                                                                            typename G::ctype, G::dimension, R,
+                                                                            momentOrder>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -315,7 +316,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -323,7 +324,7 @@ public:
   using typename BaseType::LevelGridViewType;
 
   SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
@@ -346,7 +347,7 @@ public:
         << "||  Testcase: Fokker-Planck SourceBeam                                                                ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 3]                                                                                   ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                                                   ||\n"
         << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
         << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"

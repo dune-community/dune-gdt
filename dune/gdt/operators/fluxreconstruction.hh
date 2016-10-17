@@ -18,8 +18,8 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/constant.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
@@ -37,10 +37,10 @@ template <class GridViewType, class DiffusionFactorType, class DiffusionTensorTy
 class DiffusiveFluxReconstructionOperator
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionFactorType>::value,
-                "DiffusionFactorType has to be tagged as Stuff::IsLocalizableFunction!");
-  static_assert(std::is_base_of<Stuff::IsLocalizableFunction, DiffusionTensorType>::value,
-                "DiffusionTensorType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(Dune::XT::Functions::is_localizable_function<DiffusionFactorType>::value,
+                "DiffusionFactorType has to be tagged as XT::Functions::is_localizable_function!");
+  static_assert(Dune::XT::Functions::is_localizable_function<DiffusionTensorType>::value,
+                "DiffusionTensorType has to be tagged as XT::Functions::is_localizable_function!");
 
 public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
@@ -63,8 +63,9 @@ public:
   }
 
   template <class GV, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+  void
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
@@ -75,7 +76,7 @@ public:
         diffusion_factor_, diffusion_tensor_);
     const LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType, DiffusionTensorType> boundary_evaluation(
         diffusion_factor_, diffusion_tensor_);
-    const Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
+    const XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
@@ -102,8 +103,7 @@ public:
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor    = *neighbor_ptr;
+          const auto neighbor = intersection.outside();
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_diffusion_factor_neighbor = diffusion_factor_.local_function(neighbor);
             const auto local_diffusion_tensor_neighbor = diffusion_tensor_.local_function(neighbor);
@@ -204,7 +204,7 @@ public:
           assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... apply(...)
@@ -225,8 +225,8 @@ template <class GridViewType, class LocalizableFunctionType>
 class DiffusiveFluxReconstructionOperator<GridViewType, LocalizableFunctionType, void>
 {
   static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
-  static_assert(Stuff::is_localizable_function<LocalizableFunctionType>::value,
-                "LocalizableFunctionType has to be tagged as Stuff::IsLocalizableFunction!");
+  static_assert(XT::Functions::is_localizable_function<LocalizableFunctionType>::value,
+                "LocalizableFunctionType has to be tagged as XT::Functions::is_localizable_function!");
 
 public:
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
@@ -248,8 +248,9 @@ public:
   }
 
   template <class GV, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-             DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+  void
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space   = range.space();
     auto& range_vector       = range.vector();
@@ -258,7 +259,7 @@ public:
       range_vector[ii] = infinity;
     const LocalEllipticIpdgIntegrands::Inner<LocalizableFunctionType> inner_evaluation(diffusion_);
     const LocalEllipticIpdgIntegrands::BoundaryLHS<LocalizableFunctionType> boundary_evaluation(diffusion_);
-    const Stuff::Functions::Constant<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
+    const XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
@@ -376,7 +377,7 @@ public:
           assert(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
-          DUNE_THROW(Stuff::Exceptions::internal_error, "Unknown intersection type!");
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
     } // walk the grid
   } // ... apply(...)

@@ -74,30 +74,30 @@ public:
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
                                         DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {
-  return DSC::
+  return Dune::XT::Common::
       make_unique<L2ProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<SpaceType, VectorType>>>(
           over_integrate, grid_view, source, range);
 } // ... make_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         std::unique_ptr<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
 make_l2_projection_localizable_operator(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
                                         const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
-                                                          SourceType,
-                                                          DiscreteFunction<SpaceType, VectorType>>>(
+  return Dune::XT::Common::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
+                                                                       SourceType,
+                                                                       DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, range.space().grid_view(), source, range);
 } // ... make_l2_projection_localizable_operator(...)
 
@@ -113,7 +113,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -131,7 +131,8 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& source, DiscreteFunction<S, V>& range) const
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+             DiscreteFunction<S, V>& range) const
   {
     redirect<S::continuous>::apply(grid_view_, source, range, over_integrate_);
   }
@@ -144,7 +145,7 @@ public:
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const Stuff::Common::Configuration& /*opts*/) const
+                     const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -154,7 +155,7 @@ public:
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -188,18 +189,18 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2ProjectionOperator<GridViewType>>>::type
 make_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProjectionOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2ProjectionOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0)
@@ -209,8 +210,8 @@ project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunc
 
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_l2(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {

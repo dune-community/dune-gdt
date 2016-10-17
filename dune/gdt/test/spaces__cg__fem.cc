@@ -7,7 +7,7 @@
 //   Rene Milk       (2014)
 //   Tobias Leibner  (2014)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "spaces/cg.hh"
 #include "spaces/cg/fem.hh"

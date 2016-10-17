@@ -9,7 +9,7 @@
 #define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
-#include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
+#include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "linearelliptic/swipdg-estimators.hh"
 #include "linearelliptic/swipdg-estimator-testcases.hh"
@@ -23,7 +23,7 @@ using namespace Dune::GDT;
 TYPED_TEST_CASE(linearelliptic_SWIPDG_estimators, AluGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_istl_and_alugrid_order_1)
 {
-  this->template eoc_study<ChooseSpaceBackend::fem, Stuff::LA::ChooseBackend::istl_sparse, 1>();
+  this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::istl_sparse, 1>();
 }
 
 #else

@@ -26,8 +26,8 @@
 #include <dune/fem_localfunctions/space/genericdiscretefunctionspace.hh>
 #endif // HAVE_DUNE_FEM_LOCALFUNCTIONS
 
-#include <dune/stuff/common/color.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/color.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/mapper/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/basefunctionset/dune-fem-localfunctions-wrapper.hh>
@@ -93,8 +93,8 @@ public:
                                                         RangeFieldType, rangeDim, rangeDimCols>
       BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
-  static const bool needs_grid_view                       = false;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
+  static const bool needs_grid_view              = false;
   typedef double CommunicatorType;
 
 private:
@@ -136,7 +136,7 @@ public:
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::EntityType EntityType;
 
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
 private:
   typedef typename Traits::BaseFunctionSetMapType BaseFunctionSetMapType;

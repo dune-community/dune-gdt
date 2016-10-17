@@ -8,11 +8,11 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_TESTCASE_HH
 #define DUNE_GDT_TEST_STATIONARY_TESTCASE_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/provider/eoc.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/grid/gridprovider/eoc.hh>
 
 namespace Dune {
 namespace GDT {
@@ -20,24 +20,25 @@ namespace Test {
 
 
 /**
- * \tparam ProblemType has to provide a type FunctionType (derived from Stuff::LocalizableFunctionInterface) which
+ * \tparam ProblemType has to provide a type FunctionType (derived from XT::Functions::LocalizableFunctionInterface)
+ * which
  *         defines the type of the solution of the problem.
  */
 template <class GridImp, class ProblemImp>
-class StationaryTestCase : public Stuff::Grid::Providers::EOC<GridImp>
+class StationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
 {
-  typedef Stuff::Grid::Providers::EOC<GridImp> EocBaseType;
+  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
 
 public:
   typedef ProblemImp ProblemType;
   typedef typename ProblemType::FunctionType FunctionType;
 
 private:
-  static_assert(Stuff::is_localizable_function<FunctionType>::value,
-                "ProblemImp::FunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  typedef Stuff::Functions::Constant<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
-                                     FunctionType::dimDomain, typename FunctionType::RangeFieldType,
-                                     FunctionType::dimRange>
+  static_assert(XT::Functions::is_localizable_function<FunctionType>::value,
+                "ProblemImp::FunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  typedef XT::Functions::ConstantFunction<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
+                                          FunctionType::dimDomain, typename FunctionType::RangeFieldType,
+                                          FunctionType::dimRange>
       ConstantFunctionType;
 
 public:
@@ -58,7 +59,7 @@ public:
   {
     out << "+==============================================================+\n"
         << "|+============================================================+|\n"
-        << "||  This is a GDT::Tests::StationaryTestCase, please provide  ||\n"
+        << "||  This is a GDT::Test::StationaryTestCase, please provide   ||\n"
         << "||  a meaningful message by implementing `print_header()`     ||\n"
         << "|+============================================================+|\n"
         << "+==============================================================+" << std::endl;
@@ -72,10 +73,10 @@ public:
   virtual const FunctionType& exact_solution() const
   {
     if (provides_exact_solution())
-      DUNE_THROW(Stuff::Exceptions::you_have_to_implement_this,
+      DUNE_THROW(XT::Common::Exceptions::you_have_to_implement_this,
                  "If provides_exact_solution() is true, exact_solution() has to be implemented!");
     else
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call exact_solution() if provides_exact_solution() is false!");
     return zero_;
   }

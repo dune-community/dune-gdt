@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_EXCEPTIONS_HH
 #define DUNE_GDT_EXCEPTIONS_HH
 
-#include <dune/stuff/common/exceptions.hh>
+#include <dune/xt/common/exceptions.hh>
 
 namespace Dune {
 namespace GDT {

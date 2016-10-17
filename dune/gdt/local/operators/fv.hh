@@ -11,6 +11,8 @@
 
 #include "interfaces.hh"
 
+#include <dune/xt/common/fvector.hh>
+
 namespace Dune {
 namespace GDT {
 
@@ -88,7 +90,7 @@ struct ChooseLimiter<SlopeLimiters::minmod, VectorType>
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs < slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
-      else if (DSC::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
+      else if (Dune::XT::Common::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_right[ii];
       else
         ret[ii] = 0.0;
@@ -115,7 +117,7 @@ struct ChooseLimiter<SlopeLimiters::superbee, VectorType>
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs > slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
-      else if (DSC::FloatCmp::le(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
+      else if (Dune::XT::Common::FloatCmp::le(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_right[ii];
       else
         ret[ii] = 0.0;
@@ -165,23 +167,23 @@ public:
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
   {
-    const auto entity_ptr                     = intersection.inside();
-    const auto neighbor_ptr                   = intersection.outside();
-    const auto local_source_entity            = source.local_function(*entity_ptr);
-    const auto local_source_neighbor          = source.local_function(*neighbor_ptr);
+    const auto entity                         = intersection.inside();
+    const auto neighbor                       = intersection.outside();
+    const auto local_source_entity            = source.local_function(entity);
+    const auto local_source_neighbor          = source.local_function(neighbor);
     const auto geometry_intersection          = intersection.geometry();
-    const auto local_functions_tuple_entity   = numerical_flux_.local_functions(*entity_ptr);
-    const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(*neighbor_ptr);
-    const DSC::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
-                           LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
+    const auto local_functions_tuple_entity   = numerical_flux_.local_functions(entity);
+    const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(neighbor);
+    const Dune::XT::Common::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
+                                        LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
         result = numerical_flux_.evaluate(local_functions_tuple_entity,
                                           local_functions_tuple_neighbor,
                                           *local_source_entity,
                                           *local_source_neighbor,
                                           intersection,
                                           geometry_intersection.local(geometry_intersection.center()));
-    local_range_entity.vector().add(result * (1.0 / entity_ptr->geometry().volume()));
-    local_range_neighbor.vector().add(result * (-1.0 / neighbor_ptr->geometry().volume()));
+    local_range_entity.vector().add(result * (1.0 / entity.geometry().volume()));
+    local_range_neighbor.vector().add(result * (-1.0 / neighbor.geometry().volume()));
   }
 
 private:
@@ -204,15 +206,15 @@ public:
   void apply(const SourceType& source, const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
   {
-    const auto entity_ptr            = intersection.inside();
-    const auto local_source_entity   = source.local_function(*entity_ptr);
+    const auto entity                = intersection.inside();
+    const auto local_source_entity   = source.local_function(entity);
     const auto geometry_intersection = intersection.geometry();
-    const auto local_functions_tuple = numerical_flux_.local_functions(*entity_ptr);
+    const auto local_functions_tuple = numerical_flux_.local_functions(entity);
     auto result                      = numerical_flux_.evaluate(local_functions_tuple,
                                            *local_source_entity,
                                            intersection,
                                            geometry_intersection.local(geometry_intersection.center()));
-    result /= entity_ptr->geometry().volume();
+    result /= entity.geometry().volume();
     local_range_entity.vector().add(result);
   }
 
@@ -256,7 +258,7 @@ class LocalReconstructionFvOperator
   typedef internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp, slope_limiter> Traits;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename DSC::FieldVector<RangeFieldType, dimRange> StuffFieldVectorType;
+  typedef typename Dune::XT::Common::FieldVector<RangeFieldType, dimRange> XTFieldVectorType;
 
 public:
   typedef typename Traits::MatrixType MatrixType;
@@ -287,15 +289,13 @@ public:
     for (auto i_it = grid_view.ibegin(entity); i_it != i_it_end; ++i_it) {
       const auto& intersection = *i_it;
       if (intersection.neighbor()) {
-        const auto neighbor_ptr    = intersection.outside();
-        const auto neighbor_center = neighbor_ptr->geometry().center();
+        const auto neighbor        = intersection.outside();
+        const auto neighbor_center = neighbor.geometry().center();
         const bool boundary        = intersection.boundary();
         if ((neighbor_center[0] < entity_center[0] && !boundary) || (neighbor_center[0] > entity_center[0] && boundary))
-          u_left =
-              source.local_discrete_function(*neighbor_ptr)->evaluate(neighbor_ptr->geometry().local(neighbor_center));
+          u_left = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
         else
-          u_right =
-              source.local_discrete_function(*neighbor_ptr)->evaluate(neighbor_ptr->geometry().local(neighbor_center));
+          u_right = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
       } else {
         if (intersection.geometry().center()[0] < entity_center[0])
           u_left = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
@@ -306,22 +306,22 @@ public:
 
     // diagonalize the system of equations from u_t + A*u_x = 0 to w_t + D*w_x = 0 where D = R^(-1)*A*R, w = R^(-1)*u
     // and R matrix of eigenvectors of A
-    const StuffFieldVectorType w_left(eigenvectors_inverse_ * u_left);
-    const StuffFieldVectorType w_right(eigenvectors_inverse_ * u_right);
-    const StuffFieldVectorType w_entity(eigenvectors_inverse_ * u_entity);
+    const XTFieldVectorType w_left(eigenvectors_inverse_ * u_left);
+    const XTFieldVectorType w_right(eigenvectors_inverse_ * u_right);
+    const XTFieldVectorType w_entity(eigenvectors_inverse_ * u_entity);
 
-    const StuffFieldVectorType w_slope_left     = w_entity - w_left;
-    const StuffFieldVectorType w_slope_right    = w_right - w_entity;
-    const StuffFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
-    const StuffFieldVectorType w_slope          = internal::ChooseLimiter<slope_limiter, StuffFieldVectorType>::limit(
-        w_slope_left, w_slope_right, w_centered_slope);
-    const StuffFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
-    const StuffFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
-    const StuffFieldVectorType w_reconstructed_right = w_entity + half_w_slope;
+    const XTFieldVectorType w_slope_left     = w_entity - w_left;
+    const XTFieldVectorType w_slope_right    = w_right - w_entity;
+    const XTFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
+    const XTFieldVectorType w_slope =
+        internal::ChooseLimiter<slope_limiter, XTFieldVectorType>::limit(w_slope_left, w_slope_right, w_centered_slope);
+    const XTFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
+    const XTFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
+    const XTFieldVectorType w_reconstructed_right = w_entity + half_w_slope;
 
     // convert back to u variable
-    const StuffFieldVectorType u_reconstructed_left(eigenvectors_ * w_reconstructed_left);
-    const StuffFieldVectorType u_reconstructed_right(eigenvectors_ * w_reconstructed_right);
+    const XTFieldVectorType u_reconstructed_left(eigenvectors_ * w_reconstructed_left);
+    const XTFieldVectorType u_reconstructed_right(eigenvectors_ * w_reconstructed_right);
 
     for (size_t factor_index = 0; factor_index < dimRange; ++factor_index) {
       // set values on dofs, dof with local index 0 for each factor space corresponds to basis function 1 - x, local

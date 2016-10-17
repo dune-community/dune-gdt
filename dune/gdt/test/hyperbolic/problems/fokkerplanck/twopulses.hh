@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/common/string.hh>
+#include <dune/xt/common/string.hh>
 
 #include "twobeams.hh"
 
@@ -71,8 +71,8 @@ protected:
     // Thus A(x) = 0 and q(x) = 0
     static void create_rhs_values(ConfigType& rhs_config)
     {
-      rhs_config["A.0"] = DSC::to_string(MatrixType(0));
-      rhs_config["b.0"] = DSC::to_string(RangeType(0));
+      rhs_config["A.0"] = Dune::XT::Common::to_string(MatrixType(0));
+      rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
     } // ... create_rhs_values()
 
     // boundary value of kinetic equation is 100*delta(v-1)**exp(-(t-1)^2/2) at x = 0 and 100*delta(v+1)*exp(-(t-1)^2/2)
@@ -89,7 +89,8 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
+          str +=
+              "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
         }
         str += "]";
         return str;
@@ -98,8 +99,10 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::to_string(basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr])
-                 + "*x[0]/7.0+" + DSC::to_string(basefunctions_values_at_plusone()[rr]) + ")*exp((-(t-1)^2)/2)";
+          str += "50*(" + Dune::XT::Common::to_string(basefunctions_values_at_minusone()[rr]
+                                                      - basefunctions_values_at_plusone()[rr])
+                 + "*x[0]/7.0+" + Dune::XT::Common::to_string(basefunctions_values_at_plusone()[rr])
+                 + ")*exp((-(t-1)^2)/2)";
         }
         str += "]";
         return str;
@@ -137,7 +140,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   static std::unique_ptr<ThisType> create(const std::string basefunctions_file)

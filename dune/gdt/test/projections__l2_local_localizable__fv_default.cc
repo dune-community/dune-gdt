@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2014 - 2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "projections/l2-local.hh"
 #include "spaces/fv/default.hh"
@@ -13,10 +13,9 @@
 using namespace Dune::GDT::Test;
 
 
-typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRID(3, 1), SPACE_FV_YASPGRID(1, 1),
-                       SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)
+typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)
 #if HAVE_ALUGRID
-                                                    ,
+                                                                             ,
                        SPACE_FV_ALUCONFORMGRID(2, 1), SPACE_FV_ALUCONFORMGRID(3, 1), SPACE_FV_ALUCUBEGRID(2, 1),
                        SPACE_FV_ALUCUBEGRID(3, 1)
 #endif // HAVE_ALUGRID

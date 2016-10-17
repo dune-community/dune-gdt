@@ -18,19 +18,18 @@
 #include <dune/pdelab/backend/istl/parallelhelper.hh>
 #endif
 
-#include <dune/stuff/la/container/istl.hh>
-#include <dune/stuff/common/parallel/helper.hh>
+#include <dune/xt/la/container/istl.hh>
+#include <dune/xt/common/parallel/helper.hh>
 
 namespace Dune {
 namespace GDT {
 
 
 template <class ViewImp,
-          bool is_parallel =
-              Dune::Stuff::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
+          bool is_parallel = Dune::XT::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
 struct CommunicationChooser
 {
-  typedef Dune::Stuff::SequentialCommunication Type;
+  typedef Dune::XT::SequentialCommunication Type;
 
   static Type* create(const ViewImp& /*gridView*/)
   {
@@ -69,7 +68,7 @@ struct CommunicationChooser<ViewImp, true>
 #endif
   {
 #if HAVE_DUNE_PDELAB
-    Stuff::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
+    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
     PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
 #endif // HAVE_DUNE_PDELAB

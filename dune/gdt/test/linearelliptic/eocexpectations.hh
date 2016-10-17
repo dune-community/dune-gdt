@@ -9,47 +9,29 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_EOCEXPECTATIONS_HH
 
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
+
+#include "eocexpectations_base.hh"
+
+#include <dune/gdt/test/grids.hh>
+#include "problems.hh"
+
 
 namespace Dune {
 namespace GDT {
 namespace Test {
-namespace internal {
 
-
-template <int polOrder>
-class LinearEllipticEocExpectationsBase
-{
-public:
-  static size_t rate(const std::string type)
-  {
-    if (type == "L2")
-      return polOrder + 1;
-    else if (type == "H1_semi")
-      return polOrder;
-    else if (type == "energy")
-      return polOrder;
-    else
-      EXPECT_TRUE(false) << "expected rate missing for type: " << type;
-    return 0;
-  } // ... rate(...)
-}; // class LinearEllipticEocExpectationsBase
-
-
-} // namespace internal
-
-
-template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, bool anything = true>
+template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder>
 class LinearEllipticEocExpectations : public internal::LinearEllipticEocExpectationsBase<polOrder>
 {
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     EXPECT_TRUE(false) << "Please record the expected results for\n"
-                       << "  TestCaseType: " << Stuff::Common::Typename<TestCaseType>::value() << "\n"
+                       << "  TestCaseType: " << XT::Common::Typename<TestCaseType>::value() << "\n"
                        << "  ChooseDiscretizer: " << int(disc) << "\n"
                        << "  polOrder: " << polOrder << "\n"
                        << "  type: " << type << "\n"

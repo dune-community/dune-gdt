@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "prolongations/l2.hh"
 #include "spaces/cg/fem.hh"
@@ -38,7 +38,7 @@ TYPED_TEST(L2ProlongationOperatorTest, free_function_callable)
 }
 TYPED_TEST(L2ProlongationOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(this->dimDomain == 3 ? 1.06e-13 : this->default_tolerance);
+  this->produces_correct_results(fem_cg_tolerance(*this));
 }
 
 

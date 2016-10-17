@@ -11,14 +11,15 @@
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
 #endif
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/stationary-testcase.hh>
+#include <dune/gdt/test/grids.hh>
 
 #include "base.hh"
 
@@ -39,40 +40,38 @@ class MixedBoundaryProblem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Stuff::Functions::Expression<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ExpressionFunctionType;
 
 public:
   static const size_t default_integration_order = 2;
 
-  static Stuff::Common::Configuration default_grid_cfg()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    Stuff::Common::Configuration cfg;
-    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
-    cfg["lower_left"]  = "[0 0]";
-    cfg["upper_right"] = "[1 1]";
+    XT::Common::Configuration cfg = XT::Grid::cube_gridprovider_default_config();
+    cfg["lower_left"]             = "[0 0]";
+    cfg["upper_right"]            = "[1 1]";
     return cfg;
   }
 
-  static Stuff::Common::Configuration default_boundary_info_cfg()
+  static XT::Common::Configuration default_boundary_info_cfg()
   {
-    Stuff::Common::Configuration cfg;
-    cfg["type"]      = Stuff::Grid::BoundaryInfoConfigs::NormalBased::static_id();
-    cfg["default"]   = "dirichlet";
-    cfg["neumann.0"] = "[1 0]";
+    XT::Common::Configuration cfg = XT::Grid::normalbased_boundaryinfo_default_config();
+    cfg["default"]                = "dirichlet";
+    cfg["neumann.0"]              = "[1 0]";
     return cfg;
   }
 
-  MixedBoundaryProblem(const size_t integration_order              = default_integration_order,
-                       const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
-                       const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
-    : BaseType(new ScalarConstantFunctionType(1, "diffusion_factor"),
-               new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
-                                              "diffusion_tensor"),
-               new ScalarConstantFunctionType(1, "force"),
-               new ExpressionFunctionType("x", "0.25 * x[0] * x[1]", integration_order, "dirichlet"),
-               new ScalarConstantFunctionType(0.1, "neumann"), grd_cfg, bnd_cfg)
+  MixedBoundaryProblem(const size_t integration_order           = default_integration_order,
+                       const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
+                       const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
+    : BaseType(
+          new ScalarConstantFunctionType(1, "diffusion_factor"),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
+          new ScalarConstantFunctionType(1, "force"),
+          new ExpressionFunctionType("x", "0.25 * x[0] * x[1]", integration_order, "dirichlet"),
+          new ScalarConstantFunctionType(0.1, "neumann"), grd_cfg, bnd_cfg)
   {
   }
 }; // class MixedBoundaryProblem< ..., 1 >
@@ -96,16 +95,16 @@ private:
   struct Helper
   {
     static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       return cfg;
     }
   };
 
   template <bool anything>
-  struct Helper<SGrid<2, 2>, anything>
+  struct Helper<Yasp2Grid, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[2 2]";
       return cfg;
@@ -114,9 +113,9 @@ private:
 
 #if HAVE_ALUGRID
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
+  struct Helper<AluConform2dGridType, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"]    = "[2 2]";
       cfg["num_refinements"] = "1";
@@ -125,9 +124,9 @@ private:
   };
 
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
+  struct Helper<AluSimplex2dGridType, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[2 2]";
       return cfg;
@@ -135,7 +134,7 @@ private:
   };
 #endif // HAVE_ALUGRID
 
-  static Stuff::Common::Configuration grid_cfg()
+  static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
     cfg      = Helper<typename std::decay<G>::type>::value(cfg);
@@ -146,7 +145,7 @@ public:
   using typename BaseType::GridType;
 
   MixedBoundaryTestCase(const size_t num_refs = 3)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
   {
   }

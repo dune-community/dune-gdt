@@ -20,13 +20,13 @@
 
 #include <dune/grid/io/file/vtk.hh>
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/ranges.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/common/memory.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/ranges.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -52,8 +52,9 @@ struct visualize_helper
                                const DiscreteFunctionType& discrete_function)
   {
     static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
-    discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+    discrete_function.visualize(filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_" + filename_suffix,
+                                subsampling,
+                                vtk_output_type);
   }
 };
 
@@ -80,8 +81,10 @@ struct visualize_helper<ii, true>
         typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
         typename DiscreteFunctionType::VectorType>
         factor_discrete_function(factor_space, factor_vector);
-    factor_discrete_function.visualize(
-        filename_prefix + "_factor_" + DSC::to_string(ii) + "_" + filename_suffix, subsampling, vtk_output_type);
+    factor_discrete_function.visualize(filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_"
+                                           + filename_suffix,
+                                       subsampling,
+                                       vtk_output_type);
   }
 };
 
@@ -124,17 +127,17 @@ struct ChooseVisualize
 
 template <class SpaceImp, class VectorImp>
 class ConstDiscreteFunction
-    : public Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                                 SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                                 SpaceImp::dimRange, SpaceImp::dimRangeCols>
+    : public XT::Functions::LocalizableFunctionInterface<
+          typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
+          typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols>
 {
   static_assert(is_space<SpaceImp>::value, "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(Stuff::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef Stuff::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                              SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                              SpaceImp::dimRange, SpaceImp::dimRangeCols>
+  typedef XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
+                                                      SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
+                                                      SpaceImp::dimRange, SpaceImp::dimRangeCols>
       BaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -193,7 +196,7 @@ public:
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
     assert(space_->grid_view().indexSet().contains(entity));
-    return DSC::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
+    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
   }
 
   virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
@@ -202,9 +205,9 @@ public:
   }
 
   /**
-   * \brief Visualizes the function using Dune::Stuff::LocalizableFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid view
    *        associated with the space.
-   * \sa    Dune::Stuff::LocalizableFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::LocalizableFunctionInterface::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
@@ -260,7 +263,7 @@ protected:
                                                                                                       *this);
   } // ... redirect_visualize(...)
 
-  const DS::PerThreadValue<SpaceType> space_;
+  const Dune::XT::Common::PerThreadValue<SpaceType> space_;
 
 private:
   const VectorType& vector_;
@@ -269,9 +272,9 @@ private:
 
 
 template <class SpaceImp, class VectorImp>
-class DiscreteFunction : Stuff::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
+class DiscreteFunction : XT::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
 {
-  typedef Stuff::Common::StorageProvider<VectorImp> VectorProviderBaseType;
+  typedef XT::Common::StorageProvider<VectorImp> VectorProviderBaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> BaseType;
   typedef DiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -285,33 +288,33 @@ public:
 
   DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   DiscreteFunction(const SpaceType& sp, VectorType&& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(new VectorType(sp.mapper().size()))
-    , BaseType(sp, VectorProviderBaseType::storage_access(), nm)
+    , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
 
   // manual copy ctor needed bc. of the storage provider
   DiscreteFunction(const ThisType& other)
     : VectorProviderBaseType(new VectorType(other.vector()))
-    , BaseType(other.space(), VectorProviderBaseType::storage_access(), other.name())
+    , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
   {
   }
 
   // manual move ctor needed bc. of the storage provider
   DiscreteFunction(ThisType&& source)
     : VectorProviderBaseType(new VectorType(source.vector()))
-    , BaseType(source.space(), VectorProviderBaseType::storage_access(), source.name())
+    , BaseType(source.space(), VectorProviderBaseType::access(), source.name())
   {
   }
 
@@ -325,7 +328,7 @@ public:
 
   VectorType& vector()
   {
-    return this->storage_access();
+    return this->access();
   }
 
   using BaseType::local_discrete_function;
@@ -333,7 +336,7 @@ public:
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
     assert(space_->grid_view().indexSet().contains(entity));
-    return DSC::make_unique<LocalDiscreteFunctionType>(*space_, this->storage_access(), entity);
+    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->access(), entity);
   }
 
 private:
@@ -351,7 +354,7 @@ make_const_discrete_function(const SpaceType& space, const VectorType& vector,
 
 
 template <class SpaceType, class VectorType>
-typename std::enable_if<is_space<SpaceType>::value && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         DiscreteFunction<SpaceType, VectorType>>::type
 make_discrete_function(const SpaceType& space, VectorType& vector, const std::string nm = "gdt.discretefunction")
 {
@@ -378,9 +381,10 @@ namespace internal {
 template <class D>
 struct is_const_discrete_function_helper
 {
-  DSC_has_typedef_initialize_once(SpaceType) DSC_has_typedef_initialize_once(VectorType)
+  DXTC_has_typedef_initialize_once(SpaceType);
+  DXTC_has_typedef_initialize_once(VectorType);
 
-      static const bool is_candidate = DSC_has_typedef(SpaceType)<D>::value && DSC_has_typedef(VectorType)<D>::value;
+  static const bool is_candidate = DXTC_has_typedef(SpaceType)<D>::value && DXTC_has_typedef(VectorType)<D>::value;
 };
 
 

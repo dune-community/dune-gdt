@@ -9,10 +9,10 @@
 #ifndef DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
 #define DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
 
-#include <dune/stuff/common/configuration.hh>
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/la/solver.hh>
+#include <dune/xt/common/configuration.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/la/solver.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -23,9 +23,9 @@ namespace GDT {
 
 
 template <class Traits>
-class StationaryDiscretizationInterface : public Stuff::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
+class StationaryDiscretizationInterface : public XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
 {
-  typedef Stuff::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
@@ -37,8 +37,7 @@ public:
 private:
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
-  static_assert(Stuff::LA::is_vector<VectorType>::value,
-                "VectorType has to be derived from Stuff::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<VectorType>::value, "VectorType has to be derived from XT::LA::VectorInterface!");
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -67,26 +66,26 @@ public:
     CHECK_CRTP(this->as_imp().solver_types());
     auto types = this->as_imp().solver_types();
     if (types.empty())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Reported solver_types() of the derived class (see below) must not be empty!\n\n  "
-                     << Stuff::Common::Typename<derived_type>::value());
+                     << XT::Common::Typename<derived_type>::value());
     return types;
   } // ... solver_types(...)
 
-  Stuff::Common::Configuration solver_options(const std::string type = "") const
+  XT::Common::Configuration solver_options(const std::string type = "") const
   {
     CHECK_CRTP(this->as_imp().solver_options(type));
     auto opts = this->as_imp().solver_options(type);
     if (opts.empty())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Reported solver_options() of the derived class (see below) for type '"
                      << type
                      << "'must not be empty!\n\n  "
-                     << Stuff::Common::Typename<derived_type>::value());
+                     << XT::Common::Typename<derived_type>::value());
     return opts;
   } // ... solver_options(...)
 
-  void solve(VectorType& solution, const Stuff::Common::Configuration& options) const
+  void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().solve(solution, options));
   }
@@ -110,7 +109,7 @@ public:
     solve(solution, solver_options(solver_types().at(0)));
   }
 
-  VectorType solve(const Stuff::Common::Configuration& options) const
+  VectorType solve(const XT::Common::Configuration& options) const
   {
     VectorType solution = create_vector();
     solve(solution, options);
@@ -150,7 +149,7 @@ public:
   using typename BaseType::VectorType;
 
 private:
-  typedef typename Stuff::LA::Solver<MatrixType> LinearSolverType;
+  typedef typename XT::LA::Solver<MatrixType> LinearSolverType;
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -183,7 +182,7 @@ public:
   const VectorType& dirichlet_shift() const
   {
     if (!has_dirichlet_shift())
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call dirichlet_shift() if has_dirichlet_shift() is false!");
     CHECK_CRTP(this->as_imp().dirichlet_shift());
     return this->as_imp().dirichlet_shift();
@@ -197,14 +196,14 @@ public:
     return LinearSolverType::types();
   }
 
-  Stuff::Common::Configuration solver_options(const std::string type = "") const
+  XT::Common::Configuration solver_options(const std::string type = "") const
   {
     return LinearSolverType::options(type);
   }
 
   using BaseType::solve;
 
-  void solve(VectorType& solution, const Stuff::Common::Configuration& options) const
+  void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
     LinearSolverType(system_matrix()).apply(rhs_vector(), solution, options);
     if (has_dirichlet_shift())
@@ -216,9 +215,9 @@ public:
 
 
 template <class Traits>
-class FVDiscretizationInterface : public Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
+class FVDiscretizationInterface : public XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
 {
-  typedef Stuff::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
@@ -273,9 +272,9 @@ namespace internal {
 template <class D>
 struct is_stationary_discretization_helper
 {
-  DSC_has_typedef_initialize_once(Traits)
+  DXTC_has_typedef_initialize_once(Traits);
 
-      static const bool is_candidate = DSC_has_typedef(Traits)<D>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<D>::value;
 };
 
 

@@ -10,8 +10,8 @@
 #ifndef DUNE_GDT_SPACES_BLOCK_HH
 #define DUNE_GDT_SPACES_BLOCK_HH
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/default.hh>
@@ -54,7 +54,7 @@ public:
   typedef typename MsGridType::GlobalGridViewType GridViewType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
-  static const Stuff::Grid::ChoosePartView part_view_type = LocalSpaceType::part_view_type;
+  static const XT::Grid::Backends part_view_type = LocalSpaceType::part_view_type;
 
   static const bool needs_grid_view = LocalSpaceType::needs_grid_view;
 }; // class BlockSpaceTraits
@@ -98,7 +98,7 @@ public:
     , mapper_(std::make_shared<MapperType>(ms_grid_, local_spaces_))
   {
     if (local_spaces_.size() != ms_grid_->size())
-      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the multiscale grid!\n"
                      << "  Size of the given multiscale grid: "
                      << ms_grid_->size()
@@ -174,13 +174,13 @@ private:
     const auto result              = ms_grid_->entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
     if (result == ms_grid_->entityToSubdomainMap()->end())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Entity " << global_entity_index << " of the global grid view was not found in the multiscale grid!");
 #endif // NDEBUG
     const size_t subdomain = result->second;
 #ifndef NDEBUG
     if (subdomain >= ms_grid_->size())
-      DUNE_THROW(Stuff::Exceptions::internal_error,
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "The multiscale grid is corrupted!\nIt reports Entity " << global_entity_index
                                                                          << " to be in subdomain "
                                                                          << subdomain

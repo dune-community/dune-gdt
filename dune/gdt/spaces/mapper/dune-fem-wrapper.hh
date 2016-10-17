@@ -16,7 +16,7 @@
 #include <dune/fem/space/mapper/nonblockmapper.hh>
 #endif
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "interfaces.hh"
 

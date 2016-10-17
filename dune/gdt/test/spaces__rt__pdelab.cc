@@ -9,7 +9,7 @@
 #define DUNE_GDT_TEST_SPACES_RT_CHECK 1
 
 // This one has to come first (includes the config.h)!
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "spaces/rt.hh"
 #include "spaces/rt/pdelab.hh"

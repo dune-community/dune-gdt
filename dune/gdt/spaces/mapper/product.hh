@@ -11,8 +11,8 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/debug.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/debug.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/product.hh>
 

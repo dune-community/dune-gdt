@@ -12,8 +12,8 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/type_traits.hh>
 
 namespace Dune {
 namespace GDT {
@@ -23,7 +23,7 @@ namespace GDT {
  * \todo Add note that each implementation has to document which of globalIndices or mapToGlobal is more efficient!
  */
 template <class Traits>
-class MapperInterface : public Stuff::CRTPInterface<MapperInterface<Traits>, Traits>
+class MapperInterface : public XT::CRTPInterface<MapperInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

@@ -12,9 +12,9 @@
 #define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
-#include <dune/stuff/test/common.hh>
-#include <dune/stuff/functions/spe10.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/common/test/common.hh>
+#include <dune/xt/functions/spe10/model1.hh>
+#include <dune/xt/la/container.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -25,7 +25,7 @@
 template <class TestCaseType>
 struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 {
-  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::Stuff::LA::ChooseBackend la_backend, int polOrder>
+  template <Dune::GDT::ChooseSpaceBackend space_backend, Dune::XT::LA::Backends la_backend, int polOrder>
   static void eoc_study()
   {
     using namespace Dune;
@@ -35,10 +35,10 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 #else
     TestCaseType test_case;
 #endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
+    test_case.print_header(DXTC_LOG_INFO);
+    DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
-                                            Stuff::Grid::ChooseLayer::level,
+                                            XT::Grid::Layers::level,
                                             space_backend,
                                             la_backend,
                                             polOrder,
@@ -48,9 +48,9 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
-    } catch (Dune::Stuff::Exceptions::spe10_data_file_missing&) {
-      Dune::Stuff::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
+      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
+    } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
+      Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
     }
   } // ... eoc_study()

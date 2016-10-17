@@ -13,8 +13,8 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/functions/composition.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/functions/composition.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
@@ -26,9 +26,10 @@ namespace Hyperbolic {
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
-    : public DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
+    : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
 {
-  typedef DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1> BaseType;
+  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
+      BaseType;
   typedef PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim> ThisType;
 
 public:
@@ -98,12 +99,12 @@ private:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
           size_t rangeDimCols>
-class InitialValues
-    : public DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
+class InitialValues : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+                                                                    rangeDim, rangeDimCols>
 {
-  typedef
-      typename DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
-          BaseType;
+  typedef typename XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+                                                          rangeDimCols>
+      BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -121,28 +122,30 @@ public:
 
   virtual void evaluate(const DomainType& xx, RangeType& ret) const override
   {
-    evaluate_helper(xx, ret, DS::Functions::internal::ChooseVariant<dimDomain>());
+    evaluate_helper(xx, ret, XT::Functions::internal::ChooseVariant<dimDomain>());
   }
 
 private:
-  void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant<1>) const
+  void evaluate_helper(const DomainType& xx, RangeType& ret, const XT::Functions::internal::ChooseVariant<1>) const
   {
-    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
+    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
       ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
                * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2));
-    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
+    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
       ret[0] = 1;
     else
       ret[0] = 0;
   }
 
-  void evaluate_helper(const DomainType& xx, RangeType& ret, const DS::Functions::internal::ChooseVariant<2>) const
+  void evaluate_helper(const DomainType& xx, RangeType& ret, const XT::Functions::internal::ChooseVariant<2>) const
   {
-    if (DSC::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && DSC::FloatCmp::ge(xx[1], 0.2) && xx[1] < 0.4)
+    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2)
+        && xx[1] < 0.4)
       ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
                * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000 * std::pow(xx[1] - 0.2, 2)
                * std::pow(xx[1] - 0.4, 2) * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
-    else if (DSC::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && DSC::FloatCmp::ge(xx[1], 0.6) && xx[1] < 0.8)
+    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6)
+             && xx[1] < 0.8)
       ret[0] = 1;
     else
       ret[0] = 0;
@@ -152,15 +155,15 @@ private:
 
 template <class LocalizableFunctionType, class GridViewType>
 class TransportSolution
-    : public DS::TimeDependentFunctionInterface<
-          typename DS::LocalizableFunctionInterface<
+    : public XT::Functions::TimeDependentFunctionInterface<
+          typename XT::Functions::LocalizableFunctionInterface<
               typename LocalizableFunctionType::EntityType, typename LocalizableFunctionType::DomainFieldType,
               LocalizableFunctionType::dimDomain, typename LocalizableFunctionType::RangeFieldType,
               LocalizableFunctionType::dimRange, LocalizableFunctionType::dimRangeCols>,
           double>
 {
-  typedef typename DS::TimeDependentFunctionInterface<
-      typename DS::LocalizableFunctionInterface<
+  typedef typename XT::Functions::TimeDependentFunctionInterface<
+      typename XT::Functions::LocalizableFunctionInterface<
           typename LocalizableFunctionType::EntityType, typename LocalizableFunctionType::DomainFieldType,
           LocalizableFunctionType::dimDomain, typename LocalizableFunctionType::RangeFieldType,
           LocalizableFunctionType::dimRange, LocalizableFunctionType::dimRangeCols>,
@@ -188,9 +191,10 @@ public:
   virtual std::unique_ptr<TimeIndependentFunctionType> evaluate_at_time(const double t) const
   {
     DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
-    typedef typename DS::Functions::Composition<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
-        CompositionType;
-    return DSC::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
+    typedef
+        typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
+            CompositionType;
+    return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
   }
 
   virtual std::string type() const
@@ -226,7 +230,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
+  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
       FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, r, rC>
       DefaultFluxType;
@@ -284,7 +288,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   static ConfigType default_config(const std::string sub_name = "")
@@ -354,8 +358,8 @@ public:
 
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class TransportTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::Transport<typename G::template Codim<0>::Entity,
-                                                                            typename G::ctype, G::dimension, R, r, rC>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::Transport<typename G::template Codim<0>::Entity,
+                                                                           typename G::ctype, G::dimension, R, r, rC>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -367,7 +371,7 @@ public:
   typedef typename Problems::Transport<E, D, d, R, r, rC> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -375,7 +379,7 @@ public:
   using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , reference_grid_view_(BaseType::reference_grid_view())
     , problem_(*(ProblemType::create(ProblemType::default_config())))
@@ -385,9 +389,11 @@ public:
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         initial_values,
         reference_grid_view_,
-        DSC::from_string<typename DSC::FieldVector<D, d>>("[1.0 2.0]"),
-        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["lower_left"]),
-        DSC::from_string<typename DSC::FieldVector<D, d>>(problem_.grid_config()["upper_right"]));
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
+            problem_.grid_config()["lower_left"]),
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
+            problem_.grid_config()["upper_right"]));
   }
 
   virtual const ProblemType& problem() const override final
@@ -424,7 +430,7 @@ public:
         << "||  Testcase: Transport                                               ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = u[0]                                                       ||\n"
         << "||  rhs = 0                                                           ||\n"

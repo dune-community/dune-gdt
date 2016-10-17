@@ -19,7 +19,7 @@
 #include <dune/fem/space/lagrange/space.hh>
 #endif // HAVE_DUNE_FEM
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -71,8 +71,8 @@ public:
   typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
                                           dimDomain, RangeFieldType, rangeDim, rangeDimCols>
       BaseFunctionSetType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::part;
-  static const bool needs_grid_view                       = false;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
+  static const bool needs_grid_view              = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DuneFemCgSpaceWrapperTraits

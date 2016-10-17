@@ -15,12 +15,12 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/la/container/pattern.hh>
-#include <dune/stuff/la/solver.hh>
-#include <dune/stuff/common/configuration.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/la/container/pattern.hh>
+#include <dune/xt/la/solver.hh>
+#include <dune/xt/common/configuration.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -34,7 +34,7 @@ namespace GDT {
  *       switch (to a lot of methods). Either this gets merged with the new Parameter or we need a different paradigm.
  */
 template <class Traits>
-class OperatorInterface : public Stuff::CRTPInterface<OperatorInterface<Traits>, Traits>
+class OperatorInterface : public XT::CRTPInterface<OperatorInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -65,7 +65,7 @@ public:
   //  }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& range, SourceType& source, const Stuff::Common::Configuration& opts) const
+  void apply_inverse(const RangeType& range, SourceType& source, const XT::Common::Configuration& opts) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply_inverse(range, source, opts));
   }
@@ -76,7 +76,7 @@ public:
     return this->as_imp().invert_options();
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& type) const
+  XT::Common::Configuration invert_options(const std::string& type) const
   {
     CHECK_CRTP(this->as_imp().invert_options(type));
     return this->as_imp().invert_options(type);
@@ -115,9 +115,9 @@ namespace internal {
 template <class Tt>
 struct is_operator_helper
 {
-  DSC_has_typedef_initialize_once(Traits)
+  DXTC_has_typedef_initialize_once(Traits);
 
-      static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 

@@ -19,6 +19,8 @@ addons:
     - doxygen
     - texlive-base
     - python-virtualenv
+    - python3-pytest
+    - python-pytest
     - libboost1.55-all-dev
     - python-pip
     - libtbb-dev
@@ -26,26 +28,26 @@ addons:
     - libsuitesparse-dev
     - lcov
     - curl
+    - ninja-build
     - python3-requests
+    - libeigen3-dev
 
 before_install:
   - |-
-    : ${OPTS:="config.opts/travis.make.release"} && export OPTS
-  - |-
-    : ${BUILD_CMD:="make -k -j 1"} && export BUILD_CMD
-  # workaround for https://github.com/travis-ci/travis-ci/issues/5285
-  - sudo -E apt-get install -y -q python-pip python3-pip
-  - sudo -E pip3 install virtualenv cpp-coveralls
-  - sudo -E pip install virtualenv cpp-coveralls
+    : ${OPTS:="config.opts/travis.ninja"} && export OPTS
+  # workaround for gnutls bug is using git built against curl-openssl
+  - sudo -E rm /etc/apt/sources.list.d/*git*.list
+  - sudo -E add-apt-repository -y ppa:pymor/travis && sudo -E aptitude update && sudo -E aptitude install git -yq
   # workaround for gnutls bug is using git built against curl-openssl
   - sudo -E add-apt-repository -y ppa:pymor/travis && sudo -E aptitude update && sudo -E aptitude install git -yq
-  - for ii in http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis5_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/metis_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/universe/m/metis/libmetis-dev_5.1.0.dfsg-2_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis-dev_3.1.1-4build1_amd64.deb http://de.archive.ubuntu.com/ubuntu/pool/multiverse/p/parmetis/libparmetis3.1_3.1.1-4build1_amd64.deb; do wget $ii; done && sudo -E dpkg -i *.deb && rm *.deb
-  - export PATH=/usr/lib/ccache:$PATH
   - cd $HOME
   - test -d src || git clone https://github.com/dune-community/dune-gdt-super.git src
-  - cd $HOME/src
+  - cd ${SUPERDIR}
+  - git checkout xt+core_2.4_switchover
   - git submodule update --init --recursive
   - git submodule status
+  - ${SUPERDIR}/.travis/trusty_apt_setup.bash
+  - export PATH=/usr/lib/ccache:$PATH
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
@@ -55,7 +57,7 @@ before_install:
 
 # command to install dependencies
 install:
-  - cd $HOME/src
+  - cd ${SUPERDIR}
   #- export INST_DCTRL=$HOME/dune/bin/dunecontrol
   - export SRC_DCTRL=$PWD/dune-common/bin/dunecontrol
   - ${SRC_DCTRL} ${BLD} all
@@ -63,23 +65,34 @@ install:
   - cp -ra ${TRAVIS_BUILD_DIR} .
 
 before_script:
+    - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}; fi
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_binaries_${TESTS}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_${TESTS}; fi
 
 script:
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -R ${TESTS//_/.+}; fi
-    - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} headercheck; fi
-    # retry this step becuase of the implicated race condition in cloning and pushing with multiple builder running in parallel
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
+    - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck; fi
+    - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
+    # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
     - unset GH_TOKEN
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry $HOME/src/scripts/bash/travis_upload_test_logs.bash $HOME/src/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
-
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${SUPERDIR}/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
+    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
 
 # runs independent of 'script' failure/success
 after_script:
-    # reset for ctest
-    - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec make clean
-    - export CTEST_ARG="--output-on-failure -S ${TRAVIS_BUILD_DIR}/.travis.ctest"
+    - |
+     if [ "x${CLANG_FORMAT}" != "x" ] ; then
+        git config --global hooks.clangformat ${CLANG_FORMAT}
+        PYTHONPATH=${SUPERDIR}/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\"${TRAVIS_BUILD_DIR}\")"
+     fi
+    - |
+      if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
+        ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make doc
+        ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
+        ${SUPERDIR}/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
+      fi
 
 notifications:
   email:
@@ -101,61 +114,21 @@ cache:
 
 env:
   global:
-    - BASEDIR=$HOME/src
-    - PATH=${BASEDIR}/local/bin:$PATH
-    - LD_LIBRARY_PATH=${BASEDIR}/local/lib64:${BASEDIR}/local/lib:$LD_LIBRARY_PATH
-    - PKG_CONFIG_PATH=${BASEDIR}/local/lib64/pkgconfig:${BASEDIR}/local/lib/pkgconfig:${BASEDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
-    - MY_MODULE=dune-gdt DUNE_BUILD_DIR=build INSTALL_DIR=$HOME/dune CTEST_OUTPUT_ON_FAILURE=1
+    - SUPERDIR=${HOME}/src
+    - PATH=${SUPERDIR}/local/bin:$PATH
+    - LD_LIBRARY_PATH=${SUPERDIR}/local/lib64:${SUPERDIR}/local/lib:$LD_LIBRARY_PATH
+    - PKG_CONFIG_PATH=${SUPERDIR}/local/lib64/pkgconfig:${SUPERDIR}/local/lib/pkgconfig:${SUPERDIR}/local/share/pkgconfig:$PKG_CONFIG_PATH
+    - MY_MODULE=dune-gdt
+    - DUNE_BUILD_DIR=${HOME}/dune_build/
+    - INSTALL_DIR=$HOME/dune
+    - CTEST_OUTPUT_ON_FAILURE=1
     - DCTL_ARGS="--builddir=${DUNE_BUILD_DIR} --use-cmake"
-    - DBG="${DCTL_ARGS} --opts=config.opts/travis.make.debug"
-    - REL="${DCTL_ARGS} --opts=config.opts/travis.make.release"
+    - DBG="${DCTL_ARGS} --opts=config.opts/travis.ninja"
 
 matrix:
   include:
-#    gcc 4.9
-#    - os: linux
-#      compiler: gcc
-#      addons: &gcc49
-#        apt:
-#          sources:
-#          - *commonsources
-#          - 'ubuntu-toolchain-r-test'
-#          packages:
-#          - *commonpackages
-#          - ['g++-4.9', 'gcc-4.9']
-#      env: CC=gcc-4.9 TESTS=operator BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=prolongation BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=projection BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=space BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-4.9
-#    - os: linux
-#      compiler: gcc
-#      addons:  *gcc49
-#      env: CC=gcc-4.9 TESTS=headercheck BLD=${DBG} CXX=g++-4.9
-
 #   gcc 5
     - os: linux
-      compiler: gcc
       addons: &gcc5
         apt:
           sources:
@@ -166,51 +139,39 @@ matrix:
           - ['g++-5', 'gcc-5']
       env: CC=gcc-5 TESTS=operator BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_default BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_fem BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=prolongation_pdelab BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_default BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_fem BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=projection_pdelab BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=g++-5
     - os: linux
@@ -218,83 +179,65 @@ matrix:
       addons:  *gcc5
       env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=other BLD=${DBG} CXX=g++-5
     - os: linux
-      compiler: gcc
       addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
 
-#   clang 3.7
+#   clang 3.8
     - os: linux
       compiler: clang
-      addons: &clang37
+      addons: &clang38
         apt:
           sources:
           - *commonsources
-          - ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          - ['ubuntu-toolchain-r-test']
           packages:
           - *commonpackages
-          - ['clang-3.7']
-      env: CC=clang-3.7 TESTS=operator BLD=${DBG} CXX=clang++-3.7
+      env: CC=clang-3.8 TESTS=operator BLD=${DBG} CXX=clang++-3.8"
+    - os: linux
+      env: CC=clang-3.8 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_default BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=space BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
       compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=other BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
     - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_default BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=space BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_cg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_discretization_sgrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=other BLD=${DBG} CXX=clang++-3.7
-    - os: linux
-      compiler: clang
-      addons:  *clang37
-      env: CC=clang-3.7 TESTS=headercheck BLD=${DBG} CXX=clang++-3.7
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8

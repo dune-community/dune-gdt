@@ -12,7 +12,7 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/crtp.hh>
+#include <dune/xt/common/crtp.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -22,7 +22,7 @@ namespace GDT {
 
 
 template <class Traits>
-class FunctionalInterface : public Stuff::CRTPInterface<FunctionalInterface<Traits>, Traits>
+class FunctionalInterface : public XT::CRTPInterface<FunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

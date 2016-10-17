@@ -11,8 +11,8 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -41,7 +41,7 @@ class IsRHSEvaluation
 
 template <class Traits>
 class LocalNumericalCouplingFluxInterface
-    : public Stuff::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
+    : public XT::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
       internal::IsNumericalCouplingFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -57,10 +57,10 @@ public:
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
   auto evaluate(const LocalfunctionTupleType& local_functions_tuple_entity,
                 const LocalfunctionTupleType& local_functions_tuple_neighbor,
-                const Stuff::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
-                const Stuff::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_neighbor,
+                const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
+                const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_neighbor,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const ->
-      typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple_entity,
                                        local_functions_tuple_neighbor,
@@ -80,7 +80,7 @@ public:
 
 template <class Traits>
 class LocalNumericalBoundaryFluxInterface
-    : public Stuff::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
+    : public XT::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
       internal::IsNumericalBoundaryFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -95,9 +95,9 @@ public:
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
   auto evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                const Stuff::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
+                const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
                 const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const ->
-      typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection))
     return this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection);
@@ -125,15 +125,17 @@ public:
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
   typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
-  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
-  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
+  typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
   virtual FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local,
                                  const double t_ = 0) const = 0;
@@ -162,17 +164,19 @@ public:
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
   typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
 
-  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
-  typedef typename Stuff::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
+  typedef typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::JacobianRangeType
       FluxJacobianRangeType;
 
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::JacobianRangeType
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::JacobianRangeType
       JacobianRangeType; // of \nabla u, FieldMatrix or FieldVector< FieldMatrix > depending on dimensions
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
   virtual FluxRangeType evaluate(const RangeType& u, const JacobianRangeType& grad_u, const E& entity,
                                  const DomainType& x_local, const double t_ = 0) const = 0;
@@ -237,10 +241,11 @@ public:
 
   virtual ~RhsEvaluationFluxInterface() = default;
 
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
+  typedef
+      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
   // FieldMatrix depending on
   // dimensions
-  typedef typename Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
   virtual RangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local,
                              const double t_ = 0) const = 0;

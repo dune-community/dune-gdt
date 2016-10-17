@@ -12,8 +12,8 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
@@ -22,13 +22,14 @@ namespace GDT {
 
 
 template <class Traits>
-class LocalVolumeFunctionalInterface : public Stuff::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
+class LocalVolumeFunctionalInterface : public XT::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, Dune::DynamicVector<R>& ret) const
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
+             Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply(testBase, ret));
   }
@@ -36,14 +37,14 @@ public:
 
 
 template <class Traits>
-class LocalFaceFunctionalInterface : public Stuff::CRTPInterface<LocalFaceFunctionalInterface<Traits>, Traits>
+class LocalFaceFunctionalInterface : public XT::CRTPInterface<LocalFaceFunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
 
   template <class E, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const Stuff::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase, const IntersectionType& intersection,
-             Dune::DynamicVector<R>& ret) const
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
+             const IntersectionType& intersection, Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CR(this->as_imp().apply(testBase, intersection, ret));
   }
@@ -56,9 +57,9 @@ namespace internal {
 template <class Tt>
 struct is_local_volume_functional_helper
 {
-  DSC_has_typedef_initialize_once(Traits)
+  DXTC_has_typedef_initialize_once(Traits);
 
-      static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 
