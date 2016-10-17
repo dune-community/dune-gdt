@@ -68,10 +68,10 @@ before_script:
     - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make; fi
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_${TESTS}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_builder_${TESTS}; fi
 
 script:
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R ${TESTS//_/.+}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R builder_${TESTS//_/.+}; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck; fi
     - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
@@ -137,50 +137,49 @@ matrix:
           packages:
           - *commonpackages
           - ['g++-5', 'gcc-5']
-      env: CC=gcc-5 TESTS=operator BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=0 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=prolongation_default BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=1 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=prolongation_fem BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=2 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=prolongation_pdelab BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=3 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=projection_default BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=4 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=projection_fem BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=5 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=projection_pdelab BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=6 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=space BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=7 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=8 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=9 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=10 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=11 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=g++-5
-    - os: linux
-      compiler: gcc
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=12 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=other BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=13 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=14 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
@@ -195,49 +194,48 @@ matrix:
           - ['ubuntu-toolchain-r-test']
           packages:
           - *commonpackages
-      env: CC=clang-3.8 TESTS=operator BLD=${DBG} CXX=clang++-3.8"
+      env: CC=clang-3.8 TESTS=0 BLD=${DBG} CXX=clang++-3.8
     - os: linux
-      env: CC=clang-3.8 TESTS=prolongation_default BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      addons:  *clang38
-      env: CC=clang-3.8 TESTS=prolongation_fem BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=1 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=prolongation_pdelab BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=2 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=projection_default BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=3 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=projection_fem BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=4 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=projection_pdelab BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=5 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=space BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=6 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=7 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_cg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=8 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_alugrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=9 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=10 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=linearelliptic_swipdg_estimator_alugrid BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      compiler: clang
-      addons:  *clang38
-      env: CC=clang-3.8 TESTS=hyperbolic_fv_discretization_yaspgrid BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=11 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=other BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
+      env: CC=clang-3.8 TESTS=12 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=13 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=14 BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8
